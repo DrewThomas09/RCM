@@ -2668,7 +2668,51 @@ Contribution margin on affected revenue is tunable (default
 
 ---
 
-## 124. Change log
+## 124. Archetype subrunners (`archetype_subrunners.py`)
+
+Partners don't apply generic checks — they apply checks that
+match the archetype. This module branches into 7 specialized
+runners. Each is a small heuristic pack with partner-voice
+warnings.
+
+Archetypes and the questions they answer:
+
+- **payer_mix_shift** — "Can this asset actually renegotiate
+  into a better mix, or is that wishful thinking?" Flags:
+  Medicaid heavy without commercial leverage, rate-growth
+  assumption > 6%, VBC ramp too fast.
+- **roll_up** — "Is the roll-up engine healthy, or is pro-forma
+  EBITDA fiction?" Flags: platform age < 3y + 5+ acq/yr
+  (AdaptHealth pattern), < 80% integrated, flat organic volume
+  under the wrapper.
+- **cmi_uplift** — "Is the CMI lift defensible, or a RAC trap?"
+  Flags: CMI gap > 0.15 in 24 months, high denial rate
+  compounding the lift, long DAR.
+- **outpatient_migration** — "Does the thesis survive
+  site-neutral?" Flags: high inpatient share transitioning
+  out; high HOPD exposure.
+- **back_office_consolidation** — "How many ERPs? How many
+  shared-services functions?" Flags: > 3 ERPs (24-36mo
+  program), < 2 shared-services functions consolidated.
+- **cost_basis_compression** — "Is there any fat left to cut?"
+  Flags: labor < 40% of revenue (already lean).
+- **capacity_expansion** — "Are we filling before adding?"
+  Flags: utilization < 65% (value-destructive to add more),
+  5+ new sites (ramp drag in years 1-2).
+
+Dispatch via `run_archetype(name, ctx)`. Each runner reads what
+it needs from the loose `ArchetypeSubrunnerContext` bag —
+unused fields don't matter. Add a new archetype by writing a
+runner and registering it in `ARCHETYPE_RUNNERS`.
+
+**Worked example:** a deal pitched as a roll-up with 2-year-old
+platform and 8 acquisitions/year produces an "AdaptHealth
+pattern" high-severity warning; a partner reads that and asks
+for the pro-forma-to-GAAP bridge before writing anything else.
+
+---
+
+## 125. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2898,3 +2942,9 @@ Contribution margin on affected revenue is tunable (default
 - **2026-04-17** — Added `obbba_sequestration_stress.py` (§123) —
   4 named regulatory shocks with specific $ EBITDA impacts.
   Full inventory: 121 modules, 1,204 pe_intelligence unit tests.
+- **2026-04-17** — Added `archetype_subrunners.py` (§124) —
+  7 archetype-specific heuristic packs (payer_mix_shift, roll_up,
+  cmi_uplift, outpatient_migration, back_office_consolidation,
+  cost_basis_compression, capacity_expansion) each with
+  partner-voice warnings. Full inventory: 122 modules, 1,219
+  pe_intelligence unit tests.
