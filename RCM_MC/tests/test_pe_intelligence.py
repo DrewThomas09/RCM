@@ -12873,5 +12873,136 @@ class TestBearCaseGenerator(unittest.TestCase):
             deal_name="X", base_ebitda_m=50.0)).to_dict())
 
 
+# ── Payer mix shift cascade ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    MixShiftInputs,
+    MixShiftReport,
+    MixShiftStep,
+    RATE_MULTIPLIER,
+    render_mix_shift_markdown,
+    trace_mix_shift,
+)
+
+
+class TestPayerMixShiftCascade(unittest.TestCase):
+
+    def test_no_shift_neutral(self) -> None:
+        r = trace_mix_shift(MixShiftInputs(
+            revenue_m=100.0,
+            current_commercial_pct=0.40,
+            target_commercial_pct=0.40,
+            current_medicaid_pct=0.20,
+            target_medicaid_pct=0.20,
+            current_medicare_ffs_pct=0.25,
+            target_medicare_ffs_pct=0.25,
+            current_medicare_advantage_pct=0.10,
+            target_medicare_advantage_pct=0.10,
+            current_self_pay_pct=0.05,
+            target_self_pay_pct=0.05,
+        ))
+        self.assertAlmostEqual(r.effective_rate_delta_pct, 0.0, places=1)
+
+    def test_commercial_shift_lifts_rate(self) -> None:
+        r = trace_mix_shift(MixShiftInputs(
+            revenue_m=100.0,
+            current_medicaid_pct=0.30, target_medicaid_pct=0.15,
+            current_commercial_pct=0.30, target_commercial_pct=0.45,
+        ))
+        self.assertGreater(r.effective_rate_delta_pct, 0)
+        self.assertGreater(r.revenue_impact_m, 0)
+
+    def test_aggressive_shift_flags_low_credibility(self) -> None:
+        r = trace_mix_shift(MixShiftInputs(
+            revenue_m=100.0,
+            current_commercial_pct=0.20,
+            target_commercial_pct=0.60,   # 40pp in 3yr = 13pp/yr
+            current_medicaid_pct=0.40,
+            target_medicaid_pct=0.00,
+            years_to_achieve=3,
+            commercial_contracts_signed=0,
+            commercial_contracts_in_pipeline=1,
+        ))
+        self.assertLess(r.credibility_score_0_100, 40)
+        self.assertIn("aggressive", r.partner_note.lower())
+
+    def test_credible_shift_with_signed_contracts(self) -> None:
+        r = trace_mix_shift(MixShiftInputs(
+            revenue_m=100.0,
+            current_commercial_pct=0.40,
+            target_commercial_pct=0.48,   # 8pp in 3yr
+            current_medicaid_pct=0.15,
+            target_medicaid_pct=0.07,
+            years_to_achieve=3,
+            commercial_contracts_signed=3,
+            commercial_contracts_in_pipeline=8,
+        ))
+        self.assertGreaterEqual(r.credibility_score_0_100, 70)
+
+    def test_five_steps_present(self) -> None:
+        r = trace_mix_shift(MixShiftInputs(
+            revenue_m=100.0,
+            current_commercial_pct=0.30,
+            target_commercial_pct=0.40,
+        ))
+        self.assertEqual(len(r.steps), 5)
+        names = [s.name for s in r.steps]
+        self.assertEqual(names, [
+            "mix_shift_magnitude",
+            "effective_rate_change",
+            "revenue_impact",
+            "ebitda_impact",
+            "exit_multiple_uplift",
+        ])
+
+    def test_multiple_uplift_scales_with_shift(self) -> None:
+        small = trace_mix_shift(MixShiftInputs(
+            revenue_m=100.0,
+            current_commercial_pct=0.30,
+            target_commercial_pct=0.35,
+        ))
+        big = trace_mix_shift(MixShiftInputs(
+            revenue_m=100.0,
+            current_commercial_pct=0.30,
+            target_commercial_pct=0.50,
+        ))
+        self.assertGreater(big.multiple_uplift_x, small.multiple_uplift_x)
+
+    def test_rate_multipliers_sensible(self) -> None:
+        self.assertGreater(RATE_MULTIPLIER["commercial"],
+                            RATE_MULTIPLIER["medicare_ffs"])
+        self.assertLess(RATE_MULTIPLIER["medicaid"],
+                         RATE_MULTIPLIER["medicare_ffs"])
+
+    def test_no_shift_no_shift_note(self) -> None:
+        r = trace_mix_shift(MixShiftInputs(
+            revenue_m=100.0,
+            current_commercial_pct=0.40,
+            target_commercial_pct=0.40,
+            current_medicaid_pct=0.20,
+            target_medicaid_pct=0.20,
+            current_medicare_ffs_pct=0.25,
+            target_medicare_ffs_pct=0.25,
+            current_medicare_advantage_pct=0.10,
+            target_medicare_advantage_pct=0.10,
+            current_self_pay_pct=0.05,
+            target_self_pay_pct=0.05,
+        ))
+        self.assertIn("no mix shift", r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_mix_shift_markdown(trace_mix_shift(MixShiftInputs(
+            revenue_m=100.0,
+            current_commercial_pct=0.30,
+            target_commercial_pct=0.45,
+        )))
+        self.assertIn("# Payer-mix shift cascade", md)
+        self.assertIn("Step 1:", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(trace_mix_shift(MixShiftInputs(revenue_m=100.0)).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

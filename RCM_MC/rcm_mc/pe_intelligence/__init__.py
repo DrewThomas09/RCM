@@ -714,6 +714,14 @@ from .bear_case_generator import (
     generate_bear_case,
     render_bear_case_markdown,
 )
+from .payer_mix_shift_cascade import (
+    MixShiftInputs,
+    MixShiftReport,
+    MixShiftStep,
+    RATE_MULTIPLIER,
+    render_mix_shift_markdown,
+    trace_mix_shift,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1691,4 +1699,10 @@ __all__ = [
     "BearDriver",
     "generate_bear_case",
     "render_bear_case_markdown",
+    "MixShiftInputs",
+    "MixShiftReport",
+    "MixShiftStep",
+    "RATE_MULTIPLIER",
+    "render_mix_shift_markdown",
+    "trace_mix_shift",
 ]
