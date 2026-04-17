@@ -3262,5 +3262,98 @@ class TestCmsOpportunityScoring(unittest.TestCase):
         self.assertIn("Opportunity", txt)
 
 
+# ===========================================================================
+# TestCmsAdvisoryMemo
+# ===========================================================================
+
+class TestCmsAdvisoryMemo(unittest.TestCase):
+
+    def _sample_df(self):
+        import pandas as pd
+        data = []
+        for pt, base, growth in [("Cardiology", 1000, 0.18), ("Orthopedic", 600, 0.02), ("Neurology", 800, -0.04)]:
+            for yr in [2020, 2021]:
+                for st in ["TX", "CA", "NY"]:
+                    for i in range(8):
+                        data.append({
+                            "provider_type": pt,
+                            "year": yr,
+                            "state": st,
+                            "total_medicare_payment_amt": base * ((1 + growth) ** (yr - 2020)) * (i + 1),
+                            "total_services": 100 * (i + 1),
+                            "total_unique_benes": 80 * (i + 1),
+                            "total_submitted_chrg_amt": base * 1.4 * (i + 1),
+                            "beneficiary_average_risk_score": 1.0 + i * 0.05,
+                        })
+        return pd.DataFrame(data)
+
+    def test_build_advisory_memo_returns_string(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        from rcm_mc.data_public.cms_advisory_memo import build_advisory_memo
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        memo = build_advisory_memo(report)
+        self.assertIsInstance(memo, str)
+        self.assertIn("CMS Advisory Snapshot", memo)
+
+    def test_memo_contains_regime_section(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        from rcm_mc.data_public.cms_advisory_memo import build_advisory_memo
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        memo = build_advisory_memo(report)
+        self.assertIn("Regime", memo)
+
+    def test_memo_contains_concentration(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        from rcm_mc.data_public.cms_advisory_memo import build_advisory_memo
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        memo = build_advisory_memo(report)
+        self.assertIn("Concentration", memo)
+
+    def test_quick_memo_no_http(self):
+        from rcm_mc.data_public.cms_advisory_memo import quick_memo
+        memo = quick_memo(df=self._sample_df(), year=2021)
+        self.assertIn("CMS Advisory Snapshot", memo)
+        self.assertIn("2021", memo)
+
+    def test_quick_memo_with_supplementary(self):
+        from rcm_mc.data_public.cms_advisory_memo import quick_memo
+        memo = quick_memo(df=self._sample_df(), year=2021, top_n=3)
+        self.assertIsInstance(memo, str)
+        self.assertGreater(len(memo), 100)
+
+    def test_empty_report_produces_minimal_memo(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        from rcm_mc.data_public.cms_advisory_memo import build_advisory_memo
+        import pandas as pd
+        report = run_market_analysis(year=2021, df=pd.DataFrame())
+        memo = build_advisory_memo(report)
+        self.assertIn("CMS Advisory Snapshot", memo)
+
+    def test_memo_with_posture_and_stress(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        from rcm_mc.data_public.cms_advisory_memo import build_advisory_memo
+        from rcm_mc.data_public.cms_stress_test import (
+            provider_investability_summary, provider_stress_test,
+            stress_scenario_grid, provider_operating_posture,
+        )
+        from rcm_mc.data_public.cms_opportunity_scoring import provider_screen
+        from rcm_mc.data_public.cms_stress_test import provider_value_summary
+        import pandas as pd
+        df = self._sample_df()
+        report = run_market_analysis(year=2021, df=df)
+        screen = provider_screen(df)
+        val = provider_value_summary(df)
+        inv = provider_investability_summary(screen, val, pd.DataFrame())
+        stress = provider_stress_test(inv)
+        grid = stress_scenario_grid(inv)
+        posture = provider_operating_posture(inv, pd.DataFrame(), pd.DataFrame(), grid)
+        memo = build_advisory_memo(
+            report, investability=inv, stress_test=stress,
+            operating_posture=posture, scenario_grid=grid
+        )
+        self.assertIn("Investability", memo)
+        self.assertIn("Stress", memo)
+
+
 if __name__ == "__main__":
     unittest.main()

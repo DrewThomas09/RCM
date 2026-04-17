@@ -131,6 +131,10 @@ from .cms_opportunity_scoring import (
     provider_screen,
     opportunity_table,
 )
+from .cms_advisory_memo import (
+    build_advisory_memo,
+    quick_memo,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -233,4 +237,6 @@ __all__ = [
     "provider_state_benchmark_flags",
     "provider_screen",
     "opportunity_table",
+    "build_advisory_memo",
+    "quick_memo",
 ]
