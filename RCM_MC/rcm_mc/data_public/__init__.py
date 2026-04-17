@@ -293,6 +293,15 @@ from .provider_trend_reliability import (
     reliability_table,
     watchlist_text,
 )
+from .sponsor_track_record import (
+    SponsorRecord,
+    build_sponsor_records,
+    sponsor_league_table,
+    sector_specialization,
+    sponsor_consistency_score,
+    sponsor_report,
+    league_table_text,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -517,4 +526,11 @@ __all__ = [
     "provider_trend_shift",
     "reliability_table",
     "watchlist_text",
+    "SponsorRecord",
+    "build_sponsor_records",
+    "sponsor_league_table",
+    "sector_specialization",
+    "sponsor_consistency_score",
+    "sponsor_report",
+    "league_table_text",
 ]

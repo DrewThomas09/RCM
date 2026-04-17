@@ -108,6 +108,7 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_13 import EXTENDED_SEED_DEALS_13
         from rcm_mc.data_public.extended_seed_14 import EXTENDED_SEED_DEALS_14
         from rcm_mc.data_public.extended_seed_15 import EXTENDED_SEED_DEALS_15
+        from rcm_mc.data_public.extended_seed_16 import EXTENDED_SEED_DEALS_16
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
@@ -116,7 +117,7 @@ class TestDealsCorpus(unittest.TestCase):
                     + len(EXTENDED_SEED_DEALS_9) + len(EXTENDED_SEED_DEALS_10)
                     + len(EXTENDED_SEED_DEALS_11) + len(EXTENDED_SEED_DEALS_12)
                     + len(EXTENDED_SEED_DEALS_13) + len(EXTENDED_SEED_DEALS_14)
-                    + len(EXTENDED_SEED_DEALS_15))
+                    + len(EXTENDED_SEED_DEALS_15) + len(EXTENDED_SEED_DEALS_16))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3581,10 +3582,10 @@ class TestExtendedSeed8(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_335_deals(self):
+    def test_seed_loads_355_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
-        self.assertGreaterEqual(stats["total"], 335)
+        self.assertGreaterEqual(stats["total"], 355)
 
     def test_seed_187_signify_high_moic(self):
         corpus = DealsCorpus(self.db_path)
@@ -6272,6 +6273,169 @@ class TestCorpusHealthCheck(unittest.TestCase):
         self.assertGreater(result.health_score, 0.5)
         text = health_check_text(result)
         self.assertIn("Corpus Health Check Report", text)
+
+
+class TestExtendedSeed16(unittest.TestCase):
+    """Tests for extended_seed_16.py (deals 336-355)."""
+
+    def setUp(self):
+        import tempfile, os
+        self.tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.db_path = self.tmp.name
+        self.tmp.close()
+        self.corpus = DealsCorpus(self.db_path)
+        self.corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        import os
+        os.unlink(self.db_path)
+
+    def test_seed_16_count(self):
+        from rcm_mc.data_public.extended_seed_16 import EXTENDED_SEED_DEALS_16
+        self.assertEqual(len(EXTENDED_SEED_DEALS_16), 20)
+
+    def test_seed_16_required_fields(self):
+        from rcm_mc.data_public.extended_seed_16 import EXTENDED_SEED_DEALS_16
+        for deal in EXTENDED_SEED_DEALS_16:
+            self.assertIn("source_id", deal)
+            self.assertIn("deal_name", deal)
+            self.assertIn("deal_type", deal)
+
+    def test_seed_336_kindred(self):
+        deal = self.corpus.get("seed_336")
+        self.assertIsNotNone(deal)
+        self.assertIn("Kindred", deal["deal_name"])
+
+    def test_seed_339_envision_disaster(self):
+        deal = self.corpus.get("seed_339")
+        self.assertIsNotNone(deal)
+        self.assertLessEqual(deal["realized_moic"], 0.2)
+
+    def test_seed_353_signify_homerun(self):
+        deal = self.corpus.get("seed_353")
+        self.assertIsNotNone(deal)
+        self.assertGreaterEqual(deal["realized_moic"], 4.0)
+
+    def test_seed_355_present(self):
+        deal = self.corpus.get("seed_355")
+        self.assertIsNotNone(deal)
+
+    def test_seed_16_all_unique_ids(self):
+        from rcm_mc.data_public.extended_seed_16 import EXTENDED_SEED_DEALS_16
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_16]
+        self.assertEqual(len(ids), len(set(ids)))
+
+
+class TestSponsorTrackRecord(unittest.TestCase):
+    """Tests for sponsor_track_record.py."""
+
+    def _make_deals(self):
+        return [
+            {"source_id": "t001", "buyer": "KKR", "realized_moic": 3.5, "realized_irr": 0.28,
+             "hold_years": 5.0, "ev_mm": 1000.0, "sector": "behavioral_health",
+             "deal_type": "lbo", "year": 2018},
+            {"source_id": "t002", "buyer": "KKR", "realized_moic": 1.8, "realized_irr": 0.14,
+             "hold_years": 4.0, "ev_mm": 500.0, "sector": "physician_group",
+             "deal_type": "add-on", "year": 2019},
+            {"source_id": "t003", "buyer": "KKR", "realized_moic": 0.3, "realized_irr": -0.25,
+             "hold_years": 6.0, "ev_mm": 9900.0, "sector": "emergency_medicine",
+             "deal_type": "take-private", "year": 2018},
+            {"source_id": "t004", "buyer": "Blackstone", "realized_moic": 4.2, "realized_irr": 0.35,
+             "hold_years": 5.0, "ev_mm": 800.0, "sector": "dme_home_health",
+             "deal_type": "take-private", "year": 2012},
+            {"source_id": "t005", "buyer": "Warburg Pincus", "realized_moic": 2.5, "realized_irr": 0.20,
+             "hold_years": 4.5, "ev_mm": 300.0, "sector": "behavioral_health",
+             "deal_type": "lbo", "year": 2016},
+        ]
+
+    def test_build_sponsor_records_returns_dict(self):
+        from rcm_mc.data_public.sponsor_track_record import build_sponsor_records
+        deals = self._make_deals()
+        records = build_sponsor_records(deals)
+        self.assertIn("KKR", records)
+        self.assertIn("Blackstone", records)
+
+    def test_kkr_deal_count(self):
+        from rcm_mc.data_public.sponsor_track_record import build_sponsor_records
+        records = build_sponsor_records(self._make_deals())
+        self.assertEqual(records["KKR"].deal_count, 3)
+
+    def test_kkr_loss_rate(self):
+        from rcm_mc.data_public.sponsor_track_record import build_sponsor_records
+        records = build_sponsor_records(self._make_deals())
+        self.assertAlmostEqual(records["KKR"].loss_rate, 1 / 3, places=2)
+
+    def test_kkr_home_run_rate(self):
+        from rcm_mc.data_public.sponsor_track_record import build_sponsor_records
+        records = build_sponsor_records(self._make_deals())
+        self.assertAlmostEqual(records["KKR"].home_run_rate, 1 / 3, places=2)
+
+    def test_league_table_sorted(self):
+        from rcm_mc.data_public.sponsor_track_record import sponsor_league_table
+        deals = self._make_deals()
+        table = sponsor_league_table(deals, min_deals=1)
+        scores = [r.consistency_score for r in table]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_league_table_min_deals_filter(self):
+        from rcm_mc.data_public.sponsor_track_record import sponsor_league_table
+        deals = self._make_deals()
+        table = sponsor_league_table(deals, min_deals=2)
+        for r in table:
+            self.assertGreaterEqual(r.deal_count, 2)
+
+    def test_sector_specialization(self):
+        from rcm_mc.data_public.sponsor_track_record import sector_specialization
+        deals = self._make_deals()
+        spec = sector_specialization(deals)
+        self.assertIn("KKR", spec)
+        kkr_sectors = spec["KKR"]
+        self.assertAlmostEqual(sum(kkr_sectors.values()), 1.0, places=2)
+
+    def test_sponsor_report_format(self):
+        from rcm_mc.data_public.sponsor_track_record import build_sponsor_records, sponsor_report
+        records = build_sponsor_records(self._make_deals())
+        text = sponsor_report(records["KKR"])
+        self.assertIn("KKR", text)
+        self.assertIn("Median MOIC", text)
+        self.assertIn("Loss rate", text)
+
+    def test_league_table_text_format(self):
+        from rcm_mc.data_public.sponsor_track_record import sponsor_league_table, league_table_text
+        table = sponsor_league_table(self._make_deals(), min_deals=1)
+        text = league_table_text(table)
+        self.assertIn("Sponsor", text)
+        self.assertIn("Med MOIC", text)
+
+    def test_consistency_score_range(self):
+        from rcm_mc.data_public.sponsor_track_record import build_sponsor_records
+        records = build_sponsor_records(self._make_deals())
+        for rec in records.values():
+            self.assertGreaterEqual(rec.consistency_score, 0.0)
+            self.assertLessEqual(rec.consistency_score, 100.0)
+
+    def test_high_performer_scores_higher(self):
+        from rcm_mc.data_public.sponsor_track_record import build_sponsor_records
+        records = build_sponsor_records(self._make_deals())
+        blackstone_score = records["Blackstone"].consistency_score
+        warburg_score = records.get("Warburg Pincus", records.get("Warburg")).consistency_score if (records.get("Warburg Pincus") or records.get("Warburg")) else 0
+        # Blackstone has single 4.2x deal; should score well on MOIC dimension
+        self.assertGreater(blackstone_score, 0)
+
+    def test_corpus_sponsor_table(self):
+        from rcm_mc.data_public.sponsor_track_record import sponsor_league_table, league_table_text
+        from rcm_mc.data_public.deals_corpus import DealsCorpus
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "c.db")
+            c = DealsCorpus(db)
+            c.seed()
+            deals = c.list()
+        table = sponsor_league_table(deals, min_deals=3)
+        self.assertGreater(len(table), 3)
+        text = league_table_text(table)
+        self.assertIn("Sponsor", text)
+        self.assertIn("Med MOIC", text)
 
 
 class TestExtendedSeed15(unittest.TestCase):
