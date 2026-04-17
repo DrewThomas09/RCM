@@ -7415,5 +7415,75 @@ class TestManagementComp(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Red-team review ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    RedTeamAttack,
+    RedTeamReport,
+    build_red_team_report,
+    render_red_team_markdown,
+)
+
+
+class TestRedTeamReview(unittest.TestCase):
+
+    def test_aggressive_deal_surfaces_attacks(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65, "commercial": 0.25,
+                       "medicaid": 0.10},
+            ebitda_m=50, hospital_type="acute_care",
+            exit_multiple=12.0, entry_multiple=8.0,
+            leverage_multiple=6.5, covenant_headroom_pct=0.05,
+            denial_improvement_bps_per_yr=500,
+        )
+        review = partner_review_from_context(ctx, deal_id="R1")
+        report = build_red_team_report(review)
+        self.assertGreaterEqual(len(report.top_attacks), 2)
+
+    def test_clean_deal_no_attacks(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55, "medicare": 0.30,
+                       "medicaid": 0.15},
+            ebitda_m=30, hospital_type="acute_care",
+            exit_multiple=9.0, entry_multiple=8.5, hold_years=5,
+            projected_irr=0.18, leverage_multiple=4.0,
+        )
+        review = partner_review_from_context(ctx, deal_id="R2")
+        report = build_red_team_report(review)
+        # Few/no attacks on a clean deal.
+        self.assertLessEqual(len(report.top_attacks), 1)
+
+    def test_severity_ordering(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65},
+            exit_multiple=12.0,
+            leverage_multiple=6.5,
+        )
+        review = partner_review_from_context(ctx, deal_id="R3")
+        report = build_red_team_report(review)
+        rank = {"high": 0, "medium": 1, "low": 2}
+        ranks = [rank.get(a.severity, 3) for a in report.top_attacks]
+        self.assertEqual(ranks, sorted(ranks))
+
+    def test_pass_rationale_populated(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65}, leverage_multiple=6.5,
+        )
+        report = build_red_team_report(partner_review_from_context(ctx))
+        self.assertTrue(report.pass_rationale)
+
+    def test_markdown_renders(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        report = build_red_team_report(partner_review_from_context(ctx))
+        md = render_red_team_markdown(report)
+        self.assertIn("Red-team review", md)
+
+    def test_report_json(self) -> None:
+        import json
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        report = build_red_team_report(partner_review_from_context(ctx))
+        json.dumps(report.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
