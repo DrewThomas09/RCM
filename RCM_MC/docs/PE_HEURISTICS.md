@@ -3428,7 +3428,45 @@ not negotiable.
 
 ---
 
-## 145. Change log
+## 145. IC decision synthesizer (`ic_decision_synthesizer.py`)
+
+**Partner statement:** "Give me one recommendation and three
+reasons. That's IC."
+
+This is the crown-jewel cross-module module. It consumes a
+bundle of pre-computed signals from the other brain modules
+(scorecard, QoD, bear case, margin of safety, face-plausibility,
+partner-trap, historical-failure, coherence, cross-module insights,
+cycle timing) and synthesizes:
+
+- **Recommendation** — INVEST / DILIGENCE MORE / PASS.
+- **Three reasons FOR** — drawn from strongest positives.
+- **Three flip-the-call signals** — what would flip it.
+- **Must-close before IC** — IC-blocking gaps.
+- **Chair opening line** — the partner's actual first sentence
+  at IC.
+
+Hard rules override score:
+
+- Any face-level implausibility → PASS (math doesn't work).
+- 2+ historical pattern matches → PASS ("this is X with a
+  different logo").
+- 2+ scorecard fails → PASS.
+- Bear MOIC < 1.0x AND combined-shock MOIC < 1.0x → PASS.
+- QoD not IC-ready → DILIGENCE MORE.
+- Score ≥ 72 with zero scorecard fails → INVEST.
+- Score ≤ 40 → PASS.
+- Otherwise → DILIGENCE MORE.
+
+**Worked example:** an Envision-pattern staffing deal with heavy
+OON + thin QoD produces PASS with the chair line "this is
+envision_surprise_billing_2023 with a different logo." The
+partner reads the recommendation + one sentence and knows how
+IC will go.
+
+---
+
+## 146. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3746,3 +3784,7 @@ not negotiable.
   post-LOI agenda generator: thesis + risks + outcomes blocks
   with probe-if-canned notes per question. Full inventory: 142
   modules, 1,434 pe_intelligence unit tests.
+- **2026-04-17** — Added `ic_decision_synthesizer.py` (§145) —
+  crown-jewel cross-module synthesizer: one recommendation + 3
+  reasons + 3 flip-the-call signals + chair opening line. Full
+  inventory: 143 modules, 1,447 pe_intelligence unit tests.
