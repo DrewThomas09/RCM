@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 40
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 42
 modules + test suite:
 
 | Module | Role |
@@ -746,6 +746,8 @@ modules + test suite:
 | `partner_discussion.py` | Autogen partner Q&A |
 | `kpi_alert_rules.py` | Monthly ops KPI threshold alerts |
 | `recon.py` | Cross-artifact coherence check |
+| `capital_plan.py` | Capex by year/purpose + intensity validation |
+| `auditor_view.py` | Full decision audit trail for regulators/LPs |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1046,7 +1048,32 @@ drift.
 
 ---
 
-## 43. Change log
+## 43. Capital plan (`capital_plan.py`)
+
+Structures post-close capex + maintenance/growth split, validates
+against subsector intensity bands (acute-care capex typically 5-7%
+of revenue, ASC 5-7%, CAH 4-6%). Flags:
+
+- Total intensity > subsector ceiling.
+- Year-1 concentration > 12% of revenue.
+- Maintenance < 30% of total (growth-heavy plans that defer
+  asset-reinvestment risk).
+
+---
+
+## 44. Auditor view (`auditor_view.py`)
+
+Produces a full structured decision-audit-trail for a PartnerReview.
+Every context input, every band verdict, every heuristic hit, and
+every narrative choice gets an `AuditEntry` with trigger values and
+rationale.
+
+Regulators and LPs asking "why did this deal pass?" get a
+JSON-serializable answer six months later.
+
+---
+
+## 45. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1112,4 +1139,8 @@ drift.
 - **2026-04-17** — Added `kpi_alert_rules.py` (threshold-based alerts
   for monthly ops reviews) and `recon.py` (reconcile review + plan
   + board for coherence). Full inventory: 40 modules, 479
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `capital_plan.py` (capex structuring +
+  intensity validation by subsector) and `auditor_view.py` (full
+  decision audit trail). Full inventory: 42 modules, 491
   pe_intelligence unit tests.
