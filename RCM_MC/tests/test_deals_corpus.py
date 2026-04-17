@@ -5178,6 +5178,112 @@ class TestCmsDataQuality(unittest.TestCase):
         self.assertEqual(s["declining_risk_count"], 1)
 
 
+class TestDealValueCreation(unittest.TestCase):
+    """Tests for deal_value_creation module."""
+
+    def _make_deal(self, **kwargs):
+        base = {
+            "source_id": "vc_001",
+            "deal_name": "Test Deal",
+            "deal_type": "lbo",
+            "ev_mm": 500.0,
+            "ebitda_mm": 50.0,
+            "ev_ebitda": 10.0,
+            "hold_years": 5.0,
+            "realized_moic": 2.5,
+            "realized_irr": 0.20,
+        }
+        base.update(kwargs)
+        return base
+
+    def test_attribute_value_creation_returns_bridge(self):
+        from rcm_mc.data_public.deal_value_creation import attribute_value_creation
+        deal = self._make_deal()
+        bridge = attribute_value_creation(deal)
+        self.assertEqual(bridge.source_id, "vc_001")
+        self.assertIsNotNone(bridge.realized_moic)
+
+    def test_attribute_value_creation_contributions_sum_to_one(self):
+        from rcm_mc.data_public.deal_value_creation import attribute_value_creation
+        deal = self._make_deal()
+        bridge = attribute_value_creation(deal)
+        if bridge.ebitda_growth_contribution is not None:
+            total = (bridge.ebitda_growth_contribution +
+                     bridge.multiple_expansion_contribution +
+                     bridge.leverage_contribution +
+                     (bridge.unattributed or 0.0))
+            self.assertAlmostEqual(total, 1.0, places=2)
+
+    def test_attribute_no_moic_returns_low_data(self):
+        from rcm_mc.data_public.deal_value_creation import attribute_value_creation
+        deal = self._make_deal(realized_moic=None, realized_irr=None)
+        bridge = attribute_value_creation(deal)
+        self.assertIsNone(bridge.ebitda_growth_contribution)
+        self.assertEqual(bridge.confidence, "low_data")
+
+    def test_implied_ebitda_cagr_positive_moic(self):
+        from rcm_mc.data_public.deal_value_creation import attribute_value_creation
+        deal = self._make_deal(realized_moic=3.0, hold_years=5.0)
+        bridge = attribute_value_creation(deal)
+        if bridge.implied_ebitda_cagr is not None:
+            self.assertGreater(bridge.implied_ebitda_cagr, 0.0)
+
+    def test_value_bridge_text(self):
+        from rcm_mc.data_public.deal_value_creation import attribute_value_creation, value_bridge_text
+        deal = self._make_deal()
+        bridge = attribute_value_creation(deal)
+        text = value_bridge_text(bridge)
+        self.assertIn("Value Creation Bridge", text)
+        self.assertIn("MOIC", text)
+
+    def test_corpus_value_attribution(self):
+        from rcm_mc.data_public.deal_value_creation import corpus_value_attribution
+        deals = [
+            self._make_deal(source_id=f"cv{i}", realized_moic=2.0 + i * 0.5,
+                            realized_irr=0.15 + i * 0.03, hold_years=4.0 + i)
+            for i in range(5)
+        ]
+        result = corpus_value_attribution(deals)
+        self.assertGreater(result["count"], 0)
+        self.assertIn("median_moic", result)
+        self.assertIn("median_ebitda_contribution", result)
+
+    def test_corpus_value_attribution_empty(self):
+        from rcm_mc.data_public.deal_value_creation import corpus_value_attribution
+        result = corpus_value_attribution([self._make_deal(realized_moic=None)])
+        self.assertEqual(result["count"], 0)
+
+    def test_value_creation_table(self):
+        from rcm_mc.data_public.deal_value_creation import value_creation_table
+        deals = [self._make_deal(source_id=f"t{i}") for i in range(5)]
+        table = value_creation_table(deals)
+        self.assertIn("MOIC", table)
+        self.assertIn("EBITDA", table)
+
+    def test_sector_attribution_summary(self):
+        from rcm_mc.data_public.deal_value_creation import sector_attribution_summary
+        deals = [
+            self._make_deal(source_id="s1", deal_type="lbo"),
+            self._make_deal(source_id="s2", deal_type="lbo"),
+            self._make_deal(source_id="s3", deal_type="growth_equity"),
+        ]
+        result = sector_attribution_summary(deals)
+        self.assertIn("lbo", result)
+        self.assertGreaterEqual(result["lbo"]["count"], 1)
+
+    def test_value_creation_real_corpus(self):
+        from rcm_mc.data_public.deal_value_creation import corpus_value_attribution
+        from rcm_mc.data_public.deals_corpus import DealsCorpus
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "c.db")
+            c = DealsCorpus(db)
+            c.seed()
+            deals = c.list()
+        result = corpus_value_attribution(deals)
+        self.assertGreater(result["count"], 20)
+
+
 class TestDealRiskMatrix(unittest.TestCase):
     """Tests for deal_risk_matrix module."""
 

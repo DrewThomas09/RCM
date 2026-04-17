@@ -229,6 +229,14 @@ from .corpus_health_check import (
     health_check_text,
     run_corpus_health_check,
 )
+from .deal_value_creation import (
+    ValueCreationBridge,
+    attribute_value_creation,
+    corpus_value_attribution,
+    value_bridge_text,
+    value_creation_table,
+    sector_attribution_summary,
+)
 from .deal_risk_matrix import (
     RiskDimension,
     RiskMatrix,
@@ -427,6 +435,12 @@ __all__ = [
     "check_corpus",
     "health_check_text",
     "run_corpus_health_check",
+    "ValueCreationBridge",
+    "attribute_value_creation",
+    "corpus_value_attribution",
+    "value_bridge_text",
+    "value_creation_table",
+    "sector_attribution_summary",
     "RiskDimension",
     "RiskMatrix",
     "score_reimbursement_risk",
