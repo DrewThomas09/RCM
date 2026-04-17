@@ -1832,6 +1832,22 @@ class RCMHandler(BaseHTTPRequestHandler):
             sector = _qs.get("sector", [""])[0]
             from .ui.data_public.risk_matrix_page import render_risk_matrix
             return self._send_html(render_risk_matrix(sector_filter=sector))
+        if path == "/underwriting":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qfloat(k):
+                try:
+                    return float(_qs.get(k, [None])[0])
+                except (TypeError, ValueError):
+                    return None
+            from .ui.data_public.underwriting_page import render_underwriting
+            return self._send_html(render_underwriting(
+                entry_ev=_qfloat("entry_ev"),
+                entry_ebitda=_qfloat("entry_ebitda"),
+                equity_pct=_qfloat("equity_pct"),
+                ebitda_cagr=_qfloat("ebitda_cagr"),
+                hold_years=_qfloat("hold_years"),
+                exit_multiple=_qfloat("exit_multiple"),
+            ))
         if path == "/comparables":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qf(k, default=None):
