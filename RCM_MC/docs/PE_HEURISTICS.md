@@ -2138,7 +2138,33 @@ Aggregate partner note: 2+ high findings = "material deal risk";
 
 ---
 
-## 105. Change log
+## 105. M&A integration scoreboard (`ma_integration_scoreboard.py`)
+
+Roll-up / platform deals depend on bolt-on integration execution.
+This module scores each bolt-on on six dimensions with partner
+weights:
+
+- **IT cutover (20%)** — systems consolidated onto platform.
+- **Billing conversion (20%)** — billing on platform codes.
+- **Synergy realization (25%)** — realized vs target on schedule.
+- **Customer retention (20%)** — revenue retained vs pre-close.
+- **Employee retention (10%)** — key staff retained.
+- **Brand migration (5%)** — typically lowest weight, done last.
+
+Per-deal health is a 0-100 weighted score. Platform health is
+revenue-weighted across bolt-ons. Red flags fire for:
+
+- Customer retention < 90%.
+- Synergy realization < 50% of expected curve.
+- Employee retention < 80%.
+- Past target-complete date with IT/billing incomplete.
+
+Partner note cuts to the right action: "strong", "focus on
+laggards", or "elevate to platform PMO".
+
+---
+
+## 106. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2308,3 +2334,7 @@ Aggregate partner note: 2+ high findings = "material deal risk";
 - **2026-04-17** — Added `staffing_pipeline_analyzer.py` (§104) —
   4Q headcount + attrition + lost revenue for healthcare services.
   Full inventory: 102 modules, 1,006 pe_intelligence unit tests.
+- **2026-04-17** — Added `ma_integration_scoreboard.py` (§105) —
+  6-dimension per-bolt-on health + revenue-weighted platform
+  score. Full inventory: 103 modules, 1,017 pe_intelligence unit
+  tests.
