@@ -793,6 +793,13 @@ from .healthcare_regulatory_calendar import (
     list_all_events,
     render_calendar_markdown,
 )
+from .deal_smell_detectors import (
+    DealSmell,
+    SmellContext,
+    SmellReport,
+    detect_smells,
+    render_smells_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1827,4 +1834,9 @@ __all__ = [
     "events_for_deal",
     "list_all_events",
     "render_calendar_markdown",
+    "DealSmell",
+    "SmellContext",
+    "SmellReport",
+    "detect_smells",
+    "render_smells_markdown",
 ]

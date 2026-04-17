@@ -14131,5 +14131,137 @@ class TestHealthcareRegulatoryCalendar(unittest.TestCase):
                              for h in r.hits))
 
 
+# ── Deal smell detectors ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DealSmell,
+    SmellContext,
+    SmellReport,
+    detect_smells,
+    render_smells_markdown,
+)
+
+
+class TestDealSmellDetectors(unittest.TestCase):
+    """Each smell is a specific partner-voice pattern."""
+
+    def test_rollup_running_out_fires(self) -> None:
+        r = detect_smells(SmellContext(
+            acquisitions_per_year=6,
+            pipeline_count=3,
+            platform_age_years=4,
+        ))
+        self.assertTrue(any("rollup" in s.name for s in r.smells))
+
+    def test_denials_cover_payer_problem_fires(self) -> None:
+        r = detect_smells(SmellContext(
+            denial_rate=0.12,
+            denial_rate_trend="rising",
+            top_payer_share=0.45,
+        ))
+        self.assertTrue(any(s.name ==
+                             "denials_paper_over_payer_concentration"
+                             for s in r.smells))
+
+    def test_founder_wants_out_fires(self) -> None:
+        r = detect_smells(SmellContext(
+            founder_ceo_in_place=True,
+            ceo_age_60_plus=True,
+        ))
+        self.assertTrue(any(s.name == "founder_wants_out"
+                             for s in r.smells))
+
+    def test_ebitda_pulled_forward(self) -> None:
+        r = detect_smells(SmellContext(
+            recent_ebitda_jump_pct=0.25,
+            close_deadline_weeks=4,
+            pro_forma_addbacks_pct=0.20,
+        ))
+        self.assertTrue(any(s.name == "ebitda_pulled_forward"
+                             for s in r.smells))
+
+    def test_covenant_tight(self) -> None:
+        r = detect_smells(SmellContext(
+            leverage=6.5, covenant_headroom_pct=0.08,
+        ))
+        self.assertTrue(any(s.name == "covenant_already_tight"
+                             for s in r.smells))
+
+    def test_clinician_flight(self) -> None:
+        r = detect_smells(SmellContext(
+            clinician_headcount=50,
+            key_clinician_departures_12mo=10,
+        ))
+        self.assertTrue(any(s.name == "clinician_flight_in_progress"
+                             for s in r.smells))
+
+    def test_organic_declining_under_rollup(self) -> None:
+        r = detect_smells(SmellContext(
+            revenue_growth_organic_pct=-0.03,
+            revenue_growth_from_acquisition_pct=0.12,
+        ))
+        self.assertTrue(any(s.name == "organic_declining_under_rollup"
+                             for s in r.smells))
+
+    def test_management_churn(self) -> None:
+        r = detect_smells(SmellContext(
+            management_transitions_last_2yr=4,
+        ))
+        self.assertTrue(any(s.name == "management_churn"
+                             for s in r.smells))
+
+    def test_quality_canary(self) -> None:
+        r = detect_smells(SmellContext(
+            cms_survey_issues=True, litigation_count=3,
+        ))
+        self.assertTrue(any(s.name == "quality_compliance_canary"
+                             for s in r.smells))
+
+    def test_clean_deal_no_smells(self) -> None:
+        r = detect_smells(SmellContext(
+            acquisitions_per_year=2, pipeline_count=15,
+            platform_age_years=3,
+            denial_rate=0.07, denial_rate_trend="flat",
+            top_payer_share=0.20,
+            founder_ceo_in_place=False,
+            recent_ebitda_jump_pct=0.03,
+            close_deadline_weeks=16,
+            leverage=5.0, covenant_headroom_pct=0.25,
+            clinician_headcount=100,
+            key_clinician_departures_12mo=5,
+            revenue_growth_organic_pct=0.05,
+            revenue_growth_from_acquisition_pct=0.03,
+            management_transitions_last_2yr=1,
+        ))
+        self.assertEqual(len(r.smells), 0)
+        self.assertIn("no partner-reflex smells", r.partner_note.lower())
+
+    def test_multiple_high_smells_pass_note(self) -> None:
+        r = detect_smells(SmellContext(
+            acquisitions_per_year=6, pipeline_count=3,
+            platform_age_years=5,
+            denial_rate=0.14, denial_rate_trend="rising",
+            top_payer_share=0.50,
+            leverage=6.5, covenant_headroom_pct=0.05,
+            recent_ebitda_jump_pct=0.25,
+            close_deadline_weeks=5,
+            pro_forma_addbacks_pct=0.20,
+        ))
+        self.assertGreaterEqual(r.high_count, 2)
+        self.assertIn("'something isn't right'", r.partner_note)
+
+    def test_markdown_renders(self) -> None:
+        md = render_smells_markdown(detect_smells(SmellContext(
+            acquisitions_per_year=6, pipeline_count=3,
+            platform_age_years=5,
+        )))
+        self.assertIn("# Deal smell detectors", md)
+        self.assertIn("rollup_running_out_of_boltons", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(detect_smells(SmellContext()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
