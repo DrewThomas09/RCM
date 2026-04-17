@@ -126,6 +126,7 @@ NAV_ITEMS = [
     {"label": "Capital Efficiency", "href": "/capital-efficiency", "icon": "chart"},
     {"label": "Deal Risk Scores", "href": "/deal-risk-scores", "icon": "chart"},
     {"label": "Sector Correlation", "href": "/sector-correlation", "icon": "chart"},
+    {"label": "Acquisition Timing", "href": "/acq-timing", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
