@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 23
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 29
 modules + test suite:
 
 | Module | Role |
@@ -729,6 +729,12 @@ modules + test suite:
 | `exit_math.py` | Waterfall + preferred + catch-up + reverse MOIC |
 | `workbench_integration.py` | UI bundle + compact API payload |
 | `deal_comparables.py` | Illustrative comp set + multiple stats |
+| `debt_sizing.py` | Prudent leverage by (subsector × payer) + covenant stress |
+| `management_assessment.py` | 6-dimension team scoring |
+| `thesis_validator.py` | 8 internal-consistency rules |
+| `synergy_modeler.py` | Cost + revenue + RCM + procurement synergies |
+| `working_capital.py` | AR/AP/DIO days-to-cash release math |
+| `fund_model.py` | Fund-level DPI/TVPI/NAV + vintage percentile |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -804,7 +810,76 @@ percentile of the acute-care commercial-heavy 2022-2024 comp set."
 
 ---
 
-## 26. Change log
+## 26. Debt sizing (`debt_sizing.py`)
+
+Partner-prudent leverage table by (subsector × payer_regime):
+
+- Acute care with commercial-heavy tolerates up to 5.5x at close;
+  acute-care govt-heavy capped at 3.5x.
+- ASC stretches to 6.0x on commercial-heavy platforms.
+- Critical access capped at 2.5-4.0x across regimes.
+
+Helpers: `leverage_headroom`, `max_interest_rate_to_break`,
+`covenant_stress_passes` (leverage + coverage joint test).
+
+---
+
+## 27. Management assessment (`management_assessment.py`)
+
+6-dimension team scoring: CEO, CFO, operational depth, RCM leadership,
+clinical, alignment. Returns a composite 0–100 score plus per-dimension
+findings and seat-add recommendations. Status verdicts:
+`strong` / `adequate` / `concerns` / `replace`.
+
+---
+
+## 28. Thesis validator (`thesis_validator.py`)
+
+8 internal-consistency rules flagging contradictions in a thesis:
+
+- RCM thesis with sub-4yr hold.
+- VBC structure priced with FFS growth.
+- Aggressive IRR with flat entry/exit multiples.
+- Margin expansion faster than revenue growth.
+- High leverage with government-heavy mix.
+- Turnaround + roll-up simultaneously.
+- MOIC and IRR targets that don't reconcile.
+- Large denial-improvement lift without RCM thesis tag.
+
+---
+
+## 29. Synergy modeler (`synergy_modeler.py`)
+
+Roll-up/tuck-in synergy math: cost (SG&A consolidation), revenue
+(cross-sell at margin), RCM (bps margin lift at scale), procurement
+(COGS savings). Applies a partner haircut (default 35%) and 5-year
+realization ramp.
+
+---
+
+## 30. Working capital (`working_capital.py`)
+
+One-time cash release from lever programs:
+
+- `ar_days_to_cash` — DSO reduction × revenue / 365.
+- `ap_days_to_cash` — DPO extension × cogs / 365.
+- `inventory_days_to_cash` — DIO reduction × inventory cost / 365.
+
+Partner notes distinguish sustainable tuning from one-time
+billing-system cleanup. Never applied to exit multiple.
+
+---
+
+## 31. Fund model (`fund_model.py`)
+
+Fund-level rollup: given a list of `FundDeal` commitments + holds +
+projected MOICs, projects year-by-year called capital, distributions,
+NAV, DPI, TVPI, RVPI. `fund_vintage_percentile` places a fund against
+healthcare-PE vintage quartile cutoffs.
+
+---
+
+## 32. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -847,3 +922,7 @@ percentile of the acute-care commercial-heavy 2022-2024 comp set."
   registry + filtering + percentile placement). Full inventory:
   23 modules, 325 pe_intelligence unit tests, 3448 total tests
   passing project-wide.
+- **2026-04-17** — Added `debt_sizing.py`, `management_assessment.py`,
+  `thesis_validator.py`, `synergy_modeler.py`, `working_capital.py`,
+  `fund_model.py`. Full inventory: 29 modules, 386 pe_intelligence
+  unit tests.
