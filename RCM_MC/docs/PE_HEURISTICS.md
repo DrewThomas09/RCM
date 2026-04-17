@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 34
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 38
 modules + test suite:
 
 | Module | Role |
@@ -740,6 +740,10 @@ modules + test suite:
 | `lp_side_letter_flags.py` | LP conformance (sector / state / concentration / ESG) |
 | `pipeline_tracker.py` | Sourcing funnel + stale-deal detection |
 | `operational_kpi_cascade.py` | Rank KPI levers by $ EBITDA impact |
+| `commercial_due_diligence.py` | TAM / share / growth / competitive position |
+| `icr_gate.py` | IC-Ready gate consolidator |
+| `cohort_tracker.py` | Vintage-cohort benchmarking |
+| `partner_discussion.py` | Autogen partner Q&A |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -960,7 +964,57 @@ the recurring EBITDA total — prevents double-counting.
 
 ---
 
-## 37. Change log
+## 37. Commercial due diligence (`commercial_due_diligence.py`)
+
+Partner-prudent sanity checks on market claims:
+
+- `market_size_sanity` — TAM vs US-subsector ceilings (acute $1.4T,
+  ASC $45B, behavioral $180B, etc.).
+- `market_share_check` — implied share from revenue/TAM.
+- `growth_plausibility` — flags claims above subsector norms.
+- `competitive_position` — maps differentiation × intensity to one
+  of nine position categories.
+
+---
+
+## 38. IC-Ready gate (`icr_gate.py`)
+
+Single entry point: given a PartnerReview (and optionally a
+diligence board, LP side-letter findings, management score), returns
+`ICReadinessResult` with a boolean + ordered blocker list. Gates:
+
+1. No CRITICAL heuristic hits.
+2. No IMPLAUSIBLE band verdicts.
+3. Data coverage ≥ 60%.
+4. All P0 diligence items complete.
+5. No LP side-letter breach.
+6. Management score ≥ 50.
+
+---
+
+## 39. Cohort tracker (`cohort_tracker.py`)
+
+Vintage-cohort benchmarking:
+
+- `cohort_stats(deals, vintage)` — p25/p50/p75 for IRR/MOIC/margin.
+- `rank_within_cohort` — blended-score ranking.
+- `top_decile` / `bottom_decile` — cohort outliers.
+- `compare_to_cohort` — candidate's delta vs cohort medians.
+
+---
+
+## 40. Partner discussion (`partner_discussion.py`)
+
+Autogen Q&A from a PartnerReview. Heuristic hits and band verdicts
+map to partner-voice questions and answers — the kind of back-and-
+forth an associate rehearses before IC.
+
+`build_discussion(review)` returns `DiscussionItem` list;
+`render_discussion_markdown(items)` produces IC-rehearsal Markdown.
+
+---
+
+## 41. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1018,3 +1072,8 @@ the recurring EBITDA total — prevents double-counting.
   (rank KPIs by $ EBITDA impact, segregate cash vs recurring).
   Full inventory: 34 modules, 431 pe_intelligence unit tests.
   Full project suite 3552 passed.
+- **2026-04-17** — Added `commercial_due_diligence.py` (TAM/share/
+  growth/competitive checks), `icr_gate.py` (IC-Ready consolidator),
+  `cohort_tracker.py` (vintage-cohort benchmarks), and
+  `partner_discussion.py` (autogen Q&A). Full inventory: 38 modules,
+  466 pe_intelligence unit tests.
