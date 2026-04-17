@@ -3542,7 +3542,30 @@ Partner note:
 
 ---
 
-## 148. Change log
+## 148. Letter to seller (`letter_to_seller.py`)
+
+**Partner statement:** "The banker runs 5 processes a year and
+remembers who was dismissive. Even when we pass, we write a good
+letter."
+
+Three letter variants keyed off the IC recommendation:
+
+- **PASS** — opens with thanks, names what we liked, states the
+  specific reasons we can't move forward, optionally frames the
+  price gap (if > 10%), offers to revisit if circumstances
+  change.
+- **INVEST** — short, direct; names closing-week conditions.
+- **DILIGENCE MORE** — asks for specific additional sessions in
+  the next 10-14 days.
+
+Tone discipline: no platitudes. A pass letter should name real
+reasons (payer concentration, site-neutral exposure, regulatory
+calendar) not "timing" or "priorities" — bankers know when
+they're being brushed off.
+
+---
+
+## 149. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3871,3 +3894,6 @@ Partner note:
 - **2026-04-17** — Added `deal_smell_detectors.py` (§147) — 9
   partner-reflex "smells like X" patterns from combined signals.
   Full inventory: 145 modules, 1,472 pe_intelligence unit tests.
+- **2026-04-17** — Added `letter_to_seller.py` (§148) —
+  banker-reply composer (pass/invest/diligence-more variants).
+  Full inventory: 146 modules, 1,480 pe_intelligence unit tests.
