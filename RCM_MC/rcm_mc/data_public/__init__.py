@@ -141,6 +141,13 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .deal_comparables_enhanced import (
+    similarity_score,
+    find_enhanced_comps,
+    peer_group_percentiles,
+    comp_table_enhanced,
+    leverage_adj_moic,
+)
 from .portfolio_analytics import (
     return_distribution,
     deals_by_sponsor,
@@ -262,6 +269,11 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "similarity_score",
+    "find_enhanced_comps",
+    "peer_group_percentiles",
+    "comp_table_enhanced",
+    "leverage_adj_moic",
     "return_distribution",
     "deals_by_sponsor",
     "deals_by_type",

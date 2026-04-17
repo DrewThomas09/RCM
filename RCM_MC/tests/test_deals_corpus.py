@@ -3556,6 +3556,138 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestDealComparablesEnhanced(unittest.TestCase):
+    """Tests for deal_comparables_enhanced module."""
+
+    def _deals(self):
+        return [
+            {
+                "source_id": "t001", "deal_name": "HCA LBO 2019",
+                "year": 2019, "ev_mm": 2000.0,
+                "realized_moic": 3.2, "realized_irr": 0.26,
+                "payer_mix": {"medicare": 0.35, "medicaid": 0.15, "commercial": 0.50},
+                "leverage_x": 5.5, "ebitda_at_entry_mm": 200.0,
+            },
+            {
+                "source_id": "t002", "deal_name": "Community Health LBO 2020",
+                "year": 2020, "ev_mm": 1800.0,
+                "realized_moic": 2.5, "realized_irr": 0.20,
+                "payer_mix": {"medicare": 0.30, "medicaid": 0.20, "commercial": 0.50},
+                "leverage_x": 4.8, "ebitda_at_entry_mm": 160.0,
+            },
+            {
+                "source_id": "t003", "deal_name": "Dialysis clinic 2018",
+                "year": 2018, "ev_mm": 400.0,
+                "realized_moic": 0.6, "realized_irr": -0.10,
+                "payer_mix": {"medicare": 0.70, "medicaid": 0.20, "commercial": 0.10},
+                "leverage_x": 6.0, "ebitda_at_entry_mm": 30.0,
+            },
+            {
+                "source_id": "t004", "deal_name": "ASC Platform 2021",
+                "year": 2021, "ev_mm": 500.0,
+                "realized_moic": None, "realized_irr": None,
+                "payer_mix": {"medicare": 0.20, "medicaid": 0.05, "commercial": 0.75},
+                "leverage_x": None, "ebitda_at_entry_mm": 50.0,
+            },
+        ]
+
+    def test_similarity_score_identical(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import similarity_score
+        d = self._deals()[0]
+        score = similarity_score(d, d)
+        self.assertGreater(score, 0.8)
+
+    def test_similarity_score_range(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import similarity_score
+        deals = self._deals()
+        score = similarity_score(deals[0], deals[1])
+        self.assertGreaterEqual(score, 0.0)
+        self.assertLessEqual(score, 1.0)
+
+    def test_similarity_score_similar_beats_dissimilar(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import similarity_score
+        deals = self._deals()
+        # t001 and t002 are more similar (same size/mix range) than t001 and t003 (very diff)
+        s_close = similarity_score(deals[0], deals[1])
+        s_far = similarity_score(deals[0], deals[2])
+        self.assertGreater(s_close, s_far)
+
+    def test_find_enhanced_comps_count(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import find_enhanced_comps
+        deals = self._deals()
+        comps = find_enhanced_comps(deals[0], deals, n=3)
+        self.assertLessEqual(len(comps), 3)
+        # Should not include self
+        self.assertNotIn("t001", [c.get("source_id") for c in comps])
+
+    def test_find_enhanced_comps_sorted(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import find_enhanced_comps
+        deals = self._deals()
+        comps = find_enhanced_comps(deals[0], deals, n=5)
+        scores = [c["similarity_score"] for c in comps]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_peer_group_percentiles(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import (
+            peer_group_percentiles, find_enhanced_comps
+        )
+        deals = self._deals()
+        comps = find_enhanced_comps(deals[0], deals)
+        result = peer_group_percentiles(deals[0], comps)
+        self.assertIn("comp_count", result)
+        if "moic_percentile" in result:
+            self.assertGreaterEqual(result["moic_percentile"], 0)
+            self.assertLessEqual(result["moic_percentile"], 100)
+
+    def test_leverage_adj_moic_no_data(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import leverage_adj_moic
+        d = {"realized_moic": 2.5}
+        result = leverage_adj_moic(d)
+        self.assertAlmostEqual(result, 2.5)
+
+    def test_leverage_adj_moic_high_leverage(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import leverage_adj_moic
+        d = {
+            "realized_moic": 4.0, "leverage_x": 7.0,
+            "ev_mm": 1000.0, "ebitda_at_entry_mm": 100.0,
+        }
+        adj = leverage_adj_moic(d)
+        # High leverage → smaller adj moic (more risk-normalized)
+        self.assertIsNotNone(adj)
+        self.assertLess(adj, 4.0)
+
+    def test_comp_table_enhanced_output(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import (
+            find_enhanced_comps, comp_table_enhanced
+        )
+        deals = self._deals()
+        comps = find_enhanced_comps(deals[0], deals)
+        text = comp_table_enhanced(comps)
+        self.assertIn("Enhanced Comparable Deals", text)
+        self.assertIn("Sim", text)
+
+    def test_comp_table_enhanced_empty(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import comp_table_enhanced
+        text = comp_table_enhanced([])
+        self.assertIn("No comparable", text)
+
+    def test_find_comps_from_real_corpus(self):
+        from rcm_mc.data_public.deal_comparables_enhanced import find_enhanced_comps
+        import tempfile, os
+        db = tempfile.mktemp(suffix=".db")
+        try:
+            corpus = DealsCorpus(db)
+            corpus.seed()
+            all_deals = corpus.list()
+            target = all_deals[0]
+            comps = find_enhanced_comps(target, all_deals, n=5)
+            self.assertEqual(len(comps), 5)
+            for c in comps:
+                self.assertIn("similarity_score", c)
+        finally:
+            os.unlink(db)
+
+
 class TestPortfolioAnalytics(unittest.TestCase):
     """Tests for portfolio_analytics module."""
 
