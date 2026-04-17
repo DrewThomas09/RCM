@@ -264,6 +264,11 @@ from .insurance_diligence import (
     render_insurance_report_markdown,
     screen_insurance,
 )
+from .portfolio_dashboard import (
+    PortfolioDashboard,
+    build_portfolio_dashboard,
+    render_portfolio_dashboard_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -909,4 +914,7 @@ __all__ = [
     "InsuranceReport",
     "render_insurance_report_markdown",
     "screen_insurance",
+    "PortfolioDashboard",
+    "build_portfolio_dashboard",
+    "render_portfolio_dashboard_markdown",
 ]

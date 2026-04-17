@@ -7152,5 +7152,87 @@ class TestInsuranceDiligence(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Portfolio dashboard ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    PortfolioDashboard,
+    build_portfolio_dashboard,
+    render_portfolio_dashboard_markdown,
+)
+
+
+class TestPortfolioDashboard(unittest.TestCase):
+
+    def _multi_reviews(self):
+        reviews = []
+        # Clean acute_care in TX
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30,
+            hospital_type="acute_care", state="TX",
+            exit_multiple=9.0, entry_multiple=8.0, hold_years=5,
+            projected_irr=0.20, projected_moic=2.3, leverage_multiple=5.0,
+        )
+        reviews.append(partner_review_from_context(ctx, deal_id="D1",
+                                                    deal_name="Clean A"))
+        # Problematic Medicare-heavy
+        ctx2 = HeuristicContext(
+            payer_mix={"medicare": 0.65, "commercial": 0.25,
+                       "medicaid": 0.10},
+            ebitda_m=50, hospital_type="acute_care", state="NY",
+            exit_multiple=12.0, leverage_multiple=6.5,
+            covenant_headroom_pct=0.05,
+            denial_improvement_bps_per_yr=700,  # critical
+        )
+        reviews.append(partner_review_from_context(ctx2, deal_id="D2",
+                                                    deal_name="Risky B"))
+        # Mid deal
+        ctx3 = HeuristicContext(
+            payer_mix={"commercial": 0.60, "medicare": 0.30,
+                       "medicaid": 0.10},
+            ebitda_m=20, hospital_type="asc", state="FL",
+            exit_multiple=10.5, entry_multiple=9.0,
+        )
+        reviews.append(partner_review_from_context(ctx3, deal_id="D3",
+                                                    deal_name="Med C"))
+        return reviews
+
+    def test_dashboard_counts_deals(self) -> None:
+        d = build_portfolio_dashboard(self._multi_reviews())
+        self.assertEqual(d.n_deals, 3)
+
+    def test_critical_flagged_deals_surfaced(self) -> None:
+        d = build_portfolio_dashboard(self._multi_reviews())
+        # Risky B has a CRITICAL hit from denial_improvement.
+        self.assertIn("D2", d.deals_with_critical)
+
+    def test_sector_mix(self) -> None:
+        d = build_portfolio_dashboard(self._multi_reviews())
+        self.assertEqual(d.sector_counts.get("acute_care", 0), 2)
+        self.assertEqual(d.sector_counts.get("asc", 0), 1)
+
+    def test_state_mix(self) -> None:
+        d = build_portfolio_dashboard(self._multi_reviews())
+        self.assertEqual(sum(d.state_counts.values()), 3)
+
+    def test_recommendation_counts(self) -> None:
+        d = build_portfolio_dashboard(self._multi_reviews())
+        self.assertEqual(sum(d.recommendation_counts.values()), 3)
+
+    def test_empty_portfolio_safe(self) -> None:
+        d = build_portfolio_dashboard([])
+        self.assertEqual(d.n_deals, 0)
+        self.assertIn("No deals", d.partner_summary)
+
+    def test_markdown_renders(self) -> None:
+        md = render_portfolio_dashboard_markdown(
+            build_portfolio_dashboard(self._multi_reviews()))
+        self.assertIn("# Portfolio dashboard", md)
+
+    def test_dashboard_json(self) -> None:
+        import json
+        d = build_portfolio_dashboard(self._multi_reviews())
+        json.dumps(d.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
