@@ -70,6 +70,12 @@ from .ic_memo import (
     render_markdown as render_ic_memo_markdown,
     render_text as render_ic_memo_text,
 )
+from .deal_archetype import (
+    ArchetypeContext,
+    ArchetypeHit,
+    classify_archetypes,
+    primary_archetype,
+)
 from .sector_benchmarks import (
     GapFinding,
     SectorBenchmark,
@@ -138,4 +144,8 @@ __all__ = [
     "get_benchmark",
     "list_metrics_for_subsector",
     "list_subsectors",
+    "ArchetypeContext",
+    "ArchetypeHit",
+    "classify_archetypes",
+    "primary_archetype",
 ]

@@ -1474,5 +1474,160 @@ class TestCompareToPeers(unittest.TestCase):
         self.assertIn("commentary", d)
 
 
+# ── Deal archetype ───────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ArchetypeContext,
+    ArchetypeHit,
+    classify_archetypes,
+    primary_archetype,
+)
+
+
+class TestClassifyPlatformRollup(unittest.TestCase):
+
+    def test_platform_with_many_addons_fires(self) -> None:
+        ctx = ArchetypeContext(
+            platform_or_addon="platform",
+            number_of_addons_planned=5,
+            has_rollup_thesis=True,
+        )
+        hits = classify_archetypes(ctx)
+        ids = [h.archetype for h in hits]
+        self.assertIn("platform_rollup", ids)
+
+    def test_platform_rollup_top_of_ranking(self) -> None:
+        ctx = ArchetypeContext(
+            platform_or_addon="platform",
+            number_of_addons_planned=6,
+            has_rollup_thesis=True,
+            ebitda_growth_pct=0.25,
+        )
+        self.assertEqual(primary_archetype(ctx), "platform_rollup")
+
+
+class TestClassifyTakePrivate(unittest.TestCase):
+
+    def test_public_with_take_private_intent_fires(self) -> None:
+        ctx = ArchetypeContext(is_public_target=True, plans_go_private=True)
+        self.assertEqual(primary_archetype(ctx), "take_private")
+
+    def test_non_public_doesnt_fire(self) -> None:
+        ctx = ArchetypeContext(is_public_target=False)
+        hits = classify_archetypes(ctx)
+        self.assertNotIn("take_private", [h.archetype for h in hits])
+
+
+class TestClassifyCarveout(unittest.TestCase):
+
+    def test_carveout_with_strategic_seller_fires(self) -> None:
+        ctx = ArchetypeContext(is_carveout=True, seller_is_strategic=True)
+        self.assertEqual(primary_archetype(ctx), "carve_out")
+
+
+class TestClassifyTurnaround(unittest.TestCase):
+
+    def test_distressed_and_thesis_triggers(self) -> None:
+        ctx = ArchetypeContext(
+            is_distressed=True,
+            has_turnaround_thesis=True,
+            current_ebitda_margin=0.02,
+            peer_median_margin=0.075,
+        )
+        self.assertEqual(primary_archetype(ctx), "turnaround")
+
+    def test_margin_gap_alone_is_weak_signal(self) -> None:
+        ctx = ArchetypeContext(
+            current_ebitda_margin=0.04,
+            peer_median_margin=0.075,
+        )
+        hits = classify_archetypes(ctx, min_confidence=0.40)
+        self.assertEqual(len(hits), 0)
+
+
+class TestClassifyContinuation(unittest.TestCase):
+
+    def test_continuation_vehicle_fires(self) -> None:
+        ctx = ArchetypeContext(is_continuation_vehicle=True, seller_is_sponsor=True)
+        self.assertEqual(primary_archetype(ctx), "continuation")
+
+
+class TestClassifyOperatingLift(unittest.TestCase):
+
+    def test_rcm_thesis_and_lbo_leverage(self) -> None:
+        ctx = ArchetypeContext(
+            has_rcm_thesis=True,
+            debt_to_ebitda=5.5,
+        )
+        self.assertEqual(primary_archetype(ctx), "operating_lift")
+
+
+class TestClassifyGrowthEquity(unittest.TestCase):
+
+    def test_minority_with_growth_fires(self) -> None:
+        ctx = ArchetypeContext(
+            is_minority=True,
+            ownership_pct=0.35,
+            revenue_growth_pct=0.25,
+        )
+        self.assertEqual(primary_archetype(ctx), "growth_equity")
+
+
+class TestClassifyPIPE(unittest.TestCase):
+
+    def test_public_minority_is_pipe(self) -> None:
+        ctx = ArchetypeContext(is_public_target=True, is_minority=True)
+        self.assertEqual(primary_archetype(ctx), "pipe")
+
+
+class TestArchetypeMulti(unittest.TestCase):
+
+    def test_multi_archetype_ordering(self) -> None:
+        # Carve-out that's also a turnaround — both should surface.
+        ctx = ArchetypeContext(
+            is_carveout=True, seller_is_strategic=True,
+            is_distressed=True, has_turnaround_thesis=True,
+            current_ebitda_margin=0.02, peer_median_margin=0.08,
+        )
+        hits = classify_archetypes(ctx)
+        ids = [h.archetype for h in hits]
+        self.assertIn("carve_out", ids)
+        self.assertIn("turnaround", ids)
+
+    def test_primary_archetype_returns_none_when_empty(self) -> None:
+        self.assertIsNone(primary_archetype(ArchetypeContext()))
+
+    def test_archetype_hit_to_dict(self) -> None:
+        ctx = ArchetypeContext(
+            platform_or_addon="platform", number_of_addons_planned=4,
+            has_rollup_thesis=True,
+        )
+        hits = classify_archetypes(ctx)
+        d = hits[0].to_dict()
+        self.assertIn("archetype", d)
+        self.assertIn("confidence", d)
+        self.assertIn("signals", d)
+        self.assertIn("playbook", d)
+
+    def test_each_archetype_has_questions_and_risks(self) -> None:
+        # Fire every archetype at least once and verify shape.
+        combos = [
+            ArchetypeContext(platform_or_addon="platform", number_of_addons_planned=5, has_rollup_thesis=True),
+            ArchetypeContext(is_public_target=True, plans_go_private=True),
+            ArchetypeContext(is_carveout=True, seller_is_strategic=True),
+            ArchetypeContext(is_distressed=True, has_turnaround_thesis=True),
+            ArchetypeContext(is_continuation_vehicle=True, seller_is_sponsor=True),
+            ArchetypeContext(has_rcm_thesis=True, debt_to_ebitda=5.5),
+            ArchetypeContext(is_minority=True, ownership_pct=0.30, revenue_growth_pct=0.25),
+            ArchetypeContext(is_public_target=True, is_minority=True),
+        ]
+        for c in combos:
+            hits = classify_archetypes(c)
+            for h in hits:
+                self.assertGreaterEqual(len(h.risks), 1)
+                self.assertGreaterEqual(len(h.questions), 1)
+                self.assertTrue(h.playbook)
+
+
 if __name__ == "__main__":
     unittest.main()
