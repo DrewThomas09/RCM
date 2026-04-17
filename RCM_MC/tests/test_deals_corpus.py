@@ -5178,6 +5178,144 @@ class TestCmsDataQuality(unittest.TestCase):
         self.assertEqual(s["declining_risk_count"], 1)
 
 
+class TestDealTimeline(unittest.TestCase):
+    """Tests for deal_timeline module."""
+
+    def _make_deal(self, source_id="t001", year=2018, hold=4.5, moic=2.5, irr=0.22, ev=200.0):
+        return {
+            "source_id": source_id,
+            "deal_name": f"Test Deal {source_id}",
+            "source": "seed",
+            "year": year,
+            "ev_mm": ev,
+            "realized_moic": moic,
+            "realized_irr": irr,
+            "hold_years": hold,
+            "buyer": "Test Buyer",
+            "seller": "Test Seller",
+            "deal_type": "lbo",
+            "notes": "test",
+        }
+
+    def test_build_deal_timeline_entry_exit(self):
+        from rcm_mc.data_public.deal_timeline import build_deal_timeline
+        deal = self._make_deal()
+        events = build_deal_timeline(deal)
+        self.assertEqual(len(events), 2)
+        types = {e.event_type for e in events}
+        self.assertIn("entry", types)
+        self.assertIn("exit", types)
+
+    def test_build_deal_timeline_entry_only(self):
+        from rcm_mc.data_public.deal_timeline import build_deal_timeline
+        deal = self._make_deal(moic=None, irr=None)
+        events = build_deal_timeline(deal)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].event_type, "entry")
+
+    def test_exit_year_computed(self):
+        from rcm_mc.data_public.deal_timeline import build_deal_timeline
+        deal = self._make_deal(year=2018, hold=5.0)
+        events = build_deal_timeline(deal)
+        exit_ev = [e for e in events if e.event_type == "exit"]
+        self.assertEqual(exit_ev[0].year, 2023)
+
+    def test_corpus_timeline_sorted(self):
+        from rcm_mc.data_public.deal_timeline import corpus_timeline
+        deals = [
+            self._make_deal(source_id="a", year=2020),
+            self._make_deal(source_id="b", year=2015),
+            self._make_deal(source_id="c", year=2018),
+        ]
+        events = corpus_timeline(deals)
+        years = [e.year for e in events if e.year and e.event_type == "entry"]
+        self.assertEqual(years, sorted(years))
+
+    def test_market_activity_by_year(self):
+        from rcm_mc.data_public.deal_timeline import market_activity_by_year
+        deals = [
+            self._make_deal(source_id="x1", year=2018, ev=100.0),
+            self._make_deal(source_id="x2", year=2018, ev=200.0),
+            self._make_deal(source_id="x3", year=2019, ev=150.0),
+        ]
+        result = market_activity_by_year(deals)
+        self.assertIn(2018, result)
+        self.assertEqual(result[2018]["deal_count"], 2)
+        self.assertAlmostEqual(result[2018]["total_ev_mm"], 300.0)
+        self.assertEqual(result[2019]["deal_count"], 1)
+
+    def test_market_activity_cycle_phase(self):
+        from rcm_mc.data_public.deal_timeline import market_activity_by_year
+        deals = [self._make_deal(year=2020)]
+        result = market_activity_by_year(deals)
+        self.assertEqual(result[2020]["cycle_phase"], "covid_disruption")
+
+    def test_holding_period_distribution(self):
+        from rcm_mc.data_public.deal_timeline import holding_period_distribution
+        deals = [
+            self._make_deal(source_id=f"h{i}", hold=float(i + 1)) for i in range(10)
+        ]
+        dist = holding_period_distribution(deals)
+        self.assertEqual(dist["count"], 10)
+        self.assertIn("p50", dist)
+        self.assertIn("buckets", dist)
+        total_bucket = sum(dist["buckets"].values())
+        self.assertEqual(total_bucket, 10)
+
+    def test_holding_period_distribution_empty(self):
+        from rcm_mc.data_public.deal_timeline import holding_period_distribution
+        deals = [self._make_deal(moic=None)]
+        dist = holding_period_distribution(deals)
+        self.assertEqual(dist["count"], 0)
+
+    def test_entry_exit_gap_analysis(self):
+        from rcm_mc.data_public.deal_timeline import entry_exit_gap_analysis
+        deals = [
+            self._make_deal(source_id="g1", year=2015, hold=5.0),
+            self._make_deal(source_id="g2", year=2018, hold=3.0),
+        ]
+        rows = entry_exit_gap_analysis(deals)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["exit_year"], 2020)
+        self.assertIn("entry_phase", rows[0])
+
+    def test_deal_cycle_phase(self):
+        from rcm_mc.data_public.deal_timeline import deal_cycle_phase
+        self.assertEqual(deal_cycle_phase(2008), "financial_crisis")
+        self.assertEqual(deal_cycle_phase(2021), "covid_disruption")
+        self.assertEqual(deal_cycle_phase(2016), "late_cycle_bull")
+
+    def test_timeline_table(self):
+        from rcm_mc.data_public.deal_timeline import corpus_timeline, timeline_table
+        deals = [self._make_deal()]
+        events = corpus_timeline(deals)
+        text = timeline_table(events)
+        self.assertIn("Year", text)
+        self.assertIn("entry", text)
+
+    def test_pacing_recommendation(self):
+        from rcm_mc.data_public.deal_timeline import pacing_recommendation
+        deals = [
+            self._make_deal(source_id=f"p{i}", year=2018 + (i % 3)) for i in range(15)
+        ]
+        rec = pacing_recommendation(deals)
+        self.assertIn("avg_deals_per_year", rec)
+        self.assertIn("total_active_deals", rec)
+        self.assertIn("recommendation", rec)
+
+    def test_pacing_with_real_corpus(self):
+        from rcm_mc.data_public.deal_timeline import pacing_recommendation
+        from rcm_mc.data_public.deals_corpus import DealsCorpus
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "c.db")
+            c = DealsCorpus(db)
+            c.seed()
+            deals = c.list()
+        rec = pacing_recommendation(deals)
+        self.assertGreater(rec["avg_deals_per_year"], 5.0)
+
+
 class TestCorpusCLIExtended(unittest.TestCase):
     """Tests for health-check and export CLI subcommands."""
 

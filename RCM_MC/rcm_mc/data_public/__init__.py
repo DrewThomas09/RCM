@@ -229,6 +229,17 @@ from .corpus_health_check import (
     health_check_text,
     run_corpus_health_check,
 )
+from .deal_timeline import (
+    DealEvent,
+    build_deal_timeline,
+    corpus_timeline,
+    market_activity_by_year,
+    holding_period_distribution,
+    entry_exit_gap_analysis,
+    deal_cycle_phase,
+    timeline_table,
+    pacing_recommendation,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -403,4 +414,13 @@ __all__ = [
     "check_corpus",
     "health_check_text",
     "run_corpus_health_check",
+    "DealEvent",
+    "build_deal_timeline",
+    "corpus_timeline",
+    "market_activity_by_year",
+    "holding_period_distribution",
+    "entry_exit_gap_analysis",
+    "deal_cycle_phase",
+    "timeline_table",
+    "pacing_recommendation",
 ]
