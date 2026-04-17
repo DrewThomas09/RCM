@@ -342,6 +342,13 @@ from .benchmark_bands import (
     check_sga_intensity,
     run_benchmark_bands,
 )
+from .payer_mix_risk import (
+    PayerMixRiskInputs,
+    PayerMixRiskReport,
+    PayerRisk,
+    analyze_payer_mix_risk,
+    render_payer_mix_risk_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1041,4 +1048,9 @@ __all__ = [
     "check_same_store_sales_growth",
     "check_sga_intensity",
     "run_benchmark_bands",
+    "PayerMixRiskInputs",
+    "PayerMixRiskReport",
+    "PayerRisk",
+    "analyze_payer_mix_risk",
+    "render_payer_mix_risk_markdown",
 ]

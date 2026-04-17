@@ -8044,5 +8044,73 @@ class TestBenchmarkBands(unittest.TestCase):
         self.assertEqual(len(checks), 5)
 
 
+# ── Payer-mix risk ──────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    PayerMixRiskInputs,
+    PayerMixRiskReport,
+    PayerRisk,
+    analyze_payer_mix_risk,
+    render_payer_mix_risk_markdown,
+)
+
+
+class TestPayerMixRisk(unittest.TestCase):
+
+    def test_high_hhi_flagged(self) -> None:
+        # 70% + 15% + 15% = HHI 70^2 + 15^2 + 15^2 = 5350.
+        r = analyze_payer_mix_risk(PayerMixRiskInputs(
+            payer_mix={"a": 0.70, "b": 0.15, "c": 0.15},
+        ))
+        self.assertTrue(any(risk.category == "payer_hhi" for risk in r.risks))
+
+    def test_balanced_mix_clean(self) -> None:
+        r = analyze_payer_mix_risk(PayerMixRiskInputs(
+            payer_mix={"a": 0.25, "b": 0.25, "c": 0.25, "d": 0.25},
+        ))
+        self.assertEqual(r.risks, [])
+
+    def test_dominant_payer_flag(self) -> None:
+        r = analyze_payer_mix_risk(PayerMixRiskInputs(
+            payer_mix={"bcbs": 0.55, "medicare": 0.30, "medicaid": 0.15},
+        ))
+        self.assertTrue(any(risk.category == "dominant_payer" for risk in r.risks))
+
+    def test_medicare_advantage_heavy(self) -> None:
+        r = analyze_payer_mix_risk(PayerMixRiskInputs(
+            payer_mix={"medicare": 0.50},
+            medicare_advantage_share=0.40,
+        ))
+        self.assertTrue(any(risk.category == "medicare_advantage_heavy"
+                            for risk in r.risks))
+
+    def test_aca_heavy_flag(self) -> None:
+        r = analyze_payer_mix_risk(PayerMixRiskInputs(
+            payer_mix={"commercial": 0.50},
+            aca_exchange_share=0.25,
+        ))
+        self.assertTrue(any(risk.category == "aca_exchange_heavy"
+                            for risk in r.risks))
+
+    def test_mix_shift_flag(self) -> None:
+        r = analyze_payer_mix_risk(PayerMixRiskInputs(
+            payer_mix={"medicare": 0.40, "commercial": 0.45, "medicaid": 0.15},
+            mix_trend_3yr={"medicare": 0.08, "medicaid": -0.06},
+        ))
+        self.assertTrue(any(risk.category == "mix_shift" for risk in r.risks))
+
+    def test_report_json(self) -> None:
+        import json
+        r = analyze_payer_mix_risk(PayerMixRiskInputs(
+            payer_mix={"a": 0.70, "b": 0.30}))
+        json.dumps(r.to_dict())
+
+    def test_markdown_renders(self) -> None:
+        r = analyze_payer_mix_risk(PayerMixRiskInputs(
+            payer_mix={"a": 0.70, "b": 0.30}))
+        md = render_payer_mix_risk_markdown(r)
+        self.assertIn("# Payer-mix risk", md)
+
+
 if __name__ == "__main__":
     unittest.main()
