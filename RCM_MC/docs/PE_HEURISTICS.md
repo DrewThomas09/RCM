@@ -2024,7 +2024,36 @@ calibrated: ≥ 2000 bps = "deep discount / tail-end", 1000-2000 =
 
 ---
 
-## 101. Change log
+## 101. LBO stress scenarios (`lbo_stress_scenarios.py`)
+
+Named partner-recognizable downside scenarios with covenant
+breach checks. Library (healthcare-flavored):
+
+- `recession_soft` — -10% EBITDA, rates +100 bps.
+- `recession_hard` — -25% EBITDA, rates +200 bps.
+- `denial_rate_spike` — -15% EBITDA (working-capital hit).
+- `medicare_cut` — -8% EBITDA (IPPS / fee schedule).
+- `labor_shock` — -18% EBITDA (wage inflation).
+- `cyber_attack` — -20% EBITDA + $5M one-time cash outflow.
+- `lost_contract` — -12% EBITDA (large payer loss).
+
+For each scenario, the module computes stressed EBITDA,
+post-shock leverage and coverage, whether either covenant is
+breached, and a rough **months-to-default** estimate assuming
+EBITDA doesn't recover. Cash runway = cash / (interest - stressed
+EBITDA). No recovery modeled.
+
+Aggregate output ranks scenarios by worst coverage and produces
+a partner note:
+
+- 0 breaches → "Covenants hold".
+- 1-2 breaches → "Manageable, focused monitoring".
+- 3+ breaches → "Capital structure is fragile — reduce entry
+  leverage or negotiate covenant-lite terms".
+
+---
+
+## 102. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2182,3 +2211,6 @@ calibrated: ≥ 2000 bps = "deep discount / tail-end", 1000-2000 =
 - **2026-04-17** — Added `secondary_sale_valuation.py` (§100) —
   LP-led discount and GP-led continuation pricing. Full inventory:
   98 modules, 962 pe_intelligence unit tests.
+- **2026-04-17** — Added `lbo_stress_scenarios.py` (§101) — 7-scenario
+  library + covenant-breach + months-to-default. Full inventory:
+  99 modules, 974 pe_intelligence unit tests.
