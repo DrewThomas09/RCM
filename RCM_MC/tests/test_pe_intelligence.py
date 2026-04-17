@@ -5737,5 +5737,67 @@ class TestExtraRedFlags(unittest.TestCase):
         self.assertGreaterEqual(len(EXTRA_RED_FLAG_FIELDS), 10)
 
 
+# ── Scenario narrative ──────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ScenarioNarrativeResult,
+    render_scenario_markdown,
+    render_scenario_narrative,
+)
+
+
+def _scenario_grid_from_stress():
+    # Build a grid via the real stress_test orchestrator.
+    inputs = StressInputs(
+        base_ebitda=30_000_000, target_ebitda=45_000_000,
+        base_revenue=250_000_000, entry_multiple=8.0, exit_multiple=9.5,
+        debt_at_close=150_000_000, interest_rate=0.09,
+        covenant_leverage=6.0, covenant_coverage=2.0,
+        contract_labor_spend=30_000_000, lever_contribution=15_000_000,
+        hold_years=5.0, base_moic=2.5,
+        medicare_revenue=100_000_000, commercial_revenue=120_000_000,
+    )
+    return run_stress_grid(inputs).to_dict()
+
+
+class TestScenarioNarrative(unittest.TestCase):
+
+    def test_narrative_has_all_sections(self) -> None:
+        grid = _scenario_grid_from_stress()
+        narr = render_scenario_narrative(grid)
+        self.assertIsInstance(narr, ScenarioNarrativeResult)
+        self.assertTrue(narr.headline)
+        self.assertTrue(narr.worst_case_sentence)
+        self.assertTrue(narr.passing_downside_summary)
+
+    def test_grade_a_headline(self) -> None:
+        grid = {"robustness_grade": "A", "downside_pass_rate": 0.95,
+                "outcomes": []}
+        narr = render_scenario_narrative(grid)
+        self.assertIn("durable", narr.headline.lower())
+
+    def test_grade_f_headline(self) -> None:
+        grid = {"robustness_grade": "F", "downside_pass_rate": 0.10,
+                "outcomes": []}
+        narr = render_scenario_narrative(grid)
+        self.assertIn("brittle", narr.headline.lower())
+
+    def test_empty_outcomes_no_crash(self) -> None:
+        narr = render_scenario_narrative({})
+        self.assertIsInstance(narr, ScenarioNarrativeResult)
+
+    def test_markdown_contains_worst_case(self) -> None:
+        grid = _scenario_grid_from_stress()
+        md = render_scenario_markdown(grid)
+        self.assertIn("Worst case", md)
+        self.assertIn("Absorbs", md)
+
+    def test_result_to_dict_serializable(self) -> None:
+        import json
+        grid = _scenario_grid_from_stress()
+        narr = render_scenario_narrative(grid)
+        json.dumps(narr.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

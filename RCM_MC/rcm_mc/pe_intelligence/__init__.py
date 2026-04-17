@@ -145,6 +145,11 @@ from .extra_red_flags import (
     EXTRA_RED_FLAG_FIELDS,
     run_extra_red_flags,
 )
+from .scenario_narrative import (
+    ScenarioNarrativeResult,
+    render_scenario_markdown,
+    render_scenario_narrative,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -709,4 +714,7 @@ __all__ = [
     "classify_extra_archetypes",
     "EXTRA_RED_FLAG_FIELDS",
     "run_extra_red_flags",
+    "ScenarioNarrativeResult",
+    "render_scenario_markdown",
+    "render_scenario_narrative",
 ]
