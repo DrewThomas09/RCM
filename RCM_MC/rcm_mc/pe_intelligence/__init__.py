@@ -99,6 +99,18 @@ from .market_structure import (
     compute_hhi,
     is_consolidation_play,
 )
+from .stress_test import (
+    ScenarioOutcome,
+    StressGridResult,
+    run_stress_grid,
+)
+from .operating_posture import (
+    ALL_POSTURES,
+    PostureInputs,
+    PostureResult,
+    classify_posture,
+    posture_from_stress_and_heuristics,
+)
 from .thesis_templates import (
     TEMPLATES as THESIS_TEMPLATES,
     ThesisTemplate,
@@ -603,4 +615,12 @@ __all__ = [
     "compute_cr5",
     "compute_hhi",
     "is_consolidation_play",
+    "ScenarioOutcome",
+    "StressGridResult",
+    "run_stress_grid",
+    "ALL_POSTURES",
+    "PostureInputs",
+    "PostureResult",
+    "classify_posture",
+    "posture_from_stress_and_heuristics",
 ]

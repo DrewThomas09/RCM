@@ -687,6 +687,78 @@ def _enrich_secondary_analytics(
     except Exception as exc:
         review.market_structure = {"error": f"market structure failed: {exc!r}"}
 
+    # 3. Stress-grid scenario sweep
+    try:
+        from .stress_test import run_stress_grid
+        stress_inputs = _stress_inputs_from_ctx(ctx)
+        grid = run_stress_grid(stress_inputs)
+        review.stress_scenarios = grid.to_dict()
+    except Exception as exc:
+        review.stress_scenarios = {"error": f"stress grid failed: {exc!r}"}
+
+    # 4. Operating posture (depends on stress + heuristics)
+    try:
+        from .operating_posture import posture_from_stress_and_heuristics
+        regime_name = (review.regime or {}).get("regime") if review.regime else None
+        stress_dict = review.stress_scenarios or {}
+        posture = posture_from_stress_and_heuristics(
+            stress_dict, review.heuristic_hits, regime=regime_name,
+        )
+        review.operating_posture = posture.to_dict()
+    except Exception as exc:
+        review.operating_posture = {"error": f"posture failed: {exc!r}"}
+
+
+def _stress_inputs_from_ctx(ctx: "HeuristicContext"):
+    """Build StressInputs (in $) from a HeuristicContext (EBITDA in $M).
+
+    Scales $M to $ so the stress module's thresholds operate on raw
+    dollars. Falls back to zeros for missing fields — the stress
+    module's own guards then return UNKNOWN-style outcomes.
+    """
+    from .scenario_stress import StressInputs
+    ebitda_m = ctx.ebitda_m or 0.0
+    revenue_m = ctx.revenue_m or 0.0
+    base_ebitda = ebitda_m * 1_000_000.0 if ebitda_m else 0.0
+    base_revenue = revenue_m * 1_000_000.0 if revenue_m else 0.0
+    # Rough revenue approximation from margin when revenue missing.
+    if base_revenue == 0 and ctx.ebitda_margin and ctx.ebitda_margin > 0:
+        base_revenue = base_ebitda / ctx.ebitda_margin
+    target_ebitda = base_ebitda * 1.30 if base_ebitda else 0.0
+    medicare_rev = (base_revenue
+                    * float((ctx.payer_mix or {}).get("medicare", 0.0)))
+    commercial_rev = (base_revenue
+                      * float((ctx.payer_mix or {}).get("commercial", 0.0)))
+    # Normalize payer-mix shares if given as percents.
+    if medicare_rev > base_revenue * 1.5 and base_revenue > 0:
+        medicare_rev /= 100.0
+    if commercial_rev > base_revenue * 1.5 and base_revenue > 0:
+        commercial_rev /= 100.0
+    # Leverage → debt at close = leverage × EBITDA.
+    debt = 0.0
+    if ctx.leverage_multiple and base_ebitda > 0:
+        debt = float(ctx.leverage_multiple) * base_ebitda
+    # Contract labor — use a conservative 30% of revenue default when missing.
+    contract_labor = base_revenue * 0.05 if base_revenue else 0.0
+    lever_contribution = max(target_ebitda - base_ebitda, 0.0)
+    return StressInputs(
+        base_ebitda=base_ebitda,
+        target_ebitda=target_ebitda,
+        base_revenue=base_revenue,
+        entry_multiple=ctx.entry_multiple,
+        exit_multiple=ctx.exit_multiple,
+        debt_at_close=debt,
+        interest_rate=0.09,          # partner-prudent default
+        covenant_leverage=6.0,
+        covenant_coverage=2.0,
+        contract_labor_spend=contract_labor,
+        lever_contribution=lever_contribution,
+        hold_years=ctx.hold_years,
+        base_moic=ctx.projected_moic,
+        medicare_revenue=medicare_rev,
+        commercial_revenue=commercial_rev,
+    )
+
 
 def _market_shares_from_packet(packet: Any) -> Dict[str, float]:
     """Pull a ``{player: share}`` dict from the packet's profile or

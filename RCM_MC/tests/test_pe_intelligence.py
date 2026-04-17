@@ -4868,5 +4868,172 @@ class TestMarketStructureWiredIntoReview(unittest.TestCase):
         self.assertGreater(review.market_structure["consolidation_play_score"], 0.50)
 
 
+# ── Stress grid ─────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ScenarioOutcome,
+    StressGridResult,
+    run_stress_grid,
+)
+
+
+def _stress_grid_inputs():
+    return StressInputs(
+        base_ebitda=30_000_000, target_ebitda=45_000_000,
+        base_revenue=250_000_000, entry_multiple=8.0, exit_multiple=9.5,
+        debt_at_close=150_000_000, interest_rate=0.09,
+        covenant_leverage=6.0, covenant_coverage=2.0,
+        contract_labor_spend=30_000_000, lever_contribution=15_000_000,
+        hold_years=5.0, base_moic=2.5,
+        medicare_revenue=100_000_000, commercial_revenue=120_000_000,
+    )
+
+
+class TestRunStressGrid(unittest.TestCase):
+
+    def test_grid_produces_outcomes(self) -> None:
+        grid = run_stress_grid(_stress_grid_inputs())
+        self.assertGreater(len(grid.outcomes), 5)
+        # Both downside and upside scenarios present.
+        severities = {o.severity for o in grid.outcomes}
+        self.assertIn("downside", severities)
+        self.assertIn("upside", severities)
+
+    def test_grade_populated(self) -> None:
+        grid = run_stress_grid(_stress_grid_inputs())
+        self.assertIn(grid.robustness_grade, ("A", "B", "C", "D", "F", "?"))
+
+    def test_worst_and_best_case_populated(self) -> None:
+        grid = run_stress_grid(_stress_grid_inputs())
+        self.assertIsNotNone(grid.worst_case_delta_pct)
+
+    def test_pass_rate_between_0_and_1(self) -> None:
+        grid = run_stress_grid(_stress_grid_inputs())
+        self.assertGreaterEqual(grid.downside_pass_rate, 0.0)
+        self.assertLessEqual(grid.downside_pass_rate, 1.0)
+
+    def test_weak_deal_grades_poorly(self) -> None:
+        weak = StressInputs(
+            base_ebitda=5_000_000, target_ebitda=6_000_000,
+            base_revenue=50_000_000,
+            entry_multiple=8.0, exit_multiple=8.5,
+            debt_at_close=30_000_000, interest_rate=0.10,
+            covenant_leverage=5.0, covenant_coverage=2.5,
+            contract_labor_spend=15_000_000, lever_contribution=1_000_000,
+            hold_years=5.0, base_moic=1.8,
+            medicare_revenue=25_000_000, commercial_revenue=15_000_000,
+        )
+        grid = run_stress_grid(weak)
+        self.assertIn(grid.robustness_grade, ("C", "D", "F"))
+
+    def test_grid_to_dict_json_safe(self) -> None:
+        import json
+        grid = run_stress_grid(_stress_grid_inputs())
+        json.dumps(grid.to_dict(), default=str)
+
+
+# ── Operating posture ───────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ALL_POSTURES,
+    PostureInputs,
+    PostureResult,
+    classify_posture,
+    posture_from_stress_and_heuristics,
+)
+from rcm_mc.pe_intelligence.operating_posture import (
+    POSTURE_BALANCED,
+    POSTURE_CONCENTRATION_RISK,
+    POSTURE_GROWTH_OPTIONAL,
+    POSTURE_RESILIENT_CORE,
+    POSTURE_SCENARIO_LEADER,
+)
+
+
+class TestClassifyPosture(unittest.TestCase):
+
+    def test_scenario_leader(self) -> None:
+        result = classify_posture(PostureInputs(
+            downside_pass_rate=0.90, upside_capture_rate=0.80,
+        ))
+        self.assertEqual(result.posture, POSTURE_SCENARIO_LEADER)
+
+    def test_resilient_core(self) -> None:
+        result = classify_posture(PostureInputs(
+            downside_pass_rate=0.90, upside_capture_rate=0.30,
+        ))
+        self.assertEqual(result.posture, POSTURE_RESILIENT_CORE)
+
+    def test_growth_optional(self) -> None:
+        result = classify_posture(PostureInputs(
+            downside_pass_rate=0.40, upside_capture_rate=0.80,
+        ))
+        self.assertEqual(result.posture, POSTURE_GROWTH_OPTIONAL)
+
+    def test_balanced_default(self) -> None:
+        result = classify_posture(PostureInputs(
+            downside_pass_rate=0.60, upside_capture_rate=0.55,
+        ))
+        self.assertEqual(result.posture, POSTURE_BALANCED)
+
+    def test_concentration_risk_dominates(self) -> None:
+        result = classify_posture(PostureInputs(
+            downside_pass_rate=0.90, upside_capture_rate=0.70,
+            concentration_flags=["payer_concentration_risk",
+                                 "service_line_concentration"],
+        ))
+        self.assertEqual(result.posture, POSTURE_CONCENTRATION_RISK)
+
+    def test_no_inputs_is_balanced_low_confidence(self) -> None:
+        result = classify_posture(PostureInputs())
+        self.assertEqual(result.posture, POSTURE_BALANCED)
+        self.assertLess(result.confidence, 0.50)
+
+    def test_posture_to_dict(self) -> None:
+        import json
+        result = classify_posture(PostureInputs(downside_pass_rate=0.90))
+        json.dumps(result.to_dict())
+
+
+class TestPostureFromStressAndHeuristics(unittest.TestCase):
+
+    def test_pulls_from_grid_dict(self) -> None:
+        stress_dict = {
+            "downside_pass_rate": 0.90,
+            "upside_capture_rate": 0.80,
+            "n_covenant_breaches": 0,
+            "robustness_grade": "A",
+        }
+        hits = []
+        posture = posture_from_stress_and_heuristics(stress_dict, hits)
+        self.assertEqual(posture.posture, POSTURE_SCENARIO_LEADER)
+
+
+class TestStressAndPostureWiredIntoReview(unittest.TestCase):
+
+    def test_review_includes_stress_scenarios(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30, revenue_m=250,
+            ebitda_margin=0.10, leverage_multiple=5.0,
+            exit_multiple=9.0, entry_multiple=8.0, hold_years=5,
+            projected_moic=2.3,
+        )
+        review = partner_review_from_context(ctx)
+        self.assertIsNotNone(review.stress_scenarios)
+        self.assertIn("robustness_grade", review.stress_scenarios)
+
+    def test_review_includes_operating_posture(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30, revenue_m=250,
+            ebitda_margin=0.10, leverage_multiple=5.0,
+            exit_multiple=9.0, entry_multiple=8.0, hold_years=5,
+            projected_moic=2.3,
+        )
+        review = partner_review_from_context(ctx)
+        self.assertIsNotNone(review.operating_posture)
+        self.assertIn("posture", review.operating_posture)
+        self.assertIn(review.operating_posture["posture"], ALL_POSTURES)
+
+
 if __name__ == "__main__":
     unittest.main()
