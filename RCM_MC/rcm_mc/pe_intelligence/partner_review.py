@@ -676,6 +676,43 @@ def _enrich_secondary_analytics(
     except Exception as exc:  # defensive — never break the review
         review.regime = {"error": f"regime classification failed: {exc!r}"}
 
+    # 2. Market structure (HHI / CR3 / CR5)
+    try:
+        from .market_structure import analyze_market_structure
+        shares = _market_shares_from_packet(packet)
+        if shares:
+            review.market_structure = analyze_market_structure(shares).to_dict()
+        else:
+            review.market_structure = {"note": "No market-share data on packet."}
+    except Exception as exc:
+        review.market_structure = {"error": f"market structure failed: {exc!r}"}
+
+
+def _market_shares_from_packet(packet: Any) -> Dict[str, float]:
+    """Pull a ``{player: share}`` dict from the packet's profile or
+    a dedicated ``market_shares`` section. Returns an empty dict when
+    unavailable.
+    """
+    profile = _packet_section(packet, "profile")
+    if profile is None:
+        return {}
+    # Prefer explicit market_shares keys.
+    raw: Any = None
+    if isinstance(profile, dict):
+        raw = profile.get("market_shares")
+    else:
+        raw = getattr(profile, "market_shares", None)
+    if raw is None:
+        # Also allow it at the top-level packet (dict or attr).
+        if isinstance(packet, dict):
+            raw = packet.get("market_shares")
+        elif packet is not None:
+            raw = getattr(packet, "market_shares", None)
+    if not isinstance(raw, dict):
+        return {}
+    return {str(k): float(v) for k, v in raw.items()
+            if v is not None}
+
 
 def _regime_inputs_from_packet(ctx: "HeuristicContext", packet: Any):
     """Derive RegimeInputs from a context + packet pair.

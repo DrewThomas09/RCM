@@ -4771,5 +4771,102 @@ class TestRegimeWiredIntoReview(unittest.TestCase):
         self.assertIsNotNone(d["regime"])
 
 
+# ── Market structure ─────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    HHI_HIGHLY_CONCENTRATED,
+    HHI_UNCONCENTRATED,
+    MarketStructureResult,
+    analyze_market_structure,
+    compute_cr3,
+    compute_cr5,
+    compute_hhi,
+    is_consolidation_play,
+)
+
+
+class TestHHIComputation(unittest.TestCase):
+
+    def test_monopoly_hhi_is_10000(self) -> None:
+        self.assertAlmostEqual(compute_hhi({"a": 1.0}), 10000, places=1)
+
+    def test_equal_split_hhi(self) -> None:
+        # 4 equal players at 25% each: HHI = 4 * 25^2 = 2500
+        hhi = compute_hhi({"a": 0.25, "b": 0.25, "c": 0.25, "d": 0.25})
+        self.assertAlmostEqual(hhi, 2500, places=1)
+
+    def test_hhi_scale_invariant(self) -> None:
+        # Input as percents vs fractions should produce the same HHI.
+        pct = compute_hhi({"a": 60.0, "b": 40.0})
+        frac = compute_hhi({"a": 0.60, "b": 0.40})
+        self.assertAlmostEqual(pct, frac, places=2)
+
+    def test_empty_hhi_is_zero(self) -> None:
+        self.assertEqual(compute_hhi({}), 0.0)
+
+
+class TestCR3CR5(unittest.TestCase):
+
+    def test_cr3_sums_top_three(self) -> None:
+        shares = {"a": 0.30, "b": 0.25, "c": 0.20, "d": 0.15, "e": 0.10}
+        self.assertAlmostEqual(compute_cr3(shares), 0.75, places=4)
+
+    def test_cr5_sums_top_five(self) -> None:
+        shares = {"a": 0.30, "b": 0.25, "c": 0.20, "d": 0.15, "e": 0.10}
+        self.assertAlmostEqual(compute_cr5(shares), 1.0, places=4)
+
+    def test_cr_handles_fewer_than_n(self) -> None:
+        # Only 2 players but requesting CR5.
+        self.assertAlmostEqual(compute_cr5({"a": 0.7, "b": 0.3}), 1.0, places=2)
+
+
+class TestAnalyzeMarketStructure(unittest.TestCase):
+
+    def test_fragmented_rollup_setup(self) -> None:
+        # 20 players at 5% each → HHI 500, CR5 0.25, strong rollup.
+        shares = {f"p{i}": 0.05 for i in range(20)}
+        result = analyze_market_structure(shares)
+        self.assertEqual(result.fragmentation_verdict, "fragmented")
+        self.assertGreater(result.consolidation_play_score, 0.55)
+        self.assertTrue(is_consolidation_play(result))
+
+    def test_consolidated_market_discourages_rollup(self) -> None:
+        # 3 players at 40/35/25 → high HHI, CR5 = 100%.
+        shares = {"a": 0.40, "b": 0.35, "c": 0.25}
+        result = analyze_market_structure(shares)
+        self.assertEqual(result.fragmentation_verdict, "consolidated")
+        self.assertFalse(is_consolidation_play(result))
+
+    def test_empty_shares_safe(self) -> None:
+        result = analyze_market_structure({})
+        self.assertEqual(result.n_players, 0)
+        self.assertEqual(result.fragmentation_verdict, "unknown")
+
+    def test_result_to_dict_roundtrip(self) -> None:
+        import json
+        result = analyze_market_structure({"a": 0.60, "b": 0.40})
+        json.dumps(result.to_dict())
+
+
+class TestMarketStructureWiredIntoReview(unittest.TestCase):
+
+    def test_no_shares_produces_note(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx)
+        self.assertIsNotNone(review.market_structure)
+        self.assertIn("note", review.market_structure)
+
+    def test_packet_with_shares_analyzed(self) -> None:
+        packet = _make_packet_dict()
+        packet["profile"]["market_shares"] = {
+            f"p{i}": 0.05 for i in range(20)
+        }
+        review = partner_review(packet)
+        self.assertIsNotNone(review.market_structure)
+        self.assertEqual(review.market_structure["fragmentation_verdict"],
+                         "fragmented")
+        self.assertGreater(review.market_structure["consolidation_play_score"], 0.50)
+
+
 if __name__ == "__main__":
     unittest.main()

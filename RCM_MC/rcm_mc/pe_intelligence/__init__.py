@@ -88,6 +88,17 @@ from .regime_classifier import (
     classify_regime,
     rank_all_regimes,
 )
+from .market_structure import (
+    HHI_HIGHLY_CONCENTRATED,
+    HHI_UNCONCENTRATED,
+    MarketStructureResult,
+    analyze_market_structure,
+    compute_cr,
+    compute_cr3,
+    compute_cr5,
+    compute_hhi,
+    is_consolidation_play,
+)
 from .thesis_templates import (
     TEMPLATES as THESIS_TEMPLATES,
     ThesisTemplate,
@@ -583,4 +594,13 @@ __all__ = [
     "RegimeResult",
     "classify_regime",
     "rank_all_regimes",
+    "HHI_HIGHLY_CONCENTRATED",
+    "HHI_UNCONCENTRATED",
+    "MarketStructureResult",
+    "analyze_market_structure",
+    "compute_cr",
+    "compute_cr3",
+    "compute_cr5",
+    "compute_hhi",
+    "is_consolidation_play",
 ]
