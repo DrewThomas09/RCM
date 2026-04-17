@@ -141,6 +141,14 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .deal_underwriting_model import (
+    UnderwritingAssumptions,
+    UnderwritingResult,
+    underwrite_deal,
+    sensitivity_table as underwriting_sensitivity_table,
+    benchmark_compare as underwriting_benchmark_compare,
+    underwriting_report,
+)
 from .corpus_export import (
     to_csv,
     to_json,
@@ -314,6 +322,12 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "UnderwritingAssumptions",
+    "UnderwritingResult",
+    "underwrite_deal",
+    "underwriting_sensitivity_table",
+    "underwriting_benchmark_compare",
+    "underwriting_report",
     "to_csv",
     "to_json",
     "to_markdown",

@@ -3559,6 +3559,124 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestDealUnderwritingModel(unittest.TestCase):
+    """Tests for deal_underwriting_model module."""
+
+    def _assumptions(self, **kw):
+        from rcm_mc.data_public.deal_underwriting_model import UnderwritingAssumptions
+        base = dict(
+            entry_ev_mm=1000.0,
+            entry_ebitda_mm=100.0,
+            equity_contribution_pct=0.40,
+            ebitda_cagr=0.10,
+            hold_years=5.0,
+            exit_multiple=10.0,
+            entry_leverage_x=5.0,
+            debt_amortization_pct=0.03,
+            interest_rate=0.075,
+            transaction_fee_pct=0.02,
+            management_fee_annual_mm=2.0,
+        )
+        base.update(kw)
+        return UnderwritingAssumptions(**base)
+
+    def test_underwrite_basic(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal
+        a = self._assumptions()
+        result = underwrite_deal(a)
+        self.assertGreater(result.gross_moic, 0)
+        self.assertGreater(result.gross_irr, 0)
+        self.assertGreater(result.net_moic, 0)
+
+    def test_underwrite_moic_irr_consistency(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal
+        a = self._assumptions()
+        result = underwrite_deal(a)
+        # gross_moic ^ (1/hold_years) - 1 should approximate gross_irr
+        implied = result.gross_moic ** (1.0 / a.hold_years) - 1.0
+        self.assertAlmostEqual(implied, result.gross_irr, places=2)
+
+    def test_underwrite_net_lt_gross(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal
+        a = self._assumptions()
+        result = underwrite_deal(a)
+        self.assertLess(result.net_moic, result.gross_moic)
+        self.assertLess(result.net_irr, result.gross_irr)
+
+    def test_underwrite_negative_ebitda_warning(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal
+        a = self._assumptions(entry_ebitda_mm=-10.0)
+        result = underwrite_deal(a)
+        self.assertGreater(len(result.warnings), 0)
+
+    def test_underwrite_exit_equity_positive(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal
+        a = self._assumptions()
+        result = underwrite_deal(a)
+        self.assertGreaterEqual(result.exit_equity_mm, 0)
+
+    def test_sensitivity_table_shape(self):
+        from rcm_mc.data_public.deal_underwriting_model import sensitivity_table
+        a = self._assumptions()
+        grid = sensitivity_table(a)
+        self.assertIsInstance(grid, list)
+        self.assertGreater(len(grid), 0)
+        self.assertIn("exit_multiple", grid[0])
+        self.assertIn("hold_years", grid[0])
+        self.assertIn("net_irr", grid[0])
+
+    def test_sensitivity_table_monotonic_with_multiple(self):
+        from rcm_mc.data_public.deal_underwriting_model import sensitivity_table
+        a = self._assumptions()
+        grid = sensitivity_table(a, hold_years_list=[5.0])
+        irrs = [row["net_irr"] for row in grid if row["net_irr"] is not None]
+        # Higher exit multiple should produce higher IRR
+        self.assertEqual(irrs, sorted(irrs))
+
+    def test_benchmark_compare_top_quartile(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal, benchmark_compare
+        a = self._assumptions(exit_multiple=14.0, ebitda_cagr=0.15)
+        result = underwrite_deal(a)
+        benchmarks = {"moic_p25": 1.5, "moic_p50": 2.0, "moic_p75": 3.0}
+        comp = benchmark_compare(result, benchmarks)
+        self.assertIn(comp["corpus_positioning"], ["top_quartile", "above_median"])
+
+    def test_benchmark_compare_bottom_quartile(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal, benchmark_compare
+        # Low multiple + short hold = poor returns
+        a = self._assumptions(exit_multiple=6.0, ebitda_cagr=0.02, hold_years=3.0)
+        result = underwrite_deal(a)
+        benchmarks = {"moic_p25": 1.5, "moic_p50": 2.0, "moic_p75": 3.0}
+        comp = benchmark_compare(result, benchmarks)
+        self.assertIn(comp["corpus_positioning"], ["bottom_quartile", "below_median"])
+
+    def test_underwriting_report_text(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal, underwriting_report
+        a = self._assumptions(deal_name="Test LBO")
+        result = underwrite_deal(a)
+        text = underwriting_report(result)
+        self.assertIn("Test LBO", text)
+        self.assertIn("Gross MOIC", text)
+        self.assertIn("Net IRR", text)
+
+    def test_underwriting_report_with_benchmarks(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal, underwriting_report
+        a = self._assumptions()
+        result = underwrite_deal(a)
+        benchmarks = {"moic_p25": 1.5, "moic_p50": 2.0, "moic_p75": 3.0}
+        text = underwriting_report(result, benchmarks=benchmarks)
+        self.assertIn("CORPUS BENCHMARK", text)
+        self.assertIn("Positioning", text)
+
+    def test_underwrite_exit_ev_calculation(self):
+        from rcm_mc.data_public.deal_underwriting_model import underwrite_deal
+        a = self._assumptions(ebitda_cagr=0.0, exit_multiple=10.0)
+        result = underwrite_deal(a)
+        # No growth: exit EBITDA == entry EBITDA; exit EV = 10 * 100 = 1000
+        self.assertAlmostEqual(result.exit_ebitda_mm, 100.0, places=1)
+        self.assertAlmostEqual(result.exit_ev_mm, 1000.0, places=0)
+
+
 class TestCorpusExport(unittest.TestCase):
     """Tests for corpus_export module."""
 
