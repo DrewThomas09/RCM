@@ -2082,7 +2082,36 @@ margin opportunity, below-market flight risk, or within bands).
 
 ---
 
-## 103. Change log
+## 103. EBITDA normalization (`ebitda_normalization.py`)
+
+Sellers push "Adjusted EBITDA" hard. This module codifies the
+partner haircut discipline:
+
+- **Defensible (100% credit)** — one-time legal / cyber / fire
+  costs, CEO severance, founder-family non-economic salary,
+  pre-IPO readiness costs.
+- **Defensible with support (70% credit)** — signed synergies,
+  signed-contract revenue annualization, executed cost takeouts
+  (severance paid).
+- **Aggressive (30% credit)** — projected-not-realized synergies,
+  pipeline revenue run-rate, "non-recurring" items that recur.
+- **Reject (0% credit)** — sponsor management fees, pre-opening
+  losses as add-backs, stock-comp add-backs.
+
+Output: **Partner's Adjusted EBITDA** = Reported + Σ (amount ×
+haircut). The gap between Seller's and Partner's numbers is the
+renegotiation lever:
+
+- ≥ 20% gap → renegotiate purchase price off partner view.
+- 10-20% gap → modest renegotiation leverage.
+- < 10% gap → bridge largely supportable.
+
+Unknown categories default to "aggressive" (30% credit) — the
+partner-prudent posture when in doubt.
+
+---
+
+## 104. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2246,3 +2275,6 @@ margin opportunity, below-market flight risk, or within bands).
 - **2026-04-17** — Added `physician_compensation_benchmark.py` (§102)
   — 9-specialty MGMA medians + comp/wRVU + base-mix checks. Full
   inventory: 100 modules, 984 pe_intelligence unit tests.
+- **2026-04-17** — Added `ebitda_normalization.py` (§103) — seller
+  bridge haircut + partner-prudent Adj EBITDA. Full inventory:
+  101 modules, 995 pe_intelligence unit tests.
