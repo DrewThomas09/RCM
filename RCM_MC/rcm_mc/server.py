@@ -1923,6 +1923,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             except (TypeError, ValueError): _min_sd = 3
             from .ui.data_public.deal_flow_heatmap_page import render_deal_flow_heatmap
             return self._send_html(render_deal_flow_heatmap(min_sector_deals=_min_sd))
+        if path == "/concentration-risk":
+            from .ui.data_public.concentration_risk_page import render_concentration_risk
+            return self._send_html(render_concentration_risk())
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())

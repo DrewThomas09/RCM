@@ -110,6 +110,7 @@ NAV_ITEMS = [
     {"label": "IC Memo Gen.", "href": "/corpus-ic-memo", "icon": "doc"},
     {"label": "Return Attribution", "href": "/return-attribution", "icon": "chart"},
     {"label": "Deal Flow Heatmap", "href": "/deal-flow-heatmap", "icon": "grid"},
+    {"label": "Concentration Risk", "href": "/concentration-risk", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
