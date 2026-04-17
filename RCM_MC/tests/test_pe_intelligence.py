@@ -9011,5 +9011,95 @@ class TestCarveOutRisks(unittest.TestCase):
         json.dumps(a.to_dict())
 
 
+# ── Secondary sale valuation ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    SecondarySaleAssessment,
+    SecondarySaleInputs,
+    render_secondary_markdown,
+    value_secondary_sale,
+)
+
+
+class TestSecondarySaleValuation(unittest.TestCase):
+
+    def test_lp_led_young_healthcare_fund(self) -> None:
+        a = value_secondary_sale(SecondarySaleInputs(
+            nav_m=100.0, transaction_type="lp_led",
+            fund_age_years=3, dpi_to_date=0.3,
+        ))
+        self.assertEqual(a.transaction_type, "lp_led")
+        # Discount should be modest.
+        self.assertGreaterEqual(a.indicative_discount_bps, 0)
+        self.assertLess(a.indicative_discount_bps, 800)
+        self.assertLess(a.implied_price_m, 100.0)
+
+    def test_lp_led_tail_end_fund_deep_discount(self) -> None:
+        a = value_secondary_sale(SecondarySaleInputs(
+            nav_m=100.0, transaction_type="lp_led",
+            fund_age_years=11, dpi_to_date=0.05,
+            concentration_in_top_asset_pct=0.45,
+        ))
+        self.assertGreaterEqual(a.indicative_discount_bps, 1500)
+
+    def test_high_dpi_reduces_discount(self) -> None:
+        low_dpi = value_secondary_sale(SecondarySaleInputs(
+            nav_m=100.0, fund_age_years=5, dpi_to_date=0.05,
+        ))
+        high_dpi = value_secondary_sale(SecondarySaleInputs(
+            nav_m=100.0, fund_age_years=5, dpi_to_date=1.0,
+        ))
+        self.assertGreater(low_dpi.indicative_discount_bps,
+                            high_dpi.indicative_discount_bps)
+
+    def test_gp_led_can_be_premium(self) -> None:
+        # High projected IRR → premium.
+        a = value_secondary_sale(SecondarySaleInputs(
+            nav_m=100.0, transaction_type="gp_led",
+            remaining_projected_moic_on_unrealized=2.5,
+            remaining_hold_years=4, buyer_required_irr=0.12,
+        ))
+        # Premium = negative bps (above NAV).
+        self.assertLess(a.indicative_discount_bps, 0)
+        self.assertGreater(a.implied_price_m, 100.0)
+
+    def test_gp_led_below_hurdle_discount(self) -> None:
+        a = value_secondary_sale(SecondarySaleInputs(
+            nav_m=100.0, transaction_type="gp_led",
+            remaining_projected_moic_on_unrealized=1.2,
+            remaining_hold_years=4, buyer_required_irr=0.15,
+        ))
+        self.assertGreater(a.indicative_discount_bps, 0)
+
+    def test_unsupported_type_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            value_secondary_sale(SecondarySaleInputs(
+                nav_m=100.0, transaction_type="unknown"))
+
+    def test_drivers_populated(self) -> None:
+        a = value_secondary_sale(SecondarySaleInputs(
+            nav_m=100.0, fund_age_years=11))
+        self.assertGreater(len(a.discount_drivers), 0)
+
+    def test_markdown_renders(self) -> None:
+        a = value_secondary_sale(SecondarySaleInputs(nav_m=100.0))
+        md = render_secondary_markdown(a)
+        self.assertIn("# Secondary sale valuation", md)
+        self.assertIn("Discount / premium drivers", md)
+
+    def test_json(self) -> None:
+        import json
+        a = value_secondary_sale(SecondarySaleInputs(nav_m=100.0))
+        json.dumps(a.to_dict())
+
+    def test_non_healthcare_base_higher_discount(self) -> None:
+        hc = value_secondary_sale(SecondarySaleInputs(
+            nav_m=100.0, fund_age_years=5, is_healthcare_fund=True))
+        non = value_secondary_sale(SecondarySaleInputs(
+            nav_m=100.0, fund_age_years=5, is_healthcare_fund=False))
+        self.assertGreater(non.indicative_discount_bps,
+                            hc.indicative_discount_bps)
+
+
 if __name__ == "__main__":
     unittest.main()

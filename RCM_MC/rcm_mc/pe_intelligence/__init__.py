@@ -421,6 +421,12 @@ from .carve_out_risks import (
     assess_carve_out,
     render_carve_out_markdown,
 )
+from .secondary_sale_valuation import (
+    SecondarySaleAssessment,
+    SecondarySaleInputs,
+    render_secondary_markdown,
+    value_secondary_sale,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1177,4 +1183,8 @@ __all__ = [
     "CarveOutRisk",
     "assess_carve_out",
     "render_carve_out_markdown",
+    "SecondarySaleAssessment",
+    "SecondarySaleInputs",
+    "render_secondary_markdown",
+    "value_secondary_sale",
 ]
