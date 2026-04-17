@@ -1044,6 +1044,33 @@ class TestCorpusCLI(unittest.TestCase):
         self.assertGreater(len(data), 0)
         self.assertIn("scenario", data[0])
 
+    def test_cli_score_report(self):
+        out = self._run(["score"])
+        self.assertIn("Deal Quality Report", out)
+        self.assertIn("Grade", out)
+
+    def test_cli_score_single_deal(self):
+        out = self._run(["score", "--deal-id", "seed_001"])
+        self.assertIn("Grade", out)
+        self.assertIn("Score", out)
+
+    def test_cli_score_json(self):
+        out = self._run(["score", "--json"])
+        data = json.loads(out)
+        self.assertIsInstance(data, list)
+        self.assertGreater(len(data), 0)
+        first = data[0]
+        self.assertIn("total_score", first)
+        self.assertIn("grade", first)
+
+    def test_cli_score_single_json(self):
+        out = self._run(["score", "--deal-id", "seed_007", "--json"])
+        data = json.loads(out)
+        self.assertIn("total_score", data)
+        self.assertBetween = lambda v, lo, hi: self.assertTrue(lo <= v <= hi)
+        self.assertGreaterEqual(data["total_score"], 0)
+        self.assertLessEqual(data["total_score"], 100)
+
 
 # ===========================================================================
 # Payer Sensitivity

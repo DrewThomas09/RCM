@@ -182,6 +182,35 @@ def _cmd_full_ingest(args: argparse.Namespace) -> None:
         print(_json.dumps(report.as_dict(), indent=2, default=str))
 
 
+def _cmd_score(args: argparse.Namespace) -> None:
+    from .deal_scorer import score_corpus, quality_report, score_deal
+    corpus = DealsCorpus(args.db)
+
+    if args.deal_id:
+        deal = corpus.get(args.deal_id)
+        if not deal:
+            print(f"Deal '{args.deal_id}' not found.")
+            sys.exit(1)
+        s = score_deal(deal)
+        if args.json:
+            print(json.dumps(s.as_dict(), indent=2))
+        else:
+            print(f"\n  {s.deal_name}")
+            print(f"  Grade: {s.grade}   Score: {s.total_score:.0f}/100")
+            print(f"    Completeness : {s.completeness_score:.0f}/40")
+            print(f"    Credibility  : {s.credibility_score:.0f}/40")
+            print(f"    Source       : {s.source_score:.0f}/20")
+            if s.issues:
+                print(f"  Issues:")
+                for iss in s.issues:
+                    print(f"    • {iss}")
+    elif args.json:
+        scores = score_corpus(args.db)
+        print(json.dumps([s.as_dict() for s in scores], indent=2))
+    else:
+        print(quality_report(args.db))
+
+
 def _cmd_sensitivity(args: argparse.Namespace) -> None:
     corpus = DealsCorpus(args.db)
     deal = corpus.get(args.deal_id)
@@ -253,6 +282,12 @@ def main(argv=None) -> None:
     sv.add_argument("--deal-id", required=True, dest="deal_id")
     sv.add_argument("--json", action="store_true")
 
+    # score
+    sc = sub.add_parser("score", help="Score deal data quality (0-100, A-F grade)")
+    sc.add_argument("--deal-id", default=None, dest="deal_id",
+                    help="Score a single deal; omit for full corpus report")
+    sc.add_argument("--json", action="store_true")
+
     args = parser.parse_args(argv)
 
     dispatch = {
@@ -264,6 +299,7 @@ def main(argv=None) -> None:
         "rates": _cmd_rates,
         "intel": _cmd_intel,
         "sensitivity": _cmd_sensitivity,
+        "score": _cmd_score,
     }
     dispatch[args.cmd](args)
 
