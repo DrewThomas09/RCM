@@ -749,6 +749,13 @@ from .cycle_timing_pricing_check import (
     check_cycle_pricing,
     render_cycle_pricing_markdown,
 )
+from .one_hundred_day_plan_from_packet import (
+    Plan as AutoPlan,
+    PlanAction as AutoPlanAction,
+    PlanContext as AutoPlanContext,
+    generate_plan as generate_plan_from_packet,
+    render_plan_markdown as render_auto_plan_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1751,4 +1758,9 @@ __all__ = [
     "CyclePricingReport",
     "check_cycle_pricing",
     "render_cycle_pricing_markdown",
+    "AutoPlan",
+    "AutoPlanAction",
+    "AutoPlanContext",
+    "generate_plan_from_packet",
+    "render_auto_plan_markdown",
 ]

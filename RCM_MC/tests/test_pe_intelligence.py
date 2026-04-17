@@ -13460,5 +13460,153 @@ class TestCycleTimingPricingCheck(unittest.TestCase):
         json.dumps(check_cycle_pricing(CyclePricingInputs()).to_dict())
 
 
+# ── 100-day plan from packet ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    AutoPlan,
+    AutoPlanAction,
+    AutoPlanContext,
+    generate_plan_from_packet,
+    render_auto_plan_markdown,
+)
+
+
+class TestOneHundredDayPlanFromPacket(unittest.TestCase):
+
+    def test_baseline_always_includes_board_and_kpi(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext())
+        workstreams = {a.workstream for a in p.actions}
+        self.assertIn("board", workstreams)
+        self.assertIn("finance", workstreams)
+
+    def test_high_denial_triggers_rcm_blitz(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            current_denial_rate=0.12,
+        ))
+        self.assertTrue(any("denial-reduction blitz" in a.action.lower()
+                             for a in p.actions))
+
+    def test_fca_always_week_1(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            open_fca_exposure=True,
+        ))
+        fca = next(a for a in p.actions
+                    if "fca" in a.action.lower())
+        self.assertEqual(fca.week_latest, 1)
+
+    def test_cdi_absent_triggers_stand_up(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            cdi_program_in_place=False,
+        ))
+        self.assertTrue(any("cdi program" in a.action.lower()
+                             for a in p.actions))
+
+    def test_weak_management_triggers_search(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            management_score_0_100=45,
+            key_role_gaps=["CFO", "CMO"],
+        ))
+        search = next(a for a in p.actions
+                       if "named-search" in a.action.lower())
+        self.assertIn("CFO", search.action)
+
+    def test_high_leverage_no_covenant_lite_triggers_monitor(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            leverage=6.5, has_covenant_lite=False,
+        ))
+        self.assertTrue(any("covenant headroom monitor"
+                             in a.action.lower() for a in p.actions))
+
+    def test_mip_not_finalized_week_2(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            has_mip_finalized=False,
+        ))
+        mip = next(a for a in p.actions
+                    if "mip" in a.action.lower())
+        self.assertEqual(mip.week_latest, 2)
+
+    def test_many_erps_triggers_consolidation(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            erps_count=4,
+        ))
+        self.assertTrue(any("erp consolidation" in a.action.lower()
+                             for a in p.actions))
+
+    def test_low_integration_triggers_sprint(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            integration_pct=0.60,
+        ))
+        self.assertTrue(any("integration sprint" in a.action.lower()
+                             for a in p.actions))
+
+    def test_top_payer_concentrated_triggers_contingency(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            top_payer_share=0.50,
+        ))
+        self.assertTrue(any("top-payer contingency" in a.action.lower()
+                             for a in p.actions))
+
+    def test_action_cap_at_15(self) -> None:
+        # Worst-case deal — all rules fire.
+        p = generate_plan_from_packet(AutoPlanContext(
+            current_denial_rate=0.15,
+            days_in_ar=65,
+            top_payer_share=0.55,
+            has_covenant_lite=False,
+            leverage=7.0, interest_coverage=1.8,
+            integration_pct=0.5,
+            cdi_program_in_place=False,
+            erps_count=5,
+            management_score_0_100=40,
+            c_suite_tenure_avg_years=1.0,
+            key_role_gaps=["CFO", "CMO", "COO"],
+            open_fca_exposure=True,
+            cms_survey_issues=True,
+            commercial_payer_pct=0.30,
+            has_mip_finalized=False,
+        ))
+        self.assertLessEqual(len(p.actions), 15)
+
+    def test_sorted_by_week(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            current_denial_rate=0.12,
+            open_fca_exposure=True,
+            has_mip_finalized=False,
+        ))
+        weeks = [a.week_latest for a in p.actions]
+        self.assertEqual(weeks, sorted(weeks))
+
+    def test_thin_plan_partner_note(self) -> None:
+        p = generate_plan_from_packet(AutoPlanContext(
+            has_mip_finalized=True,
+            current_denial_rate=0.06,
+            days_in_ar=40,
+            top_payer_share=0.20,
+            leverage=4.5,
+            cdi_program_in_place=True,
+            integration_pct=1.0,
+            management_score_0_100=80,
+            c_suite_tenure_avg_years=6.0,
+            key_role_gaps=[],
+            open_fca_exposure=False,
+            cms_survey_issues=False,
+            commercial_payer_pct=0.60,
+            erps_count=1,
+        ))
+        # Clean deal → only the two baseline actions fire.
+        self.assertLess(len(p.actions), 6)
+        self.assertIn("thin plan", p.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_auto_plan_markdown(generate_plan_from_packet(
+            AutoPlanContext(current_denial_rate=0.12)))
+        self.assertIn("# 100-day plan", md)
+        self.assertIn("Wk", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(generate_plan_from_packet(AutoPlanContext()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
