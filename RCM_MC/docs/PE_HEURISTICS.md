@@ -2302,7 +2302,37 @@ story, tax tells structure story.
 
 ---
 
-## 111. Change log
+## 111. Working capital peer band (`working_capital_peer_band.py`)
+
+Per-subsector DSO / DPO / DIO bands with cash-release estimation
+against the favorable end of each band:
+
+- Specialty practice: DSO 35-55, DPO 30-45, DIO 5-15.
+- Hospital: DSO 45-60, DPO 30-45, DIO 30-45.
+- Outpatient / ASC: DSO 40-50, DPO 30-45, DIO 15-25.
+- DME: DSO 55-85, DPO 40-60, DIO 45-60.
+- Home health: DSO 50-70, DPO 30-45, DIO 0-5.
+
+Directionality:
+
+- **DSO ↓** favorable (collect faster).
+- **DPO ↑** favorable (pay later).
+- **DIO ↓** favorable (less inventory on hand).
+
+Cash release = days above / below favorable threshold × daily
+revenue (DSO) or daily COGS (DPO / DIO). CCC = DSO + DIO - DPO.
+
+Partner note:
+
+- 2+ unfavorable levers → "high priority lever, $XM opportunity".
+- 1 unfavorable → "weak link: [component]".
+- In-band with residual ≥ $5M → "in-band but opportunity to
+  best-in-class".
+- All favorable → "preserve, don't optimize further".
+
+---
+
+## 112. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2491,3 +2521,6 @@ story, tax tells structure story.
 - **2026-04-17** — Added `roic_decomposition.py` (§110) —
   DuPont margin/turnover + 5-subsector peer bands. Full
   inventory: 108 modules, 1,070 pe_intelligence unit tests.
+- **2026-04-17** — Added `working_capital_peer_band.py` (§111) —
+  DSO/DPO/DIO per-subsector bands + CCC + cash release. Full
+  inventory: 109 modules, 1,080 pe_intelligence unit tests.
