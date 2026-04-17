@@ -70,6 +70,11 @@ from .ic_memo import (
     render_markdown as render_ic_memo_markdown,
     render_text as render_ic_memo_text,
 )
+from .bear_book import (
+    BEAR_PATTERNS,
+    BearPatternHit,
+    scan_bear_book,
+)
 from .deal_archetype import (
     ArchetypeContext,
     ArchetypeHit,
@@ -148,4 +153,7 @@ __all__ = [
     "ArchetypeHit",
     "classify_archetypes",
     "primary_archetype",
+    "BEAR_PATTERNS",
+    "BearPatternHit",
+    "scan_bear_book",
 ]

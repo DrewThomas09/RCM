@@ -1629,5 +1629,120 @@ class TestArchetypeMulti(unittest.TestCase):
                 self.assertTrue(h.playbook)
 
 
+# ── Bear book ────────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    BEAR_PATTERNS,
+    BearPatternHit,
+    scan_bear_book,
+)
+
+
+class TestBearBookPatterns(unittest.TestCase):
+
+    def test_rollup_integration_failure_fires(self) -> None:
+        ctx = HeuristicContext(
+            ebitda_m=30.0,
+            margin_expansion_bps_per_yr=400,
+            leverage_multiple=6.0,
+            hold_years=3.5,
+        )
+        hits = scan_bear_book(ctx)
+        self.assertTrue(any(h.pattern_id == "rollup_integration_failure" for h in hits))
+
+    def test_medicare_margin_compression_fires(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.55, "commercial": 0.30, "medicaid": 0.15},
+            margin_expansion_bps_per_yr=250,
+        )
+        hits = scan_bear_book(ctx)
+        self.assertTrue(any(h.pattern_id == "medicare_margin_compression" for h in hits))
+
+    def test_carveout_tsa_sprawl_fires(self) -> None:
+        ctx = HeuristicContext(
+            data_coverage_pct=0.50,
+            days_in_ar=70,
+            has_case_mix_data=False,
+        )
+        hits = scan_bear_book(ctx)
+        self.assertTrue(any(h.pattern_id == "carveout_tsa_sprawl" for h in hits))
+
+    def test_turnaround_without_operator(self) -> None:
+        ctx = HeuristicContext(
+            ebitda_margin=0.02,
+            margin_expansion_bps_per_yr=350,
+        )
+        hits = scan_bear_book(ctx)
+        self.assertTrue(any(h.pattern_id == "turnaround_without_operator" for h in hits))
+
+    def test_covid_tailwind_fade_fires(self) -> None:
+        ctx = HeuristicContext(
+            hospital_type="acute_care",
+            ebitda_margin=0.16,
+            exit_multiple=11.0,
+        )
+        hits = scan_bear_book(ctx)
+        self.assertTrue(any(h.pattern_id == "covid_tailwind_fade" for h in hits))
+
+    def test_high_leverage_thin_coverage_fires(self) -> None:
+        ctx = HeuristicContext(
+            leverage_multiple=6.5,
+            covenant_headroom_pct=0.10,
+        )
+        hits = scan_bear_book(ctx)
+        self.assertTrue(any(h.pattern_id == "high_leverage_thin_coverage" for h in hits))
+
+    def test_vbc_priced_as_ffs_fires(self) -> None:
+        ctx = HeuristicContext(
+            deal_structure="capitation",
+            revenue_growth_pct_per_yr=8.0,
+        )
+        hits = scan_bear_book(ctx)
+        self.assertTrue(any(h.pattern_id == "vbc_priced_as_ffs" for h in hits))
+
+    def test_rural_single_payer_cliff_fires(self) -> None:
+        ctx = HeuristicContext(
+            hospital_type="critical_access",
+            payer_mix={"medicare": 0.65, "medicaid": 0.25, "commercial": 0.10},
+        )
+        hits = scan_bear_book(ctx)
+        self.assertTrue(any(h.pattern_id == "rural_single_payer_cliff" for h in hits))
+
+    def test_empty_context_no_patterns(self) -> None:
+        ctx = HeuristicContext()
+        hits = scan_bear_book(ctx)
+        self.assertEqual(hits, [])
+
+    def test_results_sorted_by_confidence(self) -> None:
+        ctx = HeuristicContext(
+            hospital_type="acute_care", ebitda_margin=0.18, exit_multiple=12.0,
+            leverage_multiple=6.5, covenant_headroom_pct=0.08,
+        )
+        hits = scan_bear_book(ctx)
+        self.assertGreaterEqual(len(hits), 2)
+        confs = [h.confidence for h in hits]
+        self.assertEqual(confs, sorted(confs, reverse=True))
+
+    def test_bear_hit_to_dict(self) -> None:
+        ctx = HeuristicContext(
+            leverage_multiple=6.5,
+            covenant_headroom_pct=0.10,
+        )
+        hits = scan_bear_book(ctx)
+        d = hits[0].to_dict()
+        self.assertIn("pattern_id", d)
+        self.assertIn("failure_mode", d)
+        self.assertIn("partner_voice", d)
+
+    def test_min_confidence_filter(self) -> None:
+        ctx = HeuristicContext(
+            ebitda_m=20.0,
+            margin_expansion_bps_per_yr=400,
+        )
+        low_bar = scan_bear_book(ctx, min_confidence=0.20)
+        high_bar = scan_bear_book(ctx, min_confidence=0.80)
+        self.assertGreaterEqual(len(low_bar), len(high_bar))
+
+
 if __name__ == "__main__":
     unittest.main()
