@@ -9526,5 +9526,149 @@ class TestStaffingPipelineAnalyzer(unittest.TestCase):
         json.dumps(rep.to_dict())
 
 
+# ── M&A integration scoreboard ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    INTEGRATION_DIMENSION_WEIGHTS,
+    BoltOnInputs,
+    BoltOnScore,
+    IntegrationScoreboard,
+    build_scoreboard,
+    render_scoreboard_markdown,
+    score_bolton,
+)
+
+
+class TestMAIntegrationScoreboard(unittest.TestCase):
+
+    def test_on_schedule_bolton_high_score(self) -> None:
+        b = BoltOnInputs(
+            name="AlphaClinic", close_date="2025-01-01",
+            months_since_close=9, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=20.0,
+            it_cutover_pct=0.55, billing_conversion_pct=0.55,
+            synergy_target_m=5.0, synergy_realized_m=2.5,
+            customer_retention_pct=0.95, employee_retention_pct=0.90,
+            brand_migration_pct=0.50,
+        )
+        s = score_bolton(b)
+        self.assertGreaterEqual(s.health_0_100, 80)
+
+    def test_behind_schedule_bolton_lower_score(self) -> None:
+        b = BoltOnInputs(
+            name="BehindCo", close_date="2024-01-01",
+            months_since_close=15, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=20.0,
+            it_cutover_pct=0.30, billing_conversion_pct=0.30,
+            synergy_realized_m=0.0, synergy_target_m=5.0,
+            customer_retention_pct=0.75,
+        )
+        s = score_bolton(b)
+        self.assertLess(s.health_0_100, 70)
+        self.assertTrue(len(s.red_flags) > 0)
+
+    def test_customer_churn_red_flag(self) -> None:
+        b = BoltOnInputs(
+            name="ChurnyCo", close_date="2025-01-01",
+            months_since_close=6, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=20.0,
+            customer_retention_pct=0.80,
+            it_cutover_pct=0.3, billing_conversion_pct=0.3,
+            synergy_realized_m=2.0, synergy_target_m=5.0,
+        )
+        s = score_bolton(b)
+        self.assertTrue(any("Customer retention" in r for r in s.red_flags))
+
+    def test_past_deadline_incomplete_red_flag(self) -> None:
+        b = BoltOnInputs(
+            name="LateCo", close_date="2024-01-01",
+            months_since_close=24, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=20.0,
+            it_cutover_pct=0.80, billing_conversion_pct=0.80,
+            customer_retention_pct=0.98,
+        )
+        s = score_bolton(b)
+        self.assertTrue(any("Target complete-by" in r for r in s.red_flags))
+
+    def test_scoreboard_weighted_average(self) -> None:
+        big = BoltOnInputs(
+            name="Big", close_date="2025-01-01",
+            months_since_close=9, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=100.0,
+            it_cutover_pct=0.50, billing_conversion_pct=0.50,
+            synergy_realized_m=2.5, synergy_target_m=5.0,
+            customer_retention_pct=0.95, employee_retention_pct=0.90,
+        )
+        small = BoltOnInputs(
+            name="Small", close_date="2025-01-01",
+            months_since_close=9, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=1.0,
+            it_cutover_pct=0.0, billing_conversion_pct=0.0,
+            customer_retention_pct=0.5, employee_retention_pct=0.5,
+        )
+        sb = build_scoreboard([big, small])
+        # Small deal weighted lightly — platform should still be relatively high.
+        self.assertGreater(sb.platform_health, 70)
+
+    def test_laggards_below_threshold(self) -> None:
+        bad = BoltOnInputs(
+            name="WorstCo", close_date="2024-01-01",
+            months_since_close=18, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=10.0,
+            it_cutover_pct=0.20, billing_conversion_pct=0.20,
+            synergy_target_m=5.0, synergy_realized_m=0.5,
+            customer_retention_pct=0.70, employee_retention_pct=0.60,
+        )
+        sb = build_scoreboard([bad], laggard_threshold=70)
+        self.assertIn("WorstCo", sb.laggard_names)
+
+    def test_empty_scoreboard(self) -> None:
+        sb = build_scoreboard([])
+        self.assertEqual(sb.platform_health, 0)
+        self.assertIn("No bolt-ons", sb.partner_note)
+
+    def test_weak_platform_note(self) -> None:
+        bad = BoltOnInputs(
+            name="A", close_date="2024-01-01",
+            months_since_close=18, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=50.0,
+            customer_retention_pct=0.50, employee_retention_pct=0.50,
+        )
+        bad2 = BoltOnInputs(
+            name="B", close_date="2024-01-01",
+            months_since_close=18, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=50.0,
+            customer_retention_pct=0.50, employee_retention_pct=0.50,
+        )
+        sb = build_scoreboard([bad, bad2])
+        self.assertIn("weak", sb.partner_note.lower())
+
+    def test_dimension_weights_sum_to_one(self) -> None:
+        total = sum(INTEGRATION_DIMENSION_WEIGHTS.values())
+        self.assertAlmostEqual(total, 1.0, places=2)
+
+    def test_markdown_renders(self) -> None:
+        good = BoltOnInputs(
+            name="AlphaCo", close_date="2025-01-01",
+            months_since_close=9, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=20.0,
+            it_cutover_pct=0.5, billing_conversion_pct=0.5,
+            customer_retention_pct=0.95, employee_retention_pct=0.90,
+        )
+        sb = build_scoreboard([good])
+        md = render_scoreboard_markdown(sb)
+        self.assertIn("M&A integration scoreboard", md)
+        self.assertIn("AlphaCo", md)
+
+    def test_json(self) -> None:
+        import json
+        good = BoltOnInputs(
+            name="A", close_date="2025-01-01",
+            months_since_close=9, target_months_to_complete=18,
+            platform_revenue_m=100.0, bolton_revenue_m=20.0,
+        )
+        json.dumps(build_scoreboard([good]).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

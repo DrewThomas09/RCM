@@ -463,6 +463,15 @@ from .staffing_pipeline_analyzer import (
     analyze_staffing,
     render_staffing_markdown,
 )
+from .ma_integration_scoreboard import (
+    DIMENSION_WEIGHTS as INTEGRATION_DIMENSION_WEIGHTS,
+    BoltOnInputs,
+    BoltOnScore,
+    IntegrationScoreboard,
+    build_scoreboard,
+    render_scoreboard_markdown,
+    score_bolton,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1251,4 +1260,11 @@ __all__ = [
     "StaffingReport",
     "analyze_staffing",
     "render_staffing_markdown",
+    "INTEGRATION_DIMENSION_WEIGHTS",
+    "BoltOnInputs",
+    "BoltOnScore",
+    "IntegrationScoreboard",
+    "build_scoreboard",
+    "render_scoreboard_markdown",
+    "score_bolton",
 ]
