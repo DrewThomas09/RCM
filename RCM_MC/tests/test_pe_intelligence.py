@@ -6952,5 +6952,42 @@ class TestDeepDiveHeuristics(unittest.TestCase):
         self.assertGreaterEqual(len(DEEP_DIVE_FIELDS), 5)
 
 
+# ── Master bundle ─────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    build_master_bundle,
+    bundle_index,
+)
+
+
+class TestMasterBundle(unittest.TestCase):
+
+    def test_bundle_has_all_artifacts(self) -> None:
+        packet = _make_packet_dict()
+        bundle = build_master_bundle(packet)
+        expected = {
+            "review", "ic_memo", "lp_pitch", "memo_formats",
+            "analyst_cheatsheet", "board_memo",
+            "hundred_day_plan_markdown", "narrative_styles",
+            "extra_heuristics", "extra_red_flags",
+            "deepdive_heuristics", "bear_patterns",
+            "regulatory_items", "scenario_narrative",
+            "partner_discussion", "audit_trail",
+        }
+        actual = set(bundle_index(bundle))
+        self.assertEqual(actual, expected)
+
+    def test_bundle_json_serializable(self) -> None:
+        import json
+        packet = _make_packet_dict()
+        bundle = build_master_bundle(packet)
+        json.dumps(bundle, default=str)
+
+    def test_bundle_guards_failures(self) -> None:
+        # Empty packet should still produce a bundle without raising.
+        bundle = build_master_bundle({})
+        self.assertIn("review", bundle)
+
+
 if __name__ == "__main__":
     unittest.main()

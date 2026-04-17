@@ -246,6 +246,10 @@ from .deepdive_heuristics import (
     DEEP_DIVE_FIELDS,
     run_deepdive_heuristics,
 )
+from .master_bundle import (
+    build_master_bundle,
+    bundle_index,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -879,4 +883,6 @@ __all__ = [
     "screen_esg",
     "DEEP_DIVE_FIELDS",
     "run_deepdive_heuristics",
+    "build_master_bundle",
+    "bundle_index",
 ]
