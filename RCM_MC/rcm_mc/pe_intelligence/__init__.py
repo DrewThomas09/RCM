@@ -136,6 +136,14 @@ from .extra_bands import (
     check_rvu_per_provider,
     run_extra_bands,
 )
+from .memo_formats import (
+    render_all_formats as render_all_memo_formats,
+    render_deck_bullets,
+    render_email as render_memo_email,
+    render_one_pager,
+    render_pdf_ready,
+    render_slack as render_memo_slack,
+)
 from .narrative_styles import (
     ALL_NARRATIVE_STYLES,
     compose_analyst_brief,
@@ -681,4 +689,10 @@ __all__ = [
     "compose_skeptic_view",
     "compose_styled_narrative",
     "compose_three_sentence",
+    "render_all_memo_formats",
+    "render_deck_bullets",
+    "render_memo_email",
+    "render_one_pager",
+    "render_pdf_ready",
+    "render_memo_slack",
 ]

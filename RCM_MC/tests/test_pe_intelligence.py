@@ -5540,5 +5540,60 @@ class TestNarrativeStyles(unittest.TestCase):
         self.assertEqual(out["style"], "analyst_brief")
 
 
+# ── Memo formats ───────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    render_all_memo_formats,
+    render_deck_bullets,
+    render_memo_email,
+    render_one_pager,
+    render_pdf_ready,
+    render_memo_slack,
+)
+
+
+class TestMemoFormats(unittest.TestCase):
+
+    def _review(self):
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30, revenue_m=250,
+            ebitda_margin=0.10, hospital_type="acute_care",
+            exit_multiple=9.0, entry_multiple=8.0, hold_years=5,
+            projected_irr=0.20, projected_moic=2.3,
+            denial_improvement_bps_per_yr=350,
+        )
+        return partner_review_from_context(ctx, deal_name="Demo Hospital")
+
+    def test_one_pager_has_headline_and_rec(self) -> None:
+        md = render_one_pager(self._review())
+        self.assertIn("Recommendation", md)
+        self.assertIn("Demo Hospital", md)
+
+    def test_slack_format_uses_stars(self) -> None:
+        txt = render_memo_slack(self._review())
+        self.assertIn("*", txt)  # slack bold markers
+        self.assertIn("Demo Hospital", txt)
+
+    def test_email_returns_subject_and_body(self) -> None:
+        email = render_memo_email(self._review())
+        self.assertIn("subject", email)
+        self.assertIn("body", email)
+        self.assertIn("Demo Hospital", email["subject"])
+
+    def test_pdf_ready_includes_pagebreaks(self) -> None:
+        md = render_pdf_ready(self._review())
+        self.assertIn("\\pagebreak", md)
+
+    def test_deck_bullets_is_short_list(self) -> None:
+        bullets = render_deck_bullets(self._review())
+        self.assertIsInstance(bullets, list)
+        self.assertLessEqual(len(bullets), 10)
+
+    def test_all_formats_dispatcher(self) -> None:
+        out = render_all_memo_formats(self._review())
+        for key in ("one_pager", "slack", "email", "pdf_ready", "deck_bullets"):
+            self.assertIn(key, out)
+
+
 if __name__ == "__main__":
     unittest.main()
