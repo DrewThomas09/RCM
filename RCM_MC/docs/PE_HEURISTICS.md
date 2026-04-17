@@ -2190,7 +2190,33 @@ diversification priority, renewal squeeze, at-will conversion, etc.
 
 ---
 
-## 107. Change log
+## 107. Geographic reach analyzer (`geographic_reach_analyzer.py`)
+
+Multi-state healthcare carries compounding complexity. Module
+outputs:
+
+- **State HHI** on revenue.
+- **Top-state share** — single-state risk.
+- **CPOM exposure** — revenue in restrictive corporate-practice
+  states (CA, NY, TX, IL, NJ, OH, MI, WA, CO, IA, OR).
+- **Density** — sites/state (operations leverage).
+- **Expansion whitespace** — favorable states not yet entered
+  (FL, TX, AZ, NC, TN, GA, SC, NV, UT, ID) minus present states.
+
+Findings fire for:
+
+- **High** — top state ≥ 60%; or CPOM exposure ≥ 50%.
+- **Medium** — top state ≥ 40%; density < 2 sites/state across
+  ≥ 5 states; ≥ 20 states (compliance overhead).
+- **Info** — top state < 30% AND ≥ 10 states (diversified);
+  density ≥ 5 sites/state (strong leverage).
+
+Partner tone escalates with 2+ high findings (material risk,
+reprice); otherwise "healthy", "standard", or "watch one finding".
+
+---
+
+## 108. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2367,3 +2393,6 @@ diversification priority, renewal squeeze, at-will conversion, etc.
 - **2026-04-17** — Added `customer_concentration_drilldown.py` (§106)
   — top-N + HHI + churn probability + revenue-at-risk + cross-sell.
   Full inventory: 104 modules, 1,028 pe_intelligence unit tests.
+- **2026-04-17** — Added `geographic_reach_analyzer.py` (§107) —
+  state HHI + CPOM exposure + density + expansion whitespace.
+  Full inventory: 105 modules, 1,040 pe_intelligence unit tests.
