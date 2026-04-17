@@ -1807,6 +1807,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/cms-sources":
             from .ui.data_public.cms_sources_page import render_cms_sources
             return self._send_html(render_cms_sources())
+        if path == "/market-rates":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            group_by = _qs.get("group_by", ["sector"])[0]
+            sector = _qs.get("sector", [""])[0]
+            payer = _qs.get("payer", [""])[0]
+            region = _qs.get("region", [""])[0]
+            from .ui.data_public.market_rates_page import render_market_rates
+            return self._send_html(render_market_rates(group_by=group_by, sector_filter=sector, payer_filter=payer, region_filter=region))
         if path == "/query":
             return self._route_deal_query()
         if path == "/benchmarks":
