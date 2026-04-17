@@ -96,8 +96,10 @@ class TestDealsCorpus(unittest.TestCase):
     def test_seed_inserts_expected_count(self):
         from rcm_mc.data_public.extended_seed_2 import EXTENDED_SEED_DEALS_2
         from rcm_mc.data_public.extended_seed_3 import EXTENDED_SEED_DEALS_3
+        from rcm_mc.data_public.extended_seed_4 import EXTENDED_SEED_DEALS_4
         n = self.corpus.seed(skip_if_populated=False)
-        expected = len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2) + len(EXTENDED_SEED_DEALS_3)
+        expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
+                    + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -2478,7 +2480,7 @@ class TestExtendedSeed3(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_95_deals(self):
+    def test_seed_loads_95_or_more_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
         self.assertGreaterEqual(stats["total"], 95)
@@ -2519,6 +2521,60 @@ class TestExtendedSeed3(unittest.TestCase):
     def test_all_seed_3_have_required_fields(self):
         from rcm_mc.data_public.extended_seed_3 import EXTENDED_SEED_DEALS_3
         for deal in EXTENDED_SEED_DEALS_3:
+            self.assertIn("source_id", deal)
+            self.assertIn("deal_name", deal)
+            self.assertEqual(deal["source"], "seed")
+
+
+# ===========================================================================
+# Extended Seed Batch 4 (seeds 096-115)
+# ===========================================================================
+
+class TestExtendedSeed4(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def test_seed_loads_115_deals(self):
+        corpus = DealsCorpus(self.db_path)
+        stats = corpus.stats()
+        self.assertGreaterEqual(stats["total"], 115)
+
+    def test_seed_096_teladoc_present(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_096")
+        self.assertIsNotNone(deal)
+        self.assertIn("Teladoc", deal["deal_name"])
+
+    def test_seed_101_oak_street_high_ev(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_101")
+        self.assertIsNotNone(deal)
+        self.assertGreater(deal["ev_mm"], 10000)
+
+    def test_seed_115_modivcare_high_medicaid(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_115")
+        self.assertIsNotNone(deal)
+        payer = deal.get("payer_mix")
+        if isinstance(payer, str):
+            import json as _json
+            payer = _json.loads(payer)
+        if isinstance(payer, dict):
+            self.assertGreater(payer.get("medicaid", 0), 0.5)
+
+    def test_extended_seed_4_list_length(self):
+        from rcm_mc.data_public.extended_seed_4 import EXTENDED_SEED_DEALS_4
+        self.assertEqual(len(EXTENDED_SEED_DEALS_4), 20)
+
+    def test_all_seed_4_have_required_fields(self):
+        from rcm_mc.data_public.extended_seed_4 import EXTENDED_SEED_DEALS_4
+        for deal in EXTENDED_SEED_DEALS_4:
             self.assertIn("source_id", deal)
             self.assertIn("deal_name", deal)
             self.assertEqual(deal["source"], "seed")
