@@ -1489,5 +1489,133 @@ class TestComparables(unittest.TestCase):
         self.assertIn("similarity_score", data[0])
 
 
+# ===========================================================================
+# Vintage Analysis
+# ===========================================================================
+
+class TestVintageAnalysis(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def test_get_all_vintages_returns_dict(self):
+        from rcm_mc.data_public.vintage_analysis import get_all_vintages
+        vintages = get_all_vintages(self.db_path)
+        self.assertIsInstance(vintages, dict)
+        self.assertGreater(len(vintages), 3)
+
+    def test_vintage_keys_are_years(self):
+        from rcm_mc.data_public.vintage_analysis import get_all_vintages
+        vintages = get_all_vintages(self.db_path)
+        for yr in vintages:
+            self.assertIsInstance(yr, int)
+            self.assertGreater(yr, 1990)
+            self.assertLess(yr, 2030)
+
+    def test_vintage_stats_fields(self):
+        from rcm_mc.data_public.vintage_analysis import get_all_vintages
+        vintages = get_all_vintages(self.db_path)
+        vs = next(iter(vintages.values()))
+        self.assertIsNotNone(vs.cycle)
+        self.assertGreater(vs.n_deals, 0)
+
+    def test_get_vintage_stats_specific_year(self):
+        from rcm_mc.data_public.vintage_analysis import get_vintage_stats
+        vs = get_vintage_stats(2006, self.db_path)
+        self.assertEqual(vs.year, 2006)
+        self.assertIn(vs.cycle, ("pre_gfc", "post_gfc", "aca_era", "covid_era", "post_covid"))
+
+    def test_macro_cycle_summary(self):
+        from rcm_mc.data_public.vintage_analysis import macro_cycle_summary
+        cycles = macro_cycle_summary(self.db_path)
+        self.assertIsInstance(cycles, dict)
+        # corpus covers several cycles
+        self.assertGreater(len(cycles), 1)
+        for name, vs in cycles.items():
+            self.assertIsInstance(vs.n_deals, int)
+
+    def test_vintage_report_structure(self):
+        from rcm_mc.data_public.vintage_analysis import vintage_report
+        report = vintage_report(self.db_path)
+        self.assertIsNotNone(report.by_year)
+        self.assertIsNotNone(report.by_cycle)
+        self.assertIsNotNone(report.overall)
+        self.assertGreater(report.overall.n_deals, 30)
+
+    def test_vintage_report_best_worst(self):
+        from rcm_mc.data_public.vintage_analysis import vintage_report
+        report = vintage_report(self.db_path)
+        if report.best_vintage_moic is not None:
+            self.assertIsInstance(report.best_vintage_moic, int)
+        if report.worst_vintage_moic is not None:
+            self.assertIsInstance(report.worst_vintage_moic, int)
+
+    def test_vintage_as_dict_serialisable(self):
+        from rcm_mc.data_public.vintage_analysis import vintage_report
+        report = vintage_report(self.db_path)
+        d = report.as_dict()
+        json.dumps(d)  # must not raise
+
+    def test_entry_timing_assessment(self):
+        from rcm_mc.data_public.vintage_analysis import entry_timing_assessment
+        result = entry_timing_assessment(2019, self.db_path)
+        self.assertIn("cycle", result)
+        self.assertIn("relative_performance", result)
+        self.assertIn("timing_notes", result)
+        self.assertIsInstance(result["timing_notes"], list)
+
+    def test_entry_timing_post_covid(self):
+        from rcm_mc.data_public.vintage_analysis import entry_timing_assessment
+        result = entry_timing_assessment(2024, self.db_path)
+        self.assertEqual(result["cycle"], "post_covid")
+        # Should have a note about rising rates or MA headwinds
+        combined = " ".join(result["timing_notes"]).lower()
+        self.assertIn("post-covid", combined)
+
+    def test_vintage_table_string(self):
+        from rcm_mc.data_public.vintage_analysis import vintage_table
+        out = vintage_table(self.db_path)
+        self.assertIn("Vintage Year", out)
+        self.assertIn("Cycle", out)
+        self.assertIsInstance(out, str)
+
+    def test_cli_vintage_table(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "vintage"])
+        out = buf.getvalue()
+        self.assertIn("Vintage Year", out)
+
+    def test_cli_vintage_json(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "vintage", "--json"])
+        data = json.loads(buf.getvalue())
+        self.assertIn("by_year", data)
+        self.assertIn("overall", data)
+
+    def test_cli_vintage_timing(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "vintage", "--year", "2018", "--timing"])
+        out = buf.getvalue()
+        self.assertIn("2018", out)
+        self.assertIn("Cycle", out)
+
+
 if __name__ == "__main__":
     unittest.main()

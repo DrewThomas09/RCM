@@ -182,6 +182,38 @@ def _cmd_full_ingest(args: argparse.Namespace) -> None:
         print(_json.dumps(report.as_dict(), indent=2, default=str))
 
 
+def _cmd_vintage(args: argparse.Namespace) -> None:
+    from .vintage_analysis import (
+        vintage_table, vintage_report, entry_timing_assessment, get_vintage_stats
+    )
+    if args.year:
+        if args.timing:
+            result = entry_timing_assessment(args.year, args.db)
+            if args.json:
+                print(json.dumps(result, indent=2, default=str))
+            else:
+                print(f"\nEntry Timing Assessment — {args.year}")
+                print(f"  Cycle       : {result['cycle_label']} ({result['cycle']})")
+                print(f"  Cycle MOIC P50  : {result['cycle_moic_p50']:.2f}x" if result.get("cycle_moic_p50") else "  Cycle MOIC P50  : —")
+                print(f"  Overall MOIC P50: {result['overall_moic_p50']:.2f}x" if result.get("overall_moic_p50") else "  Overall MOIC P50: —")
+                print(f"  Relative    : {result['relative_performance']}")
+                for note in result["timing_notes"]:
+                    print(f"    • {note}")
+        else:
+            vs = get_vintage_stats(args.year, args.db)
+            if args.json:
+                print(json.dumps(vs.as_dict(), indent=2))
+            else:
+                print(f"\nVintage {args.year} ({vs.cycle}): {vs.n_deals} deals")
+                if vs.moic_p50:
+                    print(f"  MOIC P50={vs.moic_p50:.2f}x  IRR P50={vs.irr_p50:.1%}" if vs.irr_p50 else f"  MOIC P50={vs.moic_p50:.2f}x")
+    elif args.json:
+        report = vintage_report(args.db)
+        print(json.dumps(report.as_dict(), indent=2, default=str))
+    else:
+        print(vintage_table(args.db))
+
+
 def _cmd_comps(args: argparse.Namespace) -> None:
     from .comparables import find_comparables, comparables_table
     corpus = DealsCorpus(args.db)
@@ -298,6 +330,13 @@ def main(argv=None) -> None:
     sv.add_argument("--deal-id", required=True, dest="deal_id")
     sv.add_argument("--json", action="store_true")
 
+    # vintage
+    vt = sub.add_parser("vintage", help="Vintage year return analysis and entry timing")
+    vt.add_argument("--year", type=int, default=None, help="Specific entry year to analyse")
+    vt.add_argument("--timing", action="store_true",
+                    help="Show entry timing assessment (requires --year)")
+    vt.add_argument("--json", action="store_true")
+
     # comps
     cp = sub.add_parser("comps", help="Find comparable closed deals from the corpus")
     cp.add_argument("--deal-id", required=True, dest="deal_id")
@@ -323,6 +362,7 @@ def main(argv=None) -> None:
         "sensitivity": _cmd_sensitivity,
         "score": _cmd_score,
         "comps": _cmd_comps,
+        "vintage": _cmd_vintage,
     }
     dispatch[args.cmd](args)
 

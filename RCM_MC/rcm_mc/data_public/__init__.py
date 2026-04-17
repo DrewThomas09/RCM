@@ -32,6 +32,14 @@ from .payer_sensitivity import run_all_scenarios, sensitivity_table
 from .deal_scorer import score_deal, score_corpus, quality_report
 from .ingest_pipeline import run_full_ingest
 from .comparables import find_comparables, find_by_metrics, comparables_table
+from .vintage_analysis import (
+    get_vintage_stats,
+    get_all_vintages,
+    macro_cycle_summary,
+    vintage_report,
+    entry_timing_assessment,
+    vintage_table,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -56,4 +64,10 @@ __all__ = [
     "find_comparables",
     "find_by_metrics",
     "comparables_table",
+    "get_vintage_stats",
+    "get_all_vintages",
+    "macro_cycle_summary",
+    "vintage_report",
+    "entry_timing_assessment",
+    "vintage_table",
 ]
