@@ -5083,5 +5083,160 @@ class TestCmsDataQuality(unittest.TestCase):
         self.assertEqual(s["declining_risk_count"], 1)
 
 
+class TestCorpusHealthCheck(unittest.TestCase):
+    """Tests for corpus_health_check module."""
+
+    def _make_deal(self, **kwargs):
+        base = {
+            "source_id": "test_001",
+            "deal_name": "Test Hospital",
+            "source": "seed",
+            "year": 2018,
+            "ev_mm": 200.0,
+            "realized_moic": 2.5,
+            "realized_irr": 0.22,
+            "hold_years": 4.5,
+            "payer_mix": {"medicare": 0.40, "medicaid": 0.25, "commercial": 0.30, "self_pay": 0.05},
+        }
+        base.update(kwargs)
+        return base
+
+    def test_clean_corpus_no_issues(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deals = [self._make_deal(source_id="x001"), self._make_deal(source_id="x002")]
+        result = check_corpus(deals)
+        self.assertEqual(result.total_deals, 2)
+        self.assertEqual(result.error_count, 0)
+        self.assertEqual(result.warning_count, 0)
+        self.assertEqual(result.health_score, 1.0)
+        self.assertEqual(result.clean_deal_count, 2)
+
+    def test_missing_source_id_error(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deal = self._make_deal()
+        deal["source_id"] = ""
+        result = check_corpus([deal])
+        self.assertGreater(result.error_count, 0)
+        checks = [i.check for i in result.issues]
+        self.assertIn("required_fields", checks)
+
+    def test_missing_deal_name_error(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deal = self._make_deal()
+        deal["deal_name"] = ""
+        result = check_corpus([deal])
+        self.assertGreater(result.error_count, 0)
+
+    def test_duplicate_source_ids(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        d1 = self._make_deal(source_id="dup_001")
+        d2 = self._make_deal(source_id="dup_001")
+        result = check_corpus([d1, d2])
+        self.assertIn("dup_001", result.duplicate_source_ids)
+        self.assertGreater(result.error_count, 0)
+        self.assertLess(result.health_score, 1.0)
+
+    def test_payer_mix_sum_warning(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deal = self._make_deal(payer_mix={"medicare": 0.50, "medicaid": 0.50, "commercial": 0.20})
+        result = check_corpus([deal])
+        warnings = [i for i in result.issues if i.check == "payer_mix_sum"]
+        self.assertEqual(len(warnings), 1)
+        self.assertEqual(warnings[0].severity, "warning")
+
+    def test_payer_mix_string_json(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        import json
+        pm = json.dumps({"medicare": 0.40, "medicaid": 0.25, "commercial": 0.30, "self_pay": 0.05})
+        deal = self._make_deal(payer_mix=pm)
+        result = check_corpus([deal])
+        payer_issues = [i for i in result.issues if i.check == "payer_mix_sum"]
+        self.assertEqual(len(payer_issues), 0)
+
+    def test_moic_irr_direction_error(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deal = self._make_deal(realized_moic=2.5, realized_irr=-0.10, hold_years=4.0)
+        result = check_corpus([deal])
+        direction_issues = [i for i in result.issues if i.check == "moic_irr_direction"]
+        self.assertTrue(any(i.severity == "error" for i in direction_issues))
+
+    def test_moic_irr_consistency_warning(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        # MOIC=3.0 over 5 years implies ~24.6% IRR; report 5% → big gap
+        deal = self._make_deal(realized_moic=3.0, realized_irr=0.05, hold_years=5.0)
+        result = check_corpus([deal])
+        consistency = [i for i in result.issues if i.check == "moic_irr_consistency"]
+        self.assertGreater(len(consistency), 0)
+
+    def test_negative_moic_error(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deal = self._make_deal(realized_moic=-0.5)
+        result = check_corpus([deal])
+        moic_issues = [i for i in result.issues if i.check == "nonneg_moic"]
+        self.assertEqual(len(moic_issues), 1)
+        self.assertEqual(moic_issues[0].severity, "error")
+
+    def test_ev_range_warning_small(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deal = self._make_deal(ev_mm=2.0)
+        result = check_corpus([deal])
+        ev_issues = [i for i in result.issues if i.check == "ev_range"]
+        self.assertGreater(len(ev_issues), 0)
+
+    def test_ev_range_info_large(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deal = self._make_deal(ev_mm=60000.0)
+        result = check_corpus([deal])
+        ev_issues = [i for i in result.issues if i.check == "ev_range"]
+        self.assertEqual(ev_issues[0].severity, "info")
+
+    def test_year_out_of_range_warning(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deal = self._make_deal(year=1985)
+        result = check_corpus([deal])
+        yr_issues = [i for i in result.issues if i.check == "year_range"]
+        self.assertEqual(len(yr_issues), 1)
+        self.assertEqual(yr_issues[0].severity, "warning")
+
+    def test_hold_years_out_of_range(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deal = self._make_deal(hold_years=20.0, realized_moic=None, realized_irr=None)
+        result = check_corpus([deal])
+        hold_issues = [i for i in result.issues if i.check == "hold_years_range"]
+        self.assertEqual(len(hold_issues), 1)
+
+    def test_health_score_decreases_with_errors(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus
+        deals = [self._make_deal(source_id=f"e{i:03d}", realized_moic=-0.5) for i in range(10)]
+        result = check_corpus(deals)
+        self.assertLess(result.health_score, 1.0)
+
+    def test_health_check_text_format(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus, health_check_text
+        deals = [self._make_deal(source_id="t001")]
+        result = check_corpus(deals)
+        text = health_check_text(result)
+        self.assertIn("Corpus Health Check Report", text)
+        self.assertIn("Total deals", text)
+        self.assertIn("Health score", text)
+
+    def test_check_corpus_real_corpus(self):
+        from rcm_mc.data_public.corpus_health_check import check_corpus, health_check_text
+        from rcm_mc.data_public.deals_corpus import DealsCorpus
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "corpus.db")
+            c = DealsCorpus(db)
+            c.seed()
+            deals = c.list()
+        result = check_corpus(deals)
+        self.assertGreaterEqual(result.total_deals, 195)
+        self.assertEqual(len(result.duplicate_source_ids), 0)
+        # real corpus should score well
+        self.assertGreater(result.health_score, 0.5)
+        text = health_check_text(result)
+        self.assertIn("Corpus Health Check Report", text)
+
+
 if __name__ == "__main__":
     unittest.main()

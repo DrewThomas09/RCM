@@ -222,6 +222,13 @@ from .portfolio_analytics import (
     loss_rate,
     home_run_rate,
 )
+from .corpus_health_check import (
+    DealIssue,
+    HealthCheckResult,
+    check_corpus,
+    health_check_text,
+    run_corpus_health_check,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -391,4 +398,9 @@ __all__ = [
     "scorecard_text",
     "loss_rate",
     "home_run_rate",
+    "DealIssue",
+    "HealthCheckResult",
+    "check_corpus",
+    "health_check_text",
+    "run_corpus_health_check",
 ]
