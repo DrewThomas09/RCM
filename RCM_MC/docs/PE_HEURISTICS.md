@@ -1865,7 +1865,31 @@ a cap-table-aware number that respects concentration limits.
 
 ---
 
-## 95. Change log
+## 95. Sensitivity grid (`sensitivity_grid.py`)
+
+One-variable-at-a-time MOIC / IRR sweeps. Supported variables:
+entry_multiple, exit_multiple, ebitda_growth, leverage_multiple,
+hold_years. Produces a grid of ``SensitivityPoint`` rows and
+summary stats (base MOIC, swing, deltas vs base).
+
+Directionality partners should confirm the model reproduces:
+
+- **Exit multiple ↑ → MOIC ↑** (linear in exit EV).
+- **Entry multiple ↑ → MOIC ↓** (same exit, bigger entry equity).
+- **EBITDA growth ↑ → MOIC ↑** (compounds over hold).
+- **Leverage ↑ → MOIC ↑** (for a winner — equity base shrinks).
+  But leverage also amplifies bear cases; this grid shows magnitude
+  only, pair with ``stress_test`` for downside.
+- **Hold years ↑ → MOIC ↑** (more EBITDA growth compounds) but
+  IRR may flatten or decline since the exit is further out.
+
+``tornado(base, sweeps)`` runs several sweeps and returns them
+sorted by MOIC swing — the widest swing is the variable the deal
+is most sensitive to. That's where diligence time goes.
+
+---
+
+## 96. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2005,3 +2029,6 @@ a cap-table-aware number that respects concentration limits.
 - **2026-04-17** — Added `coinvest_sizing.py` (§94) — fund
   commitment + concentration cap + LP demand coverage. Full
   inventory: 92 modules, 900 pe_intelligence unit tests.
+- **2026-04-17** — Added `sensitivity_grid.py` (§95) — one-variable
+  MOIC / IRR sweeps + tornado. Full inventory: 93 modules, 915
+  pe_intelligence unit tests.
