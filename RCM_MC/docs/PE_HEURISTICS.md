@@ -3466,7 +3466,45 @@ IC will go.
 
 ---
 
-## 146. Change log
+## 146. Healthcare regulatory calendar (`healthcare_regulatory_calendar.py`)
+
+**Partner statement:** "What's happening in 2026-2028 that a
+deal in this subsector needs to model?"
+
+12 named events (partner-approximated, refreshed against actual
+docket before IC):
+
+- **2026 Q1** — physician fee schedule cut (-2.8%, affects
+  specialty practice / staffing / ASC).
+- **2026 Q1** — sequestration 2% baseline (all subsectors);
+  4% extension risk 2027-2028.
+- **2026 Q3** — site-neutral HOPD phase 2 (-6% impact on
+  affected services).
+- **2026 Q1** — home-health PDGM recalibration (-3.5% on routine).
+- **2026 Q1** — MA risk-adjustment v28 (-1.5% pass-through).
+- **2026 Q2** — NSA IDR cycle (-4%, staffing only).
+- **2026 Q2** — state Medicaid redetermination wave 2 (-2.5%
+  safety-net).
+- **2026 Q1** — ASC covered-procedures expansion (**+5% tailwind**).
+- **2026 Q2** — OIG / AKS enforcement bump (litigation exposure,
+  not rate).
+- **2027 Q1** — 340B program integrity rule (-2%).
+- **2027 Q3** — MedPAC hospital IPPS advisory (-1.5%).
+- **2028 Q1** — commercial rate transparency enforcement (-1%).
+
+`events_for_deal(subsector, hold_start, hold_years)` returns the
+events landing mid-hold, sorted by date, with cumulative
+revenue-impact % and partner note:
+
+- Cumulative ≤ -10% → "regulatory-headwind subsector; don't rely
+  on rate growth."
+- -5 to -10% → "model flat real rates in base case."
+- Net tailwind → "confirm ramp assumptions against regulatory
+  timeline."
+
+---
+
+## 147. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3788,3 +3826,7 @@ IC will go.
   crown-jewel cross-module synthesizer: one recommendation + 3
   reasons + 3 flip-the-call signals + chair opening line. Full
   inventory: 143 modules, 1,447 pe_intelligence unit tests.
+- **2026-04-17** — Added `healthcare_regulatory_calendar.py`
+  (§146) — 12 named 2026-2028 regulatory events with subsector +
+  $ impact; events-for-deal selector by hold period. Full
+  inventory: 144 modules, 1,459 pe_intelligence unit tests.
