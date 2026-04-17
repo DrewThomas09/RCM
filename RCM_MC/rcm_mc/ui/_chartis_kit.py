@@ -86,6 +86,7 @@ _CORPUS_NAV = [
     {"label": "Red Flag Detect.","href": "/rcm-red-flags",   "icon": "▣"},
     {"label": "Hold Optimizer", "href": "/hold-optimizer",   "icon": "▦"},
     {"label": "Payer Stress",   "href": "/payer-stress",     "icon": "▣"},
+    {"label": "Multiple Decomp","href": "/multiple-decomp",  "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

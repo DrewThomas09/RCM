@@ -122,6 +122,7 @@ NAV_ITEMS = [
     {"label": "RCM Red Flags", "href": "/rcm-red-flags", "icon": "chart"},
     {"label": "Hold Optimizer", "href": "/hold-optimizer", "icon": "chart"},
     {"label": "Payer Stress", "href": "/payer-stress", "icon": "chart"},
+    {"label": "Multiple Decomp", "href": "/multiple-decomp", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
