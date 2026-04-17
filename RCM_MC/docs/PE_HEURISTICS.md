@@ -2777,7 +2777,47 @@ partners actually do before IC.
 
 ---
 
-## 127. Change log
+## 127. Cross-module connective tissue (`cross_module_connective_tissue.py`)
+
+**The partner brain connects dots, not lists.** A denial rate
+change has coding implications which have CMI implications which
+change the Medicare bridge. This module does that explicitly:
+takes a `SignalBundle` tagged with outputs from several modules
+and emits **ConnectedInsight** narratives that only fire when
+signals co-occur.
+
+Inaugural detectors:
+
+- **envision_thesis_confirmed** — historical:envision match +
+  OON revenue ≥ 20% + pricing power < 50. Partner voice: "this
+  is the Envision failure, not a mitigated version." Pass.
+- **rollup_earnings_fiction** — archetype:roll_up + integration
+  < 70% + pro-forma add-backs > 15%. "Exit buyer underwrites
+  what is actually integrated."
+- **peak_cycle_covenant_breach_likely** — peak cycle + leverage
+  ≥ 6.5x + NOT covenant_lite. "Garden-variety 10% EBITDA miss
+  trips the coverage test."
+- **cmi_uplift_cash_squeeze** — CMI uplift + denial rate ≥ 10% +
+  DAR ≥ 55. "Cash gets WORSE before it gets better."
+- **medicare_heavy_no_defense** — Medicare ≥ 40% + pricing power
+  < 40 + OBBBA combined ≥ 10%. "No base-case defense; thesis is
+  a rate-policy bet."
+- **bear_book_plus_reasonableness_stacked** — 2+ bear hits + 2+
+  out-of-band reasonableness cells. "Stacked-risk signature."
+
+Each insight includes the literal signals that triggered it, so
+the partner can interrogate the logic. This is the first module
+where the *reasoning* is the product; all other modules feed into
+this one.
+
+**Worked example:** Envision-pattern match + OON 30% + pricing
+power 35/100 produces not "three separate warnings" but one
+connected partner-voice insight: *"this is exactly the failed
+thesis, pass."*
+
+---
+
+## 128. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3021,3 +3061,7 @@ partners actually do before IC.
   IC narrators (skeptic/optimist/md_numbers/operating_partner/
   lp_facing) producing the same deal from five perspectives.
   Full inventory: 124 modules, 1,241 pe_intelligence unit tests.
+- **2026-04-17** — Added `cross_module_connective_tissue.py`
+  (§127) — named insights emitted when signals from multiple
+  modules co-occur; first module where reasoning IS the product.
+  Full inventory: 125 modules, 1,253 pe_intelligence unit tests.
