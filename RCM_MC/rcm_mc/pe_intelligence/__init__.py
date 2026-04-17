@@ -445,6 +445,14 @@ from .physician_compensation_benchmark import (
     benchmark_physician_comp,
     render_physician_comp_markdown,
 )
+from .ebitda_normalization import (
+    CATEGORY_ORDER as EBITDA_CATEGORY_ORDER,
+    EBITDAItem,
+    HAIRCUTS as EBITDA_HAIRCUTS,
+    NormalizationResult,
+    normalize_ebitda,
+    render_normalization_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1219,4 +1227,10 @@ __all__ = [
     "PhysicianCompReport",
     "benchmark_physician_comp",
     "render_physician_comp_markdown",
+    "EBITDA_CATEGORY_ORDER",
+    "EBITDA_HAIRCUTS",
+    "EBITDAItem",
+    "NormalizationResult",
+    "normalize_ebitda",
+    "render_normalization_markdown",
 ]

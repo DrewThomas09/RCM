@@ -9321,5 +9321,95 @@ class TestPhysicianCompensationBenchmark(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── EBITDA normalization ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    EBITDA_CATEGORY_ORDER,
+    EBITDA_HAIRCUTS,
+    EBITDAItem,
+    NormalizationResult,
+    normalize_ebitda,
+    render_normalization_markdown,
+)
+
+
+class TestEBITDANormalization(unittest.TestCase):
+
+    def test_defensible_full_credit(self) -> None:
+        items = [EBITDAItem("CEO severance", 2.0, "defensible",
+                              "One-time event")]
+        r = normalize_ebitda(100.0, items)
+        self.assertAlmostEqual(r.partner_adjusted_ebitda_m, 102.0, places=1)
+        self.assertAlmostEqual(r.rejected_m, 0.0, places=1)
+
+    def test_aggressive_gets_partial_credit(self) -> None:
+        items = [EBITDAItem("Projected synergies", 10.0, "aggressive",
+                              "Not realized")]
+        r = normalize_ebitda(100.0, items)
+        # 30% credit = 3.0 → partner adj = 103.0.
+        self.assertAlmostEqual(r.partner_adjusted_ebitda_m, 103.0, places=1)
+        self.assertAlmostEqual(r.rejected_m, 7.0, places=1)
+
+    def test_reject_zero_credit(self) -> None:
+        items = [EBITDAItem("Sponsor management fees", 5.0, "reject",
+                              "Already in P&L")]
+        r = normalize_ebitda(100.0, items)
+        self.assertAlmostEqual(r.partner_adjusted_ebitda_m, 100.0, places=1)
+        self.assertAlmostEqual(r.rejected_m, 5.0, places=1)
+
+    def test_defensible_with_support_haircut(self) -> None:
+        items = [EBITDAItem("Signed synergy", 10.0,
+                              "defensible_with_support")]
+        r = normalize_ebitda(100.0, items)
+        # 70% credit.
+        self.assertAlmostEqual(r.partner_adjusted_ebitda_m, 107.0, places=1)
+
+    def test_seller_vs_partner_bridge(self) -> None:
+        items = [
+            EBITDAItem("One-time legal", 1.0, "defensible"),
+            EBITDAItem("Pipeline revenue", 8.0, "aggressive"),
+            EBITDAItem("Sponsor fees", 3.0, "reject"),
+        ]
+        r = normalize_ebitda(100.0, items)
+        self.assertAlmostEqual(r.seller_adjusted_ebitda_m, 112.0, places=1)
+        # Partner: 1.0 + 0.3*8.0 + 0 = 3.4 → 103.4.
+        self.assertAlmostEqual(r.partner_adjusted_ebitda_m, 103.4, places=1)
+
+    def test_large_haircut_renegotiation_note(self) -> None:
+        items = [EBITDAItem("Projected synergy", 50.0, "aggressive")]
+        r = normalize_ebitda(100.0, items)
+        self.assertIn("renegotiate", r.partner_note.lower())
+
+    def test_supportable_bridge_note(self) -> None:
+        items = [EBITDAItem("One-time fire", 2.0, "defensible")]
+        r = normalize_ebitda(100.0, items)
+        self.assertIn("supportable", r.partner_note.lower())
+
+    def test_unknown_category_defaults_aggressive(self) -> None:
+        items = [EBITDAItem("Mystery add-back", 10.0, "unknown_cat")]
+        r = normalize_ebitda(100.0, items)
+        # Should get aggressive treatment (30% credit).
+        self.assertAlmostEqual(r.partner_adjusted_ebitda_m, 103.0, places=1)
+
+    def test_haircut_table_structure(self) -> None:
+        self.assertEqual(EBITDA_HAIRCUTS["defensible"], 1.00)
+        self.assertEqual(EBITDA_HAIRCUTS["reject"], 0.0)
+
+    def test_markdown_renders(self) -> None:
+        items = [
+            EBITDAItem("CEO severance", 2.0, "defensible"),
+            EBITDAItem("Sponsor fees", 3.0, "reject"),
+        ]
+        md = render_normalization_markdown(normalize_ebitda(100.0, items))
+        self.assertIn("# EBITDA normalization", md)
+        self.assertIn("CEO severance", md)
+        self.assertIn("Sponsor fees", md)
+
+    def test_json(self) -> None:
+        import json
+        items = [EBITDAItem("x", 1.0, "defensible")]
+        json.dumps(normalize_ebitda(100.0, items).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
