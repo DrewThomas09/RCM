@@ -116,6 +116,7 @@ NAV_ITEMS = [
     {"label": "Payer Rate Trends", "href": "/payer-rate-trends", "icon": "chart"},
     {"label": "Entry Multiple", "href": "/entry-multiple", "icon": "chart"},
     {"label": "Corpus Coverage", "href": "/corpus-coverage", "icon": "doc"},
+    {"label": "Find Comps", "href": "/find-comps", "icon": "filter"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},

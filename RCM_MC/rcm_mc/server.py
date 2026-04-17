@@ -1941,6 +1941,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/corpus-coverage":
             from .ui.data_public.corpus_coverage_page import render_corpus_coverage
             return self._send_html(render_corpus_coverage())
+        if path == "/find-comps":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.find_comps_page import render_find_comps
+            return self._send_html(render_find_comps(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())

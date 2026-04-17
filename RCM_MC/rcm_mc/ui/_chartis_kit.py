@@ -80,6 +80,7 @@ _CORPUS_NAV = [
     {"label": "Payer Trends",   "href": "/payer-rate-trends", "icon": "▣"},
     {"label": "Entry Multiple", "href": "/entry-multiple",    "icon": "▦"},
     {"label": "Coverage Report","href": "/corpus-coverage",   "icon": "▣"},
+    {"label": "Find Comps",     "href": "/find-comps",         "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
