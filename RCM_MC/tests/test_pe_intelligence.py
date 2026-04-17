@@ -7712,5 +7712,81 @@ class TestNegotiationPosition(unittest.TestCase):
         json.dumps(pos.to_dict())
 
 
+# ── LOI drafter ────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    LOIDraft,
+    compose_loi,
+    render_loi_markdown,
+)
+
+
+class TestLOIDrafter(unittest.TestCase):
+
+    def _review(self):
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30, hospital_type="acute_care",
+            entry_multiple=8.5, exit_multiple=9.0, hold_years=5,
+        )
+        return partner_review_from_context(ctx, deal_id="LOI1",
+                                            deal_name="LOI Target")
+
+    def test_draft_has_all_sections(self) -> None:
+        review = self._review()
+        pos = derive_negotiation_position(review, seller_ask_multiple=9.5)
+        draft = compose_loi(review, pos)
+        self.assertTrue(draft.headline.startswith("Letter of Intent"))
+        self.assertTrue(draft.purchase_price_summary)
+        self.assertGreater(len(draft.diligence_scope), 0)
+        self.assertGreater(len(draft.management_terms), 0)
+        self.assertGreater(len(draft.closing_conditions), 0)
+
+    def test_exclusivity_tracks_recommendation(self) -> None:
+        review = self._review()
+        pos = derive_negotiation_position(review)
+        draft = compose_loi(review, pos)
+        self.assertGreater(draft.exclusivity_days, 0)
+
+    def test_pass_review_zero_exclusivity(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=700)
+        review = partner_review_from_context(ctx, deal_id="LOI2")
+        pos = derive_negotiation_position(review)
+        draft = compose_loi(review, pos)
+        self.assertEqual(draft.exclusivity_days, 0)
+
+    def test_diligence_scope_adds_items_from_flags(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"bcbs": 0.55, "medicare": 0.30, "medicaid": 0.15},
+            ebitda_m=30, hospital_type="acute_care",
+        )
+        # Trigger payer_concentration_risk via a dominant single payer.
+        review = partner_review_from_context(ctx)
+        pos = derive_negotiation_position(review)
+        draft = compose_loi(review, pos)
+        self.assertGreaterEqual(len(draft.diligence_scope), 4)
+
+    def test_binding_sections_present(self) -> None:
+        review = self._review()
+        pos = derive_negotiation_position(review)
+        draft = compose_loi(review, pos)
+        self.assertIn("Exclusivity", draft.binding_sections)
+        self.assertIn("Confidentiality", draft.binding_sections)
+
+    def test_markdown_renders(self) -> None:
+        review = self._review()
+        pos = derive_negotiation_position(review)
+        draft = compose_loi(review, pos)
+        md = render_loi_markdown(draft)
+        self.assertIn("Letter of Intent", md)
+        self.assertIn("Exclusivity", md)
+
+    def test_draft_json(self) -> None:
+        import json
+        review = self._review()
+        pos = derive_negotiation_position(review)
+        draft = compose_loi(review, pos)
+        json.dumps(draft.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

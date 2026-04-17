@@ -308,6 +308,11 @@ from .negotiation_position import (
     derive_negotiation_position,
     render_negotiation_markdown,
 )
+from .loi_drafter import (
+    LOIDraft,
+    compose_loi,
+    render_loi_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -983,4 +988,7 @@ __all__ = [
     "NegotiationPosition",
     "derive_negotiation_position",
     "render_negotiation_markdown",
+    "LOIDraft",
+    "compose_loi",
+    "render_loi_markdown",
 ]
