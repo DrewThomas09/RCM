@@ -13230,5 +13230,133 @@ class TestExitStoryGenerator(unittest.TestCase):
         )).to_dict())
 
 
+# ── Partner scorecard ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ScorecardCheck,
+    ScorecardInputs,
+    ScorecardReport,
+    render_scorecard_markdown,
+    run_scorecard,
+)
+
+
+class TestPartnerScorecard(unittest.TestCase):
+
+    def test_clean_deal_all_pass(self) -> None:
+        r = run_scorecard(ScorecardInputs(
+            deal_name="CleanCo",
+            ebitda_m=50.0, fund_min_ebitda_m=15.0,
+            management_score_0_100=75,
+            local_market_share_pct=0.25,
+            ebitda_margin=0.22, peer_median_margin=0.20,
+            cash_conversion=0.85,
+            leverage=5.5, stress_coverage=2.3,
+            has_articulable_exit_story=True,
+            exit_story_credibility_0_100=70,
+            recurring_ebitda_pct=0.92, thesis_coherence_0_100=85,
+        ))
+        self.assertTrue(r.all_pass)
+        self.assertIn("all must-haves pass", r.partner_note.lower())
+
+    def test_sub_threshold_ebitda_fails_scale(self) -> None:
+        r = run_scorecard(ScorecardInputs(
+            deal_name="TinyCo",
+            ebitda_m=5.0, fund_min_ebitda_m=15.0,
+            management_score_0_100=75,
+            local_market_share_pct=0.20,
+            ebitda_margin=0.22, peer_median_margin=0.20,
+            cash_conversion=0.85, leverage=5.0, stress_coverage=2.5,
+            has_articulable_exit_story=True,
+            exit_story_credibility_0_100=70,
+            recurring_ebitda_pct=0.92, thesis_coherence_0_100=85,
+        ))
+        self.assertFalse(r.all_pass)
+        self.assertIn("scale", r.failed_dimensions)
+
+    def test_weak_team_fails(self) -> None:
+        r = run_scorecard(ScorecardInputs(
+            management_score_0_100=40, team_floor=55,
+        ))
+        self.assertIn("team", r.failed_dimensions)
+
+    def test_commodity_market_position_fails(self) -> None:
+        r = run_scorecard(ScorecardInputs(
+            local_market_share_pct=0.03,
+            has_coe_or_exclusive=False,
+            market_floor_share=0.10,
+        ))
+        self.assertIn("market", r.failed_dimensions)
+
+    def test_coe_bypasses_market_share(self) -> None:
+        r = run_scorecard(ScorecardInputs(
+            local_market_share_pct=0.03,
+            has_coe_or_exclusive=True,
+            market_floor_share=0.10,
+            ebitda_m=50.0, management_score_0_100=75,
+            ebitda_margin=0.22, peer_median_margin=0.20,
+            cash_conversion=0.85,
+            leverage=5.0, stress_coverage=2.5,
+            has_articulable_exit_story=True,
+            exit_story_credibility_0_100=70,
+            recurring_ebitda_pct=0.92, thesis_coherence_0_100=85,
+        ))
+        self.assertNotIn("market", r.failed_dimensions)
+
+    def test_covenant_failure(self) -> None:
+        r = run_scorecard(ScorecardInputs(
+            leverage=7.5, stress_coverage=1.1, coverage_floor=1.5,
+        ))
+        self.assertIn("balance_sheet", r.failed_dimensions)
+
+    def test_thin_recurring_fails_thesis_integrity(self) -> None:
+        r = run_scorecard(ScorecardInputs(
+            recurring_ebitda_pct=0.60, recurring_floor=0.80,
+        ))
+        self.assertIn("thesis_integrity", r.failed_dimensions)
+
+    def test_single_fail_partner_discipline(self) -> None:
+        # Only the exit story fails.
+        r = run_scorecard(ScorecardInputs(
+            deal_name="OneFailCo",
+            ebitda_m=50.0,
+            management_score_0_100=75,
+            local_market_share_pct=0.25,
+            ebitda_margin=0.22, peer_median_margin=0.20,
+            cash_conversion=0.85,
+            leverage=5.5, stress_coverage=2.3,
+            has_articulable_exit_story=False,
+            exit_story_credibility_0_100=30,
+            recurring_ebitda_pct=0.92, thesis_coherence_0_100=85,
+        ))
+        self.assertEqual(r.failed_dimensions, ["exit_path"])
+        self.assertIn("one must-have fails", r.partner_note.lower())
+
+    def test_many_fails_hard_pass_note(self) -> None:
+        r = run_scorecard(ScorecardInputs(
+            ebitda_m=5.0, management_score_0_100=40,
+            local_market_share_pct=0.02,
+            ebitda_margin=0.05, cash_conversion=0.30,
+            leverage=9.0, stress_coverage=0.8,
+            has_articulable_exit_story=False,
+            exit_story_credibility_0_100=20,
+            recurring_ebitda_pct=0.50, thesis_coherence_0_100=40,
+        ))
+        self.assertGreater(len(r.failed_dimensions), 4)
+        self.assertIn("do not spend partner time",
+                       r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_scorecard_markdown(run_scorecard(ScorecardInputs(
+            deal_name="SCCo")))
+        self.assertIn("# SCCo — Partner scorecard", md)
+        self.assertIn("Dimension", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(run_scorecard(ScorecardInputs(
+            deal_name="X", ebitda_m=50.0)).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

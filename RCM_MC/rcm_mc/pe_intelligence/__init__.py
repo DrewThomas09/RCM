@@ -735,6 +735,13 @@ from .exit_story_generator import (
     generate_exit_story,
     render_exit_story_markdown,
 )
+from .partner_scorecard import (
+    ScorecardCheck,
+    ScorecardInputs,
+    ScorecardReport,
+    render_scorecard_markdown,
+    run_scorecard,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1727,4 +1734,9 @@ __all__ = [
     "ExitStoryInputs",
     "generate_exit_story",
     "render_exit_story_markdown",
+    "ScorecardCheck",
+    "ScorecardInputs",
+    "ScorecardReport",
+    "render_scorecard_markdown",
+    "run_scorecard",
 ]
