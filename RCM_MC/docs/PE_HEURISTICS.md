@@ -682,7 +682,55 @@ no critical blockers remain.
 
 ---
 
-## 20. Change log
+## 20. Comparative analytics (`comparative_analytics.py`)
+
+Portfolio-level cross-deal comparison helpers:
+
+- `portfolio_concentration(deals)` — EBITDA-weighted sector, state,
+  and payer shares plus top-share highlights.
+- `concentration_warnings(conc)` — partner-voice warnings when
+  sector > 40%, state > 35%, or single payer > 50%.
+- `deal_vs_book(candidate, book)` — per-metric direction (better /
+  worse / same / n/a) for a candidate against book medians.
+- `deal_rank_vs_peers(candidate, peers)` — blended-score ranking
+  (50% IRR, 25% margin, 25% reciprocal leverage).
+- `correlation_risk(candidate, book)` — flag deals likely to co-move
+  (same sector + state, Medicare-heavy + Medicare-heavy).
+
+---
+
+## 21. Module inventory
+
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains:
+
+| Module | Role |
+|--------|------|
+| `reasonableness.py` | IRR / margin / multiple / lever bands (25-cell IRR matrix, 7 hospital-type margin bands, 5 payer-regime multiple ceilings, 7-lever × 3-timeframe realizability) |
+| `heuristics.py` | 19 partner-voice rules of thumb |
+| `red_flags.py` | 10 deal-killer detectors |
+| `bear_book.py` | 8 historical-failure pattern detectors |
+| `valuation_checks.py` | WACC / EV walk / TV share / growth / coverage / concentration |
+| `scenario_stress.py` | 5 mechanical partner stresses |
+| `sector_benchmarks.py` | Peer p25/p50/p75 by healthcare subsector |
+| `regulatory_watch.py` | 15 national/state regulatory items |
+| `deal_archetype.py` | 10-archetype classifier with playbooks |
+| `narrative.py` | Senior-partner-voice IC commentary composer |
+| `partner_review.py` | Main entry — packet → PartnerReview |
+| `ic_memo.py` | Markdown / HTML / plaintext IC-memo renderers |
+| `lp_pitch.py` | LP-facing one-pager with softened tone |
+| `hundred_day_plan.py` | Post-close 4-workstream action plan |
+| `ic_voting.py` | Role-weighted IC vote aggregator with veto + dissent |
+| `diligence_tracker.py` | Workstream board with IC-ready check |
+| `comparative_analytics.py` | Portfolio concentration + deal-vs-book |
+| `exit_readiness.py` | 12-dimension pre-exit readiness score |
+| `payer_math.py` | Payer-mix-aware revenue/EBITDA projection + VBC math |
+
+Every module has corresponding tests in
+`tests/test_pe_intelligence.py`.
+
+---
+
+## 22. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -713,3 +761,6 @@ no critical blockers remain.
   aggregator with veto + dissent tracking) and `diligence_tracker.py`
   (workstream-scoped diligence board with IC-ready check and
   auto-seed from a PartnerReview).
+- **2026-04-17** — Added `comparative_analytics.py` (portfolio
+  concentration, deal-vs-book, ranking, correlation risk).
+  Full inventory: 19 modules, 291+ unit tests.
