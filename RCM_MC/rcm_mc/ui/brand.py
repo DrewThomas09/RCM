@@ -118,6 +118,7 @@ NAV_ITEMS = [
     {"label": "Corpus Coverage", "href": "/corpus-coverage", "icon": "doc"},
     {"label": "Find Comps", "href": "/find-comps", "icon": "filter"},
     {"label": "Sector Momentum", "href": "/sector-momentum", "icon": "chart"},
+    {"label": "GP Benchmarking", "href": "/gp-benchmarking", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},

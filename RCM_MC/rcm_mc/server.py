@@ -1952,6 +1952,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             except (TypeError, ValueError): _years = 5
             from .ui.data_public.sector_momentum_page import render_sector_momentum
             return self._send_html(render_sector_momentum(recent_years=_years))
+        if path == "/gp-benchmarking":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.gp_benchmarking_page import render_gp_benchmarking
+            return self._send_html(render_gp_benchmarking(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
