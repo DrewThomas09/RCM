@@ -735,7 +735,11 @@ class DealsCorpus:
         from .extended_seed_2 import EXTENDED_SEED_DEALS_2
         from .extended_seed_3 import EXTENDED_SEED_DEALS_3
         from .extended_seed_4 import EXTENDED_SEED_DEALS_4
-        all_seed = _SEED_DEALS + EXTENDED_SEED_DEALS + EXTENDED_SEED_DEALS_2 + EXTENDED_SEED_DEALS_3 + EXTENDED_SEED_DEALS_4
+        from .extended_seed_5 import EXTENDED_SEED_DEALS_5
+        all_seed = (
+            _SEED_DEALS + EXTENDED_SEED_DEALS + EXTENDED_SEED_DEALS_2
+            + EXTENDED_SEED_DEALS_3 + EXTENDED_SEED_DEALS_4 + EXTENDED_SEED_DEALS_5
+        )
 
         if skip_if_populated:
             with self._connect() as con:

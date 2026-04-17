@@ -97,9 +97,11 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_2 import EXTENDED_SEED_DEALS_2
         from rcm_mc.data_public.extended_seed_3 import EXTENDED_SEED_DEALS_3
         from rcm_mc.data_public.extended_seed_4 import EXTENDED_SEED_DEALS_4
+        from rcm_mc.data_public.extended_seed_5 import EXTENDED_SEED_DEALS_5
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
-                    + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4))
+                    + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
+                    + len(EXTENDED_SEED_DEALS_5))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -2575,6 +2577,55 @@ class TestExtendedSeed4(unittest.TestCase):
     def test_all_seed_4_have_required_fields(self):
         from rcm_mc.data_public.extended_seed_4 import EXTENDED_SEED_DEALS_4
         for deal in EXTENDED_SEED_DEALS_4:
+            self.assertIn("source_id", deal)
+            self.assertIn("deal_name", deal)
+            self.assertEqual(deal["source"], "seed")
+
+
+# ===========================================================================
+# TestExtendedSeed5
+# ===========================================================================
+
+class TestExtendedSeed5(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def test_seed_loads_135_deals(self):
+        corpus = DealsCorpus(self.db_path)
+        stats = corpus.stats()
+        self.assertGreaterEqual(stats["total"], 135)
+
+    def test_seed_116_acadia_present(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_116")
+        self.assertIsNotNone(deal)
+        self.assertIn("Acadia", deal["deal_name"])
+
+    def test_seed_123_cano_negative_irr(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_123")
+        self.assertIsNotNone(deal)
+        self.assertLess(deal["realized_irr"], 0)
+
+    def test_seed_131_prospect_distressed(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_131")
+        self.assertIsNotNone(deal)
+        self.assertLess(deal["realized_moic"], 0.5)
+
+    def test_extended_seed_5_list_length(self):
+        from rcm_mc.data_public.extended_seed_5 import EXTENDED_SEED_DEALS_5
+        self.assertEqual(len(EXTENDED_SEED_DEALS_5), 20)
+
+    def test_all_seed_5_have_required_fields(self):
+        from rcm_mc.data_public.extended_seed_5 import EXTENDED_SEED_DEALS_5
+        for deal in EXTENDED_SEED_DEALS_5:
             self.assertIn("source_id", deal)
             self.assertIn("deal_name", deal)
             self.assertEqual(deal["source"], "seed")
