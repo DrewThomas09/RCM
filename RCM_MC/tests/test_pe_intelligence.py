@@ -11677,5 +11677,131 @@ class TestArchetypeSubrunners(unittest.TestCase):
                                         acquisitions_per_year=8)).to_dict())
 
 
+# ── Unrealistic-on-its-face ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    FaceInputs,
+    ImplausibilityFinding,
+    ImplausibilityReport,
+    render_implausibility_markdown,
+    scan_unrealistic,
+)
+
+
+class TestUnrealisticOnItsFace(unittest.TestCase):
+    """Partner-voice scenarios: the things a senior catches in 30 seconds."""
+
+    def test_rural_cah_high_irr_worked_example(self) -> None:
+        # The user's exact example: $400M NPR rural CAH projecting 28% IRR.
+        r = scan_unrealistic(FaceInputs(
+            subsector="hospital",
+            revenue_m=400.0, ebitda_m=40.0,
+            is_critical_access=True, is_rural=True,
+            claimed_irr=0.28,
+        ))
+        names = [f.name for f in r.findings]
+        self.assertIn("rural_cah_irr_implausible", names)
+        finding = next(f for f in r.findings
+                        if f.name == "rural_cah_irr_implausible")
+        self.assertEqual(finding.severity, "high")
+        self.assertIn("Pass", finding.partner_note)
+
+    def test_hospital_margin_20_flagged_impossible(self) -> None:
+        r = scan_unrealistic(FaceInputs(
+            subsector="hospital",
+            revenue_m=500.0, ebitda_m=110.0,  # 22% margin
+        ))
+        names = [f.name for f in r.findings]
+        self.assertIn("hospital_margin_impossible", names)
+
+    def test_hospital_8pct_margin_normal(self) -> None:
+        r = scan_unrealistic(FaceInputs(
+            subsector="hospital",
+            revenue_m=500.0, ebitda_m=50.0,  # 10% margin
+        ))
+        self.assertNotIn("hospital_margin_impossible",
+                          [f.name for f in r.findings])
+
+    def test_arithmetic_leverage_coverage_impossible(self) -> None:
+        # 8x leverage at 9.5% → max coverage 1.32x. Claiming 3x is impossible.
+        r = scan_unrealistic(FaceInputs(
+            subsector="specialty_practice",
+            leverage=8.0, claimed_interest_coverage=3.0,
+            interest_rate=0.095,
+        ))
+        names = [f.name for f in r.findings]
+        self.assertIn("leverage_coverage_impossible", names)
+
+    def test_hospital_15pct_growth_flagged(self) -> None:
+        r = scan_unrealistic(FaceInputs(
+            subsector="hospital", revenue_m=500.0, ebitda_m=50.0,
+            claimed_annual_growth=0.15,
+        ))
+        self.assertIn("hospital_growth_implausible",
+                       [f.name for f in r.findings])
+
+    def test_practice_30pct_growth_flagged(self) -> None:
+        r = scan_unrealistic(FaceInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, ebitda_m=25.0,
+            claimed_annual_growth=0.30,
+        ))
+        self.assertIn("practice_growth_implausible",
+                       [f.name for f in r.findings])
+
+    def test_government_heavy_high_margin_flagged(self) -> None:
+        r = scan_unrealistic(FaceInputs(
+            subsector="hospital", revenue_m=500.0, ebitda_m=100.0,
+            medicare_pct=0.50, medicaid_pct=0.25,
+        ))
+        # 75% govt mix with 20% margin.
+        self.assertIn("government_heavy_high_margin_implausible",
+                       [f.name for f in r.findings])
+
+    def test_small_deal_high_irr_flagged(self) -> None:
+        r = scan_unrealistic(FaceInputs(
+            ebitda_m=12.0, claimed_irr=0.35,
+        ))
+        self.assertIn("small_deal_extraordinary_irr",
+                       [f.name for f in r.findings])
+
+    def test_clean_deal_no_findings(self) -> None:
+        r = scan_unrealistic(FaceInputs(
+            subsector="specialty_practice",
+            revenue_m=120.0, ebitda_m=25.0,  # 20% margin
+            commercial_pct=0.60, medicare_pct=0.20, medicaid_pct=0.10,
+            claimed_irr=0.22, claimed_moic=2.5,
+            claimed_annual_growth=0.12,
+            leverage=5.5, claimed_interest_coverage=2.1,
+        ))
+        self.assertEqual(len(r.findings), 0)
+        self.assertIn("no on-its-face", r.overall_partner_note.lower())
+
+    def test_multiple_high_triggers_pass_note(self) -> None:
+        r = scan_unrealistic(FaceInputs(
+            subsector="hospital", revenue_m=400.0, ebitda_m=100.0,
+            is_critical_access=True, claimed_irr=0.30,
+            claimed_annual_growth=0.20,
+            leverage=8.0, claimed_interest_coverage=3.0,
+        ))
+        self.assertIn("pass-before-modeling",
+                       r.overall_partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_implausibility_markdown(scan_unrealistic(FaceInputs(
+            subsector="hospital", revenue_m=400.0, ebitda_m=100.0,
+            is_critical_access=True, claimed_irr=0.28,
+        )))
+        self.assertIn("# Unrealistic-on-its-face scan", md)
+        self.assertIn("rural_cah_irr_implausible", md)
+
+    def test_json(self) -> None:
+        import json
+        r = scan_unrealistic(FaceInputs(subsector="hospital",
+                                          is_critical_access=True,
+                                          claimed_irr=0.28))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

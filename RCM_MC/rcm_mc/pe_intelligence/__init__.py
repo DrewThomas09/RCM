@@ -632,6 +632,13 @@ from .archetype_subrunners import (
     roll_up_review,
     run_archetype,
 )
+from .unrealistic_on_its_face import (
+    FaceInputs,
+    ImplausibilityFinding,
+    ImplausibilityReport,
+    render_implausibility_markdown,
+    scan_unrealistic,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1549,4 +1556,9 @@ __all__ = [
     "render_archetype_subrunner_markdown",
     "roll_up_review",
     "run_archetype",
+    "FaceInputs",
+    "ImplausibilityFinding",
+    "ImplausibilityReport",
+    "render_implausibility_markdown",
+    "scan_unrealistic",
 ]
