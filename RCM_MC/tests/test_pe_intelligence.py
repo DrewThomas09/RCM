@@ -10366,5 +10366,87 @@ class TestHoldPeriodOptimizer(unittest.TestCase):
         json.dumps(optimize_hold(self._inputs()).to_dict())
 
 
+# ── Pricing power diagnostic ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    PRICING_DIMENSION_WEIGHTS,
+    PricingFinding,
+    PricingPowerInputs,
+    PricingPowerReport,
+    assess_pricing_power,
+    render_pricing_power_markdown,
+)
+
+
+class TestPricingPowerDiagnostic(unittest.TestCase):
+
+    def test_strong_profile_high_score(self) -> None:
+        r = assess_pricing_power(PricingPowerInputs(
+            top_payer_share_pct=0.20,
+            local_market_share_pct=0.45,
+            is_center_of_excellence=True,
+            has_exclusive_service_line=True,
+            contract_mix_fee_for_service_pct=0.30,
+            contract_mix_capitation_pct=0.30,
+            contract_mix_value_based_pct=0.40,
+            commercial_payer_pct=0.70,
+            historical_annual_rate_increase_pct=0.06,
+        ))
+        self.assertGreaterEqual(r.overall_score_0_100, 75)
+        self.assertIn("strong", r.partner_note.lower())
+
+    def test_weak_profile_low_score(self) -> None:
+        r = assess_pricing_power(PricingPowerInputs(
+            top_payer_share_pct=0.60,
+            local_market_share_pct=0.05,
+            is_center_of_excellence=False,
+            has_exclusive_service_line=False,
+            contract_mix_fee_for_service_pct=1.0,
+            commercial_payer_pct=0.15,
+            medicaid_pct=0.50,
+            medicare_pct=0.35,
+            historical_annual_rate_increase_pct=0.005,
+        ))
+        self.assertLess(r.overall_score_0_100, 50)
+        self.assertIn("weak", r.partner_note.lower())
+
+    def test_dimensions_all_scored(self) -> None:
+        r = assess_pricing_power(PricingPowerInputs())
+        self.assertEqual(len(r.findings), 6)
+
+    def test_dimension_weights_sum_1(self) -> None:
+        self.assertAlmostEqual(sum(PRICING_DIMENSION_WEIGHTS.values()),
+                                1.0, places=3)
+
+    def test_high_payer_concentration_low_score(self) -> None:
+        r = assess_pricing_power(PricingPowerInputs(
+            top_payer_share_pct=0.70,
+        ))
+        pc = next(f for f in r.findings if f.dimension == "payer_concentration")
+        self.assertLess(pc.score_0_100, 30)
+
+    def test_coe_differentiation_boosts_score(self) -> None:
+        no_coe = assess_pricing_power(PricingPowerInputs(
+            is_center_of_excellence=False,
+            has_exclusive_service_line=False,
+        ))
+        with_coe = assess_pricing_power(PricingPowerInputs(
+            is_center_of_excellence=True,
+            has_exclusive_service_line=True,
+        ))
+        self.assertGreater(with_coe.overall_score_0_100,
+                            no_coe.overall_score_0_100)
+
+    def test_markdown_renders(self) -> None:
+        md = render_pricing_power_markdown(assess_pricing_power(
+            PricingPowerInputs()))
+        self.assertIn("# Pricing power diagnostic", md)
+        self.assertIn("Dimensions", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(assess_pricing_power(PricingPowerInputs()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

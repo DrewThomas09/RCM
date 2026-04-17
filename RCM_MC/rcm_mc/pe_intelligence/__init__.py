@@ -525,6 +525,14 @@ from .hold_period_optimizer import (
     optimize_hold,
     render_hold_markdown,
 )
+from .pricing_power_diagnostic import (
+    DIMENSION_WEIGHTS as PRICING_DIMENSION_WEIGHTS,
+    PricingFinding,
+    PricingPowerInputs,
+    PricingPowerReport,
+    assess_pricing_power,
+    render_pricing_power_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1359,4 +1367,10 @@ __all__ = [
     "HoldYearOutcome",
     "optimize_hold",
     "render_hold_markdown",
+    "PRICING_DIMENSION_WEIGHTS",
+    "PricingFinding",
+    "PricingPowerInputs",
+    "PricingPowerReport",
+    "assess_pricing_power",
+    "render_pricing_power_markdown",
 ]
