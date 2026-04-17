@@ -3033,7 +3033,42 @@ Partner note escalates:
 
 ---
 
-## 134. Change log
+## 134. RCM lever cascade (`rcm_lever_cascade.py`)
+
+**The canonical cross-module reasoning example** the user named:
+*"a denial rate change has coding implications, which have CMI
+implications, which change the Medicare bridge math."*
+
+This module traces the cascade in four named steps:
+
+1. **Denial rate shift** — EBITDA + cash hit. Every +1pp of denial
+   is ~(cases × CMI × base_rate × 1% × 40% appeal-conversion) of
+   write-off. At 10,000 cases × 1.30 CMI × $8K = 104M gross
+   Medicare; +1pp denial → ~$416K EBITDA and ~$1.04M cash.
+2. **Coding remediation / CDI** — if a CDI program is in place,
+   CMI nudges up (e.g. +0.05). Positive EBITDA offset, but
+   partner flags RAC-audit exposure on the upcoded records
+   (21st_century_oncology pattern). If CDI is NOT in place, the
+   lever exists but is not being pulled — 100-day-plan ask.
+3. **Medicare bridge** — net Medicare EBITDA impact flows here;
+   no additional hit but the partner sees the bridge line.
+4. **Working capital** — denial rise extends DAR ~5 days per 1pp;
+   cash pressure compounds. Covenants can trip from the cash side
+   even when EBITDA holds.
+
+Output includes both EBITDA and cash impact per step (kept
+distinct because exit multiple applies to EBITDA but covenant
+coverage watches cash). Partner note:
+
+- Total EBITDA < -$2M → "material; not just a denial blip — it
+  cascades."
+- Modest negative → "watch covenant headroom."
+- Positive → "CDI lift exceeds denial drag; confirm CDI is
+  operating not planned."
+
+---
+
+## 135. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3305,3 +3340,8 @@ Partner note escalates:
   classifies mgmt-vs-packet differences as minor/material/
   contradicted with partner-voice interpretation. Full inventory:
   131 modules, 1,319 pe_intelligence unit tests.
+- **2026-04-17** — Added `rcm_lever_cascade.py` (§134) — the
+  user's canonical cross-module example (denial → coding → CMI
+  → Medicare bridge → working capital) with specific $ EBITDA
+  and cash impacts per step. Full inventory: 132 modules, 1,329
+  pe_intelligence unit tests.
