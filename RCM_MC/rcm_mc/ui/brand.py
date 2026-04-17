@@ -93,6 +93,7 @@ NAV_ITEMS = [
     {"label": "Settings", "href": "/settings", "icon": "gear"},
     {"separator": True, "label": "CORPUS"},
     {"label": "Deals Library", "href": "/deals-library", "icon": "grid"},
+    {"label": "Comparables", "href": "/comparables", "icon": "grid"},
     {"label": "Market Rates", "href": "/market-rates", "icon": "chart"},
     {"label": "Backtest", "href": "/backtest", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},

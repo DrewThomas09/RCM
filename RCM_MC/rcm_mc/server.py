@@ -1827,6 +1827,27 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/exit-timing":
             from .ui.data_public.exit_timing_page import render_exit_timing
             return self._send_html(render_exit_timing())
+        if path == "/comparables":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qf(k, default=None):
+                v = _qs.get(k, [None])[0]
+                if v is None:
+                    return default
+                try:
+                    return float(v)
+                except (ValueError, TypeError):
+                    return default
+            sector = _qs.get("sector", [""])[0]
+            search = _qs.get("search", [""])[0]
+            from .ui.data_public.comparables_page import render_comparables
+            return self._send_html(render_comparables(
+                sector=sector,
+                ev_mm=_qf("ev_mm"),
+                ebitda_mm=_qf("ebitda_mm"),
+                hold_years=_qf("hold_years"),
+                commercial=_qf("commercial"),
+                search=search,
+            ))
         if path == "/query":
             return self._route_deal_query()
         if path == "/benchmarks":
