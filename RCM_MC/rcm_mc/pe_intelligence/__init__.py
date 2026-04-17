@@ -81,6 +81,14 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .thesis_templates import (
+    TEMPLATES as THESIS_TEMPLATES,
+    ThesisTemplate,
+    fill_template,
+    get_template,
+    list_templates,
+    render_template_markdown,
+)
 from .auditor_view import (
     AuditEntry,
     AuditTrail,
@@ -557,4 +565,10 @@ __all__ = [
     "build_audit_trail",
     "filter_entries",
     "summarize_trail",
+    "THESIS_TEMPLATES",
+    "ThesisTemplate",
+    "fill_template",
+    "get_template",
+    "list_templates",
+    "render_template_markdown",
 ]

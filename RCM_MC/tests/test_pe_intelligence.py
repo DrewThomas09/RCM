@@ -4613,5 +4613,64 @@ class TestSummarizeTrail(unittest.TestCase):
         self.assertIn("counts_by_source", summary)
 
 
+# ── Thesis templates ──────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    THESIS_TEMPLATES,
+    ThesisTemplate,
+    fill_template,
+    get_template,
+    list_templates,
+    render_template_markdown,
+)
+
+
+class TestThesisTemplates(unittest.TestCase):
+
+    def test_list_templates_non_empty(self) -> None:
+        templates = list_templates()
+        self.assertGreaterEqual(len(templates), 6)
+        self.assertIn("platform_rollup", templates)
+        self.assertIn("turnaround", templates)
+
+    def test_get_template(self) -> None:
+        t = get_template("platform_rollup")
+        self.assertIsNotNone(t)
+        self.assertEqual(t.name, "Platform + tuck-ins")
+
+    def test_unknown_template_returns_none(self) -> None:
+        self.assertIsNone(get_template("made_up"))
+
+    def test_fill_template(self) -> None:
+        t = get_template("platform_rollup")
+        text = fill_template(t, {
+            "subsector": "ASC", "entry_multiple": 9.0,
+            "n_addons": 4, "hold_years": 5,
+        })
+        self.assertIn("ASC", text)
+        self.assertIn("9.00x", text)
+
+    def test_unknown_placeholder_left_as_is(self) -> None:
+        t = get_template("platform_rollup")
+        text = fill_template(t, {"subsector": "ASC"})
+        # Missing fields preserved as literal placeholders.
+        self.assertIn("{entry_multiple", text)
+
+    def test_render_markdown(self) -> None:
+        t = get_template("turnaround")
+        md = render_template_markdown(t, {
+            "subsector": "Behavioral", "current_margin": 3,
+            "peer_margin": 8, "hold_years": 5,
+        })
+        self.assertIn("# Thesis:", md)
+        self.assertIn("## Bull case", md)
+        self.assertIn("Behavioral", md)
+
+    def test_template_to_dict(self) -> None:
+        import json
+        t = get_template("platform_rollup")
+        json.dumps(t.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
