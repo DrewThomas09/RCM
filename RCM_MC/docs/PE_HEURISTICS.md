@@ -586,7 +586,41 @@ without a full MC run.
 
 ---
 
-## 15. Change log
+## 15. Regulatory watch (`regulatory_watch.py`)
+
+Curated registry of ~15 CMS / OIG / state regulatory items affecting
+healthcare-PE underwriting. Each item:
+
+- `scope` — national or state code (e.g. CA, NY, TX).
+- `status` — proposed, finalized, effective, expired, watch.
+- `affected_subsectors` — acute_care, asc, behavioral, post_acute, etc.
+- `affected_payers` — medicare, medicaid, commercial.
+- `impact_summary` + `partner_relevance`.
+
+Example entries: CMS OPPS site-neutral expansion, 340B payback
+schedule, Medicaid PHE redetermination, No Surprises Act IDR,
+MPFS conversion factor, SNF VBP, IMD waiver expirations, California
+seismic capex, NY Medicaid rate-freeze history, Florida non-expansion,
+Maryland all-payer rate-setting.
+
+`regulatory_items_for_deal(subsector, state, payer_mix)` returns only
+items relevant to a given deal profile.
+
+---
+
+## 16. LP pitch (`lp_pitch.py`)
+
+Renders a PartnerReview as an LP-facing one-pager with softened tone:
+"Do not show this at IC" → "We will re-check this." Output in
+Markdown and HTML.
+
+Sections: opportunity snapshot (table), why this deal, risks and
+mitigations, diligence priorities, strengths vs peer. Disclaimer
+footer included.
+
+---
+
+## 17. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -608,3 +642,6 @@ without a full MC run.
   detectors), `exit_readiness.py` (12-dimension pre-exit checklist
   with 0-100 score), and `payer_math.py` (blended rate growth, revenue
   projection, VBC lives × PMPM math, standard payer scenarios).
+- **2026-04-17** — Added `regulatory_watch.py` (15 national/state
+  regulatory items with deal-level filtering) and `lp_pitch.py`
+  (LP-facing one-pager in Markdown + HTML with softened language).
