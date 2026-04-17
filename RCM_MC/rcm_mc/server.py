@@ -1957,6 +1957,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.gp_benchmarking_page import render_gp_benchmarking
             return self._send_html(render_gp_benchmarking(_qp))
+        if path == "/rcm-red-flags":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.rcm_red_flags_page import render_rcm_red_flags
+            return self._send_html(render_rcm_red_flags(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
