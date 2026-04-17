@@ -73,6 +73,7 @@ _CORPUS_NAV = [
     {"label": "Deal Search",    "href": "/deal-search",        "icon": "▦"},
     {"label": "IC Memo Gen.",   "href": "/corpus-ic-memo",     "icon": "▣"},
     {"label": "Return Attrib.", "href": "/return-attribution", "icon": "▦"},
+    {"label": "Deal Flow Map",  "href": "/deal-flow-heatmap", "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",  "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

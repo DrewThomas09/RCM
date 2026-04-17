@@ -1917,6 +1917,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/return-attribution":
             from .ui.data_public.return_attribution_page import render_return_attribution
             return self._send_html(render_return_attribution())
+        if path == "/deal-flow-heatmap":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            try: _min_sd = int((_qs.get("min_deals") or ["3"])[0])
+            except (TypeError, ValueError): _min_sd = 3
+            from .ui.data_public.deal_flow_heatmap_page import render_deal_flow_heatmap
+            return self._send_html(render_deal_flow_heatmap(min_sector_deals=_min_sd))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
