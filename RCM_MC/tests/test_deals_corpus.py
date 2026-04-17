@@ -3557,6 +3557,155 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestSeniorPartnerHeuristics(unittest.TestCase):
+    """Tests for senior_partner_heuristics module."""
+
+    def _lbo_deal(self, **kw):
+        base = {
+            "deal_name": "Acme Health LBO",
+            "notes": "acute hospital system lbo",
+            "year": 2021,
+            "ev_mm": 1000.0,
+            "ebitda_at_entry_mm": 100.0,
+            "hold_years": 5.0,
+            "realized_moic": 2.5,
+            "realized_irr": 0.20,
+            "leverage_x": 5.5,
+            "payer_mix": {"medicare": 0.40, "medicaid": 0.20, "commercial": 0.40},
+            "state": "TX",
+        }
+        base.update(kw)
+        return base
+
+    def test_get_entry_band_lbo_hospital(self):
+        from rcm_mc.data_public.senior_partner_heuristics import get_entry_band
+        band = get_entry_band("lbo", "acute_hospital")
+        self.assertGreater(band.high, band.fair_high)
+        self.assertGreater(band.fair_high, band.fair_low)
+
+    def test_multiple_flag_in_band(self):
+        from rcm_mc.data_public.senior_partner_heuristics import multiple_flag
+        # 10x for hospital LBO is in-band (fair_low=7.5, fair_high=10.5)
+        deal = self._lbo_deal(ev_mm=1000.0, ebitda_at_entry_mm=100.0)
+        flags = multiple_flag(deal)
+        self.assertEqual(flags, [])
+
+    def test_multiple_flag_above_ceiling(self):
+        from rcm_mc.data_public.senior_partner_heuristics import multiple_flag
+        # 15x for hospital LBO is above ceiling
+        deal = self._lbo_deal(ev_mm=1500.0, ebitda_at_entry_mm=100.0)
+        flags = multiple_flag(deal)
+        self.assertGreater(len(flags), 0)
+        self.assertIn("above ceiling", flags[0])
+
+    def test_multiple_flag_below_floor(self):
+        from rcm_mc.data_public.senior_partner_heuristics import multiple_flag
+        # 4x for hospital LBO is below floor
+        deal = self._lbo_deal(ev_mm=400.0, ebitda_at_entry_mm=100.0)
+        flags = multiple_flag(deal)
+        self.assertGreater(len(flags), 0)
+        self.assertIn("below expected floor", flags[0])
+
+    def test_multiple_flag_negative_ebitda(self):
+        from rcm_mc.data_public.senior_partner_heuristics import multiple_flag
+        deal = self._lbo_deal(ebitda_at_entry_mm=-30.0)
+        flags = multiple_flag(deal)
+        self.assertGreater(len(flags), 0)
+        self.assertIn("Negative", flags[0])
+
+    def test_hold_period_flag_normal(self):
+        from rcm_mc.data_public.senior_partner_heuristics import hold_period_flag
+        deal = self._lbo_deal(hold_years=5.0)
+        flags = hold_period_flag(deal)
+        self.assertEqual(flags, [])
+
+    def test_hold_period_flag_short(self):
+        from rcm_mc.data_public.senior_partner_heuristics import hold_period_flag
+        deal = self._lbo_deal(hold_years=1.5)
+        flags = hold_period_flag(deal)
+        self.assertGreater(len(flags), 0)
+        self.assertIn("below norm", flags[0])
+
+    def test_healthcare_trap_medicaid(self):
+        from rcm_mc.data_public.senior_partner_heuristics import healthcare_trap_scan
+        deal = self._lbo_deal(
+            payer_mix={"medicare": 0.10, "medicaid": 0.75, "commercial": 0.15}
+        )
+        traps = healthcare_trap_scan(deal)
+        trap_names = [t["trap"] for t in traps]
+        self.assertIn("medicaid_concentration", trap_names)
+
+    def test_healthcare_trap_extreme_leverage(self):
+        from rcm_mc.data_public.senior_partner_heuristics import healthcare_trap_scan
+        deal = self._lbo_deal(leverage_x=8.5)
+        traps = healthcare_trap_scan(deal)
+        trap_names = [t["trap"] for t in traps]
+        self.assertIn("extreme_leverage", trap_names)
+
+    def test_healthcare_trap_total_loss(self):
+        from rcm_mc.data_public.senior_partner_heuristics import healthcare_trap_scan
+        deal = self._lbo_deal(realized_moic=0.05)
+        traps = healthcare_trap_scan(deal)
+        trap_names = [t["trap"] for t in traps]
+        self.assertIn("total_loss_risk", trap_names)
+        severity = next(t["severity"] for t in traps if t["trap"] == "total_loss_risk")
+        self.assertEqual(severity, "critical")
+
+    def test_return_plausibility_consistent(self):
+        from rcm_mc.data_public.senior_partner_heuristics import return_plausibility_check
+        deal = self._lbo_deal(realized_moic=2.5, realized_irr=0.20, hold_years=5.0)
+        result = return_plausibility_check(deal)
+        self.assertIn("plausible", result)
+
+    def test_return_plausibility_inconsistent(self):
+        from rcm_mc.data_public.senior_partner_heuristics import return_plausibility_check
+        # Positive MOIC but negative IRR — inconsistent
+        deal = self._lbo_deal(realized_moic=2.5, realized_irr=-0.15, hold_years=5.0)
+        result = return_plausibility_check(deal)
+        self.assertFalse(result["plausible"])
+
+    def test_full_assessment_keys(self):
+        from rcm_mc.data_public.senior_partner_heuristics import full_heuristic_assessment
+        deal = self._lbo_deal()
+        assess = full_heuristic_assessment(deal)
+        for key in ["deal_name", "sector", "deal_type", "entry_band",
+                    "multiple_flags", "hold_flags", "traps", "plausibility",
+                    "overall_signal"]:
+            self.assertIn(key, assess)
+        self.assertIn(assess["overall_signal"], ["red", "amber", "yellow", "green"])
+
+    def test_full_assessment_red_for_critical_trap(self):
+        from rcm_mc.data_public.senior_partner_heuristics import full_heuristic_assessment
+        deal = self._lbo_deal(realized_moic=0.05)
+        assess = full_heuristic_assessment(deal)
+        self.assertEqual(assess["overall_signal"], "red")
+
+    def test_heuristic_report_text(self):
+        from rcm_mc.data_public.senior_partner_heuristics import (
+            full_heuristic_assessment, heuristic_report
+        )
+        deal = self._lbo_deal(ev_mm=2000.0, ebitda_at_entry_mm=100.0)
+        assess = full_heuristic_assessment(deal)
+        text = heuristic_report(assess)
+        self.assertIn("Senior Partner Heuristic Assessment", text)
+        self.assertIn("Entry band", text)
+
+    def test_corpus_wide_assessment(self):
+        from rcm_mc.data_public.senior_partner_heuristics import full_heuristic_assessment
+        import tempfile, os
+        db = tempfile.mktemp(suffix=".db")
+        try:
+            corpus = DealsCorpus(db)
+            corpus.seed()
+            deals = corpus.list()
+            # Should not raise on any real deal
+            for d in deals[:20]:
+                result = full_heuristic_assessment(d)
+                self.assertIn(result["overall_signal"], ["red", "amber", "yellow", "green"])
+        finally:
+            os.unlink(db)
+
+
 class TestDealMomentum(unittest.TestCase):
     """Tests for deal_momentum module."""
 

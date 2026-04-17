@@ -141,6 +141,16 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .senior_partner_heuristics import (
+    EntryMultipleBand,
+    get_entry_band,
+    multiple_flag,
+    hold_period_flag,
+    healthcare_trap_scan,
+    return_plausibility_check,
+    full_heuristic_assessment,
+    heuristic_report,
+)
 from .deal_momentum import (
     sector_deal_volume,
     sector_momentum_score,
@@ -284,6 +294,14 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "EntryMultipleBand",
+    "get_entry_band",
+    "multiple_flag",
+    "hold_period_flag",
+    "healthcare_trap_scan",
+    "return_plausibility_check",
+    "full_heuristic_assessment",
+    "heuristic_report",
     "sector_deal_volume",
     "sector_momentum_score",
     "multiple_compression_trend",
