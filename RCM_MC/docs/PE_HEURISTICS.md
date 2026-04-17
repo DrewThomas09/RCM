@@ -2971,7 +2971,40 @@ one are we buying?"
 
 ---
 
-## 132. Change log
+## 132. Margin of safety (`margin_of_safety.py`)
+
+**Partner statement:** "How wrong can I be on each lever before
+MOIC falls below hurdle?"
+
+For each of four levers (EBITDA growth, exit multiple, entry
+multiple, leverage), binary-search the breakeven value where MOIC
+equals the hurdle. Express as % delta from base.
+
+Safety grade per lever:
+
+- **Thin** — harmful move of < 10% crosses breakeven.
+- **Moderate** — 10-25%.
+- **Ample** — ≥ 25%.
+
+Plus a **combined shock**: -5pp growth + -1x exit multiple at once.
+If this drops below the hurdle, the base case is fragile.
+
+Partner note:
+
+- Base MOIC already below hurdle → "pass; no margin of safety".
+- 2+ thin levers → "load-bearing on aggressive assumptions".
+- 1 thin lever → "pressure-test that lever specifically".
+- All ample → "absorbs reasonable downside".
+
+**Worked example:** a deal entering at 13x with 8% growth and
+5.5x leverage at 2.3x hurdle shows thin margin on exit multiple
+(~8% headroom) and moderate on growth. Partner reads: "the deal
+cannot tolerate multiple compression. Either negotiate entry
+down or stress the exit-multiple assumption."
+
+---
+
+## 133. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3235,3 +3268,7 @@ one are we buying?"
   flags internal contradictions across thesis pillars (e.g.
   volume+margin+no labor; roll-up+no integration spend). Full
   inventory: 129 modules, 1,302 pe_intelligence unit tests.
+- **2026-04-17** — Added `margin_of_safety.py` (§132) —
+  binary-search breakeven deltas per lever against hurdle MOIC,
+  plus combined-shock test. Full inventory: 130 modules, 1,311
+  pe_intelligence unit tests.
