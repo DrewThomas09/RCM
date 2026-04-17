@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 29
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 30
 modules + test suite:
 
 | Module | Role |
@@ -735,6 +735,7 @@ modules + test suite:
 | `synergy_modeler.py` | Cost + revenue + RCM + procurement synergies |
 | `working_capital.py` | AR/AP/DIO days-to-cash release math |
 | `fund_model.py` | Fund-level DPI/TVPI/NAV + vintage percentile |
+| `regulatory_stress.py` | $ EBITDA impact of CMS/Medicaid/340B shocks |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -879,7 +880,27 @@ healthcare-PE vintage quartile cutoffs.
 
 ---
 
-## 32. Change log
+## 32. Regulatory stress (`regulatory_stress.py`)
+
+Models the $ EBITDA impact of specific regulatory shocks:
+
+- **CMS IPPS / OPPS rate cut** — N-bps reduction on Medicare revenue.
+- **Medicaid rate freeze** — foregone inflation over N years.
+- **340B program reduction** — X% haircut on current 340B EBITDA.
+- **Site-neutral expansion** — HOPD rate compression X%.
+- **SNF VBP acceleration** — additional Medicare withhold (post-acute only).
+
+`run_regulatory_stresses(inputs)` returns all relevant shocks sorted
+by $ impact; `summarize_regulatory_exposure(shocks, base_ebitda)`
+produces a partner-facing headline.
+
+Paired with `regulatory_watch.py`: the watch-list identifies which
+items are *pending*, the stress module quantifies *how much they
+hurt*.
+
+---
+
+## 33. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -926,3 +947,6 @@ healthcare-PE vintage quartile cutoffs.
   `thesis_validator.py`, `synergy_modeler.py`, `working_capital.py`,
   `fund_model.py`. Full inventory: 29 modules, 386 pe_intelligence
   unit tests.
+- **2026-04-17** — Added `regulatory_stress.py` (quantifies $ EBITDA
+  impact of CMS/Medicaid/340B/site-neutral/SNF-VBP shocks). Full
+  inventory: 30 modules, 395 pe_intelligence unit tests.
