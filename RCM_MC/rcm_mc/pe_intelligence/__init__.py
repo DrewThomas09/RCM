@@ -585,6 +585,14 @@ from .board_composition_analyzer import (
     analyze_board,
     render_board_markdown as render_board_composition_markdown,
 )
+from .historical_failure_library import (
+    FAILURE_LIBRARY,
+    FailureMatch,
+    FailurePattern,
+    list_all_patterns as list_failure_patterns,
+    match_failures,
+    render_failures_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1465,4 +1473,10 @@ __all__ = [
     "BoardReport",
     "analyze_board",
     "render_board_composition_markdown",
+    "FAILURE_LIBRARY",
+    "FailureMatch",
+    "FailurePattern",
+    "list_failure_patterns",
+    "match_failures",
+    "render_failures_markdown",
 ]

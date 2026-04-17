@@ -11020,5 +11020,133 @@ class TestBoardCompositionAnalyzer(unittest.TestCase):
         ])).to_dict())
 
 
+# ── Historical failure library ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    FAILURE_LIBRARY,
+    FailureMatch,
+    FailurePattern,
+    list_failure_patterns,
+    match_failures,
+    render_failures_markdown,
+)
+
+
+class TestHistoricalFailureLibrary(unittest.TestCase):
+
+    def test_library_populated_with_named_dated_patterns(self) -> None:
+        names = {p.name for p in FAILURE_LIBRARY}
+        self.assertIn("envision_surprise_billing_2023", names)
+        self.assertIn("steward_reit_dependency_2024", names)
+        self.assertIn("radiology_partners_rate_shock_2022", names)
+        for p in FAILURE_LIBRARY:
+            self.assertGreater(p.year, 2010)
+            self.assertTrue(p.partner_lesson)
+
+    def test_empty_context_no_matches(self) -> None:
+        self.assertEqual(match_failures({}), [])
+
+    def test_envision_signature_matches(self) -> None:
+        matches = match_failures({
+            "subsector": "physician_staffing",
+            "oon_revenue_share": 0.40,
+        })
+        names = {m.pattern.name for m in matches}
+        self.assertIn("envision_surprise_billing_2023", names)
+
+    def test_steward_sale_leaseback_matches(self) -> None:
+        matches = match_failures({
+            "subsector": "hospital",
+            "sale_leaseback_in_thesis": True,
+            "rent_to_ebitda": 0.65,
+        })
+        names = {m.pattern.name for m in matches}
+        self.assertIn("steward_reit_dependency_2024", names)
+
+    def test_radiology_leverage_shock_matches(self) -> None:
+        matches = match_failures({
+            "leverage": 7.0,
+            "floating_rate_unhedged": True,
+        })
+        names = {m.pattern.name for m in matches}
+        self.assertIn("radiology_partners_rate_shock_2022", names)
+
+    def test_adapthealth_acquisition_pace_matches(self) -> None:
+        matches = match_failures({
+            "acquisitions_per_year": 8,
+            "platform_age_years": 2,
+            "pro_forma_addbacks_pct": 0.25,
+        })
+        names = {m.pattern.name for m in matches}
+        self.assertIn("adapthealth_accounting_2021", names)
+
+    def test_oncology_fca_matches(self) -> None:
+        matches = match_failures({
+            "subsector": "oncology",
+            "open_fca_exposure": True,
+        })
+        names = {m.pattern.name for m in matches}
+        self.assertIn("21st_century_oncology_2017", names)
+
+    def test_kindred_home_health_matches_with_cms_risk(self) -> None:
+        matches = match_failures({
+            "subsector": "home_health",
+            "cms_rule_change_expected": True,
+        })
+        names = {m.pattern.name for m in matches}
+        self.assertIn("kindred_at_home_2018", names)
+
+    def test_asc_aggressive_growth_matches(self) -> None:
+        matches = match_failures({
+            "subsector": "outpatient_asc",
+            "asc_same_site_growth_assumption": 0.07,
+        })
+        names = {m.pattern.name for m in matches}
+        self.assertIn("surgery_partners_leverage_2016", names)
+
+    def test_pharmacy_dir_trigger(self) -> None:
+        matches = match_failures({
+            "pharmacy_revenue_share": 0.55,
+            "dir_fee_trend_rising": True,
+        })
+        names = {m.pattern.name for m in matches}
+        self.assertIn("shopko_rx_pharmacy_2019", names)
+
+    def test_matcher_resilient_to_missing_fields(self) -> None:
+        # Should not raise even with bizarre input.
+        matches = match_failures({"subsector": None,
+                                     "leverage": "not_a_number"})
+        self.assertIsInstance(matches, list)
+
+    def test_markdown_no_matches(self) -> None:
+        md = render_failures_markdown([])
+        self.assertIn("No historical failure patterns match", md)
+
+    def test_markdown_with_matches(self) -> None:
+        matches = match_failures({
+            "subsector": "hospital",
+            "sale_leaseback_in_thesis": True,
+            "rent_to_ebitda": 0.60,
+        })
+        md = render_failures_markdown(matches)
+        self.assertIn("Historical failure library", md)
+        self.assertIn("steward_reit_dependency_2024", md)
+        self.assertIn("Partner lesson", md)
+
+    def test_list_patterns(self) -> None:
+        self.assertEqual(
+            len(list_failure_patterns()), len(FAILURE_LIBRARY)
+        )
+
+    def test_json(self) -> None:
+        import json
+        matches = match_failures({
+            "subsector": "physician_staffing",
+            "oon_revenue_share": 0.40,
+        })
+        for m in matches:
+            json.dumps(m.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
