@@ -5937,7 +5937,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             packet = get_or_build_packet(
                 store, deal_id, skip_simulation=True,
             )
-            return self._send_html(render_workbench(packet))
+            wb_html = render_workbench(packet)
+            try:
+                from .ui.data_public.corpus_flags_panel import inject_into_workbench
+                wb_html = inject_into_workbench(wb_html, profile)
+            except Exception:
+                pass
+            return self._send_html(wb_html)
         except Exception as exc:  # noqa: BLE001
             from .ui.deal_quick_view import render_deal_quick_view
             return self._send_html(render_deal_quick_view(
