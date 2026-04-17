@@ -3557,6 +3557,125 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestCmsWhiteSpaceMap(unittest.TestCase):
+    """Tests for cms_white_space_map module."""
+
+    def _mock_report(self):
+        from rcm_mc.data_public.cms_market_analysis import MarketAnalysisReport
+        import pandas as pd
+        conc = pd.DataFrame([
+            {"state": "TX", "provider_type": "SNF", "hhi": 1200.0},
+            {"state": "CA", "provider_type": "SNF", "hhi": 3500.0},
+            {"state": "FL", "provider_type": "HHA", "hhi": 1800.0},
+        ])
+        fit = pd.DataFrame([
+            {"state": "TX", "state_fit_score": 0.85},
+            {"state": "CA", "state_fit_score": 0.60},
+            {"state": "FL", "state_fit_score": 0.72},
+        ])
+        regimes = pd.DataFrame([
+            {"provider_type": "SNF", "regime": "durable_growth"},
+            {"provider_type": "HHA", "regime": "stagnant"},
+        ])
+        return MarketAnalysisReport(
+            year=2021,
+            state_filter=None,
+            provider_type_filter=None,
+            row_count=100,
+            concentration=conc,
+            geo_dependency=pd.DataFrame(),
+            state_growth=pd.DataFrame(),
+            state_volatility=pd.DataFrame(),
+            portfolio_fit=fit,
+            regimes=regimes,
+            watchlist=pd.DataFrame(),
+            errors=[],
+        )
+
+    def test_compute_white_space_returns_list(self):
+        from rcm_mc.data_public.cms_white_space_map import compute_white_space_map
+        report = self._mock_report()
+        results = compute_white_space_map(report)
+        self.assertIsInstance(results, list)
+
+    def test_white_space_sorted_descending(self):
+        from rcm_mc.data_public.cms_white_space_map import compute_white_space_map
+        report = self._mock_report()
+        results = compute_white_space_map(report)
+        if len(results) >= 2:
+            scores = [r.white_space_score for r in results]
+            self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_top_white_space_count(self):
+        from rcm_mc.data_public.cms_white_space_map import top_white_space
+        report = self._mock_report()
+        top = top_white_space(report, n=3)
+        self.assertLessEqual(len(top), 3)
+
+    def test_fragmented_market_higher_score(self):
+        from rcm_mc.data_public.cms_white_space_map import compute_white_space_map
+        report = self._mock_report()
+        results = compute_white_space_map(report)
+        # TX (HHI=1200, fragmented) and high fit=0.85 should rank near top
+        tx_snf = [r for r in results if r.state == "TX" and r.provider_type == "SNF"]
+        ca_snf = [r for r in results if r.state == "CA" and r.provider_type == "SNF"]
+        if tx_snf and ca_snf:
+            self.assertGreater(tx_snf[0].white_space_score, ca_snf[0].white_space_score)
+
+    def test_white_space_opportunity_fields(self):
+        from rcm_mc.data_public.cms_white_space_map import compute_white_space_map
+        report = self._mock_report()
+        results = compute_white_space_map(report)
+        if results:
+            opp = results[0]
+            self.assertIsInstance(opp.state, str)
+            self.assertIsInstance(opp.provider_type, str)
+            self.assertIsInstance(opp.white_space_score, float)
+            self.assertIn(opp.fragmentation_signal, ["fragmented", "neutral", "concentrated"])
+
+    def test_white_space_table_text(self):
+        from rcm_mc.data_public.cms_white_space_map import compute_white_space_map, white_space_table
+        report = self._mock_report()
+        results = compute_white_space_map(report)
+        text = white_space_table(results)
+        self.assertIn("Geographic White-Space Map", text)
+
+    def test_white_space_table_empty(self):
+        from rcm_mc.data_public.cms_white_space_map import white_space_table
+        text = white_space_table([])
+        self.assertIn("No white-space", text)
+
+    def test_white_space_summary(self):
+        from rcm_mc.data_public.cms_white_space_map import compute_white_space_map, white_space_summary
+        report = self._mock_report()
+        results = compute_white_space_map(report)
+        summary = white_space_summary(results)
+        self.assertIn("total", summary)
+        self.assertIn("top_state", summary)
+        if summary["total"] > 0:
+            self.assertIsNotNone(summary["top_state"])
+
+    def test_white_space_summary_empty(self):
+        from rcm_mc.data_public.cms_white_space_map import white_space_summary
+        s = white_space_summary([])
+        self.assertEqual(s["total"], 0)
+        self.assertIsNone(s["top_state"])
+
+    def test_empty_report_returns_empty_list(self):
+        from rcm_mc.data_public.cms_white_space_map import compute_white_space_map
+        from rcm_mc.data_public.cms_market_analysis import MarketAnalysisReport
+        import pandas as pd
+        report = MarketAnalysisReport(
+            year=2021, state_filter=None, provider_type_filter=None, row_count=0,
+            concentration=pd.DataFrame(), geo_dependency=pd.DataFrame(),
+            state_growth=pd.DataFrame(), state_volatility=pd.DataFrame(),
+            portfolio_fit=pd.DataFrame(), regimes=pd.DataFrame(),
+            watchlist=pd.DataFrame(), errors=[]
+        )
+        results = compute_white_space_map(report)
+        self.assertEqual(results, [])
+
+
 class TestDealMemoGenerator(unittest.TestCase):
     """Tests for deal_memo_generator module."""
 

@@ -141,6 +141,13 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .cms_white_space_map import (
+    WhiteSpaceOpportunity,
+    compute_white_space_map,
+    top_white_space,
+    white_space_table,
+    white_space_summary,
+)
 from .deal_memo_generator import (
     PartnerMemo,
     generate_deal_memo,
@@ -301,6 +308,11 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "WhiteSpaceOpportunity",
+    "compute_white_space_map",
+    "top_white_space",
+    "white_space_table",
+    "white_space_summary",
     "PartnerMemo",
     "generate_deal_memo",
     "memo_text",
