@@ -3425,5 +3425,95 @@ class TestApplyPartnerHaircut(unittest.TestCase):
         self.assertAlmostEqual(net, 50, delta=0.1)
 
 
+# ── Working capital ──────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    WCRelease,
+    WCSummary,
+    WorkingCapitalInputs,
+    ap_days_to_cash,
+    ar_days_to_cash,
+    inventory_days_to_cash,
+    total_wc_release,
+)
+
+
+class TestARDaysToCash(unittest.TestCase):
+
+    def test_dso_reduction_releases_cash(self) -> None:
+        # 100M revenue; DSO 60 → 50 = 10 days × 100M/365 = ~2.74M
+        release = ar_days_to_cash(100_000_000, 60, 50)
+        self.assertAlmostEqual(release.cash_released, 2_739_726, delta=5)
+        self.assertEqual(release.days_improved, 10)
+
+    def test_no_improvement_zero_cash(self) -> None:
+        release = ar_days_to_cash(100_000_000, 60, 60)
+        self.assertEqual(release.cash_released, 0)
+
+    def test_small_release_is_modest(self) -> None:
+        release = ar_days_to_cash(100_000_000, 50, 47)
+        self.assertIn("Modest", release.partner_note)
+
+
+class TestAPDaysToCash(unittest.TestCase):
+
+    def test_dpo_extension_releases_cash(self) -> None:
+        # 40M cogs; DPO 30 → 45 = 15 days × 40M/365 = ~1.64M
+        release = ap_days_to_cash(40_000_000, 30, 45)
+        self.assertAlmostEqual(release.cash_released, 1_643_835, delta=5)
+
+    def test_large_extension_flagged_aggressive(self) -> None:
+        release = ap_days_to_cash(40_000_000, 30, 70)
+        self.assertIn("push back", release.partner_note)
+
+
+class TestInventoryDaysToCash(unittest.TestCase):
+
+    def test_dio_reduction_releases_cash(self) -> None:
+        release = inventory_days_to_cash(20_000_000, 30, 20)
+        self.assertAlmostEqual(release.cash_released, 547_945, delta=5)
+
+
+class TestTotalWCRelease(unittest.TestCase):
+
+    def test_combines_all_three(self) -> None:
+        inputs = WorkingCapitalInputs(
+            annual_revenue=100_000_000, annual_cogs=40_000_000,
+            annual_inventory_cost=20_000_000,
+            current_dso=60, target_dso=50,
+            current_dpo=30, target_dpo=40,
+            current_dio=30, target_dio=25,
+        )
+        summary = total_wc_release(inputs)
+        self.assertEqual(len(summary.components), 3)
+        self.assertGreater(summary.total_cash_released, 0)
+
+    def test_handles_missing_components(self) -> None:
+        inputs = WorkingCapitalInputs(
+            annual_revenue=100_000_000,
+            current_dso=60, target_dso=50,
+        )
+        summary = total_wc_release(inputs)
+        # Only AR component populated.
+        self.assertEqual(len(summary.components), 1)
+
+    def test_large_release_flagged(self) -> None:
+        # 100M revenue, 50 day DSO improvement → 13.7M release (>8% of revenue).
+        inputs = WorkingCapitalInputs(
+            annual_revenue=100_000_000,
+            current_dso=70, target_dso=20,
+        )
+        summary = total_wc_release(inputs)
+        self.assertIn("Very large", summary.partner_note)
+
+    def test_summary_to_dict(self) -> None:
+        import json
+        inputs = WorkingCapitalInputs(
+            annual_revenue=100_000_000, current_dso=60, target_dso=50,
+        )
+        summary = total_wc_release(inputs)
+        json.dumps(summary.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

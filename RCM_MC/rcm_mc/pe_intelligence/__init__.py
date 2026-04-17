@@ -81,6 +81,15 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .working_capital import (
+    WCRelease,
+    WCSummary,
+    WorkingCapitalInputs,
+    ap_days_to_cash,
+    ar_days_to_cash,
+    inventory_days_to_cash,
+    total_wc_release,
+)
 from .synergy_modeler import (
     SynergyInputs,
     SynergyResult,
@@ -360,4 +369,11 @@ __all__ = [
     "size_rcm_synergies",
     "size_revenue_synergies",
     "size_synergies",
+    "WCRelease",
+    "WCSummary",
+    "WorkingCapitalInputs",
+    "ap_days_to_cash",
+    "ar_days_to_cash",
+    "inventory_days_to_cash",
+    "total_wc_release",
 ]
