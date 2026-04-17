@@ -35,6 +35,7 @@ from .reasonableness import (
 )
 from .heuristics import (
     Heuristic,
+    HeuristicContext,
     HeuristicHit,
     all_heuristics,
     run_heuristics,
@@ -46,12 +47,14 @@ from .narrative import (
 from .partner_review import (
     PartnerReview,
     partner_review,
+    partner_review_from_context,
 )
 
 __all__ = [
     "Band",
     "BandCheck",
     "Heuristic",
+    "HeuristicContext",
     "HeuristicHit",
     "NarrativeBlock",
     "PartnerReview",
@@ -62,6 +65,7 @@ __all__ = [
     "check_multiple_ceiling",
     "compose_narrative",
     "partner_review",
+    "partner_review_from_context",
     "run_heuristics",
     "run_reasonableness_checks",
 ]
