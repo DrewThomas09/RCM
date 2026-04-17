@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .auditor_view import (
+    AuditEntry,
+    AuditTrail,
+    build_audit_trail,
+    filter_entries,
+    summarize_trail,
+)
 from .capital_plan import (
     CapexLine,
     CapitalPlan,
@@ -545,4 +552,9 @@ __all__ = [
     "CapitalPlanFinding",
     "has_plan_mismatch",
     "validate_capital_plan",
+    "AuditEntry",
+    "AuditTrail",
+    "build_audit_trail",
+    "filter_entries",
+    "summarize_trail",
 ]

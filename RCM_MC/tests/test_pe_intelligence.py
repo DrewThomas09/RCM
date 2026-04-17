@@ -4541,5 +4541,77 @@ class TestCapitalPlan(unittest.TestCase):
         json.dumps(plan.to_dict())
 
 
+# ── Auditor view ──────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    AuditEntry,
+    AuditTrail,
+    build_audit_trail,
+    filter_entries,
+    summarize_trail,
+)
+
+
+class TestBuildAuditTrail(unittest.TestCase):
+
+    def test_trail_has_entries_for_each_source(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65}, exit_multiple=11.5,
+        )
+        review = partner_review_from_context(ctx, deal_id="d1")
+        trail = build_audit_trail(review)
+        sources = {e.source for e in trail.entries}
+        self.assertIn("context", sources)
+        self.assertIn("band", sources)
+        self.assertIn("heuristic", sources)
+        self.assertIn("narrative", sources)
+
+    def test_trail_preserves_deal_id(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx, deal_id="X", deal_name="Demo")
+        trail = build_audit_trail(review)
+        self.assertEqual(trail.deal_id, "X")
+        self.assertEqual(trail.deal_name, "Demo")
+
+    def test_trail_to_dict_serializable(self) -> None:
+        import json
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65, "commercial": 0.35},
+            denial_improvement_bps_per_yr=400,
+        )
+        review = partner_review_from_context(ctx)
+        trail = build_audit_trail(review)
+        s = json.dumps(trail.to_dict(), default=str)
+        self.assertIn("recommendation", s)
+
+
+class TestFilterEntries(unittest.TestCase):
+
+    def test_filter_by_source(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        trail = build_audit_trail(partner_review_from_context(ctx))
+        bands = filter_entries(trail, source="band")
+        self.assertTrue(all(e.source == "band" for e in bands))
+
+    def test_filter_by_severity(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65}, exit_multiple=11.5,
+            denial_improvement_bps_per_yr=500,
+        )
+        trail = build_audit_trail(partner_review_from_context(ctx))
+        highs = filter_entries(trail, severity="HIGH")
+        self.assertTrue(all(e.severity == "HIGH" for e in highs))
+
+
+class TestSummarizeTrail(unittest.TestCase):
+
+    def test_summary_has_expected_keys(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        trail = build_audit_trail(partner_review_from_context(ctx))
+        summary = summarize_trail(trail)
+        self.assertIn("total_entries", summary)
+        self.assertIn("counts_by_source", summary)
+
+
 if __name__ == "__main__":
     unittest.main()
