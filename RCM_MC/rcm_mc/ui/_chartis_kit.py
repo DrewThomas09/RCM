@@ -91,6 +91,7 @@ _CORPUS_NAV = [
     {"label": "Risk Scores",   "href": "/deal-risk-scores",  "icon": "▦"},
     {"label": "Sector Corr.",  "href": "/sector-correlation","icon": "▣"},
     {"label": "Acq. Timing",  "href": "/acq-timing",        "icon": "▦"},
+    {"label": "Portfolio Sim","href": "/portfolio-sim",     "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
