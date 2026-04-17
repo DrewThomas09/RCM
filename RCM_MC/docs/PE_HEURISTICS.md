@@ -2572,7 +2572,48 @@ defensively (`_get_float`, `_get_str`, `_get_bool`).
 
 ---
 
-## 121. Change log
+## 121. Partner-voice IC memo (`partner_voice_memo.py`)
+
+A one-page, recommendation-first IC memo written in partner voice.
+Not a replacement for `ic_memo` (structured template) — this is the
+"60 seconds with the chairman" version.
+
+Structure:
+
+1. **Recommendation up top**: INVEST / DILIGENCE MORE / PASS.
+2. **One-paragraph summary** — numbers-first, direct.
+3. **Bull / Base / Bear case** — one line each with MOIC + IRR.
+4. **Three things that would change my mind** — honest pre-mortem,
+   capped at three.
+5. **Open deal-killers** — any unresolved red flags, historical
+   pattern matches, or valuation stretch.
+
+Scoring (0-100, higher = more INVEST-leaning):
+
+- Start 50.
+- -12 per high red flag; -3 per other red flag.
+- -3 per reasonableness out-of-band cell.
+- -4 per valuation concern.
+- -5 per bear_book hit; -8 per historical failure match.
+- +10 defensible organic growth; +5 clear exit path.
+- ±(score-50) × 0.20 for pricing power and management scores.
+- -4 peak cycle; -6 contraction; +4 early expansion.
+
+Hard rules override score:
+
+- 2+ open deal-killers OR 2+ historical pattern matches → PASS.
+- Score ≥ 70 AND no open deal-killers → INVEST.
+- Score ≤ 35 → PASS.
+- Otherwise → DILIGENCE MORE.
+
+**Why:** Partners think in terms of decisions, not scorecards.
+The memo forces a yes/no/maybe up top, then justifies it with
+the three things that would change the answer. This is how IC
+actually runs.
+
+---
+
+## 122. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2791,3 +2832,7 @@ defensively (`_get_float`, `_get_str`, `_get_bool`).
 - **2026-04-17** — Added `historical_failure_library.py` (§120) —
   10 named/dated healthcare-PE failures with packet matchers.
   Full inventory: 118 modules, 1,173 pe_intelligence unit tests.
+- **2026-04-17** — Added `partner_voice_memo.py` (§121) —
+  recommendation-first IC memo; three-things-that-would-change-my-mind;
+  hard rules (2+ deal-killers / 2+ historical matches → PASS).
+  Full inventory: 119 modules, 1,184 pe_intelligence unit tests.
