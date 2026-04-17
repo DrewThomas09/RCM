@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 59
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 63
 modules + test suite:
 
 | Module | Role |
@@ -765,6 +765,10 @@ modules + test suite:
 | `deal_comparison.py` | Side-by-side two-review comparison |
 | `priority_scoring.py` | Multi-deal partner-queue ranker |
 | `board_memo.py` | Governance memo w/ approval matrix + disclosures |
+| `contract_diligence.py` | Payer-contract portfolio risk scoring |
+| `service_line_analysis.py` | DRG/specialty mix + margin contribution |
+| `quality_metrics.py` | CMS Star / HRRP / HCAHPS → Medicare $ impact |
+| `labor_cost_analytics.py` | Contract labor / overtime / productivity |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1361,7 +1365,65 @@ PASS → DECLINE).
 
 ---
 
-## 62. Change log
+## 62. Contract diligence (`contract_diligence.py`)
+
+Scores a payer-contract portfolio by contract-level risk:
+
+- Expiry inside hold + revenue share.
+- Termination mechanic (at-will / anti-assignment / standard).
+- Rate-reset mechanic (CPI-only penalized).
+- Government + volatile-state combination.
+
+Aggregates to portfolio-level metrics: top-3 concentration, maturity
+wall (revenue expiring in hold), high-risk contract count. Produces
+a ranked action list (renegotiate / monitor / note).
+
+---
+
+## 63. Service-line analysis (`service_line_analysis.py`)
+
+Per-service-line concentration, margin contribution, and reimburse-
+ment-exposure scoring. Classifies the portfolio as:
+
+- `well_diversified` — HHI < 1500, no line > 25%.
+- `balanced` — HHI < 2500.
+- `anchor_dependent` — top line ≥ 40% of revenue.
+- `specialty_concentration` — top EBITDA contributor ≥ 60% even
+  when revenue share is moderate.
+
+---
+
+## 64. Quality metrics (`quality_metrics.py`)
+
+Translates CMS Star Rating, readmission percentile, HCAHPS, HAC
+penalty status, and mortality percentile into a composite 0..1
+score + estimated Medicare-revenue payment impact:
+
+- VBP bonuses/cuts from Stars (~1-2%).
+- HRRP penalties (up to 3%).
+- HCAHPS contribution to VBP (~0.5%).
+- HAC program (1% cut for bottom quartile).
+
+Verdict: leader / average / drag.
+
+---
+
+## 65. Labor-cost analytics (`labor_cost_analytics.py`)
+
+Scores staffing profile across five dimensions:
+
+- Contract / agency labor share.
+- Overtime share.
+- Nurse-patient ratio.
+- Wage growth vs local CPI.
+- Productivity vs peer.
+
+Estimates $ shock impact of 10% wage reset and $ savings from 5%
+productivity lever. Verdict: strong / moderate / drag.
+
+---
+
+## 66. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1454,3 +1516,7 @@ PASS → DECLINE).
 - **2026-04-17** — Added `scenario_narrative.py`,
   `deal_comparison.py`, `priority_scoring.py`, `board_memo.py`.
   Full inventory: 59 modules, 648 pe_intelligence unit tests.
+- **2026-04-17** — Added `contract_diligence.py`,
+  `service_line_analysis.py`, `quality_metrics.py`,
+  `labor_cost_analytics.py`. Full inventory: 63 modules, 679
+  pe_intelligence unit tests.
