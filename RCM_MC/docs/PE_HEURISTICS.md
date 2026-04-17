@@ -2164,7 +2164,33 @@ laggards", or "elevate to platform PMO".
 
 ---
 
-## 106. Change log
+## 106. Customer concentration drilldown (`customer_concentration_drilldown.py`)
+
+Goes beyond "top customer = X%". Per customer:
+
+- **Revenue share** (% of book).
+- **Churn probability (12mo)** — heuristic over:
+  - 5% base; +20% at-will; +15% expiring; +10% renewing in
+    ≤ 6mo; +10% relationship < 1yr; -3% relationship ≥ 5yr;
+    max 60% if known_at_risk.
+- **Revenue at risk** = churn_p × revenue.
+- **Cross-sell upside** = unpurchased products × revenue/product
+  × 50% realization.
+
+Book-level output:
+
+- Top-1, top-5, top-10 %.
+- **Customer HHI** on revenue shares.
+- Total revenue-at-risk and cross-sell upside.
+
+Partner tone: top-1 ≥ 25% = "material concentration risk";
+top-5 ≥ 50% = "moderately concentrated"; otherwise "reasonably
+diversified". Flags per customer name the specific action:
+diversification priority, renewal squeeze, at-will conversion, etc.
+
+---
+
+## 107. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2338,3 +2364,6 @@ laggards", or "elevate to platform PMO".
   6-dimension per-bolt-on health + revenue-weighted platform
   score. Full inventory: 103 modules, 1,017 pe_intelligence unit
   tests.
+- **2026-04-17** — Added `customer_concentration_drilldown.py` (§106)
+  — top-N + HHI + churn probability + revenue-at-risk + cross-sell.
+  Full inventory: 104 modules, 1,028 pe_intelligence unit tests.
