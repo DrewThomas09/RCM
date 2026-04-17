@@ -1832,6 +1832,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             sector = _qs.get("sector", [""])[0]
             from .ui.data_public.risk_matrix_page import render_risk_matrix
             return self._send_html(render_risk_matrix(sector_filter=sector))
+        if path == "/payer-intel":
+            from .ui.data_public.payer_intel_page import render_payer_intel
+            return self._send_html(render_payer_intel())
         if path == "/vintage-perf":
             from .ui.data_public.vintage_perf_page import render_vintage_perf
             return self._send_html(render_vintage_perf())
