@@ -75,6 +75,39 @@ from .regional_analysis import (
     region_table,
     find_regional_comps,
 )
+from .cms_api_client import (
+    fetch_pages,
+    fetch_provider_utilization,
+    fetch_geographic_variation,
+    normalize_row,
+    normalize_rows,
+    resolve_column,
+    safe_float,
+    safe_int,
+    CmsApiError,
+    COLUMN_ALIASES,
+    DATASET_IDS,
+)
+from .market_concentration import (
+    market_concentration_summary,
+    provider_geo_dependency,
+    state_volatility_summary,
+    state_growth_summary,
+    state_portfolio_fit,
+    concentration_table,
+)
+from .provider_regime import (
+    yearly_trends,
+    provider_volatility,
+    provider_momentum_profile,
+    growth_volatility_watchlist,
+    provider_regime_classification,
+    regime_table,
+)
+from .scrapers.cms_data import (
+    fetch_cms_market_intelligence,
+    cms_ingest_summary,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -135,4 +168,29 @@ __all__ = [
     "region_report",
     "region_table",
     "find_regional_comps",
+    "fetch_pages",
+    "fetch_provider_utilization",
+    "fetch_geographic_variation",
+    "normalize_row",
+    "normalize_rows",
+    "resolve_column",
+    "safe_float",
+    "safe_int",
+    "CmsApiError",
+    "COLUMN_ALIASES",
+    "DATASET_IDS",
+    "market_concentration_summary",
+    "provider_geo_dependency",
+    "state_volatility_summary",
+    "state_growth_summary",
+    "state_portfolio_fit",
+    "concentration_table",
+    "yearly_trends",
+    "provider_volatility",
+    "provider_momentum_profile",
+    "growth_volatility_watchlist",
+    "provider_regime_classification",
+    "regime_table",
+    "fetch_cms_market_intelligence",
+    "cms_ingest_summary",
 ]

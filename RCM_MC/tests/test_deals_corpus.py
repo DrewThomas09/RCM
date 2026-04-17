@@ -2787,5 +2787,110 @@ class TestProviderRegime(unittest.TestCase):
         self.assertTrue(out.empty)
 
 
+# ===========================================================================
+# TestCmsDataScraper
+# ===========================================================================
+
+class TestCmsDataScraper(unittest.TestCase):
+
+    def _fake_row(self):
+        return {
+            "provider_type": "Cardiology",
+            "state": "TX",
+            "total_medicare_payment_amt": "50000000",
+            "total_services": "12000",
+            "total_unique_benes": "8000",
+            "Beneficiary_Average_Risk_Score": "1.25",
+        }
+
+    def test_utilization_row_to_record_structure(self):
+        from rcm_mc.data_public.scrapers.cms_data import _utilization_row_to_record
+        rec = _utilization_row_to_record(self._fake_row(), 2021)
+        self.assertIsNotNone(rec)
+        self.assertEqual(rec["source"], "cms_data_api")
+        self.assertIn("source_id", rec)
+        self.assertIn("deal_name", rec)
+        self.assertIn("_cms_provider_type", rec)
+        self.assertEqual(rec["_cms_state"], "TX")
+
+    def test_record_source_id_stable(self):
+        from rcm_mc.data_public.scrapers.cms_data import _utilization_row_to_record
+        rec1 = _utilization_row_to_record(self._fake_row(), 2021)
+        rec2 = _utilization_row_to_record(self._fake_row(), 2021)
+        self.assertEqual(rec1["source_id"], rec2["source_id"])
+
+    def test_record_missing_provider_type_returns_none(self):
+        from rcm_mc.data_public.scrapers.cms_data import _utilization_row_to_record
+        row = {**self._fake_row(), "provider_type": ""}
+        self.assertIsNone(_utilization_row_to_record(row, 2021))
+
+    def test_record_missing_state_returns_none(self):
+        from rcm_mc.data_public.scrapers.cms_data import _utilization_row_to_record
+        row = {**self._fake_row(), "state": ""}
+        self.assertIsNone(_utilization_row_to_record(row, 2021))
+
+    def test_payment_converted_to_millions(self):
+        from rcm_mc.data_public.scrapers.cms_data import _utilization_row_to_record
+        rec = _utilization_row_to_record(self._fake_row(), 2021)
+        self.assertAlmostEqual(rec["_cms_total_payment_mm"], 50.0, places=1)
+
+    def test_fetch_cms_market_intelligence_returns_empty_on_error(self):
+        from rcm_mc.data_public.scrapers.cms_data import fetch_cms_market_intelligence
+        from rcm_mc.data_public.cms_api_client import CmsApiError
+        with unittest.mock.patch(
+            "rcm_mc.data_public.scrapers.cms_data.fetch_provider_utilization",
+            side_effect=CmsApiError("offline"),
+        ):
+            result = fetch_cms_market_intelligence(year=2021)
+        self.assertEqual(result, [])
+
+    def test_fetch_cms_market_intelligence_converts_rows(self):
+        from rcm_mc.data_public.scrapers.cms_data import fetch_cms_market_intelligence
+        rows = [self._fake_row()]
+        with unittest.mock.patch(
+            "rcm_mc.data_public.scrapers.cms_data.fetch_provider_utilization",
+            return_value=rows,
+        ):
+            result = fetch_cms_market_intelligence(year=2021)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["_cms_provider_type"], "Cardiology")
+
+    def test_cms_ingest_summary_empty(self):
+        from rcm_mc.data_public.scrapers.cms_data import cms_ingest_summary
+        s = cms_ingest_summary([])
+        self.assertEqual(s["count"], 0)
+        self.assertEqual(s["states"], [])
+
+    def test_cms_ingest_summary_aggregates(self):
+        from rcm_mc.data_public.scrapers.cms_data import _utilization_row_to_record, cms_ingest_summary
+        rows = [
+            {"provider_type": "Cardiology", "state": "TX", "total_medicare_payment_amt": "1000000",
+             "total_services": "100", "total_unique_benes": "80", "Beneficiary_Average_Risk_Score": "1.1"},
+            {"provider_type": "Orthopedic", "state": "CA", "total_medicare_payment_amt": "2000000",
+             "total_services": "200", "total_unique_benes": "160", "Beneficiary_Average_Risk_Score": "0.9"},
+        ]
+        records = [_utilization_row_to_record(r, 2021) for r in rows]
+        s = cms_ingest_summary(records)
+        self.assertEqual(s["count"], 2)
+        self.assertIn("TX", s["states"])
+        self.assertIn("CA", s["states"])
+        self.assertAlmostEqual(s["total_medicare_payment_mm"], 3.0, places=0)
+
+    def test_public_api_exports(self):
+        from rcm_mc.data_public import fetch_cms_market_intelligence, cms_ingest_summary
+        self.assertTrue(callable(fetch_cms_market_intelligence))
+        self.assertTrue(callable(cms_ingest_summary))
+
+    def test_market_concentration_exported(self):
+        from rcm_mc.data_public import market_concentration_summary, provider_geo_dependency
+        self.assertTrue(callable(market_concentration_summary))
+        self.assertTrue(callable(provider_geo_dependency))
+
+    def test_provider_regime_exported(self):
+        from rcm_mc.data_public import provider_regime_classification, regime_table
+        self.assertTrue(callable(provider_regime_classification))
+        self.assertTrue(callable(regime_table))
+
+
 if __name__ == "__main__":
     unittest.main()
