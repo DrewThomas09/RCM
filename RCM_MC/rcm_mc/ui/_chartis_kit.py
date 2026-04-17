@@ -89,6 +89,7 @@ _CORPUS_NAV = [
     {"label": "Multiple Decomp","href": "/multiple-decomp",  "icon": "▦"},
     {"label": "Capital Eff.",  "href": "/capital-efficiency","icon": "▣"},
     {"label": "Risk Scores",   "href": "/deal-risk-scores",  "icon": "▦"},
+    {"label": "Sector Corr.",  "href": "/sector-correlation","icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
