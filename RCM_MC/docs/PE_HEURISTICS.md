@@ -644,7 +644,45 @@ Output: `generate_plan(review) -> HundredDayPlan` and
 
 ---
 
-## 18. Change log
+## 18. IC voting (`ic_voting.py`)
+
+Weighted IC vote aggregator. Voters carry role-based weights
+(`managing_partner=2.0`, `partner=1.5`, `principal=1.0`, `vp=0.5`).
+Veto holders can reject a deal regardless of tally. Votes can be:
+
+- `yes` — straight approval.
+- `no` — with required rationale.
+- `yes_with_caveats` — approve subject to listed conditions.
+- `abstain` — non-counting but recorded.
+
+Outcomes: `APPROVED`, `APPROVED_WITH_CONDITIONS`, `REJECTED`, `TABLED`.
+
+`auto_vote_from_review(recommendation, voters)` produces a synthetic
+vote that mirrors the review's recommendation — useful for
+sensitivity analysis.
+
+---
+
+## 19. Diligence tracker (`diligence_tracker.py`)
+
+Lightweight board for diligence workstream status. Tracks:
+
+- Per-item status (`not_started`, `in_progress`, `blocked`,
+  `complete`, `dropped`).
+- Priority (`P0`, `P1`, `P2`).
+- Owner, due date, blocker reason, finding, critical flag.
+
+`board_from_review(review)` auto-seeds a board from a
+PartnerReview's heuristic hits — hits map to appropriate
+workstreams (operational, financial, commercial, legal, it,
+regulatory, etc.) with severity → priority mapping.
+
+`is_ic_ready()` returns True only when every P0 item is complete and
+no critical blockers remain.
+
+---
+
+## 20. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -671,3 +709,7 @@ Output: `generate_plan(review) -> HundredDayPlan` and
   (LP-facing one-pager in Markdown + HTML with softened language).
 - **2026-04-17** — Added `hundred_day_plan.py` (4-workstream post-
   close action plan generator driven by the heuristic hits).
+- **2026-04-17** — Added `ic_voting.py` (role-weighted IC vote
+  aggregator with veto + dissent tracking) and `diligence_tracker.py`
+  (workstream-scoped diligence board with IC-ready check and
+  auto-seed from a PartnerReview).
