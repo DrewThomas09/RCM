@@ -6989,5 +6989,97 @@ class TestMasterBundle(unittest.TestCase):
         self.assertIn("review", bundle)
 
 
+# ── Tax structuring ────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    TaxFinding,
+    TaxStructureInputs,
+    TaxStructureReport,
+    analyze_tax_structure,
+    render_tax_structure_markdown,
+)
+
+
+class TestTaxStructuring(unittest.TestCase):
+
+    def test_partnership_step_up(self) -> None:
+        r = analyze_tax_structure(TaxStructureInputs(
+            seller_entity_type="partnership",
+            state_of_primary_operation="TX",
+        ))
+        self.assertTrue(r.step_up_available)
+
+    def test_c_corp_blocks_step_up(self) -> None:
+        r = analyze_tax_structure(TaxStructureInputs(
+            seller_entity_type="c_corp",
+            state_of_primary_operation="TX",
+        ))
+        self.assertFalse(r.step_up_available)
+
+    def test_f_reorg_unblocks_c_corp(self) -> None:
+        r = analyze_tax_structure(TaxStructureInputs(
+            seller_entity_type="c_corp",
+            state_of_primary_operation="TX",
+            use_f_reorg=True,
+        ))
+        # Step-up becomes feasible with F-reorg.
+        self.assertIsNone(r.step_up_available)  # not auto-true, but not blocked
+
+    def test_high_tax_state_warning(self) -> None:
+        r = analyze_tax_structure(TaxStructureInputs(
+            seller_entity_type="partnership",
+            state_of_primary_operation="NY",
+        ))
+        state_finding = next(f for f in r.findings if f.area == "state_tax")
+        self.assertEqual(state_finding.status, "warning")
+
+    def test_no_tax_state_favorable(self) -> None:
+        r = analyze_tax_structure(TaxStructureInputs(
+            seller_entity_type="partnership",
+            state_of_primary_operation="FL",
+        ))
+        state_finding = next(f for f in r.findings if f.area == "state_tax")
+        self.assertEqual(state_finding.status, "favorable")
+
+    def test_163j_interest_cap_warning(self) -> None:
+        r = analyze_tax_structure(TaxStructureInputs(
+            ebitda_m=20,                         # $20M EBITDA
+            debt_at_close=150_000_000,           # $150M debt
+            interest_rate=0.10,                  # 10% → $15M interest
+        ))
+        cap_finding = next(f for f in r.findings if f.area == "163j_interest_cap")
+        # 30% of 20M EBITDA = 6M cap; 15M interest exceeds → warning.
+        self.assertEqual(cap_finding.status, "warning")
+
+    def test_qsbs_eligible_with_5yr_hold(self) -> None:
+        r = analyze_tax_structure(TaxStructureInputs(
+            seller_entity_type="partnership",
+            state_of_primary_operation="TX",
+            is_qsbs_eligible=True, holding_period_years=5.0,
+        ))
+        qsbs = next(f for f in r.findings if f.area == "qsbs")
+        self.assertEqual(qsbs.status, "favorable")
+
+    def test_international_triggers_warning(self) -> None:
+        r = analyze_tax_structure(TaxStructureInputs(
+            seller_entity_type="partnership",
+            international_exposure=True,
+        ))
+        intl = next(f for f in r.findings if f.area == "international")
+        self.assertEqual(intl.status, "warning")
+
+    def test_markdown_renders(self) -> None:
+        md = render_tax_structure_markdown(analyze_tax_structure(
+            TaxStructureInputs(seller_entity_type="partnership",
+                               state_of_primary_operation="TX")))
+        self.assertIn("# Tax structure report", md)
+
+    def test_report_json(self) -> None:
+        import json
+        r = analyze_tax_structure(TaxStructureInputs(
+            seller_entity_type="partnership"))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -250,6 +250,13 @@ from .master_bundle import (
     build_master_bundle,
     bundle_index,
 )
+from .tax_structuring import (
+    TaxFinding,
+    TaxStructureInputs,
+    TaxStructureReport,
+    analyze_tax_structure,
+    render_tax_structure_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -885,4 +892,9 @@ __all__ = [
     "run_deepdive_heuristics",
     "build_master_bundle",
     "bundle_index",
+    "TaxFinding",
+    "TaxStructureInputs",
+    "TaxStructureReport",
+    "analyze_tax_structure",
+    "render_tax_structure_markdown",
 ]
