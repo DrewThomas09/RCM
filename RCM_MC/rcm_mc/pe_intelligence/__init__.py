@@ -276,6 +276,13 @@ from .integration_readiness import (
     assess_integration_readiness,
     render_integration_report_markdown,
 )
+from .management_comp import (
+    CompFinding,
+    CompPlanInputs,
+    CompReport,
+    render_comp_plan_markdown,
+    review_comp_plan,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -929,4 +936,9 @@ __all__ = [
     "IntegrationReport",
     "assess_integration_readiness",
     "render_integration_report_markdown",
+    "CompFinding",
+    "CompPlanInputs",
+    "CompReport",
+    "render_comp_plan_markdown",
+    "review_comp_plan",
 ]

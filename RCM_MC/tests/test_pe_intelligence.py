@@ -7335,5 +7335,85 @@ class TestIntegrationReadiness(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Management compensation ───────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CompFinding,
+    CompPlanInputs,
+    CompReport,
+    render_comp_plan_markdown,
+    review_comp_plan,
+)
+
+
+class TestManagementComp(unittest.TestCase):
+
+    def test_standard_plan(self) -> None:
+        r = review_comp_plan(CompPlanInputs(
+            mip_pool_pct=0.10, ceo_mip_share_pct=0.40,
+            vesting_years=4.0, cliff_months=12,
+            acceleration_type="double",
+            ceo_equity_rollover_pct=0.10,
+            ltip_bonus_multiple_base=0.50,
+            performance_vesting_pct=0.40,
+        ))
+        for f in r.findings:
+            self.assertEqual(f.status, "standard")
+
+    def test_single_trigger_flagged_aggressive(self) -> None:
+        r = review_comp_plan(CompPlanInputs(acceleration_type="single"))
+        accel = next(f for f in r.findings if f.area == "acceleration")
+        self.assertEqual(accel.status, "aggressive")
+
+    def test_small_pool_flagged_light(self) -> None:
+        r = review_comp_plan(CompPlanInputs(mip_pool_pct=0.03))
+        pool = next(f for f in r.findings if f.area == "mip_pool")
+        self.assertEqual(pool.status, "light")
+
+    def test_oversized_pool_flagged_aggressive(self) -> None:
+        r = review_comp_plan(CompPlanInputs(mip_pool_pct=0.25))
+        pool = next(f for f in r.findings if f.area == "mip_pool")
+        self.assertEqual(pool.status, "aggressive")
+
+    def test_ceo_rollover_band(self) -> None:
+        r_low = review_comp_plan(CompPlanInputs(ceo_equity_rollover_pct=0.02))
+        r_std = review_comp_plan(CompPlanInputs(ceo_equity_rollover_pct=0.10))
+        r_high = review_comp_plan(CompPlanInputs(ceo_equity_rollover_pct=0.40))
+        self.assertEqual(next(f for f in r_low.findings
+                              if f.area == "ceo_rollover").status, "light")
+        self.assertEqual(next(f for f in r_std.findings
+                              if f.area == "ceo_rollover").status, "standard")
+        self.assertEqual(next(f for f in r_high.findings
+                              if f.area == "ceo_rollover").status, "aggressive")
+
+    def test_vesting_band(self) -> None:
+        r_short = review_comp_plan(CompPlanInputs(vesting_years=2.0))
+        r_long = review_comp_plan(CompPlanInputs(vesting_years=7.0))
+        self.assertEqual(next(f for f in r_short.findings
+                              if f.area == "vesting").status, "light")
+        self.assertEqual(next(f for f in r_long.findings
+                              if f.area == "vesting").status, "aggressive")
+
+    def test_ltip_band(self) -> None:
+        r_light = review_comp_plan(CompPlanInputs(ltip_bonus_multiple_base=0.10))
+        r_agg = review_comp_plan(CompPlanInputs(ltip_bonus_multiple_base=1.5))
+        self.assertEqual(next(f for f in r_light.findings
+                              if f.area == "ltip").status, "light")
+        self.assertEqual(next(f for f in r_agg.findings
+                              if f.area == "ltip").status, "aggressive")
+
+    def test_markdown_renders(self) -> None:
+        md = render_comp_plan_markdown(review_comp_plan(CompPlanInputs(
+            mip_pool_pct=0.10, ceo_mip_share_pct=0.40,
+            vesting_years=4.0, cliff_months=12,
+        )))
+        self.assertIn("# Management compensation review", md)
+
+    def test_json(self) -> None:
+        import json
+        r = review_comp_plan(CompPlanInputs(mip_pool_pct=0.10))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
