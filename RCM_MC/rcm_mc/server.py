@@ -10735,13 +10735,30 @@ class RCMHandler(BaseHTTPRequestHandler):
             '<span>Secure session · scrypt · CSRF-protected</span>'
             '</div>'
         )
+        # Clock + CSRF-patch shim (the same one shell_v2 injects). The signed-in
+        # variant below has a logout form which does require CSRF, and the
+        # platform's test suite asserts any form page carries this shim.
         clock_js = (
-            "<script>(function(){var e=document.getElementById('sc-utc');"
+            "<script>"
+            "(function(){"
+            "function c(n){var m=document.cookie.match("
+            "new RegExp('(?:^|; )'+n+'=([^;]*)'));"
+            "return m?decodeURIComponent(m[1]):null;}"
+            "document.addEventListener('submit',function(e){"
+            "var t=c('rcm_csrf');if(!t)return;"
+            "var f=e.target;if(!f||f.tagName!=='FORM')return;"
+            "if(f.method&&f.method.toLowerCase()!=='post')return;"
+            "var x=f.querySelector('input[name=csrf_token]');"
+            "if(!x){x=document.createElement('input');x.type='hidden';"
+            "x.name='csrf_token';f.appendChild(x);}x.value=t;},true);"
+            "})();"
+            "(function(){var e=document.getElementById('sc-utc');"
             "function p(n){return n<10?'0'+n:''+n;}"
             "function t(){if(!e)return;var d=new Date();"
             "e.textContent=d.getUTCFullYear()+'-'+p(d.getUTCMonth()+1)+'-'+p(d.getUTCDate())+"
             "' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+':'+p(d.getUTCSeconds())+' UTC';}"
-            "t();setInterval(t,1000);})();</script>"
+            "t();setInterval(t,1000);})();"
+            "</script>"
         )
 
         brand_block = (
