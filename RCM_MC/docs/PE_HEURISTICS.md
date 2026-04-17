@@ -3258,7 +3258,43 @@ talking themselves into deals that fail the binary test.
 
 ---
 
-## 140. Change log
+## 140. Cycle timing pricing check (`cycle_timing_pricing_check.py`)
+
+**Partner statement:** "Am I paying peak multiple for peak
+EBITDA?" Late-cycle discipline. The double-count is the most
+expensive mistake in PE — it looks fine in the model because
+normal × normal is fine, but peak × peak overstates value by
+2 turns of multiple or more.
+
+Two flags:
+
+- **peak_multiple** — entry multiple ≥ 110% of subsector cycle-
+  average AND cycle_phase is peak or mid_expansion.
+- **peak_ebitda** — entry EBITDA ≥ 115% of 3-year trailing
+  average.
+
+Subsector cycle-average exit multiples (partner-approximated):
+
+- Hospital 8.5x
+- Specialty practice 10.5x
+- Outpatient ASC 12.5x
+- Home health 11.0x
+- DME 9.5x
+- Physician staffing 8.0x
+
+Recommended haircut:
+
+- **Double peak** → entry multiple compressed by ~50% of premium
+  to cycle avg, or pass.
+- **Peak multiple only** → 25% haircut; walk the exit multiple
+  assumption.
+- **Peak EBITDA only** → verify recent EBITDA is durable, not
+  cyclical.
+- **Neither** → cycle timing not a pricing concern.
+
+---
+
+## 141. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3556,3 +3592,7 @@ talking themselves into deals that fail the binary test.
   balance sheet / exit path / thesis integrity); any one fails
   = pass. Full inventory: 137 modules, 1,382 pe_intelligence
   unit tests.
+- **2026-04-17** — Added `cycle_timing_pricing_check.py` (§140)
+  — peak-multiple × peak-EBITDA double-count detector with
+  subsector cycle averages and haircut recommendation. Full
+  inventory: 138 modules, 1,391 pe_intelligence unit tests.
