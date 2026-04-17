@@ -2457,7 +2457,38 @@ and MOIC projections.
 
 ---
 
-## 117. Change log
+## 117. Management incentive sizer (`mgmt_incentive_sizer.py`)
+
+Sizes post-LBO MIP + LTIP + vesting. Base pool % by deal type:
+
+- Platform LBO: 10%.
+- Physician PPM: 13% (retention-critical).
+- Carve-out: 8% (harder to justify more).
+- Add-on: 5%.
+
+Adjustments: +1.5pp if CEO is founder; +1pp if management
+headcount ≥ 15. Capped at 18%.
+
+Layer split:
+
+- CEO: 25% of pool (30% if founder).
+- C-suite (COO/CFO/CRO/CMO): 35%.
+- Broader management (VP+): remainder.
+
+LTIP annual cash target = 20% of CEO cash comp.
+
+Vesting: 4-year cliff + quarterly post-cliff. Accelerator: 100%
+vest at target MOIC; 50% at target-0.5x.
+
+Partner note:
+
+- Pool ≥ 15% → "above market; justify on retention/founder risk".
+- Pool ≤ 6% → "thin; verify management engagement".
+- Otherwise → "within market band".
+
+---
+
+## 118. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2665,3 +2696,6 @@ and MOIC projections.
 - **2026-04-17** — Added `exit_channel_selector.py` (§116) —
   strategic/sponsor/ipo/continuation scoring + timing + multiples.
   Full inventory: 114 modules, 1,128 pe_intelligence unit tests.
+- **2026-04-17** — Added `mgmt_incentive_sizer.py` (§117) —
+  MIP pool % by deal type + layer allocation + LTIP + vesting.
+  Full inventory: 115 modules, 1,140 pe_intelligence unit tests.
