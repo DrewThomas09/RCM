@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .exit_math import (
+    WaterfallResult,
+    exit_waterfall,
+    moic_cagr_to_irr,
+    project_exit_ev,
+    required_exit_ebitda_for_moic,
+)
 from .value_creation_tracker import (
     LeverActual,
     LeverPlan,
@@ -288,4 +295,9 @@ __all__ = [
     "evaluate_lever",
     "evaluate_plan",
     "rollup_status",
+    "WaterfallResult",
+    "exit_waterfall",
+    "moic_cagr_to_irr",
+    "project_exit_ev",
+    "required_exit_ebitda_for_moic",
 ]

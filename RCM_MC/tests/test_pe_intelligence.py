@@ -2870,5 +2870,107 @@ class TestRollupStatus(unittest.TestCase):
         self.assertIn("No levers", summary["headline"])
 
 
+# ── Exit math ──────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    WaterfallResult,
+    exit_waterfall,
+    moic_cagr_to_irr,
+    project_exit_ev,
+    required_exit_ebitda_for_moic,
+)
+
+
+class TestProjectExitEV(unittest.TestCase):
+
+    def test_basic_ev_calc(self) -> None:
+        out = project_exit_ev(
+            exit_ebitda=50_000_000, exit_multiple=10.0,
+            exit_net_debt=100_000_000, transaction_fees_pct=0.015,
+        )
+        self.assertAlmostEqual(out["exit_ev"], 500_000_000, delta=1)
+        self.assertAlmostEqual(out["exit_fees"], 7_500_000, delta=1)
+        self.assertAlmostEqual(out["equity_after_fees"], 392_500_000, delta=1)
+
+
+class TestExitWaterfall(unittest.TestCase):
+
+    def test_waterfall_basic_shape(self) -> None:
+        result = exit_waterfall(
+            total_proceeds=500_000_000,
+            lp_equity_in=200_000_000,
+            gp_equity_in=10_000_000,
+            hold_years=5.0,
+        )
+        self.assertIsInstance(result, WaterfallResult)
+        # LP and GP together should approximately sum to proceeds.
+        self.assertAlmostEqual(result.lp_total + result.gp_total,
+                               500_000_000, delta=100)
+
+    def test_gp_catch_up_produces_20pct_of_profit(self) -> None:
+        # With catch-up at 100% and 20% carry, GP should end up with
+        # roughly 20% of profits above preferred.
+        result = exit_waterfall(
+            total_proceeds=500_000_000,
+            lp_equity_in=200_000_000, gp_equity_in=0,
+            hold_years=5.0, preferred_return_rate=0.08,
+            gp_catch_up_pct=1.0, carry_pct=0.20,
+        )
+        profit = 500_000_000 - 200_000_000
+        # Carry earned should be ~20% of profit (hurdle compresses it a bit).
+        self.assertGreater(result.carry_earned, 50_000_000)
+        self.assertLessEqual(result.carry_earned, 65_000_000)
+
+    def test_below_preferred_no_carry(self) -> None:
+        result = exit_waterfall(
+            total_proceeds=250_000_000,
+            lp_equity_in=200_000_000, gp_equity_in=0,
+            hold_years=5.0, preferred_return_rate=0.08,
+            carry_pct=0.20,
+        )
+        # profits = 50M; preferred = 200M*(1.08^5 - 1) = 200M * 0.4693 = 93.9M
+        # Proceeds below preferred — GP gets no carry.
+        self.assertAlmostEqual(result.carry_earned, 0, delta=1)
+
+    def test_zero_proceeds_produces_zeros(self) -> None:
+        result = exit_waterfall(
+            total_proceeds=0, lp_equity_in=100_000_000, gp_equity_in=0,
+            hold_years=5,
+        )
+        self.assertEqual(result.lp_total, 0)
+        self.assertEqual(result.carry_earned, 0)
+
+
+class TestMOICCAGR(unittest.TestCase):
+
+    def test_2x_over_5yrs_is_14_87_pct(self) -> None:
+        cagr = moic_cagr_to_irr(2.0, 5.0)
+        self.assertAlmostEqual(cagr, 0.14870, places=3)
+
+    def test_invalid_inputs_return_none(self) -> None:
+        self.assertIsNone(moic_cagr_to_irr(0, 5))
+        self.assertIsNone(moic_cagr_to_irr(2, 0))
+
+
+class TestRequiredExitEBITDA(unittest.TestCase):
+
+    def test_reverses_math(self) -> None:
+        target_moic = 2.5
+        equity_in = 200_000_000
+        needed = required_exit_ebitda_for_moic(
+            target_moic=target_moic, equity_in=equity_in,
+            exit_multiple=10.0, exit_net_debt=100_000_000,
+            transaction_fees_pct=0.015,
+        )
+        self.assertIsNotNone(needed)
+        # Verify by running the forward math.
+        check = project_exit_ev(
+            exit_ebitda=needed, exit_multiple=10.0,
+            exit_net_debt=100_000_000, transaction_fees_pct=0.015,
+        )
+        self.assertAlmostEqual(check["equity_after_fees"] / equity_in,
+                               target_moic, places=4)
+
+
 if __name__ == "__main__":
     unittest.main()
