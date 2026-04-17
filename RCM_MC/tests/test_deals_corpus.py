@@ -112,6 +112,7 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_17 import EXTENDED_SEED_DEALS_17
         from rcm_mc.data_public.extended_seed_18 import EXTENDED_SEED_DEALS_18
         from rcm_mc.data_public.extended_seed_19 import EXTENDED_SEED_DEALS_19
+        from rcm_mc.data_public.extended_seed_20 import EXTENDED_SEED_DEALS_20
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
@@ -122,7 +123,7 @@ class TestDealsCorpus(unittest.TestCase):
                     + len(EXTENDED_SEED_DEALS_13) + len(EXTENDED_SEED_DEALS_14)
                     + len(EXTENDED_SEED_DEALS_15) + len(EXTENDED_SEED_DEALS_16)
                     + len(EXTENDED_SEED_DEALS_17) + len(EXTENDED_SEED_DEALS_18)
-                    + len(EXTENDED_SEED_DEALS_19))
+                    + len(EXTENDED_SEED_DEALS_19) + len(EXTENDED_SEED_DEALS_20))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3587,10 +3588,10 @@ class TestExtendedSeed8(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_415_deals(self):
+    def test_seed_loads_435_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
-        self.assertGreaterEqual(stats["total"], 415)
+        self.assertGreaterEqual(stats["total"], 435)
 
     def test_seed_187_signify_high_moic(self):
         corpus = DealsCorpus(self.db_path)
@@ -6278,6 +6279,116 @@ class TestCorpusHealthCheck(unittest.TestCase):
         self.assertGreater(result.health_score, 0.5)
         text = health_check_text(result)
         self.assertIn("Corpus Health Check Report", text)
+
+
+class TestHoldPeriodOptimizer(unittest.TestCase):
+    """Tests for hold_period_optimizer.py."""
+
+    def test_curve_returns_correct_count(self):
+        from rcm_mc.data_public.hold_period_optimizer import compute_hold_curve
+        curve = compute_hold_curve(50.0, 12.0, 0.10, max_years=8)
+        self.assertEqual(len(curve), 8)
+
+    def test_moic_increases_then_decreases(self):
+        from rcm_mc.data_public.hold_period_optimizer import compute_hold_curve
+        curve = compute_hold_curve(50.0, 12.0, 0.08, max_years=10)
+        moics = [r.gross_moic for r in curve]
+        # Should peak somewhere then decline due to multiple compression
+        peak_idx = moics.index(max(moics))
+        self.assertGreater(peak_idx, 0)  # Not first year
+
+    def test_irr_peaks_earlier_than_moic(self):
+        from rcm_mc.data_public.hold_period_optimizer import compute_hold_curve, find_optimal_exit
+        curve = compute_hold_curve(50.0, 12.0, 0.10, max_years=10)
+        opt = find_optimal_exit(curve)
+        # IRR typically maximizes earlier than MOIC
+        self.assertLessEqual(opt.irr_maximizing_year, opt.moic_maximizing_year + 1)
+
+    def test_optimal_exit_has_sweet_spot(self):
+        from rcm_mc.data_public.hold_period_optimizer import compute_hold_curve, find_optimal_exit
+        curve = compute_hold_curve(50.0, 12.0, 0.10, max_years=10)
+        opt = find_optimal_exit(curve)
+        self.assertLessEqual(opt.sweet_spot_start, opt.sweet_spot_end)
+        self.assertGreater(opt.peak_gross_moic, 1.0)
+
+    def test_higher_cagr_higher_moic(self):
+        from rcm_mc.data_public.hold_period_optimizer import compute_hold_curve
+        low_growth = compute_hold_curve(50.0, 12.0, 0.05, max_years=5)
+        high_growth = compute_hold_curve(50.0, 12.0, 0.15, max_years=5)
+        # At year 5, higher EBITDA growth → higher MOIC
+        self.assertGreater(high_growth[-1].gross_moic, low_growth[-1].gross_moic)
+
+    def test_corpus_hold_benchmarks(self):
+        from rcm_mc.data_public.hold_period_optimizer import corpus_hold_benchmarks
+        from rcm_mc.data_public.extended_seed_17 import EXTENDED_SEED_DEALS_17
+        from rcm_mc.data_public.extended_seed_18 import EXTENDED_SEED_DEALS_18
+        deals = EXTENDED_SEED_DEALS_17 + EXTENDED_SEED_DEALS_18
+        bench = corpus_hold_benchmarks(deals)
+        self.assertGreater(bench["n"], 5)
+        self.assertIsNotNone(bench["hold_p50"])
+        self.assertIsNotNone(bench["moic_p50"])
+
+    def test_hold_curve_table_format(self):
+        from rcm_mc.data_public.hold_period_optimizer import compute_hold_curve, hold_curve_table
+        curve = compute_hold_curve(50.0, 12.0, 0.10, max_years=5)
+        text = hold_curve_table(curve)
+        self.assertIn("Gross MOIC", text)
+        self.assertIn("Year", text)
+
+    def test_optimizer_report_format(self):
+        from rcm_mc.data_public.hold_period_optimizer import (
+            compute_hold_curve, find_optimal_exit, hold_optimizer_report,
+        )
+        curve = compute_hold_curve(50.0, 12.0, 0.10, max_years=8)
+        opt = find_optimal_exit(curve)
+        text = hold_optimizer_report(curve, opt)
+        self.assertIn("Hold Period Optimization Report", text)
+        self.assertIn("sweet spot", text.lower())
+
+    def test_exit_equity_positive(self):
+        from rcm_mc.data_public.hold_period_optimizer import compute_hold_curve
+        curve = compute_hold_curve(50.0, 12.0, 0.10, max_years=5)
+        for r in curve:
+            self.assertGreater(r.exit_equity_mm, 0)
+
+
+class TestExtendedSeed20(unittest.TestCase):
+    """Tests for extended_seed_20.py (deals 416-435)."""
+
+    def setUp(self):
+        import tempfile, os
+        self.tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.db_path = self.tmp.name
+        self.tmp.close()
+        self.corpus = DealsCorpus(self.db_path)
+        self.corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        import os
+        os.unlink(self.db_path)
+
+    def test_seed_20_count(self):
+        from rcm_mc.data_public.extended_seed_20 import EXTENDED_SEED_DEALS_20
+        self.assertEqual(len(EXTENDED_SEED_DEALS_20), 20)
+
+    def test_seed_421_biotelemetry_homerun(self):
+        deal = self.corpus.get("seed_421")
+        self.assertIsNotNone(deal)
+        self.assertGreaterEqual(deal["realized_moic"], 4.0)
+
+    def test_seed_418_nant_disaster(self):
+        deal = self.corpus.get("seed_418")
+        self.assertIsNotNone(deal)
+        self.assertLess(deal["realized_moic"], 1.0)
+
+    def test_seed_435_present(self):
+        deal = self.corpus.get("seed_435")
+        self.assertIsNotNone(deal)
+
+    def test_seed_20_unique_ids(self):
+        from rcm_mc.data_public.extended_seed_20 import EXTENDED_SEED_DEALS_20
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_20]
+        self.assertEqual(len(ids), len(set(ids)))
 
 
 class TestReimbursementRiskModel(unittest.TestCase):

@@ -329,6 +329,15 @@ from .reimbursement_risk_model import (
     reimbursement_risk_report,
     sector_volatility,
 )
+from .hold_period_optimizer import (
+    HoldResult,
+    OptimalExitWindow,
+    compute_hold_curve,
+    find_optimal_exit,
+    corpus_hold_benchmarks,
+    hold_curve_table,
+    hold_optimizer_report,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -581,4 +590,11 @@ __all__ = [
     "reimbursement_risk_table",
     "reimbursement_risk_report",
     "sector_volatility",
+    "HoldResult",
+    "OptimalExitWindow",
+    "compute_hold_curve",
+    "find_optimal_exit",
+    "corpus_hold_benchmarks",
+    "hold_curve_table",
+    "hold_optimizer_report",
 ]
