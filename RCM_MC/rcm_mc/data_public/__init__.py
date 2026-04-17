@@ -108,6 +108,13 @@ from .scrapers.cms_data import (
     fetch_cms_market_intelligence,
     cms_ingest_summary,
 )
+from .cms_market_analysis import (
+    MarketAnalysisReport,
+    run_market_analysis,
+    white_space_opportunities,
+    top_regimes,
+    analysis_summary_text,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -193,4 +200,9 @@ __all__ = [
     "regime_table",
     "fetch_cms_market_intelligence",
     "cms_ingest_summary",
+    "MarketAnalysisReport",
+    "run_market_analysis",
+    "white_space_opportunities",
+    "top_regimes",
+    "analysis_summary_text",
 ]

@@ -2892,5 +2892,93 @@ class TestCmsDataScraper(unittest.TestCase):
         self.assertTrue(callable(regime_table))
 
 
+# ===========================================================================
+# TestCmsMarketAnalysis
+# ===========================================================================
+
+class TestCmsMarketAnalysis(unittest.TestCase):
+
+    def _sample_df(self):
+        import pandas as pd
+        data = []
+        for pt, base, growth in [("Cardiology", 1000, 0.15), ("Orthopedic", 500, 0.02), ("Neurology", 800, -0.05)]:
+            for yr in [2020, 2021]:
+                for st in ["TX", "CA"]:
+                    data.append({
+                        "provider_type": pt,
+                        "year": yr,
+                        "state": st,
+                        "total_medicare_payment_amt": base * ((1 + growth) ** (yr - 2020)) * (1.5 if st == "CA" else 1.0),
+                        "total_services": 100,
+                        "total_unique_benes": 80,
+                    })
+        return pd.DataFrame(data)
+
+    def test_run_market_analysis_with_df(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        self.assertEqual(report.year, 2021)
+        self.assertGreater(report.row_count, 0)
+        self.assertFalse(report.concentration.empty)
+
+    def test_report_regimes_classified(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        self.assertFalse(report.regimes.empty)
+        self.assertIn("regime", report.regimes.columns)
+
+    def test_report_portfolio_fit(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        self.assertFalse(report.portfolio_fit.empty)
+
+    def test_empty_df_returns_empty_report(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        import pandas as pd
+        report = run_market_analysis(year=2021, df=pd.DataFrame())
+        self.assertEqual(report.row_count, 0)
+        self.assertTrue(report.concentration.empty)
+
+    def test_as_summary_dict_serialisable(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        import json
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        d = report.as_summary_dict()
+        json.dumps(d)
+        self.assertIn("year", d)
+        self.assertIn("regimes_classified", d)
+
+    def test_analysis_summary_text_contains_headers(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis, analysis_summary_text
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        txt = analysis_summary_text(report)
+        self.assertIn("CMS Market Analysis Report", txt)
+        self.assertIn("Provider Regimes", txt)
+
+    def test_white_space_opportunities(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis, white_space_opportunities
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        ws = white_space_opportunities(report, min_fit_percentile=0.0)
+        # May be empty if no priority watchlist providers, but should not raise
+        self.assertIsInstance(ws, __import__("pandas").DataFrame)
+
+    def test_top_regimes_length(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis, top_regimes
+        report = run_market_analysis(year=2021, df=self._sample_df())
+        top = top_regimes(report, n=2)
+        self.assertLessEqual(len(top), 2)
+
+    def test_api_error_produces_empty_report(self):
+        from rcm_mc.data_public.cms_market_analysis import run_market_analysis
+        from rcm_mc.data_public.cms_api_client import CmsApiError
+        with unittest.mock.patch(
+            "rcm_mc.data_public.cms_market_analysis.fetch_provider_utilization",
+            side_effect=CmsApiError("timeout"),
+        ):
+            report = run_market_analysis(year=2021)
+        self.assertEqual(report.row_count, 0)
+        self.assertTrue(len(report.errors) > 0)
+
+
 if __name__ == "__main__":
     unittest.main()
