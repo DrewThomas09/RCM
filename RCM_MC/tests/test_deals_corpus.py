@@ -98,10 +98,11 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_3 import EXTENDED_SEED_DEALS_3
         from rcm_mc.data_public.extended_seed_4 import EXTENDED_SEED_DEALS_4
         from rcm_mc.data_public.extended_seed_5 import EXTENDED_SEED_DEALS_5
+        from rcm_mc.data_public.extended_seed_6 import EXTENDED_SEED_DEALS_6
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
-                    + len(EXTENDED_SEED_DEALS_5))
+                    + len(EXTENDED_SEED_DEALS_5) + len(EXTENDED_SEED_DEALS_6))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3554,6 +3555,46 @@ class TestCmsCli(unittest.TestCase):
         out = buf.getvalue()
         # Should not crash; should report no data or errors
         self.assertIsInstance(out, str)
+
+
+class TestExtendedSeed6(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def test_seed_loads_155_deals(self):
+        corpus = DealsCorpus(self.db_path)
+        stats = corpus.stats()
+        self.assertGreaterEqual(stats["total"], 155)
+
+    def test_seed_136_r1_rcm_cloudmed(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_136")
+        self.assertIsNotNone(deal)
+        self.assertIn("Cloudmed", deal["deal_name"])
+
+    def test_seed_155_gentiva_hospice(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_155")
+        self.assertIsNotNone(deal)
+        self.assertIn("Gentiva", deal["deal_name"])
+        self.assertGreater(deal["ev_mm"], 3000)
+
+    def test_extended_seed_6_list_length(self):
+        from rcm_mc.data_public.extended_seed_6 import EXTENDED_SEED_DEALS_6
+        self.assertEqual(len(EXTENDED_SEED_DEALS_6), 20)
+
+    def test_all_seed_6_have_required_fields(self):
+        from rcm_mc.data_public.extended_seed_6 import EXTENDED_SEED_DEALS_6
+        for deal in EXTENDED_SEED_DEALS_6:
+            self.assertIn("source_id", deal)
+            self.assertIn("deal_name", deal)
+            self.assertEqual(deal["source"], "seed")
 
 
 class TestCmsBenchmarkCalibration(unittest.TestCase):
