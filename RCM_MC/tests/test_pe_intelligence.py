@@ -6451,5 +6451,93 @@ class TestRunReimbursementBands(unittest.TestCase):
         self.assertEqual(run_reimbursement_bands(), [])
 
 
+# ── EBITDA quality ─────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    AddbackFinding,
+    EBITDAAddback,
+    EBITDAQualityReport,
+    assess_ebitda_quality,
+    render_ebitda_quality_markdown,
+)
+
+
+class TestEBITDAQuality(unittest.TestCase):
+
+    def test_clean_ebitda_is_high_quality(self) -> None:
+        report = assess_ebitda_quality(
+            reported_ebitda=50_000_000,
+            addbacks=[
+                EBITDAAddback(name="legal_settlement", amount=500_000,
+                              category="one_time", evidence="documented"),
+            ],
+        )
+        self.assertEqual(report.quality_verdict, "high")
+
+    def test_synergy_heavy_is_implausible(self) -> None:
+        report = assess_ebitda_quality(
+            reported_ebitda=30_000_000,
+            addbacks=[
+                EBITDAAddback(name="run_rate_synergy", amount=10_000_000,
+                              category="synergy", evidence="projected"),
+                EBITDAAddback(name="rent_addback", amount=8_000_000,
+                              category="normalization", evidence="estimated"),
+            ],
+        )
+        self.assertIn(report.quality_verdict, ("implausible", "low"))
+        # Partner EBITDA should be materially lower than reported + gross.
+        self.assertLess(report.partner_ebitda,
+                        report.reported_ebitda + report.gross_addbacks)
+
+    def test_haircut_scaled_by_category(self) -> None:
+        report = assess_ebitda_quality(
+            reported_ebitda=10_000_000,
+            addbacks=[
+                EBITDAAddback(name="real", amount=1_000_000,
+                              category="one_time", evidence="documented"),
+                EBITDAAddback(name="phantom", amount=1_000_000,
+                              category="synergy", evidence="projected"),
+            ],
+        )
+        # Synergy haircut >= one_time haircut.
+        haircuts = {f.addback.name: f.haircut_pct for f in report.findings}
+        self.assertGreaterEqual(haircuts["phantom"], haircuts["real"])
+
+    def test_documented_synergy_still_aggressive(self) -> None:
+        report = assess_ebitda_quality(
+            reported_ebitda=10_000_000,
+            addbacks=[
+                EBITDAAddback(name="planned_synergy", amount=2_000_000,
+                              category="synergy", evidence="documented"),
+            ],
+        )
+        finding = report.findings[0]
+        self.assertEqual(finding.classification, "aggressive")
+
+    def test_empty_addbacks_high_quality(self) -> None:
+        report = assess_ebitda_quality(reported_ebitda=50_000_000,
+                                        addbacks=[])
+        self.assertEqual(report.quality_verdict, "high")
+        self.assertEqual(report.gross_addbacks, 0)
+
+    def test_report_to_dict(self) -> None:
+        import json
+        report = assess_ebitda_quality(
+            reported_ebitda=20_000_000,
+            addbacks=[EBITDAAddback(name="x", amount=1_000_000,
+                                    category="one_time")],
+        )
+        json.dumps(report.to_dict())
+
+    def test_markdown_renders(self) -> None:
+        report = assess_ebitda_quality(
+            reported_ebitda=20_000_000,
+            addbacks=[EBITDAAddback(name="x", amount=1_000_000,
+                                    category="one_time")],
+        )
+        md = render_ebitda_quality_markdown(report)
+        self.assertIn("EBITDA quality report", md)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -205,6 +205,13 @@ from .reimbursement_bands import (
     check_site_neutral_parity,
     run_reimbursement_bands,
 )
+from .ebitda_quality import (
+    AddbackFinding,
+    EBITDAAddback,
+    EBITDAQualityReport,
+    assess_ebitda_quality,
+    render_ebitda_quality_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -809,4 +816,9 @@ __all__ = [
     "check_payer_rate_growth",
     "check_site_neutral_parity",
     "run_reimbursement_bands",
+    "AddbackFinding",
+    "EBITDAAddback",
+    "EBITDAQualityReport",
+    "assess_ebitda_quality",
+    "render_ebitda_quality_markdown",
 ]
