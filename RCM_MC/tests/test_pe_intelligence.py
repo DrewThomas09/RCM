@@ -2700,5 +2700,56 @@ class TestCorrelationRisk(unittest.TestCase):
         self.assertEqual(len(medicare_flags), 0)
 
 
+# ── Workbench integration ─────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    archetype_summary,
+    build_api_payload,
+    build_workbench_bundle,
+)
+
+
+class TestWorkbenchIntegration(unittest.TestCase):
+
+    def test_bundle_has_all_sections(self) -> None:
+        packet = _make_packet_dict()
+        bundle = build_workbench_bundle(packet)
+        for key in ("review", "ic_memo", "lp_pitch",
+                    "hundred_day_plan_markdown", "diligence_board_markdown",
+                    "bear_patterns", "regulatory_items"):
+            self.assertIn(key, bundle)
+
+    def test_bundle_memo_markdown_nonempty(self) -> None:
+        packet = _make_packet_dict()
+        bundle = build_workbench_bundle(packet)
+        self.assertGreater(len(bundle["ic_memo"]["markdown"]), 50)
+
+    def test_bundle_is_json_serializable(self) -> None:
+        import json
+        packet = _make_packet_dict()
+        bundle = build_workbench_bundle(packet)
+        json.dumps(bundle, default=str)
+
+    def test_api_payload_is_compact(self) -> None:
+        packet = _make_packet_dict()
+        payload = build_api_payload(packet)
+        # Should not include HTML.
+        self.assertNotIn("html", payload)
+        for key in ("deal_id", "recommendation", "headline",
+                    "bull_case", "bear_case", "key_questions",
+                    "severity_counts", "band_counts",
+                    "heuristic_hits", "reasonableness_checks",
+                    "is_fundable", "has_critical_flag"):
+            self.assertIn(key, payload)
+
+    def test_archetype_summary_returns_ranked(self) -> None:
+        packet = _make_packet_dict()
+        review = partner_review(packet)
+        summary = archetype_summary(review)
+        self.assertIn("primary", summary)
+        self.assertIn("ranked", summary)
+        self.assertIsInstance(summary["ranked"], list)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -81,6 +81,11 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .workbench_integration import (
+    archetype_summary,
+    build_api_payload,
+    build_workbench_bundle,
+)
 from .comparative_analytics import (
     DealSnapshot,
     DealVsBookFinding,
@@ -266,4 +271,7 @@ __all__ = [
     "deal_rank_vs_peers",
     "deal_vs_book",
     "portfolio_concentration",
+    "archetype_summary",
+    "build_api_payload",
+    "build_workbench_bundle",
 ]
