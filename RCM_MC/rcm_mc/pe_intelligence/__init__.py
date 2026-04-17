@@ -81,6 +81,17 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .synergy_modeler import (
+    SynergyInputs,
+    SynergyResult,
+    apply_partner_haircut,
+    realization_schedule,
+    size_cost_synergies,
+    size_procurement_synergies,
+    size_rcm_synergies,
+    size_revenue_synergies,
+    size_synergies,
+)
 from .thesis_validator import (
     ConsistencyFinding,
     ThesisStatement,
@@ -340,4 +351,13 @@ __all__ = [
     "ConsistencyFinding",
     "ThesisStatement",
     "validate_thesis",
+    "SynergyInputs",
+    "SynergyResult",
+    "apply_partner_haircut",
+    "realization_schedule",
+    "size_cost_synergies",
+    "size_procurement_synergies",
+    "size_rcm_synergies",
+    "size_revenue_synergies",
+    "size_synergies",
 ]

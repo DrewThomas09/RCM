@@ -3317,5 +3317,113 @@ class TestThesisValidator(unittest.TestCase):
         json.dumps(findings[0].to_dict())
 
 
+# ── Synergy modeler ───────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    SynergyInputs,
+    SynergyResult,
+    apply_partner_haircut,
+    realization_schedule,
+    size_cost_synergies,
+    size_procurement_synergies,
+    size_rcm_synergies,
+    size_revenue_synergies,
+    size_synergies,
+)
+
+
+def _synergy_inputs() -> SynergyInputs:
+    return SynergyInputs(
+        platform_revenue=500_000_000, platform_ebitda=50_000_000,
+        addon_revenue=150_000_000, addon_ebitda=12_000_000,
+        addon_sga_pct=0.12, platform_sga_pct=0.10,
+        cross_sell_pct=0.04,
+        rcm_margin_uplift_bps=200,
+        procurement_savings_pct=0.03,
+        addon_cogs_pct=0.40,
+        partner_haircut=0.35,
+    )
+
+
+class TestSynergySizing(unittest.TestCase):
+
+    def test_cost_synergies_on_addon_sga(self) -> None:
+        inputs = _synergy_inputs()
+        cost = size_cost_synergies(inputs, consolidation_pct=0.40)
+        # 150M * 0.12 * 0.40 = 7.2M
+        self.assertAlmostEqual(cost, 7_200_000, delta=1)
+
+    def test_rcm_synergies_based_on_bps(self) -> None:
+        inputs = _synergy_inputs()
+        rcm = size_rcm_synergies(inputs)
+        # 150M * 0.02 = 3M
+        self.assertAlmostEqual(rcm, 3_000_000, delta=1)
+
+    def test_procurement_synergies(self) -> None:
+        inputs = _synergy_inputs()
+        proc = size_procurement_synergies(inputs)
+        # 150M * 0.40 * 0.03 = 1.8M
+        self.assertAlmostEqual(proc, 1_800_000, delta=1)
+
+    def test_revenue_synergies_scale_with_combined_revenue(self) -> None:
+        inputs = _synergy_inputs()
+        rev = size_revenue_synergies(inputs, margin_on_cross_sell=0.30)
+        # combined = 650M; cross-sell = 4% * 650M = 26M; margin = 30% → 7.8M
+        self.assertAlmostEqual(rev, 7_800_000, delta=1)
+
+
+class TestRealizationSchedule(unittest.TestCase):
+
+    def test_default_schedule_is_five_years(self) -> None:
+        schedule = realization_schedule(10_000_000)
+        self.assertEqual(len(schedule), 5)
+        self.assertAlmostEqual(schedule[0]["realized_dollars"], 2_000_000, delta=1)
+        self.assertAlmostEqual(schedule[-1]["realized_dollars"], 10_000_000, delta=1)
+
+    def test_custom_ramp(self) -> None:
+        schedule = realization_schedule(100, ramp=[0.5, 1.0])
+        self.assertEqual(len(schedule), 2)
+        self.assertAlmostEqual(schedule[0]["realized_dollars"], 50, delta=1)
+
+
+class TestSynergyOrchestrator(unittest.TestCase):
+
+    def test_size_synergies_full(self) -> None:
+        result = size_synergies(_synergy_inputs(), consolidation_pct=0.40)
+        self.assertIsInstance(result, SynergyResult)
+        self.assertGreater(result.gross_total, 0)
+        # Net should be gross * (1 - haircut).
+        self.assertAlmostEqual(result.partner_net_total,
+                               result.gross_total * 0.65, delta=10)
+
+    def test_partner_haircut_applied(self) -> None:
+        result = size_synergies(_synergy_inputs())
+        # 35% haircut → net = 65% of gross.
+        self.assertLess(result.partner_net_total, result.gross_total)
+
+    def test_combined_margin_calc(self) -> None:
+        result = size_synergies(_synergy_inputs())
+        # Combined rev 650M; combined ebitda = platform + addon + net synergy.
+        expected_margin = result.combined_ebitda / result.combined_revenue
+        self.assertAlmostEqual(result.implied_pro_forma_margin,
+                               expected_margin, places=4)
+
+    def test_result_to_dict_roundtrip(self) -> None:
+        import json
+        result = size_synergies(_synergy_inputs())
+        json.dumps(result.to_dict())
+
+
+class TestApplyPartnerHaircut(unittest.TestCase):
+
+    def test_default_haircut(self) -> None:
+        net = apply_partner_haircut(100)
+        self.assertAlmostEqual(net, 65, delta=0.1)
+
+    def test_custom_haircut(self) -> None:
+        net = apply_partner_haircut(100, haircut=0.50)
+        self.assertAlmostEqual(net, 50, delta=0.1)
+
+
 if __name__ == "__main__":
     unittest.main()
