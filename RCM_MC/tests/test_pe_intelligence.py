@@ -10647,5 +10647,112 @@ class TestBankSyndicatePicker(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Exit channel selector ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    EXIT_CHANNELS,
+    ChannelRank,
+    ExitChannelInputs,
+    ExitChannelRecommendation,
+    rank_exit_channels,
+    render_exit_channel_markdown,
+)
+
+
+class TestExitChannelSelector(unittest.TestCase):
+
+    def test_four_channels(self) -> None:
+        r = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=40.0, revenue_m=200.0,
+        ))
+        self.assertEqual(len(r.ranks), 4)
+        channels = {c.channel for c in r.ranks}
+        self.assertEqual(channels, {"strategic", "sponsor", "ipo",
+                                      "continuation"})
+
+    def test_strategic_interest_favors_strategic(self) -> None:
+        r = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=60.0, revenue_m=300.0,
+            sector_heat="hot",
+            has_strategic_buyers_interested=True,
+        ))
+        self.assertEqual(r.best_channel, "strategic")
+
+    def test_small_deal_disfavors_ipo(self) -> None:
+        r = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=20.0, revenue_m=100.0,
+            ipo_window_status="open",
+        ))
+        ipo = next(c for c in r.ranks if c.channel == "ipo")
+        # Small deal penalized -15 for IPO.
+        self.assertLess(ipo.score_0_100, 50)
+
+    def test_closed_ipo_window_penalizes_ipo(self) -> None:
+        open_r = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=100.0, revenue_m=500.0,
+            ipo_window_status="open",
+        ))
+        closed_r = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=100.0, revenue_m=500.0,
+            ipo_window_status="closed",
+        ))
+        open_ipo = next(c for c in open_r.ranks if c.channel == "ipo")
+        closed_ipo = next(c for c in closed_r.ranks if c.channel == "ipo")
+        self.assertGreater(open_ipo.score_0_100, closed_ipo.score_0_100)
+
+    def test_continuation_favored_with_runway_thesis(self) -> None:
+        r = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=40.0, revenue_m=200.0,
+            has_material_runway_thesis=True,
+            years_held=6,
+            ipo_window_status="closed",
+            sector_heat="cool",
+            has_strategic_buyers_interested=False,
+        ))
+        # Strategic down (no interest, cool), IPO down (closed, small).
+        # Sponsor penalized by cool sector. Continuation boosted.
+        cont = next(c for c in r.ranks if c.channel == "continuation")
+        self.assertGreaterEqual(cont.score_0_100, 55)
+
+    def test_easing_rates_boost_sponsor(self) -> None:
+        easing = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=40.0, revenue_m=200.0,
+            rate_environment="easing",
+        ))
+        tight = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=40.0, revenue_m=200.0,
+            rate_environment="tightening",
+        ))
+        easing_s = next(c for c in easing.ranks if c.channel == "sponsor")
+        tight_s = next(c for c in tight.ranks if c.channel == "sponsor")
+        self.assertGreater(easing_s.score_0_100, tight_s.score_0_100)
+
+    def test_ranks_sorted(self) -> None:
+        r = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=40.0, revenue_m=200.0,
+        ))
+        scores = [c.score_0_100 for c in r.ranks]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_markdown_renders(self) -> None:
+        md = render_exit_channel_markdown(rank_exit_channels(
+            ExitChannelInputs(ebitda_m=40.0, revenue_m=200.0)
+        ))
+        self.assertIn("# Exit channel selector", md)
+        self.assertIn("Rationale", md)
+
+    def test_json(self) -> None:
+        import json
+        r = rank_exit_channels(ExitChannelInputs(
+            ebitda_m=40.0, revenue_m=200.0))
+        json.dumps(r.to_dict())
+
+    def test_channels_constant_complete(self) -> None:
+        self.assertEqual(
+            set(EXIT_CHANNELS),
+            {"strategic", "sponsor", "ipo", "continuation"},
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

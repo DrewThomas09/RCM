@@ -550,6 +550,14 @@ from .bank_syndicate_picker import (
     pick_syndicate,
     render_syndicate_markdown,
 )
+from .exit_channel_selector import (
+    CHANNELS as EXIT_CHANNELS,
+    ChannelRank,
+    ExitChannelInputs,
+    ExitChannelRecommendation,
+    rank_exit_channels,
+    render_exit_channel_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1403,4 +1411,10 @@ __all__ = [
     "SyndicateRecommendation",
     "pick_syndicate",
     "render_syndicate_markdown",
+    "EXIT_CHANNELS",
+    "ChannelRank",
+    "ExitChannelInputs",
+    "ExitChannelRecommendation",
+    "rank_exit_channels",
+    "render_exit_channel_markdown",
 ]
