@@ -150,6 +150,12 @@ from .scenario_narrative import (
     render_scenario_markdown,
     render_scenario_narrative,
 )
+from .deal_comparison import (
+    ComparisonFinding,
+    ComparisonResult,
+    compare_reviews,
+    render_comparison_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -717,4 +723,8 @@ __all__ = [
     "ScenarioNarrativeResult",
     "render_scenario_markdown",
     "render_scenario_narrative",
+    "ComparisonFinding",
+    "ComparisonResult",
+    "compare_reviews",
+    "render_comparison_markdown",
 ]

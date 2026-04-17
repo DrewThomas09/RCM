@@ -5799,5 +5799,71 @@ class TestScenarioNarrative(unittest.TestCase):
         json.dumps(narr.to_dict())
 
 
+# ── Deal comparison ──────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ComparisonFinding,
+    ComparisonResult,
+    compare_reviews,
+    render_comparison_markdown,
+)
+
+
+def _review_for_compare(*, irr, moic, leverage, grade_hint="B", deal_id="x"):
+    ctx = HeuristicContext(
+        payer_mix={"commercial": 0.55}, ebitda_m=30, revenue_m=250,
+        ebitda_margin=0.10, leverage_multiple=leverage,
+        exit_multiple=9.0, entry_multiple=8.0, hold_years=5,
+        projected_irr=irr, projected_moic=moic,
+        hospital_type="acute_care", state="TX",
+    )
+    return partner_review_from_context(ctx, deal_id=deal_id)
+
+
+class TestDealComparison(unittest.TestCase):
+
+    def test_better_irr_wins_irr_dimension(self) -> None:
+        a = _review_for_compare(irr=0.25, moic=2.8, leverage=4.5, deal_id="A")
+        b = _review_for_compare(irr=0.15, moic=2.0, leverage=5.5, deal_id="B")
+        result = compare_reviews(a, b)
+        irr_f = next(f for f in result.findings if f.dimension == "projected_irr")
+        self.assertEqual(irr_f.winner, "left")
+
+    def test_lower_leverage_wins(self) -> None:
+        a = _review_for_compare(irr=0.20, moic=2.3, leverage=4.0, deal_id="A")
+        b = _review_for_compare(irr=0.20, moic=2.3, leverage=6.0, deal_id="B")
+        result = compare_reviews(a, b)
+        lev = next(f for f in result.findings if f.dimension == "leverage_multiple")
+        self.assertEqual(lev.winner, "left")
+
+    def test_overall_winner_populated(self) -> None:
+        a = _review_for_compare(irr=0.25, moic=2.8, leverage=4.0, deal_id="A")
+        b = _review_for_compare(irr=0.15, moic=2.0, leverage=6.5, deal_id="B")
+        result = compare_reviews(a, b)
+        self.assertEqual(result.overall_winner, "left")
+
+    def test_tied_deals_tie_overall(self) -> None:
+        a = _review_for_compare(irr=0.20, moic=2.3, leverage=5.0, deal_id="A")
+        b = _review_for_compare(irr=0.20, moic=2.3, leverage=5.0, deal_id="B")
+        result = compare_reviews(a, b)
+        self.assertEqual(result.overall_winner, "tie")
+
+    def test_markdown_has_table_headers(self) -> None:
+        a = _review_for_compare(irr=0.20, moic=2.3, leverage=5.0, deal_id="A")
+        b = _review_for_compare(irr=0.18, moic=2.1, leverage=5.5, deal_id="B")
+        result = compare_reviews(a, b)
+        md = render_comparison_markdown(result)
+        self.assertIn("| Dimension", md)
+        self.assertIn("A", md)
+        self.assertIn("B", md)
+
+    def test_to_dict_json_roundtrip(self) -> None:
+        import json
+        a = _review_for_compare(irr=0.20, moic=2.3, leverage=5.0, deal_id="A")
+        b = _review_for_compare(irr=0.18, moic=2.1, leverage=5.5, deal_id="B")
+        result = compare_reviews(a, b)
+        json.dumps(result.to_dict(), default=str)
+
+
 if __name__ == "__main__":
     unittest.main()
