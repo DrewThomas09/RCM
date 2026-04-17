@@ -479,6 +479,15 @@ from .customer_concentration_drilldown import (
     analyze_customers,
     render_concentration_markdown,
 )
+from .geographic_reach_analyzer import (
+    CPOM_RESTRICTIVE_STATES,
+    EXPANSION_FAVORABLE_STATES,
+    GeoFinding,
+    GeoReachReport,
+    StateFootprint,
+    analyze_geography,
+    render_geo_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1279,4 +1288,11 @@ __all__ = [
     "CustomerRisk",
     "analyze_customers",
     "render_concentration_markdown",
+    "CPOM_RESTRICTIVE_STATES",
+    "EXPANSION_FAVORABLE_STATES",
+    "GeoFinding",
+    "GeoReachReport",
+    "StateFootprint",
+    "analyze_geography",
+    "render_geo_markdown",
 ]

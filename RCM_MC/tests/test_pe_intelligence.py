@@ -9767,5 +9767,115 @@ class TestCustomerConcentrationDrilldown(unittest.TestCase):
         json.dumps(analyze_customers(self._diversified()).to_dict())
 
 
+# ── Geographic reach analyzer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CPOM_RESTRICTIVE_STATES,
+    EXPANSION_FAVORABLE_STATES,
+    GeoFinding,
+    GeoReachReport,
+    StateFootprint,
+    analyze_geography,
+    render_geo_markdown,
+)
+
+
+class TestGeographicReachAnalyzer(unittest.TestCase):
+
+    def test_empty_footprint(self) -> None:
+        r = analyze_geography([])
+        self.assertIn("No geographic", r.partner_note)
+
+    def test_single_state_high_concentration(self) -> None:
+        r = analyze_geography([
+            StateFootprint(state="CA", revenue_m=100.0, site_count=10),
+        ])
+        self.assertEqual(r.state_count, 1)
+        self.assertEqual(r.top_state, "CA")
+        self.assertTrue(any(f.level == "high" for f in r.findings))
+
+    def test_diversified_footprint_healthy(self) -> None:
+        r = analyze_geography([
+            StateFootprint(state=s, revenue_m=10.0, site_count=4)
+            for s in ["FL", "TX", "AZ", "NC", "TN", "GA",
+                      "SC", "NV", "UT", "ID"]
+        ])
+        self.assertEqual(r.state_count, 10)
+        self.assertLess(r.top_state_share_pct, 15)
+        self.assertIn("healthy", r.partner_note.lower())
+
+    def test_cpom_heavy_flagged(self) -> None:
+        r = analyze_geography([
+            StateFootprint(state="CA", revenue_m=40.0, site_count=5),
+            StateFootprint(state="NY", revenue_m=30.0, site_count=5),
+            StateFootprint(state="FL", revenue_m=30.0, site_count=5),
+        ])
+        self.assertGreater(r.cpom_exposure_pct, 50)
+        self.assertTrue(any("CPOM" in f.message for f in r.findings))
+
+    def test_thin_density_flagged(self) -> None:
+        r = analyze_geography([
+            StateFootprint(state=s, revenue_m=5.0, site_count=1)
+            for s in ["FL", "TX", "AZ", "NC", "TN"]
+        ])
+        self.assertTrue(any("density" in f.message.lower()
+                            for f in r.findings))
+
+    def test_expansion_suggestions_exclude_present(self) -> None:
+        r = analyze_geography([
+            StateFootprint(state="FL", revenue_m=50.0, site_count=5),
+            StateFootprint(state="TX", revenue_m=50.0, site_count=5),
+        ])
+        self.assertNotIn("FL", r.favorable_expansion_states)
+        self.assertNotIn("TX", r.favorable_expansion_states)
+
+    def test_state_aggregation_dedupes(self) -> None:
+        r = analyze_geography([
+            StateFootprint(state="FL", revenue_m=10.0, site_count=2),
+            StateFootprint(state="FL", revenue_m=20.0, site_count=3),
+        ])
+        # Should aggregate FL to single state.
+        self.assertEqual(r.state_count, 1)
+
+    def test_many_states_flagged_for_overhead(self) -> None:
+        r = analyze_geography([
+            StateFootprint(state=s, revenue_m=1.0, site_count=1)
+            for s in ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE",
+                      "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS",
+                      "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS"]
+        ])
+        self.assertTrue(any("compliance overhead" in f.message.lower()
+                            for f in r.findings))
+
+    def test_hhi_equal_states_scaled(self) -> None:
+        r = analyze_geography([
+            StateFootprint(state=s, revenue_m=10.0, site_count=3)
+            for s in ["FL", "TX", "AZ", "NC", "TN"]
+        ])
+        # 5 equal states: HHI = 5 * 20^2 = 2000.
+        self.assertLess(abs(r.state_hhi - 2000), 50)
+
+    def test_markdown_renders(self) -> None:
+        r = analyze_geography([
+            StateFootprint(state="FL", revenue_m=50.0, site_count=8),
+            StateFootprint(state="TX", revenue_m=50.0, site_count=12),
+        ])
+        md = render_geo_markdown(r)
+        self.assertIn("# Geographic reach analysis", md)
+        self.assertIn("State count", md)
+
+    def test_json(self) -> None:
+        import json
+        r = analyze_geography([
+            StateFootprint(state="FL", revenue_m=50.0, site_count=5),
+            StateFootprint(state="TX", revenue_m=50.0, site_count=5),
+        ])
+        json.dumps(r.to_dict())
+
+    def test_libraries_non_empty(self) -> None:
+        self.assertGreater(len(CPOM_RESTRICTIVE_STATES), 5)
+        self.assertGreater(len(EXPANSION_FAVORABLE_STATES), 5)
+
+
 if __name__ == "__main__":
     unittest.main()
