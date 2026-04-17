@@ -141,6 +141,14 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .cms_rate_monitor import (
+    RateTrendSignal,
+    compute_rate_trends,
+    adverse_rate_flag,
+    apply_rate_stress,
+    rate_trend_table,
+    rate_monitor_summary,
+)
 from .deal_underwriting_model import (
     UnderwritingAssumptions,
     UnderwritingResult,
@@ -322,6 +330,12 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "RateTrendSignal",
+    "compute_rate_trends",
+    "adverse_rate_flag",
+    "apply_rate_stress",
+    "rate_trend_table",
+    "rate_monitor_summary",
     "UnderwritingAssumptions",
     "UnderwritingResult",
     "underwrite_deal",

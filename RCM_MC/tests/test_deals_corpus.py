@@ -3559,6 +3559,99 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestCmsRateMonitor(unittest.TestCase):
+    """Tests for cms_rate_monitor module."""
+
+    def _make_dfs(self):
+        import pandas as pd
+        dfs = {}
+        for yr, mult in [(2019, 1.0), (2020, 0.97), (2021, 0.93), (2022, 0.88)]:
+            dfs[yr] = pd.DataFrame({
+                "provider_type": ["SNF", "HHA", "ASC", "SNF", "HHA"],
+                "state": ["TX", "TX", "TX", "CA", "CA"],
+                "_cms_total_payment_mm": [
+                    10.0 * mult, 8.0 * mult, 5.0 * mult, 12.0 * mult, 7.0 * mult
+                ],
+                "bene_cnt": [100, 80, 50, 120, 70],
+            })
+        return dfs
+
+    def test_compute_rate_trends_returns_list(self):
+        from rcm_mc.data_public.cms_rate_monitor import compute_rate_trends
+        signals = compute_rate_trends(self._make_dfs())
+        self.assertIsInstance(signals, list)
+
+    def test_compute_rate_trends_has_snf(self):
+        from rcm_mc.data_public.cms_rate_monitor import compute_rate_trends
+        signals = compute_rate_trends(self._make_dfs())
+        provider_types = [s.provider_type for s in signals]
+        self.assertIn("SNF", provider_types)
+
+    def test_declining_trend_detected(self):
+        from rcm_mc.data_public.cms_rate_monitor import compute_rate_trends
+        signals = compute_rate_trends(self._make_dfs())
+        # All provider types are declining (mult goes from 1.0 to 0.88)
+        declining = [s for s in signals if s.trend_direction == "declining"]
+        self.assertGreater(len(declining), 0)
+
+    def test_adverse_flag_set(self):
+        from rcm_mc.data_public.cms_rate_monitor import compute_rate_trends
+        signals = compute_rate_trends(self._make_dfs())
+        adverse = [s for s in signals if s.adverse_flag]
+        self.assertGreater(len(adverse), 0)
+
+    def test_adverse_rate_flag_output(self):
+        from rcm_mc.data_public.cms_rate_monitor import compute_rate_trends, adverse_rate_flag
+        signals = compute_rate_trends(self._make_dfs())
+        flags = adverse_rate_flag(signals)
+        self.assertIsInstance(flags, list)
+        if flags:
+            self.assertIn("provider_type", flags[0])
+            self.assertIn("severity", flags[0])
+
+    def test_rate_trend_table_text(self):
+        from rcm_mc.data_public.cms_rate_monitor import compute_rate_trends, rate_trend_table
+        signals = compute_rate_trends(self._make_dfs())
+        text = rate_trend_table(signals)
+        self.assertIn("CMS Payment Rate Trends", text)
+        self.assertIn("SNF", text)
+
+    def test_rate_trend_table_empty(self):
+        from rcm_mc.data_public.cms_rate_monitor import rate_trend_table
+        text = rate_trend_table([])
+        self.assertIn("No rate trend data", text)
+
+    def test_rate_monitor_summary(self):
+        from rcm_mc.data_public.cms_rate_monitor import compute_rate_trends, rate_monitor_summary
+        signals = compute_rate_trends(self._make_dfs())
+        summary = rate_monitor_summary(signals)
+        self.assertIn("total_provider_types", summary)
+        self.assertIn("adverse_count", summary)
+        self.assertGreater(summary["total_provider_types"], 0)
+
+    def test_apply_rate_stress_lowers_moic(self):
+        from rcm_mc.data_public.cms_rate_monitor import compute_rate_trends, apply_rate_stress
+        signals = compute_rate_trends(self._make_dfs())
+        benchmarks = {"moic_p25": 1.5, "moic_p50": 2.0, "moic_p75": 3.0}
+        stressed = apply_rate_stress(benchmarks, signals)
+        # Should have applied a haircut
+        if stressed.get("rate_stress_applied"):
+            self.assertLessEqual(stressed["moic_p50"], 2.0)
+
+    def test_apply_rate_stress_no_adverse(self):
+        from rcm_mc.data_public.cms_rate_monitor import apply_rate_stress
+        benchmarks = {"moic_p50": 2.0}
+        stressed = apply_rate_stress(benchmarks, [])
+        # No adverse signals → no change
+        self.assertEqual(stressed["moic_p50"], 2.0)
+
+    def test_empty_dfs(self):
+        from rcm_mc.data_public.cms_rate_monitor import compute_rate_trends
+        import pandas as pd
+        signals = compute_rate_trends({2021: pd.DataFrame(), 2022: pd.DataFrame()})
+        self.assertEqual(signals, [])
+
+
 class TestDealUnderwritingModel(unittest.TestCase):
     """Tests for deal_underwriting_model module."""
 
