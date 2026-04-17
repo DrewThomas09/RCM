@@ -2356,7 +2356,33 @@ optimizer.
 
 ---
 
-## 113. Change log
+## 113. Pricing power diagnostic (`pricing_power_diagnostic.py`)
+
+Six-dimension weighted score (0-100) of the company's ability to
+raise prices:
+
+- **Payer concentration (20%)** — top payer ≥ 50% → score 20;
+  ≥ 30% → 45; else 75.
+- **Market share (20%)** — ≥ 40% → 90 (must-have); ≥ 20% → 65;
+  else 35.
+- **Differentiation (20%)** — base 30, +30 CoE, +30 exclusive
+  service line.
+- **Contract structure (15%)** — capitation (×1.0) > VBC (×0.8)
+  > FFS (×0.3).
+- **Payer mix (15%)** — commercial ≥ 60% → 85; ≥ 40% → 60; else 30.
+- **Pricing history (10%)** — historical rate increases ≥ 5% → 90;
+  ≥ 3% → 65; < 3% → 30.
+
+Partner guidance on base-case rate assumption:
+
+- ≥ 75 (strong) → model 3-4%/yr.
+- 55-74 (moderate) → model 2-3%/yr; stress test at flat.
+- 35-54 (weak) → model 0-1.5%/yr; pricing is not the lever.
+- < 35 → pricing is not a lever.
+
+---
+
+## 114. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2551,3 +2577,6 @@ optimizer.
 - **2026-04-17** — Added `hold_period_optimizer.py` (§112) — IRR
   vs MOIC peak-year tradeoff. Full inventory: 110 modules, 1,089
   pe_intelligence unit tests.
+- **2026-04-17** — Added `pricing_power_diagnostic.py` (§113) —
+  6-dim weighted score + base-case rate guidance. Full inventory:
+  111 modules, 1,097 pe_intelligence unit tests.
