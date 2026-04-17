@@ -111,6 +111,7 @@ NAV_ITEMS = [
     {"label": "Return Attribution", "href": "/return-attribution", "icon": "chart"},
     {"label": "Deal Flow Heatmap", "href": "/deal-flow-heatmap", "icon": "grid"},
     {"label": "Concentration Risk", "href": "/concentration-risk", "icon": "chart"},
+    {"label": "Hold Analysis", "href": "/hold-analysis", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},

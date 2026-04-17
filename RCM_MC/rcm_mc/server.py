@@ -1926,6 +1926,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/concentration-risk":
             from .ui.data_public.concentration_risk_page import render_concentration_risk
             return self._send_html(render_concentration_risk())
+        if path == "/hold-analysis":
+            from .ui.data_public.hold_analysis_page import render_hold_analysis
+            return self._send_html(render_hold_analysis())
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
