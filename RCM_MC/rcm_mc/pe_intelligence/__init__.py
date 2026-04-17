@@ -349,6 +349,12 @@ from .payer_mix_risk import (
     analyze_payer_mix_risk,
     render_payer_mix_risk_markdown,
 )
+from .peer_discovery import (
+    PeerDeal,
+    PeerMatch,
+    find_peers,
+    render_peers_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1053,4 +1059,8 @@ __all__ = [
     "PayerRisk",
     "analyze_payer_mix_risk",
     "render_payer_mix_risk_markdown",
+    "PeerDeal",
+    "PeerMatch",
+    "find_peers",
+    "render_peers_markdown",
 ]

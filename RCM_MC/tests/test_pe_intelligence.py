@@ -8112,5 +8112,84 @@ class TestPayerMixRisk(unittest.TestCase):
         self.assertIn("# Payer-mix risk", md)
 
 
+# ── Peer discovery ─────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    PeerDeal,
+    PeerMatch,
+    find_peers,
+    render_peers_markdown,
+)
+
+
+class TestPeerDiscovery(unittest.TestCase):
+
+    def _universe(self):
+        return [
+            PeerDeal(deal_id="a", name="Acute-TX-mid", sector="acute_care",
+                     ebitda_m=40, state="TX",
+                     payer_mix={"commercial": 0.55, "medicare": 0.30,
+                                "medicaid": 0.15},
+                     ebitda_margin=0.09, leverage_multiple=4.5),
+            PeerDeal(deal_id="b", name="ASC-CA-lower_mid", sector="asc",
+                     ebitda_m=15, state="CA",
+                     payer_mix={"commercial": 0.70, "medicare": 0.20,
+                                "medicaid": 0.10},
+                     ebitda_margin=0.25, leverage_multiple=3.5),
+            PeerDeal(deal_id="c", name="Acute-FL-mid", sector="acute_care",
+                     ebitda_m=45, state="FL",
+                     payer_mix={"commercial": 0.55, "medicare": 0.30,
+                                "medicaid": 0.15},
+                     ebitda_margin=0.10, leverage_multiple=5.0),
+            PeerDeal(deal_id="d", name="Behavioral-NY-small",
+                     sector="behavioral", ebitda_m=8, state="NY",
+                     payer_mix={"medicaid": 0.50, "commercial": 0.30,
+                                "medicare": 0.20},
+                     ebitda_margin=0.14, leverage_multiple=4.0),
+        ]
+
+    def _candidate(self):
+        return PeerDeal(
+            deal_id="cand", name="Candidate", sector="acute_care",
+            ebitda_m=42, state="TX",
+            payer_mix={"commercial": 0.55, "medicare": 0.30, "medicaid": 0.15},
+            ebitda_margin=0.10, leverage_multiple=4.8,
+        )
+
+    def test_finds_most_similar_first(self) -> None:
+        matches = find_peers(self._candidate(), self._universe(), top_n=3)
+        self.assertGreater(len(matches), 0)
+        # Most similar should be 'a' (same sector + state + payer regime + size).
+        self.assertEqual(matches[0].peer.deal_id, "a")
+
+    def test_filters_below_threshold(self) -> None:
+        # Set high threshold.
+        matches = find_peers(self._candidate(), self._universe(),
+                             min_similarity=0.95)
+        # Only a near-clone would pass — expect fewer matches.
+        self.assertLessEqual(len(matches), 1)
+
+    def test_top_n_respected(self) -> None:
+        matches = find_peers(self._candidate(), self._universe(),
+                             top_n=2, min_similarity=0.0)
+        self.assertLessEqual(len(matches), 2)
+
+    def test_self_match_excluded(self) -> None:
+        cand = self._candidate()
+        uni = self._universe() + [PeerDeal(deal_id="cand",
+                                            sector="acute_care")]
+        matches = find_peers(cand, uni)
+        self.assertFalse(any(m.peer.deal_id == "cand" for m in matches))
+
+    def test_markdown_renders(self) -> None:
+        matches = find_peers(self._candidate(), self._universe())
+        md = render_peers_markdown(self._candidate(), matches)
+        self.assertIn("Peer matches", md)
+
+    def test_empty_universe(self) -> None:
+        matches = find_peers(self._candidate(), [])
+        self.assertEqual(matches, [])
+
+
 if __name__ == "__main__":
     unittest.main()
