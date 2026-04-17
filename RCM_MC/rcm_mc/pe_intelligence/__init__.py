@@ -156,6 +156,13 @@ from .deal_comparison import (
     compare_reviews,
     render_comparison_markdown,
 )
+from .priority_scoring import (
+    PriorityInputs,
+    PriorityScore,
+    rank_deal_portfolio,
+    render_priority_list_markdown,
+    score_deal_priority,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -727,4 +734,9 @@ __all__ = [
     "ComparisonResult",
     "compare_reviews",
     "render_comparison_markdown",
+    "PriorityInputs",
+    "PriorityScore",
+    "rank_deal_portfolio",
+    "render_priority_list_markdown",
+    "score_deal_priority",
 ]

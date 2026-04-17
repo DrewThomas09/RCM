@@ -5865,5 +5865,80 @@ class TestDealComparison(unittest.TestCase):
         json.dumps(result.to_dict(), default=str)
 
 
+# ── Priority scoring ───────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    PriorityInputs,
+    PriorityScore,
+    rank_deal_portfolio,
+    render_priority_list_markdown,
+    score_deal_priority,
+)
+
+
+class TestPriorityScoring(unittest.TestCase):
+
+    def test_urgent_deal_scores_high(self) -> None:
+        review = _review_for_compare(irr=0.20, moic=2.3, leverage=5.0,
+                                     deal_id="U")
+        score = score_deal_priority(
+            review, PriorityInputs(urgency_days=2),
+        )
+        self.assertGreater(score.urgency_score, 0.90)
+
+    def test_flagship_adds_strategic_score(self) -> None:
+        review = _review_for_compare(irr=0.20, moic=2.3, leverage=5.0,
+                                     deal_id="F")
+        score = score_deal_priority(
+            review, PriorityInputs(is_flagship=True),
+        )
+        self.assertGreater(score.strategic_score, 0.0)
+
+    def test_blocked_zeroes_leverage(self) -> None:
+        review = _review_for_compare(irr=0.20, moic=2.3, leverage=5.0,
+                                     deal_id="B")
+        score = score_deal_priority(
+            review, PriorityInputs(is_blocked=True),
+        )
+        self.assertEqual(score.leverage_score, 0.0)
+
+    def test_rank_populates_order(self) -> None:
+        reviews = [
+            _review_for_compare(irr=0.22, moic=2.5, leverage=4.5, deal_id="A"),
+            _review_for_compare(irr=0.18, moic=2.1, leverage=5.0, deal_id="B"),
+            _review_for_compare(irr=0.12, moic=1.8, leverage=6.0, deal_id="C"),
+        ]
+        inputs = [
+            PriorityInputs(urgency_days=5, is_flagship=True),     # A
+            PriorityInputs(urgency_days=60),                        # B
+            PriorityInputs(urgency_days=90),                        # C
+        ]
+        ranked = rank_deal_portfolio(list(zip(reviews, inputs)))
+        self.assertEqual(ranked[0].deal_id, "A")
+        self.assertEqual(ranked[0].rank, 1)
+        self.assertEqual(ranked[-1].rank, 3)
+
+    def test_bare_review_acceptable(self) -> None:
+        reviews = [_review_for_compare(irr=0.20, moic=2.3, leverage=5.0,
+                                       deal_id="X")]
+        ranked = rank_deal_portfolio(reviews)
+        self.assertEqual(len(ranked), 1)
+        self.assertIsNotNone(ranked[0].composite)
+
+    def test_markdown_table_renders(self) -> None:
+        reviews = [_review_for_compare(irr=0.20, moic=2.3, leverage=5.0,
+                                       deal_id="X")]
+        md = render_priority_list_markdown(rank_deal_portfolio(reviews))
+        self.assertIn("Deal priority queue", md)
+        self.assertIn("| Rank", md)
+
+    def test_score_to_dict(self) -> None:
+        import json
+        review = _review_for_compare(irr=0.20, moic=2.3, leverage=5.0,
+                                     deal_id="X")
+        score = score_deal_priority(review, None)
+        json.dumps(score.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
