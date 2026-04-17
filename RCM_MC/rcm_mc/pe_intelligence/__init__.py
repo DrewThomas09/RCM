@@ -583,7 +583,7 @@ from .board_composition_analyzer import (
     BoardMember,
     BoardReport,
     analyze_board,
-    render_board_markdown,
+    render_board_markdown as render_board_composition_markdown,
 )
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
@@ -1464,5 +1464,5 @@ __all__ = [
     "BoardMember",
     "BoardReport",
     "analyze_board",
-    "render_board_markdown",
+    "render_board_composition_markdown",
 ]

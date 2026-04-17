@@ -10948,7 +10948,7 @@ from rcm_mc.pe_intelligence import (
     BoardMember,
     BoardReport,
     analyze_board,
-    render_board_markdown,
+    render_board_composition_markdown,
 )
 
 
@@ -11007,7 +11007,7 @@ class TestBoardCompositionAnalyzer(unittest.TestCase):
         self.assertIn("audit", REQUIRED_COMMITTEES)
 
     def test_markdown_renders(self) -> None:
-        md = render_board_markdown(analyze_board(BoardInputs(members=[
+        md = render_board_composition_markdown(analyze_board(BoardInputs(members=[
             BoardMember("A", "sponsor"),
             BoardMember("B", "independent"),
         ], committees=["audit"])))
