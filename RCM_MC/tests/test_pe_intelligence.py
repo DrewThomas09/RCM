@@ -7081,5 +7081,76 @@ class TestTaxStructuring(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Insurance diligence ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    InsuranceGap,
+    InsuranceInputs,
+    InsuranceReport,
+    render_insurance_report_markdown,
+    screen_insurance,
+)
+
+
+class TestInsuranceDiligence(unittest.TestCase):
+
+    def test_adequate_pl_limit(self) -> None:
+        r = screen_insurance(InsuranceInputs(
+            subsector="acute_care", ebitda_m=30,
+            professional_liability_limit_m=100,
+        ))
+        pl = next(g for g in r.gaps if g.area == "professional_liability")
+        self.assertEqual(pl.severity, "info")
+
+    def test_pl_limit_too_low_flagged(self) -> None:
+        r = screen_insurance(InsuranceInputs(
+            subsector="acute_care", ebitda_m=30,
+            professional_liability_limit_m=50,
+        ))
+        pl = next(g for g in r.gaps if g.area == "professional_liability")
+        self.assertEqual(pl.severity, "high")
+
+    def test_low_cyber_limit(self) -> None:
+        r = screen_insurance(InsuranceInputs(cyber_limit_m=2))
+        cyber = next(g for g in r.gaps if g.area == "cyber")
+        self.assertEqual(cyber.severity, "medium")
+
+    def test_sir_unfunded_high(self) -> None:
+        r = screen_insurance(InsuranceInputs(
+            sir_m=10, sir_funded_m=3,
+        ))
+        sir = next(g for g in r.gaps if g.area == "sir_funding")
+        self.assertEqual(sir.severity, "high")
+
+    def test_claims_elevated(self) -> None:
+        r = screen_insurance(InsuranceInputs(claims_last_24mo=10))
+        claims = next(g for g in r.gaps if g.area == "claims_frequency")
+        self.assertEqual(claims.severity, "medium")
+
+    def test_claims_systemic(self) -> None:
+        r = screen_insurance(InsuranceInputs(claims_last_24mo=25))
+        claims = next(g for g in r.gaps if g.area == "claims_frequency")
+        self.assertEqual(claims.severity, "high")
+
+    def test_largest_claim_requires_escrow(self) -> None:
+        r = screen_insurance(InsuranceInputs(
+            ebitda_m=30, largest_open_claim_m=15,
+        ))
+        claim = next(g for g in r.gaps
+                     if g.area == "largest_open_claim")
+        self.assertEqual(claim.severity, "high")
+
+    def test_markdown_renders(self) -> None:
+        md = render_insurance_report_markdown(screen_insurance(
+            InsuranceInputs(subsector="acute_care", ebitda_m=30,
+                            professional_liability_limit_m=100)))
+        self.assertIn("# Insurance diligence", md)
+
+    def test_report_json(self) -> None:
+        import json
+        r = screen_insurance(InsuranceInputs(ebitda_m=30))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

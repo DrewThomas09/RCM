@@ -257,6 +257,13 @@ from .tax_structuring import (
     analyze_tax_structure,
     render_tax_structure_markdown,
 )
+from .insurance_diligence import (
+    InsuranceGap,
+    InsuranceInputs,
+    InsuranceReport,
+    render_insurance_report_markdown,
+    screen_insurance,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -897,4 +904,9 @@ __all__ = [
     "TaxStructureReport",
     "analyze_tax_structure",
     "render_tax_structure_markdown",
+    "InsuranceGap",
+    "InsuranceInputs",
+    "InsuranceReport",
+    "render_insurance_report_markdown",
+    "screen_insurance",
 ]
