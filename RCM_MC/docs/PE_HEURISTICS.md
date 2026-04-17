@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 43
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 49
 modules + test suite:
 
 | Module | Role |
@@ -749,6 +749,12 @@ modules + test suite:
 | `capital_plan.py` | Capex by year/purpose + intensity validation |
 | `auditor_view.py` | Full decision audit trail for regulators/LPs |
 | `thesis_templates.py` | 6 prebuilt narrative scaffolds for common theses |
+| `regime_classifier.py` | 5-regime classifier (durable / emerging / steady / stagnant / declining) |
+| `market_structure.py` | HHI / CR3 / CR5 + consolidation-play score |
+| `stress_test.py` | Downside/upside scenario grid with robustness grade |
+| `operating_posture.py` | 5-posture classifier (scenario_leader / resilient_core / etc.) |
+| `white_space.py` | Geographic / segment / channel adjacency detection |
+| `investability_scorer.py` | Composite opportunity×value×stability 0..100 |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1092,7 +1098,104 @@ etc.) and rendered as IC-ready Markdown.
 
 ---
 
-## 46. Change log
+## 46. Regime classifier (`regime_classifier.py`)
+
+Places a deal into one of five performance regimes based on growth /
+volatility / consistency signals:
+
+- `durable_growth` — consistent positive growth + stable margins.
+- `emerging_volatile` — fast growth with wide dispersion.
+- `steady` — modest growth, low volatility.
+- `stagnant` — flat growth, stable margins.
+- `declining_risk` — negative growth and/or deteriorating margins.
+
+Each regime ships a partner note, playbook, and key-risk statement.
+`rank_all_regimes` returns every regime scored, sorted by confidence
+desc, when the primary classification is borderline.
+
+---
+
+## 47. Market structure (`market_structure.py`)
+
+Industrial-organization metrics applied to deal markets:
+
+- **HHI** on 0..10000 scale with DOJ/FTC thresholds (1500 / 2500).
+- **CR3 / CR5** top-N concentration ratios.
+- **Fragmentation verdict** — fragmented / consolidating / consolidated.
+- **Consolidation-play score** — 0..1 blend of HHI, CR5, player count,
+  and dominance penalty. `is_consolidation_play(result, min_score)`
+  is the boolean gate for "is this a roll-up setup".
+
+Partners use it to hint the right thesis archetype
+(`platform_rollup` vs `buy_and_build` vs `challenger_or_niche`).
+
+---
+
+## 48. Stress test (`stress_test.py`)
+
+Runs a scenario grid on top of `scenario_stress.py`:
+
+- 10 downside scenarios (rate cuts at 100/200/300 bps, volume declines
+  5/10%, multiple compression flat, lever slip 40/60%, labor shocks 10/20%).
+- 2+ upside scenarios (full lever realization, +1 turn multiple expansion).
+
+Outputs `downside_pass_rate`, `upside_capture_rate`, worst/best case
+delta, covenant-breach count, and a letter grade A..F with a partner
+summary.
+
+---
+
+## 49. Operating posture (`operating_posture.py`)
+
+Labels a deal with one of five postures based on stress + regime +
+concentration flags:
+
+- `scenario_leader` — robust downside + strong upside.
+- `resilient_core` — robust downside, capped upside.
+- `balanced` — neither especially robust nor asymmetric.
+- `growth_optional` — weak downside, strong upside (high beta).
+- `concentration_risk` — payer/state/service-line concentration
+  dominates both tails.
+
+Each posture carries a playbook. `posture_from_stress_and_heuristics`
+pulls the inputs directly from an existing stress-grid dict + hit
+list.
+
+---
+
+## 50. White space (`white_space.py`)
+
+Detects unserved-opportunity adjacencies across three dimensions:
+
+- **Geographic** — candidate states vs existing footprint; scores
+  adjacent states (same census region) higher than distant ones.
+- **Segment** — service-line extensions by subsector registry
+  (e.g. acute_care → outpatient imaging, ambulatory surgery).
+- **Channel** — payer/contracting channels by subsector registry
+  (e.g. post_acute → medicare_advantage, I-SNPs).
+
+Each opportunity gets a 0..1 attractiveness score and barriers list.
+`top_opportunities(result, n)` returns the best-scoring ones.
+
+---
+
+## 51. Investability scorer (`investability_scorer.py`)
+
+Composite 0..100 blending three axes:
+
+- **Opportunity** (30%) — market-structure score + white-space.
+- **Value** (40%) — IRR / MOIC vs peer bands + raw return levels.
+- **Stability** (30%) — stress grade + regime + posture + critical-
+  hit penalty.
+
+Maps to A..F letter grade with a partner note listing top strengths
+and weaknesses. `inputs_from_review(review)` builds the input bag
+from an existing PartnerReview so the composite uses the same data
+as every other analytic.
+
+---
+
+## 52. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1166,3 +1269,10 @@ etc.) and rendered as IC-ready Markdown.
 - **2026-04-17** — Added `thesis_templates.py` (6 prebuilt
   narrative scaffolds). Full inventory: 43 modules, 498
   pe_intelligence unit tests. Full project suite **3632 passed**.
+- **2026-04-17** — Added 6 concept-named modules: `regime_classifier.py`,
+  `market_structure.py` (HHI/CR3/CR5), `stress_test.py` (scenario
+  grid), `operating_posture.py`, `white_space.py`, and
+  `investability_scorer.py`. All wired into `partner_review.py` so
+  every `PartnerReview` now carries regime / market / stress /
+  posture / white space / investability outputs. Full inventory:
+  49 modules, 558 pe_intelligence unit tests.
