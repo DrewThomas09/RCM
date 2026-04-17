@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 77
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 79
 modules + test suite:
 
 | Module | Role |
@@ -783,6 +783,8 @@ modules + test suite:
 | `portfolio_dashboard.py` | Desk-view across multiple reviews |
 | `integration_readiness.py` | Post-close integration scorecard |
 | `management_comp.py` | MIP/LTIP/vesting/rollover checks |
+| `red_team_review.py` | Adversarial attack + pass rationale |
+| `data_room_tracker.py` | 34-item canonical checklist scorer |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1655,7 +1657,33 @@ remediation.
 
 ---
 
-## 80. Change log
+## 80. Red-team review (`red_team_review.py`)
+
+Adversarial-pushback generator. Takes a `PartnerReview` and returns:
+
+- Top 3-4 attacks by vector (valuation / operating / regulatory /
+  structure / concentration).
+- Alternative sponsor-side narratives.
+- Break-the-deal scenarios.
+- "If I had to pass, why?" rationale.
+
+Complements `narrative_styles.compose_skeptic_view` with a longer-
+form, multi-vector adversarial take.
+
+---
+
+## 81. Data-room tracker (`data_room_tracker.py`)
+
+Scores a seller-provided data-room against a 34-item canonical
+checklist across 8 categories (financial, payer, operational,
+clinical, regulatory, legal, it, hr). Priority weighting: P0 × 3,
+P1 × 2, P2 × 1. Returns a 0-100 completeness score, per-category
+completeness, P0 / P1 gap lists, and readiness verdict
+(`ready` / `partial` / `insufficient`).
+
+---
+
+## 82. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1772,3 +1800,6 @@ remediation.
 - **2026-04-17** — Added `portfolio_dashboard.py`,
   `integration_readiness.py`, `management_comp.py`. Full
   inventory: 77 modules, 791 pe_intelligence unit tests.
+- **2026-04-17** — Added `red_team_review.py` and
+  `data_room_tracker.py`. Full inventory: 79 modules, 805
+  pe_intelligence unit tests.
