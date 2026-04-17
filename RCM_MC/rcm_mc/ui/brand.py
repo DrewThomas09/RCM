@@ -106,6 +106,7 @@ NAV_ITEMS = [
     {"label": "Leverage Intelligence", "href": "/leverage-intel", "icon": "chart"},
     {"label": "Size Intelligence", "href": "/size-intel", "icon": "chart"},
     {"label": "Corpus Dashboard", "href": "/corpus-dashboard", "icon": "chart"},
+    {"label": "Deal Search", "href": "/deal-search", "icon": "filter"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},

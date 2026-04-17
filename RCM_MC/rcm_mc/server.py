@@ -1832,6 +1832,29 @@ class RCMHandler(BaseHTTPRequestHandler):
             sector = _qs.get("sector", [""])[0]
             from .ui.data_public.risk_matrix_page import render_risk_matrix
             return self._send_html(render_risk_matrix(sector_filter=sector))
+        if path == "/deal-search":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qs1(k, d=""): return (_qs.get(k, [d]) or [d])[0]
+            def _qsf(k):
+                try: return float(_qs.get(k, [None])[0])
+                except (TypeError, ValueError): return None
+            def _qsi(k, d=None):
+                try: return int(_qs.get(k, [d])[0])
+                except (TypeError, ValueError): return d
+            from .ui.data_public.deal_search_page import render_deal_search
+            return self._send_html(render_deal_search(
+                query=_qs1("q"),
+                sector=_qs1("sector"),
+                yr_lo=_qsi("yr_lo"),
+                yr_hi=_qsi("yr_hi"),
+                ev_lo=_qsf("ev_lo"),
+                ev_hi=_qsf("ev_hi"),
+                moic_lo=_qsf("moic_lo"),
+                moic_hi=_qsf("moic_hi"),
+                deal_type=_qs1("deal_type"),
+                sort_by=_qs1("sort_by", "realized_moic"),
+                page=_qsi("page", 1),
+            ))
         if path == "/corpus-dashboard":
             from .ui.data_public.corpus_dashboard_page import render_corpus_dashboard
             return self._send_html(render_corpus_dashboard())
