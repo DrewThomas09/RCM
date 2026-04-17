@@ -141,6 +141,19 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .portfolio_analytics import (
+    return_distribution,
+    deals_by_sponsor,
+    deals_by_type,
+    deals_by_year,
+    vintage_cohort_summary,
+    payer_mix_sensitivity,
+    outlier_deals,
+    corpus_scorecard,
+    scorecard_text,
+    loss_rate,
+    home_run_rate,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -249,4 +262,15 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "return_distribution",
+    "deals_by_sponsor",
+    "deals_by_type",
+    "deals_by_year",
+    "vintage_cohort_summary",
+    "payer_mix_sensitivity",
+    "outlier_deals",
+    "corpus_scorecard",
+    "scorecard_text",
+    "loss_rate",
+    "home_run_rate",
 ]

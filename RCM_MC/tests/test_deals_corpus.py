@@ -3556,6 +3556,136 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestPortfolioAnalytics(unittest.TestCase):
+    """Tests for portfolio_analytics module."""
+
+    def _sample_deals(self):
+        return [
+            {"deal_name": "Deal A", "buyer": "KKR", "year": 2018, "ev_mm": 1000.0,
+             "realized_moic": 3.5, "realized_irr": 0.28,
+             "payer_mix": {"medicare": 0.60, "medicaid": 0.10, "commercial": 0.30}},
+            {"deal_name": "Deal B", "buyer": "Blackstone", "year": 2019, "ev_mm": 800.0,
+             "realized_moic": 2.1, "realized_irr": 0.19,
+             "payer_mix": {"medicare": 0.20, "medicaid": 0.10, "commercial": 0.70}},
+            {"deal_name": "Deal C", "buyer": "KKR", "year": 2019, "ev_mm": 500.0,
+             "realized_moic": 0.8, "realized_irr": -0.12,
+             "payer_mix": {"medicare": 0.10, "medicaid": 0.60, "commercial": 0.30}},
+            {"deal_name": "Deal D", "buyer": "Apollo", "year": 2020, "ev_mm": 1500.0,
+             "realized_moic": None, "realized_irr": None,
+             "payer_mix": {"medicare": 0.35, "medicaid": 0.35, "commercial": 0.30}},
+            {"deal_name": "Deal E", "buyer": "Bain", "year": 2020, "ev_mm": 600.0,
+             "realized_moic": 4.2, "realized_irr": 0.35,
+             "payer_mix": {"medicare": 0.25, "medicaid": 0.10, "commercial": 0.65}},
+        ]
+
+    def test_return_distribution_percentiles(self):
+        from rcm_mc.data_public.portfolio_analytics import return_distribution
+        dist = return_distribution(self._sample_deals())
+        self.assertIn("moic_p50", dist)
+        self.assertIn("irr_p50", dist)
+        self.assertEqual(dist["moic_count"], 4)
+
+    def test_return_distribution_empty(self):
+        from rcm_mc.data_public.portfolio_analytics import return_distribution
+        dist = return_distribution([])
+        self.assertEqual(dist["moic_count"], 0)
+        self.assertIsNone(dist["moic_p50"])
+
+    def test_loss_rate(self):
+        from rcm_mc.data_public.portfolio_analytics import loss_rate
+        rate = loss_rate(self._sample_deals())
+        # Deal C has moic=0.8 < 1.0; 1 out of 4 realized
+        self.assertAlmostEqual(rate, 0.25, places=4)
+
+    def test_home_run_rate(self):
+        from rcm_mc.data_public.portfolio_analytics import home_run_rate
+        rate = home_run_rate(self._sample_deals())
+        # Deal A (3.5) and Deal E (4.2) are >= 3.0; 2 out of 4 realized
+        self.assertAlmostEqual(rate, 0.5, places=4)
+
+    def test_deals_by_sponsor_keys(self):
+        from rcm_mc.data_public.portfolio_analytics import deals_by_sponsor
+        by_sp = deals_by_sponsor(self._sample_deals())
+        self.assertIn("KKR", by_sp)
+        self.assertEqual(by_sp["KKR"]["count"], 2)
+
+    def test_deals_by_type_buckets(self):
+        from rcm_mc.data_public.portfolio_analytics import deals_by_type
+        deals = [
+            {"deal_name": "Acme LBO", "notes": "", "realized_moic": 2.5},
+            {"deal_name": "Acme IPO", "notes": "", "realized_moic": 1.8},
+            {"deal_name": "Acme Carve-out", "notes": "", "realized_moic": None},
+        ]
+        by_type = deals_by_type(deals)
+        self.assertIn("lbo", by_type)
+        self.assertIn("ipo", by_type)
+        self.assertIn("carve_out", by_type)
+
+    def test_vintage_cohort_summary(self):
+        from rcm_mc.data_public.portfolio_analytics import vintage_cohort_summary
+        cohorts = vintage_cohort_summary(self._sample_deals())
+        years = [c["year"] for c in cohorts]
+        self.assertEqual(years, sorted(years))
+        self.assertIn(2018, years)
+        self.assertIn(2020, years)
+
+    def test_payer_mix_sensitivity(self):
+        from rcm_mc.data_public.portfolio_analytics import payer_mix_sensitivity
+        sens = payer_mix_sensitivity(self._sample_deals())
+        # Deal A has medicare=0.60 → dominant = medicare
+        self.assertIn("medicare", sens)
+        self.assertGreaterEqual(sens["medicare"]["count"], 1)
+
+    def test_outlier_deals(self):
+        from rcm_mc.data_public.portfolio_analytics import outlier_deals
+        # Deal E with moic=4.2 should be a positive outlier at z=1.0
+        outliers = outlier_deals(self._sample_deals(), z=1.0)
+        self.assertIsInstance(outliers, list)
+        if outliers:
+            self.assertIn("moic_zscore", outliers[0])
+
+    def test_outlier_deals_empty_input(self):
+        from rcm_mc.data_public.portfolio_analytics import outlier_deals
+        result = outlier_deals([])
+        self.assertEqual(result, [])
+
+    def test_corpus_scorecard_keys(self):
+        from rcm_mc.data_public.portfolio_analytics import corpus_scorecard
+        sc = corpus_scorecard(self._sample_deals())
+        for key in ["total_deals", "realized_deals", "moic_p50", "loss_rate", "home_run_rate"]:
+            self.assertIn(key, sc)
+        self.assertEqual(sc["total_deals"], 5)
+
+    def test_corpus_scorecard_from_real_corpus(self):
+        from rcm_mc.data_public.portfolio_analytics import corpus_scorecard
+        import tempfile, os
+        db = tempfile.mktemp(suffix=".db")
+        try:
+            corpus = DealsCorpus(db)
+            corpus.seed()
+            deals = corpus.list()
+            sc = corpus_scorecard(deals)
+            self.assertGreaterEqual(sc["total_deals"], 100)
+            self.assertGreater(sc["total_ev_mm"], 0)
+        finally:
+            os.unlink(db)
+
+    def test_scorecard_text_format(self):
+        from rcm_mc.data_public.portfolio_analytics import corpus_scorecard, scorecard_text
+        sc = corpus_scorecard(self._sample_deals())
+        text = scorecard_text(sc)
+        self.assertIn("Portfolio Corpus Scorecard", text)
+        self.assertIn("MOIC", text)
+        self.assertIn("Loss rate", text)
+
+    def test_deals_by_year_coverage(self):
+        from rcm_mc.data_public.portfolio_analytics import deals_by_year
+        by_yr = deals_by_year(self._sample_deals())
+        self.assertIn(2018, by_yr)
+        self.assertEqual(by_yr[2018]["count"], 1)
+        self.assertEqual(by_yr[2020]["count"], 2)
+
+
 class TestCmsDataQuality(unittest.TestCase):
     """Tests for cms_data_quality: data_quality_report, cms_run_summary,
     winsorize_metrics, quality_report_text."""
