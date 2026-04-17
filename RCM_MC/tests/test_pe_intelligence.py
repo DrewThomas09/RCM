@@ -8328,5 +8328,57 @@ class TestScenarioComparison(unittest.TestCase):
         json.dumps(cmp.to_dict())
 
 
+# ── Vintage return curve ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    VintageCurve,
+    VintageInputs,
+    VintageYearPoint,
+    project_vintage_curve,
+    render_vintage_curve_markdown,
+)
+
+
+class TestVintageReturnCurve(unittest.TestCase):
+
+    def test_curve_produces_points(self) -> None:
+        c = project_vintage_curve(VintageInputs(
+            vintage_year=2024, fund_target_moic=2.2,
+        ), horizon_years=12)
+        self.assertEqual(len(c.points), 12)
+
+    def test_j_curve_shape(self) -> None:
+        c = project_vintage_curve(VintageInputs(vintage_year=2024))
+        # Trough should be in year 1-2.
+        self.assertLessEqual(c.j_curve_trough_year, 3)
+        # TVPI at trough < 1.0.
+        self.assertLess(c.j_curve_trough_tvpi, 1.0)
+
+    def test_inflection_year_reasonable(self) -> None:
+        c = project_vintage_curve(VintageInputs(vintage_year=2024))
+        # Inflection (TVPI ≥ 1.0) typically year 3-5.
+        self.assertGreaterEqual(c.inflection_year, 2)
+        self.assertLessEqual(c.inflection_year, 6)
+
+    def test_higher_moic_target_higher_peak_tvpi(self) -> None:
+        c1 = project_vintage_curve(VintageInputs(vintage_year=2024,
+                                                  fund_target_moic=2.0))
+        c2 = project_vintage_curve(VintageInputs(vintage_year=2024,
+                                                  fund_target_moic=2.8))
+        peak1 = max(p.tvpi for p in c1.points)
+        peak2 = max(p.tvpi for p in c2.points)
+        self.assertGreater(peak2, peak1)
+
+    def test_markdown_renders(self) -> None:
+        md = render_vintage_curve_markdown(project_vintage_curve(
+            VintageInputs(vintage_year=2024)))
+        self.assertIn("# Vintage return curve", md)
+
+    def test_json(self) -> None:
+        import json
+        c = project_vintage_curve(VintageInputs(vintage_year=2024))
+        json.dumps(c.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

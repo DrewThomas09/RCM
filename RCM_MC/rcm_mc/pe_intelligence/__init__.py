@@ -370,6 +370,13 @@ from .scenario_comparison import (
     compare_scenarios,
     render_scenario_comparison_markdown,
 )
+from .vintage_return_curve import (
+    VintageCurve,
+    VintageInputs,
+    YearPoint as VintageYearPoint,
+    project_vintage_curve,
+    render_vintage_curve_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1089,4 +1096,9 @@ __all__ = [
     "ScenarioComparisonOutcome",
     "compare_scenarios",
     "render_scenario_comparison_markdown",
+    "VintageCurve",
+    "VintageInputs",
+    "VintageYearPoint",
+    "project_vintage_curve",
+    "render_vintage_curve_markdown",
 ]
