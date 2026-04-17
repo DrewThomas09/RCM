@@ -6869,5 +6869,88 @@ class TestESGScreen(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Deep-dive heuristics ───────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DEEP_DIVE_FIELDS,
+    run_deepdive_heuristics,
+)
+
+
+def _deep_ctx(**extras) -> HeuristicContext:
+    ctx = HeuristicContext()
+    for k, v in extras.items():
+        setattr(ctx, k, v)
+    return ctx
+
+
+class TestDeepDiveHeuristics(unittest.TestCase):
+
+    def test_flat_multiple_short_hold(self) -> None:
+        hits = run_deepdive_heuristics(_deep_ctx(
+            entry_multiple=9.0, exit_multiple=9.1, hold_years=3.0,
+        ))
+        self.assertTrue(any(h.id == "entry_equals_exit_same_year" for h in hits))
+
+    def test_rural_govt_concentration(self) -> None:
+        ctx = _deep_ctx(
+            payer_mix={"medicare": 0.55, "medicaid": 0.25,
+                       "commercial": 0.20},
+            urban_rural="rural",
+        )
+        hits = run_deepdive_heuristics(ctx)
+        self.assertTrue(any(h.id == "rural_govt_concentration" for h in hits))
+
+    def test_teaching_cmi_mismatch(self) -> None:
+        hits = run_deepdive_heuristics(_deep_ctx(
+            teaching_status="major", case_mix_index=1.30,
+        ))
+        self.assertTrue(any(h.id == "teaching_cmi_mismatch" for h in hits))
+
+    def test_margin_without_volume(self) -> None:
+        hits = run_deepdive_heuristics(_deep_ctx(
+            margin_expansion_bps_per_yr=300, revenue_growth_pct_per_yr=2.0,
+        ))
+        self.assertTrue(any(h.id == "ebitda_growth_no_volume" for h in hits))
+
+    def test_long_hold_thin_margin(self) -> None:
+        hits = run_deepdive_heuristics(_deep_ctx(
+            hold_years=8.0, ebitda_margin=0.06,
+        ))
+        self.assertTrue(any(h.id == "long_hold_thin_conversion" for h in hits))
+
+    def test_no_operating_partner(self) -> None:
+        hits = run_deepdive_heuristics(_deep_ctx(
+            denial_improvement_bps_per_yr=150,
+            has_operating_partner=False,
+        ))
+        self.assertTrue(any(h.id == "no_operating_partner_assigned" for h in hits))
+
+    def test_high_rollover(self) -> None:
+        hits = run_deepdive_heuristics(_deep_ctx(equity_rollover_pct=0.40))
+        self.assertTrue(any(h.id == "mgmt_rollover_too_high" for h in hits))
+
+    def test_staff_turnover_trend(self) -> None:
+        hits = run_deepdive_heuristics(_deep_ctx(staff_turnover_trend_pct=0.04))
+        self.assertTrue(any(h.id == "staff_turnover_trend_up" for h in hits))
+
+    def test_pending_cms_rule(self) -> None:
+        hits = run_deepdive_heuristics(_deep_ctx(
+            pending_cms_rule="Medicare Outpatient Rate -2% proposal",
+        ))
+        self.assertTrue(any(h.id == "pending_cms_rule" for h in hits))
+
+    def test_gp_mark_aggressive(self) -> None:
+        hits = run_deepdive_heuristics(_deep_ctx(gp_mark_vs_peer_multiple=2.0))
+        self.assertTrue(any(h.id == "gp_valuation_too_aggressive" for h in hits))
+
+    def test_empty_context_no_hits(self) -> None:
+        hits = run_deepdive_heuristics(HeuristicContext())
+        self.assertEqual(hits, [])
+
+    def test_fields_list_non_empty(self) -> None:
+        self.assertGreaterEqual(len(DEEP_DIVE_FIELDS), 5)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -242,6 +242,10 @@ from .esg_screen import (
     render_esg_markdown,
     screen_esg,
 )
+from .deepdive_heuristics import (
+    DEEP_DIVE_FIELDS,
+    run_deepdive_heuristics,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -873,4 +877,6 @@ __all__ = [
     "ESGReport",
     "render_esg_markdown",
     "screen_esg",
+    "DEEP_DIVE_FIELDS",
+    "run_deepdive_heuristics",
 ]
