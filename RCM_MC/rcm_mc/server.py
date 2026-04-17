@@ -1804,6 +1804,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             q = _qs.get("q", [""])[0]
             from .ui.data_public.deals_library_page import render_deals_library
             return self._send_html(render_deals_library(sector_filter=sector, regime_filter=regime, search=q))
+        if path == "/cms-sources":
+            from .ui.data_public.cms_sources_page import render_cms_sources
+            return self._send_html(render_cms_sources())
         if path == "/query":
             return self._route_deal_query()
         if path == "/benchmarks":
