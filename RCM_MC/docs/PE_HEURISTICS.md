@@ -2274,7 +2274,35 @@ Aggregate: total cost, longest-path months, risk score 0-100
 
 ---
 
-## 110. Change log
+## 110. ROIC decomposition (`roic_decomposition.py`)
+
+DuPont-style: ROIC = margin × turnover × (1 - tax rate), where
+margin = EBIT / revenue and turnover = revenue / invested capital.
+
+Subsector peer bands (partner-approximated):
+
+- Specialty practice: margin 18-25%, turnover 1.5-2.5x,
+  ROIC 20-35%.
+- Hospital: margin 10-15%, turnover 0.6-0.8x, ROIC 7-12%.
+- Outpatient / ASC: margin 25-35%, turnover 1.2-1.8x, ROIC 25-40%.
+- DME supplier: margin 8-12%, turnover 2.0-3.5x, ROIC 15-25%.
+- Home health: margin 10-15%, turnover 3.0-5.0x, ROIC 25-40%.
+
+Per-component verdict: `in_band`, `below_band`, `above_band`.
+Partner note fires on:
+
+- ≥ 2 below-band → "ROIC below peer band; operating posture
+  needs intervention".
+- 1 below-band → "weak link: [component]".
+- ≥ 2 above-band → "top of peer range; confirm sustainability".
+
+ROIC is the single cleanest metric for "how good is this
+business" — margin tells ops story, turnover tells asset-light
+story, tax tells structure story.
+
+---
+
+## 111. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2460,3 +2488,6 @@ Aggregate: total cost, longest-path months, risk score 0-100
 - **2026-04-17** — Added `technology_debt_assessor.py` (§109) —
   8-area severity + cost + risk score. Full inventory: 107 modules,
   1,061 pe_intelligence unit tests.
+- **2026-04-17** — Added `roic_decomposition.py` (§110) —
+  DuPont margin/turnover + 5-subsector peer bands. Full
+  inventory: 108 modules, 1,070 pe_intelligence unit tests.
