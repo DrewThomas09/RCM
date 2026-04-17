@@ -3411,5 +3411,99 @@ class TestCmsAdvisoryMemo(unittest.TestCase):
         self.assertIn("Stress", memo)
 
 
+# ===========================================================================
+# TestCmsCli — tests the 'cms' subcommand with mocked CMS API
+# ===========================================================================
+
+class TestCmsCli(unittest.TestCase):
+    """Tests cms CLI subcommand using mocked CMS API calls (no real HTTP)."""
+
+    def _mock_rows(self):
+        rows = []
+        for pt in ["Cardiology", "Orthopedic", "Neurology"]:
+            for st in ["TX", "CA"]:
+                for i in range(6):
+                    rows.append({
+                        "provider_type": pt,
+                        "state": st,
+                        "year": "2021",
+                        "total_medicare_payment_amt": str((i + 1) * 100000),
+                        "total_services": str((i + 1) * 500),
+                        "total_unique_benes": str((i + 1) * 400),
+                        "beneficiary_average_risk_score": str(1.0 + i * 0.1),
+                    })
+        return rows
+
+    def _mock_fetch(self):
+        """Context manager that patches fetch_provider_utilization to return synthetic data."""
+        rows = self._mock_rows()
+        return unittest.mock.patch(
+            "rcm_mc.data_public.cms_market_analysis.fetch_provider_utilization",
+            return_value=rows,
+        )
+
+    def test_cms_memo_output(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with self._mock_fetch():
+            with redirect_stdout(buf):
+                main(["--db", "corpus.db", "cms", "--year", "2021"])
+        out = buf.getvalue()
+        self.assertIn("CMS Market Analysis Report", out)
+
+    def test_cms_concentration_flag(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with self._mock_fetch():
+            with redirect_stdout(buf):
+                main(["--db", "corpus.db", "cms", "--year", "2021", "--concentration"])
+        out = buf.getvalue()
+        self.assertIn("HHI", out)
+        self.assertIn("CR3", out)
+
+    def test_cms_regime_flag(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with self._mock_fetch():
+            with redirect_stdout(buf):
+                main(["--db", "corpus.db", "cms", "--year", "2021", "--regime"])
+        out = buf.getvalue()
+        self.assertIn("Regime", out)
+
+    def test_cms_json_output(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with self._mock_fetch():
+            with redirect_stdout(buf):
+                main(["--db", "corpus.db", "cms", "--year", "2021", "--json"])
+        data = json.loads(buf.getvalue())
+        self.assertIn("year", data)
+        self.assertIn("row_count", data)
+
+    def test_cms_no_data_graceful(self):
+        from rcm_mc.data_public.corpus_cli import main
+        from rcm_mc.data_public.cms_api_client import CmsApiError
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with unittest.mock.patch(
+            "rcm_mc.data_public.cms_market_analysis.fetch_provider_utilization",
+            side_effect=CmsApiError("timeout"),
+        ):
+            with redirect_stdout(buf):
+                main(["--db", "corpus.db", "cms", "--year", "2021"])
+        out = buf.getvalue()
+        # Should not crash; should report no data or errors
+        self.assertIsInstance(out, str)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -453,6 +453,96 @@ def _cmd_sensitivity(args: argparse.Namespace) -> None:
         print(sensitivity_table(deal))
 
 
+def _cmd_cms(args: argparse.Namespace) -> None:
+    """CMS market analytics pipeline — concentration, regime, stress, advisory memo."""
+    import pandas as pd
+    from .cms_market_analysis import run_market_analysis, analysis_summary_text
+    from .market_concentration import concentration_table
+    from .provider_regime import regime_table
+    from .cms_stress_test import (
+        provider_investability_summary, provider_stress_test,
+        stress_scenario_grid, provider_operating_posture,
+        stress_table, posture_table, provider_value_summary,
+    )
+    from .cms_opportunity_scoring import provider_screen, opportunity_table
+    from .cms_advisory_memo import build_advisory_memo, quick_memo
+
+    year = args.year
+    state = args.state
+    provider_type = getattr(args, "provider_type", None)
+
+    # Always run the base analysis (uses local df=None → CMS API, or df if provided)
+    report = run_market_analysis(
+        year=year,
+        state=state,
+        provider_type=provider_type,
+        max_pages=args.max_pages,
+    )
+
+    if report.row_count == 0:
+        if report.errors:
+            print("CMS API errors:")
+            for e in report.errors:
+                print(f"  {e}")
+        else:
+            print("No data returned from CMS API.")
+        return
+
+    if args.concentration:
+        print(concentration_table(report.concentration))
+        return
+
+    if args.regime:
+        print(regime_table(report.regimes))
+        return
+
+    if args.opportunity:
+        print(opportunity_table(report.concentration))
+        return
+
+    if args.stress:
+        # Build investability and run stress test
+        # (report doesn't hold raw df; build a minimal investability from regimes)
+        if not report.regimes.empty and "regime_rank_score" in report.regimes.columns:
+            inv_df = report.regimes[["provider_type", "regime_rank_score"]].rename(
+                columns={"regime_rank_score": "opportunity_score"}
+            )
+            inv_df["total_payment"] = 0.0
+            inv = provider_investability_summary(inv_df, pd.DataFrame(), pd.DataFrame())
+            stress = provider_stress_test(inv)
+            grid = stress_scenario_grid(inv)
+            posture = provider_operating_posture(
+                inv, pd.DataFrame(), report.geo_dependency, grid
+            )
+            if args.json:
+                print(json.dumps({
+                    "stress": stress[["provider_type", "stress_adjusted_score"]].to_dict("records"),
+                    "posture": posture[["provider_type", "operating_posture", "posture_score"]].to_dict("records"),
+                }, indent=2, default=str))
+            else:
+                print(stress_table(grid))
+                print(posture_table(posture))
+        else:
+            print("No regime data for stress test.")
+        return
+
+    if args.json:
+        d = report.as_summary_dict()
+        if not report.concentration.empty:
+            d["concentration_top5"] = report.concentration.head(5).to_dict("records")
+        if not report.regimes.empty:
+            d["regimes_top5"] = (
+                report.regimes[["provider_type", "regime", "regime_rank_score"]]
+                .head(5)
+                .to_dict("records")
+            )
+        print(json.dumps(d, indent=2, default=str))
+        return
+
+    # Default: print advisory memo
+    print(analysis_summary_text(report))
+
+
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
         prog="corpus",
@@ -575,6 +665,24 @@ def main(argv=None) -> None:
                     help="Score a single deal; omit for full corpus report")
     sc.add_argument("--json", action="store_true")
 
+    # cms
+    cm = sub.add_parser("cms", help="CMS market analytics (concentration, regime, stress, memo)")
+    cm.add_argument("--year", type=int, default=2021, help="CMS dataset year (2021 or 2022)")
+    cm.add_argument("--state", default=None, help="Two-letter state filter (e.g. TX)")
+    cm.add_argument("--provider-type", default=None, dest="provider_type",
+                    help="Provider type filter (e.g. 'Cardiology')")
+    cm.add_argument("--max-pages", type=int, default=4, dest="max_pages",
+                    help="Max CMS API pages to fetch (5000 rows/page)")
+    cm.add_argument("--concentration", action="store_true",
+                    help="Print market concentration table (HHI, CR3, CR5)")
+    cm.add_argument("--regime", action="store_true",
+                    help="Print provider regime classification table")
+    cm.add_argument("--stress", action="store_true",
+                    help="Print stress-test + operating posture table")
+    cm.add_argument("--opportunity", action="store_true",
+                    help="Print opportunity scores table")
+    cm.add_argument("--json", action="store_true", help="Output as JSON")
+
     args = parser.parse_args(argv)
 
     dispatch = {
@@ -595,6 +703,7 @@ def main(argv=None) -> None:
         "brief": _cmd_brief,
         "region": _cmd_region,
         "rcm": _cmd_rcm,
+        "cms": _cmd_cms,
     }
     dispatch[args.cmd](args)
 
