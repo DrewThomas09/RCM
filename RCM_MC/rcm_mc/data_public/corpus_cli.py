@@ -182,6 +182,41 @@ def _cmd_full_ingest(args: argparse.Namespace) -> None:
         print(_json.dumps(report.as_dict(), indent=2, default=str))
 
 
+def _cmd_exit(args: argparse.Namespace) -> None:
+    from .exit_modeling import (
+        ExitAssumptions, model_all_exits, model_exit,
+        exit_table, irr_sensitivity, ExitRoute,
+    )
+    corpus = DealsCorpus(args.db)
+    deal = corpus.get(args.deal_id)
+    if not deal:
+        print(f"Deal '{args.deal_id}' not found.")
+        sys.exit(1)
+
+    a_overrides: dict = {}
+    if args.assumptions:
+        try:
+            a_overrides = json.loads(args.assumptions)
+        except json.JSONDecodeError:
+            print("--assumptions must be JSON, e.g. '{\"exit_multiple\": 10}'")
+            sys.exit(1)
+
+    assumptions = ExitAssumptions(**{k: v for k, v in a_overrides.items()
+                                    if hasattr(ExitAssumptions, k)}) if a_overrides else ExitAssumptions()
+    entry_debt = a_overrides.get("entry_debt_mm") or None
+
+    if args.sensitivity:
+        print(irr_sensitivity(deal, entry_debt))
+        return
+
+    results = model_all_exits(deal, entry_debt, assumptions)
+    if args.json:
+        import json as _json
+        print(_json.dumps({k: v.as_dict() for k, v in results.items()}, indent=2, default=str))
+    else:
+        print(exit_table(results))
+
+
 def _cmd_leverage(args: argparse.Namespace) -> None:
     from .leverage_analysis import model_leverage, covenant_headroom, leverage_table
     corpus = DealsCorpus(args.db)
@@ -356,6 +391,15 @@ def main(argv=None) -> None:
     sv.add_argument("--deal-id", required=True, dest="deal_id")
     sv.add_argument("--json", action="store_true")
 
+    # exit
+    ex = sub.add_parser("exit", help="Model exit scenarios and IRR/MOIC for a deal")
+    ex.add_argument("--deal-id", required=True, dest="deal_id")
+    ex.add_argument("--assumptions", default=None,
+                    help="JSON overrides, e.g. '{\"exit_multiple\": 10, \"hold_years\": 4}'")
+    ex.add_argument("--sensitivity", action="store_true",
+                    help="Print IRR sensitivity table (exit multiple × hold years)")
+    ex.add_argument("--json", action="store_true")
+
     # leverage
     lv = sub.add_parser("leverage", help="Model leverage structure and covenant headroom for a deal")
     lv.add_argument("--deal-id", required=True, dest="deal_id")
@@ -397,6 +441,7 @@ def main(argv=None) -> None:
         "comps": _cmd_comps,
         "vintage": _cmd_vintage,
         "leverage": _cmd_leverage,
+        "exit": _cmd_exit,
     }
     dispatch[args.cmd](args)
 

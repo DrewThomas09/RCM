@@ -1490,6 +1490,172 @@ class TestComparables(unittest.TestCase):
 
 
 # ===========================================================================
+# Exit Modeling
+# ===========================================================================
+
+class TestExitModeling(unittest.TestCase):
+
+    def _hca(self):
+        return {
+            "deal_name": "HCA – KKR/Bain",
+            "ev_mm": 33000,
+            "ebitda_at_entry_mm": 2900,
+            "hold_years": 4,
+        }
+
+    def _mid_market(self):
+        return {
+            "deal_name": "Mid-Market Hospital",
+            "ev_mm": 500,
+            "ebitda_at_entry_mm": 55,
+            "hold_years": 5,
+        }
+
+    def test_model_exit_strategic_returns_result(self):
+        from rcm_mc.data_public.exit_modeling import model_exit, ExitRoute
+        result = model_exit(self._mid_market(), exit_route=ExitRoute.STRATEGIC)
+        self.assertGreater(result.moic, 0)
+        self.assertIsInstance(result.irr, float)
+
+    def test_strategic_moic_positive(self):
+        from rcm_mc.data_public.exit_modeling import model_exit, ExitRoute
+        result = model_exit(self._mid_market())
+        self.assertGreater(result.moic, 0.5)
+
+    def test_sbo_lower_moic_than_strategic(self):
+        from rcm_mc.data_public.exit_modeling import model_exit, ExitRoute
+        strategic = model_exit(self._mid_market(), exit_route=ExitRoute.STRATEGIC)
+        sbo = model_exit(self._mid_market(), exit_route=ExitRoute.SBO)
+        # SBO has haircut → lower MOIC
+        self.assertLessEqual(sbo.moic, strategic.moic)
+
+    def test_dividend_recap_has_interim_cash(self):
+        from rcm_mc.data_public.exit_modeling import model_exit, ExitRoute
+        result = model_exit(self._mid_market(), exit_route=ExitRoute.DIVIDEND_RECAP)
+        self.assertGreater(result.interim_cash_distributions_mm, 0)
+
+    def test_model_all_exits_four_routes(self):
+        from rcm_mc.data_public.exit_modeling import model_all_exits, ExitRoute
+        results = model_all_exits(self._mid_market())
+        self.assertEqual(len(results), 4)
+        for route in ExitRoute.ALL:
+            self.assertIn(route, results)
+
+    def test_exit_ev_grows_with_ebitda(self):
+        from rcm_mc.data_public.exit_modeling import model_exit, ExitAssumptions
+        a = ExitAssumptions(exit_ebitda_growth_annual=0.05, hold_years=5)
+        result = model_exit(self._mid_market(), assumptions=a)
+        # Exit EBITDA > entry EBITDA after 5 years at 5% growth
+        self.assertGreater(result.exit_ebitda_mm, result.entry_ebitda_mm)
+
+    def test_higher_exit_multiple_higher_moic(self):
+        from rcm_mc.data_public.exit_modeling import model_exit, ExitAssumptions
+        a8 = ExitAssumptions(exit_multiple=8.0)
+        a12 = ExitAssumptions(exit_multiple=12.0)
+        r8 = model_exit(self._mid_market(), assumptions=a8)
+        r12 = model_exit(self._mid_market(), assumptions=a12)
+        self.assertGreater(r12.moic, r8.moic)
+
+    def test_longer_hold_lower_irr_same_moic(self):
+        from rcm_mc.data_public.exit_modeling import model_exit, ExitAssumptions
+        # Use a deal where entry_multiple < exit_multiple so IRR is positive
+        deal = {"deal_name": "Test", "ev_mm": 200, "ebitda_at_entry_mm": 40}  # 5x entry
+        a5 = ExitAssumptions(exit_ebitda_growth_annual=0.0, hold_years=5,
+                             exit_multiple=9.0, required_amort_pct=0.0,
+                             management_fee_pct=0.0, transaction_costs_pct=0.0)
+        a8 = ExitAssumptions(exit_ebitda_growth_annual=0.0, hold_years=8,
+                             exit_multiple=9.0, required_amort_pct=0.0,
+                             management_fee_pct=0.0, transaction_costs_pct=0.0)
+        r5 = model_exit(deal, assumptions=a5)
+        r8 = model_exit(deal, assumptions=a8)
+        # Same EV multiple, same MOIC, but longer hold → lower IRR (positive IRR case)
+        self.assertGreater(r5.irr, 0, "r5 IRR must be positive for this assertion to hold")
+        self.assertGreater(r5.irr, r8.irr)
+
+    def test_build_value_bridge(self):
+        from rcm_mc.data_public.exit_modeling import model_exit, build_value_bridge
+        result = model_exit(self._mid_market())
+        bridge = build_value_bridge(self._mid_market(), result)
+        self.assertIsNotNone(bridge.ebitda_growth_contribution_mm)
+        self.assertIsNotNone(bridge.debt_paydown_mm)
+        self.assertLessEqual(bridge.fees_drag_mm, 0)
+
+    def test_bridge_as_dict_serialisable(self):
+        from rcm_mc.data_public.exit_modeling import model_exit, build_value_bridge
+        result = model_exit(self._mid_market())
+        bridge = build_value_bridge(self._mid_market(), result)
+        d = bridge.as_dict()
+        json.dumps(d)
+        self.assertIn("attribution", d)
+
+    def test_exit_table_string(self):
+        from rcm_mc.data_public.exit_modeling import model_all_exits, exit_table
+        results = model_all_exits(self._mid_market())
+        out = exit_table(results)
+        self.assertIn("Exit Scenario", out)
+        self.assertIn("MOIC", out)
+        self.assertIn("IRR", out)
+
+    def test_irr_sensitivity_table(self):
+        from rcm_mc.data_public.exit_modeling import irr_sensitivity
+        out = irr_sensitivity(self._mid_market())
+        self.assertIn("IRR Sensitivity", out)
+        self.assertIn("Exit Mult", out)
+
+    def test_exit_result_as_dict(self):
+        from rcm_mc.data_public.exit_modeling import model_exit
+        result = model_exit(self._mid_market())
+        d = result.as_dict()
+        json.dumps(d)
+        self.assertIn("moic", d)
+        self.assertIn("irr", d)
+        self.assertIn("exit_route", d)
+
+    def test_cli_exit(self):
+        db_path = _tmp_db()
+        corpus = DealsCorpus(db_path)
+        corpus.seed(skip_if_populated=False)
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", db_path, "exit", "--deal-id", "seed_001"])
+        out = buf.getvalue()
+        self.assertIn("Exit Scenario", out)
+        os.unlink(db_path)
+
+    def test_cli_exit_json(self):
+        db_path = _tmp_db()
+        corpus = DealsCorpus(db_path)
+        corpus.seed(skip_if_populated=False)
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", db_path, "exit", "--deal-id", "seed_007", "--json"])
+        data = json.loads(buf.getvalue())
+        self.assertIsInstance(data, dict)
+        self.assertIn("strategic_sale", data)
+        os.unlink(db_path)
+
+    def test_cli_exit_sensitivity(self):
+        db_path = _tmp_db()
+        corpus = DealsCorpus(db_path)
+        corpus.seed(skip_if_populated=False)
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", db_path, "exit", "--deal-id", "seed_008", "--sensitivity"])
+        out = buf.getvalue()
+        self.assertIn("IRR Sensitivity", out)
+        os.unlink(db_path)
+
+
+# ===========================================================================
 # Leverage Analysis
 # ===========================================================================
 

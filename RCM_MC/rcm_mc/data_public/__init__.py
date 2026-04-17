@@ -48,6 +48,15 @@ from .leverage_analysis import (
     stress_leverage,
     leverage_table,
 )
+from .exit_modeling import (
+    ExitRoute,
+    ExitAssumptions,
+    model_exit,
+    model_all_exits,
+    build_value_bridge,
+    exit_table,
+    irr_sensitivity,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -84,4 +93,11 @@ __all__ = [
     "covenant_headroom",
     "stress_leverage",
     "leverage_table",
+    "ExitRoute",
+    "ExitAssumptions",
+    "model_exit",
+    "model_all_exits",
+    "build_value_bridge",
+    "exit_table",
+    "irr_sensitivity",
 ]
