@@ -3224,7 +3224,41 @@ Partner note:
 
 ---
 
-## 139. Change log
+## 139. Partner scorecard (`partner_scorecard.py`)
+
+**Partner statement:** "Here's my must-have list. Any ONE
+failure is typically a pass. I don't trade dimensions against
+each other."
+
+Seven binary dimensions:
+
+1. **Scale** — EBITDA ≥ fund minimum (default $15M).
+2. **Team** — management score ≥ 55/100.
+3. **Market position** — local share ≥ 10% OR CoE / exclusive
+   service line.
+4. **Unit economics** — EBITDA margin ≥ 85% of peer median AND
+   cash conversion ≥ 65%.
+5. **Balance sheet** — leverage ≤ 7.0x AND stress coverage ≥
+   1.5x.
+6. **Exit path** — articulable exit story AND credibility ≥
+   50/100.
+7. **Thesis integrity** — recurring EBITDA ≥ 80% AND thesis
+   coherence ≥ 60/100.
+
+Partner note escalates:
+
+- All pass → "buy on fundamentals alone."
+- 1 fail → "that alone is typically enough to pass; force
+  remediation if sponsor conviction is exceptional."
+- 2+ fail → "do not spend partner time on remaining
+  diligence."
+
+Not weighted. Partners who weight their must-haves end up
+talking themselves into deals that fail the binary test.
+
+---
+
+## 140. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3517,3 +3551,8 @@ Partner note:
   sell-side banker's exit pitch composed at entry; subsector
   multiple ranges; likely-buyer list. Full inventory: 136
   modules, 1,371 pe_intelligence unit tests.
+- **2026-04-17** — Added `partner_scorecard.py` (§139) — 7
+  binary must-haves (scale / team / market / unit econ /
+  balance sheet / exit path / thesis integrity); any one fails
+  = pass. Full inventory: 137 modules, 1,382 pe_intelligence
+  unit tests.
