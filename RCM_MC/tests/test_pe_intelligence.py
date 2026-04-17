@@ -13358,5 +13358,107 @@ class TestPartnerScorecard(unittest.TestCase):
             deal_name="X", ebitda_m=50.0)).to_dict())
 
 
+# ── Cycle timing pricing check ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    SUBSECTOR_CYCLE_AVG_MULT,
+    CyclePricingInputs,
+    CyclePricingReport,
+    check_cycle_pricing,
+    render_cycle_pricing_markdown,
+)
+
+
+class TestCycleTimingPricingCheck(unittest.TestCase):
+
+    def test_peak_multiple_peak_ebitda_trap(self) -> None:
+        r = check_cycle_pricing(CyclePricingInputs(
+            subsector="specialty_practice",
+            cycle_phase="peak",
+            entry_multiple=13.0,                # above 10.5 avg
+            entry_ebitda_m=60.0,
+            ebitda_3yr_ago_m=45.0,
+            ebitda_2yr_ago_m=48.0,
+            ebitda_1yr_ago_m=52.0,
+        ))
+        self.assertTrue(r.double_peak)
+        self.assertIn("trap", r.partner_note.lower())
+        self.assertGreater(r.recommended_entry_multiple_haircut_x, 0)
+
+    def test_normal_multiple_normal_ebitda_ok(self) -> None:
+        r = check_cycle_pricing(CyclePricingInputs(
+            subsector="specialty_practice",
+            cycle_phase="mid_expansion",
+            entry_multiple=10.0,
+            entry_ebitda_m=50.0,
+            ebitda_3yr_ago_m=48.0, ebitda_2yr_ago_m=49.0,
+            ebitda_1yr_ago_m=50.0,
+        ))
+        self.assertFalse(r.double_peak)
+        self.assertIn("not a pricing concern", r.partner_note.lower())
+
+    def test_peak_multiple_only_flagged(self) -> None:
+        r = check_cycle_pricing(CyclePricingInputs(
+            subsector="outpatient_asc",
+            cycle_phase="peak",
+            entry_multiple=16.0,                # above 12.5 avg
+            entry_ebitda_m=50.0,
+            ebitda_3yr_ago_m=49.0, ebitda_2yr_ago_m=50.0,
+            ebitda_1yr_ago_m=50.0,
+        ))
+        self.assertTrue(r.is_peak_multiple)
+        self.assertFalse(r.is_peak_ebitda)
+
+    def test_peak_ebitda_only_flagged(self) -> None:
+        r = check_cycle_pricing(CyclePricingInputs(
+            subsector="specialty_practice",
+            cycle_phase="mid_expansion",
+            entry_multiple=10.5,
+            entry_ebitda_m=60.0,
+            ebitda_3yr_ago_m=35.0, ebitda_2yr_ago_m=40.0,
+            ebitda_1yr_ago_m=45.0,
+        ))
+        self.assertTrue(r.is_peak_ebitda)
+        self.assertIn("peak", r.partner_note.lower())
+
+    def test_haircut_only_when_peak_multiple(self) -> None:
+        r = check_cycle_pricing(CyclePricingInputs(
+            subsector="specialty_practice",
+            cycle_phase="early_expansion",
+            entry_multiple=9.0,
+            entry_ebitda_m=50.0,
+        ))
+        self.assertEqual(r.recommended_entry_multiple_haircut_x, 0.0)
+
+    def test_unknown_subsector_uses_default(self) -> None:
+        r = check_cycle_pricing(CyclePricingInputs(
+            subsector="mystery",
+            entry_multiple=11.0, entry_ebitda_m=50.0,
+        ))
+        # Should not error; just uses default average.
+        self.assertIsInstance(r, CyclePricingReport)
+
+    def test_library_has_subsectors(self) -> None:
+        self.assertIn("hospital", SUBSECTOR_CYCLE_AVG_MULT)
+        self.assertIn("outpatient_asc", SUBSECTOR_CYCLE_AVG_MULT)
+
+    def test_markdown_renders(self) -> None:
+        md = render_cycle_pricing_markdown(check_cycle_pricing(
+            CyclePricingInputs(
+                subsector="specialty_practice",
+                cycle_phase="peak",
+                entry_multiple=13.0, entry_ebitda_m=60.0,
+                ebitda_3yr_ago_m=45.0,
+                ebitda_2yr_ago_m=48.0,
+                ebitda_1yr_ago_m=52.0,
+            )))
+        self.assertIn("# Cycle timing pricing check", md)
+        self.assertIn("Double peak", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(check_cycle_pricing(CyclePricingInputs()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

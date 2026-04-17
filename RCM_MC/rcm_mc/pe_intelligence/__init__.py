@@ -742,6 +742,13 @@ from .partner_scorecard import (
     render_scorecard_markdown,
     run_scorecard,
 )
+from .cycle_timing_pricing_check import (
+    SUBSECTOR_CYCLE_AVG_MULT,
+    CyclePricingInputs,
+    CyclePricingReport,
+    check_cycle_pricing,
+    render_cycle_pricing_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1739,4 +1746,9 @@ __all__ = [
     "ScorecardReport",
     "render_scorecard_markdown",
     "run_scorecard",
+    "SUBSECTOR_CYCLE_AVG_MULT",
+    "CyclePricingInputs",
+    "CyclePricingReport",
+    "check_cycle_pricing",
+    "render_cycle_pricing_markdown",
 ]
