@@ -3046,5 +3046,102 @@ class TestPositionInComps(unittest.TestCase):
         self.assertIsNone(out["percentile"])
 
 
+# ── Debt sizing ────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    covenant_stress_passes,
+    leverage_headroom,
+    max_interest_rate_to_break,
+    prudent_leverage,
+)
+
+
+class TestPrudentLeverage(unittest.TestCase):
+
+    def test_acute_commercial_higher_than_acute_govt(self) -> None:
+        acu_com = prudent_leverage("acute_care", "commercial_heavy")
+        acu_gov = prudent_leverage("acute_care", "govt_heavy")
+        self.assertGreater(acu_com, acu_gov)
+
+    def test_cah_capped_low(self) -> None:
+        cah = prudent_leverage("critical_access", "govt_heavy")
+        self.assertIsNotNone(cah)
+        self.assertLessEqual(cah, 3.0)
+
+    def test_unknown_returns_none(self) -> None:
+        self.assertIsNone(prudent_leverage("made_up", "balanced"))
+
+
+class TestLeverageHeadroom(unittest.TestCase):
+
+    def test_conservative_verdict(self) -> None:
+        result = leverage_headroom(3.5, subsector="acute_care",
+                                   payer_regime="commercial_heavy")
+        self.assertEqual(result["verdict"], "conservative")
+
+    def test_at_prudent(self) -> None:
+        result = leverage_headroom(5.4, subsector="acute_care",
+                                   payer_regime="commercial_heavy")
+        self.assertEqual(result["verdict"], "at_prudent")
+
+    def test_over_levered(self) -> None:
+        result = leverage_headroom(7.0, subsector="acute_care",
+                                   payer_regime="commercial_heavy")
+        self.assertEqual(result["verdict"], "over_levered")
+
+
+class TestMaxInterestRate(unittest.TestCase):
+
+    def test_basic_calc(self) -> None:
+        # 30M EBITDA, 150M debt, floor 2.0x → max rate = 30/(150*2) = 10%
+        rate = max_interest_rate_to_break(30_000_000, 150_000_000,
+                                          coverage_floor=2.0)
+        self.assertAlmostEqual(rate, 0.10, places=4)
+
+    def test_zero_debt_returns_none(self) -> None:
+        self.assertIsNone(max_interest_rate_to_break(30_000_000, 0))
+
+
+class TestCovenantStress(unittest.TestCase):
+
+    def test_passing_case(self) -> None:
+        result = covenant_stress_passes(
+            stressed_ebitda=30_000_000, debt=150_000_000,
+            leverage_covenant=6.0, coverage_covenant=2.0,
+            interest_rate=0.08,
+        )
+        # Leverage = 5.0, Coverage = 30M/12M = 2.5 — both pass.
+        self.assertTrue(result["passes"])
+
+    def test_leverage_breach(self) -> None:
+        result = covenant_stress_passes(
+            stressed_ebitda=20_000_000, debt=150_000_000,
+            leverage_covenant=6.0, coverage_covenant=2.0,
+            interest_rate=0.08,
+        )
+        # Leverage = 7.5 — breach.
+        self.assertFalse(result["leverage_ok"])
+        self.assertFalse(result["passes"])
+
+    def test_coverage_breach(self) -> None:
+        result = covenant_stress_passes(
+            stressed_ebitda=24_000_000, debt=150_000_000,
+            leverage_covenant=7.0, coverage_covenant=2.5,
+            interest_rate=0.10,
+        )
+        # Leverage = 6.25 ok (≤7), Coverage = 24/(15) = 1.6 → breach.
+        self.assertTrue(result["leverage_ok"])
+        self.assertFalse(result["coverage_ok"])
+        self.assertFalse(result["passes"])
+
+    def test_negative_ebitda(self) -> None:
+        result = covenant_stress_passes(
+            stressed_ebitda=-5_000_000, debt=100_000_000,
+            leverage_covenant=6.0, coverage_covenant=2.0,
+            interest_rate=0.08,
+        )
+        self.assertFalse(result["passes"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -81,6 +81,12 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .debt_sizing import (
+    covenant_stress_passes,
+    leverage_headroom,
+    max_interest_rate_to_break,
+    prudent_leverage,
+)
 from .deal_comparables import (
     COMPS,
     Comparable,
@@ -312,4 +318,8 @@ __all__ = [
     "filter_comps",
     "multiple_stats",
     "position_in_comps",
+    "covenant_stress_passes",
+    "leverage_headroom",
+    "max_interest_rate_to_break",
+    "prudent_leverage",
 ]
