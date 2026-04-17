@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 74
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 77
 modules + test suite:
 
 | Module | Role |
@@ -780,6 +780,9 @@ modules + test suite:
 | `master_bundle.py` | One-call build of every PE-intel artifact |
 | `tax_structuring.py` | Step-up / 163(j) / QSBS / state drag checks |
 | `insurance_diligence.py` | PL / cyber / SIR / claims adequacy |
+| `portfolio_dashboard.py` | Desk-view across multiple reviews |
+| `integration_readiness.py` | Post-close integration scorecard |
+| `management_comp.py` | MIP/LTIP/vesting/rollover checks |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1608,7 +1611,51 @@ score + tail-policy recommendation.
 
 ---
 
-## 77. Change log
+## 77. Portfolio dashboard (`portfolio_dashboard.py`)
+
+Desk-view aggregator that takes a list of `PartnerReview` objects
+and returns:
+
+- Recommendation mix (PASS / PROCEED / STRONG_PROCEED counts).
+- Regime + posture + sector + state concentration.
+- Deals with critical / 3+ high-severity flags.
+- Avg investability score + avg stress grade.
+- Partner-facing summary naming the top priorities.
+
+---
+
+## 78. Integration readiness (`integration_readiness.py`)
+
+Post-close integration scorecard across 11 dimensions: integration
+officer, day-1 systems plan, management retention + comp alignment,
+workstream leads (RCM / IT / clinical / finance / HR), integration
+budget, communications plan. 100-point weighted composite with
+verdict `ready` / `qualified` / `not_ready`.
+
+Penalties for long TSA (> 12mo) and missing integration officer on
+roll-up theses.
+
+---
+
+## 79. Management compensation (`management_comp.py`)
+
+Partner-prudent checks on MIP / LTIP structure:
+
+- **MIP pool** — 8-15% of fully-diluted pool.
+- **CEO share of MIP** — 30-50%.
+- **Vesting** — 4-5 years.
+- **Cliff** — 12 months standard.
+- **Acceleration** — double-trigger standard, single-trigger flagged.
+- **CEO rollover** — 5-15% for alignment.
+- **LTIP** — 25-75% of base.
+- **Performance vesting** — 20-70% of grant.
+
+Flags each item as `standard / aggressive / light` with concrete
+remediation.
+
+---
+
+## 80. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1722,3 +1769,6 @@ score + tail-policy recommendation.
   QSBS, state drag) and `insurance_diligence.py` (PL / cyber /
   SIR / claims / tail-policy). Full inventory: 74 modules, 767
   pe_intelligence unit tests.
+- **2026-04-17** — Added `portfolio_dashboard.py`,
+  `integration_readiness.py`, `management_comp.py`. Full
+  inventory: 77 modules, 791 pe_intelligence unit tests.
