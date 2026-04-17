@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 49
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 54
 modules + test suite:
 
 | Module | Role |
@@ -755,6 +755,11 @@ modules + test suite:
 | `operating_posture.py` | 5-posture classifier (scenario_leader / resilient_core / etc.) |
 | `white_space.py` | Geographic / segment / channel adjacency detection |
 | `investability_scorer.py` | Composite opportunity×value×stability 0..100 |
+| `extra_heuristics.py` | 8 additional partner-voice rules |
+| `extra_bands.py` | Capex / occupancy / RVU / CMI / LOS subsector bands |
+| `narrative_styles.py` | 5 alternate narrative voices |
+| `memo_formats.py` | 5 IC memo renderers (one-pager / slack / email / pdf / deck) |
+| `extra_archetypes.py` | 8 specialized deal patterns |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1195,7 +1200,81 @@ as every other analytic.
 
 ---
 
-## 52. Change log
+## 52. Extra heuristics (`extra_heuristics.py`)
+
+Eight additional partner-voice rules beyond the base 19:
+
+- `clean_claim_rate_low` — clean-claim below 88%.
+- `growth_volatility_without_driver` — > 10% growth with no named driver.
+- `payer_contract_staleness` — low clean-claim + low denial plan.
+- `check_size_concentration` — deal EBITDA > $300M implies top-check.
+- `missing_ttm_kpi_reporting` — coverage < 50%.
+- `cah_teaching_mismatch` — CAH + teaching flags together.
+- `urban_outpatient_gold_rush` — urban commercial MSO at >12x exit.
+- `hold_moic_inconsistency` — implied CAGR > 40% sustained-return.
+
+`run_all_plus_extras` unions base + red flags + extras, dedup by id.
+
+---
+
+## 53. Extra bands (`extra_bands.py`)
+
+Finer-grained subsector bands beyond the core reasonableness matrix:
+
+- Capital intensity (% of revenue, by subsector).
+- Bed occupancy (acute / post-acute / behavioral).
+- RVU per provider (outpatient / specialty).
+- Case Mix Index (acute care).
+- Length of stay (behavioral / post-acute).
+
+`run_extra_bands` runs every check that has enough input.
+
+---
+
+## 54. Narrative styles (`narrative_styles.py`)
+
+Five alternate narrative voices beyond the default senior-partner:
+
+- `analyst_brief` — neutral, data-first.
+- `skeptic` — adversarial pre-mortem.
+- `founder_voice` — target-founder perspective.
+- `bullish` — optimistic frame.
+- `three_sentence` — compressed summary.
+
+`compose_styled_narrative(style, ...)` dispatches by name.
+
+---
+
+## 55. Memo formats (`memo_formats.py`)
+
+Five renderers for the IC memo beyond the default markdown/html/text:
+
+- `render_one_pager` — constrained single-page markdown.
+- `render_memo_slack` — slack-formatted (stars for bold, emoji).
+- `render_memo_email` — subject + plain-text body.
+- `render_pdf_ready` — markdown with `\pagebreak` for pandoc.
+- `render_deck_bullets` — ≤ 10 short bullets for slide copy-paste.
+
+`render_all_memo_formats(review)` returns every format.
+
+---
+
+## 56. Extra archetypes (`extra_archetypes.py`)
+
+Eight specialized deal patterns beyond the core 10:
+
+- `de_novo_build` — pre-revenue platform build.
+- `joint_venture` — sponsor + strategic (or sponsor + sponsor) JV.
+- `distressed_restructuring` — DIP / chapter-11 emergence.
+- `carveout_platform` — carve-out that becomes a rollup platform.
+- `succession_transition` — family-founder exit.
+- `public_to_private_tender` — tender-offer mechanics.
+- `spinco_carveout` — RMT / spin-co structures.
+- `late_stage_growth` — minority pre-IPO investment.
+
+---
+
+## 57. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1276,3 +1355,9 @@ as every other analytic.
   every `PartnerReview` now carries regime / market / stress /
   posture / white space / investability outputs. Full inventory:
   49 modules, 558 pe_intelligence unit tests.
+- **2026-04-17** — Deepened coverage: `extra_heuristics.py`
+  (8 more rules), `extra_bands.py` (capex / occupancy / RVU / CMI /
+  LOS), `narrative_styles.py` (5 voices), `memo_formats.py` (5
+  renderers), `extra_archetypes.py` (8 specialized patterns). Full
+  inventory: 54 modules, 610 pe_intelligence unit tests. Full
+  project suite **3715 passed**.
