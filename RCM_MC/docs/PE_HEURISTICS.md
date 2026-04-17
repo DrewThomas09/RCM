@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 88
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 91
 modules + test suite:
 
 | Module | Role |
@@ -794,6 +794,9 @@ modules + test suite:
 | `benchmark_bands.py` | SG&A / interest / SSSG / NWC / outpatient bands |
 | `payer_mix_risk.py` | Payer HHI + MA / MMC / ACA / mix-shift flags |
 | `peer_discovery.py` | Similarity-weighted peer ranking |
+| `reimbursement_cliff.py` | Named rate-cliff modeling in hold window |
+| `scenario_comparison.py` | Base/bull/bear MOIC side-by-side |
+| `vintage_return_curve.py` | J-curve DPI/TVPI projection by vintage |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1812,7 +1815,39 @@ cohorts for lever-benchmarking.
 
 ---
 
-## 91. Change log
+## 91. Reimbursement cliffs (`reimbursement_cliff.py`)
+
+Models named reimbursement rate-change events (Medicare sequestration
+reset, IMD waiver expiry, site-neutral expansion, 340B rule
+updates) against a deal's hold window. Returns cliffs inside hold,
+dollar impact at each cliff given payer-level revenue exposure,
+and severity ranking.
+
+`default_cliff_library()` provides a starter catalog — deal teams
+extend per deal.
+
+---
+
+## 92. Scenario comparison (`scenario_comparison.py`)
+
+Builds base / bull / bear three-column pricing comparison. Each
+column computes exit EBITDA, exit multiple, EV, equity, MOIC, and
+IRR. Bull/bear deltas are caller-configurable (default +15% / +1x
+and -20% / -1x). Returns MOIC spread with partner-voice commentary
+on deal sensitivity.
+
+---
+
+## 93. Vintage return curve (`vintage_return_curve.py`)
+
+Projects year-by-year DPI / TVPI / called-capital curve for a
+given fund vintage + target MOIC. Produces the classic J-curve
+shape: early draw-down, inflection around year 3, peak around
+year 5-7. Outputs trough year, inflection year, and partner note.
+
+---
+
+## 94. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1946,3 +1981,6 @@ cohorts for lever-benchmarking.
   pe_intelligence unit tests.
 - **2026-04-17** — Added `peer_discovery.py`. Full inventory: 88
   modules, 871 pe_intelligence unit tests.
+- **2026-04-17** — Added `reimbursement_cliff.py`,
+  `scenario_comparison.py`, `vintage_return_curve.py`. Full
+  inventory: 91 modules, 890 pe_intelligence unit tests.
