@@ -195,6 +195,10 @@ from .labor_cost_analytics import (
     analyze_labor_profile,
     render_labor_profile_markdown,
 )
+from .analyst_cheatsheet import (
+    build_cheatsheet,
+    render_cheatsheet_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -793,4 +797,6 @@ __all__ = [
     "LaborProfile",
     "analyze_labor_profile",
     "render_labor_profile_markdown",
+    "build_cheatsheet",
+    "render_cheatsheet_markdown",
 ]

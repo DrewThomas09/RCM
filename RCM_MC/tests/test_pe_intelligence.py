@@ -6331,5 +6331,54 @@ class TestLaborAnalytics(unittest.TestCase):
         json.dumps(pf.to_dict())
 
 
+# ── Analyst cheatsheet ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    build_cheatsheet,
+    render_cheatsheet_markdown,
+)
+
+
+class TestAnalystCheatsheet(unittest.TestCase):
+
+    def _review(self):
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.60, "commercial": 0.30, "medicaid": 0.10},
+            ebitda_m=30, revenue_m=250, ebitda_margin=0.10,
+            hospital_type="acute_care", state="TX",
+            exit_multiple=11.0, entry_multiple=8.0, hold_years=5,
+            projected_irr=0.22, projected_moic=2.5,
+            leverage_multiple=5.0, denial_improvement_bps_per_yr=350,
+        )
+        return partner_review_from_context(ctx, deal_name="Demo")
+
+    def test_cheatsheet_has_all_sections(self) -> None:
+        sheet = build_cheatsheet(self._review())
+        for key in ("deal_id", "deal_name", "recommendation",
+                    "top_facts", "top_flags", "top_questions",
+                    "quick_numbers"):
+            self.assertIn(key, sheet)
+
+    def test_top_flags_limited_to_five(self) -> None:
+        sheet = build_cheatsheet(self._review())
+        self.assertLessEqual(len(sheet["top_flags"]), 5)
+
+    def test_top_questions_limited_to_three(self) -> None:
+        sheet = build_cheatsheet(self._review())
+        self.assertLessEqual(len(sheet["top_questions"]), 3)
+
+    def test_quick_numbers_populated(self) -> None:
+        sheet = build_cheatsheet(self._review())
+        qn = sheet["quick_numbers"]
+        for key in ("irr", "moic", "leverage", "investability", "stress_grade"):
+            self.assertIn(key, qn)
+
+    def test_markdown_renders(self) -> None:
+        md = render_cheatsheet_markdown(self._review())
+        self.assertIn("Analyst Cheatsheet", md)
+        self.assertIn("Quick numbers", md)
+        self.assertIn("Top flags", md)
+
+
 if __name__ == "__main__":
     unittest.main()
