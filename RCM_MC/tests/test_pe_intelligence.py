@@ -6539,5 +6539,107 @@ class TestEBITDAQuality(unittest.TestCase):
         self.assertIn("EBITDA quality report", md)
 
 
+# ── Covenant monitor ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CovenantDefinition,
+    CovenantObservation,
+    CovenantReport,
+    CovenantStatus,
+    evaluate_covenant,
+    monitor_covenants,
+    render_covenant_report_markdown,
+)
+
+
+class TestCovenantMonitor(unittest.TestCase):
+
+    def test_comfortable_leverage_is_green(self) -> None:
+        d = CovenantDefinition(name="net_leverage", direction="max",
+                               threshold=6.0)
+        s = evaluate_covenant(d, observed=4.0, debt=100_000_000)
+        self.assertEqual(s.status, "green")
+
+    def test_tight_leverage_is_amber(self) -> None:
+        d = CovenantDefinition(name="net_leverage", direction="max",
+                               threshold=6.0)
+        s = evaluate_covenant(d, observed=5.5, debt=100_000_000)
+        self.assertEqual(s.status, "amber")
+
+    def test_breached_leverage_is_red(self) -> None:
+        d = CovenantDefinition(name="net_leverage", direction="max",
+                               threshold=6.0)
+        s = evaluate_covenant(d, observed=5.95)
+        self.assertEqual(s.status, "red")
+
+    def test_coverage_min_direction(self) -> None:
+        d = CovenantDefinition(name="interest_coverage", direction="min",
+                               threshold=2.0)
+        s = evaluate_covenant(d, observed=3.0, interest=10_000_000)
+        self.assertEqual(s.status, "green")
+
+    def test_break_ebitda_computed_for_leverage(self) -> None:
+        d = CovenantDefinition(name="net_leverage", direction="max",
+                               threshold=6.0)
+        s = evaluate_covenant(d, observed=5.0, debt=150_000_000)
+        # Break EBITDA = debt / threshold = 150M / 6 = 25M.
+        self.assertAlmostEqual(s.break_ebitda, 25_000_000, delta=1)
+
+    def test_break_ebitda_computed_for_coverage(self) -> None:
+        d = CovenantDefinition(name="interest_coverage", direction="min",
+                               threshold=2.5)
+        s = evaluate_covenant(d, observed=3.0, interest=10_000_000)
+        # Break EBITDA = threshold * interest = 2.5 * 10M = 25M.
+        self.assertAlmostEqual(s.break_ebitda, 25_000_000, delta=1)
+
+    def test_trend_projection(self) -> None:
+        d = CovenantDefinition(name="net_leverage", direction="max",
+                               threshold=6.0)
+        s = evaluate_covenant(d, observed=4.0, trend_per_quarter=0.30)
+        self.assertAlmostEqual(s.projected_next_q, 4.30, places=2)
+
+    def test_monitor_report_with_mix(self) -> None:
+        defs = [
+            CovenantDefinition(name="net_leverage", direction="max",
+                               threshold=6.0),
+            CovenantDefinition(name="interest_coverage", direction="min",
+                               threshold=2.0),
+        ]
+        obs = [
+            CovenantObservation(covenant_name="net_leverage",
+                                observed_value=5.95),       # red
+            CovenantObservation(covenant_name="interest_coverage",
+                                observed_value=3.0),        # green
+        ]
+        report = monitor_covenants(defs, obs, debt=100_000_000,
+                                   interest=8_000_000)
+        self.assertEqual(report.worst_status, "red")
+        self.assertEqual(report.red_count, 1)
+
+    def test_no_observations_produces_empty(self) -> None:
+        report = monitor_covenants([CovenantDefinition(
+            name="net_leverage", direction="max", threshold=6.0,
+        )], [])
+        self.assertEqual(report.statuses, [])
+
+    def test_markdown_renders(self) -> None:
+        defs = [CovenantDefinition(name="net_leverage", direction="max",
+                                   threshold=6.0)]
+        obs = [CovenantObservation(covenant_name="net_leverage",
+                                   observed_value=4.5)]
+        md = render_covenant_report_markdown(
+            monitor_covenants(defs, obs, debt=100_000_000))
+        self.assertIn("# Covenant monitor", md)
+
+    def test_report_json(self) -> None:
+        import json
+        defs = [CovenantDefinition(name="net_leverage", direction="max",
+                                   threshold=6.0)]
+        obs = [CovenantObservation(covenant_name="net_leverage",
+                                   observed_value=4.5)]
+        r = monitor_covenants(defs, obs, debt=100_000_000)
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

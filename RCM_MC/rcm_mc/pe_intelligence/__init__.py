@@ -212,6 +212,15 @@ from .ebitda_quality import (
     assess_ebitda_quality,
     render_ebitda_quality_markdown,
 )
+from .covenant_monitor import (
+    CovenantDefinition,
+    CovenantObservation,
+    CovenantReport,
+    CovenantStatus,
+    evaluate_covenant,
+    monitor_covenants,
+    render_covenant_report_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -821,4 +830,11 @@ __all__ = [
     "EBITDAQualityReport",
     "assess_ebitda_quality",
     "render_ebitda_quality_markdown",
+    "CovenantDefinition",
+    "CovenantObservation",
+    "CovenantReport",
+    "CovenantStatus",
+    "evaluate_covenant",
+    "monitor_covenants",
+    "render_covenant_report_markdown",
 ]
