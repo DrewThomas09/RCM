@@ -800,6 +800,12 @@ from .deal_smell_detectors import (
     detect_smells,
     render_smells_markdown,
 )
+from .letter_to_seller import (
+    Letter,
+    LetterContext,
+    compose_letter,
+    render_letter_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1839,4 +1845,8 @@ __all__ = [
     "SmellReport",
     "detect_smells",
     "render_smells_markdown",
+    "Letter",
+    "LetterContext",
+    "compose_letter",
+    "render_letter_markdown",
 ]

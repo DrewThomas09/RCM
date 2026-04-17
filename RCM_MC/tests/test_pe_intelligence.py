@@ -14263,5 +14263,98 @@ class TestDealSmellDetectors(unittest.TestCase):
         json.dumps(detect_smells(SmellContext()).to_dict())
 
 
+# ── Letter to seller ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    Letter,
+    LetterContext,
+    compose_letter,
+    render_letter_markdown,
+)
+
+
+class TestLetterToSeller(unittest.TestCase):
+
+    def test_pass_letter_includes_reasons_and_revisit(self) -> None:
+        letter = compose_letter(LetterContext(
+            deal_name="AlphaCo",
+            banker_firm="Example Advisors",
+            banker_contact="Jane Banker",
+            ic_recommendation="PASS",
+            things_we_liked=["scale", "management depth"],
+            reasons_for_pass=["payer concentration",
+                              "site-neutral exposure"],
+            would_revisit=True,
+        ))
+        body = " ".join(letter.body_paragraphs)
+        self.assertIn("not in a position to move forward", body)
+        self.assertIn("payer concentration", body)
+        self.assertIn("revisit", body)
+
+    def test_pass_letter_price_gap_framing(self) -> None:
+        letter = compose_letter(LetterContext(
+            deal_name="X",
+            ic_recommendation="PASS",
+            asking_price_m=500.0,
+            price_we_could_support_m=400.0,
+        ))
+        body = " ".join(letter.body_paragraphs)
+        self.assertIn("$400M", body)
+        self.assertIn("gap", body.lower())
+
+    def test_invest_letter_names_conditions(self) -> None:
+        letter = compose_letter(LetterContext(
+            deal_name="BetaCo",
+            ic_recommendation="INVEST",
+            conditions_for_move_forward=[
+                "signed commercial payer schedule",
+                "retention packages finalized",
+            ],
+        ))
+        body = " ".join(letter.body_paragraphs)
+        self.assertIn("moving forward", body.lower())
+        self.assertIn("retention packages", body)
+
+    def test_diligence_letter_asks_for_sessions(self) -> None:
+        letter = compose_letter(LetterContext(
+            deal_name="GammaCo",
+            ic_recommendation="DILIGENCE MORE",
+            conditions_for_move_forward=["QofE final", "OIG screen"],
+        ))
+        body = " ".join(letter.body_paragraphs)
+        self.assertIn("not yet ready", body.lower())
+        self.assertIn("qofe final", body.lower())
+
+    def test_subject_matches_decision(self) -> None:
+        for rec, expected in [
+            ("PASS", "passing"),
+            ("INVEST", "final IC"),
+            ("DILIGENCE MORE", "additional diligence"),
+        ]:
+            letter = compose_letter(LetterContext(
+                deal_name="X", ic_recommendation=rec))
+            self.assertIn(expected, letter.subject)
+
+    def test_salutation_uses_contact(self) -> None:
+        letter = compose_letter(LetterContext(
+            deal_name="X", banker_contact="Jane Banker",
+        ))
+        self.assertIn("Jane Banker", letter.salutation)
+
+    def test_markdown_renders(self) -> None:
+        md = render_letter_markdown(compose_letter(LetterContext(
+            deal_name="X",
+            banker_contact="Jane",
+            ic_recommendation="PASS",
+        )))
+        self.assertIn("# Subject", md)
+        self.assertIn("Best regards", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(compose_letter(LetterContext(
+            deal_name="X")).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
