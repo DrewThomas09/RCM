@@ -319,6 +319,16 @@ from .lbo_entry_optimizer import (
     entry_optimizer_table,
     entry_optimizer_report,
 )
+from .reimbursement_risk_model import (
+    ReimbursementScenario,
+    RateShockAssumptions,
+    model_reimbursement_risk,
+    sector_rate_history,
+    build_scenarios,
+    reimbursement_risk_table,
+    reimbursement_risk_report,
+    sector_volatility,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -563,4 +573,12 @@ __all__ = [
     "entry_vs_corpus",
     "entry_optimizer_table",
     "entry_optimizer_report",
+    "ReimbursementScenario",
+    "RateShockAssumptions",
+    "model_reimbursement_risk",
+    "sector_rate_history",
+    "build_scenarios",
+    "reimbursement_risk_table",
+    "reimbursement_risk_report",
+    "sector_volatility",
 ]

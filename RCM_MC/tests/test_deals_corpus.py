@@ -111,6 +111,7 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_16 import EXTENDED_SEED_DEALS_16
         from rcm_mc.data_public.extended_seed_17 import EXTENDED_SEED_DEALS_17
         from rcm_mc.data_public.extended_seed_18 import EXTENDED_SEED_DEALS_18
+        from rcm_mc.data_public.extended_seed_19 import EXTENDED_SEED_DEALS_19
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
@@ -120,7 +121,8 @@ class TestDealsCorpus(unittest.TestCase):
                     + len(EXTENDED_SEED_DEALS_11) + len(EXTENDED_SEED_DEALS_12)
                     + len(EXTENDED_SEED_DEALS_13) + len(EXTENDED_SEED_DEALS_14)
                     + len(EXTENDED_SEED_DEALS_15) + len(EXTENDED_SEED_DEALS_16)
-                    + len(EXTENDED_SEED_DEALS_17) + len(EXTENDED_SEED_DEALS_18))
+                    + len(EXTENDED_SEED_DEALS_17) + len(EXTENDED_SEED_DEALS_18)
+                    + len(EXTENDED_SEED_DEALS_19))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3585,10 +3587,10 @@ class TestExtendedSeed8(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_395_deals(self):
+    def test_seed_loads_415_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
-        self.assertGreaterEqual(stats["total"], 395)
+        self.assertGreaterEqual(stats["total"], 415)
 
     def test_seed_187_signify_high_moic(self):
         corpus = DealsCorpus(self.db_path)
@@ -6276,6 +6278,143 @@ class TestCorpusHealthCheck(unittest.TestCase):
         self.assertGreater(result.health_score, 0.5)
         text = health_check_text(result)
         self.assertIn("Corpus Health Check Report", text)
+
+
+class TestReimbursementRiskModel(unittest.TestCase):
+    """Tests for reimbursement_risk_model.py."""
+
+    def _make_deal(self, **kwargs):
+        base = {
+            "source_id": "r001",
+            "deal_name": "Test Deal",
+            "sector": "home_health",
+            "ebitda_mm": 50.0,
+            "ev_ebitda": 12.0,
+            "hold_years": 5.0,
+            "payer_mix": {"medicare": 0.70, "medicaid": 0.15, "commercial": 0.12, "self_pay": 0.03},
+        }
+        base.update(kwargs)
+        return base
+
+    def test_model_returns_all_standard_scenarios(self):
+        from rcm_mc.data_public.reimbursement_risk_model import model_reimbursement_risk
+        deal = self._make_deal()
+        result = model_reimbursement_risk(deal)
+        for name in ["base_case", "mild_cut", "moderate_cut", "severe_cut"]:
+            self.assertIn(name, result)
+
+    def test_severe_cut_worse_than_mild(self):
+        from rcm_mc.data_public.reimbursement_risk_model import model_reimbursement_risk
+        deal = self._make_deal()
+        result = model_reimbursement_risk(deal)
+        severe = result["severe_cut"].total_ebitda_impact_mm
+        mild = result["mild_cut"].total_ebitda_impact_mm
+        self.assertLess(severe, mild)
+
+    def test_ebitda_impact_proportional_to_govt_exposure(self):
+        from rcm_mc.data_public.reimbursement_risk_model import model_reimbursement_risk
+        high_govt = self._make_deal(payer_mix={"medicare": 0.80, "medicaid": 0.15, "commercial": 0.05, "self_pay": 0.0})
+        low_govt = self._make_deal(payer_mix={"medicare": 0.10, "medicaid": 0.05, "commercial": 0.80, "self_pay": 0.05})
+        r_high = model_reimbursement_risk(high_govt)
+        r_low = model_reimbursement_risk(low_govt)
+        # High govt exposure → bigger absolute loss on Medicare cuts
+        self.assertLess(r_high["severe_cut"].total_ebitda_impact_mm,
+                        r_low["severe_cut"].total_ebitda_impact_mm)
+
+    def test_base_case_is_positive(self):
+        from rcm_mc.data_public.reimbursement_risk_model import model_reimbursement_risk
+        deal = self._make_deal()
+        result = model_reimbursement_risk(deal)
+        # Base case has positive rate changes → positive EBITDA impact
+        self.assertGreater(result["base_case"].total_ebitda_impact_mm, 0)
+
+    def test_severity_labels(self):
+        from rcm_mc.data_public.reimbursement_risk_model import model_reimbursement_risk
+        deal = self._make_deal()
+        result = model_reimbursement_risk(deal)
+        valid = {"low", "moderate", "high", "severe", "unknown"}
+        for s in result.values():
+            self.assertIn(s.severity, valid)
+
+    def test_sector_rate_history_home_health(self):
+        from rcm_mc.data_public.reimbursement_risk_model import sector_rate_history
+        history = sector_rate_history("home_health")
+        self.assertGreater(len(history), 3)
+        for h in history:
+            self.assertIn("year", h)
+            self.assertIn("change_pct", h)
+
+    def test_sector_volatility_returns_float(self):
+        from rcm_mc.data_public.reimbursement_risk_model import sector_volatility
+        self.assertIsInstance(sector_volatility("dialysis"), float)
+        self.assertIsInstance(sector_volatility("unknown_sector"), float)
+
+    def test_no_payer_mix_no_crash(self):
+        from rcm_mc.data_public.reimbursement_risk_model import model_reimbursement_risk
+        deal = {"source_id": "x", "deal_name": "No mix", "ebitda_mm": 20.0}
+        result = model_reimbursement_risk(deal)
+        self.assertIn("base_case", result)
+
+    def test_no_ebitda_no_crash(self):
+        from rcm_mc.data_public.reimbursement_risk_model import model_reimbursement_risk
+        deal = {"source_id": "x", "deal_name": "No EBITDA",
+                "payer_mix": {"medicare": 0.5, "medicaid": 0.2, "commercial": 0.3}}
+        result = model_reimbursement_risk(deal)
+        self.assertIsNone(result["severe_cut"].total_ebitda_impact_mm)
+
+    def test_risk_table_format(self):
+        from rcm_mc.data_public.reimbursement_risk_model import model_reimbursement_risk, reimbursement_risk_table
+        result = model_reimbursement_risk(self._make_deal())
+        text = reimbursement_risk_table(result)
+        self.assertIn("Scenario", text)
+        self.assertIn("severe_cut", text)
+
+    def test_risk_report_format(self):
+        from rcm_mc.data_public.reimbursement_risk_model import model_reimbursement_risk, reimbursement_risk_report
+        deal = self._make_deal()
+        result = model_reimbursement_risk(deal)
+        text = reimbursement_risk_report(deal, result)
+        self.assertIn("Reimbursement Risk Assessment", text)
+        self.assertIn("Govt exposure", text)
+
+
+class TestExtendedSeed19(unittest.TestCase):
+    """Tests for extended_seed_19.py (deals 396-415)."""
+
+    def setUp(self):
+        import tempfile, os
+        self.tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.db_path = self.tmp.name
+        self.tmp.close()
+        self.corpus = DealsCorpus(self.db_path)
+        self.corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        import os
+        os.unlink(self.db_path)
+
+    def test_seed_19_count(self):
+        from rcm_mc.data_public.extended_seed_19 import EXTENDED_SEED_DEALS_19
+        self.assertEqual(len(EXTENDED_SEED_DEALS_19), 20)
+
+    def test_seed_396_prospect_disaster(self):
+        deal = self.corpus.get("seed_396")
+        self.assertIsNotNone(deal)
+        self.assertLess(deal["realized_moic"], 1.0)
+
+    def test_seed_408_lhc_homerun(self):
+        deal = self.corpus.get("seed_408")
+        self.assertIsNotNone(deal)
+        self.assertGreaterEqual(deal["realized_moic"], 2.5)
+
+    def test_seed_415_present(self):
+        deal = self.corpus.get("seed_415")
+        self.assertIsNotNone(deal)
+
+    def test_seed_19_unique_ids(self):
+        from rcm_mc.data_public.extended_seed_19 import EXTENDED_SEED_DEALS_19
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_19]
+        self.assertEqual(len(ids), len(set(ids)))
 
 
 class TestLBOEntryOptimizer(unittest.TestCase):
