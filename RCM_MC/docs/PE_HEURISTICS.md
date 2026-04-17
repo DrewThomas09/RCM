@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 38
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 40
 modules + test suite:
 
 | Module | Role |
@@ -744,6 +744,8 @@ modules + test suite:
 | `icr_gate.py` | IC-Ready gate consolidator |
 | `cohort_tracker.py` | Vintage-cohort benchmarking |
 | `partner_discussion.py` | Autogen partner Q&A |
+| `kpi_alert_rules.py` | Monthly ops KPI threshold alerts |
+| `recon.py` | Cross-artifact coherence check |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1014,7 +1016,37 @@ forth an associate rehearses before IC.
 
 ---
 
-## 41. Change log
+## 41. KPI alert rules (`kpi_alert_rules.py`)
+
+Threshold-based alerts for monthly ops reviews. Default rules cover
+denial rate, write-off rate, AR days, clean claim rate, margin,
+labor ratio, and census occupancy. Each rule has:
+
+- `direction` — higher_is_better / lower_is_better.
+- `guardrail_low` / `guardrail_high` — breach = medium alert.
+- `hard_floor` / `hard_ceiling` — breach = high alert.
+
+`evaluate_kpi_alerts(observations)` returns alerts sorted highest
+severity first with partner notes + escalation paths.
+
+---
+
+## 42. Recon (`recon.py`)
+
+Reconciliation checks across PE-intel artifacts. Ensures the
+PartnerReview, 100-day plan, and diligence board tell the same
+story:
+
+- Recommendation phrase appears in IC-memo dictation.
+- Every HIGH/CRITICAL heuristic hit has a plan action.
+- Every CRITICAL hit appears as a P0 item on the diligence board.
+
+`has_mismatch(findings)` is the quick gate check for cross-artifact
+drift.
+
+---
+
+## 43. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1077,3 +1109,7 @@ forth an associate rehearses before IC.
   `cohort_tracker.py` (vintage-cohort benchmarks), and
   `partner_discussion.py` (autogen Q&A). Full inventory: 38 modules,
   466 pe_intelligence unit tests.
+- **2026-04-17** — Added `kpi_alert_rules.py` (threshold-based alerts
+  for monthly ops reviews) and `recon.py` (reconcile review + plan
+  + board for coherence). Full inventory: 40 modules, 479
+  pe_intelligence unit tests.
