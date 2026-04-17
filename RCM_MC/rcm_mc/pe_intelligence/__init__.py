@@ -136,6 +136,15 @@ from .extra_bands import (
     check_rvu_per_provider,
     run_extra_bands,
 )
+from .narrative_styles import (
+    ALL_NARRATIVE_STYLES,
+    compose_analyst_brief,
+    compose_bullish_view,
+    compose_founder_voice,
+    compose_skeptic_view,
+    compose_styled_narrative,
+    compose_three_sentence,
+)
 from .thesis_templates import (
     TEMPLATES as THESIS_TEMPLATES,
     ThesisTemplate,
@@ -665,4 +674,11 @@ __all__ = [
     "check_length_of_stay",
     "check_rvu_per_provider",
     "run_extra_bands",
+    "ALL_NARRATIVE_STYLES",
+    "compose_analyst_brief",
+    "compose_bullish_view",
+    "compose_founder_voice",
+    "compose_skeptic_view",
+    "compose_styled_narrative",
+    "compose_three_sentence",
 ]

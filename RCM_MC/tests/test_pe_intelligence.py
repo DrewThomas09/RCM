@@ -5446,5 +5446,99 @@ class TestRunExtraBands(unittest.TestCase):
             self.assertEqual(c.verdict, VERDICT_UNKNOWN)
 
 
+# ── Narrative styles ────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ALL_NARRATIVE_STYLES,
+    compose_analyst_brief,
+    compose_bullish_view,
+    compose_founder_voice,
+    compose_skeptic_view,
+    compose_styled_narrative,
+    compose_three_sentence,
+)
+
+
+def _sample_narrative_inputs():
+    ctx = HeuristicContext(
+        payer_mix={"medicare": 0.60, "commercial": 0.30, "medicaid": 0.10},
+        ebitda_m=30.0, hospital_type="acute_care",
+        exit_multiple=11.0, entry_multiple=8.0,
+        hold_years=5.0, projected_irr=0.18, projected_moic=2.3,
+        denial_improvement_bps_per_yr=250,
+    )
+    review = partner_review_from_context(ctx)
+    return review.reasonableness_checks, review.heuristic_hits
+
+
+class TestNarrativeStyles(unittest.TestCase):
+
+    def test_analyst_brief_shape(self) -> None:
+        bands, hits = _sample_narrative_inputs()
+        out = compose_analyst_brief(
+            bands=bands, hits=hits,
+            hospital_type="acute_care", ebitda_m=30,
+            payer_mix={"medicare": 0.60},
+        )
+        self.assertEqual(out["style"], "analyst_brief")
+        self.assertIn("Recommendation", out["headline"])
+
+    def test_skeptic_focuses_on_kills(self) -> None:
+        bands, hits = _sample_narrative_inputs()
+        out = compose_skeptic_view(
+            bands=bands, hits=hits,
+            hospital_type="acute_care", ebitda_m=30,
+            payer_mix={"medicare": 0.60},
+        )
+        self.assertEqual(out["style"], "skeptic")
+        self.assertIn("Pre-mortem", out["headline"])
+
+    def test_founder_voice_reads_like_target(self) -> None:
+        bands, hits = _sample_narrative_inputs()
+        out = compose_founder_voice(
+            bands=bands, hits=hits,
+            hospital_type="acute_care", ebitda_m=30,
+            payer_mix={"medicare": 0.60},
+        )
+        self.assertEqual(out["style"], "founder_voice")
+        self.assertIn("founder", out["headline"].lower())
+
+    def test_bullish_view(self) -> None:
+        bands, hits = _sample_narrative_inputs()
+        out = compose_bullish_view(
+            bands=bands, hits=hits,
+            hospital_type="acute_care", ebitda_m=30,
+            payer_mix={"medicare": 0.60},
+        )
+        self.assertEqual(out["style"], "bullish")
+
+    def test_three_sentence_is_compact(self) -> None:
+        bands, hits = _sample_narrative_inputs()
+        out = compose_three_sentence(
+            bands=bands, hits=hits,
+            hospital_type="acute_care", ebitda_m=30,
+            payer_mix={"medicare": 0.60},
+        )
+        self.assertEqual(out["style"], "three_sentence")
+        # Should be composed of ≤ 4 sentences.
+        self.assertLessEqual(out["headline"].count("."), 4)
+
+    def test_dispatcher_matches(self) -> None:
+        bands, hits = _sample_narrative_inputs()
+        for style in ALL_NARRATIVE_STYLES:
+            out = compose_styled_narrative(
+                style, bands=bands, hits=hits,
+                hospital_type="acute_care", ebitda_m=30,
+            )
+            self.assertEqual(out["style"], style)
+
+    def test_unknown_style_falls_back(self) -> None:
+        bands, hits = _sample_narrative_inputs()
+        out = compose_styled_narrative(
+            "made_up", bands=bands, hits=hits,
+        )
+        self.assertEqual(out["style"], "analyst_brief")
+
+
 if __name__ == "__main__":
     unittest.main()
