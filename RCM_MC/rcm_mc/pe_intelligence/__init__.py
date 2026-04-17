@@ -722,6 +722,13 @@ from .payer_mix_shift_cascade import (
     render_mix_shift_markdown,
     trace_mix_shift,
 )
+from .labor_shortage_cascade import (
+    LaborCascadeInputs,
+    LaborCascadeReport,
+    LaborCascadeStep,
+    render_labor_cascade_markdown,
+    trace_labor_cascade,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1705,4 +1712,9 @@ __all__ = [
     "RATE_MULTIPLIER",
     "render_mix_shift_markdown",
     "trace_mix_shift",
+    "LaborCascadeInputs",
+    "LaborCascadeReport",
+    "LaborCascadeStep",
+    "render_labor_cascade_markdown",
+    "trace_labor_cascade",
 ]

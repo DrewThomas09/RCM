@@ -13004,5 +13004,105 @@ class TestPayerMixShiftCascade(unittest.TestCase):
         json.dumps(trace_mix_shift(MixShiftInputs(revenue_m=100.0)).to_dict())
 
 
+# ── Labor shortage cascade ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    LaborCascadeInputs,
+    LaborCascadeReport,
+    LaborCascadeStep,
+    render_labor_cascade_markdown,
+    trace_labor_cascade,
+)
+
+
+class TestLaborShortageCascade(unittest.TestCase):
+
+    def test_turnover_delta_flows_through(self) -> None:
+        r = trace_labor_cascade(LaborCascadeInputs(
+            baseline_turnover_pct=0.15,
+            current_turnover_pct=0.30,
+        ))
+        step1 = next(s for s in r.steps if s.name == "turnover_delta")
+        self.assertAlmostEqual(step1.value, 15.0, places=1)
+
+    def test_agency_premium_creates_ebitda_hit(self) -> None:
+        r = trace_labor_cascade(LaborCascadeInputs(
+            agency_current_share=0.05,
+            agency_peak_share=0.20,
+        ))
+        self.assertGreater(r.ebitda_hit_m, 0)
+
+    def test_five_steps(self) -> None:
+        r = trace_labor_cascade(LaborCascadeInputs())
+        self.assertEqual(len(r.steps), 5)
+        names = [s.name for s in r.steps]
+        self.assertEqual(names, [
+            "turnover_delta", "agency_premium_cost",
+            "margin_compression", "quality_volume_impact",
+            "covenant_pressure",
+        ])
+
+    def test_breach_when_coverage_compresses(self) -> None:
+        r = trace_labor_cascade(LaborCascadeInputs(
+            baseline_turnover_pct=0.10,
+            current_turnover_pct=0.35,
+            clinician_headcount=2000,
+            avg_annual_wage_k=90.0,
+            agency_current_share=0.05,
+            agency_peak_share=0.30,
+            current_ebitda_m=30.0,
+            current_covenant_coverage=2.5,
+            debt_m=400.0,
+            interest_rate=0.10,
+        ))
+        self.assertTrue(r.covenant_breach)
+        self.assertIn("breach", r.partner_note.lower())
+
+    def test_manageable_when_turnover_stable(self) -> None:
+        r = trace_labor_cascade(LaborCascadeInputs(
+            baseline_turnover_pct=0.12,
+            current_turnover_pct=0.13,
+            agency_current_share=0.05,
+            agency_peak_share=0.06,
+            current_ebitda_m=80.0,
+            debt_m=200.0,
+        ))
+        self.assertFalse(r.covenant_breach)
+
+    def test_material_note_when_ebitda_hit_large(self) -> None:
+        # Material (~15-25% EBITDA hit) but strong coverage cushion.
+        r = trace_labor_cascade(LaborCascadeInputs(
+            baseline_turnover_pct=0.10,
+            current_turnover_pct=0.25,
+            clinician_headcount=1000,
+            agency_current_share=0.05,
+            agency_peak_share=0.18,
+            current_ebitda_m=80.0,
+            current_covenant_coverage=4.0,
+            debt_m=150.0,
+            interest_rate=0.07,
+        ))
+        self.assertFalse(r.covenant_breach)
+        self.assertIn("material", r.partner_note.lower())
+
+    def test_agency_explanation_in_step_note(self) -> None:
+        r = trace_labor_cascade(LaborCascadeInputs(
+            agency_current_share=0.05,
+            agency_peak_share=0.15,
+        ))
+        step2 = next(s for s in r.steps if s.name == "agency_premium_cost")
+        self.assertIn("agency", step2.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_labor_cascade_markdown(trace_labor_cascade(
+            LaborCascadeInputs()))
+        self.assertIn("# Labor shortage cascade", md)
+        self.assertIn("Step 1:", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(trace_labor_cascade(LaborCascadeInputs()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
