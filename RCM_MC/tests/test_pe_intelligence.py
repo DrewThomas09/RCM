@@ -7927,5 +7927,70 @@ class TestCycleTiming(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Exit planning ───────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ExitMilestone,
+    ExitPlan,
+    ExitPlanInputs,
+    build_exit_plan,
+    render_exit_plan_markdown,
+)
+
+
+class TestExitPlanning(unittest.TestCase):
+
+    def test_5yr_hold_produces_milestones(self) -> None:
+        plan = build_exit_plan(ExitPlanInputs(hold_years=5))
+        self.assertGreater(len(plan.milestones), 5)
+        years = {m.year for m in plan.milestones}
+        self.assertIn(1, years)
+        self.assertIn(5, years)
+
+    def test_rollup_adds_integration_milestones(self) -> None:
+        plan = build_exit_plan(ExitPlanInputs(
+            hold_years=5, has_rollup_thesis=True,
+        ))
+        milestones = " ".join(m.milestone for m in plan.milestones)
+        self.assertIn("Integration officer", milestones)
+
+    def test_rcm_adds_rcm_milestones(self) -> None:
+        plan = build_exit_plan(ExitPlanInputs(
+            hold_years=5, has_rcm_thesis=True,
+        ))
+        milestones = " ".join(m.milestone for m in plan.milestones)
+        self.assertIn("RCM", milestones)
+
+    def test_ipo_adds_sox_milestone(self) -> None:
+        plan = build_exit_plan(ExitPlanInputs(
+            hold_years=5, target_exit_type="ipo",
+        ))
+        milestones = " ".join(m.milestone for m in plan.milestones)
+        self.assertIn("S-1", milestones)
+
+    def test_distressed_adds_turnaround_milestone(self) -> None:
+        plan = build_exit_plan(ExitPlanInputs(
+            hold_years=5, is_distressed=True,
+        ))
+        milestones = " ".join(m.milestone for m in plan.milestones)
+        self.assertIn("Turnaround", milestones)
+
+    def test_short_hold_clamped(self) -> None:
+        plan = build_exit_plan(ExitPlanInputs(hold_years=2))
+        # Minimum hold should be 3.
+        max_year = max(m.year for m in plan.milestones)
+        self.assertGreaterEqual(max_year, 3)
+
+    def test_markdown_renders(self) -> None:
+        md = render_exit_plan_markdown(build_exit_plan(
+            ExitPlanInputs(hold_years=5)))
+        self.assertIn("# Exit preparation roadmap", md)
+
+    def test_plan_json(self) -> None:
+        import json
+        plan = build_exit_plan(ExitPlanInputs(hold_years=5))
+        json.dumps(plan.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

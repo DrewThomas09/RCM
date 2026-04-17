@@ -327,6 +327,13 @@ from .cycle_timing import (
     classify_cycle,
     render_cycle_markdown,
 )
+from .exit_planning import (
+    ExitMilestone,
+    ExitPlan,
+    ExitPlanInputs,
+    build_exit_plan,
+    render_exit_plan_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1015,4 +1022,9 @@ __all__ = [
     "CycleResult",
     "classify_cycle",
     "render_cycle_markdown",
+    "ExitMilestone",
+    "ExitPlan",
+    "ExitPlanInputs",
+    "build_exit_plan",
+    "render_exit_plan_markdown",
 ]
