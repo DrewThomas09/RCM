@@ -303,6 +303,11 @@ from .workstream_tracker import (
     aggregate_workstreams,
     render_workstream_report_markdown,
 )
+from .negotiation_position import (
+    NegotiationPosition,
+    derive_negotiation_position,
+    render_negotiation_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -975,4 +980,7 @@ __all__ = [
     "WorkstreamReport",
     "aggregate_workstreams",
     "render_workstream_report_markdown",
+    "NegotiationPosition",
+    "derive_negotiation_position",
+    "render_negotiation_markdown",
 ]

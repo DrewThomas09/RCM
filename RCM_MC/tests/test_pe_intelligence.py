@@ -7644,5 +7644,73 @@ class TestWorkstreamTracker(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Negotiation position ───────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    NegotiationPosition,
+    derive_negotiation_position,
+    render_negotiation_markdown,
+)
+
+
+class TestNegotiationPosition(unittest.TestCase):
+
+    def test_disciplined_on_moderate_deal(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30,
+            entry_multiple=8.5, exit_multiple=9.0, hold_years=5,
+            projected_irr=0.18,
+        )
+        review = partner_review_from_context(ctx)
+        pos = derive_negotiation_position(review, seller_ask_multiple=9.0)
+        self.assertIn(pos.cadence, ("disciplined", "aggressive"))
+
+    def test_anchor_below_seller_ask(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55}, ebitda_m=30)
+        review = partner_review_from_context(ctx)
+        pos = derive_negotiation_position(review, seller_ask_multiple=10.0)
+        self.assertEqual(pos.anchor_multiple, 9.0)
+
+    def test_walk_on_pass(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=700)
+        review = partner_review_from_context(ctx)
+        pos = derive_negotiation_position(review, seller_ask_multiple=10.0)
+        self.assertEqual(pos.cadence, "walk")
+
+    def test_price_computed_when_ebitda_present(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55},
+                               ebitda_m=30, entry_multiple=9.0)
+        review = partner_review_from_context(ctx)
+        pos = derive_negotiation_position(review)
+        self.assertIsNotNone(pos.anchor_price_m)
+
+    def test_leverage_points_from_review(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65}, exit_multiple=11.5,
+            leverage_multiple=6.5, covenant_headroom_pct=0.05,
+        )
+        review = partner_review_from_context(ctx)
+        pos = derive_negotiation_position(review)
+        self.assertGreater(len(pos.leverage_points), 0)
+
+    def test_concessions_always_populated(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx)
+        pos = derive_negotiation_position(review)
+        self.assertGreater(len(pos.concessions_available), 0)
+
+    def test_markdown_renders(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55}, ebitda_m=30)
+        md = render_negotiation_markdown(
+            derive_negotiation_position(partner_review_from_context(ctx)))
+        self.assertIn("Negotiation position", md)
+
+    def test_json(self) -> None:
+        import json
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        pos = derive_negotiation_position(partner_review_from_context(ctx))
+        json.dumps(pos.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
