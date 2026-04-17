@@ -393,6 +393,13 @@ from .sensitivity_grid import (
     run_sensitivity,
     tornado,
 )
+from .capital_structure_tradeoff import (
+    CapStructureInputs,
+    CapStructurePoint,
+    CapStructureResult,
+    render_cap_structure_markdown,
+    sweep_cap_structure,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1129,4 +1136,9 @@ __all__ = [
     "render_tornado_markdown",
     "run_sensitivity",
     "tornado",
+    "CapStructureInputs",
+    "CapStructurePoint",
+    "CapStructureResult",
+    "render_cap_structure_markdown",
+    "sweep_cap_structure",
 ]

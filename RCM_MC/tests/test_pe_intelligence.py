@@ -8613,5 +8613,78 @@ class TestSensitivityGrid(unittest.TestCase):
         self.assertIn("hold_years", SENSITIVITY_VARIABLES)
 
 
+# ── Capital structure trade-off ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CapStructureInputs,
+    CapStructurePoint,
+    CapStructureResult,
+    render_cap_structure_markdown,
+    sweep_cap_structure,
+)
+
+
+class TestCapStructureTradeoff(unittest.TestCase):
+
+    def _inputs(self) -> CapStructureInputs:
+        return CapStructureInputs(
+            ebitda_m=50.0, entry_multiple=11.0, exit_multiple=11.0,
+            ebitda_growth=0.10, hold_years=5, interest_rate=0.095,
+        )
+
+    def test_sweep_produces_points(self) -> None:
+        r = sweep_cap_structure(self._inputs(),
+                                 [3.0, 4.0, 5.0, 6.0, 7.0])
+        self.assertEqual(len(r.points), 5)
+
+    def test_higher_leverage_higher_moic(self) -> None:
+        r = sweep_cap_structure(self._inputs(),
+                                 [3.0, 4.0, 5.0, 6.0])
+        moics = [p.equity_moic for p in r.points]
+        self.assertEqual(moics, sorted(moics))
+
+    def test_higher_leverage_lower_coverage(self) -> None:
+        r = sweep_cap_structure(self._inputs(),
+                                 [3.0, 4.0, 5.0, 6.0])
+        covs = [p.interest_coverage for p in r.points]
+        # Coverage strictly decreases.
+        for i in range(1, len(covs)):
+            self.assertLess(covs[i], covs[i-1])
+
+    def test_status_red_for_high_leverage(self) -> None:
+        r = sweep_cap_structure(self._inputs(), [8.0])
+        self.assertEqual(r.points[0].status, "red")
+        self.assertGreaterEqual(r.points[0].default_risk_score, 40)
+
+    def test_status_green_for_low_leverage(self) -> None:
+        r = sweep_cap_structure(self._inputs(), [3.0])
+        self.assertEqual(r.points[0].status, "green")
+
+    def test_recommended_avoids_red(self) -> None:
+        r = sweep_cap_structure(self._inputs(),
+                                 [3.0, 4.0, 5.0, 6.0, 7.0, 8.0])
+        # Recommended leverage should not be the red 8.0.
+        self.assertLess(r.recommended_leverage, 8.0)
+        self.assertGreater(r.recommended_moic, 0)
+
+    def test_irr_populated(self) -> None:
+        r = sweep_cap_structure(self._inputs(), [4.0, 5.0, 6.0])
+        for p in r.points:
+            self.assertIsNotNone(p.equity_irr)
+
+    def test_markdown_renders(self) -> None:
+        r = sweep_cap_structure(self._inputs(),
+                                 [3.0, 4.0, 5.0, 6.0])
+        md = render_cap_structure_markdown(r)
+        self.assertIn("# Capital structure trade-off", md)
+        self.assertIn("MOIC", md)
+        self.assertIn("Cov", md)
+
+    def test_json(self) -> None:
+        import json
+        r = sweep_cap_structure(self._inputs(), [4.0, 5.0, 6.0])
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
