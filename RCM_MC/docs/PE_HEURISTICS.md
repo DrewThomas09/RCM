@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 22
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 23
 modules + test suite:
 
 | Module | Role |
@@ -728,6 +728,7 @@ modules + test suite:
 | `value_creation_tracker.py` | Monthly lever-vs-plan tracker |
 | `exit_math.py` | Waterfall + preferred + catch-up + reverse MOIC |
 | `workbench_integration.py` | UI bundle + compact API payload |
+| `deal_comparables.py` | Illustrative comp set + multiple stats |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -785,7 +786,25 @@ and `/api/partner-review/<deal_id>`.
 
 ---
 
-## 25. Change log
+## 25. Deal comparables (`deal_comparables.py`)
+
+Illustrative healthcare-PE comp registry (16 starter entries across
+acute care, ASC, behavioral, post-acute, specialty, outpatient, and
+critical access). Not a live feed — refresh quarterly with real
+closed-deal comps.
+
+- `filter_comps(sector, payer_regime, size_bucket, min_year, max_year)`
+  — subset the registry.
+- `multiple_stats(comps)` — min / median / mean / max of EV/EBITDA.
+- `position_in_comps(modeled_multiple, comps)` — percentile placement
+  of a modeled multiple against the comp set, with partner commentary.
+
+Used to defend an exit multiple at IC: "our exit sits at the 55th
+percentile of the acute-care commercial-heavy 2022-2024 comp set."
+
+---
+
+## 26. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -824,3 +843,7 @@ and `/api/partner-review/<deal_id>`.
   (monthly lever tracker with partner rollup), and `exit_math.py`
   (waterfall + preferred + catch-up + reverse MOIC→EBITDA math).
   Full inventory: 22 modules, 314+ unit tests.
+- **2026-04-17** — Added `deal_comparables.py` (illustrative comp
+  registry + filtering + percentile placement). Full inventory:
+  23 modules, 325 pe_intelligence unit tests, 3448 total tests
+  passing project-wide.
