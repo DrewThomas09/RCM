@@ -103,6 +103,7 @@ NAV_ITEMS = [
     {"label": "Sector Intel", "href": "/sector-intel", "icon": "chart"},
     {"label": "Vintage Performance", "href": "/vintage-perf", "icon": "chart"},
     {"label": "Payer Intelligence", "href": "/payer-intel", "icon": "chart"},
+    {"label": "Leverage Intelligence", "href": "/leverage-intel", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
