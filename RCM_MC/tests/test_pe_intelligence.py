@@ -6782,5 +6782,92 @@ class TestMAPipeline(unittest.TestCase):
         json.dumps(s.to_dict())
 
 
+# ── ESG screen ───────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ESGFlag,
+    ESGInputs,
+    ESGReport,
+    render_esg_markdown,
+    screen_esg,
+)
+
+
+class TestESGScreen(unittest.TestCase):
+
+    def test_clean_profile_scores_high(self) -> None:
+        r = screen_esg(ESGInputs(
+            tobacco_exposure=False, firearms_exposure=False,
+            short_term_detention=False, fossil_fuel_primary=False,
+            environmental_score=0.80, social_score=0.75,
+            governance_score=0.80,
+            scope1_emissions_tracked=True,
+            scope2_emissions_tracked=True,
+            dei_metrics_tracked=True,
+            worker_safety_tracked=True,
+            board_diversity_pct=0.35,
+        ))
+        self.assertFalse(r.is_excluded)
+        self.assertIn(r.grade, ("A", "B"))
+
+    def test_tobacco_triggers_exclusion(self) -> None:
+        r = screen_esg(ESGInputs(tobacco_exposure=True))
+        self.assertTrue(r.is_excluded)
+        self.assertEqual(r.score, 0)
+        self.assertEqual(r.grade, "F")
+
+    def test_reporting_gaps_penalize_score(self) -> None:
+        r_with_gaps = screen_esg(ESGInputs(
+            environmental_score=0.80, social_score=0.75,
+            governance_score=0.80,
+            scope1_emissions_tracked=False,
+            scope2_emissions_tracked=False,
+            dei_metrics_tracked=False,
+            worker_safety_tracked=False,
+        ))
+        r_without_gaps = screen_esg(ESGInputs(
+            environmental_score=0.80, social_score=0.75,
+            governance_score=0.80,
+            scope1_emissions_tracked=True,
+            scope2_emissions_tracked=True,
+            dei_metrics_tracked=True,
+            worker_safety_tracked=True,
+        ))
+        self.assertLess(r_with_gaps.score, r_without_gaps.score)
+
+    def test_board_diversity_scoring(self) -> None:
+        r_low = screen_esg(ESGInputs(
+            environmental_score=0.5, social_score=0.5, governance_score=0.5,
+            board_diversity_pct=0.05,
+        ))
+        r_high = screen_esg(ESGInputs(
+            environmental_score=0.5, social_score=0.5, governance_score=0.5,
+            board_diversity_pct=0.40,
+        ))
+        self.assertLess(r_low.score, r_high.score)
+
+    def test_empty_inputs_safe(self) -> None:
+        r = screen_esg(ESGInputs())
+        # Neutral 50% composite → score around 50.
+        self.assertGreater(r.score, 30)
+        self.assertLess(r.score, 70)
+
+    def test_multiple_exclusions_listed(self) -> None:
+        r = screen_esg(ESGInputs(
+            tobacco_exposure=True, firearms_exposure=True,
+        ))
+        self.assertEqual(len(r.exclusion_flags), 2)
+
+    def test_markdown_renders(self) -> None:
+        r = screen_esg(ESGInputs(environmental_score=0.7))
+        md = render_esg_markdown(r)
+        self.assertIn("# ESG screen", md)
+
+    def test_report_json(self) -> None:
+        import json
+        r = screen_esg(ESGInputs(environmental_score=0.7))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
