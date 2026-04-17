@@ -2817,7 +2817,34 @@ thesis, pass."*
 
 ---
 
-## 128. Change log
+## 128. Live diligence checklist (`diligence_checklist_live.py`)
+
+Canonical 30-item list across financial / clinical / legal / ops.
+Each item is tagged with its source: `packet`, `mi` (management
+interview), or `third_party`. The walker takes the running
+diligence state and returns per-item status:
+
+- **answered** — source closed.
+- **needs_mi** — MI scheduled but not complete.
+- **needs_third_party** — report outstanding.
+- **stale** — packet data > 90 days old.
+- **missing** — nothing scheduled.
+
+Aggregate **IC-ready %** = answered / total. Partner note:
+
+- ≥ 90% → "IC-ready; close remainder in final-IC pass".
+- 70-90% → "target 2-3 weeks to IC-ready".
+- < 70% → "missing items require MI scheduling or third-party
+  engagement".
+
+This replaces the generic diligence_tracker's purely-tracking
+view with one that knows the *nature* of each gap — packet data
+you can't fix with more calls, vs an MI that you schedule, vs a
+third-party report that takes 4 weeks.
+
+---
+
+## 129. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3065,3 +3092,7 @@ thesis, pass."*
   (§127) — named insights emitted when signals from multiple
   modules co-occur; first module where reasoning IS the product.
   Full inventory: 125 modules, 1,253 pe_intelligence unit tests.
+- **2026-04-17** — Added `diligence_checklist_live.py` (§128) —
+  30-item canonical list with packet/MI/third-party source tags
+  and answered/needs/stale/missing status per item. Full
+  inventory: 126 modules, 1,263 pe_intelligence unit tests.
