@@ -3068,7 +3068,52 @@ coverage watches cash). Partner note:
 
 ---
 
-## 135. Change log
+## 135. Bear case generator (`bear_case_generator.py`)
+
+**Partner statement:** "If I can't write the bear case, I haven't
+done the work. And the bear case has to be specific to this deal,
+not 'a recession hits everyone.'"
+
+The module fires 10 deal-specific bear drivers based on the
+packet. Each has a named haircut:
+
+- **medicare_rate_shock** — Medicare FFS ≥ 30% → 3% + delta haircut.
+- **nsa_oon_compression** — OON ≥ 20% → 40% of OON revenue.
+- **top_payer_walk** — top payer ≥ 40% → 25% of that book.
+- **denial_compounding** — denial rate ≥ 10% → (rate - 8%) × 1.5.
+- **historical:<pattern>** — any named match → 20%.
+- **steward_sale_leaseback** — sale-leaseback in thesis → 15%.
+- **weak_management** — score < 60 → 8%.
+- **rate_growth_miss** — claimed > 5% → 5%.
+- **pro_forma_fiction** — pro-forma ≥ 15% → half of pro-forma.
+- **labor_inflation** — labor ≥ 50% of revenue → 6%.
+
+Haircuts combine multiplicatively (not additively). Bear exit
+multiple = base − 1.5x (floor 5.0x).
+
+Output includes:
+
+- Bear EBITDA, bear exit multiple, bear MOIC, bear IRR.
+- Probability-weighted MOIC using configurable base_probability.
+- Partner-voice bear **story** that names the top driver and
+  weaves in the second/third.
+
+Partner note:
+
+- Bear < 1.0x → "loses money; only buy if base-case probability
+  ≥ 70%."
+- Bear 1.0-1.5x → "clears principal but not hurdle; bet on base."
+- Bear ≥ 1.5x → "real downside protection."
+
+**Worked example:** a staffing deal with 35% OON and an Envision
+pattern-match produces a bear case narrative that leads with NSA
+compression, compounds with the historical pattern, and puts
+bear MOIC under 1.0x. The partner reads it in 30 seconds and
+knows exactly what they are betting against.
+
+---
+
+## 136. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3345,3 +3390,6 @@ coverage watches cash). Partner note:
   → Medicare bridge → working capital) with specific $ EBITDA
   and cash impacts per step. Full inventory: 132 modules, 1,329
   pe_intelligence unit tests.
+- **2026-04-17** — Added `bear_case_generator.py` (§135) —
+  deal-specific bear drivers + story + probability-weighted MOIC.
+  Full inventory: 133 modules, 1,342 pe_intelligence unit tests.
