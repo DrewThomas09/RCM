@@ -7567,5 +7567,82 @@ class TestDataRoomTracker(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Workstream tracker ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    Workstream,
+    WorkstreamMilestone,
+    WorkstreamReport,
+    aggregate_workstreams,
+    render_workstream_report_markdown,
+)
+
+
+class TestWorkstreamTracker(unittest.TestCase):
+
+    def _streams(self):
+        return [
+            Workstream(
+                name="rcm", lead="Jane Doe",
+                milestones=[
+                    WorkstreamMilestone(id="rcm1", title="Denial edits",
+                                        status="done"),
+                    WorkstreamMilestone(id="rcm2", title="AR aging dashboard",
+                                        status="in_progress"),
+                ],
+                health="green",
+            ),
+            Workstream(
+                name="it", lead="John Smith",
+                milestones=[
+                    WorkstreamMilestone(id="it1", title="EHR cutover",
+                                        status="delayed"),
+                ],
+                health="red",
+            ),
+        ]
+
+    def test_aggregate_counts(self) -> None:
+        r = aggregate_workstreams(self._streams())
+        self.assertEqual(r.total_milestones, 3)
+        self.assertEqual(r.completed_milestones, 1)
+        self.assertEqual(r.delayed_count, 1)
+
+    def test_red_streams_listed(self) -> None:
+        r = aggregate_workstreams(self._streams())
+        self.assertIn("it", r.red_streams)
+
+    def test_completion_pct_roundtrip(self) -> None:
+        r = aggregate_workstreams(self._streams())
+        self.assertAlmostEqual(r.overall_completion, 1/3, places=3)
+
+    def test_empty_safe(self) -> None:
+        r = aggregate_workstreams([])
+        self.assertEqual(r.total_milestones, 0)
+
+    def test_stream_completion_pct(self) -> None:
+        s = Workstream(
+            name="rcm",
+            milestones=[
+                WorkstreamMilestone(id="a", title="a", status="done"),
+                WorkstreamMilestone(id="b", title="b", status="done"),
+                WorkstreamMilestone(id="c", title="c", status="pending"),
+                WorkstreamMilestone(id="d", title="d", status="dropped"),
+            ],
+        )
+        # 2 done / 3 non-dropped.
+        self.assertAlmostEqual(s.completion_pct(), 2/3, places=3)
+
+    def test_markdown_renders(self) -> None:
+        md = render_workstream_report_markdown(
+            aggregate_workstreams(self._streams()))
+        self.assertIn("# Integration workstream status", md)
+
+    def test_json(self) -> None:
+        import json
+        r = aggregate_workstreams(self._streams())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

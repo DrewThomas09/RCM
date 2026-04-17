@@ -296,6 +296,13 @@ from .data_room_tracker import (
     analyze_data_room,
     render_data_room_markdown,
 )
+from .workstream_tracker import (
+    Workstream,
+    WorkstreamMilestone,
+    WorkstreamReport,
+    aggregate_workstreams,
+    render_workstream_report_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -963,4 +970,9 @@ __all__ = [
     "DataRoomReport",
     "analyze_data_room",
     "render_data_room_markdown",
+    "Workstream",
+    "WorkstreamMilestone",
+    "WorkstreamReport",
+    "aggregate_workstreams",
+    "render_workstream_report_markdown",
 ]
