@@ -3748,5 +3748,73 @@ class TestAssessConversion(unittest.TestCase):
         json.dumps(result.to_dict())
 
 
+# ── LP side-letter conformance ─────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    SideLetterRule,
+    SideLetterSet,
+    check_side_letters,
+    has_breach,
+)
+from rcm_mc.pe_intelligence.lp_side_letter_flags import ConformanceFinding
+
+
+class TestSideLetterChecks(unittest.TestCase):
+
+    def test_sector_exclusion_triggers_breach(self) -> None:
+        sls = SideLetterSet(sector_exclusions=["asc"])
+        findings = check_side_letters(sls=sls, deal_sector="asc")
+        self.assertTrue(has_breach(findings))
+
+    def test_sector_not_in_exclusion_passes(self) -> None:
+        sls = SideLetterSet(sector_exclusions=["asc"])
+        findings = check_side_letters(sls=sls, deal_sector="acute_care")
+        self.assertFalse(has_breach(findings))
+
+    def test_state_exclusion(self) -> None:
+        sls = SideLetterSet(state_exclusions=["CA"])
+        findings = check_side_letters(sls=sls, deal_state="CA")
+        self.assertTrue(has_breach(findings))
+
+    def test_deal_concentration_cap(self) -> None:
+        sls = SideLetterSet(max_single_deal_pct_of_fund=0.15)
+        findings = check_side_letters(
+            sls=sls, equity_check=300_000_000, fund_size=1_000_000_000,
+        )
+        self.assertTrue(has_breach(findings))
+
+    def test_govt_payer_cap_warns(self) -> None:
+        sls = SideLetterSet(max_govt_payer_pct=0.70)
+        findings = check_side_letters(
+            sls=sls,
+            payer_mix={"medicare": 0.50, "medicaid": 0.30, "commercial": 0.20},
+        )
+        self.assertTrue(any(f.severity == "warning" for f in findings))
+
+    def test_tobacco_screen(self) -> None:
+        sls = SideLetterSet(no_tobacco=True)
+        findings = check_side_letters(
+            sls=sls, deal_notes="Company also distributes tobacco products.",
+        )
+        self.assertTrue(has_breach(findings))
+
+    def test_short_term_detention_screen(self) -> None:
+        sls = SideLetterSet(no_short_term_detention=True)
+        findings = check_side_letters(
+            sls=sls, deal_notes="Facility provides short-term detention services.",
+        )
+        self.assertTrue(has_breach(findings))
+
+    def test_empty_inputs_no_findings(self) -> None:
+        findings = check_side_letters(sls=SideLetterSet())
+        self.assertEqual(findings, [])
+
+    def test_findings_json_serializable(self) -> None:
+        import json
+        sls = SideLetterSet(sector_exclusions=["asc"])
+        findings = check_side_letters(sls=sls, deal_sector="asc")
+        json.dumps([f.to_dict() for f in findings])
+
+
 if __name__ == "__main__":
     unittest.main()

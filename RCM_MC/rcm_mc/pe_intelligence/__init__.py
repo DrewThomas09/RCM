@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .lp_side_letter_flags import (
+    ConformanceFinding,
+    SideLetterRule,
+    SideLetterSet,
+    check_side_letters,
+    has_breach,
+)
 from .cash_conversion import (
     CashConversionInputs,
     ConversionAssessment,
@@ -422,4 +429,8 @@ __all__ = [
     "assess_conversion",
     "cash_conversion_ratio",
     "expected_conversion_by_subsector",
+    "SideLetterRule",
+    "SideLetterSet",
+    "check_side_letters",
+    "has_breach",
 ]
