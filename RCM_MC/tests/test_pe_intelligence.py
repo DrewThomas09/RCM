@@ -3143,5 +3143,86 @@ class TestCovenantStress(unittest.TestCase):
         self.assertFalse(result["passes"])
 
 
+# ── Management assessment ─────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DimensionScore,
+    ManagementInputs,
+    ManagementScore,
+    score_management,
+)
+
+
+class TestManagementScoring(unittest.TestCase):
+
+    def test_strong_team_scores_high(self) -> None:
+        inputs = ManagementInputs(
+            ceo_tenure_years=5, ceo_healthcare_years=15,
+            ceo_pe_experience=True, ceo_operator_background=True,
+            cfo_pe_experience=True, cfo_tenure_years=4,
+            cfo_lbo_close_experience=True,
+            coo_present=True, operating_bench_depth=6,
+            rcm_leader_named=True, rcm_program_experience=True,
+            cmo_present=True, quality_star_rating=4.0,
+            equity_rollover_pct=0.25, top20_with_options_pct=0.85,
+        )
+        score = score_management(inputs)
+        self.assertGreaterEqual(score.overall, 80)
+        self.assertEqual(score.status, "strong")
+
+    def test_weak_team_triggers_replacement_rec(self) -> None:
+        inputs = ManagementInputs(
+            ceo_tenure_years=0.5, ceo_healthcare_years=2,
+            ceo_pe_experience=False, ceo_operator_background=False,
+            cfo_pe_experience=False, cfo_lbo_close_experience=False,
+            coo_present=False, operating_bench_depth=0,
+            rcm_leader_named=False, rcm_program_experience=False,
+            cmo_present=False, quality_star_rating=2.0,
+            equity_rollover_pct=0.02, top20_with_options_pct=0.20,
+        )
+        score = score_management(inputs)
+        self.assertLessEqual(score.overall, 55)
+        self.assertIn(score.status, ("concerns", "replace"))
+        self.assertGreater(len(score.seat_adds), 0)
+
+    def test_no_inputs_produces_unknown_dims(self) -> None:
+        score = score_management(ManagementInputs())
+        for d in score.dimensions:
+            self.assertEqual(d.status, "unknown")
+
+    def test_dimensions_cover_six_areas(self) -> None:
+        score = score_management(ManagementInputs())
+        names = {d.name for d in score.dimensions}
+        self.assertEqual(names, {
+            "ceo", "cfo", "operational", "rcm_leadership",
+            "clinical", "alignment",
+        })
+
+    def test_partial_inputs_blend(self) -> None:
+        # CEO strong, nothing else — should be moderate overall.
+        inputs = ManagementInputs(
+            ceo_tenure_years=5, ceo_healthcare_years=10,
+            ceo_pe_experience=True, ceo_operator_background=True,
+        )
+        score = score_management(inputs)
+        # Other dims default to 50 → composite around 60.
+        self.assertGreater(score.overall, 55)
+        self.assertLess(score.overall, 75)
+
+    def test_seat_adds_surface_weak_areas(self) -> None:
+        inputs = ManagementInputs(
+            ceo_tenure_years=5, ceo_healthcare_years=10,
+            ceo_pe_experience=True, ceo_operator_background=True,
+            coo_present=False, operating_bench_depth=0,
+        )
+        score = score_management(inputs)
+        self.assertTrue(any("operational" in s for s in score.seat_adds))
+
+    def test_score_to_dict_roundtrip(self) -> None:
+        import json
+        score = score_management(ManagementInputs(ceo_tenure_years=3))
+        json.dumps(score.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

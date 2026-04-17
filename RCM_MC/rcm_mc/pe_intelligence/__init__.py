@@ -81,6 +81,12 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .management_assessment import (
+    DimensionScore,
+    ManagementInputs,
+    ManagementScore,
+    score_management,
+)
 from .debt_sizing import (
     covenant_stress_passes,
     leverage_headroom,
@@ -322,4 +328,8 @@ __all__ = [
     "leverage_headroom",
     "max_interest_rate_to_break",
     "prudent_leverage",
+    "DimensionScore",
+    "ManagementInputs",
+    "ManagementScore",
+    "score_management",
 ]
