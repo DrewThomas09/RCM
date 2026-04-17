@@ -400,6 +400,14 @@ from .capital_structure_tradeoff import (
     render_cap_structure_markdown,
     sweep_cap_structure,
 )
+from .refinancing_window import (
+    DebtTranche,
+    RefiContext,
+    RefiPlan,
+    RefiRecommendation,
+    plan_refinance,
+    render_refi_plan_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1141,4 +1149,10 @@ __all__ = [
     "CapStructureResult",
     "render_cap_structure_markdown",
     "sweep_cap_structure",
+    "DebtTranche",
+    "RefiContext",
+    "RefiPlan",
+    "RefiRecommendation",
+    "plan_refinance",
+    "render_refi_plan_markdown",
 ]

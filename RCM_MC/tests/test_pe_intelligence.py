@@ -8686,5 +8686,116 @@ class TestCapStructureTradeoff(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Refinancing window ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DebtTranche,
+    RefiContext,
+    RefiPlan,
+    RefiRecommendation,
+    plan_refinance,
+    render_refi_plan_markdown,
+)
+
+
+class TestRefinancingWindow(unittest.TestCase):
+
+    def test_imminent_maturity_forces_refi(self) -> None:
+        tranches = [DebtTranche(
+            name="TLB", principal_m=200.0, maturity_year=2026,
+            rate=0.095, covenant_headroom_pct=0.30)]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="flat")
+        plan = plan_refinance(tranches, ctx)
+        self.assertEqual(plan.recommendations[0].action, "refi_now")
+
+    def test_high_rate_vs_market_triggers_refi(self) -> None:
+        # 120 bps above market, rates flat, good covenant room.
+        tranches = [DebtTranche(
+            name="TLB", principal_m=200.0, maturity_year=2030,
+            rate=0.105, covenant_headroom_pct=0.30)]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="flat")
+        plan = plan_refinance(tranches, ctx)
+        self.assertEqual(plan.recommendations[0].action, "refi_now")
+
+    def test_rates_falling_wait(self) -> None:
+        tranches = [DebtTranche(
+            name="TLB", principal_m=200.0, maturity_year=2030,
+            rate=0.095, covenant_headroom_pct=0.30)]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="down")
+        plan = plan_refinance(tranches, ctx)
+        self.assertEqual(plan.recommendations[0].action, "wait")
+
+    def test_rates_rising_with_near_maturity(self) -> None:
+        tranches = [DebtTranche(
+            name="TLB", principal_m=200.0, maturity_year=2028,
+            rate=0.09, covenant_headroom_pct=0.30)]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="up")
+        plan = plan_refinance(tranches, ctx)
+        self.assertEqual(plan.recommendations[0].action, "refi_in_1_year")
+
+    def test_thin_covenants_force_wait(self) -> None:
+        tranches = [DebtTranche(
+            name="TLB", principal_m=200.0, maturity_year=2030,
+            rate=0.095, covenant_headroom_pct=0.05)]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="flat")
+        plan = plan_refinance(tranches, ctx)
+        self.assertEqual(plan.recommendations[0].action, "wait")
+        self.assertIn("headroom", plan.recommendations[0].rationale.lower())
+
+    def test_maturity_wall_aggregates(self) -> None:
+        tranches = [
+            DebtTranche("TLB", 200.0, 2027, 0.095, 0.30),
+            DebtTranche("Revolver", 50.0, 2026, 0.085, 0.30),
+            DebtTranche("Mezz", 100.0, 2030, 0.12, 0.25),
+        ]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="flat")
+        plan = plan_refinance(tranches, ctx)
+        # TLB (2027) + Revolver (2026) in the 2-year window = 250M.
+        self.assertAlmostEqual(plan.total_maturity_wall_m, 250.0, places=1)
+
+    def test_hold_to_maturity_when_no_edge(self) -> None:
+        tranches = [DebtTranche(
+            name="TLB", principal_m=200.0, maturity_year=2032,
+            rate=0.09, covenant_headroom_pct=0.30)]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="flat")
+        plan = plan_refinance(tranches, ctx)
+        self.assertEqual(plan.recommendations[0].action, "hold_to_maturity")
+
+    def test_rate_delta_populated(self) -> None:
+        tranches = [DebtTranche(
+            name="TLB", principal_m=200.0, maturity_year=2030,
+            rate=0.10, covenant_headroom_pct=0.30)]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="flat")
+        plan = plan_refinance(tranches, ctx)
+        self.assertEqual(plan.recommendations[0].rate_delta_bps, 100)
+
+    def test_markdown_renders(self) -> None:
+        tranches = [
+            DebtTranche("TLB", 200.0, 2027, 0.105, 0.30),
+            DebtTranche("Revolver", 50.0, 2028, 0.09, 0.30),
+        ]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="flat")
+        md = render_refi_plan_markdown(plan_refinance(tranches, ctx))
+        self.assertIn("# Refinancing plan", md)
+        self.assertIn("Rationale", md)
+        self.assertIn("TLB", md)
+
+    def test_json(self) -> None:
+        import json
+        tranches = [DebtTranche("TLB", 200.0, 2027, 0.09, 0.30)]
+        ctx = RefiContext(current_year=2026, current_market_rate=0.09,
+                           rate_trend="flat")
+        json.dumps(plan_refinance(tranches, ctx).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
