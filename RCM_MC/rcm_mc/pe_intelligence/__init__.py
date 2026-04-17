@@ -664,6 +664,14 @@ from .diligence_checklist_live import (
     render_checklist_markdown as render_diligence_checklist_markdown,
     walk_checklist,
 )
+from .partner_traps_library import (
+    TRAPS_LIBRARY,
+    PartnerTrap,
+    TrapHit,
+    list_all_traps,
+    match_traps,
+    render_traps_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1605,4 +1613,10 @@ __all__ = [
     "DiligenceChecklistStatus",
     "render_diligence_checklist_markdown",
     "walk_checklist",
+    "TRAPS_LIBRARY",
+    "PartnerTrap",
+    "TrapHit",
+    "list_all_traps",
+    "match_traps",
+    "render_traps_markdown",
 ]

@@ -12100,5 +12100,126 @@ class TestDiligenceChecklistLive(unittest.TestCase):
         json.dumps(walk_checklist({}).to_dict())
 
 
+# ── Partner traps library ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    TRAPS_LIBRARY,
+    PartnerTrap,
+    TrapHit,
+    list_all_traps,
+    match_traps,
+    render_traps_markdown,
+)
+
+
+class TestPartnerTrapsLibrary(unittest.TestCase):
+
+    def test_canonical_user_named_traps_present(self) -> None:
+        names = {t.name for t in TRAPS_LIBRARY}
+        # The three the user named explicitly.
+        self.assertIn("fix_denials_in_12_months", names)
+        self.assertIn("payer_renegotiation_is_coming", names)
+        self.assertIn("ma_will_make_it_up", names)
+
+    def test_fix_denials_trap_fires(self) -> None:
+        hits = match_traps({
+            "current_denial_rate": 0.15,
+            "target_denial_rate": 0.05,
+            "months_to_target": 12,
+        })
+        names = {h.trap.name for h in hits}
+        self.assertIn("fix_denials_in_12_months", names)
+
+    def test_payer_reneg_trap_fires(self) -> None:
+        hits = match_traps({
+            "payer_contracts_renewing_next_12mo": 3,
+            "claimed_rate_growth_pct": 0.05,
+        })
+        self.assertIn("payer_renegotiation_is_coming",
+                       {h.trap.name for h in hits})
+
+    def test_ma_will_make_it_up_fires(self) -> None:
+        hits = match_traps({
+            "medicare_advantage_pct": 0.30,
+            "regulatory_risk_material": True,
+        })
+        self.assertIn("ma_will_make_it_up",
+                       {h.trap.name for h in hits})
+
+    def test_multiple_rerate_fires(self) -> None:
+        hits = match_traps({
+            "entry_multiple": 11.0,
+            "exit_multiple_assumption": 13.0,
+        })
+        self.assertIn("multiple_will_re_rate",
+                       {h.trap.name for h in hits})
+
+    def test_multiple_rerate_not_firing_when_flat(self) -> None:
+        hits = match_traps({
+            "entry_multiple": 11.0,
+            "exit_multiple_assumption": 11.0,
+        })
+        self.assertNotIn("multiple_will_re_rate",
+                          {h.trap.name for h in hits})
+
+    def test_robust_pipeline_fires(self) -> None:
+        hits = match_traps({
+            "claimed_pipeline_count": 15,
+            "platform_first_year": True,
+        })
+        self.assertIn("robust_bolt_on_pipeline",
+                       {h.trap.name for h in hits})
+
+    def test_ceo_retention_fires_without_agreement(self) -> None:
+        hits = match_traps({
+            "founder_ceo_in_place": True,
+            "no_retention_agreement": True,
+        })
+        self.assertIn("ceo_stays_through_exit",
+                       {h.trap.name for h in hits})
+
+    def test_quality_and_growth_fires(self) -> None:
+        hits = match_traps({
+            "claimed_volume_growth": 0.20,
+            "claimed_quality_improvement_in_hold": True,
+        })
+        self.assertIn("quality_and_growth_together",
+                       {h.trap.name for h in hits})
+
+    def test_tech_platform_lift_fires(self) -> None:
+        hits = match_traps({
+            "claimed_year_1_productivity_lift": 0.12,
+        })
+        self.assertIn("technology_platform_lift",
+                       {h.trap.name for h in hits})
+
+    def test_no_traps_on_empty_context(self) -> None:
+        self.assertEqual(match_traps({}), [])
+
+    def test_markdown_no_traps(self) -> None:
+        md = render_traps_markdown([])
+        self.assertIn("No named partner traps", md)
+
+    def test_markdown_with_traps(self) -> None:
+        hits = match_traps({
+            "current_denial_rate": 0.15,
+            "target_denial_rate": 0.04,
+            "months_to_target": 12,
+        })
+        md = render_traps_markdown(hits)
+        self.assertIn("fix_denials_in_12_months", md)
+        self.assertIn("Partner rebuttal", md)
+
+    def test_json(self) -> None:
+        import json
+        hits = match_traps({
+            "current_denial_rate": 0.15,
+            "target_denial_rate": 0.04,
+            "months_to_target": 12,
+        })
+        for h in hits:
+            json.dumps(h.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
