@@ -1938,6 +1938,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/entry-multiple":
             from .ui.data_public.entry_multiple_page import render_entry_multiple
             return self._send_html(render_entry_multiple())
+        if path == "/corpus-coverage":
+            from .ui.data_public.corpus_coverage_page import render_corpus_coverage
+            return self._send_html(render_corpus_coverage())
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
