@@ -6641,5 +6641,84 @@ class TestCovenantMonitor(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Liquidity monitor ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CashWeek,
+    LiquidityReport,
+    project_cash_detail,
+    project_cash_runway,
+    render_liquidity_markdown,
+)
+
+
+class TestLiquidityMonitor(unittest.TestCase):
+
+    def test_positive_cash_flow_is_green(self) -> None:
+        r = project_cash_runway(
+            current_cash=10_000_000,
+            weekly_collections=2_500_000,
+            weekly_operating_outflows=2_000_000,
+            weekly_debt_service=100_000,
+            weeks_to_project=13,
+        )
+        self.assertEqual(r.status, "green")
+        # Ending balance grows.
+        self.assertGreater(r.weeks[-1].ending_balance, r.weeks[0].opening_balance)
+
+    def test_burn_triggers_breach(self) -> None:
+        r = project_cash_runway(
+            current_cash=3_000_000,
+            weekly_collections=1_000_000,
+            weekly_operating_outflows=1_400_000,
+            weekly_debt_service=100_000,
+            weeks_to_project=13,
+            minimum_cash=500_000,
+            covenant_floor=1_000_000,
+        )
+        self.assertIsNotNone(r.breach_week)
+        self.assertEqual(r.status, "red")
+
+    def test_runway_calculation(self) -> None:
+        # Burn rate = 400k/week; starting 5M; runway ~= 12.5 weeks.
+        r = project_cash_runway(
+            current_cash=5_000_000,
+            weekly_collections=1_000_000,
+            weekly_operating_outflows=1_400_000,
+            weeks_to_project=4,
+        )
+        self.assertAlmostEqual(r.weeks_of_runway, 12.5, delta=0.5)
+
+    def test_project_cash_detail_variable_weekly(self) -> None:
+        detail = [
+            (2_000_000, 2_000_000, 0),       # break-even week
+            (2_500_000, 2_300_000, 100_000), # slight positive
+            (1_000_000, 2_000_000, 100_000), # negative
+        ]
+        r = project_cash_detail(
+            current_cash=1_000_000, weekly_detail=detail,
+            minimum_cash=100_000, covenant_floor=200_000,
+        )
+        self.assertEqual(len(r.weeks), 3)
+
+    def test_markdown_renders(self) -> None:
+        r = project_cash_runway(
+            current_cash=1_000_000,
+            weekly_collections=500_000,
+            weekly_operating_outflows=500_000,
+            weeks_to_project=4,
+        )
+        md = render_liquidity_markdown(r)
+        self.assertIn("# Liquidity monitor", md)
+
+    def test_report_json(self) -> None:
+        import json
+        r = project_cash_runway(
+            current_cash=1_000_000, weekly_collections=500_000,
+            weekly_operating_outflows=500_000, weeks_to_project=4,
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
