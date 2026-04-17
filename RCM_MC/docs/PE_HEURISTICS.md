@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 81
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 82
 modules + test suite:
 
 | Module | Role |
@@ -787,6 +787,7 @@ modules + test suite:
 | `data_room_tracker.py` | 34-item canonical checklist scorer |
 | `workstream_tracker.py` | Post-close integration milestone aggregator |
 | `negotiation_position.py` | Anchor / walkaway / leverage / concessions |
+| `loi_drafter.py` | LOI term-sheet generator |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1715,7 +1716,18 @@ Translates a `PartnerReview` into a pricing-negotiation cheatsheet:
 
 ---
 
-## 84. Change log
+## 84. LOI drafter (`loi_drafter.py`)
+
+Generates a partner-voice LOI term sheet from a `PartnerReview` +
+`NegotiationPosition`. Includes purchase price / structure,
+exclusivity period (30-60 days by recommendation), diligence
+scope (extended per flagged findings), financing terms,
+management terms, closing conditions, and explicit binding vs
+non-binding delineation.
+
+---
+
+## 85. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1839,3 +1851,5 @@ Translates a `PartnerReview` into a pricing-negotiation cheatsheet:
   80 modules, 812 pe_intelligence unit tests.
 - **2026-04-17** — Added `negotiation_position.py`. Full inventory:
   81 modules, 820 pe_intelligence unit tests.
+- **2026-04-17** — Added `loi_drafter.py`. Full inventory: 82
+  modules, 827 pe_intelligence unit tests.
