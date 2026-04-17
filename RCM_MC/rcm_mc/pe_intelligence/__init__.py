@@ -593,6 +593,15 @@ from .historical_failure_library import (
     match_failures,
     render_failures_markdown,
 )
+from .partner_voice_memo import (
+    REC_DILIGENCE_MORE,
+    REC_INVEST,
+    REC_PASS,
+    PartnerVoiceInputs,
+    PartnerVoiceMemo,
+    build_partner_memo,
+    render_partner_memo_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1479,4 +1488,11 @@ __all__ = [
     "list_failure_patterns",
     "match_failures",
     "render_failures_markdown",
+    "REC_DILIGENCE_MORE",
+    "REC_INVEST",
+    "REC_PASS",
+    "PartnerVoiceInputs",
+    "PartnerVoiceMemo",
+    "build_partner_memo",
+    "render_partner_memo_markdown",
 ]

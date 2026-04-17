@@ -11148,5 +11148,174 @@ class TestHistoricalFailureLibrary(unittest.TestCase):
             json.dumps(m.to_dict())
 
 
+# ── Partner voice memo ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    REC_DILIGENCE_MORE,
+    REC_INVEST,
+    REC_PASS,
+    PartnerVoiceInputs,
+    PartnerVoiceMemo,
+    build_partner_memo,
+    render_partner_memo_markdown,
+)
+
+
+class TestPartnerVoiceMemo(unittest.TestCase):
+    """Tests read as diligence scenarios, not mechanical assertions."""
+
+    def test_strong_deal_recommends_invest(self) -> None:
+        # Clean deal: no red flags, defensible growth, strong mgmt.
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="AlphaCo",
+            subsector="specialty_practice",
+            ebitda_m=60.0, revenue_m=300.0,
+            entry_multiple=11.0, target_moic=2.5, target_irr=0.22,
+            has_defensible_organic_growth=True,
+            has_clear_exit_path=True,
+            pricing_power_score_0_100=75,
+            management_score_0_100=80,
+            cycle_phase="mid_expansion",
+        ))
+        self.assertEqual(m.recommendation, REC_INVEST)
+        self.assertIn("final ic", m.summary.lower())
+        self.assertGreaterEqual(m.score_0_100, 70)
+
+    def test_envision_like_deal_passes(self) -> None:
+        # Staffing deal with OON dependency, NSA risk, red flags.
+        # Should be a PASS — historical pattern matches.
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="RiskyStaffingCo",
+            subsector="physician_staffing",
+            ebitda_m=80.0, revenue_m=400.0,
+            entry_multiple=12.0,
+            red_flag_high_count=2,
+            red_flag_count=4,
+            historical_failure_matches=2,
+            bear_book_hits=1,
+            has_defensible_organic_growth=False,
+            pricing_power_score_0_100=30,
+        ))
+        self.assertEqual(m.recommendation, REC_PASS)
+
+    def test_mixed_deal_diligence_more(self) -> None:
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="MixedCo",
+            subsector="outpatient_asc",
+            ebitda_m=40.0, revenue_m=200.0,
+            entry_multiple=11.5, target_moic=2.3, target_irr=0.20,
+            red_flag_high_count=1,
+            red_flag_count=2,
+            reasonableness_out_of_band_count=1,
+            has_defensible_organic_growth=True,
+            pricing_power_score_0_100=55,
+            management_score_0_100=65,
+        ))
+        self.assertEqual(m.recommendation, REC_DILIGENCE_MORE)
+        self.assertIn("Decision within", m.summary)
+
+    def test_three_things_capped_at_three(self) -> None:
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="ProblemCo",
+            subsector="hospital",
+            ebitda_m=50.0, revenue_m=400.0,
+            red_flag_high_count=2,
+            red_flag_count=5,
+            reasonableness_out_of_band_count=3,
+            historical_failure_matches=1,
+            bear_book_hits=1,
+            pricing_power_score_0_100=35,
+            management_score_0_100=50,
+        ))
+        self.assertLessEqual(len(m.change_my_mind), 3)
+
+    def test_historical_match_in_change_my_mind(self) -> None:
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="PatternCo",
+            subsector="physician_staffing",
+            ebitda_m=50.0,
+            historical_failure_matches=1,
+            has_defensible_organic_growth=True,
+            pricing_power_score_0_100=70,
+            management_score_0_100=70,
+        ))
+        joined = " ".join(m.change_my_mind).lower()
+        self.assertIn("historical", joined)
+
+    def test_two_historical_hits_forces_pass(self) -> None:
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="PatternCo2",
+            subsector="hospital",
+            ebitda_m=50.0,
+            historical_failure_matches=2,
+            # Even if everything else looks fine:
+            has_defensible_organic_growth=True,
+            pricing_power_score_0_100=90,
+            management_score_0_100=90,
+        ))
+        self.assertEqual(m.recommendation, REC_PASS)
+
+    def test_peak_cycle_penalty(self) -> None:
+        peak = build_partner_memo(PartnerVoiceInputs(
+            deal_name="PeakCo",
+            ebitda_m=50.0, entry_multiple=13.5,
+            cycle_phase="peak",
+            has_defensible_organic_growth=True,
+            pricing_power_score_0_100=70,
+            management_score_0_100=70,
+        ))
+        early = build_partner_memo(PartnerVoiceInputs(
+            deal_name="EarlyCo",
+            ebitda_m=50.0, entry_multiple=11.0,
+            cycle_phase="early_expansion",
+            has_defensible_organic_growth=True,
+            pricing_power_score_0_100=70,
+            management_score_0_100=70,
+        ))
+        self.assertLess(peak.score_0_100, early.score_0_100)
+
+    def test_case_views_all_present(self) -> None:
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="X", ebitda_m=50.0, target_moic=2.5,
+            target_irr=0.20,
+        ))
+        self.assertTrue(m.bull_case)
+        self.assertTrue(m.base_case)
+        self.assertTrue(m.bear_case)
+        self.assertIn("MOIC", m.base_case)
+
+    def test_markdown_has_recommendation_up_top(self) -> None:
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="TopCo", ebitda_m=50.0,
+            has_defensible_organic_growth=True,
+            pricing_power_score_0_100=80,
+            management_score_0_100=80,
+        ))
+        md = render_partner_memo_markdown(m)
+        # Recommendation appears before case views.
+        rec_idx = md.find("## Recommendation")
+        case_idx = md.find("## Case views")
+        self.assertGreaterEqual(rec_idx, 0)
+        self.assertGreater(case_idx, rec_idx)
+
+    def test_markdown_three_things_section(self) -> None:
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="NeedsMoreCo",
+            ebitda_m=50.0,
+            red_flag_high_count=1,
+            reasonableness_out_of_band_count=2,
+            has_defensible_organic_growth=False,
+            pricing_power_score_0_100=40,
+        ))
+        md = render_partner_memo_markdown(m)
+        self.assertIn("Three things that would change my mind", md)
+
+    def test_json(self) -> None:
+        import json
+        m = build_partner_memo(PartnerVoiceInputs(
+            deal_name="X", ebitda_m=50.0))
+        json.dumps(m.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
