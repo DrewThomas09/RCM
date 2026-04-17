@@ -5178,6 +5178,147 @@ class TestCmsDataQuality(unittest.TestCase):
         self.assertEqual(s["declining_risk_count"], 1)
 
 
+class TestDealRiskMatrix(unittest.TestCase):
+    """Tests for deal_risk_matrix module."""
+
+    def _make_deal(self, **kwargs):
+        base = {
+            "source_id": "risk_001",
+            "deal_name": "Test Hospital",
+            "deal_type": "lbo",
+            "ev_mm": 500.0,
+            "ebitda_mm": 50.0,
+            "ev_ebitda": 10.0,
+            "payer_mix": {"medicare": 0.40, "medicaid": 0.20, "commercial": 0.36, "self_pay": 0.04},
+            "notes": "",
+            "region": "Southeast",
+        }
+        base.update(kwargs)
+        return base
+
+    def test_score_reimbursement_risk_high_medicaid(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_reimbursement_risk
+        deal = self._make_deal(payer_mix={"medicare": 0.05, "medicaid": 0.80, "commercial": 0.10, "self_pay": 0.05})
+        dim = score_reimbursement_risk(deal)
+        self.assertGreater(dim.score, 40)
+        self.assertIn(dim.level, ("high", "critical"))
+
+    def test_score_reimbursement_risk_low_risk(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_reimbursement_risk
+        deal = self._make_deal(payer_mix={"medicare": 0.20, "medicaid": 0.10, "commercial": 0.65, "self_pay": 0.05})
+        dim = score_reimbursement_risk(deal)
+        self.assertLess(dim.score, 35)
+
+    def test_score_leverage_risk_high_multiple(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_leverage_risk
+        deal = self._make_deal(ev_ebitda=22.0)
+        dim = score_leverage_risk(deal)
+        self.assertGreater(dim.score, 30)
+
+    def test_score_leverage_risk_negative_ebitda(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_leverage_risk
+        deal = self._make_deal(ebitda_mm=-15.0, ev_ebitda=None)
+        dim = score_leverage_risk(deal)
+        self.assertGreater(dim.score, 20)
+
+    def test_score_execution_risk_carve_out(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_execution_risk
+        deal = self._make_deal(deal_type="carve_out")
+        dim = score_execution_risk(deal)
+        self.assertGreater(dim.score, 15)
+
+    def test_score_execution_risk_distressed(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_execution_risk
+        deal = self._make_deal(deal_type="distressed")
+        dim = score_execution_risk(deal)
+        self.assertGreater(dim.score, 25)
+
+    def test_score_regulatory_risk_doj(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_regulatory_risk
+        deal = self._make_deal(notes="DOJ settlement 2019 for overbilling")
+        dim = score_regulatory_risk(deal)
+        self.assertGreater(dim.score, 25)
+
+    def test_score_regulatory_risk_clean(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_regulatory_risk
+        deal = self._make_deal(notes="Stable operator; no compliance issues")
+        dim = score_regulatory_risk(deal)
+        self.assertEqual(dim.score, 0.0)
+
+    def test_score_market_risk_rural(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_market_risk
+        deal = self._make_deal(notes="Rural critical access hospital", region="Midwest")
+        dim = score_market_risk(deal)
+        self.assertGreater(dim.score, 10)
+
+    def test_score_operational_risk_negative_moic(self):
+        from rcm_mc.data_public.deal_risk_matrix import score_operational_risk
+        deal = self._make_deal(realized_moic=0.3)
+        dim = score_operational_risk(deal)
+        self.assertGreater(dim.score, 15)
+
+    def test_build_risk_matrix_returns_six_dimensions(self):
+        from rcm_mc.data_public.deal_risk_matrix import build_risk_matrix
+        deal = self._make_deal()
+        matrix = build_risk_matrix(deal)
+        self.assertEqual(len(matrix.dimensions), 6)
+        dim_names = {d.name for d in matrix.dimensions}
+        self.assertEqual(dim_names, {"reimbursement", "leverage", "execution", "regulatory", "market", "operational"})
+
+    def test_build_risk_matrix_composite_score_range(self):
+        from rcm_mc.data_public.deal_risk_matrix import build_risk_matrix
+        deal = self._make_deal()
+        matrix = build_risk_matrix(deal)
+        self.assertGreaterEqual(matrix.composite_score, 0.0)
+        self.assertLessEqual(matrix.composite_score, 100.0)
+        self.assertIn(matrix.overall_signal, ("green", "yellow", "amber", "red"))
+
+    def test_risk_matrix_text(self):
+        from rcm_mc.data_public.deal_risk_matrix import build_risk_matrix, risk_matrix_text
+        deal = self._make_deal()
+        matrix = build_risk_matrix(deal)
+        text = risk_matrix_text(matrix)
+        self.assertIn("Risk Matrix", text)
+        self.assertIn("Composite Score", text)
+        self.assertIn("Reimbursement", text)
+
+    def test_risk_matrix_as_dict(self):
+        from rcm_mc.data_public.deal_risk_matrix import build_risk_matrix
+        deal = self._make_deal()
+        matrix = build_risk_matrix(deal)
+        d = matrix.as_dict()
+        self.assertIn("composite_score", d)
+        self.assertIn("dimensions", d)
+        self.assertEqual(len(d["dimensions"]), 6)
+
+    def test_risk_matrix_summary_sorted(self):
+        from rcm_mc.data_public.deal_risk_matrix import risk_matrix_summary
+        deals = [
+            self._make_deal(source_id="low", payer_mix={"medicare": 0.10, "medicaid": 0.05, "commercial": 0.80, "self_pay": 0.05}),
+            self._make_deal(source_id="high", payer_mix={"medicare": 0.05, "medicaid": 0.85, "commercial": 0.05, "self_pay": 0.05},
+                            deal_type="distressed", notes="DOJ settlement"),
+        ]
+        rows = risk_matrix_summary(deals)
+        self.assertEqual(rows[0]["source_id"], "high")  # higher risk first
+        self.assertGreater(rows[0]["composite_score"], rows[1]["composite_score"])
+
+    def test_risk_matrix_real_corpus(self):
+        from rcm_mc.data_public.deal_risk_matrix import risk_matrix_summary
+        from rcm_mc.data_public.deals_corpus import DealsCorpus
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "c.db")
+            c = DealsCorpus(db)
+            c.seed()
+            deals = c.list()
+        rows = risk_matrix_summary(deals)
+        self.assertGreater(len(rows), 200)
+        # all scores in valid range
+        for r in rows:
+            self.assertGreaterEqual(r["composite_score"], 0.0)
+            self.assertLessEqual(r["composite_score"], 100.0)
+
+
 class TestDealTimeline(unittest.TestCase):
     """Tests for deal_timeline module."""
 
