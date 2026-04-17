@@ -123,6 +123,7 @@ NAV_ITEMS = [
     {"label": "Hold Optimizer", "href": "/hold-optimizer", "icon": "chart"},
     {"label": "Payer Stress", "href": "/payer-stress", "icon": "chart"},
     {"label": "Multiple Decomp", "href": "/multiple-decomp", "icon": "chart"},
+    {"label": "Capital Efficiency", "href": "/capital-efficiency", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
