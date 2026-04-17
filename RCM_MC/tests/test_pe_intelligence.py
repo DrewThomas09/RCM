@@ -7485,5 +7485,87 @@ class TestRedTeamReview(unittest.TestCase):
         json.dumps(report.to_dict())
 
 
+# ── Data-room tracker ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CANONICAL_CHECKLIST,
+    DataRoomItem,
+    DataRoomReport,
+    analyze_data_room,
+    render_data_room_markdown,
+)
+
+
+class TestDataRoomTracker(unittest.TestCase):
+
+    def test_empty_room_is_insufficient(self) -> None:
+        r = analyze_data_room([])
+        self.assertEqual(r.status, "insufficient")
+
+    def test_complete_room_is_ready(self) -> None:
+        provided = [
+            DataRoomItem(category=i.category, name=i.name, status="present")
+            for i in CANONICAL_CHECKLIST
+        ]
+        r = analyze_data_room(provided)
+        self.assertEqual(r.status, "ready")
+        self.assertGreaterEqual(r.score, 90)
+
+    def test_partial_room(self) -> None:
+        # Provide half the items as present.
+        half = CANONICAL_CHECKLIST[:len(CANONICAL_CHECKLIST)//2]
+        provided = [
+            DataRoomItem(category=i.category, name=i.name, status="present")
+            for i in half
+        ]
+        r = analyze_data_room(provided)
+        # Score somewhere between.
+        self.assertGreater(r.score, 20)
+        self.assertLess(r.score, 90)
+
+    def test_p0_gaps_surfaced(self) -> None:
+        provided = [
+            DataRoomItem(category=i.category, name=i.name, status="present")
+            for i in CANONICAL_CHECKLIST
+            if i.priority != "P0"
+        ]
+        r = analyze_data_room(provided)
+        self.assertGreater(len(r.p0_missing), 0)
+
+    def test_category_completeness_reported(self) -> None:
+        provided = [
+            DataRoomItem(category=i.category, name=i.name, status="present")
+            for i in CANONICAL_CHECKLIST
+        ]
+        r = analyze_data_room(provided)
+        self.assertIn("financial", r.completeness_by_category)
+
+    def test_partial_status_scores_half(self) -> None:
+        item = CANONICAL_CHECKLIST[0]
+        provided = [
+            DataRoomItem(category=item.category, name=item.name,
+                         status="partial"),
+        ]
+        r = analyze_data_room(provided)
+        # Partial items should be non-zero but < 1 completeness in their
+        # category.
+        cat_complete = r.completeness_by_category.get(item.category, 0)
+        self.assertGreater(cat_complete, 0)
+        self.assertLess(cat_complete, 1.0)
+
+    def test_markdown_renders(self) -> None:
+        provided = [
+            DataRoomItem(category=i.category, name=i.name, status="present")
+            for i in CANONICAL_CHECKLIST[:5]
+        ]
+        md = render_data_room_markdown(analyze_data_room(provided))
+        self.assertIn("# Data-room readiness", md)
+
+    def test_report_json(self) -> None:
+        import json
+        r = analyze_data_room([])
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

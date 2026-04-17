@@ -289,6 +289,13 @@ from .red_team_review import (
     build_red_team_report,
     render_red_team_markdown,
 )
+from .data_room_tracker import (
+    CANONICAL_CHECKLIST,
+    DataRoomItem,
+    DataRoomReport,
+    analyze_data_room,
+    render_data_room_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -951,4 +958,9 @@ __all__ = [
     "RedTeamReport",
     "build_red_team_report",
     "render_red_team_markdown",
+    "CANONICAL_CHECKLIST",
+    "DataRoomItem",
+    "DataRoomReport",
+    "analyze_data_room",
+    "render_data_room_markdown",
 ]
