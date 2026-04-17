@@ -518,6 +518,13 @@ from .working_capital_peer_band import (
     benchmark_working_capital,
     render_wc_markdown,
 )
+from .hold_period_optimizer import (
+    HoldInputs,
+    HoldOptimizerResult,
+    HoldYearOutcome,
+    optimize_hold,
+    render_hold_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1347,4 +1354,9 @@ __all__ = [
     "WCPeerReport",
     "benchmark_working_capital",
     "render_wc_markdown",
+    "HoldInputs",
+    "HoldOptimizerResult",
+    "HoldYearOutcome",
+    "optimize_hold",
+    "render_hold_markdown",
 ]

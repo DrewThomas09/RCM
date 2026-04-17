@@ -10287,5 +10287,84 @@ class TestWorkingCapitalPeerBand(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Hold period optimizer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    HoldInputs,
+    HoldOptimizerResult,
+    HoldYearOutcome,
+    optimize_hold,
+    render_hold_markdown,
+)
+
+
+class TestHoldPeriodOptimizer(unittest.TestCase):
+
+    def _inputs(self) -> HoldInputs:
+        return HoldInputs(
+            ebitda_by_year_m=[50.0, 60.0, 72.0, 85.0, 95.0, 100.0],
+            entry_ev_m=500.0, entry_debt_m=275.0,
+            exit_multiples_by_year=[11.0, 11.0, 11.0, 11.0, 10.5, 10.0],
+            entry_equity_m=225.0,
+        )
+
+    def test_outcomes_per_year(self) -> None:
+        r = optimize_hold(self._inputs())
+        self.assertEqual(len(r.outcomes), 6)
+
+    def test_irr_peaks_early_with_multiple_compression(self) -> None:
+        r = optimize_hold(self._inputs())
+        # IRR typically peaks before MOIC when multiple compresses late.
+        self.assertLessEqual(r.max_irr_year, r.max_moic_year)
+
+    def test_moic_peak_year(self) -> None:
+        r = optimize_hold(HoldInputs(
+            ebitda_by_year_m=[50.0, 60.0, 72.0, 85.0, 95.0],
+            entry_ev_m=500.0, entry_debt_m=275.0,
+            exit_multiples_by_year=[11.0] * 5,
+            entry_equity_m=225.0,
+        ))
+        # Flat multiple with growing EBITDA → MOIC peaks last year.
+        self.assertEqual(r.max_moic_year, 5)
+
+    def test_irr_vs_moic_tension_note(self) -> None:
+        r = optimize_hold(self._inputs())
+        if r.max_irr_year != r.max_moic_year:
+            self.assertIn("tension", r.partner_note.lower())
+
+    def test_both_peak_same_year_no_ambiguity(self) -> None:
+        r = optimize_hold(HoldInputs(
+            ebitda_by_year_m=[50.0, 55.0, 50.0, 40.0],
+            entry_ev_m=500.0, entry_debt_m=275.0,
+            exit_multiples_by_year=[11.0, 11.0, 11.0, 11.0],
+            entry_equity_m=225.0,
+        ))
+        # MOIC peaks year 2 (highest EBITDA × flat multiple).
+        # IRR also peaks year 2 (best return / earliest).
+        self.assertEqual(r.max_irr_year, r.max_moic_year)
+        self.assertIn("no ambiguity", r.partner_note.lower())
+
+    def test_empty_inputs_handled(self) -> None:
+        r = optimize_hold(HoldInputs(
+            ebitda_by_year_m=[], entry_ev_m=0.0, entry_debt_m=0.0,
+            exit_multiples_by_year=[], entry_equity_m=0.0,
+        ))
+        self.assertIn("Insufficient", r.partner_note)
+
+    def test_irr_populated(self) -> None:
+        r = optimize_hold(self._inputs())
+        for o in r.outcomes:
+            self.assertIsNotNone(o.irr)
+
+    def test_markdown_renders(self) -> None:
+        md = render_hold_markdown(optimize_hold(self._inputs()))
+        self.assertIn("# Hold period optimizer", md)
+        self.assertIn("MOIC", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(optimize_hold(self._inputs()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
