@@ -620,7 +620,31 @@ footer included.
 
 ---
 
-## 17. Change log
+## 17. 100-Day post-close plan (`hundred_day_plan.py`)
+
+Generates a dated, owned 100-day action plan from a PartnerReview.
+Four workstreams:
+
+- **Operational** — KPI cascade, RCM triage (AR aging, denial reason-
+  code concentration, write-off buckets), integration playbook.
+- **Financial** — monthly close, covenant-tracking dashboard, lender
+  engagement, rate-update monitoring.
+- **People** — top-20 retention plan, incentive redesign, contract-
+  labor reduction.
+- **Systems** — data-coverage close-out, CMI/acuity reporting, TSA
+  tracker, EHR cutover plan.
+
+Actions are triggered by heuristic hits in the review: if
+`ar_days_above_peer` fired, the plan adds an AR-aging diagnosis with
+a 45-day due date. If `covenant_headroom_tight` fired, a 15-day
+lender-engagement action is added. Payer-mix drives CMS monitoring.
+
+Output: `generate_plan(review) -> HundredDayPlan` and
+`render_plan_markdown(plan) -> str` for partner-ready markdown.
+
+---
+
+## 18. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -645,3 +669,5 @@ footer included.
 - **2026-04-17** — Added `regulatory_watch.py` (15 national/state
   regulatory items with deal-level filtering) and `lp_pitch.py`
   (LP-facing one-pager in Markdown + HTML with softened language).
+- **2026-04-17** — Added `hundred_day_plan.py` (4-workstream post-
+  close action plan generator driven by the heuristic hits).
