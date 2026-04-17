@@ -5131,6 +5131,68 @@ class TestCmsDataQuality(unittest.TestCase):
         self.assertEqual(s["declining_risk_count"], 1)
 
 
+class TestCorpusCLIExtended(unittest.TestCase):
+    """Tests for health-check and export CLI subcommands."""
+
+    def setUp(self):
+        import tempfile
+        self._tmp = tempfile.mkdtemp()
+        self._db = os.path.join(self._tmp, "cli_test.db")
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self._tmp, ignore_errors=True)
+
+    def _run_cli(self, *args):
+        from rcm_mc.data_public.corpus_cli import main
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            try:
+                main(["--db", self._db] + list(args))
+            except SystemExit:
+                pass
+        return buf.getvalue()
+
+    def test_health_check_text_output(self):
+        out = self._run_cli("health-check", "--no-fail")
+        self.assertIn("Corpus Health Check Report", out)
+        self.assertIn("Total deals", out)
+        self.assertIn("Health score", out)
+
+    def test_health_check_json_output(self):
+        out = self._run_cli("health-check", "--json", "--no-fail")
+        data = json.loads(out)
+        self.assertIn("total_deals", data)
+        self.assertIn("health_score", data)
+        self.assertIn("issues", data)
+        self.assertGreater(data["total_deals"], 200)
+
+    def test_export_csv(self):
+        out = self._run_cli("export", "--format", "csv")
+        self.assertIn("source_id", out)
+        self.assertIn("deal_name", out)
+
+    def test_export_json(self):
+        out = self._run_cli("export", "--format", "json")
+        data = json.loads(out)
+        self.assertIsInstance(data, list)
+        self.assertGreater(len(data), 200)
+
+    def test_export_markdown(self):
+        out = self._run_cli("export", "--format", "markdown")
+        self.assertIn("#", out)
+        self.assertIn("Deal", out)
+
+    def test_export_to_file_csv(self):
+        outfile = os.path.join(self._tmp, "corpus.csv")
+        self._run_cli("export", "--format", "csv", "--output", outfile)
+        self.assertTrue(os.path.exists(outfile))
+        with open(outfile) as f:
+            content = f.read()
+        self.assertIn("source_id", content)
+
+
 class TestCorpusHealthCheck(unittest.TestCase):
     """Tests for corpus_health_check module."""
 

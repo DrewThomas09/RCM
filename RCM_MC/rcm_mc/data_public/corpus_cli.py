@@ -543,6 +543,67 @@ def _cmd_cms(args: argparse.Namespace) -> None:
     print(analysis_summary_text(report))
 
 
+def _cmd_health_check(args: argparse.Namespace) -> None:
+    """Run corpus health check and report data quality issues."""
+    from .corpus_health_check import check_corpus, health_check_text
+    corpus = DealsCorpus(args.db)
+    corpus.seed(skip_if_populated=True)
+    deals = corpus.list(limit=10000)
+    result = check_corpus(deals)
+    if args.json:
+        issues_raw = [
+            {"source_id": i.source_id, "deal_name": i.deal_name,
+             "check": i.check, "severity": i.severity, "detail": i.detail}
+            for i in result.issues
+        ]
+        print(json.dumps({
+            "total_deals": result.total_deals,
+            "clean_deals": result.clean_deal_count,
+            "error_count": result.error_count,
+            "warning_count": result.warning_count,
+            "info_count": result.info_count,
+            "duplicate_source_ids": result.duplicate_source_ids,
+            "health_score": result.health_score,
+            "issues": issues_raw,
+        }, indent=2))
+    else:
+        print(health_check_text(result))
+    if result.error_count > 0 and not args.no_fail:
+        sys.exit(1)
+
+
+def _cmd_export(args: argparse.Namespace) -> None:
+    """Export the full corpus to CSV, JSON, or Markdown."""
+    from .corpus_export import to_csv, to_json, to_markdown
+    corpus = DealsCorpus(args.db)
+    corpus.seed(skip_if_populated=True)
+    deals = corpus.list(limit=10000)
+    fmt = args.format.lower()
+    if fmt == "csv":
+        out = to_csv(deals, path=args.output)
+        if not args.output:
+            print(out)
+        else:
+            print(f"Exported {len(deals)} deals to {args.output}")
+    elif fmt == "json":
+        out = to_json(deals, path=args.output)
+        if not args.output:
+            print(out)
+        else:
+            print(f"Exported {len(deals)} deals to {args.output}")
+    elif fmt in ("markdown", "md"):
+        out = to_markdown(deals)
+        if args.output:
+            import pathlib
+            pathlib.Path(args.output).write_text(out)
+            print(f"Exported {len(deals)} deals to {args.output}")
+        else:
+            print(out)
+    else:
+        print(f"Unknown format '{fmt}'. Use: csv, json, markdown")
+        sys.exit(1)
+
+
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
         prog="corpus",
@@ -665,6 +726,18 @@ def main(argv=None) -> None:
                     help="Score a single deal; omit for full corpus report")
     sc.add_argument("--json", action="store_true")
 
+    # health-check
+    hc = sub.add_parser("health-check", help="Run corpus data quality health check")
+    hc.add_argument("--json", action="store_true", help="Output as JSON")
+    hc.add_argument("--no-fail", action="store_true", dest="no_fail",
+                    help="Exit 0 even when errors are found (default: exit 1 on errors)")
+
+    # export
+    ex2 = sub.add_parser("export", help="Export corpus to CSV, JSON, or Markdown")
+    ex2.add_argument("--format", default="csv", choices=["csv", "json", "markdown", "md"],
+                     help="Output format (default: csv)")
+    ex2.add_argument("--output", default=None, help="Output file path (default: stdout)")
+
     # cms
     cm = sub.add_parser("cms", help="CMS market analytics (concentration, regime, stress, memo)")
     cm.add_argument("--year", type=int, default=2021, help="CMS dataset year (2021 or 2022)")
@@ -704,6 +777,8 @@ def main(argv=None) -> None:
         "region": _cmd_region,
         "rcm": _cmd_rcm,
         "cms": _cmd_cms,
+        "health-check": _cmd_health_check,
+        "export": _cmd_export,
     }
     dispatch[args.cmd](args)
 
