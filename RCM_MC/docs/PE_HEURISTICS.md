@@ -3367,7 +3367,40 @@ Partner note:
 
 ---
 
-## 143. Change log
+## 143. Quality of diligence scorer (`quality_of_diligence_scorer.py`)
+
+**Partner statement:** "Before I recommend invest or pass, I
+audit my OWN team's work. The failure mode is going to IC with
+a thin book and learning in the room."
+
+Six dimensions, each with a required checklist:
+
+- **Financial** (6 items) — QofE, NWC peg, recurring vs one-time
+  split, 3yr capex, debt schedule, capital plan.
+- **Commercial** (5) — payer map, top-10 contract review,
+  competitive map, customer references, pricing power.
+- **Clinical** (5) — quality metrics, CMS history, physician
+  interviews, coding audit, RAC history.
+- **Operational** (5) — IT inventory, KPI dashboards,
+  integration playbook, labor costs, staffing pipeline.
+- **Legal** (6) — QoL, FCA, Stark/AKS, litigation, CoC consents,
+  environmental.
+- **Management** (5) — CEO/CFO refs, MIP finalized, succession,
+  board charter.
+
+**IC-ready = every dimension ≥ 80%.** Not an average — a floor.
+The weakest dimension is always named.
+
+Partner note:
+
+- IC-ready → "weakest dimension still is X at Y%."
+- Near-ready → "close gaps on X: missing items Y, Z."
+- Weakest < 50% → "NOT IC-ready; decline to recommend; pull IC
+  back 2-3 weeks."
+
+---
+
+## 144. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3677,3 +3710,7 @@ Partner note:
   — 4th canonical cascade (IP→OP → rate differential → margin
   swap → capacity unlock → site-neutral regulatory risk). Full
   inventory: 140 modules, 1,414 pe_intelligence unit tests.
+- **2026-04-17** — Added `quality_of_diligence_scorer.py` (§143)
+  — partner audits own team's work across 6 dimensions; IC-ready
+  requires every dim ≥ 80% (floor, not average). Full inventory:
+  141 modules, 1,424 pe_intelligence unit tests.
