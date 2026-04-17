@@ -2883,7 +2883,55 @@ drop-in tool for anyone preparing for IC.
 
 ---
 
-## 130. Change log
+## 130. First thirty minutes (`first_thirty_minutes.py`)
+
+**Partner statement:** walking into an MI, a senior partner does
+not ask generic questions. They ask three to five questions that
+the packet has already pointed at, specifically enough to force
+a non-rehearsed answer.
+
+Tiers:
+
+- **Landmine** — specific risk that kills the deal if true.
+  Always goes first. Cannot be deflected to week-6 diligence.
+- **Opening** — sets the tone; usually about the thing the deck
+  tried hardest to downplay.
+- **Probe** — follow-ups that test whether the answer is genuine
+  or canned.
+
+12 question detectors currently wired:
+
+- Denial rate ≥ 10% → opening: "three biggest denial reasons by
+  payer; structural vs fixable."
+- DAR ≥ 55 → probe: "billing timing vs payer-mix vs clean-claim."
+- One-time % EBITDA ≥ 15% → opening: "recurring trajectory."
+- OON ≥ 20% → landmine: "NSA exposure + in-network pipeline."
+- Denial rate delta +≥ 1.5pp → probe: "what broke; owner; timeline."
+- C-suite tenure < 2.5 → probe: "retention packages through exit."
+- Pending FCA → landmine: "settlement exposure, timeline."
+- Rate growth > 5% → probe: "signed contract wins; 5%+ rate-card
+  number does not exist."
+- Top payer ≥ 35% → landmine: "renewal date, escalators,
+  contingency if they walk or cut 5%."
+- Historical pattern match → opening: "three structural
+  mitigations that prevent the same outcome."
+- Year-1 synergies > $5M → probe: "actions in months 1-6 vs
+  7-12 with named owners."
+- Sale-leaseback in thesis → landmine: "rent-to-EBITDA at -10%
+  EBITDA; Steward told us what happens."
+
+Each question ships with the packet trigger (e.g.
+`current_denial_rate=0.15`) so the associate can reference the
+data when management deflects.
+
+**Worked example:** an Envision-pattern staffing deal with 30%
+OON, rising denials, and a 45% top-payer concentration generates
+three landmine questions up top — exactly how a senior partner
+would open.
+
+---
+
+## 131. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3139,3 +3187,7 @@ drop-in tool for anyone preparing for IC.
   named thesis traps including the three user-cited: fix-denials-
   in-12-months, payer-renegotiation-coming, MA-will-make-it-up.
   Full inventory: 127 modules, 1,277 pe_intelligence unit tests.
+- **2026-04-17** — Added `first_thirty_minutes.py` (§130) —
+  packet-derived landmine/opening/probe questions for the first
+  30 minutes of an MI. Full inventory: 128 modules, 1,291
+  pe_intelligence unit tests.
