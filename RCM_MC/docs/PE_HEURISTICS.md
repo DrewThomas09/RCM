@@ -533,7 +533,60 @@ and `questions` (what the partner asks before signing).
 
 ---
 
-## 12. Change log
+## 12. Bear book (`bear_book.py`)
+
+Pattern recognition against known failure modes. Each pattern encodes
+a combination of signals that rhymes with deals that have gone wrong.
+
+- `rollup_integration_failure` — sub-$50M platform + aggressive
+  margin expansion + high leverage + short hold.
+- `medicare_margin_compression` — Medicare ≥ 50% + margin expansion
+  > 150 bps/yr.
+- `carveout_tsa_sprawl` — low data coverage + high AR + missing CMI.
+- `turnaround_without_operator` — sub-3% margin + aggressive plan.
+- `covid_tailwind_fade` — acute-care + margin > 14% + exit > 10x.
+- `high_leverage_thin_coverage` — leverage ≥ 6.0x + headroom < 15%.
+- `vbc_priced_as_ffs` — capitation structure + volume growth math.
+- `rural_single_payer_cliff` — CAH + ≥60% Medicare or ≥35% Medicaid.
+
+Each hit exposes a `failure_mode` (what goes wrong) and a
+`partner_voice` warning.
+
+---
+
+## 13. Exit readiness (`exit_readiness.py`)
+
+12-dimension pre-exit checklist yielding a 0–100 readiness score:
+
+- **≥ 85** → engage banker immediately.
+- **65 – 84** → soft-launch ready; fix gaps before formal process.
+- **< 65** → not exit-ready; address core gaps first.
+
+Dimensions include: audited financials, TTM KPIs, data-room
+organization, QoE preparation, EBITDA trend, margin trend, buyer
+universe mapping, management retention, legal cleanliness, adjustment
+reconciliation, EBITDA-vs-plan, revenue-vs-plan.
+
+---
+
+## 14. Payer math (`payer_math.py`)
+
+Deterministic payer-mix-aware projection helpers:
+
+- `blended_rate_growth(mix, rate_by_payer)` — weighted growth rate.
+- `project_revenue(inputs)` — year-by-year revenue + EBITDA walk.
+- `compare_payer_scenarios(base, scenarios)` — side-by-side.
+- `vbc_revenue_projection(inputs)` — capitation math: premium, claims,
+  admin, underwriting margin, shared savings.
+- `standard_scenarios()` — base, CMS cut, commercial rate boom,
+  frozen rates.
+
+Used by the narrative layer to answer "what happens if CMS cuts?"
+without a full MC run.
+
+---
+
+## 15. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -551,3 +604,7 @@ and `questions` (what the partner asks before signing).
   `ic_memo.py` (markdown/html/text IC-memo renderers),
   `sector_benchmarks.py` (peer p25/p50/p75 by subsector), and
   `deal_archetype.py` (10 deal-pattern classifier with playbooks).
+- **2026-04-17** — Added `bear_book.py` (8 historical-failure pattern
+  detectors), `exit_readiness.py` (12-dimension pre-exit checklist
+  with 0-100 score), and `payer_math.py` (blended rate growth, revenue
+  projection, VBC lives × PMPM math, standard payer scenarios).
