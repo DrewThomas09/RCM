@@ -2407,7 +2407,36 @@ Committee and LPs. Fast, honest, no hedging.
 
 ---
 
-## 115. Change log
+## 115. Bank syndicate picker (`bank_syndicate_picker.py`)
+
+Picks lenders for a deal from a 21-lender universe covering
+bulge bracket, commercial banks, healthcare specialists, and
+direct lenders / BDCs.
+
+Scoring:
+
+- Size fit: +20 if debt in lender's hold range.
+- Bulge preference for >$1B deals: +15.
+- Commercial preference for $100M-$500M: +10.
+- Direct-lender preference for ≤$100M: +10.
+- Healthcare specialist when requested: +30.
+- Direct lender when partner prefers looser covenants: +25.
+- Explicitly looser covenant posture: +15.
+
+Tiers: position 0 = lead, 1-2 = joint, 3+ = participant. Fallback
+list is next 3 candidates behind the primaries.
+
+Partner note scales to deal size:
+
+- \>$1B → "bulge-led syndicate with 4-6 joint arrangers".
+- $250M-$1B → "commercial or direct-lender club with 2-4".
+- ≤$250M → "single direct lender or 2-lender club".
+
+Universe can grow; library is partner-approximated not exhaustive.
+
+---
+
+## 116. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2609,3 +2638,6 @@ Committee and LPs. Fast, honest, no hedging.
   fund-level aggregation + top movers + sub-sector / vintage /
   stage cuts. Full inventory: 112 modules, 1,108 pe_intelligence
   unit tests.
+- **2026-04-17** — Added `bank_syndicate_picker.py` (§115) —
+  21-lender universe + size/sector/covenant scoring + tiered picks.
+  Full inventory: 113 modules, 1,118 pe_intelligence unit tests.
