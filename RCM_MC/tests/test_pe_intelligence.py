@@ -11891,5 +11891,126 @@ class TestPartnerVoiceVariants(unittest.TestCase):
             deal_name="X", recurring_ebitda_m=50.0)).to_dict())
 
 
+# ── Cross-module connective tissue ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ConnectedInsight,
+    ConnectedReport,
+    SignalBundle,
+    connect_signals,
+    render_connected_markdown,
+)
+
+
+class TestConnectiveTissue(unittest.TestCase):
+    """Diligence-scenario tests: multiple signals → named insight."""
+
+    def test_envision_confirmed_fires(self) -> None:
+        r = connect_signals(SignalBundle(
+            historical_failure_matches=["envision_surprise_billing_2023"],
+            oon_revenue_share=0.30,
+            pricing_power_score_0_100=35,
+        ))
+        names = {i.name for i in r.insights}
+        self.assertIn("envision_thesis_confirmed", names)
+        envision = next(i for i in r.insights
+                         if i.name == "envision_thesis_confirmed")
+        self.assertIn("not a mitigated version", envision.narrative.lower())
+
+    def test_envision_mitigated_does_not_fire(self) -> None:
+        # Has historical match but strong pricing power → mitigated.
+        r = connect_signals(SignalBundle(
+            historical_failure_matches=["envision_surprise_billing_2023"],
+            oon_revenue_share=0.10,
+            pricing_power_score_0_100=75,
+        ))
+        names = {i.name for i in r.insights}
+        self.assertNotIn("envision_thesis_confirmed", names)
+
+    def test_rollup_earnings_fiction(self) -> None:
+        r = connect_signals(SignalBundle(
+            archetype="roll_up",
+            integration_pct=0.60,
+            pro_forma_addbacks_pct=0.20,
+        ))
+        self.assertIn("rollup_earnings_fiction",
+                       {i.name for i in r.insights})
+
+    def test_peak_cycle_leverage_covenant_risk(self) -> None:
+        r = connect_signals(SignalBundle(
+            cycle_phase="peak", leverage=7.0,
+            has_covenant_lite=False,
+        ))
+        self.assertIn("peak_cycle_covenant_breach_likely",
+                       {i.name for i in r.insights})
+
+    def test_covenant_lite_prevents_fire(self) -> None:
+        r = connect_signals(SignalBundle(
+            cycle_phase="peak", leverage=7.0,
+            has_covenant_lite=True,
+        ))
+        self.assertNotIn("peak_cycle_covenant_breach_likely",
+                          {i.name for i in r.insights})
+
+    def test_cmi_uplift_cash_squeeze(self) -> None:
+        r = connect_signals(SignalBundle(
+            cmi_uplift_in_thesis=True,
+            denial_rate=0.12,
+            days_in_ar=60,
+        ))
+        self.assertIn("cmi_uplift_cash_squeeze",
+                       {i.name for i in r.insights})
+
+    def test_medicare_heavy_no_defense(self) -> None:
+        r = connect_signals(SignalBundle(
+            medicare_pct=0.50,
+            pricing_power_score_0_100=30,
+            obbba_combined_pct=0.15,
+        ))
+        insight = next(i for i in r.insights
+                        if i.name == "medicare_heavy_no_defense")
+        self.assertIn("not a business", insight.narrative.lower())
+
+    def test_stacked_risk_medium(self) -> None:
+        r = connect_signals(SignalBundle(
+            bear_book_hits=2,
+            reasonableness_out_of_band=2,
+        ))
+        names = {i.name for i in r.insights}
+        self.assertIn("bear_book_plus_reasonableness_stacked", names)
+
+    def test_two_high_insights_aggregate_partner_note(self) -> None:
+        r = connect_signals(SignalBundle(
+            historical_failure_matches=["envision_surprise_billing_2023"],
+            oon_revenue_share=0.30, pricing_power_score_0_100=35,
+            archetype="roll_up",
+            integration_pct=0.60, pro_forma_addbacks_pct=0.20,
+        ))
+        self.assertGreaterEqual(r.high_count, 2)
+        self.assertIn("pass-level", r.partner_note.lower())
+
+    def test_no_signals_clean_note(self) -> None:
+        r = connect_signals(SignalBundle())
+        self.assertEqual(len(r.insights), 0)
+        self.assertIn("do not compound", r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        r = connect_signals(SignalBundle(
+            historical_failure_matches=["envision_surprise_billing_2023"],
+            oon_revenue_share=0.30, pricing_power_score_0_100=35,
+        ))
+        md = render_connected_markdown(r)
+        self.assertIn("# Connective-tissue reasoning", md)
+        self.assertIn("envision_thesis_confirmed", md)
+
+    def test_json(self) -> None:
+        import json
+        r = connect_signals(SignalBundle(
+            historical_failure_matches=["envision_surprise_billing_2023"],
+            oon_revenue_share=0.30, pricing_power_score_0_100=35,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

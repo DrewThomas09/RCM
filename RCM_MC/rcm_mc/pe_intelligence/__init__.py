@@ -649,6 +649,13 @@ from .partner_voice_variants import (
     compose_voice,
     render_voices_markdown,
 )
+from .cross_module_connective_tissue import (
+    ConnectedInsight,
+    ConnectedReport,
+    SignalBundle,
+    connect_signals,
+    render_connected_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1579,4 +1586,9 @@ __all__ = [
     "compose_all_voices",
     "compose_voice",
     "render_voices_markdown",
+    "ConnectedInsight",
+    "ConnectedReport",
+    "SignalBundle",
+    "connect_signals",
+    "render_connected_markdown",
 ]
