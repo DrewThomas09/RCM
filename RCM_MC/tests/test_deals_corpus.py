@@ -93,8 +93,9 @@ class TestDealsCorpus(unittest.TestCase):
         self.assertEqual(stats["total"], 0)
 
     def test_seed_inserts_expected_count(self):
+        from rcm_mc.data_public.extended_seed_2 import EXTENDED_SEED_DEALS_2
         n = self.corpus.seed(skip_if_populated=False)
-        expected = len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS)
+        expected = len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -2134,6 +2135,183 @@ class TestVintageAnalysis(unittest.TestCase):
         out = buf.getvalue()
         self.assertIn("2018", out)
         self.assertIn("Cycle", out)
+
+
+# ===========================================================================
+# Extended Seed Batch 2 + Corpus Size
+# ===========================================================================
+
+class TestExtendedSeed2(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def test_seed_loads_75_deals(self):
+        corpus = DealsCorpus(self.db_path)
+        stats = corpus.stats()
+        self.assertGreaterEqual(stats["total"], 75)
+
+    def test_seed_056_present(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_056")
+        self.assertIsNotNone(deal)
+        self.assertIn("Kindred", deal["deal_name"])
+
+    def test_seed_075_present(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_075")
+        self.assertIsNotNone(deal)
+        self.assertIn("Agilon", deal["deal_name"])
+
+    def test_seed_batch2_payer_mix_parseable(self):
+        from rcm_mc.data_public.extended_seed_2 import EXTENDED_SEED_DEALS_2
+        for deal in EXTENDED_SEED_DEALS_2:
+            pm = deal.get("payer_mix")
+            if pm:
+                parsed = json.loads(pm)
+                self.assertIsInstance(parsed, dict)
+
+    def test_no_duplicate_source_ids(self):
+        from rcm_mc.data_public.deals_corpus import _SEED_DEALS
+        from rcm_mc.data_public.extended_seed import EXTENDED_SEED_DEALS
+        from rcm_mc.data_public.extended_seed_2 import EXTENDED_SEED_DEALS_2
+        all_ids = [d["source_id"] for d in _SEED_DEALS + EXTENDED_SEED_DEALS + EXTENDED_SEED_DEALS_2]
+        self.assertEqual(len(all_ids), len(set(all_ids)), "Duplicate source_ids found in seed data")
+
+
+# ===========================================================================
+# Regional Analysis
+# ===========================================================================
+
+class TestRegionalAnalysis(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def test_classify_region_known_deal(self):
+        from rcm_mc.data_public.regional_analysis import classify_region
+        deal = {"deal_name": "HCA Healthcare – Nashville Tennessee", "buyer": "KKR"}
+        region = classify_region(deal)
+        self.assertEqual(region, "southeast")
+
+    def test_classify_region_northeast(self):
+        from rcm_mc.data_public.regional_analysis import classify_region
+        deal = {"deal_name": "Nuvance Health – Connecticut", "notes": "CT hospital system"}
+        region = classify_region(deal)
+        self.assertEqual(region, "northeast")
+
+    def test_classify_region_southwest(self):
+        from rcm_mc.data_public.regional_analysis import classify_region
+        deal = {"deal_name": "Southwest Health System – Texas", "buyer": "TPG",
+                "notes": "Dallas-based community hospital"}
+        region = classify_region(deal)
+        self.assertEqual(region, "southwest")
+
+    def test_classify_region_national_fallback(self):
+        from rcm_mc.data_public.regional_analysis import classify_region
+        deal = {"deal_name": "Generic Hospital Platform", "buyer": "PE Fund"}
+        region = classify_region(deal)
+        self.assertEqual(region, "national")
+
+    def test_get_all_regions_returns_dict(self):
+        from rcm_mc.data_public.regional_analysis import get_all_regions
+        regions = get_all_regions(self.db_path)
+        self.assertIsInstance(regions, dict)
+        self.assertGreater(len(regions), 0)
+
+    def test_all_region_stats_have_deals(self):
+        from rcm_mc.data_public.regional_analysis import get_all_regions
+        regions = get_all_regions(self.db_path)
+        for region_key, rs in regions.items():
+            self.assertGreater(rs.n_deals, 0)
+
+    def test_region_stats_fields(self):
+        from rcm_mc.data_public.regional_analysis import get_all_regions
+        regions = get_all_regions(self.db_path)
+        rs = next(iter(regions.values()))
+        self.assertIsInstance(rs.region, str)
+        self.assertIsInstance(rs.label, str)
+        self.assertIsInstance(rs.n_deals, int)
+
+    def test_region_report_structure(self):
+        from rcm_mc.data_public.regional_analysis import region_report
+        report = region_report(self.db_path)
+        self.assertIsInstance(report.by_region, dict)
+        self.assertIsNotNone(report.overall_moic_p50)
+
+    def test_region_report_as_dict(self):
+        from rcm_mc.data_public.regional_analysis import region_report
+        report = region_report(self.db_path)
+        d = report.as_dict()
+        json.dumps(d)
+        self.assertIn("by_region", d)
+
+    def test_region_table_string(self):
+        from rcm_mc.data_public.regional_analysis import region_table
+        out = region_table(self.db_path)
+        self.assertIn("Regional Return Analysis", out)
+        self.assertIn("MOIC", out)
+
+    def test_find_regional_comps(self):
+        from rcm_mc.data_public.regional_analysis import find_regional_comps
+        deal = {"deal_name": "Nashville Medical Center", "buyer": "KKR",
+                "source_id": "test_001"}
+        comps = find_regional_comps(deal, self.db_path, n=5)
+        self.assertIsInstance(comps, list)
+
+    def test_regional_comps_exclude_self(self):
+        from rcm_mc.data_public.regional_analysis import find_regional_comps
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_001")
+        comps = find_regional_comps(deal, self.db_path, n=10)
+        ids = [d.get("source_id") for d in comps]
+        self.assertNotIn("seed_001", ids)
+
+    def test_get_region_stats(self):
+        from rcm_mc.data_public.regional_analysis import get_region_stats
+        rs = get_region_stats("national", self.db_path)
+        self.assertIsInstance(rs.n_deals, int)
+        self.assertEqual(rs.region, "national")
+
+    def test_cli_region_table(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "region"])
+        out = buf.getvalue()
+        self.assertIn("Regional Return", out)
+
+    def test_cli_region_json(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "region", "--json"])
+        data = json.loads(buf.getvalue())
+        self.assertIn("by_region", data)
+
+    def test_cli_region_deal_id(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "region", "--deal-id", "seed_001"])
+        out = buf.getvalue()
+        self.assertIn("region", out.lower())
 
 
 if __name__ == "__main__":

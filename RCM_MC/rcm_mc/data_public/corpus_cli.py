@@ -182,6 +182,32 @@ def _cmd_full_ingest(args: argparse.Namespace) -> None:
         print(_json.dumps(report.as_dict(), indent=2, default=str))
 
 
+def _cmd_region(args: argparse.Namespace) -> None:
+    from .regional_analysis import region_table, region_report, get_region_stats, find_regional_comps
+    if args.deal_id:
+        corpus = DealsCorpus(args.db)
+        deal = corpus.get(args.deal_id)
+        if not deal:
+            print(f"Deal '{args.deal_id}' not found.")
+            sys.exit(1)
+        from .regional_analysis import classify_region
+        region = classify_region(deal)
+        comps = find_regional_comps(deal, args.db, n=args.n)
+        if args.json:
+            print(json.dumps({"region": region, "comps": comps}, indent=2, default=str))
+        else:
+            print(f"\n  Classified region: {region}")
+            print(f"  Top {len(comps)} regional comparable deals:")
+            for d in comps:
+                moic = f"{d['realized_moic']:.2f}x" if d.get("realized_moic") else "—"
+                print(f"    {d.get('deal_name','')[:55]}  MOIC={moic}")
+    elif args.json:
+        report = region_report(args.db)
+        print(json.dumps(report.as_dict(), indent=2, default=str))
+    else:
+        print(region_table(args.db))
+
+
 def _cmd_brief(args: argparse.Namespace) -> None:
     from .corpus_report import deal_brief, corpus_summary_report
     if args.corpus_summary:
@@ -437,6 +463,13 @@ def main(argv=None) -> None:
     sv.add_argument("--deal-id", required=True, dest="deal_id")
     sv.add_argument("--json", action="store_true")
 
+    # region
+    rg = sub.add_parser("region", help="Regional return analysis or classify a deal's region")
+    rg.add_argument("--deal-id", default=None, dest="deal_id",
+                    help="Classify a deal's region + show regional comps")
+    rg.add_argument("--n", type=int, default=5, help="Number of regional comps to show")
+    rg.add_argument("--json", action="store_true")
+
     # brief
     br = sub.add_parser("brief", help="One-page deal brief (all modules) for IC review")
     br.add_argument("--deal-id", default=None, dest="deal_id",
@@ -506,6 +539,7 @@ def main(argv=None) -> None:
         "exit": _cmd_exit,
         "diligence": _cmd_diligence,
         "brief": _cmd_brief,
+        "region": _cmd_region,
     }
     dispatch[args.cmd](args)
 

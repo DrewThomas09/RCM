@@ -59,6 +59,14 @@ from .exit_modeling import (
 )
 from .diligence_checklist import build_checklist, checklist_text, checklist_json
 from .corpus_report import deal_brief, corpus_summary_report
+from .regional_analysis import (
+    classify_region,
+    get_region_stats,
+    get_all_regions,
+    region_report,
+    region_table,
+    find_regional_comps,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -107,4 +115,10 @@ __all__ = [
     "checklist_json",
     "deal_brief",
     "corpus_summary_report",
+    "classify_region",
+    "get_region_stats",
+    "get_all_regions",
+    "region_report",
+    "region_table",
+    "find_regional_comps",
 ]
