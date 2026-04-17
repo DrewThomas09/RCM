@@ -310,6 +310,15 @@ from .subsector_benchmarks import (
     sector_peer_group,
     subsector_table,
 )
+from .lbo_entry_optimizer import (
+    LBOAssumptions,
+    LBOResult,
+    solve_entry_multiple,
+    sweep_moic_vs_entry,
+    entry_vs_corpus,
+    entry_optimizer_table,
+    entry_optimizer_report,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -547,4 +556,11 @@ __all__ = [
     "benchmark_deal_vs_sector",
     "sector_peer_group",
     "subsector_table",
+    "LBOAssumptions",
+    "LBOResult",
+    "solve_entry_multiple",
+    "sweep_moic_vs_entry",
+    "entry_vs_corpus",
+    "entry_optimizer_table",
+    "entry_optimizer_report",
 ]

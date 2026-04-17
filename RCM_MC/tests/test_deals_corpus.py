@@ -110,6 +110,7 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_15 import EXTENDED_SEED_DEALS_15
         from rcm_mc.data_public.extended_seed_16 import EXTENDED_SEED_DEALS_16
         from rcm_mc.data_public.extended_seed_17 import EXTENDED_SEED_DEALS_17
+        from rcm_mc.data_public.extended_seed_18 import EXTENDED_SEED_DEALS_18
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
@@ -119,7 +120,7 @@ class TestDealsCorpus(unittest.TestCase):
                     + len(EXTENDED_SEED_DEALS_11) + len(EXTENDED_SEED_DEALS_12)
                     + len(EXTENDED_SEED_DEALS_13) + len(EXTENDED_SEED_DEALS_14)
                     + len(EXTENDED_SEED_DEALS_15) + len(EXTENDED_SEED_DEALS_16)
-                    + len(EXTENDED_SEED_DEALS_17))
+                    + len(EXTENDED_SEED_DEALS_17) + len(EXTENDED_SEED_DEALS_18))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3584,10 +3585,10 @@ class TestExtendedSeed8(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_375_deals(self):
+    def test_seed_loads_395_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
-        self.assertGreaterEqual(stats["total"], 375)
+        self.assertGreaterEqual(stats["total"], 395)
 
     def test_seed_187_signify_high_moic(self):
         corpus = DealsCorpus(self.db_path)
@@ -6275,6 +6276,134 @@ class TestCorpusHealthCheck(unittest.TestCase):
         self.assertGreater(result.health_score, 0.5)
         text = health_check_text(result)
         self.assertIn("Corpus Health Check Report", text)
+
+
+class TestLBOEntryOptimizer(unittest.TestCase):
+    """Tests for lbo_entry_optimizer.py."""
+
+    def _base_assumptions(self, **kwargs):
+        from rcm_mc.data_public.lbo_entry_optimizer import LBOAssumptions
+        defaults = dict(
+            entry_ebitda_mm=50.0,
+            ebitda_cagr=0.10,
+            hold_years=5.0,
+            exit_multiple=12.0,
+            leverage_pct=0.55,
+            debt_interest_rate=0.07,
+            debt_amortization_pct=0.03,
+        )
+        defaults.update(kwargs)
+        return LBOAssumptions(**defaults)
+
+    def test_solve_returns_result(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import solve_entry_multiple
+        result = solve_entry_multiple(self._base_assumptions(), target_moic=2.5)
+        self.assertIsNotNone(result)
+        self.assertGreater(result.gross_moic, 2.4)
+
+    def test_higher_target_means_lower_entry(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import solve_entry_multiple
+        r25 = solve_entry_multiple(self._base_assumptions(), target_moic=2.5)
+        r30 = solve_entry_multiple(self._base_assumptions(), target_moic=3.0)
+        # More demanding MOIC target → can pay less at entry
+        self.assertGreaterEqual(r25.entry_multiple, r30.entry_multiple)
+
+    def test_moic_monotone_with_entry(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import sweep_moic_vs_entry
+        results = sweep_moic_vs_entry(self._base_assumptions(), entry_range=[8.0, 10.0, 12.0, 14.0])
+        moics = [r.gross_moic for r in results]
+        # Higher entry multiple → lower MOIC
+        self.assertGreater(moics[0], moics[-1])
+
+    def test_sweep_returns_correct_count(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import sweep_moic_vs_entry
+        results = sweep_moic_vs_entry(self._base_assumptions(), entry_range=[10.0, 12.0, 14.0])
+        self.assertEqual(len(results), 3)
+
+    def test_feasibility_flag(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import solve_entry_multiple
+        # Very thin margin — tiny EBITDA, high leverage should trigger warning
+        a = self._base_assumptions(entry_ebitda_mm=5.0, leverage_pct=0.90)
+        result = solve_entry_multiple(a, target_moic=1.5)
+        self.assertFalse(result.feasible)
+        self.assertTrue(len(result.warnings) > 0)
+
+    def test_irr_reasonable(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import solve_entry_multiple
+        result = solve_entry_multiple(self._base_assumptions(), target_moic=2.5)
+        # 2.5x over 5 yrs → ~20% IRR
+        self.assertGreater(result.gross_irr, 0.10)
+        self.assertLess(result.gross_irr, 0.50)
+
+    def test_net_moic_less_than_gross(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import solve_entry_multiple
+        result = solve_entry_multiple(self._base_assumptions(), target_moic=2.5)
+        self.assertLess(result.net_moic, result.gross_moic)
+
+    def test_entry_ev_equals_multiple_times_ebitda(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import solve_entry_multiple
+        a = self._base_assumptions()
+        result = solve_entry_multiple(a, target_moic=2.5)
+        self.assertAlmostEqual(result.entry_ev_mm, result.entry_multiple * a.entry_ebitda_mm, delta=1.0)
+
+    def test_table_format(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import sweep_moic_vs_entry, entry_optimizer_table
+        results = sweep_moic_vs_entry(self._base_assumptions(), entry_range=[10.0, 12.0, 14.0])
+        text = entry_optimizer_table(results)
+        self.assertIn("Entry EV/EBITDA", text)
+        self.assertIn("Gross MOIC", text)
+
+    def test_report_format(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import solve_entry_multiple, entry_optimizer_report
+        result = solve_entry_multiple(self._base_assumptions(), target_moic=2.5)
+        text = entry_optimizer_report(result)
+        self.assertIn("LBO Entry Optimization Report", text)
+        self.assertIn("Gross MOIC", text)
+        self.assertIn("Leverage at entry", text)
+
+    def test_debt_paydown_positive(self):
+        from rcm_mc.data_public.lbo_entry_optimizer import solve_entry_multiple
+        result = solve_entry_multiple(self._base_assumptions(), target_moic=2.0)
+        self.assertGreater(result.debt_paydown_mm, 0.0)
+
+
+class TestExtendedSeed18(unittest.TestCase):
+    """Tests for extended_seed_18.py (deals 376-395)."""
+
+    def setUp(self):
+        import tempfile, os
+        self.tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.db_path = self.tmp.name
+        self.tmp.close()
+        self.corpus = DealsCorpus(self.db_path)
+        self.corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        import os
+        os.unlink(self.db_path)
+
+    def test_seed_18_count(self):
+        from rcm_mc.data_public.extended_seed_18 import EXTENDED_SEED_DEALS_18
+        self.assertEqual(len(EXTENDED_SEED_DEALS_18), 20)
+
+    def test_seed_395_vitas_hospice(self):
+        deal = self.corpus.get("seed_395")
+        self.assertIsNotNone(deal)
+        self.assertGreater(deal["realized_moic"], 4.0)
+
+    def test_seed_380_bright_health_disaster(self):
+        deal = self.corpus.get("seed_380")
+        self.assertIsNotNone(deal)
+        self.assertLess(deal["realized_moic"], 0.5)
+
+    def test_seed_376_present(self):
+        deal = self.corpus.get("seed_376")
+        self.assertIsNotNone(deal)
+
+    def test_seed_18_unique_ids(self):
+        from rcm_mc.data_public.extended_seed_18 import EXTENDED_SEED_DEALS_18
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_18]
+        self.assertEqual(len(ids), len(set(ids)))
 
 
 class TestExtendedSeed17(unittest.TestCase):
