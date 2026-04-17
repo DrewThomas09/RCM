@@ -9101,5 +9101,111 @@ class TestSecondarySaleValuation(unittest.TestCase):
                             hc.indicative_discount_bps)
 
 
+# ── LBO stress scenarios ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    LBO_STRESS_LIBRARY,
+    LBOStressInputs,
+    LBOStressReport,
+    LBOStressResult,
+    LBOStressScenario,
+    render_lbo_stress_markdown,
+    run_all_lbo_stresses,
+    run_lbo_stress_scenario,
+)
+
+
+class TestLBOStressScenarios(unittest.TestCase):
+
+    def _inputs(self) -> LBOStressInputs:
+        return LBOStressInputs(
+            base_ebitda_m=100.0, debt_m=550.0,
+            interest_rate=0.095,
+            covenant_leverage_max=7.0,
+            covenant_coverage_min=2.0,
+            cash_on_hand_m=20.0,
+        )
+
+    def test_library_has_scenarios(self) -> None:
+        self.assertGreaterEqual(len(LBO_STRESS_LIBRARY), 5)
+
+    def test_run_single_scenario(self) -> None:
+        scen = LBOStressScenario(name="minor", ebitda_hit_pct=-0.05)
+        r = run_lbo_stress_scenario(self._inputs(), scen)
+        self.assertEqual(r.scenario, "minor")
+        self.assertAlmostEqual(r.stressed_ebitda_m, 95.0, places=1)
+
+    def test_recession_hard_breaches(self) -> None:
+        hard = next(s for s in LBO_STRESS_LIBRARY
+                     if s.name == "recession_hard")
+        r = run_lbo_stress_scenario(self._inputs(), hard)
+        # 5.5x base leverage → 5.5/0.75 = 7.33x post, > 7x cap.
+        self.assertTrue(r.leverage_breach)
+
+    def test_all_scenarios_return_results(self) -> None:
+        rep = run_all_lbo_stresses(self._inputs())
+        self.assertEqual(len(rep.results), len(LBO_STRESS_LIBRARY))
+
+    def test_worst_scenario_has_lowest_coverage(self) -> None:
+        rep = run_all_lbo_stresses(self._inputs())
+        worst = next(r for r in rep.results
+                      if r.scenario == rep.worst_scenario)
+        coverages = [r.stressed_coverage for r in rep.results]
+        self.assertEqual(worst.stressed_coverage, min(coverages))
+
+    def test_cyber_attack_depletes_cash(self) -> None:
+        cyber = next(s for s in LBO_STRESS_LIBRARY if s.name == "cyber_attack")
+        r = run_lbo_stress_scenario(self._inputs(), cyber)
+        # 20 - 5 = 15.
+        self.assertAlmostEqual(r.cash_after_shock_m, 15.0, places=1)
+
+    def test_rate_shift_raises_interest(self) -> None:
+        lo_scen = LBOStressScenario(name="a", ebitda_hit_pct=-0.05,
+                                      rate_shift_bps=0)
+        hi_scen = LBOStressScenario(name="b", ebitda_hit_pct=-0.05,
+                                      rate_shift_bps=300)
+        lo = run_lbo_stress_scenario(self._inputs(), lo_scen)
+        hi = run_lbo_stress_scenario(self._inputs(), hi_scen)
+        # Coverage drops with rate hike.
+        self.assertLess(hi.stressed_coverage, lo.stressed_coverage)
+
+    def test_breach_count_populated(self) -> None:
+        rep = run_all_lbo_stresses(self._inputs())
+        self.assertEqual(
+            rep.breach_count,
+            sum(1 for r in rep.results if r.breach),
+        )
+
+    def test_fragile_structure_note(self) -> None:
+        fragile = LBOStressInputs(
+            base_ebitda_m=100.0, debt_m=700.0,  # 7x leverage base
+            interest_rate=0.11,
+            covenant_leverage_max=6.5, covenant_coverage_min=2.5,
+        )
+        rep = run_all_lbo_stresses(fragile)
+        self.assertIn("fragile", rep.partner_note.lower())
+
+    def test_clean_structure_note(self) -> None:
+        clean = LBOStressInputs(
+            base_ebitda_m=100.0, debt_m=300.0,  # 3x leverage
+            interest_rate=0.08,
+            covenant_leverage_max=7.0, covenant_coverage_min=2.0,
+        )
+        rep = run_all_lbo_stresses(clean)
+        self.assertEqual(rep.breach_count, 0)
+        self.assertIn("hold", rep.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        rep = run_all_lbo_stresses(self._inputs())
+        md = render_lbo_stress_markdown(rep)
+        self.assertIn("# LBO stress scenarios", md)
+        self.assertIn("recession", md)
+
+    def test_json(self) -> None:
+        import json
+        rep = run_all_lbo_stresses(self._inputs())
+        json.dumps(rep.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
