@@ -1832,6 +1832,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             sector = _qs.get("sector", [""])[0]
             from .ui.data_public.risk_matrix_page import render_risk_matrix
             return self._send_html(render_risk_matrix(sector_filter=sector))
+        if path == "/deal-quality":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qs1(k, default=""):
+                return (_qs.get(k, [default]) or [default])[0]
+            def _qsint(k, default=1):
+                try: return int(_qs.get(k, [default])[0])
+                except (TypeError, ValueError): return default
+            from .ui.data_public.deal_quality_page import render_deal_quality
+            return self._send_html(render_deal_quality(
+                tier_filter=_qs1("tier"),
+                sort_by=_qs1("sort_by", "quality_score"),
+                page=_qsint("page", 1),
+            ))
         if path == "/portfolio-optimizer":
             _qs = urllib.parse.parse_qs(parsed.query)
             sectors = _qs.get("sector") or None
