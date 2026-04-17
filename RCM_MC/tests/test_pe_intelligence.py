@@ -10448,5 +10448,109 @@ class TestPricingPowerDiagnostic(unittest.TestCase):
         json.dumps(assess_pricing_power(PricingPowerInputs()).to_dict())
 
 
+# ── Portfolio rollup viewer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    PortfolioDeal,
+    PortfolioRollup,
+    SectorSummary,
+    TopMover,
+    build_portfolio_rollup,
+    render_rollup_markdown,
+)
+
+
+class TestPortfolioRollupViewer(unittest.TestCase):
+
+    def _book(self) -> List[PortfolioDeal]:
+        return [
+            PortfolioDeal(name="Alpha", subsector="specialty_practice",
+                           vintage_year=2022, stage="platform", status="held",
+                           cost_basis_m=100.0, current_nav_m=180.0,
+                           realized_m=0.0, current_irr=0.22,
+                           prior_nav_m=160.0),
+            PortfolioDeal(name="Beta", subsector="hospital",
+                           vintage_year=2023, stage="platform", status="held",
+                           cost_basis_m=150.0, current_nav_m=140.0,
+                           realized_m=0.0, current_irr=-0.05,
+                           prior_nav_m=155.0),
+            PortfolioDeal(name="Gamma", subsector="outpatient_asc",
+                           vintage_year=2021, stage="add_on", status="exited",
+                           cost_basis_m=80.0, current_nav_m=0.0,
+                           realized_m=180.0, current_irr=0.30),
+            PortfolioDeal(name="Delta", subsector="specialty_practice",
+                           vintage_year=2024, stage="add_on",
+                           status="written_off",
+                           cost_basis_m=40.0, current_nav_m=5.0,
+                           realized_m=0.0),
+        ]
+
+    def test_rollup_totals(self) -> None:
+        r = build_portfolio_rollup(self._book())
+        self.assertEqual(r.total_deals, 4)
+        self.assertAlmostEqual(r.total_cost_m, 370.0, places=1)
+        self.assertAlmostEqual(r.total_nav_m, 325.0, places=1)
+        self.assertAlmostEqual(r.total_realized_m, 180.0, places=1)
+
+    def test_status_counts(self) -> None:
+        r = build_portfolio_rollup(self._book())
+        self.assertEqual(r.hold_count, 2)
+        self.assertEqual(r.exit_count, 1)
+        self.assertEqual(r.write_off_count, 1)
+
+    def test_weighted_moic(self) -> None:
+        r = build_portfolio_rollup(self._book())
+        # (180 + 325) / 370 ≈ 1.365
+        self.assertGreater(r.weighted_moic, 1.2)
+        self.assertLess(r.weighted_moic, 1.5)
+
+    def test_top_movers_separated(self) -> None:
+        r = build_portfolio_rollup(self._book())
+        self.assertTrue(any(m.name == "Alpha" for m in r.top_gainers))
+        self.assertTrue(any(m.name == "Beta" for m in r.top_losers))
+
+    def test_by_subsector_aggregation(self) -> None:
+        r = build_portfolio_rollup(self._book())
+        names = [s.subsector for s in r.by_subsector]
+        self.assertIn("specialty_practice", names)
+
+    def test_by_vintage(self) -> None:
+        r = build_portfolio_rollup(self._book())
+        self.assertEqual(r.by_vintage[2022], 1)
+        self.assertEqual(r.by_vintage[2024], 1)
+
+    def test_empty_book(self) -> None:
+        r = build_portfolio_rollup([])
+        self.assertEqual(r.total_deals, 0)
+        self.assertIn("Empty", r.partner_note)
+
+    def test_underwater_note(self) -> None:
+        # Book where MOIC < 1.2.
+        r = build_portfolio_rollup([
+            PortfolioDeal(name="X", cost_basis_m=100.0,
+                           current_nav_m=80.0, realized_m=0.0),
+            PortfolioDeal(name="Y", cost_basis_m=100.0,
+                           current_nav_m=90.0, realized_m=0.0),
+        ])
+        self.assertIn("under water", r.partner_note.lower())
+
+    def test_strong_book_note(self) -> None:
+        r = build_portfolio_rollup([
+            PortfolioDeal(name="X", cost_basis_m=100.0,
+                           current_nav_m=0.0, realized_m=300.0,
+                           status="exited"),
+        ])
+        self.assertIn("strongly", r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_rollup_markdown(build_portfolio_rollup(self._book()))
+        self.assertIn("# Portfolio rollup", md)
+        self.assertIn("Top gainers", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(build_portfolio_rollup(self._book()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

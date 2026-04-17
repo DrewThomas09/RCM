@@ -533,6 +533,14 @@ from .pricing_power_diagnostic import (
     assess_pricing_power,
     render_pricing_power_markdown,
 )
+from .portfolio_rollup_viewer import (
+    PortfolioDeal,
+    PortfolioRollup,
+    SectorSummary,
+    TopMover,
+    build_portfolio_rollup,
+    render_rollup_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1373,4 +1381,10 @@ __all__ = [
     "PricingPowerReport",
     "assess_pricing_power",
     "render_pricing_power_markdown",
+    "PortfolioDeal",
+    "PortfolioRollup",
+    "SectorSummary",
+    "TopMover",
+    "build_portfolio_rollup",
+    "render_rollup_markdown",
 ]
