@@ -1010,6 +1010,32 @@ class TestCorpusCLI(unittest.TestCase):
         out = self._run(["seed", "--force"])
         self.assertIn("deals", out.lower())
 
+    def test_cli_full_ingest(self):
+        # Use a fresh db so full-ingest actually loads
+        fresh_db = _tmp_db()
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", fresh_db, "full-ingest"])
+        out = buf.getvalue()
+        self.assertIn("Ingest Report", out)
+        self.assertIn("seed", out)
+        os.unlink(fresh_db)
+
+    def test_cli_sensitivity(self):
+        out = self._run(["sensitivity", "--deal-id", "seed_008"])
+        self.assertIn("Payer Sensitivity", out)
+        self.assertIn("Medicaid", out)
+
+    def test_cli_sensitivity_json(self):
+        out = self._run(["sensitivity", "--deal-id", "seed_007", "--json"])
+        data = json.loads(out)
+        self.assertIsInstance(data, list)
+        self.assertGreater(len(data), 0)
+        self.assertIn("scenario", data[0])
+
 
 # ===========================================================================
 # Payer Sensitivity
@@ -1127,6 +1153,58 @@ class TestPayerSensitivity(unittest.TestCase):
                 "payer_mix": {"medicare": 0.5, "commercial": 0.5}}
         result = run_medicaid_cut_scenario(deal)
         self.assertIsNone(result.stressed_ebitda_mm)
+
+
+# ===========================================================================
+# Ingest Pipeline
+# ===========================================================================
+
+class TestIngestPipeline(unittest.TestCase):
+
+    def test_full_ingest_loads_all_sources(self):
+        from rcm_mc.data_public.ingest_pipeline import run_full_ingest
+        db_path = _tmp_db()
+        report = run_full_ingest(db_path, sec_edgar=False, live_pe=False)
+
+        self.assertIn("seed", report.sources_run)
+        self.assertIn("news", report.sources_run)
+        self.assertIn("pe_portfolio", report.sources_run)
+        self.assertGreater(report.total_upserted, 50)
+        self.assertGreater(report.corpus_stats["total"], 50)
+        os.unlink(db_path)
+
+    def test_full_ingest_deduplicates(self):
+        from rcm_mc.data_public.ingest_pipeline import run_full_ingest
+        db_path = _tmp_db()
+        r1 = run_full_ingest(db_path, sec_edgar=False, live_pe=False)
+        r2 = run_full_ingest(db_path, sec_edgar=False, live_pe=False)
+        # Second run should produce the same total (upsert, not append)
+        self.assertEqual(r1.corpus_stats["total"], r2.corpus_stats["total"])
+        os.unlink(db_path)
+
+    def test_ingest_report_no_errors(self):
+        from rcm_mc.data_public.ingest_pipeline import run_full_ingest
+        db_path = _tmp_db()
+        report = run_full_ingest(db_path)
+        self.assertEqual(report.errors, [])
+        os.unlink(db_path)
+
+    def test_ingest_report_as_dict(self):
+        from rcm_mc.data_public.ingest_pipeline import run_full_ingest
+        db_path = _tmp_db()
+        report = run_full_ingest(db_path)
+        d = report.as_dict()
+        self.assertIn("started_at", d)
+        self.assertIn("corpus_stats", d)
+        self.assertIn("counts_by_source", d)
+        os.unlink(db_path)
+
+    def test_ingest_corpus_has_moic_data(self):
+        from rcm_mc.data_public.ingest_pipeline import run_full_ingest
+        db_path = _tmp_db()
+        report = run_full_ingest(db_path)
+        self.assertGreater(report.corpus_stats["with_moic"], 10)
+        os.unlink(db_path)
 
 
 if __name__ == "__main__":

@@ -1,12 +1,14 @@
 """CLI for the public deals corpus.
 
 Usage (from repo root with venv active):
-    python -m rcm_mc.data_public.corpus_cli seed   --db corpus.db
-    python -m rcm_mc.data_public.corpus_cli stats  --db corpus.db
-    python -m rcm_mc.data_public.corpus_cli query  --db corpus.db [--buyer KKR] [--year-min 2015]
-    python -m rcm_mc.data_public.corpus_cli ingest --db corpus.db --source pe_portfolios
-    python -m rcm_mc.data_public.corpus_cli rates  --db corpus.db
-    python -m rcm_mc.data_public.corpus_cli intel  --db corpus.db --deal-id seed_007
+    python -m rcm_mc.data_public.corpus_cli seed        --db corpus.db
+    python -m rcm_mc.data_public.corpus_cli stats       --db corpus.db
+    python -m rcm_mc.data_public.corpus_cli query       --db corpus.db [--buyer KKR] [--year-min 2015]
+    python -m rcm_mc.data_public.corpus_cli ingest      --db corpus.db --source pe_portfolios
+    python -m rcm_mc.data_public.corpus_cli full-ingest --db corpus.db [--sec-edgar] [--live-pe]
+    python -m rcm_mc.data_public.corpus_cli rates       --db corpus.db
+    python -m rcm_mc.data_public.corpus_cli intel       --db corpus.db --deal-id seed_007
+    python -m rcm_mc.data_public.corpus_cli sensitivity --db corpus.db --deal-id seed_008
 
 Runs fully standalone — no server required.
 """
@@ -166,6 +168,36 @@ def _cmd_intel(args: argparse.Namespace) -> None:
             print(f"    • {n}")
 
 
+def _cmd_full_ingest(args: argparse.Namespace) -> None:
+    from .ingest_pipeline import run_full_ingest, print_ingest_report
+    report = run_full_ingest(
+        args.db,
+        sec_edgar=args.sec_edgar,
+        live_pe=args.live_pe,
+        verbose=True,
+    )
+    print_ingest_report(report)
+    if args.json:
+        import json as _json
+        print(_json.dumps(report.as_dict(), indent=2, default=str))
+
+
+def _cmd_sensitivity(args: argparse.Namespace) -> None:
+    corpus = DealsCorpus(args.db)
+    deal = corpus.get(args.deal_id)
+    if not deal:
+        print(f"Deal '{args.deal_id}' not found.")
+        sys.exit(1)
+
+    from .payer_sensitivity import sensitivity_table, run_all_scenarios
+    if args.json:
+        results = run_all_scenarios(deal)
+        import json as _json
+        print(_json.dumps([r.as_dict() for r in results], indent=2, default=str))
+    else:
+        print(sensitivity_table(deal))
+
+
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
         prog="corpus",
@@ -208,6 +240,19 @@ def main(argv=None) -> None:
                    help="JSON string of model assumptions, e.g. '{\"entry_debt_mm\": 3500}'")
     n.add_argument("--json", action="store_true")
 
+    # full-ingest
+    fi = sub.add_parser("full-ingest", help="Run full corpus ingest pipeline (all sources)")
+    fi.add_argument("--sec-edgar", action="store_true", dest="sec_edgar",
+                    help="Include live SEC EDGAR scrape")
+    fi.add_argument("--live-pe", action="store_true", dest="live_pe",
+                    help="Include live PE firm portfolio scrape")
+    fi.add_argument("--json", action="store_true")
+
+    # sensitivity
+    sv = sub.add_parser("sensitivity", help="Run payer-mix sensitivity analysis on a deal")
+    sv.add_argument("--deal-id", required=True, dest="deal_id")
+    sv.add_argument("--json", action="store_true")
+
     args = parser.parse_args(argv)
 
     dispatch = {
@@ -215,8 +260,10 @@ def main(argv=None) -> None:
         "stats": _cmd_stats,
         "query": _cmd_query,
         "ingest": _cmd_ingest,
+        "full-ingest": _cmd_full_ingest,
         "rates": _cmd_rates,
         "intel": _cmd_intel,
+        "sensitivity": _cmd_sensitivity,
     }
     dispatch[args.cmd](args)
 
