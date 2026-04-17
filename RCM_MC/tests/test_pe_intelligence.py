@@ -4474,5 +4474,72 @@ class TestReconcile(unittest.TestCase):
         json.dumps([f.to_dict() for f in findings])
 
 
+# ── Capital plan ──────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CapexLine,
+    CapitalPlan,
+    CapitalPlanFinding,
+    has_plan_mismatch,
+    validate_capital_plan,
+)
+
+
+def _valid_plan() -> CapitalPlan:
+    return CapitalPlan(
+        deal_id="d1", subsector="acute_care",
+        annual_revenue=500_000_000, horizon_years=5,
+        lines=[
+            CapexLine(purpose="maintenance", year=1, amount=10_000_000),
+            CapexLine(purpose="maintenance", year=2, amount=10_000_000),
+            CapexLine(purpose="maintenance", year=3, amount=10_000_000),
+            CapexLine(purpose="growth", year=1, amount=5_000_000),
+            CapexLine(purpose="growth", year=2, amount=8_000_000),
+            CapexLine(purpose="it", year=1, amount=3_000_000),
+        ],
+    )
+
+
+class TestCapitalPlan(unittest.TestCase):
+
+    def test_totals(self) -> None:
+        plan = _valid_plan()
+        self.assertEqual(plan.total_capex(), 46_000_000)
+        self.assertEqual(plan.total_by_year()[1], 18_000_000)
+
+    def test_validate_within_intensity(self) -> None:
+        plan = _valid_plan()
+        findings = validate_capital_plan(plan)
+        self.assertFalse(has_plan_mismatch(findings))
+
+    def test_intensity_breach_flagged(self) -> None:
+        plan = _valid_plan()
+        plan.lines.append(CapexLine(purpose="growth", year=3, amount=200_000_000))
+        findings = validate_capital_plan(plan)
+        self.assertTrue(has_plan_mismatch(findings))
+
+    def test_year1_concentration_flagged(self) -> None:
+        plan = CapitalPlan(
+            deal_id="d2", subsector="acute_care",
+            annual_revenue=100_000_000, horizon_years=5,
+            lines=[
+                CapexLine(purpose="maintenance", year=1, amount=15_000_000),
+            ],
+        )
+        findings = validate_capital_plan(plan)
+        self.assertTrue(any(f.check == "year1_concentration" and not f.passed
+                            for f in findings))
+
+    def test_missing_revenue_returns_warning(self) -> None:
+        plan = CapitalPlan(deal_id="d3", subsector="acute_care", annual_revenue=None)
+        findings = validate_capital_plan(plan)
+        self.assertTrue(any(f.severity == "warning" for f in findings))
+
+    def test_plan_to_dict(self) -> None:
+        import json
+        plan = _valid_plan()
+        json.dumps(plan.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

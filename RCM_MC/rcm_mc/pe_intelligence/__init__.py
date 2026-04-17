@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .capital_plan import (
+    CapexLine,
+    CapitalPlan,
+    CapitalPlanFinding,
+    has_plan_mismatch,
+    validate_capital_plan,
+)
 from .recon import (
     ReconFinding,
     has_mismatch,
@@ -533,4 +540,9 @@ __all__ = [
     "ReconFinding",
     "has_mismatch",
     "reconcile",
+    "CapexLine",
+    "CapitalPlan",
+    "CapitalPlanFinding",
+    "has_plan_mismatch",
+    "validate_capital_plan",
 ]
