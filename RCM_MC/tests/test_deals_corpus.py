@@ -3557,6 +3557,114 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestDealMemoGenerator(unittest.TestCase):
+    """Tests for deal_memo_generator module."""
+
+    def _sample_deal(self):
+        return {
+            "source_id": "test_deal",
+            "deal_name": "Acme Health Systems – Blackstone LBO",
+            "year": 2021,
+            "buyer": "Blackstone",
+            "seller": "Acme Health founders",
+            "ev_mm": 1200.0,
+            "ebitda_at_entry_mm": 110.0,
+            "hold_years": 5.0,
+            "realized_moic": 2.8,
+            "realized_irr": 0.21,
+            "payer_mix": {"medicare": 0.40, "medicaid": 0.20, "commercial": 0.40},
+            "leverage_x": 5.5,
+            "state": "TX",
+            "notes": "acute hospital system lbo southeast",
+        }
+
+    def _corpus(self):
+        import tempfile, os
+        db = tempfile.mktemp(suffix=".db")
+        corpus = DealsCorpus(db)
+        corpus.seed()
+        deals = corpus.list()
+        return db, deals
+
+    def test_generate_deal_memo_returns_partner_memo(self):
+        from rcm_mc.data_public.deal_memo_generator import generate_deal_memo, PartnerMemo
+        _, deals = self._corpus()
+        memo = generate_deal_memo(self._sample_deal(), deals)
+        self.assertIsInstance(memo, PartnerMemo)
+
+    def test_memo_has_signal(self):
+        from rcm_mc.data_public.deal_memo_generator import generate_deal_memo
+        _, deals = self._corpus()
+        memo = generate_deal_memo(self._sample_deal(), deals)
+        self.assertIn(memo.heuristic_signal, ["red", "amber", "yellow", "green"])
+
+    def test_memo_has_comps(self):
+        from rcm_mc.data_public.deal_memo_generator import generate_deal_memo
+        _, deals = self._corpus()
+        memo = generate_deal_memo(self._sample_deal(), deals)
+        self.assertIsInstance(memo.comps, list)
+        self.assertGreater(len(memo.comps), 0)
+
+    def test_memo_has_corpus_distribution(self):
+        from rcm_mc.data_public.deal_memo_generator import generate_deal_memo
+        _, deals = self._corpus()
+        memo = generate_deal_memo(self._sample_deal(), deals)
+        dist = memo.corpus_distribution
+        self.assertIn("moic_p50", dist)
+
+    def test_memo_text_output(self):
+        from rcm_mc.data_public.deal_memo_generator import generate_deal_memo, memo_text
+        _, deals = self._corpus()
+        memo = generate_deal_memo(self._sample_deal(), deals)
+        text = memo_text(memo)
+        self.assertIn("PARTNER DEAL MEMO", text)
+        self.assertIn("Blackstone", text)
+        self.assertIn("Comparable Deals", text)
+
+    def test_memo_markdown_output(self):
+        from rcm_mc.data_public.deal_memo_generator import generate_deal_memo, memo_markdown
+        _, deals = self._corpus()
+        memo = generate_deal_memo(self._sample_deal(), deals)
+        md = memo_markdown(memo)
+        self.assertIn("# Partner Deal Memo", md)
+        self.assertIn("| EV |", md)
+
+    def test_memo_with_cms_calibration(self):
+        from rcm_mc.data_public.deal_memo_generator import generate_deal_memo
+        import pandas as pd
+        import numpy as np
+        _, deals = self._corpus()
+        rng = np.random.default_rng(0)
+        n = 200
+        df = pd.DataFrame({
+            "provider_type": (["SNF", "HHA"] * 100),
+            "state": (["TX", "CA"] * 100),
+            "year": [2021] * n,
+            "_cms_total_payment_mm": rng.uniform(1, 50, n).tolist(),
+            "bene_cnt": rng.integers(10, 300, n).tolist(),
+            "srvcs_cnt": rng.integers(50, 1000, n).tolist(),
+            "avg_mdcr_alowd_amt": rng.uniform(50, 200, n).tolist(),
+            "avg_mdcr_pymt_amt": rng.uniform(40, 180, n).tolist(),
+            "avg_mdcr_stdzd_amt": rng.uniform(40, 180, n).tolist(),
+        })
+        memo = generate_deal_memo(self._sample_deal(), deals, cms_df=df, cms_year=2021)
+        # calibration should run without error
+        self.assertIsNotNone(memo)
+
+    def test_memo_no_errors_on_clean_deal(self):
+        from rcm_mc.data_public.deal_memo_generator import generate_deal_memo
+        _, deals = self._corpus()
+        memo = generate_deal_memo(self._sample_deal(), deals)
+        # Should have no or minimal errors
+        self.assertLessEqual(len(memo.errors), 2)
+
+    def test_memo_timing_populated(self):
+        from rcm_mc.data_public.deal_memo_generator import generate_deal_memo
+        _, deals = self._corpus()
+        memo = generate_deal_memo(self._sample_deal(), deals)
+        self.assertIsInstance(memo.timing, dict)
+
+
 class TestSeniorPartnerHeuristics(unittest.TestCase):
     """Tests for senior_partner_heuristics module."""
 

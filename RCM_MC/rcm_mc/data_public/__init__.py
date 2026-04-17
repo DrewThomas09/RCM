@@ -141,6 +141,13 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .deal_memo_generator import (
+    PartnerMemo,
+    generate_deal_memo,
+    memo_text,
+    memo_markdown,
+    quick_deal_memo,
+)
 from .senior_partner_heuristics import (
     EntryMultipleBand,
     get_entry_band,
@@ -294,6 +301,11 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "PartnerMemo",
+    "generate_deal_memo",
+    "memo_text",
+    "memo_markdown",
+    "quick_deal_memo",
     "EntryMultipleBand",
     "get_entry_band",
     "multiple_flag",
