@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 87
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 88
 modules + test suite:
 
 | Module | Role |
@@ -793,6 +793,7 @@ modules + test suite:
 | `exit_planning.py` | Year-by-year exit preparation roadmap |
 | `benchmark_bands.py` | SG&A / interest / SSSG / NWC / outpatient bands |
 | `payer_mix_risk.py` | Payer HHI + MA / MMC / ACA / mix-shift flags |
+| `peer_discovery.py` | Similarity-weighted peer ranking |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1794,7 +1795,24 @@ Finer-grained payer-mix analysis beyond simple regime classification:
 
 ---
 
-## 90. Change log
+## 90. Peer discovery (`peer_discovery.py`)
+
+Finds the most-similar peers for a candidate deal from a universe
+using a weighted similarity function over:
+
+- Sector (30%)
+- Size bucket (20%)
+- Payer regime (20%)
+- State (10%)
+- Margin band (10%)
+- Leverage band (10%)
+
+Used pre-IC to surface known analogs and post-close to build
+cohorts for lever-benchmarking.
+
+---
+
+## 91. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1926,3 +1944,5 @@ Finer-grained payer-mix analysis beyond simple regime classification:
 - **2026-04-17** — Added `benchmark_bands.py` and
   `payer_mix_risk.py`. Full inventory: 87 modules, 865
   pe_intelligence unit tests.
+- **2026-04-17** — Added `peer_discovery.py`. Full inventory: 88
+  modules, 871 pe_intelligence unit tests.
