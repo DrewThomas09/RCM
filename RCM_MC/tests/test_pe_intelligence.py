@@ -2212,5 +2212,101 @@ class TestLPPitch(unittest.TestCase):
         self.assertNotIn("this is where deals die", md.lower())
 
 
+# ── 100-day plan ────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    HundredDayPlan,
+    PlanAction,
+    generate_plan,
+    render_plan_markdown,
+)
+
+
+class TestHundredDayPlanGenerator(unittest.TestCase):
+
+    def test_baseline_plan_has_four_workstreams(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx, deal_id="d1")
+        plan = generate_plan(review)
+        ws = plan.by_workstream()
+        for name in ("operational", "financial", "people", "systems"):
+            self.assertIn(name, ws)
+            self.assertGreater(len(ws[name]), 0)
+
+    def test_ar_heuristic_adds_ar_diagnosis_action(self) -> None:
+        ctx = HeuristicContext(days_in_ar=75,
+                               payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx, deal_id="d2")
+        plan = generate_plan(review)
+        titles = [a.title for a in plan.actions]
+        self.assertIn("AR-aging diagnosis + remediation plan", titles)
+
+    def test_covenant_action_when_headroom_tight(self) -> None:
+        ctx = HeuristicContext(covenant_headroom_pct=0.08,
+                               payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx, deal_id="d3")
+        plan = generate_plan(review)
+        titles = [a.title for a in plan.actions]
+        self.assertIn("Covenant-cushion review + lender engagement", titles)
+
+    def test_medicare_heavy_adds_cms_watch_action(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.60, "commercial": 0.30, "medicaid": 0.10},
+            ebitda_m=50.0,
+        )
+        review = partner_review_from_context(ctx, deal_id="d4")
+        plan = generate_plan(review)
+        titles = [a.title for a in plan.actions]
+        self.assertIn("CMS / IPPS rate-update monitoring", titles)
+
+    def test_actions_sorted_by_due_day(self) -> None:
+        ctx = HeuristicContext(
+            days_in_ar=75, covenant_headroom_pct=0.08,
+            payer_mix={"medicare": 0.60, "commercial": 0.40},
+        )
+        review = partner_review_from_context(ctx, deal_id="d5")
+        plan = generate_plan(review)
+        # Ensure sort invariant.
+        for i in range(len(plan.actions) - 1):
+            self.assertLessEqual(plan.actions[i].due_day,
+                                 plan.actions[i + 1].due_day)
+
+    def test_plan_summary_mentions_p0_count(self) -> None:
+        ctx = HeuristicContext(
+            days_in_ar=75, covenant_headroom_pct=0.08,
+            payer_mix={"commercial": 0.55},
+        )
+        review = partner_review_from_context(ctx, deal_id="d6")
+        plan = generate_plan(review)
+        self.assertIn("P0", plan.summary)
+
+    def test_plan_to_dict_roundtrip(self) -> None:
+        import json
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx, deal_id="d7")
+        plan = generate_plan(review)
+        json.dumps(plan.to_dict())
+
+
+class TestHundredDayPlanRender(unittest.TestCase):
+
+    def test_markdown_has_workstream_headers(self) -> None:
+        ctx = HeuristicContext(
+            days_in_ar=75, covenant_headroom_pct=0.08,
+            payer_mix={"commercial": 0.55},
+        )
+        review = partner_review_from_context(ctx, deal_id="d8", deal_name="Test")
+        md = render_plan_markdown(generate_plan(review))
+        for heading in ("100-Day Plan", "## Operational",
+                        "## Financial", "## People", "## Systems"):
+            self.assertIn(heading, md)
+
+    def test_markdown_mentions_day_numbers(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx, deal_id="d9")
+        md = render_plan_markdown(generate_plan(review))
+        self.assertIn("D+30", md)
+
+
 if __name__ == "__main__":
     unittest.main()

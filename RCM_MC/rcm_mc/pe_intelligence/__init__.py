@@ -81,6 +81,12 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .hundred_day_plan import (
+    HundredDayPlan,
+    PlanAction,
+    generate_plan,
+    render_plan_markdown,
+)
 from .lp_pitch import (
     render_lp_all,
     render_lp_html,
@@ -212,4 +218,8 @@ __all__ = [
     "render_lp_all",
     "render_lp_html",
     "render_lp_markdown",
+    "HundredDayPlan",
+    "PlanAction",
+    "generate_plan",
+    "render_plan_markdown",
 ]
