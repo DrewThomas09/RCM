@@ -2382,7 +2382,32 @@ Partner guidance on base-case rate assumption:
 
 ---
 
-## 114. Change log
+## 114. Portfolio rollup viewer (`portfolio_rollup_viewer.py`)
+
+Fund-level dashboard over per-deal snapshots. Aggregates:
+
+- Totals: cost, NAV, realized, unrealized.
+- **Weighted gross MOIC** = (realized + NAV) / cost.
+- **Cost-weighted IRR** (deals with current_irr populated only).
+- **Status counts** — held / exited / written off.
+- **Top 5 gainers / losers** by period-over-period NAV delta.
+- **By sub-sector** — deal count + NAV + cost.
+- **By vintage year** — deal count.
+- **By stage** — platform vs add-on.
+
+Partner note:
+
+- MOIC ≥ 2.5x → "strong".
+- 1.8-2.5x → "on track".
+- 1.2-1.8x → "pedestrian; need outperformance from later vintages".
+- < 1.2x → "under water; GP intervention required".
+
+This is the one-page view partners share with the Investment
+Committee and LPs. Fast, honest, no hedging.
+
+---
+
+## 115. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2580,3 +2605,7 @@ Partner guidance on base-case rate assumption:
 - **2026-04-17** — Added `pricing_power_diagnostic.py` (§113) —
   6-dim weighted score + base-case rate guidance. Full inventory:
   111 modules, 1,097 pe_intelligence unit tests.
+- **2026-04-17** — Added `portfolio_rollup_viewer.py` (§114) —
+  fund-level aggregation + top movers + sub-sector / vintage /
+  stage cuts. Full inventory: 112 modules, 1,108 pe_intelligence
+  unit tests.
