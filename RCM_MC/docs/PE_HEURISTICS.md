@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 32
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 34
 modules + test suite:
 
 | Module | Role |
@@ -738,6 +738,8 @@ modules + test suite:
 | `regulatory_stress.py` | $ EBITDA impact of CMS/Medicaid/340B shocks |
 | `cash_conversion.py` | FCF/EBITDA by subsector with peer bands |
 | `lp_side_letter_flags.py` | LP conformance (sector / state / concentration / ESG) |
+| `pipeline_tracker.py` | Sourcing funnel + stale-deal detection |
+| `operational_kpi_cascade.py` | Rank KPI levers by $ EBITDA impact |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -929,7 +931,36 @@ Returns `ConformanceFinding` items flagged as "breach" / "warning" /
 
 ---
 
-## 35. Change log
+## 35. Pipeline tracker (`pipeline_tracker.py`)
+
+Sourcing-funnel analyzer: counts deals at each stage
+(sourced → screened → ioi → meeting → loi → exclusive → closed),
+computes stage-to-stage yields with target benchmarks, and flags
+stages where the funnel is leaking. `stale_deals(today, threshold)`
+surfaces pipeline items with no activity in 60+ days.
+
+`source_mix(deals)` returns channel breakdown (banker / direct /
+sponsor) — useful for partnership-review conversations.
+
+---
+
+## 36. Operational KPI cascade (`operational_kpi_cascade.py`)
+
+Ranks operating KPIs by $ EBITDA impact given current/target values:
+
+- `initial_denial_rate` — × revenue × flow factor (default 50%).
+- `final_writeoff_rate` — × revenue (100% flow-through).
+- `days_in_ar` — × revenue / 365 (flagged as one-time cash).
+- `clean_claim_rate` — × revenue × flow factor (default 30%).
+- `labor_pct_of_revenue` — × revenue (100% flow-through).
+
+`build_cascade(inputs)` returns movements sorted by $ impact desc.
+`total_ebitda_impact(cascade)` excludes the AR one-time cash from
+the recurring EBITDA total — prevents double-counting.
+
+---
+
+## 37. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -982,3 +1013,8 @@ Returns `ConformanceFinding` items flagged as "breach" / "warning" /
 - **2026-04-17** — Added `cash_conversion.py` (FCF/EBITDA by
   subsector) and `lp_side_letter_flags.py` (LP conformance screen).
   Full inventory: 32 modules, 415 pe_intelligence unit tests.
+- **2026-04-17** — Added `pipeline_tracker.py` (sourcing-funnel
+  stats + stale-deal detection) and `operational_kpi_cascade.py`
+  (rank KPIs by $ EBITDA impact, segregate cash vs recurring).
+  Full inventory: 34 modules, 431 pe_intelligence unit tests.
+  Full project suite 3552 passed.
