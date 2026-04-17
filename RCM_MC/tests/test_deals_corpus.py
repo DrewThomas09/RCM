@@ -3169,5 +3169,98 @@ class TestCmsStressTest(unittest.TestCase):
         self.assertIn("Operating Posture", txt)
 
 
+# ===========================================================================
+# TestCmsOpportunityScoring
+# ===========================================================================
+
+class TestCmsOpportunityScoring(unittest.TestCase):
+
+    def _sample_df(self):
+        import pandas as pd
+        data = []
+        for pt in ["Cardiology", "Orthopedic", "Neurology"]:
+            for st in ["TX", "CA", "NY"]:
+                for i in range(10):
+                    data.append({
+                        "provider_type": pt,
+                        "state": st,
+                        "total_medicare_payment_amt": (i + 1) * 10000,
+                        "total_services": (i + 1) * 100,
+                        "total_unique_benes": (i + 1) * 80,
+                        "total_submitted_chrg_amt": (i + 1) * 15000,
+                        "beneficiary_average_risk_score": 1.0 + i * 0.05,
+                    })
+        return pd.DataFrame(data)
+
+    def test_enrich_features_adds_pps(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import enrich_features
+        out = enrich_features(self._sample_df())
+        self.assertIn("payment_per_service", out.columns)
+        self.assertIn("payment_per_bene", out.columns)
+
+    def test_enrich_features_no_double_compute(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import enrich_features
+        df = self._sample_df()
+        df["payment_per_service"] = 999.0  # already present
+        out = enrich_features(df)
+        self.assertTrue((out["payment_per_service"] == 999.0).all())
+
+    def test_state_provider_opportunities_returns_df(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import state_provider_opportunities
+        out = state_provider_opportunities(self._sample_df(), min_rows=1)
+        self.assertFalse(out.empty)
+        self.assertIn("regional_opportunity_score", out.columns)
+        self.assertIn("provider_type", out.columns)
+        self.assertIn("state", out.columns)
+
+    def test_opportunity_score_in_range(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import state_provider_opportunities
+        out = state_provider_opportunities(self._sample_df(), min_rows=1)
+        self.assertTrue((out["regional_opportunity_score"] >= 0).all())
+        self.assertTrue((out["regional_opportunity_score"] <= 1.01).all())
+
+    def test_missing_columns_returns_empty(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import state_provider_opportunities
+        import pandas as pd
+        out = state_provider_opportunities(pd.DataFrame({"x": [1]}), min_rows=1)
+        self.assertTrue(out.empty)
+
+    def test_benchmark_flags_high_low_normal(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import provider_state_benchmark_flags
+        out = provider_state_benchmark_flags(self._sample_df(), min_rows=1)
+        if not out.empty:
+            valid = {"high_price", "normal", "low_price"}
+            for f in out["benchmark_flag"]:
+                self.assertIn(str(f), valid)
+
+    def test_provider_screen_adds_market_share(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import provider_screen
+        out = provider_screen(self._sample_df())
+        self.assertFalse(out.empty)
+        self.assertIn("market_share", out.columns)
+        self.assertIn("opportunity_score", out.columns)
+        total_share = out["market_share"].sum()
+        self.assertAlmostEqual(total_share, 1.0, places=5)
+
+    def test_provider_screen_empty_input(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import provider_screen
+        import pandas as pd
+        out = provider_screen(pd.DataFrame({"x": [1]}))
+        self.assertTrue(out.empty)
+
+    def test_opportunity_table_string(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import state_provider_opportunities, opportunity_table
+        out = state_provider_opportunities(self._sample_df(), min_rows=1)
+        txt = opportunity_table(out)
+        self.assertIn("Opportunity", txt)
+        self.assertIn("Score", txt)
+
+    def test_provider_screen_table_string(self):
+        from rcm_mc.data_public.cms_opportunity_scoring import provider_screen, opportunity_table
+        out = provider_screen(self._sample_df())
+        txt = opportunity_table(out)
+        self.assertIn("Opportunity", txt)
+
+
 if __name__ == "__main__":
     unittest.main()

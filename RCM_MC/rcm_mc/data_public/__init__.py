@@ -124,6 +124,13 @@ from .cms_stress_test import (
     stress_table,
     posture_table,
 )
+from .cms_opportunity_scoring import (
+    enrich_features,
+    state_provider_opportunities,
+    provider_state_benchmark_flags,
+    provider_screen,
+    opportunity_table,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -221,4 +228,9 @@ __all__ = [
     "provider_operating_posture",
     "stress_table",
     "posture_table",
+    "enrich_features",
+    "state_provider_opportunities",
+    "provider_state_benchmark_flags",
+    "provider_screen",
+    "opportunity_table",
 ]
