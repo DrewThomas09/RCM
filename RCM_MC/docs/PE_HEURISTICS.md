@@ -3504,7 +3504,45 @@ revenue-impact % and partner note:
 
 ---
 
-## 147. Change log
+## 147. Deal smell detectors (`deal_smell_detectors.py`)
+
+**Partner statement:** "I've seen this before, and I didn't
+like it."
+
+Different from historical_failure_library (named/dated real
+failures) and partner_traps_library (specific pitch claims).
+These are SMELLS — combined-signal patterns partners recognize
+on sight. Each prints in partner-voice shorthand.
+
+Nine smells currently wired:
+
+- **rollup_running_out_of_boltons** — ≥ 5 acq/yr + thin pipeline
+  + platform ≥ 3y.
+- **denials_paper_over_payer_concentration** — denial ≥ 9%,
+  rising, + top payer ≥ 35%.
+- **founder_wants_out** — founder CEO + (age 60+ OR retiring
+  flag).
+- **ebitda_pulled_forward** — recent EBITDA jump ≥ 15% + close
+  deadline ≤ 8 weeks + pro-forma ≥ 10%.
+- **covenant_already_tight** — leverage ≥ 6.0x + headroom ≤ 10%.
+- **clinician_flight_in_progress** — ≥ 15% of headcount departed
+  in last 12 months.
+- **organic_declining_under_rollup** — negative organic + strong
+  acquisition growth (AdaptHealth pattern).
+- **management_churn** — ≥ 3 C-suite transitions in 2 years.
+- **quality_compliance_canary** — CMS survey issues + ≥ 2
+  litigation items.
+
+Partner note:
+
+- ≥ 2 high smells → "'something isn't right' deal; pass unless
+  specific remediation for each is on the table."
+- 1 high → "push IC back and diligence the specific signal."
+- 0 high → "passes the gut-check layer."
+
+---
+
+## 148. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3830,3 +3868,6 @@ revenue-impact % and partner note:
   (§146) — 12 named 2026-2028 regulatory events with subsector +
   $ impact; events-for-deal selector by hold period. Full
   inventory: 144 modules, 1,459 pe_intelligence unit tests.
+- **2026-04-17** — Added `deal_smell_detectors.py` (§147) — 9
+  partner-reflex "smells like X" patterns from combined signals.
+  Full inventory: 145 modules, 1,472 pe_intelligence unit tests.
