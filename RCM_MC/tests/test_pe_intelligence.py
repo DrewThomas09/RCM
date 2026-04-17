@@ -3515,5 +3515,77 @@ class TestTotalWCRelease(unittest.TestCase):
         json.dumps(summary.to_dict())
 
 
+# ── Fund model ─────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    Fund,
+    FundDeal,
+    FundProjection,
+    commentary_for_quartile,
+    fund_vintage_percentile,
+    project_fund,
+)
+
+
+class TestFundProjection(unittest.TestCase):
+
+    def test_simple_one_deal_fund(self) -> None:
+        fund = Fund(name="F1", fund_size=500_000_000, vintage_year=2024)
+        deals = [FundDeal(deal_id="d1", commitment=100_000_000,
+                          hold_years=5.0, projected_moic=2.5,
+                          investment_year=1)]
+        projections = project_fund(fund, deals, horizon_years=8)
+        self.assertEqual(len(projections), 8)
+        # By year 6 (after exit), deal distributed 100M × 2.5 = 250M.
+        y6 = next(p for p in projections if p.year == 6)
+        self.assertGreaterEqual(y6.distributions_to_date, 250_000_000)
+
+    def test_tvpi_converges_to_moic(self) -> None:
+        fund = Fund(name="F1", fund_size=100_000_000, vintage_year=2024,
+                    management_fee_years=0, management_fee_pct=0.0)
+        deals = [FundDeal(deal_id="d1", commitment=100_000_000,
+                          hold_years=3.0, projected_moic=2.0,
+                          investment_year=1)]
+        projections = project_fund(fund, deals, horizon_years=6)
+        y6 = projections[-1]
+        # After exit, distributions = 200M; called = 100M; TVPI ~ 2.0x.
+        self.assertAlmostEqual(y6.tvpi, 2.0, places=2)
+
+    def test_nav_tracks_interim_progress(self) -> None:
+        fund = Fund(name="F1", fund_size=100_000_000, vintage_year=2024,
+                    management_fee_years=0, management_fee_pct=0.0)
+        deals = [FundDeal(deal_id="d1", commitment=100_000_000,
+                          hold_years=4.0, projected_moic=2.0,
+                          investment_year=1)]
+        projections = project_fund(fund, deals, horizon_years=5)
+        # NAV should grow during the hold, then drop to 0 post-exit.
+        nav_series = [p.nav for p in projections]
+        self.assertGreater(nav_series[1], nav_series[0])  # year 2 > year 1
+        self.assertEqual(nav_series[-1], 0)  # year 5 (post-exit) = 0
+
+
+class TestFundVintagePercentile(unittest.TestCase):
+
+    def test_high_tvpi_is_top_quartile(self) -> None:
+        q = fund_vintage_percentile("tvpi", 2.8, 2024)
+        self.assertEqual(q, "Q1")
+
+    def test_low_tvpi_is_bottom_quartile(self) -> None:
+        q = fund_vintage_percentile("tvpi", 1.2, 2024)
+        self.assertEqual(q, "Q4")
+
+    def test_unknown_metric_returns_none(self) -> None:
+        self.assertIsNone(fund_vintage_percentile("made_up", 1.0, 2024))
+
+
+class TestQuartileCommentary(unittest.TestCase):
+
+    def test_q1_is_positive(self) -> None:
+        self.assertIn("Top", commentary_for_quartile("Q1"))
+
+    def test_q4_warns_fundraise(self) -> None:
+        self.assertIn("fundraise", commentary_for_quartile("Q4"))
+
+
 if __name__ == "__main__":
     unittest.main()

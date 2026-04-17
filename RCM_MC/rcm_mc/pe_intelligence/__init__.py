@@ -81,6 +81,14 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .fund_model import (
+    Fund,
+    FundDeal,
+    FundProjection,
+    commentary_for_quartile,
+    fund_vintage_percentile,
+    project_fund,
+)
 from .working_capital import (
     WCRelease,
     WCSummary,
@@ -376,4 +384,10 @@ __all__ = [
     "ar_days_to_cash",
     "inventory_days_to_cash",
     "total_wc_release",
+    "Fund",
+    "FundDeal",
+    "FundProjection",
+    "commentary_for_quartile",
+    "fund_vintage_percentile",
+    "project_fund",
 ]
