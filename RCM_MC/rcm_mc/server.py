@@ -1824,6 +1824,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             min_deals = int(_qs.get("min_deals", ["3"])[0]) if _qs.get("min_deals", ["3"])[0].isdigit() else 3
             from .ui.data_public.sponsor_league_page import render_sponsor_league
             return self._send_html(render_sponsor_league(min_deals=min_deals, sort_by=sort_by))
+        if path == "/exit-timing":
+            from .ui.data_public.exit_timing_page import render_exit_timing
+            return self._send_html(render_exit_timing())
         if path == "/query":
             return self._route_deal_query()
         if path == "/benchmarks":

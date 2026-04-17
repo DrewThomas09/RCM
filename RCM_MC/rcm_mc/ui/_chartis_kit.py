@@ -59,6 +59,8 @@ _CORPUS_NAV = [
     {"label": "Deals Library",  "href": "/deals-library",   "icon": "▤"},
     {"label": "Market Rates",   "href": "/market-rates",    "icon": "▦"},
     {"label": "Backtest",       "href": "/backtest",         "icon": "▣"},
+    {"label": "Sponsor League", "href": "/sponsor-league",  "icon": "▤"},
+    {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
