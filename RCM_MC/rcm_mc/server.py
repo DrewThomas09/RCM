@@ -1815,6 +1815,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             region = _qs.get("region", [""])[0]
             from .ui.data_public.market_rates_page import render_market_rates
             return self._send_html(render_market_rates(group_by=group_by, sector_filter=sector, payer_filter=payer, region_filter=region))
+        if path == "/backtest":
+            from .ui.data_public.backtest_page import render_backtest
+            return self._send_html(render_backtest())
         if path == "/query":
             return self._route_deal_query()
         if path == "/benchmarks":

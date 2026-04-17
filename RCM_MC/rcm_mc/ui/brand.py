@@ -94,6 +94,7 @@ NAV_ITEMS = [
     {"separator": True, "label": "CORPUS"},
     {"label": "Deals Library", "href": "/deals-library", "icon": "grid"},
     {"label": "Market Rates", "href": "/market-rates", "icon": "chart"},
+    {"label": "Backtest", "href": "/backtest", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
 ]
 
