@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 67
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 70
 modules + test suite:
 
 | Module | Role |
@@ -773,6 +773,9 @@ modules + test suite:
 | `reimbursement_bands.py` | Payer rate growth / gross-to-net / site-neutral parity |
 | `ebitda_quality.py` | Add-back classifier → partner-EBITDA |
 | `covenant_monitor.py` | Live covenant tracking + break-EBITDA |
+| `liquidity_monitor.py` | 13-week cash projection + runway |
+| `ma_pipeline.py` | Add-on acquisition funnel + capacity |
+| `esg_screen.py` | ESG exclusions + composite + reporting gaps |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1485,7 +1488,50 @@ Intended for the monthly ops-partner review cadence alongside
 
 ---
 
-## 70. Change log
+## 70. Liquidity monitor (`liquidity_monitor.py`)
+
+13-week cash projection with runway + covenant-floor breach
+detection. Projects opening / collections / outflows / debt-service
+/ ending balance per week. Flags:
+
+- **Red** when the projection breaches the covenant cash floor at
+  any week.
+- **Amber** when runway is under 26 weeks.
+- **Green** otherwise.
+
+---
+
+## 71. M&A pipeline (`ma_pipeline.py`)
+
+Add-on acquisition pipeline tracking:
+
+- Stage inventory across `sourced / outreach / loi / diligence /
+  closed / passed`.
+- Conversion probabilities per stage (sourced 30%, outreach 40%,
+  loi 60%, diligence 75%).
+- Weighted-close EBITDA = sum of target EBITDA × prob(close | stage).
+- Expected closes/year from active count × avg conversion × cycle
+  speed.
+- Capacity-check ratio vs platform EBITDA.
+
+---
+
+## 72. ESG screen (`esg_screen.py`)
+
+ESG diligence screen for LP reporting:
+
+- **Hard exclusions** — tobacco, firearms, short-term detention,
+  fossil-fuel-primary, controversial weapons. Any triggers → score
+  zero'd, gate closed.
+- **Composite scoring** — blend of E/S/G scores, board diversity
+  vs 30% threshold, and reporting completeness (scope-1/2,
+  DEI metrics, worker safety).
+- **Reporting gaps** — specific items missing from current tracking.
+- A..F grade; penalty of up to 25 points for reporting gaps.
+
+---
+
+## 73. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1587,4 +1633,7 @@ Intended for the monthly ops-partner review cadence alongside
   66 modules, 702 pe_intelligence unit tests.
 - **2026-04-17** — Added `covenant_monitor.py` (live covenant
   tracking + break-EBITDA math). Full inventory: 67 modules, 713
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `liquidity_monitor.py`, `ma_pipeline.py`,
+  `esg_screen.py`. Full inventory: 70 modules, 733
   pe_intelligence unit tests.
