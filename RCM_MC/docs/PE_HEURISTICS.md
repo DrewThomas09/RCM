@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 63
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 66
 modules + test suite:
 
 | Module | Role |
@@ -769,6 +769,9 @@ modules + test suite:
 | `service_line_analysis.py` | DRG/specialty mix + margin contribution |
 | `quality_metrics.py` | CMS Star / HRRP / HCAHPS → Medicare $ impact |
 | `labor_cost_analytics.py` | Contract labor / overtime / productivity |
+| `analyst_cheatsheet.py` | 1-page associate IC pre-read |
+| `reimbursement_bands.py` | Payer rate growth / gross-to-net / site-neutral parity |
+| `ebitda_quality.py` | Add-back classifier → partner-EBITDA |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1423,7 +1426,48 @@ productivity lever. Verdict: strong / moderate / drag.
 
 ---
 
-## 66. Change log
+## 66. Analyst cheatsheet (`analyst_cheatsheet.py`)
+
+Condensed IC pre-read for the associate. Renders a `PartnerReview`
+into a 1-page reference: top 5 facts, top 5 flags with partner-voice
+quotes, top 3 questions, and quick-number summary (IRR / MOIC /
+leverage / investability / stress grade). Different from the
+`ic_memo` renderer — this is the associate's desk reference during
+IC discussion, not the partner's document.
+
+---
+
+## 67. Reimbursement bands (`reimbursement_bands.py`)
+
+Payer-level rate-assumption bands:
+
+- **Rate growth** — Medicare 1.5-2.5%, Medicaid 0-2.5%, Commercial
+  3-5.5%. Above each band's ceiling requires a named story.
+- **Gross-to-net** — per-payer collection-ratio ranges (Medicare
+  28-42%, Medicaid 22-38%, Commercial 40-65%).
+- **HOPD / ASC parity** — site-neutral policy exposure via rate
+  ratio between HOPD and ASC / office equivalents.
+
+`run_reimbursement_bands(payer_rate_growths, gross_to_net_ratios,
+hopd_asc_parity)` runs every check with populated inputs.
+
+---
+
+## 68. EBITDA quality (`ebitda_quality.py`)
+
+Classifies add-backs against reported EBITDA:
+
+- **Defensible** (one_time, documented) — haircut 5-10%.
+- **Aggressive** (normalization, rent, CEO comp) — haircut 30-50%.
+- **Phantom** (synergies, run-rate, projected) — haircut 60-75%.
+
+Produces a partner-EBITDA (reported + haircut-adjusted add-backs)
+and a quality verdict (high / moderate / low / implausible) based
+on both the add-back ratio and phantom-share.
+
+---
+
+## 69. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1520,3 +1564,6 @@ productivity lever. Verdict: strong / moderate / drag.
   `service_line_analysis.py`, `quality_metrics.py`,
   `labor_cost_analytics.py`. Full inventory: 63 modules, 679
   pe_intelligence unit tests.
+- **2026-04-17** — Added `analyst_cheatsheet.py`,
+  `reimbursement_bands.py`, `ebitda_quality.py`. Full inventory:
+  66 modules, 702 pe_intelligence unit tests.
