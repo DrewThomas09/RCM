@@ -2247,7 +2247,34 @@ Partner note priorities:
 
 ---
 
-## 109. Change log
+## 109. Technology debt assessor (`technology_debt_assessor.py`)
+
+Scores tech debt across eight areas, each with severity + cost +
+timeline. Triggers:
+
+- **EHR** — legacy or ≥ 12 years old = high ($15M / 24mo);
+  aging or ≥ 8 years = medium ($3M / 12mo).
+- **Billing / RCM** — legacy = high ($5M / 18mo); aging = medium.
+- **Integrations** — ≥ 20 without API layer = high; ≥ 10 without
+  = medium.
+- **Security** — gaps in MFA / SSO / SOC 2 / HITRUST / recent pen
+  test; 3+ = high, else medium.
+- **Data / analytics** — no warehouse = high; partial = medium.
+- **Uptime** — > 48h outage/12mo = high; > 16h = medium.
+- **Eng staffing** — < 2 engineers per 1,000 employees = high.
+- **Cloud** — on-prem only = medium.
+
+Aggregate: total cost, longest-path months, risk score 0-100
+(15 × high + 7 × medium, capped). Partner note escalates:
+
+- 3+ high → "material pre-close risk; flag to IC".
+- 1-2 high → "fold into 100-day plan".
+- Medium only → "include in operating plan".
+- None → "clean".
+
+---
+
+## 110. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2430,3 +2457,6 @@ Partner note priorities:
 - **2026-04-17** — Added `growth_algorithm_diagnostic.py` (§108) —
   price/volume/mix/acquisition decomposition + quality score.
   Full inventory: 106 modules, 1,050 pe_intelligence unit tests.
+- **2026-04-17** — Added `technology_debt_assessor.py` (§109) —
+  8-area severity + cost + risk score. Full inventory: 107 modules,
+  1,061 pe_intelligence unit tests.
