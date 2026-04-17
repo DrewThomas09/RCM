@@ -1967,6 +1967,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.hold_optimizer_page import render_hold_optimizer
             return self._send_html(render_hold_optimizer(_qp))
+        if path == "/payer-stress":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.payer_stress_page import render_payer_stress
+            return self._send_html(render_payer_stress(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
