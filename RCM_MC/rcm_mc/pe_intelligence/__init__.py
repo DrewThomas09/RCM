@@ -320,6 +320,13 @@ from .post_mortem import (
     render_post_mortem_markdown,
     run_post_mortem,
 )
+from .cycle_timing import (
+    ALL_PHASES,
+    CycleInputs,
+    CycleResult,
+    classify_cycle,
+    render_cycle_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1003,4 +1010,9 @@ __all__ = [
     "PostMortemReport",
     "render_post_mortem_markdown",
     "run_post_mortem",
+    "ALL_PHASES",
+    "CycleInputs",
+    "CycleResult",
+    "classify_cycle",
+    "render_cycle_markdown",
 ]

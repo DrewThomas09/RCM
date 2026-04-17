@@ -7866,5 +7866,66 @@ class TestPostMortem(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Cycle timing ──────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ALL_PHASES,
+    CycleInputs,
+    CycleResult,
+    classify_cycle,
+    render_cycle_markdown,
+)
+
+
+class TestCycleTiming(unittest.TestCase):
+
+    def test_peak_classification(self) -> None:
+        r = classify_cycle(CycleInputs(
+            current_median_multiple=12.0, ten_year_avg_multiple=9.0,
+            deal_volume_yoy=0.20, lp_commitment_yoy=0.15,
+            fed_funds_direction="rising",
+        ))
+        self.assertIn(r.phase, ("peak", "mid_expansion"))
+
+    def test_contraction_classification(self) -> None:
+        r = classify_cycle(CycleInputs(
+            current_median_multiple=7.0, ten_year_avg_multiple=9.0,
+            deal_volume_yoy=-0.25, lp_commitment_yoy=-0.20,
+            fed_funds_direction="rising", debt_spread_bps=600,
+        ))
+        self.assertEqual(r.phase, "contraction")
+
+    def test_early_expansion(self) -> None:
+        # 8.5 vs 9.0 is -5.6% which is within the -10% contraction floor.
+        r = classify_cycle(CycleInputs(
+            current_median_multiple=8.5, ten_year_avg_multiple=9.0,
+            deal_volume_yoy=0.05, fed_funds_direction="falling",
+            debt_spread_bps=250,
+        ))
+        self.assertIn(r.phase, ("early_expansion", "mid_expansion"))
+
+    def test_no_signals_returns_default(self) -> None:
+        r = classify_cycle(CycleInputs())
+        self.assertEqual(r.confidence, 0.0)
+
+    def test_entry_exit_implications_populated(self) -> None:
+        r = classify_cycle(CycleInputs(
+            current_median_multiple=12.0, ten_year_avg_multiple=9.0,
+        ))
+        self.assertTrue(r.entry_implication)
+        self.assertTrue(r.exit_implication)
+
+    def test_markdown_renders(self) -> None:
+        md = render_cycle_markdown(classify_cycle(CycleInputs(
+            current_median_multiple=9.0, ten_year_avg_multiple=9.0,
+        )))
+        self.assertIn("# Market cycle timing", md)
+
+    def test_result_json(self) -> None:
+        import json
+        r = classify_cycle(CycleInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
