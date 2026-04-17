@@ -3182,7 +3182,49 @@ the propagation.
 
 ---
 
-## 138. Change log
+## 138. Exit story generator (`exit_story_generator.py`)
+
+**Partner statement:** "If I can't write the sell-side CIM
+headline at entry, I don't know what I'm buying."
+
+The exit story is NOT the investment thesis. It is the
+two-sentence pitch a banker will make in 5 years. The module
+composes it from: scale multiplier, revenue CAGR, recurring-
+EBITDA %, payer mix, CoE/category-leader flags, M&A count.
+
+Outputs:
+
+- **Headline** — "Premium strategic asset / Sponsor-ready
+  platform / Public-ready company" + subsector + NPR + EBITDA +
+  CAGR + scale multiple.
+- **Three bullets** — growth, quality of earnings, differentiation
+  or M&A. Capped at 3; banker discipline.
+- **Likely buyers** — based on target channel.
+- **Exit risk** — the derailer (low growth, pro-forma, M&A-
+  dependency, IPO window, cycle timing).
+- **Banker multiple range** — subsector base ± differentiation
+  adjustments (e.g., +0.5x CoE, +1.0x category leader, +0.25x
+  high recurring, +0.5x commercial ≥ 60%).
+
+Subsector bases (partner-approximated):
+
+- Hospital: 7-10x.
+- Specialty practice: 9-13x.
+- Outpatient ASC: 11-15x.
+- Home health: 10-13x.
+- DME: 8-11x.
+- Physician staffing: 7-10x.
+
+Partner note:
+
+- Weak story (low CAGR + <2 bullets) → "banker will struggle;
+  shift to continuation."
+- Strong (category leader / CoE) → "defensible range."
+- Middling → "workable; main risk: [X]."
+
+---
+
+## 139. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3471,3 +3513,7 @@ the propagation.
   turnover → agency premium → margin → quality/volume →
   covenant pressure with breach flag. Full inventory: 135
   modules, 1,361 pe_intelligence unit tests.
+- **2026-04-17** — Added `exit_story_generator.py` (§138) —
+  sell-side banker's exit pitch composed at entry; subsector
+  multiple ranges; likely-buyer list. Full inventory: 136
+  modules, 1,371 pe_intelligence unit tests.
