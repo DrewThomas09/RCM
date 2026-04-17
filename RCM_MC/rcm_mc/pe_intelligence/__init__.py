@@ -313,6 +313,13 @@ from .loi_drafter import (
     compose_loi,
     render_loi_markdown,
 )
+from .post_mortem import (
+    PostMortemFinding,
+    PostMortemInputs,
+    PostMortemReport,
+    render_post_mortem_markdown,
+    run_post_mortem,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -991,4 +998,9 @@ __all__ = [
     "LOIDraft",
     "compose_loi",
     "render_loi_markdown",
+    "PostMortemFinding",
+    "PostMortemInputs",
+    "PostMortemReport",
+    "render_post_mortem_markdown",
+    "run_post_mortem",
 ]

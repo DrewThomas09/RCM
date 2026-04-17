@@ -7788,5 +7788,83 @@ class TestLOIDrafter(unittest.TestCase):
         json.dumps(draft.to_dict())
 
 
+# ── Post-mortem ────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    PostMortemFinding,
+    PostMortemInputs,
+    PostMortemReport,
+    render_post_mortem_markdown,
+    run_post_mortem,
+)
+
+
+class TestPostMortem(unittest.TestCase):
+
+    def test_outperform_classified(self) -> None:
+        r = run_post_mortem(PostMortemInputs(
+            deal_id="pm1",
+            planned_irr=0.18, actual_irr=0.24,
+            planned_moic=2.3, actual_moic=2.8,
+            planned_exit_multiple=9.0, actual_exit_multiple=10.0,
+            planned_ebitda_at_exit_m=40, actual_ebitda_at_exit_m=48,
+        ))
+        self.assertEqual(r.net_vs_plan, "outperform")
+
+    def test_underperform_classified(self) -> None:
+        r = run_post_mortem(PostMortemInputs(
+            deal_id="pm2",
+            planned_irr=0.20, actual_irr=0.10,
+            planned_moic=2.5, actual_moic=1.5,
+            planned_exit_multiple=10.0, actual_exit_multiple=7.5,
+            planned_ebitda_at_exit_m=40, actual_ebitda_at_exit_m=30,
+        ))
+        self.assertEqual(r.net_vs_plan, "underperform")
+
+    def test_missed_operating_triggers_lesson(self) -> None:
+        r = run_post_mortem(PostMortemInputs(
+            deal_id="pm3",
+            planned_irr=0.18, actual_irr=0.18,
+            planned_ebitda_at_exit_m=40, actual_ebitda_at_exit_m=28,
+        ))
+        lessons = " ".join(r.top_lessons).lower()
+        self.assertIn("operating", lessons + " lever ramp")
+
+    def test_management_departure_lesson(self) -> None:
+        r = run_post_mortem(PostMortemInputs(
+            deal_id="pm4",
+            planned_irr=0.18, actual_irr=0.14,
+            management_retained=False,
+        ))
+        lessons = " ".join(r.top_lessons).lower()
+        self.assertIn("retention", lessons + " management departed")
+
+    def test_write_off_lesson(self) -> None:
+        r = run_post_mortem(PostMortemInputs(
+            deal_id="pm5",
+            planned_irr=0.20, actual_irr=-0.20,
+            exit_outcome="write_off",
+        ))
+        lessons = " ".join(r.top_lessons).lower()
+        self.assertIn("written off", lessons)
+
+    def test_empty_inputs_safe(self) -> None:
+        r = run_post_mortem(PostMortemInputs(deal_id="pmx"))
+        self.assertEqual(r.findings, [])
+
+    def test_markdown_renders(self) -> None:
+        r = run_post_mortem(PostMortemInputs(
+            deal_id="pm1", deal_name="Deal A",
+            planned_irr=0.18, actual_irr=0.24,
+        ))
+        md = render_post_mortem_markdown(r)
+        self.assertIn("Post-mortem", md)
+
+    def test_report_json(self) -> None:
+        import json
+        r = run_post_mortem(PostMortemInputs(deal_id="pm"))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
