@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 42
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 43
 modules + test suite:
 
 | Module | Role |
@@ -748,6 +748,7 @@ modules + test suite:
 | `recon.py` | Cross-artifact coherence check |
 | `capital_plan.py` | Capex by year/purpose + intensity validation |
 | `auditor_view.py` | Full decision audit trail for regulators/LPs |
+| `thesis_templates.py` | 6 prebuilt narrative scaffolds for common theses |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1073,7 +1074,25 @@ JSON-serializable answer six months later.
 
 ---
 
-## 45. Change log
+## 45. Thesis templates (`thesis_templates.py`)
+
+Six prebuilt narrative scaffolds for common healthcare-PE theses:
+
+1. **Platform + tuck-ins** — consolidation in a fragmented subsector.
+2. **Operational improvement** — RCM / labor / mix levers.
+3. **Scale + margin** — volume-driven fixed-cost leverage.
+4. **Turnaround** — distressed asset with named operator.
+5. **Strategic exit** — positioning for strategic acquisition.
+6. **Value-based care** — lives growth + shared-savings.
+
+Each template provides opening paragraph, bull/bear case framing,
+lever priority stack, and 5 partner questions. Templates are
+field-substituted (`{subsector}`, `{entry_multiple}`, `{hold_years}`,
+etc.) and rendered as IC-ready Markdown.
+
+---
+
+## 46. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1144,3 +1163,6 @@ JSON-serializable answer six months later.
   intensity validation by subsector) and `auditor_view.py` (full
   decision audit trail). Full inventory: 42 modules, 491
   pe_intelligence unit tests.
+- **2026-04-17** — Added `thesis_templates.py` (6 prebuilt
+  narrative scaffolds). Full inventory: 43 modules, 498
+  pe_intelligence unit tests. Full project suite **3632 passed**.
