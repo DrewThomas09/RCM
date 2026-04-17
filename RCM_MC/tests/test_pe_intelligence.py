@@ -5250,5 +5250,95 @@ class TestFullReviewToDict(unittest.TestCase):
         json.dumps(review.to_dict(), default=str)
 
 
+# ── Extra heuristics ────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    run_all_plus_extras,
+    run_extra_heuristics,
+)
+
+
+class TestExtraHeuristics(unittest.TestCase):
+
+    def test_clean_claim_low_fires(self) -> None:
+        ctx = HeuristicContext(clean_claim_rate=0.82)
+        hits = run_extra_heuristics(ctx)
+        self.assertTrue(any(h.id == "clean_claim_rate_low" for h in hits))
+
+    def test_clean_claim_high_does_not_fire(self) -> None:
+        ctx = HeuristicContext(clean_claim_rate=0.93)
+        hits = run_extra_heuristics(ctx)
+        self.assertFalse(any(h.id == "clean_claim_rate_low" for h in hits))
+
+    def test_growth_volatility_without_driver_fires(self) -> None:
+        ctx = HeuristicContext(revenue_growth_pct_per_yr=15.0)
+        hits = run_extra_heuristics(ctx)
+        self.assertTrue(any(h.id == "growth_volatility_without_driver" for h in hits))
+
+    def test_payer_contract_staleness_fires(self) -> None:
+        ctx = HeuristicContext(clean_claim_rate=0.83,
+                               denial_improvement_bps_per_yr=100)
+        hits = run_extra_heuristics(ctx)
+        self.assertTrue(any(h.id == "payer_contract_staleness" for h in hits))
+
+    def test_large_deal_concentration_fires(self) -> None:
+        ctx = HeuristicContext(ebitda_m=400)
+        hits = run_extra_heuristics(ctx)
+        self.assertTrue(any(h.id == "check_size_concentration" for h in hits))
+
+    def test_missing_ttm_fires(self) -> None:
+        ctx = HeuristicContext(data_coverage_pct=0.30)
+        hits = run_extra_heuristics(ctx)
+        self.assertTrue(any(h.id == "missing_ttm_kpi_reporting" for h in hits))
+
+    def test_cah_teaching_mismatch_fires(self) -> None:
+        ctx = HeuristicContext(hospital_type="critical_access",
+                               teaching_status="major")
+        hits = run_extra_heuristics(ctx)
+        self.assertTrue(any(h.id == "cah_teaching_mismatch" for h in hits))
+
+    def test_urban_outpatient_premium_fires(self) -> None:
+        ctx = HeuristicContext(
+            hospital_type="outpatient", urban_rural="urban",
+            payer_mix={"commercial": 0.70, "medicare": 0.20, "medicaid": 0.10},
+            exit_multiple=13.0,
+        )
+        hits = run_extra_heuristics(ctx)
+        self.assertTrue(any(h.id == "urban_outpatient_gold_rush" for h in hits))
+
+    def test_hold_moic_inconsistency_fires(self) -> None:
+        # 4x MOIC in 3 years → ~59% CAGR.
+        ctx = HeuristicContext(projected_moic=4.0, hold_years=3.0)
+        hits = run_extra_heuristics(ctx)
+        self.assertTrue(any(h.id == "hold_moic_inconsistency" for h in hits))
+
+    def test_results_sorted_by_severity(self) -> None:
+        ctx = HeuristicContext(
+            clean_claim_rate=0.75, ebitda_m=400, data_coverage_pct=0.30,
+            projected_moic=4.0, hold_years=3.0,
+        )
+        hits = run_extra_heuristics(ctx)
+        order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
+        ranks = [order.get(h.severity, 5) for h in hits]
+        self.assertEqual(ranks, sorted(ranks))
+
+
+class TestRunAllPlusExtras(unittest.TestCase):
+
+    def test_union_dedupes_by_id(self) -> None:
+        ctx = HeuristicContext(
+            clean_claim_rate=0.82,
+            denial_improvement_bps_per_yr=400,  # base heuristic
+        )
+        hits = run_all_plus_extras(ctx)
+        ids = [h.id for h in hits]
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_union_includes_extras(self) -> None:
+        ctx = HeuristicContext(clean_claim_rate=0.82)
+        hits = run_all_plus_extras(ctx)
+        self.assertTrue(any(h.id == "clean_claim_rate_low" for h in hits))
+
+
 if __name__ == "__main__":
     unittest.main()

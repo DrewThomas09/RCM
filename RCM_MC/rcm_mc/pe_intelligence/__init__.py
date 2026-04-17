@@ -124,6 +124,10 @@ from .investability_scorer import (
     inputs_from_review as investability_inputs_from_review,
     score_investability,
 )
+from .extra_heuristics import (
+    run_all_plus_extras,
+    run_extra_heuristics,
+)
 from .thesis_templates import (
     TEMPLATES as THESIS_TEMPLATES,
     ThesisTemplate,
@@ -645,4 +649,6 @@ __all__ = [
     "InvestabilityResult",
     "investability_inputs_from_review",
     "score_investability",
+    "run_all_plus_extras",
+    "run_extra_heuristics",
 ]
