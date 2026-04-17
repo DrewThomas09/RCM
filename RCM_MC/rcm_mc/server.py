@@ -1946,6 +1946,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.find_comps_page import render_find_comps
             return self._send_html(render_find_comps(_qp))
+        if path == "/sector-momentum":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            try: _years = int((_qs.get("years") or ["5"])[0])
+            except (TypeError, ValueError): _years = 5
+            from .ui.data_public.sector_momentum_page import render_sector_momentum
+            return self._send_html(render_sector_momentum(recent_years=_years))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
