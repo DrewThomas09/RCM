@@ -68,6 +68,7 @@ _CORPUS_NAV = [
     {"label": "Vintage Perf",   "href": "/vintage-perf",       "icon": "▣"},
     {"label": "Payer Intel",    "href": "/payer-intel",        "icon": "▦"},
     {"label": "Leverage Intel", "href": "/leverage-intel",     "icon": "▣"},
+    {"label": "Size Intel",     "href": "/size-intel",         "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",  "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
