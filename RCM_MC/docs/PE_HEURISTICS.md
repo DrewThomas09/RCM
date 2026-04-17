@@ -3004,7 +3004,36 @@ down or stress the exit-multiple assumption."
 
 ---
 
-## 133. Change log
+## 133. Management vs packet gap (`management_vs_packet_gap.py`)
+
+**Partner statement:** when management's story and the packet
+numbers disagree, the gap size tells you what you are dealing
+with.
+
+Classification by |gap %|:
+
+- **< 5%** → minor; rounding or timing.
+- **5-15%** → material; management rounding in their favor OR
+  sandbagging. Push for the packet number in underwriting.
+- **≥ 15%** → contradicted; credibility issue — they are
+  selling what the numbers do not show. Force reconciliation
+  before IC.
+
+Favorable-for-mgmt direction depends on `higher_is_better`:
+EBITDA margin and growth are higher-is-better; denial rate and
+DAR are lower-is-better.
+
+Partner note escalates:
+
+- 2+ contradictions → "credibility problem, not a metrics
+  problem. Pause diligence until reconciled."
+- 1 contradiction → "force explicit reconciliation before IC."
+- 3+ material → "rounding pattern — underwrite to packet numbers
+  not deck."
+
+---
+
+## 134. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3272,3 +3301,7 @@ down or stress the exit-multiple assumption."
   binary-search breakeven deltas per lever against hurdle MOIC,
   plus combined-shock test. Full inventory: 130 modules, 1,311
   pe_intelligence unit tests.
+- **2026-04-17** — Added `management_vs_packet_gap.py` (§133) —
+  classifies mgmt-vs-packet differences as minor/material/
+  contradicted with partner-voice interpretation. Full inventory:
+  131 modules, 1,319 pe_intelligence unit tests.
