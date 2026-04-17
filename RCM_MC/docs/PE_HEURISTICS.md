@@ -2053,7 +2053,36 @@ a partner note:
 
 ---
 
-## 102. Change log
+## 102. Physician compensation benchmark (`physician_compensation_benchmark.py`)
+
+For physician-practice PE (PPMs, specialty consolidators), comp
+is the single largest cost line. This module compares actual
+comp vs partner-approximated MGMA medians across 9 specialties:
+
+- Primary care, cardiology, orthopedics, dermatology,
+  gastroenterology, ophthalmology, anesthesiology, emergency
+  medicine, radiology.
+
+Two ratios benchmarked:
+
+- **Total comp vs median** — ≥ 1.20× = high (margin pressure);
+  ≤ 0.85× = low (flight risk).
+- **Comp per wRVU vs median** — ≥ 1.20× = inefficient
+  (overpaying for output); ≤ 0.85× = efficient or under-comp.
+
+Structural check on base-productivity mix:
+
+- Base ≥ 80% of total → weak productivity incentive; expect
+  flat volume.
+- Base ≤ 30% of total → retention risk for average producers.
+
+Optional ``coastal_adjust=True`` shifts median 5% for NYC/SF/LA
+markets. Aggregate partner note names the risk (above-market
+margin opportunity, below-market flight risk, or within bands).
+
+---
+
+## 103. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2214,3 +2243,6 @@ a partner note:
 - **2026-04-17** — Added `lbo_stress_scenarios.py` (§101) — 7-scenario
   library + covenant-breach + months-to-default. Full inventory:
   99 modules, 974 pe_intelligence unit tests.
+- **2026-04-17** — Added `physician_compensation_benchmark.py` (§102)
+  — 9-specialty MGMA medians + comp/wRVU + base-mix checks. Full
+  inventory: 100 modules, 984 pe_intelligence unit tests.
