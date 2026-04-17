@@ -11424,5 +11424,104 @@ class TestRecurringVsOnetimeEBITDA(unittest.TestCase):
         json.dumps(s.to_dict())
 
 
+# ── OBBBA / sequestration / site-neutral stress ────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    OBBBAStressInputs,
+    OBBBAStressReport,
+    OBBBAShock,
+    render_reg_stress_markdown,
+    stress_regulatory,
+)
+
+
+class TestOBBBARegulatoryStress(unittest.TestCase):
+
+    def test_low_medicare_exposure_immaterial(self) -> None:
+        r = stress_regulatory(OBBBAStressInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, ebitda_m=20.0,
+            medicare_ffs_pct=0.05, medicare_advantage_pct=0.03,
+            hopd_revenue_pct=0.0,
+        ))
+        self.assertIn("immaterial", r.partner_note.lower())
+
+    def test_hospital_heavy_medicare_material(self) -> None:
+        r = stress_regulatory(OBBBAStressInputs(
+            subsector="hospital",
+            revenue_m=400.0, ebitda_m=40.0,
+            medicare_ffs_pct=0.50, medicare_advantage_pct=0.10,
+            hopd_revenue_pct=0.30,
+        ))
+        self.assertGreater(r.worst_case_pct, 0.15)
+        self.assertTrue(r.partner_note)
+
+    def test_site_neutral_zero_if_no_hopd(self) -> None:
+        r = stress_regulatory(OBBBAStressInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, ebitda_m=20.0,
+            medicare_ffs_pct=0.20, hopd_revenue_pct=0.0,
+        ))
+        site_neutral = next(s for s in r.shocks
+                            if s.name == "site_neutral_hopd")
+        self.assertEqual(site_neutral.ebitda_impact_m, 0.0)
+
+    def test_site_neutral_material_when_hopd_heavy(self) -> None:
+        r = stress_regulatory(OBBBAStressInputs(
+            subsector="hospital",
+            revenue_m=500.0, ebitda_m=50.0,
+            hopd_revenue_pct=0.40,
+        ))
+        site_neutral = next(s for s in r.shocks
+                            if s.name == "site_neutral_hopd")
+        self.assertGreater(site_neutral.ebitda_impact_m, 0)
+
+    def test_all_four_named_shocks_present(self) -> None:
+        r = stress_regulatory(OBBBAStressInputs(
+            subsector="hospital", revenue_m=200.0, ebitda_m=30.0,
+        ))
+        names = {s.name for s in r.shocks}
+        self.assertEqual(names, {
+            "obbba_medicare_cut_3pct",
+            "sequestration_extended_2pct",
+            "site_neutral_hopd",
+            "state_medicaid_freeze_cut_3pct",
+        })
+
+    def test_catastrophic_partner_note(self) -> None:
+        # Heavy Medicare + HOPD + safety-net subsector → combined > 30%.
+        r = stress_regulatory(OBBBAStressInputs(
+            subsector="safety_net_hospital",
+            revenue_m=500.0, ebitda_m=30.0,
+            medicare_ffs_pct=0.50, medicare_advantage_pct=0.10,
+            hopd_revenue_pct=0.35,
+        ))
+        self.assertIn("catastrophic", r.partner_note.lower())
+
+    def test_json(self) -> None:
+        import json
+        r = stress_regulatory(OBBBAStressInputs(
+            subsector="hospital", revenue_m=200.0, ebitda_m=30.0,
+        ))
+        json.dumps(r.to_dict())
+
+    def test_markdown_renders(self) -> None:
+        md = render_reg_stress_markdown(stress_regulatory(OBBBAStressInputs(
+            subsector="hospital", revenue_m=200.0, ebitda_m=30.0,
+        )))
+        self.assertIn("OBBBA", md)
+        self.assertIn("site_neutral_hopd", md)
+
+    def test_subsector_medicaid_default(self) -> None:
+        # Unknown subsector should still produce a shock value (default).
+        r = stress_regulatory(OBBBAStressInputs(
+            subsector="unknown", revenue_m=100.0, ebitda_m=15.0,
+            medicare_ffs_pct=0.10,
+        ))
+        medicaid = next(s for s in r.shocks
+                        if s.name == "state_medicaid_freeze_cut_3pct")
+        self.assertGreater(medicaid.ebitda_impact_m, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

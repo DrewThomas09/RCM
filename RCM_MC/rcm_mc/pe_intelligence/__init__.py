@@ -610,6 +610,13 @@ from .recurring_vs_onetime_ebitda import (
     render_recurring_split_markdown,
     split_ebitda,
 )
+from .obbba_sequestration_stress import (
+    RegulatoryStressInputs as OBBBAStressInputs,
+    RegulatoryStressReport as OBBBAStressReport,
+    RegulatoryShock as OBBBAShock,
+    render_reg_stress_markdown,
+    stress_regulatory,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1509,4 +1516,9 @@ __all__ = [
     "RecurringSplit",
     "render_recurring_split_markdown",
     "split_ebitda",
+    "OBBBAStressInputs",
+    "OBBBAStressReport",
+    "OBBBAShock",
+    "render_reg_stress_markdown",
+    "stress_regulatory",
 ]
