@@ -6192,5 +6192,77 @@ class TestServiceLineAnalysis(unittest.TestCase):
         json.dumps(pf.to_dict())
 
 
+# ── Quality metrics ───────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    QualityImpact,
+    QualityInputs,
+    QualityProfile,
+    analyze_quality_profile,
+    render_quality_profile_markdown,
+)
+
+
+class TestQualityMetrics(unittest.TestCase):
+
+    def test_top_quality_leader(self) -> None:
+        pf = analyze_quality_profile(QualityInputs(
+            cms_star_rating=4.5, readmission_percentile=15,
+            hcahps_percentile=85, hac_program_bottom_quartile=False,
+            mortality_percentile=20,
+            annual_medicare_revenue=100_000_000,
+        ))
+        self.assertEqual(pf.verdict, "leader")
+        self.assertGreater(pf.total_payment_impact, 0)
+
+    def test_drag_profile(self) -> None:
+        pf = analyze_quality_profile(QualityInputs(
+            cms_star_rating=1.5, readmission_percentile=85,
+            hcahps_percentile=15, hac_program_bottom_quartile=True,
+            mortality_percentile=80,
+            annual_medicare_revenue=100_000_000,
+        ))
+        self.assertEqual(pf.verdict, "drag")
+        self.assertLess(pf.total_payment_impact, 0)
+
+    def test_average_stays_neutral(self) -> None:
+        pf = analyze_quality_profile(QualityInputs(
+            cms_star_rating=3.0, readmission_percentile=50,
+            hcahps_percentile=55, hac_program_bottom_quartile=False,
+            mortality_percentile=50,
+            annual_medicare_revenue=100_000_000,
+        ))
+        self.assertIn(pf.verdict, ("average", "leader"))
+
+    def test_missing_metrics_returns_unknown(self) -> None:
+        pf = analyze_quality_profile(QualityInputs())
+        self.assertEqual(pf.verdict, "unknown")
+
+    def test_hrrp_penalty_scales_with_medicare_revenue(self) -> None:
+        pf1 = analyze_quality_profile(QualityInputs(
+            readmission_percentile=80,
+            annual_medicare_revenue=100_000_000,
+        ))
+        pf2 = analyze_quality_profile(QualityInputs(
+            readmission_percentile=80,
+            annual_medicare_revenue=200_000_000,
+        ))
+        # pf2 should have more-negative impact.
+        self.assertLess(pf2.total_payment_impact, pf1.total_payment_impact)
+
+    def test_markdown_renders(self) -> None:
+        pf = analyze_quality_profile(QualityInputs(
+            cms_star_rating=4.0,
+            annual_medicare_revenue=100_000_000,
+        ))
+        md = render_quality_profile_markdown(pf)
+        self.assertIn("# Quality metrics profile", md)
+
+    def test_profile_json(self) -> None:
+        import json
+        pf = analyze_quality_profile(QualityInputs(cms_star_rating=3.5))
+        json.dumps(pf.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -181,6 +181,13 @@ from .service_line_analysis import (
     analyze_service_lines,
     render_service_lines_markdown,
 )
+from .quality_metrics import (
+    QualityImpact,
+    QualityInputs,
+    QualityProfile,
+    analyze_quality_profile,
+    render_quality_profile_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -769,4 +776,9 @@ __all__ = [
     "ServiceLineRisk",
     "analyze_service_lines",
     "render_service_lines_markdown",
+    "QualityImpact",
+    "QualityInputs",
+    "QualityProfile",
+    "analyze_quality_profile",
+    "render_quality_profile_markdown",
 ]
