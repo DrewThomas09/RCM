@@ -1968,7 +1968,38 @@ named reasons.
 
 ---
 
-## 99. Change log
+## 99. Carve-out risks (`carve_out_risks.py`)
+
+Carve-out deals (buying a business from a larger parent) carry a
+structurally different risk profile from LBOs of standalone
+companies. This module codifies the specific risks:
+
+- **TSA scope gaps** — if < 80% of shared services covered, Day-1
+  operations are at risk. < 50% is high severity.
+- **Short TSA duration** — < 12 months forces accelerated stand-up.
+- **Change-of-control contracts** — ≥ 20% of revenue with CoC
+  clauses is material; ≥ 40% is high severity. Buyer must secure
+  customer consents pre-close.
+- **Unaudited carve-out financials** — always high severity.
+  Allocations (parent overhead, shared-service cost) are
+  judgmental and can distort EBITDA by 10-30%.
+- **Shared IT systems** — ≥ 3 is medium, ≥ 5 high. ERP / CRM
+  separations run $2M+ each and 12-18 months.
+- **Parent brand dependency** — medium when present; rebrand
+  required within the TSA window.
+- **Payer re-credentialing (healthcare only)** — each new NPI/TIN
+  payer contract takes 90-120 days. 20+ contracts is high severity.
+- **Key employee retention** — < 75% expected retention is
+  medium; < 60% is high severity.
+
+Aggregate output: total separation cost estimate, longest-path
+timeline, high-severity count, partner note ("Severe", "Material",
+"Standard", or "Clean"). Each risk ships with a mitigation line
+that IC wants on the first diligence call.
+
+---
+
+## 100. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2120,3 +2151,6 @@ named reasons.
 - **2026-04-17** — Added `dividend_recap_analyzer.py` (§98) —
   feasibility gates + DPI uplift + blockers. Full inventory: 96
   modules, 942 pe_intelligence unit tests.
+- **2026-04-17** — Added `carve_out_risks.py` (§99) — TSA, CoC,
+  IT separation, payer re-credentialing, employee retention. Full
+  inventory: 97 modules, 952 pe_intelligence unit tests.
