@@ -408,6 +408,12 @@ from .refinancing_window import (
     plan_refinance,
     render_refi_plan_markdown,
 )
+from .dividend_recap_analyzer import (
+    RecapAssessment,
+    RecapInputs,
+    analyze_recap,
+    render_recap_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1155,4 +1161,8 @@ __all__ = [
     "RefiRecommendation",
     "plan_refinance",
     "render_refi_plan_markdown",
+    "RecapAssessment",
+    "RecapInputs",
+    "analyze_recap",
+    "render_recap_markdown",
 ]

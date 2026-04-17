@@ -8797,5 +8797,97 @@ class TestRefinancingWindow(unittest.TestCase):
         json.dumps(plan_refinance(tranches, ctx).to_dict())
 
 
+# ── Dividend recap analyzer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    RecapAssessment,
+    RecapInputs,
+    analyze_recap,
+    render_recap_markdown,
+)
+
+
+class TestDividendRecapAnalyzer(unittest.TestCase):
+
+    def test_feasible_recap(self) -> None:
+        # 100M EBITDA, 400M debt (4x leverage), room to 6.5x.
+        a = analyze_recap(RecapInputs(
+            current_ebitda_m=100.0, current_debt_m=400.0,
+            fund_equity_invested_m=300.0,
+            current_enterprise_value_m=1100.0,
+        ))
+        self.assertTrue(a.feasible)
+        self.assertGreater(a.proposed_dividend_m, 0)
+        self.assertGreater(a.dpi_uplift, 0)
+
+    def test_blocked_when_already_maxed(self) -> None:
+        # Already at 7x — over cap of 6.5x.
+        a = analyze_recap(RecapInputs(
+            current_ebitda_m=100.0, current_debt_m=700.0,
+            fund_equity_invested_m=300.0,
+            current_enterprise_value_m=1100.0,
+        ))
+        self.assertFalse(a.feasible)
+        self.assertGreater(len(a.blockers), 0)
+
+    def test_dpi_uplift_calculation(self) -> None:
+        a = analyze_recap(RecapInputs(
+            current_ebitda_m=100.0, current_debt_m=400.0,
+            fund_equity_invested_m=200.0,
+            current_enterprise_value_m=1100.0,
+        ))
+        # dividend / 200 = uplift; just check positivity + bounds.
+        self.assertGreater(a.dpi_uplift, 0)
+        self.assertLess(a.dpi_uplift, 10.0)
+
+    def test_post_recap_leverage_respects_cap(self) -> None:
+        a = analyze_recap(RecapInputs(
+            current_ebitda_m=100.0, current_debt_m=400.0,
+            fund_equity_invested_m=300.0,
+            current_enterprise_value_m=1100.0,
+            max_leverage_tolerance=6.0,
+        ))
+        self.assertLessEqual(a.post_recap_leverage, 6.01)
+
+    def test_tight_coverage_blocks(self) -> None:
+        # High target coverage + high rate → zero capacity.
+        a = analyze_recap(RecapInputs(
+            current_ebitda_m=100.0, current_debt_m=500.0,
+            fund_equity_invested_m=300.0,
+            current_enterprise_value_m=1100.0,
+            target_interest_coverage=4.0,
+            market_debt_rate=0.12,
+        ))
+        self.assertFalse(a.feasible)
+
+    def test_markdown_feasible(self) -> None:
+        a = analyze_recap(RecapInputs(
+            current_ebitda_m=100.0, current_debt_m=400.0,
+            fund_equity_invested_m=300.0,
+            current_enterprise_value_m=1100.0,
+        ))
+        md = render_recap_markdown(a)
+        self.assertIn("# Dividend recap assessment", md)
+        self.assertIn("Feasible", md)
+
+    def test_markdown_with_blockers(self) -> None:
+        a = analyze_recap(RecapInputs(
+            current_ebitda_m=100.0, current_debt_m=700.0,
+            fund_equity_invested_m=300.0,
+            current_enterprise_value_m=1100.0,
+        ))
+        md = render_recap_markdown(a)
+        self.assertIn("## Blockers", md)
+
+    def test_json(self) -> None:
+        import json
+        a = analyze_recap(RecapInputs(
+            current_ebitda_m=100.0, current_debt_m=400.0,
+            fund_equity_invested_m=300.0,
+            current_enterprise_value_m=1100.0,
+        ))
+        json.dumps(a.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
