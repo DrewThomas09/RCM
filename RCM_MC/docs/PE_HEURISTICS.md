@@ -2488,7 +2488,32 @@ Partner note:
 
 ---
 
-## 118. Change log
+## 118. QofE tracker (`qofe_tracker.py`)
+
+Quality-of-Earnings diligence progress monitor. Tracks:
+
+- **Status** — not_started / in_progress / draft / final.
+- **Total adjustments** with "supported" / "unsupported" split.
+- **NWC vs peg** — actual - peg.
+- **High-severity findings** count.
+- **Days until target completion**.
+
+Critical-path flag fires when:
+
+- Status is not final, AND
+- Days < 10 OR high-severity findings ≥ 2.
+
+Partner note scales:
+
+- Final + 0 high → "clean".
+- Final + high findings → "reflect in purchase-price mechanism".
+- Critical path → "NOT on track; escalate to deal team lead".
+- Draft → "review adjustments ($X unsupported)".
+- Otherwise → "monitor daily as deadline approaches".
+
+---
+
+## 119. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2699,3 +2724,6 @@ Partner note:
 - **2026-04-17** — Added `mgmt_incentive_sizer.py` (§117) —
   MIP pool % by deal type + layer allocation + LTIP + vesting.
   Full inventory: 115 modules, 1,140 pe_intelligence unit tests.
+- **2026-04-17** — Added `qofe_tracker.py` (§118) — QofE status
+  + adjustments supported/unsupported + NWC-vs-peg + critical-path.
+  Full inventory: 116 modules, 1,150 pe_intelligence unit tests.
