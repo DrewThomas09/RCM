@@ -2712,7 +2712,47 @@ for the pro-forma-to-GAAP bridge before writing anything else.
 
 ---
 
-## 125. Change log
+## 125. Unrealistic-on-its-face detector (`unrealistic_on_its_face.py`)
+
+**Partner statement:** some deal profiles are red flags on sight,
+before any model runs — pass before we spend diligence hours.
+
+Canonical worked example: **$400M NPR rural critical-access
+hospital projecting 28% IRR.** That combination is physically
+implausible. Rural CAH economics + cost-based reimbursement + no
+commercial leverage cap IRR in mid-single-digit-to-low-teens at
+best. 22%+ is not an achievable outcome — the seller either
+mis-modelled or is selling what they cannot deliver.
+
+Seven detectors:
+
+- **rural_cah_irr_implausible** — rural/CAH + claimed IRR ≥ 22%.
+- **hospital_margin_impossible** — hospital EBITDA margin ≥ 20%.
+- **practice_margin_impossible** — specialty-practice margin ≥ 35%
+  (likely includes cash-pay or non-operating income).
+- **leverage_coverage_impossible** — leverage + coverage that
+  arithmetic cannot support at market rates.
+- **hospital_growth_implausible** — hospital annual growth ≥ 12%
+  (M&A-hidden inorganic).
+- **practice_growth_implausible** — specialty practice organic
+  growth ≥ 25%.
+- **government_heavy_high_margin_implausible** — ≥ 70% Medicare +
+  Medicaid combined WITH ≥ 18% EBITDA margin.
+- **small_deal_extraordinary_irr** — EBITDA ≤ $20M + IRR ≥ 30%
+  (check equity base; small deals inflate IRR on pennies).
+
+Output grouped: `ImplausibilityFinding` per detector with
+`claim`, `reality`, and partner note. Overall: "pass-before-
+modeling" when 2+ high severity, otherwise push seller on
+specifics.
+
+Packet fields that trigger: `subsector`, `revenue_m`, `ebitda_m`,
+`medicare_pct`, `medicaid_pct`, `claimed_irr`, `leverage`,
+`claimed_interest_coverage`, `is_rural`, `is_critical_access`.
+
+---
+
+## 126. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2948,3 +2988,7 @@ for the pro-forma-to-GAAP bridge before writing anything else.
   cost_basis_compression, capacity_expansion) each with
   partner-voice warnings. Full inventory: 122 modules, 1,219
   pe_intelligence unit tests.
+- **2026-04-17** — Added `unrealistic_on_its_face.py` (§125) —
+  7 partner-reflex "red flag on sight" detectors, encoding the
+  canonical $400M rural-CAH-at-28%-IRR example. Full inventory:
+  123 modules, 1,231 pe_intelligence unit tests.
