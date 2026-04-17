@@ -104,13 +104,14 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_9 import EXTENDED_SEED_DEALS_9
         from rcm_mc.data_public.extended_seed_10 import EXTENDED_SEED_DEALS_10
         from rcm_mc.data_public.extended_seed_11 import EXTENDED_SEED_DEALS_11
+        from rcm_mc.data_public.extended_seed_12 import EXTENDED_SEED_DEALS_12
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
                     + len(EXTENDED_SEED_DEALS_5) + len(EXTENDED_SEED_DEALS_6)
                     + len(EXTENDED_SEED_DEALS_7) + len(EXTENDED_SEED_DEALS_8)
                     + len(EXTENDED_SEED_DEALS_9) + len(EXTENDED_SEED_DEALS_10)
-                    + len(EXTENDED_SEED_DEALS_11))
+                    + len(EXTENDED_SEED_DEALS_11) + len(EXTENDED_SEED_DEALS_12))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3575,10 +3576,10 @@ class TestExtendedSeed8(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_255_deals(self):
+    def test_seed_loads_275_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
-        self.assertGreaterEqual(stats["total"], 255)
+        self.assertGreaterEqual(stats["total"], 275)
 
     def test_seed_187_signify_high_moic(self):
         corpus = DealsCorpus(self.db_path)
@@ -5178,6 +5179,52 @@ class TestCmsDataQuality(unittest.TestCase):
         s = cms_run_summary(report)
         self.assertEqual(s["durable_growth_count"], 2)
         self.assertEqual(s["declining_risk_count"], 1)
+
+
+class TestExtendedSeed12(unittest.TestCase):
+    """Tests for extended_seed_12.py (deals 256-275)."""
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def test_extended_seed_12_list_length(self):
+        from rcm_mc.data_public.extended_seed_12 import EXTENDED_SEED_DEALS_12
+        self.assertEqual(len(EXTENDED_SEED_DEALS_12), 20)
+
+    def test_all_seed_12_have_required_fields(self):
+        from rcm_mc.data_public.extended_seed_12 import EXTENDED_SEED_DEALS_12
+        for deal in EXTENDED_SEED_DEALS_12:
+            self.assertIn("source_id", deal)
+            self.assertIn("deal_name", deal)
+            self.assertEqual(deal["source"], "seed")
+
+    def test_seed_261_fertility_moic(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_261")
+        self.assertIsNotNone(deal)
+        self.assertGreater(deal["realized_moic"], 3.0)
+
+    def test_seed_263_clover_spac_fail(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_263")
+        self.assertIsNotNone(deal)
+        self.assertLess(deal["realized_moic"], 0.5)
+
+    def test_seed_266_genesis_bankruptcy(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_266")
+        self.assertIsNotNone(deal)
+        self.assertLess(deal["realized_moic"], 1.0)
+
+    def test_seed_12_source_ids_unique(self):
+        from rcm_mc.data_public.extended_seed_12 import EXTENDED_SEED_DEALS_12
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_12]
+        self.assertEqual(len(ids), len(set(ids)))
 
 
 class TestDealScreeningEngine(unittest.TestCase):
