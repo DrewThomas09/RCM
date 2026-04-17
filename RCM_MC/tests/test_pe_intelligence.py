@@ -12221,5 +12221,148 @@ class TestPartnerTrapsLibrary(unittest.TestCase):
             json.dumps(h.to_dict())
 
 
+# ── First thirty minutes ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    FirstThirtyContext,
+    FirstThirtyPlan,
+    PartnerQuestion,
+    build_first_thirty,
+    render_first_thirty_markdown,
+)
+
+
+class TestFirstThirtyMinutes(unittest.TestCase):
+
+    def test_clean_deal_no_questions(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            current_denial_rate=0.05,
+            prior_year_denial_rate=0.05,
+            days_in_ar=40,
+            recurring_ebitda_pct=1.0,
+            one_time_pct_of_ebitda=0.0,
+            commercial_pct=0.60,
+            top_payer_share=0.20,
+            c_suite_tenure_avg_years=5.0,
+            claimed_rate_growth_pct=0.03,
+        ))
+        self.assertEqual(plan.questions, [])
+        self.assertIn("clean on paper", plan.partner_note.lower())
+
+    def test_high_denial_triggers_opening(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            current_denial_rate=0.15,
+        ))
+        denial_q = next((q for q in plan.questions
+                          if "denial rate is" in q.text.lower()),
+                         None)
+        self.assertIsNotNone(denial_q)
+        self.assertEqual(denial_q.tier, "opening")
+
+    def test_oon_dependency_landmine_goes_first(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            current_denial_rate=0.12,   # opening
+            oon_revenue_share=0.40,     # landmine
+        ))
+        # Landmines sort before openings.
+        self.assertEqual(plan.questions[0].tier, "landmine")
+        self.assertIn("No Surprises Act", plan.questions[0].text)
+
+    def test_recurring_ebitda_question_when_heavy_onetime(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            one_time_pct_of_ebitda=0.25,
+        ))
+        self.assertTrue(any("exit multiple only applies to recurring"
+                             in q.text.lower() for q in plan.questions))
+
+    def test_tenure_probe_fires(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            c_suite_tenure_avg_years=1.5,
+        ))
+        self.assertTrue(any("retention packages" in q.text
+                             for q in plan.questions))
+
+    def test_fca_question_always_landmine(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            has_pending_fca=True,
+        ))
+        fca_q = next(q for q in plan.questions
+                      if "FCA" in q.text)
+        self.assertEqual(fca_q.tier, "landmine")
+
+    def test_aggressive_rate_growth_probe(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            claimed_rate_growth_pct=0.07,
+        ))
+        self.assertTrue(any("5%+ rate-card number does not exist"
+                             in q.text for q in plan.questions))
+
+    def test_top_payer_concentration_landmine(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            top_payer_share=0.45,
+        ))
+        payer_q = next(q for q in plan.questions
+                        if "Top payer is" in q.text)
+        self.assertEqual(payer_q.tier, "landmine")
+
+    def test_historical_pattern_generates_opening(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            historical_failure_matches=["envision_surprise_billing_2023"],
+        ))
+        hist_q = next(q for q in plan.questions
+                       if "envision" in q.text.lower())
+        self.assertEqual(hist_q.tier, "opening")
+        self.assertIn("three structural mitigations", hist_q.text)
+
+    def test_sale_leaseback_triggers_steward_ref(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            sale_leaseback_in_thesis=True,
+        ))
+        self.assertTrue(any("Steward" in q.text
+                             for q in plan.questions))
+
+    def test_max_questions_cap(self) -> None:
+        # Trigger many questions; verify cap.
+        plan = build_first_thirty(FirstThirtyContext(
+            current_denial_rate=0.15,
+            prior_year_denial_rate=0.08,
+            days_in_ar=65,
+            one_time_pct_of_ebitda=0.30,
+            oon_revenue_share=0.35,
+            c_suite_tenure_avg_years=1.0,
+            has_pending_fca=True,
+            claimed_rate_growth_pct=0.08,
+            top_payer_share=0.50,
+            historical_failure_matches=["envision_surprise_billing_2023"],
+            sale_leaseback_in_thesis=True,
+            claimed_synergies_year_1_m=15.0,
+        ), max_questions=5)
+        self.assertLessEqual(len(plan.questions), 5)
+
+    def test_packet_trigger_populated(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            current_denial_rate=0.14,
+        ))
+        q = plan.questions[0]
+        self.assertIn("current_denial_rate", q.packet_trigger)
+
+    def test_markdown_renders(self) -> None:
+        plan = build_first_thirty(FirstThirtyContext(
+            current_denial_rate=0.15,
+            oon_revenue_share=0.30,
+        ))
+        md = render_first_thirty_markdown(plan)
+        self.assertIn("# First thirty minutes", md)
+        self.assertIn("LANDMINE", md)
+        self.assertIn("Packet trigger", md)
+
+    def test_json(self) -> None:
+        import json
+        plan = build_first_thirty(FirstThirtyContext(
+            current_denial_rate=0.15,
+        ))
+        json.dumps(plan.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

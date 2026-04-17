@@ -672,6 +672,13 @@ from .partner_traps_library import (
     match_traps,
     render_traps_markdown,
 )
+from .first_thirty_minutes import (
+    FirstThirtyContext,
+    FirstThirtyPlan,
+    PartnerQuestion,
+    build_first_thirty,
+    render_first_thirty_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1619,4 +1626,9 @@ __all__ = [
     "list_all_traps",
     "match_traps",
     "render_traps_markdown",
+    "FirstThirtyContext",
+    "FirstThirtyPlan",
+    "PartnerQuestion",
+    "build_first_thirty",
+    "render_first_thirty_markdown",
 ]
