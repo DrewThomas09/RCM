@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 54
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 55
 modules + test suite:
 
 | Module | Role |
@@ -760,6 +760,7 @@ modules + test suite:
 | `narrative_styles.py` | 5 alternate narrative voices |
 | `memo_formats.py` | 5 IC memo renderers (one-pager / slack / email / pdf / deck) |
 | `extra_archetypes.py` | 8 specialized deal patterns |
+| `extra_red_flags.py` | 10 more deal-killer detectors |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1274,7 +1275,27 @@ Eight specialized deal patterns beyond the core 10:
 
 ---
 
-## 57. Change log
+## 57. Extra red flags (`extra_red_flags.py`)
+
+Ten additional deal-killer detectors beyond the core 10 in
+`red_flags.py`:
+
+- `physician_turnover_high` — retention < 85%.
+- `clinical_staff_shortage` — RN vacancy > 15%.
+- `payer_denial_spike` — QoQ denial rate delta > 200 bps.
+- `bad_debt_spike` — bad-debt growth > revenue × 2.
+- `it_system_eol` — EHR end-of-life inside hold.
+- `lease_expiration_cluster` — > 30% of leased sites expire in hold.
+- `regulatory_inspection_open` — unresolved CMS / state inspection.
+- `self_insurance_tail` — under-funded self-insurance reserves.
+- `capex_deferral_pattern` — capex/D&A < 0.80.
+- `key_payer_churn` — top-3 commercial payer departure risk.
+
+Field list exported as `EXTRA_RED_FLAG_FIELDS` for caller wiring.
+
+---
+
+## 58. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1361,3 +1382,6 @@ Eight specialized deal patterns beyond the core 10:
   renderers), `extra_archetypes.py` (8 specialized patterns). Full
   inventory: 54 modules, 610 pe_intelligence unit tests. Full
   project suite **3715 passed**.
+- **2026-04-17** — Added `extra_red_flags.py` (10 more deal-killer
+  detectors). Full inventory: 55 modules, 622 pe_intelligence
+  unit tests.
