@@ -12732,5 +12732,146 @@ class TestRCMLeverCascade(unittest.TestCase):
         json.dumps(trace_cascade(CascadeInputs()).to_dict())
 
 
+# ── Bear case generator ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    BearCaseInputs,
+    BearCaseReport,
+    BearDriver,
+    generate_bear_case,
+    render_bear_case_markdown,
+)
+
+
+class TestBearCaseGenerator(unittest.TestCase):
+
+    def test_clean_deal_no_drivers_generic_story(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="CleanCo",
+            base_ebitda_m=50.0,
+            base_moic=2.5,
+            management_score_0_100=80,
+        ))
+        self.assertEqual(r.drivers, [])
+        self.assertIn("no deal-specific shocks", r.bear_story.lower())
+
+    def test_envision_signature_surfaces_driver(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="StaffingCo",
+            subsector="physician_staffing",
+            base_ebitda_m=80.0, base_moic=2.6,
+            oon_revenue_share=0.35,
+            historical_failure_matches=["envision_surprise_billing_2023"],
+        ))
+        names = [d.name for d in r.drivers]
+        self.assertTrue(any("nsa_oon_compression" in n for n in names))
+        self.assertTrue(any("envision" in n for n in names))
+
+    def test_medicare_heavy_driver_fires(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="HospitalCo",
+            subsector="hospital",
+            base_ebitda_m=60.0,
+            medicare_ffs_pct=0.55,
+        ))
+        self.assertTrue(any(d.name == "medicare_rate_shock"
+                             for d in r.drivers))
+
+    def test_top_payer_walk_driver(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="PracticeCo",
+            base_ebitda_m=30.0,
+            top_payer_share=0.55,
+        ))
+        self.assertTrue(any(d.name == "top_payer_walk"
+                             for d in r.drivers))
+
+    def test_sale_leaseback_driver(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="LeasebackCo",
+            base_ebitda_m=40.0,
+            sale_leaseback_in_thesis=True,
+        ))
+        self.assertTrue(any(d.name == "steward_sale_leaseback"
+                             for d in r.drivers))
+
+    def test_aggressive_rate_driver(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="AggressiveCo",
+            base_ebitda_m=40.0,
+            claimed_rate_growth_pct=0.08,
+        ))
+        self.assertTrue(any(d.name == "rate_growth_miss"
+                             for d in r.drivers))
+
+    def test_bear_ebitda_below_base(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="X", base_ebitda_m=100.0,
+            medicare_ffs_pct=0.45,
+            oon_revenue_share=0.25,
+            historical_failure_matches=["envision_surprise_billing_2023"],
+        ))
+        self.assertLess(r.bear_ebitda_m, 100.0)
+
+    def test_multi_driver_bear_moic_under_1_triggers_pass_note(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="StackedRiskCo",
+            base_ebitda_m=50.0, base_moic=2.0,
+            medicare_ffs_pct=0.50,
+            oon_revenue_share=0.35,
+            top_payer_share=0.50,
+            denial_rate=0.14,
+            historical_failure_matches=["envision_surprise_billing_2023"],
+            sale_leaseback_in_thesis=True,
+            management_score_0_100=50,
+            pro_forma_addbacks_pct=0.25,
+            labor_cost_pct_revenue=0.55,
+        ))
+        self.assertLess(r.bear_moic, 1.0)
+        self.assertIn("loses money", r.partner_note.lower())
+
+    def test_probability_weighted_uses_base_prob(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="X", base_ebitda_m=50.0,
+            base_moic=3.0, base_probability=0.80,
+        ))
+        # With no drivers, bear MOIC ≈ base * (1 × (5.0/11) for
+        # multiple compression). Should give a positive pw MOIC.
+        self.assertGreater(r.probability_weighted_moic, 0)
+
+    def test_drivers_sorted_by_haircut(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="X", base_ebitda_m=60.0,
+            medicare_ffs_pct=0.50,
+            oon_revenue_share=0.30,
+            denial_rate=0.12,
+        ))
+        haircuts = [d.ebitda_haircut_pct for d in r.drivers]
+        self.assertEqual(haircuts, sorted(haircuts, reverse=True))
+
+    def test_story_mentions_top_driver(self) -> None:
+        r = generate_bear_case(BearCaseInputs(
+            deal_name="OONCo",
+            base_ebitda_m=50.0,
+            oon_revenue_share=0.40,
+        ))
+        # OON driver has ~0.16 haircut; likely top driver.
+        self.assertIn("No Surprises Act", r.bear_story)
+
+    def test_markdown_renders(self) -> None:
+        md = render_bear_case_markdown(generate_bear_case(BearCaseInputs(
+            deal_name="X", base_ebitda_m=50.0,
+            medicare_ffs_pct=0.50,
+        )))
+        self.assertIn("Bear case", md)
+        self.assertIn("Drivers", md)
+        self.assertIn("medicare_rate_shock", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(generate_bear_case(BearCaseInputs(
+            deal_name="X", base_ebitda_m=50.0)).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -707,6 +707,13 @@ from .rcm_lever_cascade import (
     render_cascade_markdown,
     trace_cascade,
 )
+from .bear_case_generator import (
+    BearCaseInputs,
+    BearCaseReport,
+    BearDriver,
+    generate_bear_case,
+    render_bear_case_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1679,4 +1686,9 @@ __all__ = [
     "CascadeStep",
     "render_cascade_markdown",
     "trace_cascade",
+    "BearCaseInputs",
+    "BearCaseReport",
+    "BearDriver",
+    "generate_bear_case",
+    "render_bear_case_markdown",
 ]
