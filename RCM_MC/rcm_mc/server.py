@@ -1982,6 +1982,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.capital_efficiency_page import render_capital_efficiency
             return self._send_html(render_capital_efficiency(_qp))
+        if path == "/deal-risk-scores":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.deal_risk_scores_page import render_deal_risk_scores
+            return self._send_html(render_deal_risk_scores(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
