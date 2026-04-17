@@ -771,6 +771,13 @@ from .quality_of_diligence_scorer import (
     render_qod_markdown,
     score_diligence,
 )
+from .management_first_sitdown import (
+    AgendaItem,
+    SitdownAgenda,
+    SitdownContext,
+    build_agenda,
+    render_agenda_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1789,4 +1796,9 @@ __all__ = [
     "QoDReport",
     "render_qod_markdown",
     "score_diligence",
+    "AgendaItem",
+    "SitdownAgenda",
+    "SitdownContext",
+    "build_agenda",
+    "render_agenda_markdown",
 ]

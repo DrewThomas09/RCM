@@ -13798,5 +13798,104 @@ class TestQualityOfDiligenceScorer(unittest.TestCase):
         json.dumps(score_diligence(DiligenceCompleted()).to_dict())
 
 
+# ── Management first sit-down ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    AgendaItem,
+    SitdownAgenda,
+    SitdownContext,
+    build_agenda,
+    render_agenda_markdown,
+)
+
+
+class TestManagementFirstSitdown(unittest.TestCase):
+
+    def test_covers_all_three_blocks(self) -> None:
+        a = build_agenda(SitdownContext(deal_name="AlphaCo"))
+        blocks = {i.block for i in a.items}
+        self.assertEqual(blocks, {"thesis", "risks", "outcomes"})
+
+    def test_high_denials_add_denial_probe(self) -> None:
+        a = build_agenda(SitdownContext(
+            deal_name="X",
+            current_denial_rate=0.12,
+        ))
+        self.assertTrue(any("denial" in i.topic.lower()
+                             for i in a.items))
+
+    def test_fca_surfaces_in_risks_block(self) -> None:
+        a = build_agenda(SitdownContext(
+            deal_name="X",
+            has_pending_fca=True,
+        ))
+        fca_item = next((i for i in a.items
+                          if "fca" in i.topic.lower()), None)
+        self.assertIsNotNone(fca_item)
+        self.assertEqual(fca_item.block, "risks")
+
+    def test_historical_match_probes_mitigations(self) -> None:
+        a = build_agenda(SitdownContext(
+            deal_name="X",
+            historical_failure_matches=[
+                "envision_surprise_billing_2023"
+            ],
+        ))
+        pattern_item = next(i for i in a.items
+                             if "pattern:" in i.topic.lower())
+        self.assertIn("three structural mitigations",
+                       pattern_item.probe.lower())
+
+    def test_weak_management_forces_hiring_topic(self) -> None:
+        a = build_agenda(SitdownContext(
+            deal_name="X",
+            management_score_0_100=50,
+        ))
+        self.assertTrue(any("team gaps" in i.topic.lower()
+                             for i in a.items))
+
+    def test_concentration_adds_top_payer_topic(self) -> None:
+        a = build_agenda(SitdownContext(
+            deal_name="X",
+            top_payer_share=0.45,
+        ))
+        self.assertTrue(any("top payer concentration" in i.topic.lower()
+                             for i in a.items))
+
+    def test_agenda_fits_total_minutes(self) -> None:
+        a = build_agenda(SitdownContext(
+            deal_name="X",
+            current_denial_rate=0.12,
+            has_pending_fca=True,
+            top_payer_share=0.50,
+            historical_failure_matches=["envision_surprise_billing_2023"],
+            management_score_0_100=50,
+            claimed_year_1_synergies_m=10.0,
+        ), total_minutes=60)
+        self.assertLessEqual(a.total_minutes, 60)
+
+    def test_synergy_probe_when_large(self) -> None:
+        a = build_agenda(SitdownContext(
+            deal_name="X",
+            claimed_year_1_synergies_m=12.0,
+        ))
+        self.assertTrue(any("year-1 synergies" in i.topic.lower()
+                             for i in a.items))
+
+    def test_markdown_renders(self) -> None:
+        md = render_agenda_markdown(build_agenda(SitdownContext(
+            deal_name="MemoCo",
+            current_denial_rate=0.12,
+        )))
+        self.assertIn("# MemoCo — Management first sit-down", md)
+        self.assertIn("Block:", md)
+        self.assertIn("Probe if canned", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(build_agenda(SitdownContext(
+            deal_name="X")).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
