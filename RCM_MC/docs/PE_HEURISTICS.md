@@ -3294,7 +3294,49 @@ Recommended haircut:
 
 ---
 
-## 141. Change log
+## 141. 100-day plan from packet (`one_hundred_day_plan_from_packet.py`)
+
+**Partner statement:** "When I read the packet I already have the
+100-day plan sketched. The packet SHOULD tell me what to do in
+the first 100 days."
+
+14 conditional rules + 2 always-on (board cadence, KPI
+instrumentation). Each rule fires when a specific packet signal
+is present:
+
+- **FCA exposure** → engage specialized counsel, week 1.
+- **No MIP finalized** → finalize grants, week 2.
+- **Denial ≥ 10%** → RCM denial-reduction blitz, week 3.
+- **Weak management OR tenure < 2y OR role gaps** → named search,
+  week 4.
+- **Leverage ≥ 6x, covenanted** → weekly covenant monitor, week 4.
+- **CMS survey issues** → remediation plan, week 5.
+- **Integration < 80%** → integration sprint, week 6.
+- **DAR ≥ 55** → DAR reduction program, week 6.
+- **CDI not in place** → stand-up, week 8.
+- **Top payer ≥ 40%** → contingency plan, week 9.
+- **≥ 3 ERPs** → consolidation charter, week 10.
+- **Commercial < 50%** → payer strategy review, week 12.
+
+Cap at 15 actions (partner discipline — more is a wish list).
+Sorted by latest-start week. Expected $ impact quantified where
+calculable (denial blitz $2M, DAR $1M, CDI $1.5M).
+
+Partner note:
+
+- < 6 actions → "thin plan; confirm packet is complete."
+- 6-11 → "standard plan, $X quantified impact."
+- ≥ 12 → "aggressive; ensure CEO can execute 12+ simultaneous
+  workstreams."
+
+**Worked example:** a deal with denials at 12%, weak management,
+covenant-tight structure, and no MIP produces a week-sorted
+list of ~8 actions the partner can hand to the deal team on the
+day of close.
+
+---
+
+## 142. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3596,3 +3638,7 @@ Recommended haircut:
   — peak-multiple × peak-EBITDA double-count detector with
   subsector cycle averages and haircut recommendation. Full
   inventory: 138 modules, 1,391 pe_intelligence unit tests.
+- **2026-04-17** — Added `one_hundred_day_plan_from_packet.py`
+  (§141) — auto-derive 100-day actions from packet signals; 14
+  conditional rules + 2 always-on; cap at 15. Full inventory:
+  139 modules, 1,406 pe_intelligence unit tests.
