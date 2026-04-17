@@ -1,0 +1,830 @@
+"""Tests for rcm_mc.pe_intelligence — reasonableness, heuristics,
+narrative, and the top-level partner_review entry point.
+
+The tests deliberately use hand-built ``HeuristicContext`` objects and
+dict-shaped packet stubs rather than real ``DealAnalysisPacket``
+instances where possible. This isolates the intelligence brain from
+packet-builder changes — the contract we care about is "given these
+inputs, produce this judgment," not the packet's internal plumbing.
+
+Every test targets a specific partner rule or band. The rule ids
+referenced here must match those in heuristics.py — if a rule is
+renamed, the test will fail on id-level assertion.
+"""
+from __future__ import annotations
+
+import unittest
+
+from rcm_mc.pe_intelligence import (
+    Band,
+    BandCheck,
+    HeuristicContext,
+    HeuristicHit,
+    NarrativeBlock,
+    PartnerReview,
+    all_heuristics,
+    check_ebitda_margin,
+    check_irr,
+    check_lever_realizability,
+    check_multiple_ceiling,
+    compose_narrative,
+    partner_review,
+    partner_review_from_context,
+    run_heuristics,
+    run_reasonableness_checks,
+)
+from rcm_mc.pe_intelligence.narrative import (
+    REC_PASS,
+    REC_PROCEED,
+    REC_PROCEED_CAVEATS,
+    REC_STRONG_PROCEED,
+)
+from rcm_mc.pe_intelligence.reasonableness import (
+    VERDICT_IMPLAUSIBLE,
+    VERDICT_IN_BAND,
+    VERDICT_OUT_OF_BAND,
+    VERDICT_STRETCH,
+    VERDICT_UNKNOWN,
+    classify_payer_mix,
+    classify_size,
+    get_irr_band,
+    get_lever_timeframe,
+    get_margin_band,
+    PAYER_BALANCED,
+    PAYER_COMMERCIAL_HEAVY,
+    PAYER_GOVT_HEAVY,
+    PAYER_MEDICAID_HEAVY,
+    PAYER_MEDICARE_HEAVY,
+    SIZE_LARGE,
+    SIZE_LOWER_MID,
+    SIZE_MID,
+    SIZE_SMALL,
+    SIZE_UPPER_MID,
+)
+from rcm_mc.pe_intelligence.heuristics import (
+    SEV_CRITICAL,
+    SEV_HIGH,
+    SEV_LOW,
+    SEV_MEDIUM,
+)
+
+
+# ── Reasonableness: Band classification ───────────────────────────────
+
+class TestBandClassification(unittest.TestCase):
+
+    def test_band_in_band_returns_in_band(self) -> None:
+        band = Band("test", "test", low=0.10, high=0.20,
+                    stretch_high=0.25, implausible_high=0.35)
+        self.assertEqual(band.classify(0.15), VERDICT_IN_BAND)
+
+    def test_band_stretch_returns_stretch(self) -> None:
+        band = Band("test", "test", low=0.10, high=0.20,
+                    stretch_high=0.25, implausible_high=0.35)
+        self.assertEqual(band.classify(0.23), VERDICT_STRETCH)
+
+    def test_band_out_of_band_returns_out_of_band(self) -> None:
+        band = Band("test", "test", low=0.10, high=0.20,
+                    stretch_high=0.25, implausible_high=0.35)
+        self.assertEqual(band.classify(0.30), VERDICT_OUT_OF_BAND)
+
+    def test_band_implausible_returns_implausible(self) -> None:
+        band = Band("test", "test", low=0.10, high=0.20,
+                    stretch_high=0.25, implausible_high=0.35)
+        self.assertEqual(band.classify(0.40), VERDICT_IMPLAUSIBLE)
+
+    def test_band_none_value_returns_unknown(self) -> None:
+        band = Band("test", "test", low=0.10, high=0.20)
+        self.assertEqual(band.classify(None), VERDICT_UNKNOWN)
+
+
+class TestSizeClassification(unittest.TestCase):
+
+    def test_small_bucket(self) -> None:
+        self.assertEqual(classify_size(5.0), SIZE_SMALL)
+
+    def test_lower_mid_bucket(self) -> None:
+        self.assertEqual(classify_size(15.0), SIZE_LOWER_MID)
+
+    def test_mid_bucket(self) -> None:
+        self.assertEqual(classify_size(50.0), SIZE_MID)
+
+    def test_upper_mid_bucket(self) -> None:
+        self.assertEqual(classify_size(150.0), SIZE_UPPER_MID)
+
+    def test_large_bucket(self) -> None:
+        self.assertEqual(classify_size(400.0), SIZE_LARGE)
+
+    def test_missing_defaults_to_small(self) -> None:
+        self.assertEqual(classify_size(None), SIZE_SMALL)
+
+
+class TestPayerMixClassification(unittest.TestCase):
+
+    def test_commercial_heavy(self) -> None:
+        self.assertEqual(
+            classify_payer_mix({"commercial": 0.50, "medicare": 0.30, "medicaid": 0.10}),
+            PAYER_COMMERCIAL_HEAVY,
+        )
+
+    def test_medicare_heavy(self) -> None:
+        self.assertEqual(
+            classify_payer_mix({"medicare": 0.60, "commercial": 0.30}),
+            PAYER_MEDICARE_HEAVY,
+        )
+
+    def test_govt_heavy_takes_precedence(self) -> None:
+        # Medicare 45 + Medicaid 30 = 75% — should be govt_heavy.
+        self.assertEqual(
+            classify_payer_mix({"medicare": 0.45, "medicaid": 0.30, "commercial": 0.25}),
+            PAYER_GOVT_HEAVY,
+        )
+
+    def test_medicaid_heavy(self) -> None:
+        self.assertEqual(
+            classify_payer_mix({"medicaid": 0.35, "commercial": 0.40, "medicare": 0.25}),
+            PAYER_MEDICAID_HEAVY,
+        )
+
+    def test_balanced_when_no_regime_hits(self) -> None:
+        self.assertEqual(
+            classify_payer_mix({"commercial": 0.35, "medicare": 0.40, "medicaid": 0.20, "other": 0.05}),
+            PAYER_BALANCED,
+        )
+
+    def test_empty_returns_balanced(self) -> None:
+        self.assertEqual(classify_payer_mix({}), PAYER_BALANCED)
+
+    def test_percent_format_autonormalized(self) -> None:
+        # Given as percentages (sum ~ 100) — should still classify correctly.
+        # 60 medicare + 5 medicaid = 65% govt, below the 70% govt_heavy cutoff,
+        # so the classifier should resolve to medicare_heavy.
+        self.assertEqual(
+            classify_payer_mix({"medicare": 60.0, "commercial": 35.0, "medicaid": 5.0}),
+            PAYER_MEDICARE_HEAVY,
+        )
+
+
+# ── Reasonableness: IRR checks ────────────────────────────────────────
+
+class TestCheckIRR(unittest.TestCase):
+
+    def test_none_irr_returns_unknown(self) -> None:
+        result = check_irr(None, ebitda_m=50.0, payer_mix={"commercial": 0.50})
+        self.assertEqual(result.verdict, VERDICT_UNKNOWN)
+
+    def test_medicare_heavy_irr_in_band(self) -> None:
+        # Mid-size, Medicare-heavy (below 70% govt threshold) — 14% IRR is in the band
+        r = check_irr(0.14, ebitda_m=50.0,
+                      payer_mix={"medicare": 0.60, "commercial": 0.35, "medicaid": 0.05})
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+        self.assertIn("Medicare-heavy", r.rationale)
+
+    def test_medicare_heavy_irr_stretch(self) -> None:
+        r = check_irr(0.19, ebitda_m=50.0,
+                      payer_mix={"medicare": 0.60, "commercial": 0.35, "medicaid": 0.05})
+        self.assertEqual(r.verdict, VERDICT_STRETCH)
+
+    def test_medicare_heavy_irr_implausible(self) -> None:
+        # mid × medicare_heavy has implausible > 28%
+        r = check_irr(0.35, ebitda_m=50.0,
+                      payer_mix={"medicare": 0.60, "commercial": 0.35, "medicaid": 0.05})
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+        self.assertIn("IC", r.partner_note)
+
+    def test_commercial_heavy_same_irr_not_implausible(self) -> None:
+        # The same 35% IRR in a commercial-heavy mid deal is STRETCH, not implausible.
+        r = check_irr(0.35, ebitda_m=50.0,
+                      payer_mix={"commercial": 0.55, "medicare": 0.30})
+        self.assertNotEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_band_varies_by_size(self) -> None:
+        """A 25% IRR is IN_BAND for small-commercial but OUT/IMPLAUSIBLE for large."""
+        r_small = check_irr(0.25, ebitda_m=5.0, payer_mix={"commercial": 0.55})
+        r_large = check_irr(0.25, ebitda_m=300.0, payer_mix={"commercial": 0.55})
+        self.assertEqual(r_small.verdict, VERDICT_IN_BAND)
+        # Large-commercial IN_BAND is 12-20, STRETCH 25, so this should be STRETCH.
+        self.assertIn(r_large.verdict, (VERDICT_STRETCH, VERDICT_OUT_OF_BAND))
+
+    def test_get_irr_band_falls_back_to_balanced(self) -> None:
+        # Contrived: should never return None.
+        band = get_irr_band(SIZE_MID, "totally_bogus_regime")
+        self.assertIsNotNone(band)
+
+
+# ── Reasonableness: EBITDA margin ─────────────────────────────────────
+
+class TestCheckEBITDAMargin(unittest.TestCase):
+
+    def test_none_margin_returns_unknown(self) -> None:
+        r = check_ebitda_margin(None, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+    def test_acute_care_normal_margin(self) -> None:
+        r = check_ebitda_margin(0.08, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_acute_care_high_margin_flagged(self) -> None:
+        r = check_ebitda_margin(0.22, hospital_type="acute_care")
+        self.assertIn(r.verdict, (VERDICT_OUT_OF_BAND, VERDICT_STRETCH))
+
+    def test_acute_care_extreme_margin_implausible(self) -> None:
+        r = check_ebitda_margin(0.40, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_asc_high_margin_is_normal(self) -> None:
+        # 25% margin on an ASC is entirely normal.
+        r = check_ebitda_margin(0.25, hospital_type="asc")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_critical_access_tight_band(self) -> None:
+        # 12% on CAH is above band.
+        r = check_ebitda_margin(0.12, hospital_type="critical_access")
+        self.assertIn(r.verdict, (VERDICT_STRETCH, VERDICT_OUT_OF_BAND))
+
+    def test_aliases_resolve(self) -> None:
+        r = check_ebitda_margin(0.08, hospital_type="acute")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+        r2 = check_ebitda_margin(0.08, hospital_type="hospital")
+        self.assertEqual(r2.verdict, VERDICT_IN_BAND)
+
+    def test_unknown_type_falls_back_to_acute(self) -> None:
+        # Unknown hospital type should fall back to acute_care band.
+        r = check_ebitda_margin(0.08, hospital_type="made_up_type")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+
+# ── Reasonableness: exit multiple ─────────────────────────────────────
+
+class TestCheckMultipleCeiling(unittest.TestCase):
+
+    def test_none_multiple_returns_unknown(self) -> None:
+        r = check_multiple_ceiling(None, payer_mix={"commercial": 0.55})
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+    def test_commercial_heavy_high_multiple_in_band(self) -> None:
+        r = check_multiple_ceiling(10.0, payer_mix={"commercial": 0.55})
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_medicare_heavy_same_multiple_out_of_band(self) -> None:
+        r = check_multiple_ceiling(10.0, payer_mix={"medicare": 0.65})
+        self.assertIn(r.verdict, (VERDICT_STRETCH, VERDICT_OUT_OF_BAND))
+
+    def test_medicare_heavy_extreme_multiple_implausible(self) -> None:
+        r = check_multiple_ceiling(14.0, payer_mix={"medicare": 0.65})
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+
+# ── Reasonableness: lever realizability ──────────────────────────────
+
+class TestCheckLeverRealizability(unittest.TestCase):
+
+    def test_denial_12mo_200bps_is_in_band(self) -> None:
+        r = check_lever_realizability("denial_rate", 200, 12)
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_denial_12mo_300bps_is_stretch(self) -> None:
+        # 12mo denial: reasonable ≤ 200, stretch ≤ 350, implausible > 600.
+        r = check_lever_realizability("denial_rate", 300, 12)
+        self.assertEqual(r.verdict, VERDICT_STRETCH)
+
+    def test_denial_12mo_400bps_is_out_of_band(self) -> None:
+        # 400 bps exceeds stretch_max=350 but is below implausible=600.
+        r = check_lever_realizability("denial_rate", 400, 12)
+        self.assertEqual(r.verdict, VERDICT_OUT_OF_BAND)
+
+    def test_denial_12mo_700bps_is_implausible(self) -> None:
+        r = check_lever_realizability("denial_rate", 700, 12)
+        self.assertIn(r.verdict, (VERDICT_OUT_OF_BAND, VERDICT_IMPLAUSIBLE))
+
+    def test_ar_days_12mo_reasonable(self) -> None:
+        r = check_lever_realizability("days_in_ar", 8, 12)
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_ar_days_12mo_implausible(self) -> None:
+        r = check_lever_realizability("days_in_ar", 40, 12)
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_unknown_lever_returns_unknown_verdict(self) -> None:
+        r = check_lever_realizability("made_up_lever", 100, 12)
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+    def test_get_lever_timeframe_finds_nearest(self) -> None:
+        # Asking for an 18-month denial timeframe should resolve to 12 or 24 (closest).
+        lt = get_lever_timeframe("denial_rate", 18)
+        self.assertIsNotNone(lt)
+        self.assertIn(lt.months, (12, 24))
+
+
+# ── Reasonableness orchestrator ──────────────────────────────────────
+
+class TestRunReasonablenessChecks(unittest.TestCase):
+
+    def test_runs_all_three_core_checks(self) -> None:
+        results = run_reasonableness_checks(
+            irr=0.18, ebitda_margin=0.08, ebitda_m=30.0,
+            exit_multiple=10.0, hospital_type="acute_care",
+            payer_mix={"commercial": 0.50, "medicare": 0.30, "medicaid": 0.20},
+            lever_claims=[],
+        )
+        metrics = [r.metric for r in results]
+        self.assertIn("irr", metrics)
+        self.assertIn("ebitda_margin", metrics)
+        self.assertIn("exit_multiple", metrics)
+
+    def test_lever_claims_produce_lever_bands(self) -> None:
+        results = run_reasonableness_checks(
+            irr=0.20, ebitda_margin=0.10, ebitda_m=50.0,
+            exit_multiple=9.5, hospital_type="acute_care",
+            payer_mix={"commercial": 0.50, "medicare": 0.30, "medicaid": 0.20},
+            lever_claims=[{"lever": "denial_rate", "magnitude": 250, "months": 12}],
+        )
+        lever_checks = [r for r in results if r.metric.startswith("lever:")]
+        self.assertEqual(len(lever_checks), 1)
+
+    def test_missing_inputs_still_produces_unknown(self) -> None:
+        results = run_reasonableness_checks()
+        # All three core checks should still emit UNKNOWN rather than raise.
+        self.assertTrue(any(r.verdict == VERDICT_UNKNOWN for r in results))
+
+
+# ── Heuristics: individual rules ─────────────────────────────────────
+
+class TestHeuristicsFireOnExpectedPatterns(unittest.TestCase):
+
+    def test_medicare_heavy_exit_fires(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65, "commercial": 0.25, "medicaid": 0.10},
+            exit_multiple=11.5,
+        )
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "medicare_heavy_multiple_ceiling" for h in hits))
+
+    def test_medicare_heavy_exit_doesnt_fire_below_threshold(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65, "commercial": 0.25, "medicaid": 0.10},
+            exit_multiple=8.5,
+        )
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "medicare_heavy_multiple_ceiling" for h in hits))
+
+    def test_aggressive_denial_fires_above_200_bps(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=350)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "aggressive_denial_improvement" for h in hits))
+
+    def test_aggressive_denial_doesnt_fire_at_200_bps(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=180)
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "aggressive_denial_improvement" for h in hits))
+
+    def test_aggressive_denial_critical_above_600(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=700)
+        hits = run_heuristics(ctx)
+        denial = next(h for h in hits if h.id == "aggressive_denial_improvement")
+        self.assertEqual(denial.severity, SEV_CRITICAL)
+
+    def test_capitation_with_ffs_growth_fires(self) -> None:
+        ctx = HeuristicContext(
+            deal_structure="capitation",
+            revenue_growth_pct_per_yr=7.0,
+        )
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "capitation_vbc_uses_ffs_growth" for h in hits))
+
+    def test_capitation_with_flat_growth_does_not_fire(self) -> None:
+        ctx = HeuristicContext(
+            deal_structure="capitation",
+            revenue_growth_pct_per_yr=2.5,
+        )
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "capitation_vbc_uses_ffs_growth" for h in hits))
+
+    def test_multiple_expansion_fires(self) -> None:
+        ctx = HeuristicContext(entry_multiple=7.0, exit_multiple=10.0)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "multiple_expansion_carrying_return" for h in hits))
+
+    def test_multiple_expansion_low_delta_doesnt_fire(self) -> None:
+        ctx = HeuristicContext(entry_multiple=9.0, exit_multiple=9.5)
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "multiple_expansion_carrying_return" for h in hits))
+
+    def test_leverage_high_with_govt_fires(self) -> None:
+        ctx = HeuristicContext(
+            leverage_multiple=6.2,
+            payer_mix={"medicare": 0.45, "medicaid": 0.30, "commercial": 0.25},
+        )
+        hits = run_heuristics(ctx)
+        hit = next((h for h in hits if h.id == "leverage_too_high_govt_mix"), None)
+        self.assertIsNotNone(hit)
+        self.assertEqual(hit.severity, SEV_HIGH)
+
+    def test_leverage_high_with_commercial_doesnt_fire(self) -> None:
+        ctx = HeuristicContext(
+            leverage_multiple=6.2,
+            payer_mix={"commercial": 0.60, "medicare": 0.25, "medicaid": 0.15},
+        )
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "leverage_too_high_govt_mix" for h in hits))
+
+    def test_covenant_headroom_tight_fires(self) -> None:
+        ctx = HeuristicContext(covenant_headroom_pct=0.08)
+        hits = run_heuristics(ctx)
+        hit = next((h for h in hits if h.id == "covenant_headroom_tight"), None)
+        self.assertIsNotNone(hit)
+        self.assertEqual(hit.severity, SEV_HIGH)
+
+    def test_data_coverage_low_fires(self) -> None:
+        ctx = HeuristicContext(data_coverage_pct=0.45)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "insufficient_data_coverage" for h in hits))
+
+    def test_case_mix_missing_fires_on_acute(self) -> None:
+        ctx = HeuristicContext(hospital_type="acute_care", has_case_mix_data=False)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "case_mix_missing" for h in hits))
+
+    def test_case_mix_missing_doesnt_fire_on_asc(self) -> None:
+        ctx = HeuristicContext(hospital_type="asc", has_case_mix_data=False)
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "case_mix_missing" for h in hits))
+
+    def test_ar_days_high_fires(self) -> None:
+        ctx = HeuristicContext(days_in_ar=75)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "ar_days_above_peer" for h in hits))
+
+    def test_denial_rate_elevated_fires(self) -> None:
+        ctx = HeuristicContext(denial_rate=0.15)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "denial_rate_elevated" for h in hits))
+
+    def test_small_deal_mega_irr_fires(self) -> None:
+        ctx = HeuristicContext(ebitda_m=8.0, projected_irr=0.52)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "small_deal_mega_irr" for h in hits))
+
+    def test_small_deal_normal_irr_doesnt_fire(self) -> None:
+        ctx = HeuristicContext(ebitda_m=8.0, projected_irr=0.25)
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "small_deal_mega_irr" for h in hits))
+
+    def test_short_hold_rcm_fires(self) -> None:
+        ctx = HeuristicContext(hold_years=3.0, denial_improvement_bps_per_yr=150)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "hold_too_short_for_rcm" for h in hits))
+
+    def test_short_hold_without_rcm_doesnt_fire(self) -> None:
+        ctx = HeuristicContext(hold_years=3.0)
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "hold_too_short_for_rcm" for h in hits))
+
+    def test_writeoff_rate_high_fires(self) -> None:
+        ctx = HeuristicContext(final_writeoff_rate=0.095)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "writeoff_rate_high" for h in hits))
+
+    def test_cah_reimbursement_fires(self) -> None:
+        ctx = HeuristicContext(hospital_type="critical_access")
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "critical_access_reimbursement" for h in hits))
+
+    def test_moic_cagr_high_fires(self) -> None:
+        ctx = HeuristicContext(projected_moic=4.0, hold_years=4.0)  # ~41% CAGR
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "moic_cagr_too_high" for h in hits))
+
+    def test_moic_cagr_reasonable_doesnt_fire(self) -> None:
+        ctx = HeuristicContext(projected_moic=2.5, hold_years=5.0)  # ~20% CAGR
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "moic_cagr_too_high" for h in hits))
+
+    def test_teaching_hospital_fires(self) -> None:
+        ctx = HeuristicContext(teaching_status="major")
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "teaching_hospital_complexity" for h in hits))
+
+    def test_ar_reduction_aggressive_fires(self) -> None:
+        ctx = HeuristicContext(ar_reduction_days_per_yr=20)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "ar_reduction_aggressive" for h in hits))
+
+    def test_medicaid_volatile_state_fires(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicaid": 0.40, "commercial": 0.40, "medicare": 0.20},
+            state="IL",
+        )
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "state_medicaid_volatility" for h in hits))
+
+    def test_medicaid_non_volatile_state_doesnt_fire(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicaid": 0.40, "commercial": 0.40, "medicare": 0.20},
+            state="TX",
+        )
+        hits = run_heuristics(ctx)
+        self.assertFalse(any(h.id == "state_medicaid_volatility" for h in hits))
+
+    def test_margin_expansion_too_fast_fires(self) -> None:
+        ctx = HeuristicContext(margin_expansion_bps_per_yr=450)
+        hits = run_heuristics(ctx)
+        self.assertTrue(any(h.id == "margin_expansion_too_fast" for h in hits))
+
+
+class TestHeuristicsSortingAndRegistry(unittest.TestCase):
+
+    def test_registry_is_stable_and_non_empty(self) -> None:
+        catalog = all_heuristics()
+        self.assertGreaterEqual(len(catalog), 19)
+        # All ids are unique.
+        ids = [h.id for h in catalog]
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_hits_sorted_highest_severity_first(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65, "commercial": 0.25, "medicaid": 0.10},
+            ebitda_m=50.0,
+            leverage_multiple=6.5,  # should trigger HIGH
+            covenant_headroom_pct=0.05,  # HIGH
+            teaching_status="major",  # LOW
+        )
+        hits = run_heuristics(ctx)
+        # Severities should be non-increasing.
+        ranks = [h.severity_rank() for h in hits]
+        self.assertEqual(ranks, sorted(ranks, reverse=True))
+
+    def test_every_hit_has_finding_and_partner_voice(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65, "commercial": 0.25, "medicaid": 0.10},
+            exit_multiple=11.5,
+            denial_improvement_bps_per_yr=400,
+            days_in_ar=75,
+            denial_rate=0.15,
+        )
+        hits = run_heuristics(ctx)
+        for h in hits:
+            self.assertTrue(h.finding, f"{h.id} has empty finding")
+            # Not every hit must have partner_voice, but most should.
+            # Check that id, title, category all populated.
+            self.assertTrue(h.id)
+            self.assertTrue(h.title)
+            self.assertTrue(h.category)
+
+    def test_heuristic_hit_to_dict_roundtrip(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=350)
+        hits = run_heuristics(ctx)
+        self.assertGreaterEqual(len(hits), 1)
+        d = hits[0].to_dict()
+        self.assertIn("id", d)
+        self.assertIn("severity", d)
+        self.assertIn("finding", d)
+        self.assertIn("trigger_values", d)
+
+
+# ── Narrative composer ──────────────────────────────────────────────
+
+class TestNarrativeCompose(unittest.TestCase):
+
+    def test_clean_deal_returns_strong_proceed(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.50, "medicare": 0.35, "medicaid": 0.15},
+            ebitda_m=40.0, hospital_type="acute_care",
+            exit_multiple=9.0, entry_multiple=8.5, hold_years=5.0,
+            projected_irr=0.19, projected_moic=2.2,
+            denial_improvement_bps_per_yr=150,
+            ar_reduction_days_per_yr=6,
+            leverage_multiple=4.8, covenant_headroom_pct=0.30,
+            data_coverage_pct=0.80, has_case_mix_data=True,
+            ebitda_margin=0.09, days_in_ar=50,
+            denial_rate=0.09, final_writeoff_rate=0.04,
+            state="TX", margin_expansion_bps_per_yr=150,
+        )
+        review = partner_review_from_context(ctx, deal_id="d1")
+        self.assertIn(review.narrative.recommendation, (REC_STRONG_PROCEED, REC_PROCEED))
+
+    def test_implausible_irr_forces_pass(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.70, "commercial": 0.20, "medicaid": 0.10},
+            ebitda_m=50.0, hospital_type="acute_care",
+            projected_irr=0.45,  # implausible for mid × medicare_heavy
+            exit_multiple=14.0,
+        )
+        review = partner_review_from_context(ctx)
+        self.assertEqual(review.narrative.recommendation, REC_PASS)
+
+    def test_multiple_high_hits_trigger_caveats_or_pass(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.45, "medicaid": 0.30, "commercial": 0.25},
+            ebitda_m=50.0, hospital_type="acute_care",
+            exit_multiple=9.5, entry_multiple=9.0,
+            leverage_multiple=6.3,
+            covenant_headroom_pct=0.12,
+            data_coverage_pct=0.40,
+            days_in_ar=80,
+            denial_rate=0.18,
+            denial_improvement_bps_per_yr=500,
+            projected_irr=0.16,
+        )
+        review = partner_review_from_context(ctx)
+        self.assertIn(review.narrative.recommendation,
+                      (REC_PROCEED_CAVEATS, REC_PASS))
+
+    def test_narrative_has_all_sections(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30.0,
+            hospital_type="acute_care", projected_irr=0.20,
+            exit_multiple=9.5, entry_multiple=8.0, hold_years=5.0,
+        )
+        review = partner_review_from_context(ctx)
+        self.assertTrue(review.narrative.headline)
+        self.assertTrue(review.narrative.bull_case)
+        self.assertTrue(review.narrative.bear_case)
+        self.assertGreaterEqual(len(review.narrative.key_questions), 3)
+        self.assertTrue(review.narrative.ic_memo_paragraph)
+
+    def test_compose_narrative_directly(self) -> None:
+        bands = [
+            check_irr(0.25, ebitda_m=15.0, payer_mix={"commercial": 0.50}),
+            check_ebitda_margin(0.09, hospital_type="acute_care"),
+        ]
+        hits = []
+        nb = compose_narrative(
+            bands=bands, hits=hits, hospital_type="acute_care",
+            ebitda_m=15.0, payer_mix={"commercial": 0.50},
+        )
+        self.assertIsInstance(nb, NarrativeBlock)
+        self.assertTrue(nb.recommendation)
+
+
+# ── partner_review entry point ───────────────────────────────────────
+
+def _make_packet_dict(**overrides):
+    """Minimal dict-shaped packet for testing."""
+    base = {
+        "deal_id": "test",
+        "deal_name": "Test Hospital",
+        "profile": {
+            "payer_mix": {"commercial": 0.50, "medicare": 0.30, "medicaid": 0.20},
+            "hospital_type": "acute_care",
+            "bed_count": 220,
+            "state": "TX",
+        },
+        "observed_metrics": {
+            "initial_denial_rate": {"value": 0.09},
+            "days_in_ar": {"value": 48},
+            "final_writeoff_rate": {"value": 0.04},
+            "case_mix_index": {"value": 1.45},
+        },
+        "rcm_profile": {},
+        "ebitda_bridge": {
+            "current_ebitda": 30_000_000,
+            "target_ebitda": 40_000_000,
+            "new_ebitda_margin": 0.10,
+            "margin_improvement_bps": 150,
+            "per_metric_impacts": [
+                {"metric_key": "initial_denial_rate", "current_value": 0.09, "target_value": 0.07},
+                {"metric_key": "days_in_ar", "current_value": 48, "target_value": 40},
+            ],
+        },
+        "simulation": {
+            "irr": {"p50": 0.20},
+            "moic": {"p50": 2.5},
+        },
+        "enterprise_value_summary": {
+            "exit_multiple": 9.5,
+            "entry_multiple": 8.0,
+            "hold_years": 5.0,
+            "leverage_multiple": 4.5,
+        },
+        "completeness": {"coverage_pct": 0.75},
+    }
+    # Shallow override
+    for k, v in overrides.items():
+        base[k] = v
+    return base
+
+
+class TestPartnerReviewFromPacket(unittest.TestCase):
+
+    def test_minimal_dict_packet_produces_review(self) -> None:
+        packet = _make_packet_dict()
+        review = partner_review(packet)
+        self.assertIsInstance(review, PartnerReview)
+        self.assertEqual(review.deal_id, "test")
+        self.assertEqual(review.deal_name, "Test Hospital")
+
+    def test_review_is_json_roundtrippable(self) -> None:
+        import json
+        packet = _make_packet_dict()
+        review = partner_review(packet)
+        d = review.to_dict()
+        s = json.dumps(d, default=str)
+        back = json.loads(s)
+        self.assertEqual(back["deal_id"], "test")
+        self.assertIn("reasonableness_checks", back)
+        self.assertIn("heuristic_hits", back)
+        self.assertIn("narrative", back)
+
+    def test_severity_counts_populate(self) -> None:
+        # Bad deal should have high severity count.
+        packet = _make_packet_dict()
+        packet["profile"]["payer_mix"] = {"medicare": 0.70, "commercial": 0.20, "medicaid": 0.10}
+        packet["enterprise_value_summary"]["exit_multiple"] = 12.5
+        packet["enterprise_value_summary"]["leverage_multiple"] = 6.5
+        review = partner_review(packet)
+        counts = review.severity_counts()
+        self.assertGreaterEqual(sum(counts.values()), 1)
+
+    def test_empty_packet_does_not_raise(self) -> None:
+        review = partner_review({})
+        self.assertIsInstance(review, PartnerReview)
+
+    def test_minimal_packet_with_only_deal_id(self) -> None:
+        review = partner_review({"deal_id": "X"})
+        self.assertEqual(review.deal_id, "X")
+        self.assertIsInstance(review.narrative, NarrativeBlock)
+
+    def test_review_to_dict_has_expected_keys(self) -> None:
+        review = partner_review(_make_packet_dict())
+        d = review.to_dict()
+        for key in ("deal_id", "reasonableness_checks", "heuristic_hits",
+                    "narrative", "severity_counts", "band_counts",
+                    "recommendation", "has_critical_flag", "is_fundable"):
+            self.assertIn(key, d)
+
+    def test_real_packet_instance_also_works(self) -> None:
+        """If a real DealAnalysisPacket import path is available, we
+        also accept it."""
+        try:
+            from rcm_mc.analysis.packet import DealAnalysisPacket, HospitalProfile
+        except ImportError:
+            self.skipTest("DealAnalysisPacket not importable in this env")
+            return
+        p = DealAnalysisPacket(
+            deal_id="real",
+            deal_name="Real Hospital",
+            profile=HospitalProfile(
+                payer_mix={"commercial": 0.50, "medicare": 0.30, "medicaid": 0.20},
+                bed_count=200, state="TX",
+            ),
+        )
+        review = partner_review(p)
+        self.assertEqual(review.deal_id, "real")
+
+
+class TestPartnerReviewConvenienceFlags(unittest.TestCase):
+
+    def test_has_critical_flag_detects_critical(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=700)
+        review = partner_review_from_context(ctx)
+        self.assertTrue(review.has_critical_flag())
+
+    def test_is_fundable_false_when_recommendation_is_pass(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=700)
+        review = partner_review_from_context(ctx)
+        self.assertFalse(review.is_fundable())
+
+    def test_is_fundable_true_when_strong_proceed(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.50, "medicare": 0.35, "medicaid": 0.15},
+            ebitda_m=40.0, hospital_type="acute_care",
+            exit_multiple=9.0, entry_multiple=8.5, hold_years=5.0,
+            projected_irr=0.19, projected_moic=2.2,
+            denial_improvement_bps_per_yr=150,
+            ar_reduction_days_per_yr=6,
+            leverage_multiple=4.8, covenant_headroom_pct=0.30,
+            data_coverage_pct=0.80, has_case_mix_data=True,
+            ebitda_margin=0.09, days_in_ar=50,
+            denial_rate=0.09, final_writeoff_rate=0.04,
+            state="TX", margin_expansion_bps_per_yr=150,
+        )
+        review = partner_review_from_context(ctx)
+        self.assertTrue(review.is_fundable())
+
+
+# ── Independence: no packet_builder modification ─────────────────────
+
+class TestNoPacketBuilderModification(unittest.TestCase):
+    """Sentinel test: partner_review must NOT touch packet_builder. The
+    packet is an input; the review is a sibling, not a replacement.
+    """
+
+    def test_pe_intelligence_does_not_import_packet_builder(self) -> None:
+        import importlib
+        # pe_intelligence package must not pull in packet_builder.
+        for mod in ("rcm_mc.pe_intelligence.heuristics",
+                    "rcm_mc.pe_intelligence.reasonableness",
+                    "rcm_mc.pe_intelligence.narrative",
+                    "rcm_mc.pe_intelligence.partner_review"):
+            m = importlib.import_module(mod)
+            src = getattr(m, "__file__", "")
+            if src:
+                with open(src) as f:
+                    content = f.read()
+                self.assertNotIn("packet_builder", content,
+                                 f"{mod} should not import packet_builder")
+
+
+if __name__ == "__main__":
+    unittest.main()

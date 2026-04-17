@@ -566,18 +566,20 @@ def partner_review_from_context(ctx: HeuristicContext, *, deal_id: str = "",
                                 deal_name: str = "") -> PartnerReview:
     """Test/CLI-friendly entry: run the review from a pre-built context
     without a packet. Useful for what-if sensitivities."""
+    # Per-year rates → check against the 12-month band. This keeps the
+    # realizability check calibrated to ramp speed, not hold length.
     lever_claims: List[Dict[str, Any]] = []
-    if ctx.denial_improvement_bps_per_yr and ctx.hold_years:
+    if ctx.denial_improvement_bps_per_yr:
         lever_claims.append({
             "lever": "denial_rate",
-            "magnitude": ctx.denial_improvement_bps_per_yr * ctx.hold_years,
-            "months": int(round((ctx.hold_years or 1) * 12)),
+            "magnitude": float(ctx.denial_improvement_bps_per_yr),
+            "months": 12,
         })
-    if ctx.ar_reduction_days_per_yr and ctx.hold_years:
+    if ctx.ar_reduction_days_per_yr:
         lever_claims.append({
             "lever": "days_in_ar",
-            "magnitude": ctx.ar_reduction_days_per_yr * ctx.hold_years,
-            "months": int(round((ctx.hold_years or 1) * 12)),
+            "magnitude": float(ctx.ar_reduction_days_per_yr),
+            "months": 12,
         })
     bands = run_reasonableness_checks(
         irr=ctx.projected_irr,
