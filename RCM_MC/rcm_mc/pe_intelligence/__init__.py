@@ -136,6 +136,11 @@ from .extra_bands import (
     check_rvu_per_provider,
     run_extra_bands,
 )
+from .extra_archetypes import (
+    ExtraArchetypeContext,
+    ExtraArchetypeHit,
+    classify_extra_archetypes,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -695,4 +700,7 @@ __all__ = [
     "render_one_pager",
     "render_pdf_ready",
     "render_memo_slack",
+    "ExtraArchetypeContext",
+    "ExtraArchetypeHit",
+    "classify_extra_archetypes",
 ]

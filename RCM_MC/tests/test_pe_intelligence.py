@@ -5595,5 +5595,76 @@ class TestMemoFormats(unittest.TestCase):
             self.assertIn(key, out)
 
 
+# ── Extra archetypes ────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ExtraArchetypeContext,
+    ExtraArchetypeHit,
+    classify_extra_archetypes,
+)
+
+
+class TestExtraArchetypes(unittest.TestCase):
+
+    def test_de_novo_build_fires(self) -> None:
+        hits = classify_extra_archetypes(ExtraArchetypeContext(
+            is_pre_revenue=True, has_ebitda=False,
+        ))
+        self.assertTrue(any(h.archetype == "de_novo_build" for h in hits))
+
+    def test_jv_fires(self) -> None:
+        hits = classify_extra_archetypes(ExtraArchetypeContext(
+            is_jv=True, jv_partner_is_strategic=True,
+        ))
+        self.assertTrue(any(h.archetype == "joint_venture" for h in hits))
+
+    def test_distressed_fires(self) -> None:
+        hits = classify_extra_archetypes(ExtraArchetypeContext(
+            covenant_in_breach=True, in_bankruptcy=True,
+        ))
+        self.assertTrue(any(h.archetype == "distressed_restructuring" for h in hits))
+
+    def test_carveout_platform(self) -> None:
+        hits = classify_extra_archetypes(ExtraArchetypeContext(
+            is_carveout=True, has_rollup_thesis=True,
+        ))
+        self.assertTrue(any(h.archetype == "carveout_platform" for h in hits))
+
+    def test_succession_transition(self) -> None:
+        hits = classify_extra_archetypes(ExtraArchetypeContext(
+            is_family_owned=True, founder_exiting=True,
+        ))
+        self.assertTrue(any(h.archetype == "succession_transition" for h in hits))
+
+    def test_public_tender(self) -> None:
+        hits = classify_extra_archetypes(ExtraArchetypeContext(
+            tender_offer_planned=True,
+        ))
+        self.assertTrue(any(h.archetype == "public_to_private_tender" for h in hits))
+
+    def test_spinco_rmt(self) -> None:
+        hits = classify_extra_archetypes(ExtraArchetypeContext(
+            rmt_structure=True,
+        ))
+        self.assertTrue(any(h.archetype == "spinco_carveout" for h in hits))
+
+    def test_late_stage_growth(self) -> None:
+        hits = classify_extra_archetypes(ExtraArchetypeContext(
+            is_minority=True, pre_ipo=True, revenue_cagr=0.30,
+        ))
+        self.assertTrue(any(h.archetype == "late_stage_growth" for h in hits))
+
+    def test_empty_context_no_fires(self) -> None:
+        hits = classify_extra_archetypes(ExtraArchetypeContext())
+        self.assertEqual(hits, [])
+
+    def test_hit_to_dict_json(self) -> None:
+        import json
+        hits = classify_extra_archetypes(ExtraArchetypeContext(
+            is_jv=True, jv_partner_is_strategic=True,
+        ))
+        json.dumps(hits[0].to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
