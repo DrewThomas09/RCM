@@ -1999,7 +1999,32 @@ that IC wants on the first diligence call.
 
 ---
 
-## 100. Change log
+## 100. Secondary sale valuation (`secondary_sale_valuation.py`)
+
+Prices two types of secondary transactions:
+
+- **LP-led** — one LP sells a fund interest. Priced at a
+  discount to NAV:
+  - Base: 500 bps healthcare / 800 bps non-healthcare.
+  - Fund age ≥ 10y: +700 bps. ≥ 7y: +300 bps. ≤ 3y: -200 bps.
+  - DPI < 0.10x: +500 bps. DPI ≥ 0.80x: -200 bps.
+  - Top-asset concentration ≥ 40%: +400 bps.
+
+- **GP-led continuation vehicle** — usually priced near or above
+  NAV. Pricing is driven by projected remaining IRR vs buyer's
+  required hurdle:
+  - Projected IRR > hurdle + 500 bps → 500 bps premium possible.
+  - Projected IRR < hurdle → 600 bps discount required.
+
+Output: indicative bps vs NAV (positive = discount, negative =
+premium), implied price in $M, driver list. Partner tone is
+calibrated: ≥ 2000 bps = "deep discount / tail-end", 1000-2000 =
+"material", 500-1000 = "modest", 0-500 = "near NAV", < 0 =
+"premium pricing".
+
+---
+
+## 101. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2154,3 +2179,6 @@ that IC wants on the first diligence call.
 - **2026-04-17** — Added `carve_out_risks.py` (§99) — TSA, CoC,
   IT separation, payer re-credentialing, employee retention. Full
   inventory: 97 modules, 952 pe_intelligence unit tests.
+- **2026-04-17** — Added `secondary_sale_valuation.py` (§100) —
+  LP-led discount and GP-led continuation pricing. Full inventory:
+  98 modules, 962 pe_intelligence unit tests.
