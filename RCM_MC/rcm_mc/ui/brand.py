@@ -113,6 +113,7 @@ NAV_ITEMS = [
     {"label": "Concentration Risk", "href": "/concentration-risk", "icon": "chart"},
     {"label": "Hold Analysis", "href": "/hold-analysis", "icon": "chart"},
     {"label": "IRR Dispersion", "href": "/irr-dispersion", "icon": "chart"},
+    {"label": "Payer Rate Trends", "href": "/payer-rate-trends", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},

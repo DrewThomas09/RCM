@@ -77,6 +77,7 @@ _CORPUS_NAV = [
     {"label": "Concentration",  "href": "/concentration-risk", "icon": "▦"},
     {"label": "Hold Analysis",  "href": "/hold-analysis",      "icon": "▣"},
     {"label": "IRR Dispersion", "href": "/irr-dispersion",    "icon": "▦"},
+    {"label": "Payer Trends",   "href": "/payer-rate-trends", "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

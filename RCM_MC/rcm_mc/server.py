@@ -1932,6 +1932,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/irr-dispersion":
             from .ui.data_public.irr_dispersion_page import render_irr_dispersion
             return self._send_html(render_irr_dispersion())
+        if path == "/payer-rate-trends":
+            from .ui.data_public.payer_rate_trends_page import render_payer_rate_trends
+            return self._send_html(render_payer_rate_trends())
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
