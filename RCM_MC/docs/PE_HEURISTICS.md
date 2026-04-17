@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 80
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 81
 modules + test suite:
 
 | Module | Role |
@@ -786,6 +786,7 @@ modules + test suite:
 | `red_team_review.py` | Adversarial attack + pass rationale |
 | `data_room_tracker.py` | 34-item canonical checklist scorer |
 | `workstream_tracker.py` | Post-close integration milestone aggregator |
+| `negotiation_position.py` | Anchor / walkaway / leverage / concessions |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1699,7 +1700,22 @@ alongside `value_creation_tracker.py` and `hundred_day_plan.py`.
 
 ---
 
-## 83. Change log
+## 83. Negotiation position (`negotiation_position.py`)
+
+Translates a `PartnerReview` into a pricing-negotiation cheatsheet:
+
+- **Anchor** — opening-offer multiple + price (below seller ask).
+- **Walkaway** — below which the partner pulls the bid.
+- **Leverage points** — findings from the review to justify a
+  lower offer.
+- **Concessions** — non-price items to unstick talks (higher
+  rollover, R&W tail, earnout, staged close).
+- **Cadence** — `aggressive` / `disciplined` / `walk` based on the
+  recommendation + critical flags.
+
+---
+
+## 84. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1821,3 +1837,5 @@ alongside `value_creation_tracker.py` and `hundred_day_plan.py`.
   pe_intelligence unit tests.
 - **2026-04-17** — Added `workstream_tracker.py`. Full inventory:
   80 modules, 812 pe_intelligence unit tests.
+- **2026-04-17** — Added `negotiation_position.py`. Full inventory:
+  81 modules, 820 pe_intelligence unit tests.
