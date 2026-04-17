@@ -3336,7 +3336,38 @@ day of close.
 
 ---
 
-## 142. Change log
+## 142. Outpatient migration cascade (`outpatient_migration_cascade.py`)
+
+Fourth canonical cascade (after RCM, payer-mix, labor). When a
+hospital thesis assumes IP-to-OP procedure migration:
+
+1. **Magnitude** — % of IP revenue in motion. > 20% in 5 years
+   requires infrastructure + physician-contract changes decks
+   often under-budget.
+2. **OP rate differential** — OP rates typically 55-75% of IP.
+   Top-line shrinks first; the "higher margin outpatient"
+   narrative ignores this.
+3. **Margin swap** — OP margin × rate-adjusted revenue vs IP
+   margin × original revenue. Net positive only when OP margin
+   differential beats the rate haircut.
+4. **Capacity unlock** — freed IP capacity: if backfilled with
+   higher-acuity cases (default 50% fill × 20% higher rate),
+   positive. If no named demand, fixed-cost drag.
+5. **Site-neutral risk** — HOPD share × site-neutral haircut
+   (22%) × OP margin. Bear-case assumes partial realization.
+
+Partner note:
+
+- Net EBITDA < 0 → "revenue loss from lower OP rates dominates;
+  backfill and margin swap don't close the gap."
+- Net positive but ≥ 50% from HOPD exposure → "regulatory bet,
+  not operational one."
+- Net positive with low HOPD share → "validate backfill
+  assumption and site-neutral exposure."
+
+---
+
+## 143. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3642,3 +3673,7 @@ day of close.
   (§141) — auto-derive 100-day actions from packet signals; 14
   conditional rules + 2 always-on; cap at 15. Full inventory:
   139 modules, 1,406 pe_intelligence unit tests.
+- **2026-04-17** — Added `outpatient_migration_cascade.py` (§142)
+  — 4th canonical cascade (IP→OP → rate differential → margin
+  swap → capacity unlock → site-neutral regulatory risk). Full
+  inventory: 140 modules, 1,414 pe_intelligence unit tests.
