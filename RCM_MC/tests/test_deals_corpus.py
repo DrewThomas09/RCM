@@ -14,6 +14,14 @@ from pathlib import Path
 
 from rcm_mc.data_public.deals_corpus import DealsCorpus, _SEED_DEALS
 from rcm_mc.data_public.extended_seed import EXTENDED_SEED_DEALS
+from rcm_mc.data_public.payer_sensitivity import (
+    run_medicaid_cut_scenario,
+    run_ma_creep_scenario,
+    run_commercial_loss_scenario,
+    run_uncompensated_care_scenario,
+    run_all_scenarios,
+    sensitivity_table,
+)
 from rcm_mc.data_public.normalizer import normalize_raw, normalize_batch, validate
 from rcm_mc.data_public.base_rates import (
     Benchmarks,
@@ -1001,6 +1009,124 @@ class TestCorpusCLI(unittest.TestCase):
     def test_cli_seed_force(self):
         out = self._run(["seed", "--force"])
         self.assertIn("deals", out.lower())
+
+
+# ===========================================================================
+# Payer Sensitivity
+# ===========================================================================
+
+class TestPayerSensitivity(unittest.TestCase):
+
+    def _lifepoint(self):
+        return {
+            "deal_name": "LifePoint Health – KKR",
+            "ev_mm": 5600,
+            "ebitda_at_entry_mm": 620,
+            "realized_moic": 2.0,
+            "payer_mix": {
+                "medicare": 0.52, "medicaid": 0.15,
+                "commercial": 0.29, "self_pay": 0.04,
+            },
+        }
+
+    def _surgery_partners(self):
+        return {
+            "deal_name": "Surgery Partners",
+            "ev_mm": 1300,
+            "ebitda_at_entry_mm": 130,
+            "realized_moic": 2.5,
+            "payer_mix": {
+                "medicare": 0.33, "medicaid": 0.07,
+                "commercial": 0.55, "self_pay": 0.05,
+            },
+        }
+
+    def test_medicaid_cut_negative_ebitda_delta(self):
+        result = run_medicaid_cut_scenario(self._lifepoint(), cut_pct=0.05)
+        self.assertIsNotNone(result.ebitda_delta_mm)
+        self.assertLess(result.ebitda_delta_mm, 0)  # always negative for a cut
+
+    def test_medicaid_cut_larger_cut_larger_impact(self):
+        r5 = run_medicaid_cut_scenario(self._lifepoint(), cut_pct=0.05)
+        r10 = run_medicaid_cut_scenario(self._lifepoint(), cut_pct=0.10)
+        self.assertLess(r10.ebitda_delta_mm, r5.ebitda_delta_mm)
+
+    def test_medicaid_cut_zero_medicaid_no_impact(self):
+        deal = dict(self._lifepoint())
+        deal["payer_mix"] = {"medicare": 0.60, "commercial": 0.40}
+        result = run_medicaid_cut_scenario(deal, cut_pct=0.10)
+        self.assertAlmostEqual(result.ebitda_delta_mm, 0.0, places=1)
+
+    def test_ma_creep_negative_impact(self):
+        deal = self._lifepoint()  # 52% Medicare
+        result = run_ma_creep_scenario(deal, ma_creep_pct=0.10)
+        self.assertLess(result.ebitda_delta_mm, 0)
+
+    def test_ma_creep_more_creep_more_impact(self):
+        deal = self._lifepoint()
+        r10 = run_ma_creep_scenario(deal, ma_creep_pct=0.10)
+        r20 = run_ma_creep_scenario(deal, ma_creep_pct=0.20)
+        self.assertLess(r20.ebitda_delta_mm, r10.ebitda_delta_mm)
+
+    def test_commercial_loss_negative_impact(self):
+        result = run_commercial_loss_scenario(self._lifepoint(), loss_pct=0.15)
+        self.assertLess(result.ebitda_delta_mm, 0)
+
+    def test_commercial_loss_high_commercial_more_pct_impact(self):
+        lp = run_commercial_loss_scenario(self._lifepoint(), loss_pct=0.15)
+        sp = run_commercial_loss_scenario(self._surgery_partners(), loss_pct=0.15)
+        # Surgery Partners has 55% commercial vs 29% for LifePoint;
+        # should have a larger *percentage* EBITDA impact
+        self.assertLess(sp.ebitda_delta_pct, lp.ebitda_delta_pct)
+
+    def test_uncompensated_care_spike_negative(self):
+        result = run_uncompensated_care_scenario(self._lifepoint(), spike_pct=0.03)
+        self.assertLess(result.ebitda_delta_mm, 0)
+
+    def test_stressed_moic_lower_than_base(self):
+        result = run_medicaid_cut_scenario(self._lifepoint(), cut_pct=0.10)
+        if result.base_moic and result.stressed_moic:
+            self.assertLess(result.stressed_moic, result.base_moic)
+
+    def test_moic_delta_negative(self):
+        result = run_medicaid_cut_scenario(self._lifepoint(), cut_pct=0.10)
+        if result.moic_delta is not None:
+            self.assertLess(result.moic_delta, 0)
+
+    def test_run_all_scenarios_count(self):
+        results = run_all_scenarios(self._lifepoint())
+        self.assertEqual(len(results), 7)
+
+    def test_run_all_scenarios_all_negative(self):
+        results = run_all_scenarios(self._lifepoint())
+        for r in results:
+            if r.ebitda_delta_mm is not None:
+                self.assertLess(r.ebitda_delta_mm, 0, f"{r.scenario_name} should have negative EBITDA delta")
+
+    def test_sensitivity_table_string_output(self):
+        table = sensitivity_table(self._lifepoint())
+        self.assertIn("Payer Sensitivity", table)
+        self.assertIn("Medicaid rate cut", table)
+        self.assertIn("EBITDA", table)
+
+    def test_result_as_dict(self):
+        result = run_medicaid_cut_scenario(self._lifepoint(), cut_pct=0.05)
+        d = result.as_dict()
+        self.assertIn("scenario", d)
+        self.assertIn("ebitda_delta_pct", d)
+        self.assertIn("stressed_moic", d)
+
+    def test_missing_payer_mix_handled_gracefully(self):
+        deal = {"deal_name": "No Payer Mix", "ebitda_at_entry_mm": 100, "ev_mm": 1000}
+        result = run_medicaid_cut_scenario(deal, cut_pct=0.05)
+        # Should not crash; delta should be ~0 since no payer mix
+        self.assertIsNotNone(result)
+
+    def test_missing_ebitda_handled_gracefully(self):
+        deal = {"deal_name": "No EBITDA",
+                "payer_mix": {"medicare": 0.5, "commercial": 0.5}}
+        result = run_medicaid_cut_scenario(deal)
+        self.assertIsNone(result.stressed_ebitda_mm)
 
 
 if __name__ == "__main__":
