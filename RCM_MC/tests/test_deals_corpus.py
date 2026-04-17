@@ -3041,5 +3041,133 @@ class TestCmsMarketAnalysis(unittest.TestCase):
         self.assertTrue(len(report.errors) > 0)
 
 
+# ===========================================================================
+# TestCmsStressTest
+# ===========================================================================
+
+class TestCmsStressTest(unittest.TestCase):
+
+    def _investability_df(self):
+        import pandas as pd
+        return pd.DataFrame([
+            {"provider_type": "Cardiology",  "investability_score": 0.80, "total_payment": 1_000_000},
+            {"provider_type": "Orthopedic",  "investability_score": 0.60, "total_payment": 500_000},
+            {"provider_type": "Neurology",   "investability_score": 0.40, "total_payment": 300_000},
+            {"provider_type": "Dermatology", "investability_score": 0.20, "total_payment": 200_000},
+        ])
+
+    def test_provider_stress_test_returns_df(self):
+        from rcm_mc.data_public.cms_stress_test import provider_stress_test
+        out = provider_stress_test(self._investability_df())
+        self.assertFalse(out.empty)
+        self.assertIn("stress_adjusted_score", out.columns)
+
+    def test_stress_score_lower_on_downside(self):
+        from rcm_mc.data_public.cms_stress_test import provider_stress_test
+        base = provider_stress_test(self._investability_df(), downside_shock=0.0, upside_shock=0.0)
+        stressed = provider_stress_test(self._investability_df(), downside_shock=0.20, upside_shock=0.0)
+        self.assertLess(
+            stressed["stress_adjusted_score"].mean(),
+            base["stress_adjusted_score"].mean(),
+        )
+
+    def test_downside_payment_less_than_upside(self):
+        from rcm_mc.data_public.cms_stress_test import provider_stress_test
+        out = provider_stress_test(self._investability_df())
+        for _, row in out.iterrows():
+            if row["total_payment"] > 0:
+                self.assertLess(row["downside_payment"], row["upside_payment"])
+
+    def test_stress_scenario_grid_shape(self):
+        from rcm_mc.data_public.cms_stress_test import stress_scenario_grid
+        grid = stress_scenario_grid(
+            self._investability_df(),
+            downsides=[0.05, 0.15],
+            upsides=[0.0, 0.10],
+        )
+        self.assertEqual(len(grid), 4)
+        self.assertIn("scenario_label", grid.columns)
+
+    def test_stress_scenario_grid_empty_input(self):
+        from rcm_mc.data_public.cms_stress_test import stress_scenario_grid
+        import pandas as pd
+        out = stress_scenario_grid(pd.DataFrame())
+        self.assertTrue(out.empty)
+
+    def test_provider_value_summary(self):
+        from rcm_mc.data_public.cms_stress_test import provider_value_summary
+        import pandas as pd
+        data = [
+            {"provider_type": "Cardiology", "total_medicare_payment_amt": 1e6,
+             "total_unique_benes": 500, "beneficiary_average_risk_score": 1.2},
+            {"provider_type": "Orthopedic", "total_medicare_payment_amt": 500_000,
+             "total_unique_benes": 300, "beneficiary_average_risk_score": 0.9},
+        ]
+        out = provider_value_summary(pd.DataFrame(data))
+        self.assertFalse(out.empty)
+        self.assertIn("value_score", out.columns)
+        self.assertIn("value_percentile", out.columns)
+
+    def test_provider_investability_summary(self):
+        from rcm_mc.data_public.cms_stress_test import provider_investability_summary
+        import pandas as pd
+        screen = pd.DataFrame([
+            {"provider_type": "Cardiology", "opportunity_score": 0.8, "total_payment": 1e6},
+            {"provider_type": "Orthopedic", "opportunity_score": 0.4, "total_payment": 500_000},
+        ])
+        out = provider_investability_summary(screen, pd.DataFrame(), pd.DataFrame())
+        self.assertFalse(out.empty)
+        self.assertIn("investability_score", out.columns)
+
+    def test_operating_posture_returns_five_buckets(self):
+        from rcm_mc.data_public.cms_stress_test import (
+            provider_operating_posture, stress_scenario_grid
+        )
+        import pandas as pd
+        grid = stress_scenario_grid(self._investability_df())
+        geo = pd.DataFrame([
+            {"provider_type": "Cardiology", "top_state_share": 0.4, "geo_dependency_flag": False},
+            {"provider_type": "Orthopedic", "top_state_share": 0.7, "geo_dependency_flag": True},
+            {"provider_type": "Neurology", "top_state_share": 0.3, "geo_dependency_flag": False},
+            {"provider_type": "Dermatology", "top_state_share": 0.5, "geo_dependency_flag": False},
+        ])
+        out = provider_operating_posture(
+            self._investability_df(), pd.DataFrame(), geo, grid
+        )
+        self.assertIn("operating_posture", out.columns)
+        valid = {"scenario_leader", "resilient_core", "balanced", "growth_optional", "concentration_risk"}
+        for p in out["operating_posture"]:
+            self.assertIn(str(p), valid)
+
+    def test_concentration_risk_flagged_for_high_share(self):
+        from rcm_mc.data_public.cms_stress_test import provider_operating_posture
+        import pandas as pd
+        # Provider with >60% concentration in one state → concentration_risk
+        inv = pd.DataFrame([
+            {"provider_type": "X", "investability_score": 0.5, "total_payment": 1e6},
+        ])
+        geo = pd.DataFrame([
+            {"provider_type": "X", "top_state_share": 0.75, "geo_dependency_flag": True},
+        ])
+        out = provider_operating_posture(inv, pd.DataFrame(), geo, pd.DataFrame())
+        self.assertEqual(str(out.iloc[0]["operating_posture"]), "concentration_risk")
+
+    def test_stress_table_string(self):
+        from rcm_mc.data_public.cms_stress_test import stress_scenario_grid, stress_table
+        grid = stress_scenario_grid(self._investability_df())
+        txt = stress_table(grid)
+        self.assertIn("Stress Scenario", txt)
+        self.assertIn("Downside", txt)
+
+    def test_posture_table_string(self):
+        from rcm_mc.data_public.cms_stress_test import provider_operating_posture, posture_table
+        import pandas as pd
+        out = provider_operating_posture(
+            self._investability_df(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        )
+        txt = posture_table(out)
+        self.assertIn("Operating Posture", txt)
+
+
 if __name__ == "__main__":
     unittest.main()

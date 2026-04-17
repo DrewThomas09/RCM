@@ -115,6 +115,15 @@ from .cms_market_analysis import (
     top_regimes,
     analysis_summary_text,
 )
+from .cms_stress_test import (
+    provider_value_summary,
+    provider_investability_summary,
+    provider_stress_test,
+    stress_scenario_grid,
+    provider_operating_posture,
+    stress_table,
+    posture_table,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -205,4 +214,11 @@ __all__ = [
     "white_space_opportunities",
     "top_regimes",
     "analysis_summary_text",
+    "provider_value_summary",
+    "provider_investability_summary",
+    "provider_stress_test",
+    "stress_scenario_grid",
+    "provider_operating_posture",
+    "stress_table",
+    "posture_table",
 ]
