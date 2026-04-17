@@ -2931,7 +2931,47 @@ would open.
 
 ---
 
-## 131. Change log
+## 131. Thesis coherence check (`thesis_coherence_check.py`)
+
+**Partner statement:** "You claim margin expansion AND 15% volume
+growth AND labor cost reduction AND quality improvement — how
+does all that work together?"
+
+Most decks list thesis pillars independently. This module checks
+them against each other. Named tensions:
+
+- **volume_growth ↔ margin_expansion** — high: if you grow 12%+
+  and expand margin without labor investment, you're burning
+  existing staff. Pick two.
+- **price_growth ↔ contract_reality** — medium: > 5% rate growth
+  hides mix shift; underwrite pure rate 2-3%.
+- **volume_growth ↔ quality_improvement** — medium: rapid growth
+  typically depresses quality 18-24 months. Both improving
+  simultaneously is rare.
+- **roll_up_closings ↔ integration_investment** — high: aggressive
+  roll-up without proportional integration spend is pro-forma
+  fiction (AdaptHealth pattern).
+- **multiple_expansion ↔ exit_underwriting** — medium: the weakest
+  leg in any MOIC bridge. If the math needs expansion to work,
+  the math doesn't work.
+- **labor_cost_reduction ↔ enabling_investment** — high: labor
+  cuts ≥ 5% without tech or process investment is RIFs, which
+  compress quality and trigger flight.
+
+Score 100 minus penalties (high = -20, medium = -8). Partner note:
+
+- ≥ 85 → "pillars fit together".
+- 60-85 → "pillars in tension; walk management through specifics".
+- < 60 → "internally incoherent; deck has not done the work".
+
+Worked example: a deck claiming 20% volume + 4% margin + -10%
+labor + 20% roll-up + 7% price + multiple expansion produces
+5+ contradictions. The partner reads all of it and says "which
+one are we buying?"
+
+---
+
+## 132. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3191,3 +3231,7 @@ would open.
   packet-derived landmine/opening/probe questions for the first
   30 minutes of an MI. Full inventory: 128 modules, 1,291
   pe_intelligence unit tests.
+- **2026-04-17** — Added `thesis_coherence_check.py` (§131) —
+  flags internal contradictions across thesis pillars (e.g.
+  volume+margin+no labor; roll-up+no integration spend). Full
+  inventory: 129 modules, 1,302 pe_intelligence unit tests.
