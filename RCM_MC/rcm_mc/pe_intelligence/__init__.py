@@ -81,6 +81,17 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .cohort_tracker import (
+    CohortDeal,
+    CohortRanking,
+    CohortStats,
+    bottom_decile,
+    cohort_stats,
+    compare_to_cohort,
+    group_by_vintage,
+    rank_within_cohort,
+    top_decile,
+)
 from .icr_gate import (
     ICReadinessResult,
     evaluate_ic_readiness,
@@ -481,4 +492,13 @@ __all__ = [
     "run_cdd_checks",
     "ICReadinessResult",
     "evaluate_ic_readiness",
+    "CohortDeal",
+    "CohortRanking",
+    "CohortStats",
+    "bottom_decile",
+    "cohort_stats",
+    "compare_to_cohort",
+    "group_by_vintage",
+    "rank_within_cohort",
+    "top_decile",
 ]

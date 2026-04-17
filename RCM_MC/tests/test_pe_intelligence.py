@@ -4195,5 +4195,91 @@ class TestICReadinessGate(unittest.TestCase):
         json.dumps(result.to_dict())
 
 
+# ── Cohort tracker ─────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CohortDeal,
+    CohortRanking,
+    CohortStats,
+    bottom_decile,
+    cohort_stats,
+    compare_to_cohort,
+    group_by_vintage,
+    rank_within_cohort,
+    top_decile,
+)
+
+
+def _cohort_sample() -> List[CohortDeal]:
+    return [
+        CohortDeal(deal_id="a", vintage_year=2023,
+                   projected_irr=0.22, projected_moic=2.5, ebitda_margin=0.10),
+        CohortDeal(deal_id="b", vintage_year=2023,
+                   projected_irr=0.18, projected_moic=2.2, ebitda_margin=0.08),
+        CohortDeal(deal_id="c", vintage_year=2023,
+                   projected_irr=0.14, projected_moic=1.9, ebitda_margin=0.07),
+        CohortDeal(deal_id="d", vintage_year=2023,
+                   projected_irr=0.28, projected_moic=3.0, ebitda_margin=0.13),
+        CohortDeal(deal_id="e", vintage_year=2024,
+                   projected_irr=0.20, projected_moic=2.3, ebitda_margin=0.09),
+    ]
+
+
+class TestGroupByVintage(unittest.TestCase):
+
+    def test_grouping(self) -> None:
+        g = group_by_vintage(_cohort_sample())
+        self.assertEqual(len(g[2023]), 4)
+        self.assertEqual(len(g[2024]), 1)
+
+
+class TestCohortStats(unittest.TestCase):
+
+    def test_percentiles_populated(self) -> None:
+        stats = cohort_stats(_cohort_sample(), 2023)
+        self.assertEqual(stats.n_deals, 4)
+        self.assertIsNotNone(stats.irr_p50)
+        self.assertGreater(stats.irr_p75, stats.irr_p25)
+
+    def test_empty_vintage_has_none_percentiles(self) -> None:
+        stats = cohort_stats(_cohort_sample(), 2022)
+        self.assertEqual(stats.n_deals, 0)
+        self.assertIsNone(stats.irr_p50)
+
+
+class TestRankWithinCohort(unittest.TestCase):
+
+    def test_best_deal_is_rank_one(self) -> None:
+        rankings = rank_within_cohort(_cohort_sample(), 2023)
+        self.assertEqual(rankings[0].deal_id, "d")
+
+    def test_weakest_is_last(self) -> None:
+        rankings = rank_within_cohort(_cohort_sample(), 2023)
+        self.assertEqual(rankings[-1].deal_id, "c")
+
+
+class TestDecileFlags(unittest.TestCase):
+
+    def test_top_decile_contains_best(self) -> None:
+        top = top_decile(_cohort_sample(), 2023)
+        self.assertIn("d", top)
+
+    def test_bottom_decile_contains_weakest(self) -> None:
+        bot = bottom_decile(_cohort_sample(), 2023)
+        self.assertIn("c", bot)
+
+
+class TestCompareToCohort(unittest.TestCase):
+
+    def test_metric_deltas_reported(self) -> None:
+        candidate = CohortDeal(deal_id="cand", vintage_year=2023,
+                               projected_irr=0.25, projected_moic=2.7,
+                               ebitda_margin=0.11)
+        cmp = compare_to_cohort(candidate, _cohort_sample())
+        self.assertIn("irr_delta_vs_median", cmp)
+        self.assertIn("moic_delta_vs_median", cmp)
+        self.assertGreater(cmp["irr_delta_vs_median"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
