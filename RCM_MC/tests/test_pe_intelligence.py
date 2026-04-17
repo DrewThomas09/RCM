@@ -4281,5 +4281,70 @@ class TestCompareToCohort(unittest.TestCase):
         self.assertGreater(cmp["irr_delta_vs_median"], 0)
 
 
+# ── Partner discussion ────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DiscussionItem,
+    build_discussion,
+    render_discussion_markdown,
+)
+
+
+class TestBuildDiscussion(unittest.TestCase):
+
+    def test_medicare_exit_generates_qa(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65, "commercial": 0.25, "medicaid": 0.10},
+            exit_multiple=11.5,
+        )
+        review = partner_review_from_context(ctx)
+        items = build_discussion(review)
+        self.assertTrue(any("comp" in i.question.lower() for i in items))
+
+    def test_clean_deal_has_no_discussion(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30.0,
+            exit_multiple=9.0, projected_irr=0.18,
+            ebitda_margin=0.09,
+        )
+        review = partner_review_from_context(ctx)
+        items = build_discussion(review)
+        self.assertEqual(items, [])
+
+    def test_deduplicates_by_source_id(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.65},
+            exit_multiple=11.5,
+        )
+        review = partner_review_from_context(ctx)
+        items = build_discussion(review)
+        ids = [i.source_id for i in items]
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_item_to_dict_roundtrip(self) -> None:
+        import json
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=400)
+        review = partner_review_from_context(ctx)
+        items = build_discussion(review)
+        if items:
+            json.dumps(items[0].to_dict())
+
+
+class TestRenderDiscussionMarkdown(unittest.TestCase):
+
+    def test_renders_qa_format(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=400)
+        review = partner_review_from_context(ctx)
+        items = build_discussion(review)
+        md = render_discussion_markdown(items)
+        self.assertIn("Partner Discussion", md)
+        self.assertIn("**Q:**", md)
+        self.assertIn("**A:**", md)
+
+    def test_empty_renders_placeholder(self) -> None:
+        md = render_discussion_markdown([])
+        self.assertIn("No discussion", md)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -81,6 +81,11 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .partner_discussion import (
+    DiscussionItem,
+    build_discussion,
+    render_discussion_markdown,
+)
 from .cohort_tracker import (
     CohortDeal,
     CohortRanking,
@@ -501,4 +506,7 @@ __all__ = [
     "group_by_vintage",
     "rank_within_cohort",
     "top_decile",
+    "DiscussionItem",
+    "build_discussion",
+    "render_discussion_markdown",
 ]
