@@ -229,6 +229,15 @@ from .corpus_health_check import (
     health_check_text,
     run_corpus_health_check,
 )
+from .deal_portfolio_monitor import (
+    PortfolioAlert,
+    MonitorConfig,
+    compute_implied_moic,
+    deal_status,
+    monitor_portfolio,
+    portfolio_dashboard_text,
+    benchmark_gap_analysis,
+)
 from .deal_screening_engine import (
     ScreeningConfig,
     ScreeningResult,
@@ -443,6 +452,13 @@ __all__ = [
     "check_corpus",
     "health_check_text",
     "run_corpus_health_check",
+    "PortfolioAlert",
+    "MonitorConfig",
+    "compute_implied_moic",
+    "deal_status",
+    "monitor_portfolio",
+    "portfolio_dashboard_text",
+    "benchmark_gap_analysis",
     "ScreeningConfig",
     "ScreeningResult",
     "screen_deal",

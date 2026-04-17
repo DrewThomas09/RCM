@@ -105,13 +105,15 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_10 import EXTENDED_SEED_DEALS_10
         from rcm_mc.data_public.extended_seed_11 import EXTENDED_SEED_DEALS_11
         from rcm_mc.data_public.extended_seed_12 import EXTENDED_SEED_DEALS_12
+        from rcm_mc.data_public.extended_seed_13 import EXTENDED_SEED_DEALS_13
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
                     + len(EXTENDED_SEED_DEALS_5) + len(EXTENDED_SEED_DEALS_6)
                     + len(EXTENDED_SEED_DEALS_7) + len(EXTENDED_SEED_DEALS_8)
                     + len(EXTENDED_SEED_DEALS_9) + len(EXTENDED_SEED_DEALS_10)
-                    + len(EXTENDED_SEED_DEALS_11) + len(EXTENDED_SEED_DEALS_12))
+                    + len(EXTENDED_SEED_DEALS_11) + len(EXTENDED_SEED_DEALS_12)
+                    + len(EXTENDED_SEED_DEALS_13))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3576,10 +3578,10 @@ class TestExtendedSeed8(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_275_deals(self):
+    def test_seed_loads_295_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
-        self.assertGreaterEqual(stats["total"], 275)
+        self.assertGreaterEqual(stats["total"], 295)
 
     def test_seed_187_signify_high_moic(self):
         corpus = DealsCorpus(self.db_path)
@@ -3700,6 +3702,52 @@ class TestExtendedSeed10(unittest.TestCase):
     def test_seed_10_source_ids_unique(self):
         from rcm_mc.data_public.extended_seed_10 import EXTENDED_SEED_DEALS_10
         ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_10]
+        self.assertEqual(len(ids), len(set(ids)))
+
+
+class TestExtendedSeed13(unittest.TestCase):
+    """Tests for extended_seed_13.py (deals 276-295)."""
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def test_extended_seed_13_list_length(self):
+        from rcm_mc.data_public.extended_seed_13 import EXTENDED_SEED_DEALS_13
+        self.assertEqual(len(EXTENDED_SEED_DEALS_13), 20)
+
+    def test_all_seed_13_have_required_fields(self):
+        from rcm_mc.data_public.extended_seed_13 import EXTENDED_SEED_DEALS_13
+        for deal in EXTENDED_SEED_DEALS_13:
+            self.assertIn("source_id", deal)
+            self.assertIn("deal_name", deal)
+            self.assertEqual(deal["source"], "seed")
+
+    def test_seed_277_us_oncology_moic(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_277")
+        self.assertIsNotNone(deal)
+        self.assertGreater(deal["realized_moic"], 3.0)
+
+    def test_seed_290_privia_high_moic(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_290")
+        self.assertIsNotNone(deal)
+        self.assertGreater(deal["realized_moic"], 5.0)
+
+    def test_seed_295_reit_portfolio(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_295")
+        self.assertIsNotNone(deal)
+        self.assertIsNotNone(deal["deal_name"])
+
+    def test_seed_13_source_ids_unique(self):
+        from rcm_mc.data_public.extended_seed_13 import EXTENDED_SEED_DEALS_13
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_13]
         self.assertEqual(len(ids), len(set(ids)))
 
 
@@ -5179,6 +5227,109 @@ class TestCmsDataQuality(unittest.TestCase):
         s = cms_run_summary(report)
         self.assertEqual(s["durable_growth_count"], 2)
         self.assertEqual(s["declining_risk_count"], 1)
+
+
+class TestDealPortfolioMonitor(unittest.TestCase):
+    """Tests for deal_portfolio_monitor module."""
+
+    def _make_deal(self, **kwargs):
+        base = {
+            "source_id": "pm_001",
+            "deal_name": "Test Active Deal",
+            "deal_type": "lbo",
+            "year": 2020,
+            "ev_mm": 400.0,
+            "ebitda_mm": 40.0,
+            "ev_ebitda": 10.0,
+            "hold_years": 5.0,
+            "realized_moic": None,
+        }
+        base.update(kwargs)
+        return base
+
+    def test_compute_implied_moic_active(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import compute_implied_moic
+        deal = self._make_deal(year=2019, ev_mm=300.0, ebitda_mm=30.0, ev_ebitda=10.0)
+        moic = compute_implied_moic(deal, as_of_year=2024)
+        self.assertIsNotNone(moic)
+        self.assertGreater(moic, 1.0)
+
+    def test_compute_implied_moic_insufficient_data(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import compute_implied_moic
+        deal = {"source_id": "x", "deal_name": "Missing Data"}
+        moic = compute_implied_moic(deal, as_of_year=2024)
+        self.assertIsNone(moic)
+
+    def test_deal_status_realized(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import deal_status
+        deal = self._make_deal(realized_moic=2.8)
+        result = deal_status(deal)
+        self.assertEqual(result["status"], "realized")
+        self.assertAlmostEqual(result["realized_moic"], 2.8)
+
+    def test_deal_status_active_on_track(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import deal_status, MonitorConfig
+        deal = self._make_deal(year=2021, ev_mm=200.0, ebitda_mm=20.0, ev_ebitda=10.0)
+        config = MonitorConfig(target_gross_moic=2.5, as_of_year=2024)
+        result = deal_status(deal, config)
+        self.assertEqual(result["status"], "active")
+        self.assertIn(result["alert_type"], ("on_track", "watch", "at_risk", "unknown"))
+
+    def test_deal_status_critical(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import deal_status, MonitorConfig
+        # Deal entered at very high multiple relative to EBITDA — will compute low implied MOIC
+        deal = self._make_deal(year=2015, ev_mm=5000.0, ebitda_mm=20.0, ev_ebitda=250.0)
+        config = MonitorConfig(as_of_year=2024)
+        result = deal_status(deal, config)
+        self.assertIn(result["alert_type"], ("critical", "at_risk", "watch", "on_track", "unknown"))
+
+    def test_monitor_portfolio_sorts_by_urgency(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import monitor_portfolio
+        deals = [self._make_deal(source_id=f"d{i}") for i in range(5)]
+        results = monitor_portfolio(deals)
+        self.assertEqual(len(results), 5)
+
+    def test_portfolio_dashboard_text(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import monitor_portfolio, portfolio_dashboard_text
+        deals = [
+            self._make_deal(source_id="a1"),
+            self._make_deal(source_id="a2", realized_moic=2.5),
+        ]
+        results = monitor_portfolio(deals)
+        text = portfolio_dashboard_text(results)
+        self.assertIn("Portfolio Monitor Dashboard", text)
+        self.assertIn("Active positions", text)
+
+    def test_benchmark_gap_analysis(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import benchmark_gap_analysis
+        deals = [
+            self._make_deal(source_id="g1", realized_moic=3.5),
+            self._make_deal(source_id="g2", realized_moic=1.2),
+            self._make_deal(source_id="g3", realized_moic=2.0),
+        ]
+        rows = benchmark_gap_analysis(deals)
+        self.assertEqual(len(rows), 3)
+        # Underperformers should come first (lowest gap)
+        self.assertLessEqual(rows[0]["moic_gap"], rows[-1]["moic_gap"])
+
+    def test_benchmark_gap_empty(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import benchmark_gap_analysis
+        rows = benchmark_gap_analysis([self._make_deal(realized_moic=None)])
+        self.assertEqual(rows, [])
+
+    def test_monitor_real_corpus(self):
+        from rcm_mc.data_public.deal_portfolio_monitor import monitor_portfolio, portfolio_dashboard_text
+        from rcm_mc.data_public.deals_corpus import DealsCorpus
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "c.db")
+            c = DealsCorpus(db)
+            c.seed()
+            deals = c.list()
+        results = monitor_portfolio(deals)
+        self.assertEqual(len(results), len(deals))
+        text = portfolio_dashboard_text(results)
+        self.assertIn("Portfolio Monitor Dashboard", text)
 
 
 class TestExtendedSeed12(unittest.TestCase):
