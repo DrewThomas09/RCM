@@ -81,6 +81,11 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .lp_pitch import (
+    render_lp_all,
+    render_lp_html,
+    render_lp_markdown,
+)
 from .regulatory_watch import (
     REGISTRY as REGULATORY_REGISTRY,
     RegulatoryItem,
@@ -204,4 +209,7 @@ __all__ = [
     "regulatory_items_for_deal",
     "list_regulatory_items",
     "regulatory_summary_for_partner",
+    "render_lp_all",
+    "render_lp_html",
+    "render_lp_markdown",
 ]

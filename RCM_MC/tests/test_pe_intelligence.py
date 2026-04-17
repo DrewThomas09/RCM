@@ -2141,5 +2141,76 @@ class TestRegulatoryForDeal(unittest.TestCase):
             json.dumps(item.to_dict())
 
 
+# ── LP pitch ─────────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    render_lp_all,
+    render_lp_html,
+    render_lp_markdown,
+)
+
+
+class TestLPPitch(unittest.TestCase):
+
+    def test_markdown_has_expected_sections(self) -> None:
+        review = _review_for_memo()
+        md = render_lp_markdown(review)
+        for section in ("LP Brief", "Opportunity snapshot", "Why this deal",
+                        "Risks and mitigations", "Diligence priorities",
+                        "Strengths vs peer"):
+            self.assertIn(section, md)
+
+    def test_markdown_softens_partner_language(self) -> None:
+        # Build a review that would include hard partner language.
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.70},
+            ebitda_m=50.0,
+            projected_irr=0.45,           # triggers implausible
+            exit_multiple=13.5,
+            denial_improvement_bps_per_yr=800,
+        )
+        review = partner_review_from_context(ctx, deal_name="Hard Deal")
+        md = render_lp_markdown(review)
+        # "Do not show this" should not appear in LP output.
+        self.assertNotIn("Do not show this at IC", md)
+
+    def test_html_escapes_deal_name(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        rv = partner_review_from_context(ctx, deal_name="<script>x</script>")
+        h = render_lp_html(rv)
+        self.assertNotIn("<script>x</script>", h)
+        self.assertIn("&lt;script&gt;", h)
+
+    def test_html_has_article_wrapper(self) -> None:
+        review = _review_for_memo()
+        h = render_lp_html(review)
+        self.assertIn('<article class="lp-brief">', h)
+        self.assertIn("</article>", h)
+
+    def test_render_all_returns_two_formats(self) -> None:
+        review = _review_for_memo()
+        out = render_lp_all(review)
+        self.assertEqual(set(out.keys()), {"markdown", "html"})
+        for v in out.values():
+            self.assertIsInstance(v, str)
+            self.assertGreater(len(v), 50)
+
+    def test_no_hard_pass_language_in_lp_brief(self) -> None:
+        # Even for a failing deal, LP brief uses soft language.
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.75, "medicaid": 0.20, "commercial": 0.05},
+            ebitda_m=30.0,
+            exit_multiple=14.0,
+            leverage_multiple=6.8,
+            covenant_headroom_pct=0.05,
+            denial_improvement_bps_per_yr=700,
+        )
+        review = partner_review_from_context(ctx, deal_name="Hard Deal")
+        md = render_lp_markdown(review)
+        # Check softening substitution occurred when relevant.
+        self.assertNotIn("Hard pass", md)
+        self.assertNotIn("this is where deals die", md.lower())
+
+
 if __name__ == "__main__":
     unittest.main()
