@@ -121,6 +121,7 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_26 import EXTENDED_SEED_DEALS_26
         from rcm_mc.data_public.extended_seed_27 import EXTENDED_SEED_DEALS_27
         from rcm_mc.data_public.extended_seed_28 import EXTENDED_SEED_DEALS_28
+        from rcm_mc.data_public.extended_seed_29 import EXTENDED_SEED_DEALS_29
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
@@ -135,7 +136,8 @@ class TestDealsCorpus(unittest.TestCase):
                     + len(EXTENDED_SEED_DEALS_21) + len(EXTENDED_SEED_DEALS_22)
                     + len(EXTENDED_SEED_DEALS_23) + len(EXTENDED_SEED_DEALS_24)
                     + len(EXTENDED_SEED_DEALS_25) + len(EXTENDED_SEED_DEALS_26)
-                    + len(EXTENDED_SEED_DEALS_27) + len(EXTENDED_SEED_DEALS_28))
+                    + len(EXTENDED_SEED_DEALS_27) + len(EXTENDED_SEED_DEALS_28)
+                    + len(EXTENDED_SEED_DEALS_29))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3600,10 +3602,10 @@ class TestExtendedSeed8(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_595_deals(self):
+    def test_seed_loads_615_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
-        self.assertGreaterEqual(stats["total"], 595)
+        self.assertGreaterEqual(stats["total"], 615)
 
     def test_seed_187_signify_high_moic(self):
         corpus = DealsCorpus(self.db_path)
@@ -7580,6 +7582,53 @@ class TestProviderTrendReliability(unittest.TestCase):
         text = watchlist_text(wl)
         self.assertIn("Provider Type", text)
         self.assertIn("Bucket", text)
+
+
+class TestExtendedSeed29(unittest.TestCase):
+    """Tests for extended_seed_29.py (deals 596-615)."""
+
+    def setUp(self):
+        import tempfile, os
+        self.tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.db_path = self.tmp.name
+        self.tmp.close()
+        self.corpus = DealsCorpus(self.db_path)
+        self.corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        import os
+        os.unlink(self.db_path)
+
+    def test_seed_29_count(self):
+        from rcm_mc.data_public.extended_seed_29 import EXTENDED_SEED_DEALS_29
+        self.assertEqual(len(EXTENDED_SEED_DEALS_29), 20)
+
+    def test_seed_29_unique_ids(self):
+        from rcm_mc.data_public.extended_seed_29 import EXTENDED_SEED_DEALS_29
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_29]
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_seed_600_shields_health_strong_return(self):
+        """Shields Health Solutions / Summit — 5.0x in 2 years."""
+        deal = self.corpus.get("seed_600")
+        self.assertIsNotNone(deal)
+        self.assertGreaterEqual(deal["realized_moic"], 4.5)
+
+    def test_seed_601_oncology_institute_disaster(self):
+        """The Oncology Institute SPAC — near total loss."""
+        deal = self.corpus.get("seed_601")
+        self.assertIsNotNone(deal)
+        self.assertLessEqual(deal["realized_moic"], 0.5)
+
+    def test_seed_603_innovage_pace(self):
+        """InnovAge / Welsh Carson — PACE model 3.8x."""
+        deal = self.corpus.get("seed_603")
+        self.assertIsNotNone(deal)
+        self.assertGreaterEqual(deal["realized_moic"], 3.5)
+
+    def test_seed_615_present(self):
+        deal = self.corpus.get("seed_615")
+        self.assertIsNotNone(deal)
 
 
 class TestExtendedSeed28(unittest.TestCase):
