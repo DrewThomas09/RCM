@@ -701,7 +701,8 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains:
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 22
+modules + test suite:
 
 | Module | Role |
 |--------|------|
@@ -724,13 +725,67 @@ As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains:
 | `comparative_analytics.py` | Portfolio concentration + deal-vs-book |
 | `exit_readiness.py` | 12-dimension pre-exit readiness score |
 | `payer_math.py` | Payer-mix-aware revenue/EBITDA projection + VBC math |
+| `value_creation_tracker.py` | Monthly lever-vs-plan tracker |
+| `exit_math.py` | Waterfall + preferred + catch-up + reverse MOIC |
+| `workbench_integration.py` | UI bundle + compact API payload |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
 
 ---
 
-## 22. Change log
+## 22. Value creation tracker (`value_creation_tracker.py`)
+
+Monthly lever-vs-plan tracker for portfolio ops:
+
+- `LeverPlan` — baseline + year1..year5 targets + `lower_is_better`
+  flag.
+- `LeverActual` — observed value at a given date.
+- `evaluate_lever(plan, actual, year_in_hold)` — returns ``LeverStatus``
+  with verdicts `ahead`, `on_track`, `behind`, `off_track`, `unknown`.
+- `rollup_status(statuses)` — portfolio-level headline and counts.
+
+Used by the operating-partner monthly review to flag levers that
+need intervention before the quarter closes.
+
+---
+
+## 23. Exit math (`exit_math.py`)
+
+Classic US PE waterfall + sensitivities:
+
+- `project_exit_ev(exit_ebitda, exit_multiple, exit_net_debt, fees)`
+  — gross EV, fees, equity value.
+- `exit_waterfall(total_proceeds, lp_equity_in, gp_equity_in,
+  hold_years, ...)` — full 4-stage waterfall: return-of-capital, 8%
+  preferred, 100% GP catch-up to 20% of profit, 80/20 LP/GP split.
+- `moic_cagr_to_irr(moic, years)` — quick CAGR approximation.
+- `required_exit_ebitda_for_moic(target_moic, equity_in, exit_multiple,
+  exit_net_debt)` — reverse-math: what EBITDA hits a target MOIC?
+
+Useful for partner sensitivities pre-IC: "what does EBITDA need to
+reach for us to hit 2.5x."
+
+---
+
+## 24. Workbench integration (`workbench_integration.py`)
+
+Server-friendly bundle helpers:
+
+- `build_workbench_bundle(packet)` — single-call produces the full
+  artifact set: review, IC memo (markdown + html + text), LP pitch
+  (markdown + html), 100-day plan, diligence board, bear patterns,
+  regulatory items.
+- `build_api_payload(packet)` — compact JSON payload without HTML,
+  for network-efficient API responses.
+- `archetype_summary(review)` — archetype ranking for a deal.
+
+Intended entry points for UI routes like `/partner-review/<deal_id>`
+and `/api/partner-review/<deal_id>`.
+
+---
+
+## 25. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -764,3 +819,8 @@ Every module has corresponding tests in
 - **2026-04-17** — Added `comparative_analytics.py` (portfolio
   concentration, deal-vs-book, ranking, correlation risk).
   Full inventory: 19 modules, 291+ unit tests.
+- **2026-04-17** — Added `workbench_integration.py` (single-call
+  bundle + compact API payload), `value_creation_tracker.py`
+  (monthly lever tracker with partner rollup), and `exit_math.py`
+  (waterfall + preferred + catch-up + reverse MOIC→EBITDA math).
+  Full inventory: 22 modules, 314+ unit tests.
