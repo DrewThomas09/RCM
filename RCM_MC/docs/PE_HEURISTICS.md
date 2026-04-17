@@ -2332,7 +2332,31 @@ Partner note:
 
 ---
 
-## 112. Change log
+## 112. Hold period optimizer (`hold_period_optimizer.py`)
+
+For each possible exit year, compute exit EV (EBITDA × exit
+multiple), exit equity (EV - debt), MOIC (equity / entry equity
+net of fees), and IRR. Partners face the classic tension:
+
+- **IRR-max year** is typically earlier (compounding haircuts
+  later returns).
+- **MOIC-max year** is typically later (EBITDA compounding).
+
+Module returns both years and a partner note:
+
+- IRR peak < MOIC peak → "Classic tension — exit at IRR peak if
+  LP scoring metric; hold to MOIC peak if narrative matters".
+- IRR peak == MOIC peak → "No ambiguity on hold year".
+- IRR peak > MOIC peak → "Unusual shape — review exit multiple
+  assumptions".
+
+Inputs accept year-by-year exit multiples, so multiple compression
+assumptions (e.g., 11x → 10x over hold) flow directly into the
+optimizer.
+
+---
+
+## 113. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2524,3 +2548,6 @@ Partner note:
 - **2026-04-17** — Added `working_capital_peer_band.py` (§111) —
   DSO/DPO/DIO per-subsector bands + CCC + cash release. Full
   inventory: 109 modules, 1,080 pe_intelligence unit tests.
+- **2026-04-17** — Added `hold_period_optimizer.py` (§112) — IRR
+  vs MOIC peak-year tradeoff. Full inventory: 110 modules, 1,089
+  pe_intelligence unit tests.
