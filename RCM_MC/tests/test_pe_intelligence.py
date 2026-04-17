@@ -2055,5 +2055,91 @@ class TestStandardScenarios(unittest.TestCase):
             self.assertIn("medicare", s.rate_growth_by_payer)
 
 
+# ── Regulatory watch ─────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    REGULATORY_REGISTRY,
+    RegulatoryItem,
+    regulatory_items_for_deal,
+    list_regulatory_items,
+    regulatory_summary_for_partner,
+)
+
+
+class TestRegulatoryRegistry(unittest.TestCase):
+
+    def test_registry_non_empty(self) -> None:
+        self.assertGreater(len(REGULATORY_REGISTRY), 10)
+
+    def test_every_item_has_id_and_title(self) -> None:
+        for item in REGULATORY_REGISTRY:
+            self.assertTrue(item.id)
+            self.assertTrue(item.title)
+            self.assertTrue(item.scope)
+
+    def test_filter_by_scope(self) -> None:
+        ca = list_regulatory_items(scope="CA")
+        self.assertTrue(all(i.scope == "CA" for i in ca))
+        self.assertGreaterEqual(len(ca), 1)
+
+    def test_filter_by_status(self) -> None:
+        effective = list_regulatory_items(status="effective")
+        self.assertTrue(all(i.status == "effective" for i in effective))
+
+
+class TestRegulatoryForDeal(unittest.TestCase):
+
+    def test_acute_care_national_plus_state(self) -> None:
+        items = regulatory_items_for_deal(
+            subsector="acute_care", state="CA",
+            payer_mix={"medicare": 0.40, "commercial": 0.40, "medicaid": 0.20},
+        )
+        # Should include both national (e.g. IPPS) and CA-specific (seismic).
+        scopes = {i.scope for i in items}
+        self.assertIn("national", scopes)
+        self.assertIn("CA", scopes)
+
+    def test_state_only_filter(self) -> None:
+        items = regulatory_items_for_deal(
+            subsector="acute_care", state="NY",
+            payer_mix={"medicaid": 0.40, "commercial": 0.40, "medicare": 0.20},
+        )
+        # NY items should be included.
+        ny_hits = [i for i in items if i.scope == "NY"]
+        self.assertGreaterEqual(len(ny_hits), 1)
+
+    def test_payer_filter_excludes_non_relevant(self) -> None:
+        # A pure commercial deal — 340B (medicare-only) should be filtered.
+        items = regulatory_items_for_deal(
+            subsector="acute_care", state=None,
+            payer_mix={"commercial": 1.0},
+        )
+        ids = {i.id for i in items}
+        # 340B targets medicare; should be excluded.
+        self.assertNotIn("340b_payback_schedule", ids)
+
+    def test_behavioral_deal(self) -> None:
+        items = regulatory_items_for_deal(
+            subsector="behavioral",
+            payer_mix={"medicaid": 0.50, "commercial": 0.30, "medicare": 0.20},
+        )
+        ids = {i.id for i in items}
+        # IMD waiver is behavioral-specific.
+        self.assertIn("imd_exclusion_waiver", ids)
+
+    def test_summary_shape(self) -> None:
+        items = regulatory_items_for_deal(subsector="acute_care")
+        summary = regulatory_summary_for_partner(items)
+        self.assertIn("regulatory item", summary)
+
+    def test_summary_empty(self) -> None:
+        self.assertIn("No active", regulatory_summary_for_partner([]))
+
+    def test_item_to_dict_roundtrip(self) -> None:
+        import json
+        for item in REGULATORY_REGISTRY[:3]:
+            json.dumps(item.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

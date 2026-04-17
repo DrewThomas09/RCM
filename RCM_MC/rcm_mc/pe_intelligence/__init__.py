@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .regulatory_watch import (
+    REGISTRY as REGULATORY_REGISTRY,
+    RegulatoryItem,
+    for_deal as regulatory_items_for_deal,
+    list_items as list_regulatory_items,
+    summarize_for_partner as regulatory_summary_for_partner,
+)
 from .payer_math import (
     PayerScenario,
     ProjectionInputs,
@@ -192,4 +199,9 @@ __all__ = [
     "project_revenue",
     "standard_scenarios",
     "vbc_revenue_projection",
+    "REGULATORY_REGISTRY",
+    "RegulatoryItem",
+    "regulatory_items_for_deal",
+    "list_regulatory_items",
+    "regulatory_summary_for_partner",
 ]
