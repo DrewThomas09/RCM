@@ -11317,5 +11317,112 @@ class TestPartnerVoiceMemo(unittest.TestCase):
         json.dumps(m.to_dict())
 
 
+# ── Recurring vs one-time EBITDA ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ONE_TIME_CATEGORIES,
+    RECURRING_CATEGORIES,
+    EBITDAContribution,
+    RecurringSplit,
+    render_recurring_split_markdown,
+    split_ebitda,
+)
+
+
+class TestRecurringVsOnetimeEBITDA(unittest.TestCase):
+
+    def test_worked_example_50m_ebitda_with_10m_onetime(self) -> None:
+        # Partner's worked example from the module docstring.
+        s = split_ebitda([
+            EBITDAContribution(
+                "operating core", 40.0, "ongoing_operations",
+                "base clinic revenue"),
+            EBITDAContribution(
+                "contract termination", 10.0,
+                "contract_termination_payment",
+                "one-time payment from a partner break"),
+        ], exit_multiple=12.0)
+        self.assertEqual(s.recurring_ebitda_m, 40.0)
+        self.assertEqual(s.one_time_ebitda_m, 10.0)
+        # Correct EV: 12 * 40 + 1 * 10 = 490.
+        self.assertAlmostEqual(s.exit_ev_correct_m, 490.0, places=1)
+        # Naive EV: 12 * 50 = 600.
+        self.assertAlmostEqual(s.exit_ev_naive_m, 600.0, places=1)
+        # Overstatement: 110.
+        self.assertAlmostEqual(s.ev_overstatement_m, 110.0, places=1)
+
+    def test_pure_recurring_no_overstatement(self) -> None:
+        s = split_ebitda([
+            EBITDAContribution("core", 50.0, "ongoing_operations"),
+        ], exit_multiple=11.0)
+        self.assertAlmostEqual(s.ev_overstatement_m, 0.0, places=1)
+
+    def test_unknown_category_treated_as_one_time(self) -> None:
+        # Partner-prudent default.
+        s = split_ebitda([
+            EBITDAContribution("mystery", 20.0, "unspecified"),
+            EBITDAContribution("core", 80.0, "ongoing_operations"),
+        ], exit_multiple=11.0)
+        self.assertEqual(s.one_time_ebitda_m, 20.0)
+        self.assertEqual(s.recurring_ebitda_m, 80.0)
+
+    def test_low_ratio_triggers_fragile_note(self) -> None:
+        s = split_ebitda([
+            EBITDAContribution("core", 30.0, "ongoing_operations"),
+            EBITDAContribution("settlement", 20.0,
+                                 "legal_settlement_recovery"),
+            EBITDAContribution("wc release", 30.0,
+                                 "working_capital_release"),
+        ], exit_multiple=11.0)
+        self.assertLess(s.recurring_ratio, 0.60)
+        self.assertIn("fragile", s.partner_note.lower())
+
+    def test_clean_profile_partner_note(self) -> None:
+        s = split_ebitda([
+            EBITDAContribution("core", 95.0, "ongoing_operations"),
+            EBITDAContribution("one-time legal", 5.0,
+                                 "legal_settlement_recovery"),
+        ], exit_multiple=11.0)
+        self.assertIn("clean", s.partner_note.lower())
+
+    def test_multiple_applied_only_to_recurring(self) -> None:
+        s = split_ebitda([
+            EBITDAContribution("core", 100.0, "ongoing_operations"),
+            EBITDAContribution("grant", 50.0, "grant_or_subsidy_one_time"),
+        ], exit_multiple=10.0)
+        # Correct: 1000 + 50 = 1050. Naive: 1500.
+        self.assertAlmostEqual(s.exit_ev_correct_m, 1050.0, places=1)
+        self.assertAlmostEqual(s.exit_ev_naive_m, 1500.0, places=1)
+
+    def test_empty_book(self) -> None:
+        s = split_ebitda([], exit_multiple=11.0)
+        self.assertEqual(s.recurring_ebitda_m, 0.0)
+        self.assertEqual(s.recurring_ratio, 0.0)
+
+    def test_recurring_categories_contains_core_types(self) -> None:
+        self.assertIn("ongoing_operations", RECURRING_CATEGORIES)
+        self.assertIn("contracted_revenue", RECURRING_CATEGORIES)
+
+    def test_one_time_categories_contains_wc_and_sale_leaseback(self) -> None:
+        self.assertIn("working_capital_release", ONE_TIME_CATEGORIES)
+        self.assertIn("sale_leaseback_proceeds", ONE_TIME_CATEGORIES)
+
+    def test_markdown_contains_overstatement(self) -> None:
+        md = render_recurring_split_markdown(split_ebitda([
+            EBITDAContribution("core", 40.0, "ongoing_operations"),
+            EBITDAContribution("one-time", 10.0,
+                                 "contract_termination_payment"),
+        ], exit_multiple=12.0))
+        self.assertIn("Overstatement", md)
+        self.assertIn("110", md)  # 10 × (12 - 1) = 110
+
+    def test_json(self) -> None:
+        import json
+        s = split_ebitda([
+            EBITDAContribution("core", 40.0, "ongoing_operations"),
+        ], exit_multiple=11.0)
+        json.dumps(s.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

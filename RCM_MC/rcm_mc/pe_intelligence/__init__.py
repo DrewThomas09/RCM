@@ -602,6 +602,14 @@ from .partner_voice_memo import (
     build_partner_memo,
     render_partner_memo_markdown,
 )
+from .recurring_vs_onetime_ebitda import (
+    ONE_TIME_CATEGORIES,
+    RECURRING_CATEGORIES,
+    EBITDAContribution,
+    RecurringSplit,
+    render_recurring_split_markdown,
+    split_ebitda,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1495,4 +1503,10 @@ __all__ = [
     "PartnerVoiceMemo",
     "build_partner_memo",
     "render_partner_memo_markdown",
+    "ONE_TIME_CATEGORIES",
+    "RECURRING_CATEGORIES",
+    "EBITDAContribution",
+    "RecurringSplit",
+    "render_recurring_split_markdown",
+    "split_ebitda",
 ]
