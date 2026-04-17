@@ -729,6 +729,12 @@ from .labor_shortage_cascade import (
     render_labor_cascade_markdown,
     trace_labor_cascade,
 )
+from .exit_story_generator import (
+    ExitStory,
+    ExitStoryInputs,
+    generate_exit_story,
+    render_exit_story_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1717,4 +1723,8 @@ __all__ = [
     "LaborCascadeStep",
     "render_labor_cascade_markdown",
     "trace_labor_cascade",
+    "ExitStory",
+    "ExitStoryInputs",
+    "generate_exit_story",
+    "render_exit_story_markdown",
 ]

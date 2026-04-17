@@ -13104,5 +13104,131 @@ class TestLaborShortageCascade(unittest.TestCase):
         json.dumps(trace_labor_cascade(LaborCascadeInputs()).to_dict())
 
 
+# ── Exit story generator ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ExitStory,
+    ExitStoryInputs,
+    generate_exit_story,
+    render_exit_story_markdown,
+)
+
+
+class TestExitStoryGenerator(unittest.TestCase):
+
+    def test_strong_deal_produces_premium_headline(self) -> None:
+        s = generate_exit_story(ExitStoryInputs(
+            deal_name="AlphaCo",
+            subsector="outpatient_asc",
+            entry_revenue_m=200.0, entry_ebitda_m=50.0,
+            exit_revenue_m=400.0, exit_ebitda_m=100.0,
+            hold_years=5, organic_growth_pct=0.15,
+            acquisition_growth_pct=0.05,
+            recurring_ebitda_pct=0.98,
+            commercial_payer_pct=0.65,
+            has_coe_designation=True,
+            is_category_leader=True,
+            target_channel="strategic",
+        ))
+        self.assertIn("Premium strategic asset", s.headline)
+        self.assertIn("strong", s.partner_note.lower())
+
+    def test_weak_deal_flags_banker_struggle(self) -> None:
+        s = generate_exit_story(ExitStoryInputs(
+            deal_name="FlatCo",
+            entry_revenue_m=100.0, entry_ebitda_m=15.0,
+            exit_revenue_m=110.0, exit_ebitda_m=16.0,  # basically flat
+            hold_years=5,
+            recurring_ebitda_pct=0.70,
+            commercial_payer_pct=0.30,
+        ))
+        self.assertIn("banker will struggle", s.partner_note.lower())
+
+    def test_banker_multiple_lifts_for_differentiation(self) -> None:
+        commodity = generate_exit_story(ExitStoryInputs(
+            deal_name="X", subsector="specialty_practice",
+            entry_revenue_m=100.0, exit_revenue_m=150.0,
+            exit_ebitda_m=25.0, hold_years=5,
+        ))
+        differentiated = generate_exit_story(ExitStoryInputs(
+            deal_name="X", subsector="specialty_practice",
+            entry_revenue_m=100.0, exit_revenue_m=150.0,
+            exit_ebitda_m=25.0, hold_years=5,
+            has_coe_designation=True,
+            is_category_leader=True,
+            commercial_payer_pct=0.70,
+            recurring_ebitda_pct=0.98,
+        ))
+        self.assertGreater(differentiated.banker_multiple_range[0],
+                            commodity.banker_multiple_range[0])
+
+    def test_ipo_channel_changes_lead(self) -> None:
+        s = generate_exit_story(ExitStoryInputs(
+            deal_name="X",
+            entry_revenue_m=300.0, exit_revenue_m=600.0,
+            exit_ebitda_m=120.0,
+            target_channel="ipo",
+        ))
+        self.assertIn("Public-ready", s.headline)
+        self.assertIn("public_market", s.likely_buyers)
+
+    def test_ma_dependent_deal_surfaces_ma_risk(self) -> None:
+        s = generate_exit_story(ExitStoryInputs(
+            deal_name="X",
+            entry_revenue_m=100.0, exit_revenue_m=250.0,
+            exit_ebitda_m=50.0,
+            acquisition_growth_pct=0.15,
+            site_count_at_entry=5, site_count_at_exit=40,
+        ))
+        self.assertIn("M&A", s.exit_risk)
+
+    def test_likely_buyers_include_sponsor(self) -> None:
+        s = generate_exit_story(ExitStoryInputs(
+            deal_name="X",
+            entry_revenue_m=100.0, exit_revenue_m=200.0,
+            exit_ebitda_m=40.0,
+        ))
+        self.assertIn("next_ring_up_sponsor", s.likely_buyers)
+
+    def test_low_recurring_ebitda_surfaces_pro_forma_risk(self) -> None:
+        s = generate_exit_story(ExitStoryInputs(
+            deal_name="X",
+            entry_revenue_m=100.0, exit_revenue_m=180.0,
+            exit_ebitda_m=30.0,
+            recurring_ebitda_pct=0.70,
+        ))
+        self.assertIn("pro-forma", s.exit_risk.lower())
+
+    def test_three_bullets_max(self) -> None:
+        s = generate_exit_story(ExitStoryInputs(
+            deal_name="X",
+            entry_revenue_m=100.0, exit_revenue_m=200.0,
+            exit_ebitda_m=40.0,
+            has_coe_designation=True,
+            is_category_leader=True,
+            commercial_payer_pct=0.70,
+            acquisition_growth_pct=0.08,
+            site_count_at_entry=5, site_count_at_exit=20,
+        ))
+        self.assertLessEqual(len(s.bullets), 3)
+
+    def test_markdown_renders(self) -> None:
+        md = render_exit_story_markdown(generate_exit_story(
+            ExitStoryInputs(deal_name="MemoCo",
+                             entry_revenue_m=100.0,
+                             exit_revenue_m=200.0,
+                             exit_ebitda_m=40.0)))
+        self.assertIn("# MemoCo — Exit story", md)
+        self.assertIn("Why buy this", md)
+        self.assertIn("Banker multiple range", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(generate_exit_story(ExitStoryInputs(
+            deal_name="X", entry_revenue_m=100.0,
+            exit_revenue_m=200.0, exit_ebitda_m=40.0,
+        )).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
