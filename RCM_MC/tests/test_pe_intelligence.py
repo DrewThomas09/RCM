@@ -13897,5 +13897,156 @@ class TestManagementFirstSitdown(unittest.TestCase):
             deal_name="X")).to_dict())
 
 
+# ── IC decision synthesizer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ICDecision,
+    ICSignalBundle,
+    render_ic_decision_markdown,
+    synthesize_ic_decision,
+)
+
+
+class TestICDecisionSynthesizer(unittest.TestCase):
+    """Diligence-scenario tests: signal bundle \u2192 specific partner call."""
+
+    def test_clean_deal_invest(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="AlphaCo",
+            scorecard_all_pass=True,
+            qod_ic_ready=True,
+            qod_overall_pct=0.95,
+            bear_moic=1.9,
+            bear_probability_weighted_moic=2.3,
+            safety_thin_levers=[],
+            safety_combined_shock_moic=1.7,
+            face_high_implausibilities=0,
+            historical_pattern_matches=[],
+            partner_trap_names=[],
+            coherence_score_0_100=90,
+            connective_high_insight_count=0,
+            has_defensible_organic_growth=True,
+            has_clear_exit_story=True,
+            management_score_0_100=80,
+            pricing_power_score_0_100=75,
+        ))
+        self.assertEqual(d.recommendation, "INVEST")
+        self.assertIn("buy", d.chair_opening_line.lower())
+
+    def test_implausibility_forces_pass(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="X",
+            face_high_implausibilities=1,
+            scorecard_all_pass=True,   # even with strong scorecard
+        ))
+        self.assertEqual(d.recommendation, "PASS")
+        self.assertIn("math doesn't work", d.chair_opening_line.lower())
+
+    def test_two_historical_matches_force_pass(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="X",
+            historical_pattern_matches=[
+                "envision_surprise_billing_2023",
+                "steward_reit_dependency_2024",
+            ],
+        ))
+        self.assertEqual(d.recommendation, "PASS")
+        self.assertIn("envision", d.chair_opening_line.lower())
+
+    def test_two_scorecard_fails_pass(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="X",
+            scorecard_failed_dimensions=["scale", "team"],
+        ))
+        self.assertEqual(d.recommendation, "PASS")
+        self.assertIn("scale", d.chair_opening_line.lower())
+
+    def test_catastrophic_downside_pass(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="X",
+            bear_moic=0.7,
+            safety_combined_shock_moic=0.8,
+        ))
+        self.assertEqual(d.recommendation, "PASS")
+
+    def test_thin_qod_diligence_more(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="X",
+            scorecard_all_pass=True,
+            qod_ic_ready=False,
+            qod_weakest_dimension="clinical",
+            qod_overall_pct=0.60,
+            bear_moic=1.8,
+            safety_combined_shock_moic=1.5,
+            has_defensible_organic_growth=True,
+        ))
+        self.assertEqual(d.recommendation, "DILIGENCE MORE")
+        self.assertIn("clinical", d.chair_opening_line.lower())
+
+    def test_reasons_for_capped_at_three(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            scorecard_all_pass=True,
+            qod_ic_ready=True,
+            bear_moic=2.0, safety_combined_shock_moic=1.6,
+            coherence_score_0_100=92,
+            has_defensible_organic_growth=True,
+            has_clear_exit_story=True,
+            management_score_0_100=85,
+            pricing_power_score_0_100=75,
+        ))
+        self.assertLessEqual(len(d.reasons_for), 3)
+
+    def test_flip_signals_name_specific_pattern(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="X",
+            historical_pattern_matches=["envision_surprise_billing_2023"],
+            qod_ic_ready=True,
+            bear_moic=1.8,
+        ))
+        flips_joined = " ".join(d.flip_the_call_signals).lower()
+        self.assertIn("envision", flips_joined)
+
+    def test_must_close_includes_diligence_gap(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="X",
+            qod_ic_ready=False,
+            qod_weakest_dimension="legal",
+            qod_overall_pct=0.70,
+        ))
+        musts = " ".join(d.must_close_before_ic)
+        self.assertIn("legal", musts)
+
+    def test_cycle_double_peak_must_close(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="X",
+            cycle_double_peak=True,
+            qod_ic_ready=True,
+        ))
+        self.assertTrue(any("peak × peak" in m or "peak x peak" in m.lower()
+                             for m in d.must_close_before_ic))
+
+    def test_score_bounded(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle())
+        self.assertGreaterEqual(d.score_0_100, 0)
+        self.assertLessEqual(d.score_0_100, 100)
+
+    def test_markdown_recommendation_top(self) -> None:
+        d = synthesize_ic_decision(ICSignalBundle(
+            deal_name="MemoCo",
+            scorecard_all_pass=True,
+            qod_ic_ready=True,
+            bear_moic=1.9,
+        ))
+        md = render_ic_decision_markdown(d)
+        rec_idx = md.find("## Recommendation")
+        chair_idx = md.find("## Chair opening line")
+        self.assertGreater(rec_idx, 0)
+        self.assertGreater(chair_idx, rec_idx)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(synthesize_ic_decision(ICSignalBundle()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

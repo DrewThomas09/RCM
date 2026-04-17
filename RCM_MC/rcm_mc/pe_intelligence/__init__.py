@@ -778,6 +778,12 @@ from .management_first_sitdown import (
     build_agenda,
     render_agenda_markdown,
 )
+from .ic_decision_synthesizer import (
+    ICDecision,
+    ICSignalBundle,
+    render_ic_decision_markdown,
+    synthesize_ic_decision,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1801,4 +1807,8 @@ __all__ = [
     "SitdownContext",
     "build_agenda",
     "render_agenda_markdown",
+    "ICDecision",
+    "ICSignalBundle",
+    "render_ic_decision_markdown",
+    "synthesize_ic_decision",
 ]
