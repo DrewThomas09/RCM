@@ -101,6 +101,7 @@ NAV_ITEMS = [
     {"label": "Portfolio Optimizer", "href": "/portfolio-optimizer", "icon": "chart"},
     {"label": "Deal Quality", "href": "/deal-quality", "icon": "chart"},
     {"label": "Sector Intel", "href": "/sector-intel", "icon": "chart"},
+    {"label": "Vintage Performance", "href": "/vintage-perf", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
