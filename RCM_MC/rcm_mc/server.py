@@ -1827,6 +1827,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/exit-timing":
             from .ui.data_public.exit_timing_page import render_exit_timing
             return self._send_html(render_exit_timing())
+        if path == "/risk-matrix":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sector = _qs.get("sector", [""])[0]
+            from .ui.data_public.risk_matrix_page import render_risk_matrix
+            return self._send_html(render_risk_matrix(sector_filter=sector))
         if path == "/comparables":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qf(k, default=None):

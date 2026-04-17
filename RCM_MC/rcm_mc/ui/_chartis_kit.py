@@ -58,6 +58,7 @@ _CORPUS_NAV = [
     {"label": "CORPUS INTEL", "separator": True},
     {"label": "Deals Library",  "href": "/deals-library",   "icon": "▤"},
     {"label": "Comparables",    "href": "/comparables",      "icon": "▣"},
+    {"label": "Risk Matrix",    "href": "/risk-matrix",      "icon": "▦"},
     {"label": "Market Rates",   "href": "/market-rates",    "icon": "▦"},
     {"label": "Backtest",       "href": "/backtest",         "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",  "icon": "▤"},
