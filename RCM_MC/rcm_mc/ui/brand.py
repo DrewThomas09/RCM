@@ -108,6 +108,7 @@ NAV_ITEMS = [
     {"label": "Corpus Dashboard", "href": "/corpus-dashboard", "icon": "chart"},
     {"label": "Deal Search", "href": "/deal-search", "icon": "filter"},
     {"label": "IC Memo Gen.", "href": "/corpus-ic-memo", "icon": "doc"},
+    {"label": "Return Attribution", "href": "/return-attribution", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},

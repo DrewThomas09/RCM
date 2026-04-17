@@ -1914,6 +1914,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.ic_memo_page import render_ic_memo_gen
             return self._send_html(render_ic_memo_gen(_qp))
+        if path == "/return-attribution":
+            from .ui.data_public.return_attribution_page import render_return_attribution
+            return self._send_html(render_return_attribution())
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
