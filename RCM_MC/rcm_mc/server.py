@@ -1929,6 +1929,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/hold-analysis":
             from .ui.data_public.hold_analysis_page import render_hold_analysis
             return self._send_html(render_hold_analysis())
+        if path == "/irr-dispersion":
+            from .ui.data_public.irr_dispersion_page import render_irr_dispersion
+            return self._send_html(render_irr_dispersion())
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())

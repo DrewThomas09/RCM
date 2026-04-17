@@ -76,6 +76,7 @@ _CORPUS_NAV = [
     {"label": "Deal Flow Map",  "href": "/deal-flow-heatmap",  "icon": "▣"},
     {"label": "Concentration",  "href": "/concentration-risk", "icon": "▦"},
     {"label": "Hold Analysis",  "href": "/hold-analysis",      "icon": "▣"},
+    {"label": "IRR Dispersion", "href": "/irr-dispersion",    "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
