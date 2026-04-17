@@ -10754,5 +10754,110 @@ class TestExitChannelSelector(unittest.TestCase):
         )
 
 
+# ── Management incentive sizer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    MIP_BASE_POOL_PCT,
+    MIPAllocation,
+    MIPInputs,
+    MIPPlan,
+    render_mip_markdown,
+    size_mip,
+)
+
+
+class TestMgmtIncentiveSizer(unittest.TestCase):
+
+    def test_platform_base_pool_10pct(self) -> None:
+        p = size_mip(MIPInputs(
+            post_close_equity_m=300.0, deal_type="platform",
+        ))
+        self.assertAlmostEqual(p.mip_pool_pct, 0.10, places=2)
+
+    def test_physician_ppm_higher_pool(self) -> None:
+        platform = size_mip(MIPInputs(
+            post_close_equity_m=300.0, deal_type="platform",
+        ))
+        ppm = size_mip(MIPInputs(
+            post_close_equity_m=300.0, deal_type="physician_ppm",
+        ))
+        self.assertGreater(ppm.mip_pool_pct, platform.mip_pool_pct)
+
+    def test_carve_out_lower_pool(self) -> None:
+        platform = size_mip(MIPInputs(
+            post_close_equity_m=300.0, deal_type="platform",
+        ))
+        carve = size_mip(MIPInputs(
+            post_close_equity_m=300.0, deal_type="carve_out",
+        ))
+        self.assertLess(carve.mip_pool_pct, platform.mip_pool_pct)
+
+    def test_founder_bonus_increases_pool(self) -> None:
+        standard = size_mip(MIPInputs(
+            post_close_equity_m=300.0, ceo_is_founder=False,
+        ))
+        founder = size_mip(MIPInputs(
+            post_close_equity_m=300.0, ceo_is_founder=True,
+        ))
+        self.assertGreater(founder.mip_pool_pct, standard.mip_pool_pct)
+
+    def test_large_mgmt_bonus_increases_pool(self) -> None:
+        small = size_mip(MIPInputs(
+            post_close_equity_m=300.0,
+            total_management_headcount=5,
+        ))
+        large = size_mip(MIPInputs(
+            post_close_equity_m=300.0,
+            total_management_headcount=20,
+        ))
+        self.assertGreater(large.mip_pool_pct, small.mip_pool_pct)
+
+    def test_pool_capped_at_18pct(self) -> None:
+        p = size_mip(MIPInputs(
+            post_close_equity_m=300.0, deal_type="physician_ppm",
+            ceo_is_founder=True,
+            total_management_headcount=30,
+        ))
+        self.assertLessEqual(p.mip_pool_pct, 0.18)
+
+    def test_allocations_split(self) -> None:
+        p = size_mip(MIPInputs(post_close_equity_m=300.0))
+        layers = {a.layer for a in p.allocations}
+        self.assertEqual(layers, {"ceo", "c_suite", "management"})
+        # Pct sums to ~1.0.
+        total = sum(a.pct_of_pool for a in p.allocations)
+        self.assertAlmostEqual(total, 1.0, places=3)
+
+    def test_ltip_20pct_of_ceo_comp(self) -> None:
+        p = size_mip(MIPInputs(
+            post_close_equity_m=300.0, ceo_cash_comp_k=800.0,
+        ))
+        self.assertAlmostEqual(p.ltip_annual_cash_k, 160.0, places=1)
+
+    def test_large_pool_partner_note(self) -> None:
+        p = size_mip(MIPInputs(
+            post_close_equity_m=300.0, deal_type="physician_ppm",
+            ceo_is_founder=True, total_management_headcount=30,
+        ))
+        self.assertIn("above market", p.partner_note.lower())
+
+    def test_thin_pool_partner_note(self) -> None:
+        p = size_mip(MIPInputs(
+            post_close_equity_m=100.0, deal_type="add_on",
+        ))
+        self.assertIn("thin", p.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_mip_markdown(size_mip(MIPInputs(
+            post_close_equity_m=300.0)))
+        self.assertIn("# Management incentive plan", md)
+        self.assertIn("MIP pool", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(size_mip(MIPInputs(
+            post_close_equity_m=300.0)).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

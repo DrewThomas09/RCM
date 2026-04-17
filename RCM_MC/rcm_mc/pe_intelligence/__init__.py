@@ -558,6 +558,14 @@ from .exit_channel_selector import (
     rank_exit_channels,
     render_exit_channel_markdown,
 )
+from .mgmt_incentive_sizer import (
+    BASE_POOL_PCT as MIP_BASE_POOL_PCT,
+    MIPAllocation,
+    MIPInputs,
+    MIPPlan,
+    render_mip_markdown,
+    size_mip,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1417,4 +1425,10 @@ __all__ = [
     "ExitChannelRecommendation",
     "rank_exit_channels",
     "render_exit_channel_markdown",
+    "MIP_BASE_POOL_PCT",
+    "MIPAllocation",
+    "MIPInputs",
+    "MIPPlan",
+    "render_mip_markdown",
+    "size_mip",
 ]
