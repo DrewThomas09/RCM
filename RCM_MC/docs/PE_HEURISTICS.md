@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 79
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 80
 modules + test suite:
 
 | Module | Role |
@@ -785,6 +785,7 @@ modules + test suite:
 | `management_comp.py` | MIP/LTIP/vesting/rollover checks |
 | `red_team_review.py` | Adversarial attack + pass rationale |
 | `data_room_tracker.py` | 34-item canonical checklist scorer |
+| `workstream_tracker.py` | Post-close integration milestone aggregator |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1683,7 +1684,22 @@ completeness, P0 / P1 gap lists, and readiness verdict
 
 ---
 
-## 82. Change log
+## 82. Workstream tracker (`workstream_tracker.py`)
+
+Post-close integration workstream tracker. Each `Workstream` (RCM,
+IT, clinical, finance, HR, PMO) has a lead, a list of milestones,
+and a health flag (green / amber / red). Aggregator surfaces:
+
+- Overall completion percentage.
+- Delayed milestone count.
+- Red / amber workstream list for ops-partner escalation.
+
+Distinct from `diligence_tracker.py` (pre-close) — runs post-close
+alongside `value_creation_tracker.py` and `hundred_day_plan.py`.
+
+---
+
+## 83. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1803,3 +1819,5 @@ completeness, P0 / P1 gap lists, and readiness verdict
 - **2026-04-17** — Added `red_team_review.py` and
   `data_room_tracker.py`. Full inventory: 79 modules, 805
   pe_intelligence unit tests.
+- **2026-04-17** — Added `workstream_tracker.py`. Full inventory:
+  80 modules, 812 pe_intelligence unit tests.
