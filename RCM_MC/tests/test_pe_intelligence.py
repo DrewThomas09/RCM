@@ -1277,5 +1277,106 @@ class TestRunPartnerStresses(unittest.TestCase):
         json.dumps(d)  # must not raise
 
 
+# ── IC memo formatter ────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    render_ic_memo_all,
+    render_ic_memo_html,
+    render_ic_memo_markdown,
+    render_ic_memo_text,
+)
+
+
+def _review_for_memo() -> PartnerReview:
+    ctx = HeuristicContext(
+        payer_mix={"medicare": 0.60, "commercial": 0.30, "medicaid": 0.10},
+        ebitda_m=30.0, revenue_m=250.0, bed_count=220, state="TX",
+        hospital_type="acute_care", exit_multiple=11.0, entry_multiple=8.0,
+        hold_years=5.0, projected_irr=0.22, projected_moic=2.9,
+        denial_improvement_bps_per_yr=350, ar_reduction_days_per_yr=7,
+        leverage_multiple=5.0, covenant_headroom_pct=0.25,
+        data_coverage_pct=0.75, has_case_mix_data=True,
+        ebitda_margin=0.09, days_in_ar=52, denial_rate=0.10,
+        final_writeoff_rate=0.04, margin_expansion_bps_per_yr=150,
+    )
+    return partner_review_from_context(ctx, deal_id="MEMO_TEST", deal_name="Demo Hospital")
+
+
+class TestICMemoMarkdown(unittest.TestCase):
+
+    def test_markdown_has_required_sections(self) -> None:
+        review = _review_for_memo()
+        md = render_ic_memo_markdown(review)
+        for section in (
+            "# IC Memo",
+            "## Context",
+            "## Bull case",
+            "## Bear case",
+            "## Reasonableness",
+            "## Pattern flags",
+            "## Key questions",
+            "## Partner dictation",
+        ):
+            self.assertIn(section, md)
+
+    def test_markdown_includes_deal_name(self) -> None:
+        review = _review_for_memo()
+        md = render_ic_memo_markdown(review)
+        self.assertIn("Demo Hospital", md)
+
+    def test_markdown_has_recommendation(self) -> None:
+        review = _review_for_memo()
+        md = render_ic_memo_markdown(review)
+        self.assertIn("Recommendation", md)
+        self.assertIn(review.narrative.recommendation, md)
+
+
+class TestICMemoText(unittest.TestCase):
+
+    def test_text_has_required_headings(self) -> None:
+        review = _review_for_memo()
+        txt = render_ic_memo_text(review)
+        for heading in ("CONTEXT", "BULL CASE", "BEAR CASE",
+                        "REASONABLENESS", "PATTERN FLAGS",
+                        "KEY QUESTIONS", "DICTATION"):
+            self.assertIn(heading, txt)
+
+    def test_text_shows_partner_voice_on_flags(self) -> None:
+        review = _review_for_memo()
+        txt = render_ic_memo_text(review)
+        # At least one heuristic should have partner voice quoted.
+        has_quote = any('"' in line for line in txt.splitlines())
+        if review.heuristic_hits:
+            self.assertTrue(has_quote)
+
+
+class TestICMemoHTML(unittest.TestCase):
+
+    def test_html_has_article_wrapper(self) -> None:
+        review = _review_for_memo()
+        h = render_ic_memo_html(review)
+        self.assertIn('<article class="ic-memo">', h)
+        self.assertIn("</article>", h)
+
+    def test_html_escapes_content(self) -> None:
+        # Build a context with an XSS-ish deal name.
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        rv = partner_review_from_context(ctx, deal_name="<script>x</script>")
+        h = render_ic_memo_html(rv)
+        self.assertNotIn("<script>x</script>", h)
+        self.assertIn("&lt;script&gt;", h)
+
+
+class TestICMemoAll(unittest.TestCase):
+
+    def test_render_all_returns_three_formats(self) -> None:
+        review = _review_for_memo()
+        out = render_ic_memo_all(review)
+        self.assertEqual(set(out.keys()), {"markdown", "text", "html"})
+        for v in out.values():
+            self.assertIsInstance(v, str)
+            self.assertGreater(len(v), 50)
+
+
 if __name__ == "__main__":
     unittest.main()

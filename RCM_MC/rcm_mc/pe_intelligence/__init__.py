@@ -64,6 +64,12 @@ from .valuation_checks import (
     check_wacc,
     run_valuation_checks,
 )
+from .ic_memo import (
+    render_all as render_ic_memo_all,
+    render_html as render_ic_memo_html,
+    render_markdown as render_ic_memo_markdown,
+    render_text as render_ic_memo_text,
+)
 from .scenario_stress import (
     StressInputs,
     StressResult,
@@ -114,4 +120,8 @@ __all__ = [
     "stress_rate_down",
     "stress_volume_down",
     "worst_case_summary",
+    "render_ic_memo_all",
+    "render_ic_memo_html",
+    "render_ic_memo_markdown",
+    "render_ic_memo_text",
 ]
