@@ -4091,5 +4091,109 @@ class TestRunCDDChecks(unittest.TestCase):
         json.dumps([f.to_dict() for f in findings])
 
 
+# ── IC-Ready gate ──────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ICReadinessResult,
+    evaluate_ic_readiness,
+)
+
+
+class TestICReadinessGate(unittest.TestCase):
+
+    def test_clean_deal_is_ready(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55},
+            ebitda_m=30.0, hospital_type="acute_care",
+            exit_multiple=9.0, entry_multiple=8.5,
+            hold_years=5.0, projected_irr=0.19,
+            data_coverage_pct=0.80, has_case_mix_data=True,
+            ebitda_margin=0.09, days_in_ar=48, denial_rate=0.08,
+            final_writeoff_rate=0.04,
+        )
+        review = partner_review_from_context(ctx, deal_id="clean")
+        result = evaluate_ic_readiness(review)
+        self.assertTrue(result.ic_ready)
+        self.assertEqual(result.blockers, [])
+
+    def test_critical_hit_blocks(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=700)
+        review = partner_review_from_context(ctx)
+        result = evaluate_ic_readiness(review)
+        self.assertFalse(result.ic_ready)
+        self.assertTrue(any("critical" in b.lower() for b in result.blockers))
+
+    def test_implausible_band_blocks(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.70},
+            ebitda_m=50.0, projected_irr=0.45,
+        )
+        review = partner_review_from_context(ctx)
+        result = evaluate_ic_readiness(review)
+        self.assertFalse(result.ic_ready)
+        self.assertTrue(any("implausible" in b.lower() for b in result.blockers))
+
+    def test_low_data_coverage_blocks(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55},
+            ebitda_m=30.0, projected_irr=0.18,
+            data_coverage_pct=0.35,
+        )
+        review = partner_review_from_context(ctx)
+        result = evaluate_ic_readiness(review)
+        self.assertFalse(result.ic_ready)
+        self.assertTrue(any("Data coverage" in b for b in result.blockers))
+
+    def test_diligence_board_open_p0_blocks(self) -> None:
+        from rcm_mc.pe_intelligence import DiligenceBoard, DiligenceItem
+        board = DiligenceBoard()
+        board.add(DiligenceItem(id="a", workstream="financial",
+                                title="QoE", priority="P0",
+                                status="in_progress"))
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30.0,
+            data_coverage_pct=0.80,
+        )
+        review = partner_review_from_context(ctx)
+        result = evaluate_ic_readiness(review, diligence_board=board)
+        self.assertFalse(result.ic_ready)
+        self.assertTrue(any("P0 diligence" in b for b in result.blockers))
+
+    def test_side_letter_breach_blocks(self) -> None:
+        from rcm_mc.pe_intelligence import SideLetterSet, check_side_letters
+        sls = SideLetterSet(sector_exclusions=["asc"])
+        findings = check_side_letters(sls=sls, deal_sector="asc")
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30.0,
+            data_coverage_pct=0.80,
+        )
+        review = partner_review_from_context(ctx)
+        result = evaluate_ic_readiness(review, side_letter_findings=findings)
+        self.assertFalse(result.ic_ready)
+
+    def test_replace_management_blocks(self) -> None:
+        from rcm_mc.pe_intelligence import ManagementInputs, score_management
+        weak = score_management(ManagementInputs(
+            ceo_tenure_years=0.5, ceo_pe_experience=False,
+            ceo_operator_background=False, cfo_pe_experience=False,
+            coo_present=False, operating_bench_depth=0,
+            rcm_leader_named=False, cmo_present=False,
+            equity_rollover_pct=0.01,
+        ))
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30.0,
+            data_coverage_pct=0.80,
+        )
+        review = partner_review_from_context(ctx)
+        result = evaluate_ic_readiness(review, management=weak)
+        self.assertFalse(result.ic_ready)
+
+    def test_result_to_dict(self) -> None:
+        import json
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        result = evaluate_ic_readiness(partner_review_from_context(ctx))
+        json.dumps(result.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

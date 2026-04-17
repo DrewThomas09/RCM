@@ -81,6 +81,10 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .icr_gate import (
+    ICReadinessResult,
+    evaluate_ic_readiness,
+)
 from .commercial_due_diligence import (
     CDDFinding,
     CDDInputs,
@@ -475,4 +479,6 @@ __all__ = [
     "market_share_check",
     "market_size_sanity",
     "run_cdd_checks",
+    "ICReadinessResult",
+    "evaluate_ic_readiness",
 ]
