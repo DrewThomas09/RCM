@@ -3587,5 +3587,90 @@ class TestQuartileCommentary(unittest.TestCase):
         self.assertIn("fundraise", commentary_for_quartile("Q4"))
 
 
+# ── Regulatory stress ──────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    RegulatoryStressInputs,
+    StressShock,
+    run_regulatory_stresses,
+    shock_340b_reduction,
+    shock_cms_ipps_cut,
+    shock_medicaid_freeze,
+    shock_site_neutral,
+    shock_snf_vbp_accel,
+    summarize_regulatory_exposure,
+)
+
+
+def _reg_inputs() -> RegulatoryStressInputs:
+    return RegulatoryStressInputs(
+        annual_revenue=500_000_000,
+        medicare_revenue_share=0.40,
+        medicaid_revenue_share=0.20,
+        commercial_revenue_share=0.40,
+        hopd_revenue_share=0.15,
+        share_340b_of_ebitda=0.15,
+        base_ebitda=50_000_000,
+        hospital_type="acute_care",
+    )
+
+
+class TestRegulatoryShocks(unittest.TestCase):
+
+    def test_ipps_cut_negative_impact(self) -> None:
+        shock = shock_cms_ipps_cut(_reg_inputs(), bps=100)
+        # 200M Medicare revenue * 1% = 2M EBITDA hit
+        self.assertAlmostEqual(shock.dollar_ebitda_impact, -2_000_000, delta=1)
+
+    def test_medicaid_freeze_calc(self) -> None:
+        shock = shock_medicaid_freeze(_reg_inputs(), years_frozen=2,
+                                      annual_inflation=0.025)
+        # 100M Medicaid * 2.5% * 2 = 5M foregone
+        self.assertAlmostEqual(shock.dollar_ebitda_impact, -5_000_000, delta=1)
+
+    def test_340b_reduction_scaled_to_ebitda(self) -> None:
+        shock = shock_340b_reduction(_reg_inputs(), reduction_pct=0.50)
+        # 50M ebitda * 15% * 50% = 3.75M
+        self.assertAlmostEqual(shock.dollar_ebitda_impact, -3_750_000, delta=1)
+
+    def test_site_neutral(self) -> None:
+        shock = shock_site_neutral(_reg_inputs(), hopd_rate_compression_pct=0.20)
+        # 75M HOPD * 20% = 15M
+        self.assertAlmostEqual(shock.dollar_ebitda_impact, -15_000_000, delta=1)
+
+    def test_snf_vbp_only_for_post_acute(self) -> None:
+        inputs = _reg_inputs()
+        inputs.hospital_type = "acute_care"
+        self.assertIsNone(shock_snf_vbp_accel(inputs))
+
+        inputs.hospital_type = "post_acute"
+        self.assertIsNotNone(shock_snf_vbp_accel(inputs))
+
+
+class TestRunRegulatoryStresses(unittest.TestCase):
+
+    def test_orchestrator_produces_shocks(self) -> None:
+        shocks = run_regulatory_stresses(_reg_inputs())
+        self.assertGreaterEqual(len(shocks), 5)
+
+    def test_sorted_by_absolute_impact(self) -> None:
+        shocks = run_regulatory_stresses(_reg_inputs())
+        abs_impacts = [abs(s.dollar_ebitda_impact) for s in shocks]
+        self.assertEqual(abs_impacts, sorted(abs_impacts, reverse=True))
+
+
+class TestSummarizeRegulatoryExposure(unittest.TestCase):
+
+    def test_summary_identifies_worst(self) -> None:
+        shocks = run_regulatory_stresses(_reg_inputs())
+        summary = summarize_regulatory_exposure(shocks, base_ebitda=50_000_000)
+        self.assertIn("worst_scenario", summary)
+        self.assertIn("headline", summary)
+
+    def test_empty_summary(self) -> None:
+        summary = summarize_regulatory_exposure([], base_ebitda=50_000_000)
+        self.assertIn("No", summary["headline"])
+
+
 if __name__ == "__main__":
     unittest.main()

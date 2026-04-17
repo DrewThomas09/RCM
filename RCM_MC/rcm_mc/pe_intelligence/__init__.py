@@ -81,6 +81,17 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .regulatory_stress import (
+    RegulatoryStressInputs,
+    StressShock,
+    run_regulatory_stresses,
+    shock_340b_reduction,
+    shock_cms_ipps_cut,
+    shock_medicaid_freeze,
+    shock_site_neutral,
+    shock_snf_vbp_accel,
+    summarize_regulatory_exposure,
+)
 from .fund_model import (
     Fund,
     FundDeal,
@@ -390,4 +401,13 @@ __all__ = [
     "commentary_for_quartile",
     "fund_vintage_percentile",
     "project_fund",
+    "RegulatoryStressInputs",
+    "StressShock",
+    "run_regulatory_stresses",
+    "shock_340b_reduction",
+    "shock_cms_ipps_cut",
+    "shock_medicaid_freeze",
+    "shock_site_neutral",
+    "shock_snf_vbp_accel",
+    "summarize_regulatory_exposure",
 ]
