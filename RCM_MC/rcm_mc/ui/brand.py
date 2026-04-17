@@ -95,6 +95,7 @@ NAV_ITEMS = [
     {"label": "Deals Library", "href": "/deals-library", "icon": "grid"},
     {"label": "Market Rates", "href": "/market-rates", "icon": "chart"},
     {"label": "Backtest", "href": "/backtest", "icon": "chart"},
+    {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
 ]
 

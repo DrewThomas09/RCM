@@ -1818,6 +1818,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/backtest":
             from .ui.data_public.backtest_page import render_backtest
             return self._send_html(render_backtest())
+        if path == "/sponsor-league":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sort_by = _qs.get("sort_by", ["median_moic"])[0]
+            min_deals = int(_qs.get("min_deals", ["3"])[0]) if _qs.get("min_deals", ["3"])[0].isdigit() else 3
+            from .ui.data_public.sponsor_league_page import render_sponsor_league
+            return self._send_html(render_sponsor_league(min_deals=min_deals, sort_by=sort_by))
         if path == "/query":
             return self._route_deal_query()
         if path == "/benchmarks":
