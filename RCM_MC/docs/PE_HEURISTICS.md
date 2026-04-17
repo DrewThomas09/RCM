@@ -2216,7 +2216,38 @@ reprice); otherwise "healthy", "standard", or "watch one finding".
 
 ---
 
-## 108. Change log
+## 108. Growth algorithm diagnostic (`growth_algorithm_diagnostic.py`)
+
+Decomposes total revenue growth into:
+
+- **Organic growth** = price + volume + mix.
+- **Acquisition growth** = revenue from bolt-ons closed in period
+  (as % of prior-year revenue).
+
+Organic further splits:
+
+- **Price** — rate / chargemaster / reimbursement per unit.
+- **Volume** — visits, admits, cases, members.
+- **Mix** — shift toward higher- or lower-reimbursement services,
+  payers, or acuity. Inferred as `organic - price - volume` if
+  not provided.
+
+Quality score (0-100) weights components by sustainability:
+volume (×4) > price (×2.5) > mix (×1.5) > acquisition (×1.0).
+Volume growth is the most defensible — it reflects real
+competitive position.
+
+Partner note priorities:
+
+- Organic < 0 → "contracting; acquisitions masking core decline".
+- Acquisition ≥ 60% of total → "acquisition-driven; underwrite
+  roll-up engine, not asset".
+- Organic ≥ 10% with volume ≥ 5% → "defensible algorithm".
+- Price-led with thin volume → "stress test pricing durability".
+
+---
+
+## 109. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2396,3 +2427,6 @@ reprice); otherwise "healthy", "standard", or "watch one finding".
 - **2026-04-17** — Added `geographic_reach_analyzer.py` (§107) —
   state HHI + CPOM exposure + density + expansion whitespace.
   Full inventory: 105 modules, 1,040 pe_intelligence unit tests.
+- **2026-04-17** — Added `growth_algorithm_diagnostic.py` (§108) —
+  price/volume/mix/acquisition decomposition + quality score.
+  Full inventory: 106 modules, 1,050 pe_intelligence unit tests.
