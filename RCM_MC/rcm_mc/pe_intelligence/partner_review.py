@@ -708,6 +708,54 @@ def _enrich_secondary_analytics(
     except Exception as exc:
         review.operating_posture = {"error": f"posture failed: {exc!r}"}
 
+    # 5. White-space adjacency detection
+    try:
+        from .white_space import WhiteSpaceInputs, detect_white_space
+        ws_inputs = _white_space_inputs_from_ctx(ctx, packet)
+        review.white_space = detect_white_space(ws_inputs).to_dict()
+    except Exception as exc:
+        review.white_space = {"error": f"white_space failed: {exc!r}"}
+
+
+def _white_space_inputs_from_ctx(ctx: "HeuristicContext", packet: Any):
+    """Build WhiteSpaceInputs from context + packet.
+
+    Packet may carry arrays under ``profile`` describing existing /
+    candidate markets, segments, and channels. Missing fields fall
+    back to empty lists — the module still produces registry-based
+    adjacency suggestions by subsector.
+    """
+    from .white_space import WhiteSpaceInputs
+    profile = _packet_section(packet, "profile")
+
+    def _list(field_name: str) -> List[str]:
+        if profile is None:
+            return []
+        if isinstance(profile, dict):
+            v = profile.get(field_name)
+        else:
+            v = getattr(profile, field_name, None)
+        if isinstance(v, list):
+            return [str(x) for x in v if x is not None]
+        return []
+
+    existing_states = _list("existing_states") or ([ctx.state] if ctx.state else [])
+    existing_segments = _list("existing_segments")
+    existing_channels = _list("existing_channels")
+    candidate_states = _list("candidate_states")
+    candidate_segments = _list("candidate_segments")
+    candidate_channels = _list("candidate_channels")
+    return WhiteSpaceInputs(
+        subsector=ctx.hospital_type,
+        state=ctx.state,
+        existing_states=existing_states,
+        existing_segments=existing_segments,
+        existing_channels=existing_channels,
+        candidate_states=candidate_states,
+        candidate_segments=candidate_segments,
+        candidate_channels=candidate_channels,
+    )
+
 
 def _stress_inputs_from_ctx(ctx: "HeuristicContext"):
     """Build StressInputs (in $) from a HeuristicContext (EBITDA in $M).

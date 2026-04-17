@@ -111,6 +111,13 @@ from .operating_posture import (
     classify_posture,
     posture_from_stress_and_heuristics,
 )
+from .white_space import (
+    WhiteSpaceInputs,
+    WhiteSpaceOpportunity,
+    WhiteSpaceResult,
+    detect_white_space,
+    top_opportunities,
+)
 from .thesis_templates import (
     TEMPLATES as THESIS_TEMPLATES,
     ThesisTemplate,
@@ -623,4 +630,9 @@ __all__ = [
     "PostureResult",
     "classify_posture",
     "posture_from_stress_and_heuristics",
+    "WhiteSpaceInputs",
+    "WhiteSpaceOpportunity",
+    "WhiteSpaceResult",
+    "detect_white_space",
+    "top_opportunities",
 ]

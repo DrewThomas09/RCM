@@ -5035,5 +5035,103 @@ class TestStressAndPostureWiredIntoReview(unittest.TestCase):
         self.assertIn(review.operating_posture["posture"], ALL_POSTURES)
 
 
+# ── White space ───────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    WhiteSpaceInputs,
+    WhiteSpaceOpportunity,
+    WhiteSpaceResult,
+    detect_white_space,
+    top_opportunities,
+)
+
+
+class TestDetectWhiteSpace(unittest.TestCase):
+
+    def test_geographic_adjacency_scores_higher(self) -> None:
+        # NY (existing), NJ (adjacent), CA (distant).
+        result = detect_white_space(WhiteSpaceInputs(
+            subsector="acute_care", state="NY",
+            existing_states=["NY"],
+            candidate_states=["NJ", "CA"],
+        ))
+        by_name = {o.name: o for o in result.opportunities
+                   if o.dimension == "geographic"}
+        self.assertIn("NJ", by_name)
+        self.assertIn("CA", by_name)
+        self.assertGreater(by_name["NJ"].score, by_name["CA"].score)
+
+    def test_existing_state_excluded(self) -> None:
+        result = detect_white_space(WhiteSpaceInputs(
+            subsector="acute_care", existing_states=["TX"],
+            candidate_states=["TX", "OK"],
+        ))
+        geo = {o.name for o in result.opportunities
+               if o.dimension == "geographic"}
+        self.assertNotIn("TX", geo)
+        self.assertIn("OK", geo)
+
+    def test_segment_registry_adjacency(self) -> None:
+        # Acute-care registry adjacencies include "outpatient imaging".
+        result = detect_white_space(WhiteSpaceInputs(
+            subsector="acute_care",
+            existing_segments=[],
+            candidate_segments=[],
+        ))
+        segs = [o for o in result.opportunities if o.dimension == "segment"]
+        self.assertTrue(any("outpatient imaging" in o.name for o in segs))
+
+    def test_channel_registry_adjacency_for_behavioral(self) -> None:
+        result = detect_white_space(WhiteSpaceInputs(
+            subsector="behavioral",
+        ))
+        channels = [o for o in result.opportunities if o.dimension == "channel"]
+        self.assertGreater(len(channels), 0)
+
+    def test_existing_segments_excluded(self) -> None:
+        result = detect_white_space(WhiteSpaceInputs(
+            subsector="acute_care",
+            existing_segments=["outpatient imaging"],
+        ))
+        segs = [o.name for o in result.opportunities
+                if o.dimension == "segment"]
+        self.assertNotIn("outpatient imaging", segs)
+
+    def test_top_opportunities_n(self) -> None:
+        result = detect_white_space(WhiteSpaceInputs(subsector="acute_care"))
+        top = top_opportunities(result, n=2)
+        self.assertEqual(len(top), min(2, len(result.opportunities)))
+
+    def test_top_dimension_populated(self) -> None:
+        result = detect_white_space(WhiteSpaceInputs(subsector="acute_care"))
+        self.assertIn(result.top_dimension, ("geographic", "segment", "channel", None))
+
+    def test_result_to_dict(self) -> None:
+        import json
+        result = detect_white_space(WhiteSpaceInputs(subsector="asc"))
+        json.dumps(result.to_dict())
+
+
+class TestWhiteSpaceWiredIntoReview(unittest.TestCase):
+
+    def test_review_includes_white_space(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30,
+            hospital_type="acute_care", state="TX",
+        )
+        review = partner_review_from_context(ctx)
+        self.assertIsNotNone(review.white_space)
+        self.assertIn("opportunities", review.white_space)
+
+    def test_packet_fields_feed_into_white_space(self) -> None:
+        packet = _make_packet_dict()
+        packet["profile"]["existing_states"] = ["TX"]
+        packet["profile"]["candidate_states"] = ["OK", "LA"]
+        review = partner_review(packet)
+        names = [o["name"] for o in review.white_space["opportunities"]
+                 if o["dimension"] == "geographic"]
+        self.assertIn("OK", names)
+
+
 if __name__ == "__main__":
     unittest.main()
