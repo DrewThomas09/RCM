@@ -5666,5 +5666,76 @@ class TestExtraArchetypes(unittest.TestCase):
         json.dumps(hits[0].to_dict())
 
 
+# ── Extra red flags ────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    EXTRA_RED_FLAG_FIELDS,
+    run_extra_red_flags,
+)
+
+
+def _ctx_with(**extras):
+    ctx = HeuristicContext()
+    for k, v in extras.items():
+        setattr(ctx, k, v)
+    return ctx
+
+
+class TestExtraRedFlags(unittest.TestCase):
+
+    def test_physician_turnover(self) -> None:
+        hits = run_extra_red_flags(_ctx_with(physician_retention_pct=0.78))
+        self.assertTrue(any(h.id == "physician_turnover_high" for h in hits))
+
+    def test_rn_shortage_critical(self) -> None:
+        hits = run_extra_red_flags(_ctx_with(unfilled_rn_positions_pct=0.28))
+        hit = next(h for h in hits if h.id == "clinical_staff_shortage")
+        self.assertEqual(hit.severity, "CRITICAL")
+
+    def test_denial_spike(self) -> None:
+        hits = run_extra_red_flags(_ctx_with(denial_rate_qoq_delta_bps=250))
+        self.assertTrue(any(h.id == "payer_denial_spike" for h in hits))
+
+    def test_bad_debt_spike(self) -> None:
+        ctx = _ctx_with(bad_debt_growth_yoy_pct=20.0)
+        ctx.revenue_growth_pct_per_yr = 5.0
+        hits = run_extra_red_flags(ctx)
+        self.assertTrue(any(h.id == "bad_debt_spike" for h in hits))
+
+    def test_it_system_eol(self) -> None:
+        ctx = _ctx_with(ehr_eol_years=3.0)
+        ctx.hold_years = 5.0
+        hits = run_extra_red_flags(ctx)
+        self.assertTrue(any(h.id == "it_system_eol" for h in hits))
+
+    def test_lease_cluster(self) -> None:
+        hits = run_extra_red_flags(_ctx_with(leased_site_pct_expiring_in_hold=0.55))
+        hit = next(h for h in hits if h.id == "lease_expiration_cluster")
+        self.assertEqual(hit.severity, "HIGH")
+
+    def test_open_inspection(self) -> None:
+        hits = run_extra_red_flags(_ctx_with(open_cms_inspection="2023 OIG review"))
+        self.assertTrue(any(h.id == "regulatory_inspection_open" for h in hits))
+
+    def test_self_insurance_gap(self) -> None:
+        hits = run_extra_red_flags(_ctx_with(self_insurance_reserve_gap_m=12.0))
+        self.assertTrue(any(h.id == "self_insurance_tail" for h in hits))
+
+    def test_capex_deferral(self) -> None:
+        hits = run_extra_red_flags(_ctx_with(capex_to_da_ratio=0.50))
+        self.assertTrue(any(h.id == "capex_deferral_pattern" for h in hits))
+
+    def test_key_payer_churn(self) -> None:
+        hits = run_extra_red_flags(_ctx_with(top_payer_churn_risk="Aetna contract expires Q2 2027"))
+        self.assertTrue(any(h.id == "key_payer_churn" for h in hits))
+
+    def test_empty_context_no_fires(self) -> None:
+        hits = run_extra_red_flags(HeuristicContext())
+        self.assertEqual(hits, [])
+
+    def test_fields_list_non_empty(self) -> None:
+        self.assertGreaterEqual(len(EXTRA_RED_FLAG_FIELDS), 10)
+
+
 if __name__ == "__main__":
     unittest.main()

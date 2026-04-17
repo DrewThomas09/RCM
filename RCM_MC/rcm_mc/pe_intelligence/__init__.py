@@ -141,6 +141,10 @@ from .extra_archetypes import (
     ExtraArchetypeHit,
     classify_extra_archetypes,
 )
+from .extra_red_flags import (
+    EXTRA_RED_FLAG_FIELDS,
+    run_extra_red_flags,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -703,4 +707,6 @@ __all__ = [
     "ExtraArchetypeContext",
     "ExtraArchetypeHit",
     "classify_extra_archetypes",
+    "EXTRA_RED_FLAG_FIELDS",
+    "run_extra_red_flags",
 ]
