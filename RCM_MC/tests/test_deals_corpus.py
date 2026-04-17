@@ -1490,6 +1490,84 @@ class TestComparables(unittest.TestCase):
 
 
 # ===========================================================================
+# Corpus Report (deal brief + corpus summary)
+# ===========================================================================
+
+class TestCorpusReport(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def _deal(self):
+        return {
+            "deal_name": "Mid-Market Hospital – PE Buyout",
+            "year": 2017,
+            "buyer": "Apollo",
+            "ev_mm": 650,
+            "ebitda_at_entry_mm": 70,
+            "hold_years": 5.0,
+            "payer_mix": {"medicare": 0.44, "medicaid": 0.22, "commercial": 0.30, "self_pay": 0.04},
+            "source": "seed",
+        }
+
+    def test_deal_brief_returns_string(self):
+        from rcm_mc.data_public.corpus_report import deal_brief
+        out = deal_brief(self._deal(), self.db_path)
+        self.assertIsInstance(out, str)
+        self.assertGreater(len(out), 200)
+
+    def test_deal_brief_has_sections(self):
+        from rcm_mc.data_public.corpus_report import deal_brief
+        out = deal_brief(self._deal(), self.db_path)
+        self.assertIn("DEAL BRIEF", out)
+        self.assertIn("EXIT SCENARIOS", out)
+        self.assertIn("CAPITAL STRUCTURE", out)
+        self.assertIn("PE INTELLIGENCE", out)
+
+    def test_corpus_summary_report(self):
+        from rcm_mc.data_public.corpus_report import corpus_summary_report
+        out = corpus_summary_report(self.db_path)
+        self.assertIsInstance(out, str)
+        self.assertIn("PUBLIC DEALS CORPUS", out)
+        self.assertIn("BASE RATES", out)
+        self.assertIn("DATA QUALITY", out)
+
+    def test_deal_brief_corpus_deal(self):
+        from rcm_mc.data_public.corpus_report import deal_brief
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_001")
+        out = deal_brief(deal, self.db_path)
+        self.assertIn("DEAL BRIEF", out)
+
+    def test_cli_brief_deal(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "brief", "--deal-id", "seed_007"])
+        out = buf.getvalue()
+        self.assertIn("DEAL BRIEF", out)
+        self.assertIn("EXIT SCENARIOS", out)
+
+    def test_cli_brief_corpus_summary(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "brief", "--corpus-summary"])
+        out = buf.getvalue()
+        self.assertIn("PUBLIC DEALS CORPUS", out)
+        self.assertIn("BASE RATES", out)
+
+
+# ===========================================================================
 # Diligence Checklist
 # ===========================================================================
 

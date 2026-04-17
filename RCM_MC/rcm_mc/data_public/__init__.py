@@ -58,6 +58,7 @@ from .exit_modeling import (
     irr_sensitivity,
 )
 from .diligence_checklist import build_checklist, checklist_text, checklist_json
+from .corpus_report import deal_brief, corpus_summary_report
 
 __all__ = [
     "DealsCorpus",
@@ -104,4 +105,6 @@ __all__ = [
     "build_checklist",
     "checklist_text",
     "checklist_json",
+    "deal_brief",
+    "corpus_summary_report",
 ]

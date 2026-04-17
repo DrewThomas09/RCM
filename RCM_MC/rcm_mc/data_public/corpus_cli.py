@@ -182,6 +182,27 @@ def _cmd_full_ingest(args: argparse.Namespace) -> None:
         print(_json.dumps(report.as_dict(), indent=2, default=str))
 
 
+def _cmd_brief(args: argparse.Namespace) -> None:
+    from .corpus_report import deal_brief, corpus_summary_report
+    if args.corpus_summary:
+        print(corpus_summary_report(args.db))
+        return
+    corpus = DealsCorpus(args.db)
+    deal = corpus.get(args.deal_id)
+    if not deal:
+        print(f"Deal '{args.deal_id}' not found.")
+        sys.exit(1)
+    overrides: dict = {}
+    if args.assumptions:
+        try:
+            overrides = json.loads(args.assumptions)
+        except json.JSONDecodeError:
+            print("--assumptions must be JSON")
+            sys.exit(1)
+    entry_debt = overrides.pop("entry_debt_mm", None)
+    print(deal_brief(deal, args.db, entry_debt_mm=entry_debt))
+
+
 def _cmd_diligence(args: argparse.Namespace) -> None:
     from .diligence_checklist import build_checklist, checklist_text, checklist_json
     corpus = DealsCorpus(args.db)
@@ -416,6 +437,15 @@ def main(argv=None) -> None:
     sv.add_argument("--deal-id", required=True, dest="deal_id")
     sv.add_argument("--json", action="store_true")
 
+    # brief
+    br = sub.add_parser("brief", help="One-page deal brief (all modules) for IC review")
+    br.add_argument("--deal-id", default=None, dest="deal_id",
+                    help="Corpus deal ID (omit to use --corpus-summary)")
+    br.add_argument("--corpus-summary", action="store_true", dest="corpus_summary",
+                    help="Print corpus-level summary report instead of a deal brief")
+    br.add_argument("--assumptions", default=None,
+                    help="JSON overrides, e.g. '{\"entry_debt_mm\": 2000}'")
+
     # diligence
     dil = sub.add_parser("diligence", help="Full IC diligence checklist for a corpus deal")
     dil.add_argument("--deal-id", required=True, dest="deal_id")
@@ -475,6 +505,7 @@ def main(argv=None) -> None:
         "leverage": _cmd_leverage,
         "exit": _cmd_exit,
         "diligence": _cmd_diligence,
+        "brief": _cmd_brief,
     }
     dispatch[args.cmd](args)
 
