@@ -495,6 +495,13 @@ from .growth_algorithm_diagnostic import (
     diagnose_growth,
     render_growth_markdown,
 )
+from .technology_debt_assessor import (
+    TechDebtFinding,
+    TechDebtInputs,
+    TechDebtReport,
+    assess_technology_debt,
+    render_tech_debt_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1307,4 +1314,9 @@ __all__ = [
     "GrowthInputs",
     "diagnose_growth",
     "render_growth_markdown",
+    "TechDebtFinding",
+    "TechDebtInputs",
+    "TechDebtReport",
+    "assess_technology_debt",
+    "render_tech_debt_markdown",
 ]

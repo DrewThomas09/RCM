@@ -9981,5 +9981,114 @@ class TestGrowthAlgorithmDiagnostic(unittest.TestCase):
         json.dumps(d.to_dict())
 
 
+# ── Technology debt assessor ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    TechDebtFinding,
+    TechDebtInputs,
+    TechDebtReport,
+    assess_technology_debt,
+    render_tech_debt_markdown,
+)
+
+
+class TestTechnologyDebtAssessor(unittest.TestCase):
+
+    def test_clean_profile_no_findings(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            ehr_system="modern", ehr_age_years=3,
+            billing_system="modern",
+            integrations_count=5, has_api_layer=True,
+            has_cloud_migration=True, has_sso=True, has_mfa=True,
+            has_soc2=True, pen_test_recent=True,
+            data_warehouse_status="modern",
+            outage_hours_last_12mo=5.0,
+            eng_headcount_per_1k_employees=6.0,
+        ))
+        self.assertEqual(r.total_findings, 0)
+        self.assertIn("clean", r.partner_note.lower())
+
+    def test_legacy_ehr_flagged_high(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            ehr_system="legacy", ehr_age_years=15,
+        ))
+        self.assertTrue(any(f.area == "EHR" and f.severity == "high"
+                            for f in r.findings))
+
+    def test_security_gaps_flagged(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            has_mfa=False, has_sso=False, has_soc2=False,
+            pen_test_recent=False,
+        ))
+        self.assertTrue(any(f.area == "Security" and f.severity == "high"
+                            for f in r.findings))
+
+    def test_outage_high_flagged(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            outage_hours_last_12mo=60,
+        ))
+        self.assertTrue(any(f.area == "Uptime / reliability"
+                            and f.severity == "high"
+                            for f in r.findings))
+
+    def test_many_integrations_no_api_flagged(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            integrations_count=25, has_api_layer=False,
+        ))
+        self.assertTrue(any(f.area == "Integrations" for f in r.findings))
+
+    def test_no_cloud_flagged(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            has_cloud_migration=False,
+        ))
+        self.assertTrue(any(f.area == "Infrastructure" for f in r.findings))
+
+    def test_total_cost_aggregates(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            ehr_system="legacy", has_mfa=False,
+            has_sso=False, has_soc2=False, pen_test_recent=False,
+            outage_hours_last_12mo=60,
+        ))
+        self.assertGreater(r.total_remediation_m, 15.0)
+
+    def test_high_severity_escalation_note(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            ehr_system="legacy",
+            billing_system="legacy",
+            outage_hours_last_12mo=60,
+            has_mfa=False, has_sso=False, has_soc2=False,
+            pen_test_recent=False,
+        ))
+        self.assertGreaterEqual(r.high_severity, 3)
+        self.assertIn("IC", r.partner_note)
+
+    def test_risk_score_bounds(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            ehr_system="legacy", billing_system="legacy",
+            integrations_count=30, has_api_layer=False,
+            outage_hours_last_12mo=100,
+            has_mfa=False, has_sso=False, has_soc2=False,
+            pen_test_recent=False,
+            data_warehouse_status="none",
+            eng_headcount_per_1k_employees=1.0,
+            has_cloud_migration=False,
+        ))
+        self.assertLessEqual(r.risk_score_0_100, 100)
+        self.assertGreater(r.risk_score_0_100, 30)
+
+    def test_markdown_renders(self) -> None:
+        r = assess_technology_debt(TechDebtInputs(
+            ehr_system="legacy",
+        ))
+        md = render_tech_debt_markdown(r)
+        self.assertIn("# Technology debt assessment", md)
+        self.assertIn("EHR", md)
+
+    def test_json(self) -> None:
+        import json
+        r = assess_technology_debt(TechDebtInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
