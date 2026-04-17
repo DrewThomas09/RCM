@@ -2752,7 +2752,32 @@ Packet fields that trigger: `subsector`, `revenue_m`, `ebitda_m`,
 
 ---
 
-## 126. Change log
+## 126. Partner voice variants (`partner_voice_variants.py`)
+
+A deal goes to IC narrated five different ways in a partner's
+head. This module produces each:
+
+- **Skeptic** — "what breaks this?"; numbers-first, no hedging;
+  invokes historical pattern matches when present; ends with the
+  question "pass unless X".
+- **Optimist** — "where does this 10x?"; upside case; believer
+  tone; ends with "this is the best deal in the pipeline" when
+  conviction is warranted.
+- **MD-numbers** — senior physician-investor; clinical + financial
+  blend; flags CMS survey history and covenant headroom.
+- **Operating partner** — "day 100 view"; what do I own; where
+  are the execution gaps; hiring plan if mgmt score is low.
+- **LP-facing** — what the GP would write in the next LP update;
+  quoted update-style paragraph with base-case MOIC/IRR + risks.
+
+`compose_all_voices(ctx)` produces all five. `compose_voice(name, ctx)`
+produces one. Rendered markdown reads as a cross-examination of
+the same deal from five senior perspectives — which is what
+partners actually do before IC.
+
+---
+
+## 127. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2992,3 +3017,7 @@ Packet fields that trigger: `subsector`, `revenue_m`, `ebitda_m`,
   7 partner-reflex "red flag on sight" detectors, encoding the
   canonical $400M rural-CAH-at-28%-IRR example. Full inventory:
   123 modules, 1,231 pe_intelligence unit tests.
+- **2026-04-17** — Added `partner_voice_variants.py` (§126) — 5
+  IC narrators (skeptic/optimist/md_numbers/operating_partner/
+  lp_facing) producing the same deal from five perspectives.
+  Full inventory: 124 modules, 1,241 pe_intelligence unit tests.
