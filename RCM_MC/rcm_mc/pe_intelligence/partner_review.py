@@ -716,6 +716,16 @@ def _enrich_secondary_analytics(
     except Exception as exc:
         review.white_space = {"error": f"white_space failed: {exc!r}"}
 
+    # 6. Investability composite (consumes the upstream fields).
+    try:
+        from .investability_scorer import (
+            inputs_from_review, score_investability,
+        )
+        inv_inputs = inputs_from_review(review)
+        review.investability = score_investability(inv_inputs).to_dict()
+    except Exception as exc:
+        review.investability = {"error": f"investability failed: {exc!r}"}
+
 
 def _white_space_inputs_from_ctx(ctx: "HeuristicContext", packet: Any):
     """Build WhiteSpaceInputs from context + packet.

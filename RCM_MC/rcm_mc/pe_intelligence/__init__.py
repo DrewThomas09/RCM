@@ -118,6 +118,12 @@ from .white_space import (
     detect_white_space,
     top_opportunities,
 )
+from .investability_scorer import (
+    InvestabilityInputs,
+    InvestabilityResult,
+    inputs_from_review as investability_inputs_from_review,
+    score_investability,
+)
 from .thesis_templates import (
     TEMPLATES as THESIS_TEMPLATES,
     ThesisTemplate,
@@ -635,4 +641,8 @@ __all__ = [
     "WhiteSpaceResult",
     "detect_white_space",
     "top_opportunities",
+    "InvestabilityInputs",
+    "InvestabilityResult",
+    "investability_inputs_from_review",
+    "score_investability",
 ]

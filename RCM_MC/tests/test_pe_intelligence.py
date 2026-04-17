@@ -5133,5 +5133,122 @@ class TestWhiteSpaceWiredIntoReview(unittest.TestCase):
         self.assertIn("OK", names)
 
 
+# ── Investability scorer ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    InvestabilityInputs,
+    InvestabilityResult,
+    investability_inputs_from_review,
+    score_investability,
+)
+
+
+class TestInvestabilityScorer(unittest.TestCase):
+
+    def test_strong_deal_scores_high(self) -> None:
+        inputs = InvestabilityInputs(
+            consolidation_play_score=0.70, fragmentation_verdict="fragmented",
+            white_space_top_score=0.75,
+            projected_irr=0.22, projected_moic=2.6,
+            irr_verdict="IN_BAND", exit_multiple_verdict="IN_BAND",
+            robustness_grade="A", downside_pass_rate=0.95,
+            regime="durable_growth", posture="scenario_leader",
+            n_critical_hits=0, n_high_hits=0, n_covenant_breaches=0,
+        )
+        result = score_investability(inputs)
+        self.assertGreaterEqual(result.score, 80)
+        self.assertIn(result.grade, ("A", "B"))
+
+    def test_weak_deal_scores_low(self) -> None:
+        inputs = InvestabilityInputs(
+            fragmentation_verdict="consolidated",
+            projected_irr=0.07, projected_moic=1.3,
+            irr_verdict="OUT_OF_BAND", exit_multiple_verdict="IMPLAUSIBLE",
+            robustness_grade="F", downside_pass_rate=0.10,
+            regime="declining_risk", posture="concentration_risk",
+            n_critical_hits=2, n_high_hits=3, n_covenant_breaches=2,
+        )
+        result = score_investability(inputs)
+        self.assertLessEqual(result.score, 40)
+        self.assertIn(result.grade, ("D", "F"))
+
+    def test_strengths_and_weaknesses_populated(self) -> None:
+        inputs = InvestabilityInputs(
+            consolidation_play_score=0.70,
+            projected_irr=0.22, projected_moic=2.8,
+            irr_verdict="IN_BAND",
+            robustness_grade="A", regime="durable_growth",
+            posture="scenario_leader",
+        )
+        result = score_investability(inputs)
+        self.assertGreater(len(result.strengths), 0)
+
+    def test_empty_inputs_produces_neutral_score(self) -> None:
+        result = score_investability(InvestabilityInputs())
+        self.assertGreater(result.score, 30)
+        self.assertLess(result.score, 70)
+
+    def test_partner_note_mentions_grade(self) -> None:
+        result = score_investability(InvestabilityInputs(
+            projected_irr=0.22, irr_verdict="IN_BAND",
+            robustness_grade="A",
+        ))
+        self.assertTrue(result.partner_note)
+
+    def test_result_to_dict(self) -> None:
+        import json
+        result = score_investability(InvestabilityInputs())
+        json.dumps(result.to_dict())
+
+
+class TestInvestabilityWiredIntoReview(unittest.TestCase):
+
+    def test_review_contains_investability(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30, revenue_m=250,
+            ebitda_margin=0.10, leverage_multiple=5.0,
+            exit_multiple=9.0, entry_multiple=8.0, hold_years=5,
+            projected_irr=0.20, projected_moic=2.3,
+            hospital_type="acute_care", state="TX",
+        )
+        review = partner_review_from_context(ctx)
+        self.assertIsNotNone(review.investability)
+        self.assertIn("score", review.investability)
+        self.assertIn("grade", review.investability)
+        self.assertIn("partner_note", review.investability)
+
+    def test_inputs_from_review_roundtrip(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30, revenue_m=250,
+            projected_irr=0.20, projected_moic=2.3,
+        )
+        review = partner_review_from_context(ctx)
+        inputs = investability_inputs_from_review(review)
+        self.assertIsInstance(inputs, InvestabilityInputs)
+
+
+class TestFullReviewToDict(unittest.TestCase):
+
+    def test_to_dict_includes_all_six_fields(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30,
+            hospital_type="acute_care", state="TX",
+        )
+        review = partner_review_from_context(ctx)
+        d = review.to_dict()
+        for key in ("regime", "market_structure", "stress_scenarios",
+                    "operating_posture", "white_space", "investability"):
+            self.assertIn(key, d)
+
+    def test_to_dict_json_serializable_end_to_end(self) -> None:
+        import json
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30,
+            hospital_type="acute_care", state="TX",
+        )
+        review = partner_review_from_context(ctx)
+        json.dumps(review.to_dict(), default=str)
+
+
 if __name__ == "__main__":
     unittest.main()
