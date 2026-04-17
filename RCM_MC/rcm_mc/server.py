@@ -1832,6 +1832,57 @@ class RCMHandler(BaseHTTPRequestHandler):
             sector = _qs.get("sector", [""])[0]
             from .ui.data_public.risk_matrix_page import render_risk_matrix
             return self._send_html(render_risk_matrix(sector_filter=sector))
+        if path == "/api/corpus":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qs1c(k, d=""): return (_qs.get(k, [d]) or [d])[0]
+            def _qsfc(k):
+                try: return float(_qs.get(k, [None])[0])
+                except (TypeError, ValueError): return None
+            def _qsic(k):
+                try: return int(_qs.get(k, [None])[0])
+                except (TypeError, ValueError): return None
+            import importlib as _il
+            from .data_public.deals_corpus import _SEED_DEALS
+            from .data_public.extended_seed import EXTENDED_SEED_DEALS
+            _corp = list(_SEED_DEALS) + list(EXTENDED_SEED_DEALS)
+            for _i in range(2, 33):
+                try:
+                    _m = _il.import_module(f"rcm_mc.data_public.extended_seed_{_i}")
+                    _corp += list(getattr(_m, f"EXTENDED_SEED_DEALS_{_i}"))
+                except (ImportError, AttributeError): pass
+            sector_f = _qs1c("sector"); yr_lo = _qsic("yr_lo"); yr_hi = _qsic("yr_hi")
+            ev_lo = _qsfc("ev_lo"); ev_hi = _qsfc("ev_hi")
+            moic_lo = _qsfc("moic_lo"); moic_hi = _qsfc("moic_hi")
+            limit = min(200, int(_qs.get("limit", ["50"])[0]) if _qs.get("limit") else 50)
+            q = _qs1c("q").lower()
+            results = []
+            for _d in _corp:
+                if sector_f and _d.get("sector", "") != sector_f: continue
+                if yr_lo or yr_hi:
+                    _yr = _d.get("year") or _d.get("entry_year")
+                    try:
+                        _yr_i = int(_yr)
+                        if yr_lo and _yr_i < yr_lo: continue
+                        if yr_hi and _yr_i > yr_hi: continue
+                    except (TypeError, ValueError): pass
+                if ev_lo or ev_hi:
+                    try:
+                        _ev = float(_d.get("ev_mm") or 0)
+                        if ev_lo and _ev < ev_lo: continue
+                        if ev_hi and _ev > ev_hi: continue
+                    except (TypeError, ValueError): pass
+                if moic_lo or moic_hi:
+                    try:
+                        _m2 = float(_d.get("realized_moic") or 0)
+                        if moic_lo and _m2 < moic_lo: continue
+                        if moic_hi and _m2 > moic_hi: continue
+                    except (TypeError, ValueError): pass
+                if q:
+                    _hay = " ".join(str(_d.get(f, "") or "") for f in ("deal_name", "buyer", "seller", "sector")).lower()
+                    if q not in _hay: continue
+                results.append(_d)
+            results.sort(key=lambda d: -(float(d.get("realized_moic") or 0)))
+            return self._send_json({"count": len(results), "limit": limit, "deals": results[:limit]})
         if path == "/deal-search":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qs1(k, d=""): return (_qs.get(k, [d]) or [d])[0]
