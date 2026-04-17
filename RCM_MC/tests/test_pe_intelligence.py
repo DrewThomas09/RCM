@@ -11803,5 +11803,93 @@ class TestUnrealisticOnItsFace(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Partner voice variants ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    VOICES,
+    VOICE_BUILDERS,
+    VoiceBundle,
+    VoiceContext,
+    VoiceParagraph,
+    compose_all_voices,
+    compose_voice,
+    render_voices_markdown,
+)
+
+
+class TestPartnerVoiceVariants(unittest.TestCase):
+
+    def test_five_voices_defined(self) -> None:
+        self.assertEqual(set(VOICES), {
+            "skeptic", "optimist", "md_numbers",
+            "operating_partner", "lp_facing",
+        })
+
+    def test_skeptic_tone_if_historical_matches(self) -> None:
+        ctx = VoiceContext(
+            deal_name="X", recurring_ebitda_m=50.0,
+            historical_matches=["envision_surprise_billing_2023"],
+            top_risks=["OON dependency"],
+        )
+        v = compose_voice("skeptic", ctx)
+        self.assertIn("pattern-matches", v.paragraph.lower())
+        self.assertIn("pass", v.paragraph.lower())
+
+    def test_optimist_best_in_pipeline(self) -> None:
+        ctx = VoiceContext(
+            deal_name="AlphaCo", recurring_ebitda_m=50.0,
+            key_thesis_pillars=["payer renegotiation"],
+            target_moic=2.8, target_irr=0.25,
+        )
+        v = compose_voice("optimist", ctx)
+        self.assertIn("best deal", v.paragraph.lower())
+
+    def test_md_numbers_mentions_cms_survey(self) -> None:
+        ctx = VoiceContext(deal_name="X", recurring_ebitda_m=30.0,
+                             subsector="hospital")
+        v = compose_voice("md_numbers", ctx)
+        self.assertIn("cms survey", v.paragraph.lower())
+
+    def test_operating_partner_day_100(self) -> None:
+        ctx = VoiceContext(deal_name="X", recurring_ebitda_m=50.0)
+        v = compose_voice("operating_partner", ctx)
+        self.assertIn("day 100", v.paragraph.lower())
+
+    def test_lp_facing_reads_like_update(self) -> None:
+        ctx = VoiceContext(
+            deal_name="AlphaCo", recurring_ebitda_m=50.0,
+            key_thesis_pillars=["scale", "operational lift"],
+            target_moic=2.5, target_irr=0.20,
+        )
+        v = compose_voice("lp_facing", ctx)
+        self.assertIn("lp update framing", v.paragraph.lower())
+        # Quoted body.
+        self.assertIn("\"", v.paragraph)
+
+    def test_compose_all_returns_five(self) -> None:
+        b = compose_all_voices(VoiceContext(
+            deal_name="X", recurring_ebitda_m=50.0))
+        self.assertEqual(len(b.paragraphs), 5)
+        voices = {p.voice for p in b.paragraphs}
+        self.assertEqual(voices, set(VOICES))
+
+    def test_unknown_voice(self) -> None:
+        v = compose_voice("ghost", VoiceContext(deal_name="X"))
+        self.assertIn("Unknown voice", v.paragraph)
+
+    def test_markdown_renders(self) -> None:
+        b = compose_all_voices(VoiceContext(
+            deal_name="MemoCo", recurring_ebitda_m=50.0))
+        md = render_voices_markdown(b)
+        self.assertIn("# MemoCo — Partner voices", md)
+        self.assertIn("## Skeptic", md)
+        self.assertIn("## Operating Partner", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(compose_all_voices(VoiceContext(
+            deal_name="X", recurring_ebitda_m=50.0)).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

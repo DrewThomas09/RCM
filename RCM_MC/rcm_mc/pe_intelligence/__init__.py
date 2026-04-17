@@ -639,6 +639,16 @@ from .unrealistic_on_its_face import (
     render_implausibility_markdown,
     scan_unrealistic,
 )
+from .partner_voice_variants import (
+    VOICES,
+    VOICE_BUILDERS,
+    VoiceBundle,
+    VoiceContext,
+    VoiceParagraph,
+    compose_all_voices,
+    compose_voice,
+    render_voices_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1561,4 +1571,12 @@ __all__ = [
     "ImplausibilityReport",
     "render_implausibility_markdown",
     "scan_unrealistic",
+    "VOICES",
+    "VOICE_BUILDERS",
+    "VoiceBundle",
+    "VoiceContext",
+    "VoiceParagraph",
+    "compose_all_voices",
+    "compose_voice",
+    "render_voices_markdown",
 ]
