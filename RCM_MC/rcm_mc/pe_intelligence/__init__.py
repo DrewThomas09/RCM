@@ -334,6 +334,14 @@ from .exit_planning import (
     build_exit_plan,
     render_exit_plan_markdown,
 )
+from .benchmark_bands import (
+    check_interest_to_ebitda,
+    check_nwc_days,
+    check_outpatient_share,
+    check_same_store_sales_growth,
+    check_sga_intensity,
+    run_benchmark_bands,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1027,4 +1035,10 @@ __all__ = [
     "ExitPlanInputs",
     "build_exit_plan",
     "render_exit_plan_markdown",
+    "check_interest_to_ebitda",
+    "check_nwc_days",
+    "check_outpatient_share",
+    "check_same_store_sales_growth",
+    "check_sga_intensity",
+    "run_benchmark_bands",
 ]

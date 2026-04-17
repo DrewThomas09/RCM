@@ -7992,5 +7992,57 @@ class TestExitPlanning(unittest.TestCase):
         json.dumps(plan.to_dict())
 
 
+# ── Benchmark bands ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    check_interest_to_ebitda,
+    check_nwc_days,
+    check_outpatient_share,
+    check_same_store_sales_growth,
+    check_sga_intensity,
+    run_benchmark_bands,
+)
+
+
+class TestBenchmarkBands(unittest.TestCase):
+
+    def test_sga_normal_in_band(self) -> None:
+        r = check_sga_intensity(0.08, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_sga_high_flagged(self) -> None:
+        r = check_sga_intensity(0.20, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_interest_to_ebitda_stretch(self) -> None:
+        r = check_interest_to_ebitda(0.50)
+        self.assertEqual(r.verdict, VERDICT_STRETCH)
+
+    def test_sssg_in_band(self) -> None:
+        r = check_same_store_sales_growth(0.04)
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_nwc_high_stretch(self) -> None:
+        r = check_nwc_days(55)
+        self.assertEqual(r.verdict, VERDICT_STRETCH)
+
+    def test_outpatient_share_only_applies_to_acute_and_cah(self) -> None:
+        r = check_outpatient_share(0.50, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+        r2 = check_outpatient_share(0.50, hospital_type="asc")
+        self.assertEqual(r2.verdict, VERDICT_UNKNOWN)
+
+    def test_orchestrator_runs_all(self) -> None:
+        checks = run_benchmark_bands(
+            hospital_type="acute_care",
+            sga_pct_of_revenue=0.08,
+            interest_to_ebitda=0.35,
+            same_store_sales_growth=0.04,
+            net_working_capital_days=30,
+            outpatient_revenue_share=0.50,
+        )
+        self.assertEqual(len(checks), 5)
+
+
 if __name__ == "__main__":
     unittest.main()
