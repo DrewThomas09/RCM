@@ -1935,6 +1935,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/payer-rate-trends":
             from .ui.data_public.payer_rate_trends_page import render_payer_rate_trends
             return self._send_html(render_payer_rate_trends())
+        if path == "/entry-multiple":
+            from .ui.data_public.entry_multiple_page import render_entry_multiple
+            return self._send_html(render_entry_multiple())
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
