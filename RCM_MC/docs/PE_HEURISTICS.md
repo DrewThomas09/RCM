@@ -2513,7 +2513,66 @@ Partner note scales:
 
 ---
 
-## 119. Change log
+## 119. Board composition analyzer (`board_composition_analyzer.py`)
+
+Scores portco board composition:
+
+- **Independent seats %** — ≥ 25% market standard. Below → high gap.
+- **Diverse representation %** — LP reporting threshold ≈ 25%.
+  Below 20% → medium gap.
+- **Experience coverage** — healthcare ops / clinical / public co /
+  finance. Missing any → medium gap each.
+- **Committees** — audit + compensation always required; compliance
+  required in healthcare. Missing → high gap each.
+
+Partner note: 2+ high gaps = "address before next LP update"; any
+gaps = "decent with minor gaps"; none = "strong".
+
+---
+
+## 120. Historical failure library (`historical_failure_library.py`)
+
+Named, dated healthcare-PE failures with packet-field matchers.
+Unlike the generic bear_book, each entry captures a specific
+deal with: thesis at entry, what went wrong, ebitda destruction %,
+early-warning signals, partner lesson, and the packet_triggers
+needed to pattern-match it.
+
+Inaugural library (10 patterns):
+
+- **envision_surprise_billing_2023** — NSA compression on OON-
+  dependent staffing book.
+- **steward_reit_dependency_2024** — rent/EBITDA > 0.5 on
+  sale-leasebacked hospital book; multi-state failure.
+- **prospect_medical_cashflow_2023** — dividend recaps + capex
+  starvation in safety-net hospitals.
+- **hahnemann_bankruptcy_2019** — real-estate-motivated hospital
+  buyout, no operating competence.
+- **radiology_partners_rate_shock_2022** — >6.5x leverage +
+  floating unhedged + NSA overlap.
+- **adapthealth_accounting_2021** — acquisition pace outstripping
+  integration; pro-forma fiction.
+- **kindred_at_home_2018** — PDGM reset mid-hold compressed
+  home-health margins.
+- **shopko_rx_pharmacy_2019** — DIR fees + PBM squeeze ate
+  pharmacy margins.
+- **21st_century_oncology_2017** — FCA settlement + regulatory
+  investigations → bankruptcy.
+- **surgery_partners_leverage_2016** — ASC same-site growth
+  assumptions above 5% collided with reality.
+
+Usage: `match_failures(ctx)` scans a dict of packet fields and
+returns the patterns that fire. Partner reads each match as "this
+deal looks like <pattern>". Treat as a strong prior against the
+thesis unless specifically mitigated in underwrite.
+
+Adding a new pattern: add a `FailurePattern` to `FAILURE_LIBRARY`
+and a matcher to `_matchers()`. Matcher should read packet fields
+defensively (`_get_float`, `_get_str`, `_get_bool`).
+
+---
+
+## 121. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2727,3 +2786,8 @@ Partner note scales:
 - **2026-04-17** — Added `qofe_tracker.py` (§118) — QofE status
   + adjustments supported/unsupported + NWC-vs-peg + critical-path.
   Full inventory: 116 modules, 1,150 pe_intelligence unit tests.
+- **2026-04-17** — Added `board_composition_analyzer.py` (§119).
+  Full inventory: 117 modules, 1,158 pe_intelligence unit tests.
+- **2026-04-17** — Added `historical_failure_library.py` (§120) —
+  10 named/dated healthcare-PE failures with packet matchers.
+  Full inventory: 118 modules, 1,173 pe_intelligence unit tests.
