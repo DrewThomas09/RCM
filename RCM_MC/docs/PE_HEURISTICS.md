@@ -1847,7 +1847,25 @@ year 5-7. Outputs trough year, inflection year, and partner note.
 
 ---
 
-## 94. Change log
+## 94. Co-invest sizing (`coinvest_sizing.py`)
+
+Splits a deal's equity check between fund commitment and LP
+co-investment offering. Fund commitment = min of three binders:
+total equity, concentration cap (typically 10-15% of fund size),
+and per-deal budget ((fund × (1 - reserve)) / expected deals).
+Co-invest offered = total_equity - fund_commitment.
+
+When LPs signal demand, compute coverage = demand / coinvest.
+≥ 1.5x = oversubscribed (allocation decisions matter); < 1.0x =
+undercovered (widen invite list or reduce syndication). Fully
+covered by fund means no co-invest needed.
+
+This replaces partner intuition (\"let's offer $X to LPs\") with
+a cap-table-aware number that respects concentration limits.
+
+---
+
+## 95. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1984,3 +2002,6 @@ year 5-7. Outputs trough year, inflection year, and partner note.
 - **2026-04-17** — Added `reimbursement_cliff.py`,
   `scenario_comparison.py`, `vintage_return_curve.py`. Full
   inventory: 91 modules, 890 pe_intelligence unit tests.
+- **2026-04-17** — Added `coinvest_sizing.py` (§94) — fund
+  commitment + concentration cap + LP demand coverage. Full
+  inventory: 92 modules, 900 pe_intelligence unit tests.
