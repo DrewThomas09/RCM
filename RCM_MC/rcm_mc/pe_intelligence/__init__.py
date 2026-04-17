@@ -377,6 +377,12 @@ from .vintage_return_curve import (
     project_vintage_curve,
     render_vintage_curve_markdown,
 )
+from .coinvest_sizing import (
+    CoInvestInputs,
+    CoInvestSizing,
+    render_coinvest_markdown,
+    size_coinvest,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1101,4 +1107,8 @@ __all__ = [
     "VintageYearPoint",
     "project_vintage_curve",
     "render_vintage_curve_markdown",
+    "CoInvestInputs",
+    "CoInvestSizing",
+    "render_coinvest_markdown",
+    "size_coinvest",
 ]

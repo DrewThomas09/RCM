@@ -8380,5 +8380,110 @@ class TestVintageReturnCurve(unittest.TestCase):
         json.dumps(c.to_dict())
 
 
+# ── Co-invest sizing ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CoInvestInputs,
+    CoInvestSizing,
+    render_coinvest_markdown,
+    size_coinvest,
+)
+
+
+class TestCoInvestSizing(unittest.TestCase):
+
+    def test_small_deal_fully_covered_by_fund(self) -> None:
+        # $10M check in a $1B fund with 15% cap ($150M) and
+        # $53M per-deal budget — fund fully covers.
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=10.0,
+        ))
+        self.assertEqual(s.fund_commitment_m, 10.0)
+        self.assertEqual(s.coinvest_offered_m, 0.0)
+        self.assertIn("no co-invest", s.partner_note.lower())
+
+    def test_large_deal_triggers_coinvest(self) -> None:
+        # $300M check in $1B fund — concentration cap ($150M) binds.
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=300.0,
+        ))
+        # Per-deal budget = 800/15 ≈ 53.3M, which is lower than cap.
+        self.assertLess(s.fund_commitment_m, 300.0)
+        self.assertGreater(s.coinvest_offered_m, 0.0)
+
+    def test_concentration_cap_bounds_fund_commitment(self) -> None:
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=300.0,
+            expected_deals_in_fund=5,  # larger per-deal budget
+        ))
+        # Now per-deal budget = 800/5 = 160M, so cap at 150M binds.
+        self.assertEqual(s.fund_commitment_m, 150.0)
+        self.assertEqual(s.coinvest_offered_m, 150.0)
+
+    def test_lp_demand_coverage_ratio(self) -> None:
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=300.0,
+            expected_deals_in_fund=5,
+            lp_signaled_demand_m=300.0,  # 2x coverage on 150M co-invest
+        ))
+        self.assertIsNotNone(s.lp_demand_coverage_ratio)
+        self.assertAlmostEqual(s.lp_demand_coverage_ratio, 2.0, places=2)
+        self.assertIn("covered", s.partner_note.lower())
+
+    def test_lp_demand_undercovers(self) -> None:
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=300.0,
+            expected_deals_in_fund=5,
+            lp_signaled_demand_m=50.0,  # undercovers 150M co-invest
+        ))
+        self.assertLess(s.lp_demand_coverage_ratio, 1.0)
+        self.assertIn("under-covers", s.partner_note.lower())
+
+    def test_lp_demand_coverage_clamped(self) -> None:
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=300.0,
+            expected_deals_in_fund=5,
+            lp_signaled_demand_m=10000.0,  # massive demand
+        ))
+        # Clamped at 5.0x.
+        self.assertLessEqual(s.lp_demand_coverage_ratio, 5.0)
+
+    def test_markdown_renders(self) -> None:
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=300.0,
+        ))
+        md = render_coinvest_markdown(s)
+        self.assertIn("# Co-invest sizing", md)
+        self.assertIn("Fund commitment", md)
+        self.assertIn("Co-invest offered", md)
+
+    def test_markdown_includes_demand_coverage(self) -> None:
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=300.0,
+            lp_signaled_demand_m=250.0,
+        ))
+        md = render_coinvest_markdown(s)
+        self.assertIn("LP demand coverage", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=300.0,
+            lp_signaled_demand_m=250.0,
+        ))
+        blob = json.dumps(s.to_dict())
+        data = json.loads(blob)
+        self.assertIn("fund_commitment_m", data)
+        self.assertIn("coinvest_offered_m", data)
+
+    def test_zero_expected_deals_guard(self) -> None:
+        # expected_deals_in_fund=0 shouldn't divide by zero.
+        s = size_coinvest(CoInvestInputs(
+            fund_size_m=1000.0, total_equity_m=50.0,
+            expected_deals_in_fund=0,
+        ))
+        self.assertGreaterEqual(s.fund_commitment_m, 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()
