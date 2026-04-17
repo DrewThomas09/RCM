@@ -229,6 +229,13 @@ from .corpus_health_check import (
     health_check_text,
     run_corpus_health_check,
 )
+from .cms_trend_forecaster import (
+    RateForecast,
+    compute_rate_forecast,
+    apply_forecast_to_deal,
+    build_rate_forecast_table,
+    forecast_summary,
+)
 from .deal_portfolio_monitor import (
     PortfolioAlert,
     MonitorConfig,
@@ -452,6 +459,11 @@ __all__ = [
     "check_corpus",
     "health_check_text",
     "run_corpus_health_check",
+    "RateForecast",
+    "compute_rate_forecast",
+    "apply_forecast_to_deal",
+    "build_rate_forecast_table",
+    "forecast_summary",
     "PortfolioAlert",
     "MonitorConfig",
     "compute_implied_moic",

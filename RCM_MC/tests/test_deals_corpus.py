@@ -5229,6 +5229,131 @@ class TestCmsDataQuality(unittest.TestCase):
         self.assertEqual(s["declining_risk_count"], 1)
 
 
+class TestCmsTrendForecaster(unittest.TestCase):
+    """Tests for cms_trend_forecaster module."""
+
+    def _make_trends_df(self, provider_type="Cardiology", n_years=5):
+        import pandas as pd
+        years = list(range(2018, 2018 + n_years))
+        payments = [1_000_000 * (1.04 ** i) for i in range(n_years)]
+        benes = [50_000] * n_years
+        return pd.DataFrame({
+            "year": years,
+            "provider_type": [provider_type] * n_years,
+            "total_medicare_payment_amt": payments,
+            "total_unique_benes": benes,
+        })
+
+    def test_compute_rate_forecast_basic(self):
+        from rcm_mc.data_public.cms_trend_forecaster import compute_rate_forecast
+        df = self._make_trends_df()
+        fc = compute_rate_forecast(df, "Cardiology", forecast_years=3)
+        self.assertEqual(fc.provider_type, "Cardiology")
+        self.assertIsNotNone(fc.historical_cagr)
+        self.assertGreater(fc.historical_cagr, 0)
+        self.assertIsNotNone(fc.base_case_payment)
+        self.assertIsNotNone(fc.bear_case_payment)
+        self.assertIsNotNone(fc.bull_case_payment)
+
+    def test_compute_rate_forecast_no_data(self):
+        from rcm_mc.data_public.cms_trend_forecaster import compute_rate_forecast
+        import pandas as pd
+        fc = compute_rate_forecast(pd.DataFrame(), "Cardiology")
+        self.assertIsNone(fc.historical_cagr)
+        self.assertEqual(fc.years_of_data, 0)
+
+    def test_compute_rate_forecast_regime_durable_growth(self):
+        from rcm_mc.data_public.cms_trend_forecaster import compute_rate_forecast
+        import pandas as pd
+        # Stable 8% growth with low volatility
+        years = list(range(2015, 2022))
+        payments = [1_000_000 * (1.08 ** i) for i in range(len(years))]
+        df = pd.DataFrame({
+            "year": years,
+            "provider_type": ["SNF"] * len(years),
+            "total_medicare_payment_amt": payments,
+            "total_unique_benes": [100_000] * len(years),
+        })
+        fc = compute_rate_forecast(df, "SNF")
+        self.assertIn(fc.regime, ("durable_growth", "emerging_volatile", "steady_compounders"))
+
+    def test_compute_rate_forecast_declining(self):
+        from rcm_mc.data_public.cms_trend_forecaster import compute_rate_forecast
+        import pandas as pd
+        years = list(range(2015, 2022))
+        payments = [1_000_000 * (0.95 ** i) for i in range(len(years))]
+        df = pd.DataFrame({
+            "year": years,
+            "provider_type": ["HHA"] * len(years),
+            "total_medicare_payment_amt": payments,
+            "total_unique_benes": [50_000] * len(years),
+        })
+        fc = compute_rate_forecast(df, "HHA")
+        self.assertLess(fc.historical_cagr, 0)
+
+    def test_apply_forecast_to_deal(self):
+        from rcm_mc.data_public.cms_trend_forecaster import compute_rate_forecast, apply_forecast_to_deal
+        df = self._make_trends_df()
+        fc = compute_rate_forecast(df, "Cardiology", forecast_years=3)
+        deal = {
+            "source_id": "test_001",
+            "deal_name": "Test Hospital",
+            "ebitda_mm": 50.0,
+            "ev_mm": 500.0,
+            "payer_mix": {"medicare": 0.45, "medicaid": 0.15, "commercial": 0.38, "self_pay": 0.02},
+        }
+        result = apply_forecast_to_deal(deal, fc)
+        self.assertIn("ebitda_base_case_mm", result)
+        self.assertIn("ebitda_bear_case_mm", result)
+        self.assertIn("forecast_regime", result)
+
+    def test_apply_forecast_missing_ebitda(self):
+        from rcm_mc.data_public.cms_trend_forecaster import compute_rate_forecast, apply_forecast_to_deal
+        df = self._make_trends_df()
+        fc = compute_rate_forecast(df, "Cardiology")
+        deal = {"source_id": "x", "deal_name": "No EBITDA"}
+        result = apply_forecast_to_deal(deal, fc)
+        self.assertIn("note", result)
+
+    def test_build_rate_forecast_table(self):
+        from rcm_mc.data_public.cms_trend_forecaster import build_rate_forecast_table
+        import pandas as pd
+        df = pd.concat([
+            self._make_trends_df("Cardiology"),
+            self._make_trends_df("Orthopedics"),
+        ])
+        table = build_rate_forecast_table(df, forecast_years=3, top_n=5)
+        self.assertIn("Provider Type", table)
+        self.assertIn("Cardiology", table)
+
+    def test_forecast_summary(self):
+        from rcm_mc.data_public.cms_trend_forecaster import compute_rate_forecast, forecast_summary
+        df = self._make_trends_df()
+        fcs = [compute_rate_forecast(df, "Cardiology", forecast_years=i) for i in [2, 3, 5]]
+        summary = forecast_summary(fcs)
+        self.assertEqual(summary["count"], 3)
+        self.assertIn("median_historical_cagr", summary)
+        self.assertIn("regime_distribution", summary)
+
+    def test_forecast_summary_empty(self):
+        from rcm_mc.data_public.cms_trend_forecaster import forecast_summary
+        summary = forecast_summary([])
+        self.assertEqual(summary["count"], 0)
+
+    def test_confidence_increases_with_data(self):
+        from rcm_mc.data_public.cms_trend_forecaster import compute_rate_forecast
+        import pandas as pd
+        short_df = self._make_trends_df(n_years=2)
+        long_df = self._make_trends_df(n_years=6)
+        fc_short = compute_rate_forecast(short_df, "Cardiology")
+        fc_long = compute_rate_forecast(long_df, "Cardiology")
+        conf_order = {"low": 0, "medium": 1, "high": 2}
+        self.assertGreaterEqual(
+            conf_order.get(fc_long.confidence, 0),
+            conf_order.get(fc_short.confidence, 0)
+        )
+
+
 class TestDealPortfolioMonitor(unittest.TestCase):
     """Tests for deal_portfolio_monitor module."""
 
