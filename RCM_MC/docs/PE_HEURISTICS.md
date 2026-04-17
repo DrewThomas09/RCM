@@ -1889,7 +1889,37 @@ is most sensitive to. That's where diligence time goes.
 
 ---
 
-## 96. Change log
+## 96. Capital structure trade-off (`capital_structure_tradeoff.py`)
+
+The "how much leverage?" question made explicit. For each leverage
+multiple in a sweep, compute:
+
+- **Equity MOIC / IRR** — winner-case, same exit multiple.
+- **Interest coverage** — EBITDA / annual interest at entry.
+- **Default risk score (0-100)** — heuristic based on coverage and
+  absolute leverage.
+- **Status** — `green` (coverage ≥ 3x AND leverage < 6x),
+  `yellow` (coverage ≥ 2x AND leverage < 7x), `red` (below either
+  threshold).
+
+Healthcare PE prudence bounds:
+
+- Coverage < 2.0x → covenant trip probability material in a rate
+  shock or a -10% EBITDA year. Red.
+- Leverage ≥ 7.0x → bank syndicate will apply FDIC SNC
+  "non-pass" scrutiny; pricing ratchets up. Red.
+- 6.0x-7.0x or coverage 2.0x-3.0x → yellow (workable but needs
+  headroom cushion in base case).
+- < 6.0x AND coverage ≥ 3.0x → green zone.
+
+``sweep_cap_structure`` returns the max-MOIC point that is still
+non-red as the recommendation. Partners routinely push against
+this to squeeze more MOIC; the module's role is to make the
+coverage cost of that decision visible.
+
+---
+
+## 97. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2032,3 +2062,6 @@ is most sensitive to. That's where diligence time goes.
 - **2026-04-17** — Added `sensitivity_grid.py` (§95) — one-variable
   MOIC / IRR sweeps + tornado. Full inventory: 93 modules, 915
   pe_intelligence unit tests.
+- **2026-04-17** — Added `capital_structure_tradeoff.py` (§96) —
+  leverage sweep with coverage + default-risk + status. Full
+  inventory: 94 modules, 924 pe_intelligence unit tests.
