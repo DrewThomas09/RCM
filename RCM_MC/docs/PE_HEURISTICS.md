@@ -440,7 +440,100 @@ the deal does not clear as modeled."
 
 ---
 
-## 7. Change log
+## 7. Valuation sanity checks (`valuation_checks.py`)
+
+Beyond the operating-metric bands, partners ask six valuation-level
+questions on every deal. Each has a defensible range and a partner-
+voice note.
+
+| Check | IN_BAND | STRETCH | IMPLAUSIBLE |
+|-------|---------|---------|-------------|
+| WACC | 8%–12% | 7%–14% | <5% or >18% |
+| EV walk residual | ≤1% | ≤3% | >10% |
+| TV share of DCF | 55%–80% | 45%–88% | <30% or >95% |
+| Terminal growth | 1.5%–3.0% | 0.5%–4.0% | <0% or >5.5% |
+| Interest coverage | ≥3.0x | ≥2.0x | <1.5x |
+| Equity concentration | ≤15% of fund | ≤25% | >35% |
+
+These checks take a `ValuationInputs` bag. Missing inputs produce
+`UNKNOWN` verdicts rather than raising.
+
+---
+
+## 8. Stress tests (`scenario_stress.py`)
+
+Five mechanical shocks a partner asks about every deal:
+
+1. **rate_down** — CMS down-rate 200 bps. Does leverage covenant hold?
+2. **volume_down** — 7% volume decline, 40% flows to EBITDA.
+3. **multiple_compression** — recompute MOIC at entry == exit multiple.
+4. **lever_slip** — levers deliver 60% of plan.
+5. **labor_shock** — agency labor rate +12%.
+
+Each returns a `StressResult` with `shocked_ebitda`, `covenant_breach`,
+`passes`, and a `partner_note`. A `worst_case_summary` aggregates the
+results for the narrative layer.
+
+---
+
+## 9. IC memo formatter (`ic_memo.py`)
+
+Renders a `PartnerReview` as an IC-ready memo in three formats:
+
+- `render_markdown(review)` — Slack / Notion / email thread.
+- `render_html(review)` — workbench `/partner-review` page, with
+  dark-mode CSS variables.
+- `render_text(review)` — CLI-friendly plaintext briefing.
+
+Memo structure: recommendation → context → bull/bear → reasonableness
+table → pattern flags → key questions → partner dictation block.
+
+---
+
+## 10. Sector benchmarks (`sector_benchmarks.py`)
+
+Peer-median benchmarks by healthcare subsector (p25 / p50 / p75) for
+dashboard positioning. Current coverage:
+
+- `acute_care` — EBITDA margin, days_in_ar, initial_denial_rate,
+  final_writeoff_rate, clean_claim_rate, case_mix_index, occupancy.
+- `asc` — margin, AR, denial, cases per OR.
+- `behavioral` — margin, AR, denial, LOS, census.
+- `post_acute` — margin, AR, occupancy, Medicare mix.
+- `specialty` — margin, AR, denial.
+- `outpatient` — margin, AR, denial, RVUs.
+- `critical_access` — margin, AR, Medicare mix.
+
+`compare_to_peers(subsector, observations)` returns a list of
+`GapFinding` objects with percentile placement (15/40/65/85 buckets)
+and direction (above/below peer median) plus commentary.
+
+---
+
+## 11. Deal archetype classification (`deal_archetype.py`)
+
+Ten PE healthcare deal patterns, each with its own playbook, risks,
+and key questions:
+
+| Archetype | Core signal |
+|-----------|-------------|
+| `platform_rollup` | Platform + ≥3 add-ons + rollup thesis |
+| `take_private` | Public target + go-private intent |
+| `carve_out` | Strategic seller + carve-out flag |
+| `turnaround` | Distressed + sub-peer margin |
+| `buy_and_build` | Platform + 1-2 targeted add-ons, organic ≥10% |
+| `continuation` | Continuation-fund transaction |
+| `gp_led_secondary` | Sponsor-to-sponsor, not continuation |
+| `operating_lift` | RCM thesis + LBO leverage (4.0-6.5x) |
+| `growth_equity` | Minority stake + rapid revenue growth |
+| `pipe` | Public + minority |
+
+Each hit includes `playbook` (what to do), `risks` (what goes wrong),
+and `questions` (what the partner asks before signing).
+
+---
+
+## 12. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -452,3 +545,9 @@ the deal does not clear as modeled."
   EHR migration, prior regulatory action, quality rating,
   debt maturity. Added three worked IC examples (Medicare-heavy
   11.5x, clean commercial mid-market, crisis scenario).
+- **2026-04-17** — Added `valuation_checks.py` (WACC, EV walk, TV
+  share, terminal growth, interest coverage, equity concentration),
+  `scenario_stress.py` (5 mechanical partner stresses),
+  `ic_memo.py` (markdown/html/text IC-memo renderers),
+  `sector_benchmarks.py` (peer p25/p50/p75 by subsector), and
+  `deal_archetype.py` (10 deal-pattern classifier with playbooks).
