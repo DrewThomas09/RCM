@@ -70,6 +70,14 @@ from .ic_memo import (
     render_markdown as render_ic_memo_markdown,
     render_text as render_ic_memo_text,
 )
+from .sector_benchmarks import (
+    GapFinding,
+    SectorBenchmark,
+    compare_to_peers,
+    get_benchmark,
+    list_metrics_for_subsector,
+    list_subsectors,
+)
 from .scenario_stress import (
     StressInputs,
     StressResult,
@@ -124,4 +132,10 @@ __all__ = [
     "render_ic_memo_html",
     "render_ic_memo_markdown",
     "render_ic_memo_text",
+    "GapFinding",
+    "SectorBenchmark",
+    "compare_to_peers",
+    "get_benchmark",
+    "list_metrics_for_subsector",
+    "list_subsectors",
 ]

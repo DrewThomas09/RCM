@@ -1378,5 +1378,101 @@ class TestICMemoAll(unittest.TestCase):
             self.assertGreater(len(v), 50)
 
 
+# ── Sector benchmarks ────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    GapFinding,
+    SectorBenchmark,
+    compare_to_peers,
+    get_benchmark,
+    list_metrics_for_subsector,
+    list_subsectors,
+)
+
+
+class TestSectorBenchmarkLookup(unittest.TestCase):
+
+    def test_list_subsectors_non_empty(self) -> None:
+        self.assertIn("acute_care", list_subsectors())
+        self.assertIn("asc", list_subsectors())
+
+    def test_list_metrics_for_acute_care(self) -> None:
+        metrics = list_metrics_for_subsector("acute_care")
+        self.assertIn("ebitda_margin", metrics)
+        self.assertIn("days_in_ar", metrics)
+
+    def test_get_benchmark_finds_known_pair(self) -> None:
+        bm = get_benchmark("acute_care", "ebitda_margin")
+        self.assertIsNotNone(bm)
+        self.assertEqual(bm.unit, "pct")
+        self.assertIsNotNone(bm.p50)
+
+    def test_alias_resolves(self) -> None:
+        bm = get_benchmark("hospital", "ebitda_margin")
+        self.assertIsNotNone(bm)
+
+    def test_unknown_returns_none(self) -> None:
+        self.assertIsNone(get_benchmark("acute_care", "made_up_metric"))
+        self.assertIsNone(get_benchmark("made_up_sector", "ebitda_margin"))
+
+
+class TestPercentilePlacement(unittest.TestCase):
+
+    def test_below_p25_is_bottom_percentile(self) -> None:
+        bm = get_benchmark("acute_care", "ebitda_margin")
+        self.assertEqual(bm.percentile(0.02), 15)
+
+    def test_at_p50_is_middle(self) -> None:
+        bm = get_benchmark("acute_care", "ebitda_margin")
+        self.assertEqual(bm.percentile(bm.p50), 40)
+
+    def test_above_p75_is_top(self) -> None:
+        bm = get_benchmark("acute_care", "ebitda_margin")
+        self.assertEqual(bm.percentile(0.15), 85)
+
+
+class TestCompareToPeers(unittest.TestCase):
+
+    def test_compare_acute_care_mixed(self) -> None:
+        findings = compare_to_peers("acute_care", {
+            "ebitda_margin": 0.10,          # above median 0.075 — good
+            "days_in_ar": 70,               # above median 50 — bad (low is better)
+            "initial_denial_rate": 0.06,    # below median 0.09 — good
+        })
+        self.assertEqual(len(findings), 3)
+        by_metric = {f.metric: f for f in findings}
+        self.assertEqual(by_metric["ebitda_margin"].direction, "above")
+        self.assertEqual(by_metric["days_in_ar"].direction, "above")  # value > median
+        # Percentile estimates should be sensible.
+        self.assertGreaterEqual(by_metric["ebitda_margin"].percentile_estimate, 40)
+        self.assertIn("days", by_metric["days_in_ar"].commentary.lower())
+
+    def test_missing_benchmarks_skipped(self) -> None:
+        findings = compare_to_peers("acute_care", {
+            "ebitda_margin": 0.08,
+            "made_up_metric": 42.0,
+        })
+        self.assertEqual(len(findings), 1)
+
+    def test_missing_values_skipped(self) -> None:
+        findings = compare_to_peers("acute_care", {
+            "ebitda_margin": 0.08,
+            "days_in_ar": None,
+        })
+        self.assertEqual(len(findings), 1)
+
+    def test_top_quartile_commentary_on_denial_rate(self) -> None:
+        # days_in_ar at 40 is below p25=42 -> top quartile
+        findings = compare_to_peers("acute_care", {"days_in_ar": 40})
+        self.assertEqual(findings[0].direction, "below")
+        self.assertIn("Top-quartile", findings[0].commentary)
+
+    def test_gap_finding_to_dict(self) -> None:
+        findings = compare_to_peers("acute_care", {"ebitda_margin": 0.08})
+        d = findings[0].to_dict()
+        self.assertIn("metric", d)
+        self.assertIn("commentary", d)
+
+
 if __name__ == "__main__":
     unittest.main()
