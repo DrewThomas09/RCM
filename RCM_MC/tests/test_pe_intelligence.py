@@ -6380,5 +6380,76 @@ class TestAnalystCheatsheet(unittest.TestCase):
         self.assertIn("Top flags", md)
 
 
+# ── Reimbursement bands ───────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    check_gross_to_net,
+    check_payer_rate_growth,
+    check_site_neutral_parity,
+    run_reimbursement_bands,
+)
+
+
+class TestPayerRateGrowth(unittest.TestCase):
+
+    def test_medicare_normal(self) -> None:
+        r = check_payer_rate_growth(0.02, payer="medicare")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_commercial_aggressive_flagged(self) -> None:
+        r = check_payer_rate_growth(0.12, payer="commercial")
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_unknown_payer_unknown(self) -> None:
+        r = check_payer_rate_growth(0.03, payer="made_up")
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+    def test_negative_medicaid_out_of_band(self) -> None:
+        # -2% in medicaid is in `STRETCH` territory per the band.
+        r = check_payer_rate_growth(-0.03, payer="medicaid")
+        self.assertIn(r.verdict, (VERDICT_STRETCH, VERDICT_OUT_OF_BAND,
+                                  VERDICT_IMPLAUSIBLE))
+
+
+class TestGrossToNet(unittest.TestCase):
+
+    def test_commercial_mid_range(self) -> None:
+        r = check_gross_to_net(0.55, payer="commercial")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_medicare_extreme_implausible(self) -> None:
+        r = check_gross_to_net(0.80, payer="medicare")
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_medicaid_too_low(self) -> None:
+        r = check_gross_to_net(0.05, payer="medicaid")
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+
+class TestSiteNeutral(unittest.TestCase):
+
+    def test_normal_parity(self) -> None:
+        r = check_site_neutral_parity(1.40)
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_too_high(self) -> None:
+        r = check_site_neutral_parity(2.50)
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+
+class TestRunReimbursementBands(unittest.TestCase):
+
+    def test_orchestrator_runs_all(self) -> None:
+        checks = run_reimbursement_bands(
+            payer_rate_growths={"medicare": 0.02, "commercial": 0.045},
+            gross_to_net_ratios={"medicare": 0.32, "commercial": 0.55},
+            hopd_asc_parity=1.40,
+        )
+        self.assertEqual(len(checks), 5)
+
+    def test_empty_produces_empty(self) -> None:
+        self.assertEqual(run_reimbursement_bands(), [])
+
+
 if __name__ == "__main__":
     unittest.main()
