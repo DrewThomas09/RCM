@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .cash_conversion import (
+    CashConversionInputs,
+    ConversionAssessment,
+    assess_conversion,
+    cash_conversion_ratio,
+    expected_conversion_by_subsector,
+)
 from .regulatory_stress import (
     RegulatoryStressInputs,
     StressShock,
@@ -410,4 +417,9 @@ __all__ = [
     "shock_site_neutral",
     "shock_snf_vbp_accel",
     "summarize_regulatory_exposure",
+    "CashConversionInputs",
+    "ConversionAssessment",
+    "assess_conversion",
+    "cash_conversion_ratio",
+    "expected_conversion_by_subsector",
 ]

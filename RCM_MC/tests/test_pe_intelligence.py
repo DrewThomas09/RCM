@@ -3672,5 +3672,81 @@ class TestSummarizeRegulatoryExposure(unittest.TestCase):
         self.assertIn("No", summary["headline"])
 
 
+# ── Cash conversion ────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CashConversionInputs,
+    ConversionAssessment,
+    assess_conversion,
+    cash_conversion_ratio,
+    expected_conversion_by_subsector,
+)
+
+
+class TestCashConversion(unittest.TestCase):
+
+    def test_basic_ratio(self) -> None:
+        inputs = CashConversionInputs(
+            ebitda=100, capex=20, working_capital_change=5, taxes_paid=15,
+        )
+        ratio = cash_conversion_ratio(inputs)
+        self.assertAlmostEqual(ratio, 0.60, places=2)
+
+    def test_missing_optional_fields(self) -> None:
+        inputs = CashConversionInputs(ebitda=100, capex=20)
+        ratio = cash_conversion_ratio(inputs)
+        self.assertAlmostEqual(ratio, 0.80, places=2)
+
+    def test_zero_ebitda_returns_none(self) -> None:
+        inputs = CashConversionInputs(ebitda=0)
+        self.assertIsNone(cash_conversion_ratio(inputs))
+
+
+class TestExpectedConversion(unittest.TestCase):
+
+    def test_acute_care_in_band(self) -> None:
+        band = expected_conversion_by_subsector("acute_care")
+        self.assertIsNotNone(band)
+        self.assertEqual(len(band), 3)
+
+    def test_aliases(self) -> None:
+        self.assertIsNotNone(expected_conversion_by_subsector("hospital"))
+        self.assertIsNotNone(expected_conversion_by_subsector("snf"))
+        self.assertIsNotNone(expected_conversion_by_subsector("cah"))
+
+    def test_unknown_returns_none(self) -> None:
+        self.assertIsNone(expected_conversion_by_subsector("made_up"))
+
+
+class TestAssessConversion(unittest.TestCase):
+
+    def test_acute_in_band(self) -> None:
+        inputs = CashConversionInputs(ebitda=100, capex=25,
+                                      working_capital_change=5, taxes_paid=12)
+        result = assess_conversion(inputs, subsector="acute_care")
+        self.assertEqual(result.status, "in_band")
+
+    def test_above_band(self) -> None:
+        inputs = CashConversionInputs(ebitda=100, capex=5)  # 95% conversion
+        result = assess_conversion(inputs, subsector="acute_care")
+        self.assertEqual(result.status, "above")
+
+    def test_below_band(self) -> None:
+        inputs = CashConversionInputs(ebitda=100, capex=60)  # 40% conversion
+        result = assess_conversion(inputs, subsector="acute_care")
+        self.assertEqual(result.status, "below")
+
+    def test_no_subsector_returns_unknown(self) -> None:
+        inputs = CashConversionInputs(ebitda=100, capex=20)
+        result = assess_conversion(inputs)
+        self.assertEqual(result.status, "unknown")
+
+    def test_result_to_dict(self) -> None:
+        import json
+        inputs = CashConversionInputs(ebitda=100, capex=20)
+        result = assess_conversion(inputs, subsector="acute_care")
+        json.dumps(result.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
