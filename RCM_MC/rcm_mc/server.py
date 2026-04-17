@@ -1962,6 +1962,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.rcm_red_flags_page import render_rcm_red_flags
             return self._send_html(render_rcm_red_flags(_qp))
+        if path == "/hold-optimizer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.hold_optimizer_page import render_hold_optimizer
+            return self._send_html(render_hold_optimizer(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())

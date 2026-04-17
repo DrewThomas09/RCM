@@ -84,6 +84,7 @@ _CORPUS_NAV = [
     {"label": "Sector Momentum","href": "/sector-momentum",    "icon": "▣"},
     {"label": "GP Benchmarking","href": "/gp-benchmarking",   "icon": "▦"},
     {"label": "Red Flag Detect.","href": "/rcm-red-flags",   "icon": "▣"},
+    {"label": "Hold Optimizer", "href": "/hold-optimizer",   "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
