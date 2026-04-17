@@ -228,6 +228,13 @@ from .liquidity_monitor import (
     project_cash_runway,
     render_liquidity_markdown,
 )
+from .ma_pipeline import (
+    ADDON_STAGES,
+    AddOnTarget,
+    PipelineSummary,
+    analyze_pipeline,
+    render_pipeline_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -849,4 +856,9 @@ __all__ = [
     "project_cash_detail",
     "project_cash_runway",
     "render_liquidity_markdown",
+    "ADDON_STAGES",
+    "AddOnTarget",
+    "PipelineSummary",
+    "analyze_pipeline",
+    "render_pipeline_markdown",
 ]

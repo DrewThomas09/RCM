@@ -6720,5 +6720,67 @@ class TestLiquidityMonitor(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── M&A pipeline ─────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ADDON_STAGES,
+    AddOnTarget,
+    PipelineSummary,
+    analyze_pipeline,
+    render_pipeline_markdown,
+)
+
+
+class TestMAPipeline(unittest.TestCase):
+
+    def test_stage_inventory_counts(self) -> None:
+        targets = [
+            AddOnTarget(name="A", stage="sourced", ebitda_m=5),
+            AddOnTarget(name="B", stage="outreach", ebitda_m=8),
+            AddOnTarget(name="C", stage="loi", ebitda_m=10),
+            AddOnTarget(name="D", stage="diligence", ebitda_m=12),
+            AddOnTarget(name="E", stage="closed", ebitda_m=6),
+            AddOnTarget(name="F", stage="passed"),
+        ]
+        s = analyze_pipeline(targets)
+        self.assertEqual(s.inventory["sourced"], 1)
+        self.assertEqual(s.inventory["diligence"], 1)
+        self.assertEqual(s.inventory["closed"], 1)
+        # Active count excludes closed + passed.
+        self.assertEqual(s.n_active, 4)
+
+    def test_weighted_close_by_stage(self) -> None:
+        # Diligence stage has highest conversion — should weight most.
+        targets = [
+            AddOnTarget(name="dd", stage="diligence", ebitda_m=10),
+            AddOnTarget(name="sourced1", stage="sourced", ebitda_m=10),
+        ]
+        s = analyze_pipeline(targets)
+        self.assertGreater(s.weighted_ebitda_close, 0)
+
+    def test_capacity_ratio_against_platform(self) -> None:
+        targets = [
+            AddOnTarget(name="big", stage="diligence", ebitda_m=20),
+        ]
+        s = analyze_pipeline(targets, platform_ebitda_m=50)
+        self.assertIsNotNone(s.capacity_ratio)
+
+    def test_empty_pipeline(self) -> None:
+        s = analyze_pipeline([])
+        self.assertEqual(s.n_active, 0)
+        self.assertIn("No active pipeline", s.partner_note)
+
+    def test_markdown_renders(self) -> None:
+        targets = [AddOnTarget(name="A", stage="loi", ebitda_m=8)]
+        md = render_pipeline_markdown(analyze_pipeline(targets))
+        self.assertIn("# M&A pipeline", md)
+
+    def test_summary_json(self) -> None:
+        import json
+        targets = [AddOnTarget(name="A", stage="loi", ebitda_m=8)]
+        s = analyze_pipeline(targets)
+        json.dumps(s.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
