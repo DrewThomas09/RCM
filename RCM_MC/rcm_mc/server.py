@@ -1796,6 +1796,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/methodology":
             from .ui.methodology_page import render_methodology
             return self._send_html(render_methodology())
+        # Corpus Intelligence pages
+        if path == "/deals-library":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sector = _qs.get("sector", [""])[0]
+            regime = _qs.get("regime", [""])[0]
+            q = _qs.get("q", [""])[0]
+            from .ui.data_public.deals_library_page import render_deals_library
+            return self._send_html(render_deals_library(sector_filter=sector, regime_filter=regime, search=q))
         if path == "/query":
             return self._route_deal_query()
         if path == "/benchmarks":

@@ -91,6 +91,8 @@ NAV_ITEMS = [
     {"label": "Methodology", "href": "/methodology", "icon": "bookmark"},
     {"label": "Data Sources", "href": "/data", "icon": "bookmark"},
     {"label": "Settings", "href": "/settings", "icon": "gear"},
+    {"separator": True, "label": "CORPUS"},
+    {"label": "Deals Library", "href": "/deals-library", "icon": "grid"},
 ]
 
 NAV_ICONS = {
