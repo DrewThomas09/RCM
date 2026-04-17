@@ -141,6 +141,15 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .deal_momentum import (
+    sector_deal_volume,
+    sector_momentum_score,
+    multiple_compression_trend,
+    return_compression_trend,
+    hot_sectors,
+    timing_assessment,
+    momentum_report,
+)
 from .cms_benchmark_calibration import (
     CalibrationResult,
     calibrate_from_cms,
@@ -275,6 +284,13 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "sector_deal_volume",
+    "sector_momentum_score",
+    "multiple_compression_trend",
+    "return_compression_trend",
+    "hot_sectors",
+    "timing_assessment",
+    "momentum_report",
     "CalibrationResult",
     "calibrate_from_cms",
     "apply_calibration",

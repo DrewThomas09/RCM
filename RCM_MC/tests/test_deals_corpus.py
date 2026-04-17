@@ -3557,6 +3557,110 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestDealMomentum(unittest.TestCase):
+    """Tests for deal_momentum module."""
+
+    def _deals(self):
+        return [
+            {"deal_name": "Acadia Behavioral LBO 2019", "notes": "behavioral health platform",
+             "year": 2019, "ev_mm": 500.0, "ebitda_at_entry_mm": 50.0,
+             "realized_moic": 2.5},
+            {"deal_name": "Spring Health Behavioral 2021", "notes": "digital mental health",
+             "year": 2021, "ev_mm": 800.0, "ebitda_at_entry_mm": None,
+             "realized_moic": None},
+            {"deal_name": "LifeStance Behavioral 2022", "notes": "outpatient behavioral",
+             "year": 2022, "ev_mm": 900.0, "ebitda_at_entry_mm": None,
+             "realized_moic": None},
+            {"deal_name": "HCA Hospital System LBO", "notes": "acute hospital system",
+             "year": 2018, "ev_mm": 5000.0, "ebitda_at_entry_mm": 400.0,
+             "realized_moic": 3.2},
+            {"deal_name": "Community Health Hospital 2020", "notes": "hospital system rural",
+             "year": 2020, "ev_mm": 1200.0, "ebitda_at_entry_mm": 100.0,
+             "realized_moic": 1.5},
+            {"deal_name": "ASC Surgery Center 2021", "notes": "ambulatory surgical",
+             "year": 2021, "ev_mm": 400.0, "ebitda_at_entry_mm": 40.0,
+             "realized_moic": 3.8},
+            {"deal_name": "ASC Platform Add-on 2022", "notes": "asc ambulatory",
+             "year": 2022, "ev_mm": 300.0, "ebitda_at_entry_mm": 28.0,
+             "realized_moic": None},
+        ]
+
+    def test_sector_deal_volume(self):
+        from rcm_mc.data_public.deal_momentum import sector_deal_volume
+        vol = sector_deal_volume(self._deals())
+        self.assertIsInstance(vol, dict)
+        # behavioral_health should appear
+        self.assertIn("behavioral_health", vol)
+
+    def test_sector_momentum_score_range(self):
+        from rcm_mc.data_public.deal_momentum import sector_momentum_score
+        score = sector_momentum_score(self._deals(), "behavioral_health")
+        self.assertGreaterEqual(score, 0.0)
+        self.assertLessEqual(score, 1.0)
+
+    def test_sector_momentum_accelerating(self):
+        from rcm_mc.data_public.deal_momentum import sector_momentum_score
+        # behavioral_health has more recent deals → should be > 0.5
+        score = sector_momentum_score(self._deals(), "behavioral_health")
+        self.assertGreater(score, 0.5)
+
+    def test_sector_momentum_unknown_sector(self):
+        from rcm_mc.data_public.deal_momentum import sector_momentum_score
+        score = sector_momentum_score(self._deals(), "nonexistent_sector")
+        self.assertEqual(score, 0.0)
+
+    def test_multiple_compression_trend(self):
+        from rcm_mc.data_public.deal_momentum import multiple_compression_trend
+        trend = multiple_compression_trend(self._deals())
+        self.assertIsInstance(trend, dict)
+        # 2018 and 2019 should be in there (have both ev and ebitda)
+        for yr in (2018, 2019):
+            if yr in trend:
+                self.assertIsInstance(trend[yr], float)
+
+    def test_return_compression_trend(self):
+        from rcm_mc.data_public.deal_momentum import return_compression_trend
+        trend = return_compression_trend(self._deals())
+        self.assertIsInstance(trend, dict)
+
+    def test_hot_sectors_sorted(self):
+        from rcm_mc.data_public.deal_momentum import hot_sectors
+        hot = hot_sectors(self._deals(), top_n=5)
+        scores = [h["momentum_score"] for h in hot]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_hot_sectors_count(self):
+        from rcm_mc.data_public.deal_momentum import hot_sectors
+        hot = hot_sectors(self._deals(), top_n=3)
+        self.assertLessEqual(len(hot), 3)
+
+    def test_timing_assessment_keys(self):
+        from rcm_mc.data_public.deal_momentum import timing_assessment
+        ta = timing_assessment(self._deals(), "behavioral_health")
+        for key in ["sector", "momentum_score", "entry_risk", "deal_count", "recommendation"]:
+            self.assertIn(key, ta)
+        self.assertIn(ta["entry_risk"], ["running_hot", "active", "neutral", "cooling_off"])
+
+    def test_timing_assessment_from_corpus(self):
+        from rcm_mc.data_public.deal_momentum import timing_assessment
+        import tempfile, os
+        db = tempfile.mktemp(suffix=".db")
+        try:
+            corpus = DealsCorpus(db)
+            corpus.seed()
+            deals = corpus.list()
+            ta = timing_assessment(deals, "acute_hospital")
+            self.assertGreater(ta["deal_count"], 0)
+        finally:
+            os.unlink(db)
+
+    def test_momentum_report_text(self):
+        from rcm_mc.data_public.deal_momentum import momentum_report
+        text = momentum_report(self._deals())
+        self.assertIn("Deal Flow Momentum Report", text)
+        self.assertIn("Sector", text)
+
+
 class TestExtendedSeed6(unittest.TestCase):
 
     def setUp(self):
