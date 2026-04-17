@@ -2436,7 +2436,28 @@ Universe can grow; library is partner-approximated not exhaustive.
 
 ---
 
-## 116. Change log
+## 116. Exit channel selector (`exit_channel_selector.py`)
+
+Ranks the four exit channels:
+
+- **Strategic** — base 40; +25 if strategic interest expressed;
+  ±15 for sector heat; +10 if EBITDA ≥ $50M. Timing 9 months.
+  Expected 11x base, up to 13x hot.
+- **Sponsor** — base 55; ±15 for sector heat; ±10 for rate env;
+  +10 if EBITDA ≥ $25M. Timing 6 months. Expected 10x base.
+- **IPO** — base 25; +20 if revenue ≥ $300M AND EBITDA ≥ $75M,
+  else -15; ±30 for IPO window open/closed. Timing 12 months.
+  Expected 12x base.
+- **Continuation** — base 30; +25 if runway thesis; +10 if held
+  ≥ 5 years; +15 when IPO closed and sector not hot.
+
+Best channel is highest score; partner note names the winner and
+runner-up. Expected multiples and timings flow into waterfall
+and MOIC projections.
+
+---
+
+## 117. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2641,3 +2662,6 @@ Universe can grow; library is partner-approximated not exhaustive.
 - **2026-04-17** — Added `bank_syndicate_picker.py` (§115) —
   21-lender universe + size/sector/covenant scoring + tiered picks.
   Full inventory: 113 modules, 1,118 pe_intelligence unit tests.
+- **2026-04-17** — Added `exit_channel_selector.py` (§116) —
+  strategic/sponsor/ipo/continuation scoring + timing + multiples.
+  Full inventory: 114 modules, 1,128 pe_intelligence unit tests.
