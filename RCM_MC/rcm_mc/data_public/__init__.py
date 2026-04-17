@@ -135,6 +135,12 @@ from .cms_advisory_memo import (
     build_advisory_memo,
     quick_memo,
 )
+from .cms_data_quality import (
+    data_quality_report,
+    cms_run_summary,
+    winsorize_metrics,
+    quality_report_text,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -239,4 +245,8 @@ __all__ = [
     "opportunity_table",
     "build_advisory_memo",
     "quick_memo",
+    "data_quality_report",
+    "cms_run_summary",
+    "winsorize_metrics",
+    "quality_report_text",
 ]

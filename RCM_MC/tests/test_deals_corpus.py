@@ -3505,5 +3505,226 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestCmsDataQuality(unittest.TestCase):
+    """Tests for cms_data_quality: data_quality_report, cms_run_summary,
+    winsorize_metrics, quality_report_text."""
+
+    def _make_df(self):
+        import pandas as pd
+        import numpy as np
+        return pd.DataFrame({
+            "payment": [100.0, 200.0, np.nan, 400.0, 5000.0],
+            "bene_count": [10, 0, 30, 0, 50],
+            "state": ["CA", "TX", None, "FL", "NY"],
+            "charge_ratio": [2.5, 3.0, 1.5, np.nan, 10.0],
+        })
+
+    def test_data_quality_report_columns(self):
+        from rcm_mc.data_public.cms_data_quality import data_quality_report
+        import pandas as pd
+        df = self._make_df()
+        dq = data_quality_report(df)
+        self.assertIsInstance(dq, pd.DataFrame)
+        for col in ["column", "dtype", "null_pct", "zero_pct", "nunique"]:
+            self.assertIn(col, dq.columns)
+
+    def test_data_quality_report_row_count(self):
+        from rcm_mc.data_public.cms_data_quality import data_quality_report
+        df = self._make_df()
+        dq = data_quality_report(df)
+        self.assertEqual(len(dq), 4)
+
+    def test_data_quality_report_null_pct_accuracy(self):
+        from rcm_mc.data_public.cms_data_quality import data_quality_report
+        import pandas as pd
+        df = self._make_df()
+        dq = data_quality_report(df)
+        payment_row = dq[dq["column"] == "payment"].iloc[0]
+        # 1 null out of 5 = 0.20
+        self.assertAlmostEqual(payment_row["null_pct"], 0.20, places=4)
+
+    def test_data_quality_report_sorted_by_null_desc(self):
+        from rcm_mc.data_public.cms_data_quality import data_quality_report
+        df = self._make_df()
+        dq = data_quality_report(df)
+        null_pcts = dq["null_pct"].tolist()
+        self.assertEqual(null_pcts, sorted(null_pcts, reverse=True))
+
+    def test_data_quality_report_empty(self):
+        from rcm_mc.data_public.cms_data_quality import data_quality_report
+        import pandas as pd
+        dq = data_quality_report(pd.DataFrame())
+        self.assertTrue(dq.empty)
+        self.assertIn("null_pct", dq.columns)
+
+    def test_data_quality_report_zero_pct_numeric(self):
+        from rcm_mc.data_public.cms_data_quality import data_quality_report
+        df = self._make_df()
+        dq = data_quality_report(df)
+        bene_row = dq[dq["column"] == "bene_count"].iloc[0]
+        # 2 zeros out of 5 = 0.40
+        self.assertAlmostEqual(bene_row["zero_pct"], 0.40, places=4)
+
+    def test_winsorize_clips_payment_per_service(self):
+        from rcm_mc.data_public.cms_data_quality import winsorize_metrics
+        import pandas as pd
+        df = pd.DataFrame({"payment_per_service": list(range(1, 101))})
+        out = winsorize_metrics(df, upper_quantile=0.90)
+        self.assertLessEqual(out["payment_per_service"].max(), df["payment_per_service"].quantile(0.90) + 1e-6)
+
+    def test_winsorize_no_clip_at_1(self):
+        from rcm_mc.data_public.cms_data_quality import winsorize_metrics
+        import pandas as pd
+        df = pd.DataFrame({"payment_per_service": [1.0, 2.0, 1000.0]})
+        out = winsorize_metrics(df, upper_quantile=1.0)
+        self.assertEqual(out["payment_per_service"].max(), 1000.0)
+
+    def test_winsorize_ignores_missing_columns(self):
+        from rcm_mc.data_public.cms_data_quality import winsorize_metrics
+        import pandas as pd
+        df = pd.DataFrame({"other_col": [1.0, 2.0, 3.0]})
+        out = winsorize_metrics(df, upper_quantile=0.95)
+        self.assertIn("other_col", out.columns)
+        self.assertNotIn("payment_per_service", out.columns)
+
+    def test_winsorize_all_three_columns(self):
+        from rcm_mc.data_public.cms_data_quality import winsorize_metrics
+        import pandas as pd
+        df = pd.DataFrame({
+            "payment_per_service": list(range(1, 101)),
+            "payment_per_bene": list(range(100, 200)),
+            "charge_to_payment_ratio": [float(x) for x in range(1, 101)],
+        })
+        out = winsorize_metrics(df, upper_quantile=0.95)
+        for col in ["payment_per_service", "payment_per_bene", "charge_to_payment_ratio"]:
+            self.assertLessEqual(out[col].max(), df[col].quantile(0.95) + 1e-6)
+
+    def test_quality_report_text_empty(self):
+        from rcm_mc.data_public.cms_data_quality import quality_report_text
+        import pandas as pd
+        text = quality_report_text(pd.DataFrame())
+        self.assertIn("No data quality", text)
+
+    def test_quality_report_text_has_header(self):
+        from rcm_mc.data_public.cms_data_quality import quality_report_text, data_quality_report
+        df = self._make_df()
+        dq = data_quality_report(df)
+        text = quality_report_text(dq)
+        self.assertIn("CMS Data Quality Report", text)
+        self.assertIn("Null%", text)
+
+    def test_quality_report_text_warns_high_null(self):
+        from rcm_mc.data_public.cms_data_quality import quality_report_text
+        import pandas as pd
+        import numpy as np
+        # column with 60% null → should get ⚠ flag
+        df = pd.DataFrame({
+            "column": ["x"],
+            "dtype": ["float64"],
+            "null_pct": [0.60],
+            "zero_pct": [0.0],
+            "nunique": [1],
+        })
+        text = quality_report_text(df)
+        self.assertIn("⚠", text)
+
+    def test_cms_run_summary_basic(self):
+        from rcm_mc.data_public.cms_data_quality import cms_run_summary
+        from rcm_mc.data_public.cms_market_analysis import MarketAnalysisReport
+        import pandas as pd
+        report = MarketAnalysisReport(
+            year=2021,
+            state_filter=None,
+            provider_type_filter=None,
+            row_count=0,
+            concentration=pd.DataFrame(),
+            geo_dependency=pd.DataFrame(),
+            state_growth=pd.DataFrame(),
+            state_volatility=pd.DataFrame(),
+            portfolio_fit=pd.DataFrame(),
+            regimes=pd.DataFrame(),
+            watchlist=pd.DataFrame(),
+            errors=[],
+        )
+        s = cms_run_summary(report)
+        self.assertEqual(s["year"], 2021)
+        self.assertIn("row_count", s)
+        self.assertIn("concentration_markets", s)
+
+    def test_cms_run_summary_json_serialisable(self):
+        from rcm_mc.data_public.cms_data_quality import cms_run_summary
+        from rcm_mc.data_public.cms_market_analysis import MarketAnalysisReport
+        import pandas as pd
+        import json
+        report = MarketAnalysisReport(
+            year=2022,
+            state_filter="CA",
+            provider_type_filter=None,
+            row_count=10,
+            concentration=pd.DataFrame(),
+            geo_dependency=pd.DataFrame(),
+            state_growth=pd.DataFrame(),
+            state_volatility=pd.DataFrame(),
+            portfolio_fit=pd.DataFrame(),
+            regimes=pd.DataFrame(),
+            watchlist=pd.DataFrame(),
+            errors=["test_error"],
+        )
+        s = cms_run_summary(report)
+        # Should not raise
+        json.dumps(s)
+
+    def test_cms_run_summary_with_concentration(self):
+        from rcm_mc.data_public.cms_data_quality import cms_run_summary
+        from rcm_mc.data_public.cms_market_analysis import MarketAnalysisReport
+        import pandas as pd
+        conc = pd.DataFrame([{"state": "TX", "hhi": 3500.0, "provider_type": "SNF"}])
+        report = MarketAnalysisReport(
+            year=2021,
+            state_filter=None,
+            provider_type_filter=None,
+            row_count=100,
+            concentration=conc,
+            geo_dependency=pd.DataFrame(),
+            state_growth=pd.DataFrame(),
+            state_volatility=pd.DataFrame(),
+            portfolio_fit=pd.DataFrame(),
+            regimes=pd.DataFrame(),
+            watchlist=pd.DataFrame(),
+            errors=[],
+        )
+        s = cms_run_summary(report)
+        self.assertEqual(s["concentration_markets"], 1)
+        self.assertEqual(s["highest_hhi_state"], "TX")
+        self.assertAlmostEqual(s["highest_hhi"], 3500.0)
+
+    def test_cms_run_summary_with_regimes(self):
+        from rcm_mc.data_public.cms_data_quality import cms_run_summary
+        from rcm_mc.data_public.cms_market_analysis import MarketAnalysisReport
+        import pandas as pd
+        regimes = pd.DataFrame([
+            {"provider_type": "SNF", "regime": "durable_growth"},
+            {"provider_type": "HHA", "regime": "declining_risk"},
+            {"provider_type": "ASC", "regime": "durable_growth"},
+        ])
+        report = MarketAnalysisReport(
+            year=2021,
+            state_filter=None,
+            provider_type_filter=None,
+            row_count=50,
+            concentration=pd.DataFrame(),
+            geo_dependency=pd.DataFrame(),
+            state_growth=pd.DataFrame(),
+            state_volatility=pd.DataFrame(),
+            portfolio_fit=pd.DataFrame(),
+            regimes=regimes,
+            watchlist=pd.DataFrame(),
+            errors=[],
+        )
+        s = cms_run_summary(report)
+        self.assertEqual(s["durable_growth_count"], 2)
+        self.assertEqual(s["declining_risk_count"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()
