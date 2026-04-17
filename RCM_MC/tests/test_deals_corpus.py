@@ -5180,6 +5180,126 @@ class TestCmsDataQuality(unittest.TestCase):
         self.assertEqual(s["declining_risk_count"], 1)
 
 
+class TestDealScreeningEngine(unittest.TestCase):
+    """Tests for deal_screening_engine module."""
+
+    def _make_deal(self, **kwargs):
+        base = {
+            "source_id": "scr_001",
+            "deal_name": "Test Hospital",
+            "deal_type": "lbo",
+            "ev_mm": 300.0,
+            "ebitda_mm": 30.0,
+            "ev_ebitda": 10.0,
+            "hold_years": 5.0,
+            "year": 2020,
+            "payer_mix": {"medicare": 0.40, "medicaid": 0.20, "commercial": 0.36, "self_pay": 0.04},
+            "notes": "Stable operator",
+            "buyer": "Test PE Fund",
+        }
+        base.update(kwargs)
+        return base
+
+    def test_screen_deal_returns_result(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_deal
+        deal = self._make_deal()
+        result = screen_deal(deal)
+        self.assertIn(result.decision, ("PASS", "WATCH", "FAIL"))
+        self.assertGreaterEqual(result.score, 0.0)
+        self.assertLessEqual(result.score, 100.0)
+
+    def test_screen_deal_pass_healthy(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_deal
+        deal = self._make_deal(
+            ev_ebitda=9.0,
+            payer_mix={"medicare": 0.25, "medicaid": 0.10, "commercial": 0.60, "self_pay": 0.05},
+        )
+        result = screen_deal(deal)
+        # Healthy deal should pass or watch, not fail
+        self.assertNotEqual(result.decision, "FAIL")
+
+    def test_screen_deal_fail_critical_medicaid(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_deal, ScreeningConfig
+        deal = self._make_deal(
+            payer_mix={"medicare": 0.02, "medicaid": 0.90, "commercial": 0.05, "self_pay": 0.03},
+        )
+        config = ScreeningConfig(max_medicaid_pct=0.65)
+        result = screen_deal(deal, config)
+        self.assertIn(result.decision, ("WATCH", "FAIL"))
+
+    def test_screen_deal_fail_high_multiple(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_deal, ScreeningConfig
+        deal = self._make_deal(ev_ebitda=25.0)
+        config = ScreeningConfig(max_ev_ebitda=20.0)
+        result = screen_deal(deal, config)
+        self.assertEqual(result.decision, "FAIL")
+        self.assertTrue(any("multiple" in r.lower() for r in result.fail_reasons))
+
+    def test_screen_deal_fail_negative_ebitda(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_deal, ScreeningConfig
+        deal = self._make_deal(ebitda_mm=-10.0, ev_ebitda=None)
+        config = ScreeningConfig(require_ebitda_positive=True)
+        result = screen_deal(deal, config)
+        self.assertEqual(result.decision, "FAIL")
+
+    def test_screen_deal_custom_config(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_deal, ScreeningConfig
+        deal = self._make_deal(ev_ebitda=13.0)
+        strict = ScreeningConfig(watch_ev_ebitda=12.0)
+        result = screen_deal(deal, strict)
+        self.assertIn(result.decision, ("WATCH", "FAIL"))
+
+    def test_screen_deal_as_dict(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_deal
+        deal = self._make_deal()
+        result = screen_deal(deal)
+        d = result.as_dict()
+        self.assertIn("decision", d)
+        self.assertIn("score", d)
+        self.assertIn("fail_reasons", d)
+
+    def test_screen_corpus_returns_all(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_corpus
+        deals = [self._make_deal(source_id=f"s{i}") for i in range(5)]
+        results = screen_corpus(deals)
+        self.assertEqual(len(results), 5)
+
+    def test_screening_report(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_corpus, screening_report
+        deals = [self._make_deal(source_id=f"r{i}") for i in range(3)]
+        results = screen_corpus(deals)
+        report = screening_report(results)
+        self.assertIn("Deal Screening Report", report)
+        self.assertIn("PASS", report)
+
+    def test_screening_summary(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_corpus, screening_summary
+        deals = [
+            self._make_deal(source_id="ok", ev_ebitda=9.0),
+            self._make_deal(source_id="bad", ev_ebitda=25.0),
+        ]
+        results = screen_corpus(deals)
+        summary = screening_summary(results)
+        self.assertIn("total", summary)
+        self.assertEqual(summary["total"], 2)
+        self.assertIn("by_decision", summary)
+
+    def test_screen_real_corpus(self):
+        from rcm_mc.data_public.deal_screening_engine import screen_corpus, screening_summary
+        from rcm_mc.data_public.deals_corpus import DealsCorpus
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "c.db")
+            c = DealsCorpus(db)
+            c.seed()
+            deals = c.list()
+        results = screen_corpus(deals)
+        summary = screening_summary(results)
+        self.assertEqual(summary["total"], len(deals))
+        # Should have at least some in each bucket
+        self.assertGreater(summary["by_decision"]["PASS"] + summary["by_decision"]["WATCH"], 0)
+
+
 class TestExtendedSeed11(unittest.TestCase):
     """Tests for extended_seed_11.py (deals 236-255)."""
 

@@ -229,6 +229,14 @@ from .corpus_health_check import (
     health_check_text,
     run_corpus_health_check,
 )
+from .deal_screening_engine import (
+    ScreeningConfig,
+    ScreeningResult,
+    screen_deal,
+    screen_corpus,
+    screening_report,
+    screening_summary,
+)
 from .deal_value_creation import (
     ValueCreationBridge,
     attribute_value_creation,
@@ -435,6 +443,12 @@ __all__ = [
     "check_corpus",
     "health_check_text",
     "run_corpus_health_check",
+    "ScreeningConfig",
+    "ScreeningResult",
+    "screen_deal",
+    "screen_corpus",
+    "screening_report",
+    "screening_summary",
     "ValueCreationBridge",
     "attribute_value_creation",
     "corpus_value_attribution",
