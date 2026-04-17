@@ -566,6 +566,15 @@ from .mgmt_incentive_sizer import (
     render_mip_markdown,
     size_mip,
 )
+from .qofe_tracker import (
+    QOFE_STATUSES,
+    QofEAdjustment,
+    QofEFinding,
+    QofEInputs,
+    QofETracker,
+    render_qofe_markdown,
+    track_qofe,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1431,4 +1440,11 @@ __all__ = [
     "MIPPlan",
     "render_mip_markdown",
     "size_mip",
+    "QOFE_STATUSES",
+    "QofEAdjustment",
+    "QofEFinding",
+    "QofEInputs",
+    "QofETracker",
+    "render_qofe_markdown",
+    "track_qofe",
 ]

@@ -10859,5 +10859,84 @@ class TestMgmtIncentiveSizer(unittest.TestCase):
             post_close_equity_m=300.0)).to_dict())
 
 
+# ── QofE tracker ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    QOFE_STATUSES,
+    QofEAdjustment,
+    QofEFinding,
+    QofEInputs,
+    QofETracker,
+    render_qofe_markdown,
+    track_qofe,
+)
+
+
+class TestQofETracker(unittest.TestCase):
+
+    def test_statuses_defined(self) -> None:
+        self.assertIn("final", QOFE_STATUSES)
+        self.assertIn("in_progress", QOFE_STATUSES)
+
+    def test_clean_final_note(self) -> None:
+        t = track_qofe(QofEInputs(
+            status="final", days_until_target=0,
+            findings=[],
+        ))
+        self.assertIn("clean", t.partner_note.lower())
+
+    def test_final_with_high_findings(self) -> None:
+        t = track_qofe(QofEInputs(
+            status="final", days_until_target=0,
+            findings=[QofEFinding(severity="high", area="revenue",
+                                     description="cash-basis")],
+        ))
+        self.assertIn("purchase-price", t.partner_note)
+
+    def test_not_on_track_flags_critical(self) -> None:
+        t = track_qofe(QofEInputs(
+            status="in_progress", days_until_target=5,
+            findings=[QofEFinding(severity="high", area="accruals",
+                                     description="missing"),
+                       QofEFinding(severity="high", area="related_party",
+                                     description="disclosure gap")],
+        ))
+        self.assertTrue(t.is_on_critical_path)
+        self.assertIn("NOT on track", t.partner_note)
+
+    def test_nwc_vs_peg(self) -> None:
+        t = track_qofe(QofEInputs(
+            nwc_target_m=25.0, nwc_actual_m=22.0, nwc_peg_m=20.0,
+        ))
+        self.assertEqual(t.nwc_vs_peg_m, 2.0)
+
+    def test_unsupported_adjustments_counted(self) -> None:
+        t = track_qofe(QofEInputs(
+            adjustments=[
+                QofEAdjustment("one-time legal", "non_recurring", 1.0, True),
+                QofEAdjustment("projected synergy", "pro_forma", 5.0, False),
+            ],
+        ))
+        self.assertEqual(t.unsupported_adjustments_m, 5.0)
+
+    def test_unknown_status_defaults(self) -> None:
+        t = track_qofe(QofEInputs(status="unknown"))
+        self.assertEqual(t.status, "in_progress")
+
+    def test_in_progress_not_critical_with_time(self) -> None:
+        t = track_qofe(QofEInputs(
+            status="in_progress", days_until_target=30,
+        ))
+        self.assertFalse(t.is_on_critical_path)
+
+    def test_markdown_renders(self) -> None:
+        md = render_qofe_markdown(track_qofe(QofEInputs()))
+        self.assertIn("# Quality of Earnings tracker", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(track_qofe(QofEInputs()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
