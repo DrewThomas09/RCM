@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .regime_classifier import (
+    ALL_REGIMES,
+    RegimeInputs,
+    RegimeResult,
+    classify_regime,
+    rank_all_regimes,
+)
 from .thesis_templates import (
     TEMPLATES as THESIS_TEMPLATES,
     ThesisTemplate,
@@ -571,4 +578,9 @@ __all__ = [
     "get_template",
     "list_templates",
     "render_template_markdown",
+    "ALL_REGIMES",
+    "RegimeInputs",
+    "RegimeResult",
+    "classify_regime",
+    "rank_all_regimes",
 ]

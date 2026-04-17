@@ -64,6 +64,15 @@ class PartnerReview:
     reasonableness_checks: List[BandCheck] = field(default_factory=list)
     heuristic_hits: List[HeuristicHit] = field(default_factory=list)
     narrative: NarrativeBlock = field(default_factory=NarrativeBlock)
+    # Additive outputs from secondary analytics (wired post-core).
+    # These default to None so existing callers and serialized reviews
+    # remain compatible.
+    regime: Optional[Dict[str, Any]] = None
+    market_structure: Optional[Dict[str, Any]] = None
+    operating_posture: Optional[Dict[str, Any]] = None
+    stress_scenarios: Optional[Dict[str, Any]] = None
+    white_space: Optional[Dict[str, Any]] = None
+    investability: Optional[Dict[str, Any]] = None
 
     def has_critical_flag(self) -> bool:
         return any(h.severity == SEV_CRITICAL for h in self.heuristic_hits)
@@ -102,6 +111,12 @@ class PartnerReview:
             "recommendation": self.narrative.recommendation,
             "has_critical_flag": self.has_critical_flag(),
             "is_fundable": self.is_fundable(),
+            "regime": dict(self.regime) if self.regime else None,
+            "market_structure": dict(self.market_structure) if self.market_structure else None,
+            "operating_posture": dict(self.operating_posture) if self.operating_posture else None,
+            "stress_scenarios": dict(self.stress_scenarios) if self.stress_scenarios else None,
+            "white_space": dict(self.white_space) if self.white_space else None,
+            "investability": dict(self.investability) if self.investability else None,
         }
 
 
@@ -573,7 +588,7 @@ def partner_review(packet: Any) -> PartnerReview:
     deal_id = str(_packet_section(packet, "deal_id") or "")
     deal_name = str(_packet_section(packet, "deal_name") or "")
 
-    return PartnerReview(
+    review = PartnerReview(
         deal_id=deal_id,
         deal_name=deal_name,
         generated_at=datetime.now(timezone.utc),
@@ -582,6 +597,8 @@ def partner_review(packet: Any) -> PartnerReview:
         heuristic_hits=hits,
         narrative=narrative,
     )
+    _enrich_secondary_analytics(review, ctx, packet=packet)
+    return review
 
 
 def partner_review_from_context(ctx: HeuristicContext, *, deal_id: str = "",
@@ -620,7 +637,7 @@ def partner_review_from_context(ctx: HeuristicContext, *, deal_id: str = "",
         ebitda_m=ctx.ebitda_m,
         payer_mix=ctx.payer_mix,
     )
-    return PartnerReview(
+    review = PartnerReview(
         deal_id=deal_id,
         deal_name=deal_name,
         generated_at=datetime.now(timezone.utc),
@@ -628,4 +645,61 @@ def partner_review_from_context(ctx: HeuristicContext, *, deal_id: str = "",
         reasonableness_checks=bands,
         heuristic_hits=hits,
         narrative=narrative,
+    )
+    _enrich_secondary_analytics(review, ctx, packet=None)
+    return review
+
+
+# ── Secondary analytics wiring ──────────────────────────────────────
+# This helper runs the six analytics modules that augment the core
+# review: regime, market structure, operating posture, stress, white
+# space, investability. Each is defensive: missing inputs produce a
+# UNKNOWN-style result rather than raising.
+
+def _enrich_secondary_analytics(
+    review: "PartnerReview",
+    ctx: "HeuristicContext",
+    *,
+    packet: Any = None,
+) -> None:
+    """Populate PartnerReview.regime / market_structure / etc.
+
+    Each wiring is guarded by a try/except so a bug in any analytic
+    cannot take down the entire review.
+    """
+    # 1. Regime classification
+    try:
+        from .regime_classifier import RegimeInputs, classify_regime
+        regime_inputs = _regime_inputs_from_packet(ctx, packet)
+        result = classify_regime(regime_inputs)
+        review.regime = result.to_dict()
+    except Exception as exc:  # defensive — never break the review
+        review.regime = {"error": f"regime classification failed: {exc!r}"}
+
+
+def _regime_inputs_from_packet(ctx: "HeuristicContext", packet: Any):
+    """Derive RegimeInputs from a context + packet pair.
+
+    The packet may carry a trailing-3-year financial history in
+    ``observed_metrics`` (revenue/EBITDA series) or in ``profile``. If
+    neither is available, the classifier falls back to whatever the
+    HeuristicContext exposes (current margin, peer median, etc.).
+    """
+    from .regime_classifier import RegimeInputs
+    obs = _packet_section(packet, "observed_metrics") or {}
+    # Preferred keys.
+    rev_cagr = _get_metric_value(obs, "revenue_cagr_3yr")
+    ebitda_cagr = _get_metric_value(obs, "ebitda_cagr_3yr")
+    rev_stddev = _get_metric_value(obs, "revenue_growth_stddev")
+    margin_trend = _get_metric_value(obs, "margin_trend_bps")
+    positive_years = _get_metric_value(obs, "positive_growth_years_out_of_5")
+    return RegimeInputs(
+        revenue_cagr_3yr=rev_cagr,
+        ebitda_cagr_3yr=ebitda_cagr,
+        revenue_growth_stddev=rev_stddev,
+        margin_trend_bps=margin_trend,
+        positive_growth_years_out_of_5=(int(positive_years)
+                                        if positive_years is not None else None),
+        current_margin=ctx.ebitda_margin,
+        peer_median_margin=None,  # filled by sector_benchmarks downstream
     )

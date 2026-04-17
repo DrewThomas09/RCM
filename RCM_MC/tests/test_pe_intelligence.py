@@ -4672,5 +4672,104 @@ class TestThesisTemplates(unittest.TestCase):
         json.dumps(t.to_dict())
 
 
+# ── Regime classifier ────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ALL_REGIMES,
+    RegimeInputs,
+    RegimeResult,
+    classify_regime,
+    rank_all_regimes,
+)
+from rcm_mc.pe_intelligence.regime_classifier import (
+    REGIME_DECLINING_RISK,
+    REGIME_DURABLE_GROWTH,
+    REGIME_EMERGING_VOLATILE,
+    REGIME_STAGNANT,
+    REGIME_STEADY,
+)
+
+
+class TestRegimeClassifier(unittest.TestCase):
+
+    def test_durable_growth_profile(self) -> None:
+        result = classify_regime(RegimeInputs(
+            revenue_cagr_3yr=0.10, revenue_growth_stddev=0.02,
+            positive_growth_years_out_of_5=5, margin_trend_bps=50,
+        ))
+        self.assertEqual(result.regime, REGIME_DURABLE_GROWTH)
+        self.assertGreater(result.confidence, 0.70)
+
+    def test_declining_risk_profile(self) -> None:
+        result = classify_regime(RegimeInputs(
+            revenue_cagr_3yr=-0.03, ebitda_cagr_3yr=-0.05,
+            margin_trend_bps=-200,
+        ))
+        self.assertEqual(result.regime, REGIME_DECLINING_RISK)
+
+    def test_stagnant_profile(self) -> None:
+        result = classify_regime(RegimeInputs(
+            revenue_cagr_3yr=0.005, ebitda_cagr_3yr=0.01,
+            margin_trend_bps=20,
+        ))
+        self.assertEqual(result.regime, REGIME_STAGNANT)
+
+    def test_steady_profile(self) -> None:
+        result = classify_regime(RegimeInputs(
+            revenue_cagr_3yr=0.04, revenue_growth_stddev=0.015,
+            positive_growth_years_out_of_5=5, margin_trend_bps=20,
+        ))
+        self.assertEqual(result.regime, REGIME_STEADY)
+
+    def test_emerging_volatile_profile(self) -> None:
+        result = classify_regime(RegimeInputs(
+            revenue_cagr_3yr=0.15, revenue_growth_stddev=0.09,
+            positive_growth_years_out_of_5=3,
+        ))
+        self.assertEqual(result.regime, REGIME_EMERGING_VOLATILE)
+
+    def test_no_inputs_returns_steady_zero_confidence(self) -> None:
+        result = classify_regime(RegimeInputs())
+        self.assertEqual(result.regime, REGIME_STEADY)
+        self.assertEqual(result.confidence, 0.0)
+
+    def test_playbook_and_risk_populated(self) -> None:
+        result = classify_regime(RegimeInputs(
+            revenue_cagr_3yr=0.10, revenue_growth_stddev=0.02,
+            positive_growth_years_out_of_5=5,
+        ))
+        self.assertTrue(result.playbook)
+        self.assertTrue(result.key_risk)
+
+    def test_rank_returns_all_five(self) -> None:
+        ranked = rank_all_regimes(RegimeInputs(
+            revenue_cagr_3yr=0.10, revenue_growth_stddev=0.02,
+            positive_growth_years_out_of_5=5,
+        ))
+        self.assertEqual(len(ranked), 5)
+        self.assertEqual({r.regime for r in ranked}, set(ALL_REGIMES))
+
+    def test_result_to_dict(self) -> None:
+        import json
+        result = classify_regime(RegimeInputs(revenue_cagr_3yr=0.08))
+        json.dumps(result.to_dict())
+
+
+class TestRegimeWiredIntoReview(unittest.TestCase):
+
+    def test_review_populates_regime_field(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx, deal_id="r1")
+        self.assertIsNotNone(review.regime)
+        self.assertIn("regime", review.regime)
+
+    def test_review_regime_in_dict(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx)
+        d = review.to_dict()
+        self.assertIn("regime", d)
+        self.assertIsNotNone(d["regime"])
+
+
 if __name__ == "__main__":
     unittest.main()
