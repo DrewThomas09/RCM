@@ -437,6 +437,14 @@ from .lbo_stress_scenarios import (
     run_all_lbo_stresses,
     run_scenario as run_lbo_stress_scenario,
 )
+from .physician_compensation_benchmark import (
+    MGMA_BENCHMARKS,
+    PhysicianCompFinding,
+    PhysicianCompInputs,
+    PhysicianCompReport,
+    benchmark_physician_comp,
+    render_physician_comp_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1205,4 +1213,10 @@ __all__ = [
     "render_lbo_stress_markdown",
     "run_all_lbo_stresses",
     "run_lbo_stress_scenario",
+    "MGMA_BENCHMARKS",
+    "PhysicianCompFinding",
+    "PhysicianCompInputs",
+    "PhysicianCompReport",
+    "benchmark_physician_comp",
+    "render_physician_comp_markdown",
 ]

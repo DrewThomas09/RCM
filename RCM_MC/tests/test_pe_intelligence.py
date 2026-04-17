@@ -9207,5 +9207,119 @@ class TestLBOStressScenarios(unittest.TestCase):
         json.dumps(rep.to_dict())
 
 
+# ── Physician compensation benchmark ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    MGMA_BENCHMARKS,
+    PhysicianCompFinding,
+    PhysicianCompInputs,
+    PhysicianCompReport,
+    benchmark_physician_comp,
+    render_physician_comp_markdown,
+)
+
+
+class TestPhysicianCompensationBenchmark(unittest.TestCase):
+
+    def test_library_has_specialties(self) -> None:
+        self.assertIn("orthopedics", MGMA_BENCHMARKS)
+        self.assertIn("primary_care", MGMA_BENCHMARKS)
+
+    def test_at_median_flagged_ok(self) -> None:
+        r = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="primary_care",
+            avg_total_comp_k=280.0,
+            avg_comp_per_wrvu=55.0,
+            base_pct=0.60,
+        ))
+        self.assertAlmostEqual(r.comp_pct_of_median, 1.0, places=2)
+        self.assertTrue(any(f.level == "ok" for f in r.findings))
+
+    def test_above_median_flagged_high(self) -> None:
+        r = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="orthopedics",
+            avg_total_comp_k=900.0,  # well above 720
+            avg_comp_per_wrvu=85.0,
+            base_pct=0.60,
+        ))
+        self.assertGreaterEqual(r.comp_pct_of_median, 1.2)
+        self.assertTrue(any(f.level == "high" for f in r.findings))
+
+    def test_below_median_flagged_low(self) -> None:
+        r = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="cardiology",
+            avg_total_comp_k=450.0,  # well below 650
+            avg_comp_per_wrvu=75.0,
+            base_pct=0.60,
+        ))
+        self.assertLessEqual(r.comp_pct_of_median, 0.85)
+        self.assertTrue(any(f.level == "low" for f in r.findings))
+
+    def test_high_base_pct_flagged(self) -> None:
+        r = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="primary_care",
+            avg_total_comp_k=280.0,
+            avg_comp_per_wrvu=55.0,
+            base_pct=0.90,
+        ))
+        self.assertTrue(any("base" in f.description.lower()
+                            for f in r.findings))
+
+    def test_low_base_pct_flagged(self) -> None:
+        r = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="primary_care",
+            avg_total_comp_k=280.0,
+            avg_comp_per_wrvu=55.0,
+            base_pct=0.20,
+        ))
+        self.assertTrue(any("base" in f.description.lower()
+                            for f in r.findings))
+
+    def test_coastal_adjust_shifts_ratio(self) -> None:
+        r_base = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="radiology",
+            avg_total_comp_k=530.0,
+            avg_comp_per_wrvu=65.0,
+            coastal_adjust=False,
+        ))
+        r_coastal = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="radiology",
+            avg_total_comp_k=530.0,
+            avg_comp_per_wrvu=65.0,
+            coastal_adjust=True,
+        ))
+        # Coastal adjust raises the median, so ratio is lower.
+        self.assertLess(r_coastal.comp_pct_of_median,
+                         r_base.comp_pct_of_median)
+
+    def test_unknown_specialty_returns_note(self) -> None:
+        r = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="unknown_specialty",
+            avg_total_comp_k=400.0,
+            avg_comp_per_wrvu=60.0,
+        ))
+        self.assertIn("not in MGMA library", r.partner_note)
+
+    def test_markdown_renders(self) -> None:
+        r = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="orthopedics",
+            avg_total_comp_k=900.0,
+            avg_comp_per_wrvu=85.0,
+        ))
+        md = render_physician_comp_markdown(r)
+        self.assertIn("Physician compensation benchmark", md)
+        self.assertIn("orthopedics", md)
+        self.assertIn("Findings", md)
+
+    def test_json(self) -> None:
+        import json
+        r = benchmark_physician_comp(PhysicianCompInputs(
+            specialty="primary_care",
+            avg_total_comp_k=280.0,
+            avg_comp_per_wrvu=55.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
