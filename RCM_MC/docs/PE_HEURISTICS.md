@@ -1945,7 +1945,30 @@ Healthcare-PE wrinkles not yet encoded:
 
 ---
 
-## 98. Change log
+## 98. Dividend recap analyzer (`dividend_recap_analyzer.py`)
+
+Tests whether a portfolio company can be re-levered to return
+cash to LPs (DPI without an exit). Gates:
+
+- **Max leverage tolerance** — post-recap leverage ≤ 6.5x (default).
+- **Post-recap interest coverage** — must remain ≥ 2.5x at
+  market debt rate.
+- **No incremental debt capacity** — if already at the cap, block.
+
+Output: proposed dividend size (incremental debt × 98% fee
+haircut), post-recap leverage + coverage, **DPI uplift**
+(dividend / fund equity invested). The DPI number is what drives
+partner conversations — a 0.5x DPI uplift mid-hold materially
+improves the vintage's interim return profile.
+
+Blockers are explicit: if coverage would drop below the target,
+if current leverage is already past the cap, or if there's no
+incremental debt capacity, the module returns feasible=False with
+named reasons.
+
+---
+
+## 99. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2094,3 +2117,6 @@ Healthcare-PE wrinkles not yet encoded:
 - **2026-04-17** — Added `refinancing_window.py` (§97) — per-tranche
   refi/wait/hold recommendations + maturity wall aggregation. Full
   inventory: 95 modules, 934 pe_intelligence unit tests.
+- **2026-04-17** — Added `dividend_recap_analyzer.py` (§98) —
+  feasibility gates + DPI uplift + blockers. Full inventory: 96
+  modules, 942 pe_intelligence unit tests.
