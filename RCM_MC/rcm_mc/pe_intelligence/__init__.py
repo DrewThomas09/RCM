@@ -188,6 +188,13 @@ from .quality_metrics import (
     analyze_quality_profile,
     render_quality_profile_markdown,
 )
+from .labor_cost_analytics import (
+    LaborFinding,
+    LaborInputs,
+    LaborProfile,
+    analyze_labor_profile,
+    render_labor_profile_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -781,4 +788,9 @@ __all__ = [
     "QualityProfile",
     "analyze_quality_profile",
     "render_quality_profile_markdown",
+    "LaborFinding",
+    "LaborInputs",
+    "LaborProfile",
+    "analyze_labor_profile",
+    "render_labor_profile_markdown",
 ]

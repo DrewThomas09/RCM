@@ -6264,5 +6264,72 @@ class TestQualityMetrics(unittest.TestCase):
         json.dumps(pf.to_dict())
 
 
+# ── Labor cost analytics ───────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    LaborFinding,
+    LaborInputs,
+    LaborProfile,
+    analyze_labor_profile,
+    render_labor_profile_markdown,
+)
+
+
+class TestLaborAnalytics(unittest.TestCase):
+
+    def test_strong_profile(self) -> None:
+        pf = analyze_labor_profile(LaborInputs(
+            contract_labor_share=0.05, overtime_share=0.03,
+            nurse_patient_ratio=4.0, wage_growth_yoy=0.03,
+            local_cpi=0.03, productivity_volume_per_fte=1.10,
+            peer_productivity=1.00, total_labor_spend=200_000_000,
+        ))
+        self.assertEqual(pf.verdict, "strong")
+
+    def test_drag_profile(self) -> None:
+        pf = analyze_labor_profile(LaborInputs(
+            contract_labor_share=0.28, overtime_share=0.20,
+            nurse_patient_ratio=8.5, wage_growth_yoy=0.07,
+            local_cpi=0.03, productivity_volume_per_fte=0.80,
+            peer_productivity=1.00, total_labor_spend=200_000_000,
+        ))
+        self.assertEqual(pf.verdict, "drag")
+
+    def test_shock_impact_scales(self) -> None:
+        pf1 = analyze_labor_profile(LaborInputs(
+            contract_labor_share=0.10, total_labor_spend=100_000_000,
+        ))
+        pf2 = analyze_labor_profile(LaborInputs(
+            contract_labor_share=0.10, total_labor_spend=300_000_000,
+        ))
+        self.assertLess(pf2.shock_impact_10pct_wage,
+                        pf1.shock_impact_10pct_wage)
+
+    def test_productivity_lever_scales(self) -> None:
+        pf = analyze_labor_profile(LaborInputs(
+            total_labor_spend=100_000_000, contract_labor_share=0.10,
+        ))
+        self.assertAlmostEqual(pf.lever_savings_5pct_productivity,
+                               5_000_000, delta=1)
+
+    def test_empty_returns_unknown(self) -> None:
+        pf = analyze_labor_profile(LaborInputs())
+        self.assertEqual(pf.verdict, "unknown")
+
+    def test_markdown_renders(self) -> None:
+        pf = analyze_labor_profile(LaborInputs(
+            contract_labor_share=0.12, total_labor_spend=100_000_000,
+        ))
+        md = render_labor_profile_markdown(pf)
+        self.assertIn("# Labor profile", md)
+
+    def test_profile_json(self) -> None:
+        import json
+        pf = analyze_labor_profile(LaborInputs(
+            contract_labor_share=0.10,
+        ))
+        json.dumps(pf.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
