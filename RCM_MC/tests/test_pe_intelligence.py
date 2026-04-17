@@ -2308,5 +2308,138 @@ class TestHundredDayPlanRender(unittest.TestCase):
         self.assertIn("D+30", md)
 
 
+# ── IC voting ───────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ROLE_WEIGHTS,
+    Vote,
+    VoteOutcome,
+    Voter,
+    aggregate_vote,
+    auto_vote_from_review,
+    default_committee,
+)
+from rcm_mc.pe_intelligence.ic_voting import (
+    VOTE_ABSTAIN,
+    VOTE_NO,
+    VOTE_YES,
+    VOTE_YES_CAVEATS,
+)
+
+
+class TestVoterWeight(unittest.TestCase):
+
+    def test_role_weight_default(self) -> None:
+        v = Voter(name="p", role="partner")
+        self.assertEqual(v.effective_weight(), ROLE_WEIGHTS["partner"])
+
+    def test_override_weight(self) -> None:
+        v = Voter(name="p", role="partner", weight=3.0)
+        self.assertEqual(v.effective_weight(), 3.0)
+
+    def test_recused_is_zero(self) -> None:
+        v = Voter(name="p", role="partner", recused=True)
+        self.assertEqual(v.effective_weight(), 0.0)
+
+
+class TestAggregateVote(unittest.TestCase):
+
+    def test_unanimous_yes_approves(self) -> None:
+        voters = default_committee()
+        votes = [Vote(voter=v.name, vote=VOTE_YES) for v in voters]
+        out = aggregate_vote(voters, votes)
+        self.assertEqual(out.decision, "APPROVED")
+        self.assertAlmostEqual(out.approval_pct, 1.0, places=3)
+
+    def test_majority_yes_but_veto_rejects(self) -> None:
+        voters = default_committee()
+        votes = [Vote(voter=v.name, vote=VOTE_YES) for v in voters]
+        # MP1 has veto — flip their vote to NO.
+        votes[0] = Vote(voter="MP1", vote=VOTE_NO, rationale="Doesn't clear my bar.")
+        out = aggregate_vote(voters, votes)
+        self.assertTrue(out.veto_triggered)
+        self.assertEqual(out.decision, "REJECTED")
+
+    def test_caveat_votes_approve_with_conditions(self) -> None:
+        voters = default_committee()
+        votes = [Vote(voter=v.name, vote=VOTE_YES_CAVEATS,
+                      conditions=["Confirm payer mix"])
+                 for v in voters]
+        out = aggregate_vote(voters, votes)
+        self.assertEqual(out.decision, "APPROVED_WITH_CONDITIONS")
+        self.assertIn("Confirm payer mix", out.conditions)
+
+    def test_split_vote_below_threshold_rejects(self) -> None:
+        voters = default_committee()
+        # Half yes, half no.
+        votes = [
+            Vote(voter="MP1", vote=VOTE_NO, rationale="Risk too high."),
+            Vote(voter="MP2", vote=VOTE_NO, rationale="Disagree with thesis."),
+            Vote(voter="P1", vote=VOTE_YES),
+            Vote(voter="P2", vote=VOTE_YES),
+            Vote(voter="PR1", vote=VOTE_YES),
+            Vote(voter="VP1", vote=VOTE_YES),
+        ]
+        out = aggregate_vote(voters, votes)
+        # Managing partners carry heavy weight - this should reject.
+        # MPs contribute 4 weight NO; everyone else is 4 weight YES.
+        # But MP1 has veto.
+        self.assertIn(out.decision, ("REJECTED",))
+
+    def test_abstentions_do_not_count(self) -> None:
+        voters = default_committee()
+        votes = [
+            Vote(voter="MP1", vote=VOTE_YES),
+            Vote(voter="MP2", vote=VOTE_YES),
+            Vote(voter="P1", vote=VOTE_ABSTAIN),
+            Vote(voter="P2", vote=VOTE_ABSTAIN),
+            Vote(voter="PR1", vote=VOTE_ABSTAIN),
+            Vote(voter="VP1", vote=VOTE_ABSTAIN),
+        ]
+        out = aggregate_vote(voters, votes)
+        self.assertEqual(out.decision, "APPROVED")
+        self.assertAlmostEqual(out.approval_pct, 1.0, places=2)
+        self.assertGreater(out.abstain_weight, 0)
+
+    def test_no_votes_tabled(self) -> None:
+        voters = default_committee()
+        out = aggregate_vote(voters, [])
+        self.assertEqual(out.decision, "TABLED")
+
+    def test_dissent_rationale_recorded(self) -> None:
+        voters = default_committee()
+        votes = [Vote(voter=v.name, vote=VOTE_YES) for v in voters]
+        votes[2] = Vote(voter="P1", vote=VOTE_NO, rationale="Concerns on payer mix")
+        out = aggregate_vote(voters, votes)
+        self.assertEqual(len(out.dissent_rationales), 1)
+        self.assertIn("payer mix", out.dissent_rationales[0])
+
+    def test_outcome_to_dict_roundtrip(self) -> None:
+        import json
+        voters = default_committee()
+        votes = [Vote(voter=v.name, vote=VOTE_YES) for v in voters]
+        out = aggregate_vote(voters, votes)
+        json.dumps(out.to_dict())
+
+
+class TestAutoVoteFromReview(unittest.TestCase):
+
+    def test_strong_proceed_yields_all_yes(self) -> None:
+        voters = default_committee()
+        votes = auto_vote_from_review("STRONG_PROCEED", voters)
+        self.assertTrue(all(v.vote == VOTE_YES for v in votes))
+
+    def test_pass_yields_all_no(self) -> None:
+        voters = default_committee()
+        votes = auto_vote_from_review("PASS", voters)
+        self.assertTrue(all(v.vote == VOTE_NO for v in votes))
+
+    def test_caveats_yields_conditions(self) -> None:
+        voters = default_committee()
+        votes = auto_vote_from_review("PROCEED_WITH_CAVEATS", voters)
+        self.assertTrue(all(v.vote == VOTE_YES_CAVEATS for v in votes))
+        self.assertGreater(len(votes[0].conditions), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -81,6 +81,15 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .ic_voting import (
+    ROLE_WEIGHTS,
+    Vote,
+    VoteOutcome,
+    Voter,
+    aggregate_vote,
+    auto_vote_from_review,
+    default_committee,
+)
 from .hundred_day_plan import (
     HundredDayPlan,
     PlanAction,
@@ -222,4 +231,11 @@ __all__ = [
     "PlanAction",
     "generate_plan",
     "render_plan_markdown",
+    "ROLE_WEIGHTS",
+    "Vote",
+    "VoteOutcome",
+    "Voter",
+    "aggregate_vote",
+    "auto_vote_from_review",
+    "default_committee",
 ]
