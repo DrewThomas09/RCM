@@ -3400,7 +3400,35 @@ Partner note:
 
 ---
 
-## 144. Change log
+## 144. Management first sit-down (`management_first_sitdown.py`)
+
+**Partner statement:** "First post-LOI session is not 'tell me
+about yourself.' I walk in with an agenda calibrated to what the
+packet already told me."
+
+Three blocks:
+
+- **Confirm the thesis** (15-25 min) — "walk me through pillars
+  AS YOU SEE THEM, not the banker's version." Tests ownership
+  vs recital.
+- **Name the risks** (10-30 min) — "what keeps you up at night?"
+  Specific probes for denial rate, top-payer concentration, FCA
+  exposure, historical-pattern matches.
+- **Sign up for outcomes** (15-25 min) — "5 metrics I hold you
+  to with numbers"; MIP structure commitments; team-gap hiring
+  plan if management score is weak.
+
+Each item ships with a **probe-if-canned** note — the follow-up
+when management gives the CIM answer. Partners don't take
+rehearsed responses; they push past them.
+
+Partner note when any block is missing → "sit-down is
+incomplete; extend the meeting." Thesis + risks + outcomes is
+not negotiable.
+
+---
+
+## 145. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3714,3 +3742,7 @@ Partner note:
   — partner audits own team's work across 6 dimensions; IC-ready
   requires every dim ≥ 80% (floor, not average). Full inventory:
   141 modules, 1,424 pe_intelligence unit tests.
+- **2026-04-17** — Added `management_first_sitdown.py` (§144) —
+  post-LOI agenda generator: thesis + risks + outcomes blocks
+  with probe-if-canned notes per question. Full inventory: 142
+  modules, 1,434 pe_intelligence unit tests.
