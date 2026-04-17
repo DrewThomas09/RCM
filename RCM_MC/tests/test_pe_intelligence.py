@@ -6104,5 +6104,93 @@ class TestContractScoring(unittest.TestCase):
         json.dumps(pf.to_dict())
 
 
+# ── Service-line analysis ─────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ServiceLine,
+    ServiceLinePortfolio,
+    ServiceLineRisk,
+    analyze_service_lines,
+    render_service_lines_markdown,
+)
+
+
+class TestServiceLineAnalysis(unittest.TestCase):
+
+    def test_anchor_dependent_verdict(self) -> None:
+        lines = [
+            ServiceLine(name="Cardiology", revenue_share=0.55,
+                        ebitda_margin=0.20),
+            ServiceLine(name="Ortho", revenue_share=0.20,
+                        ebitda_margin=0.15),
+            ServiceLine(name="General", revenue_share=0.15,
+                        ebitda_margin=0.08),
+            ServiceLine(name="Other", revenue_share=0.10,
+                        ebitda_margin=0.05),
+        ]
+        pf = analyze_service_lines(lines)
+        self.assertEqual(pf.portfolio_verdict, "anchor_dependent")
+        self.assertAlmostEqual(pf.concentration_top_line, 0.55, places=2)
+
+    def test_well_diversified_verdict(self) -> None:
+        lines = [
+            ServiceLine(name=f"L{i}", revenue_share=0.125,
+                        ebitda_margin=0.10)
+            for i in range(8)
+        ]
+        pf = analyze_service_lines(lines)
+        self.assertEqual(pf.portfolio_verdict, "well_diversified")
+
+    def test_specialty_concentration_verdict(self) -> None:
+        # Top line is 25% revenue but carries most of the EBITDA.
+        lines = [
+            ServiceLine(name="HighMargin", revenue_share=0.25,
+                        ebitda_margin=0.35),
+            ServiceLine(name="LowA", revenue_share=0.25,
+                        ebitda_margin=0.05),
+            ServiceLine(name="LowB", revenue_share=0.25,
+                        ebitda_margin=0.05),
+            ServiceLine(name="LowC", revenue_share=0.25,
+                        ebitda_margin=0.05),
+        ]
+        pf = analyze_service_lines(lines)
+        self.assertEqual(pf.portfolio_verdict, "specialty_concentration")
+
+    def test_reimbursement_exposure_compounds(self) -> None:
+        line = ServiceLine(name="Cardio", revenue_share=0.35,
+                           ebitda_margin=0.20,
+                           is_reimbursement_exposed=True)
+        pf = analyze_service_lines([line])
+        risk = pf.per_line[0]
+        self.assertGreater(risk.risk_score, 0.80)
+
+    def test_ebitda_contribution_sums_to_one(self) -> None:
+        lines = [
+            ServiceLine(name="A", revenue_share=0.50, ebitda_margin=0.10),
+            ServiceLine(name="B", revenue_share=0.30, ebitda_margin=0.15),
+            ServiceLine(name="C", revenue_share=0.20, ebitda_margin=0.05),
+        ]
+        pf = analyze_service_lines(lines)
+        total = sum(r.ebitda_contribution_share for r in pf.per_line)
+        self.assertAlmostEqual(total, 1.0, places=2)
+
+    def test_empty_returns_unknown(self) -> None:
+        pf = analyze_service_lines([])
+        self.assertEqual(pf.portfolio_verdict, "unknown")
+
+    def test_markdown_renders(self) -> None:
+        lines = [ServiceLine(name="Test", revenue_share=0.5,
+                             ebitda_margin=0.10)]
+        md = render_service_lines_markdown(analyze_service_lines(lines))
+        self.assertIn("# Service-line portfolio", md)
+
+    def test_portfolio_json_serializable(self) -> None:
+        import json
+        lines = [ServiceLine(name="Test", revenue_share=0.5,
+                             ebitda_margin=0.10)]
+        pf = analyze_service_lines(lines)
+        json.dumps(pf.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

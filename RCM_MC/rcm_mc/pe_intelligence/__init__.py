@@ -174,6 +174,13 @@ from .contract_diligence import (
     analyze_contract_portfolio,
     render_contract_diligence_markdown,
 )
+from .service_line_analysis import (
+    ServiceLine,
+    ServiceLinePortfolio,
+    ServiceLineRisk,
+    analyze_service_lines,
+    render_service_lines_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -757,4 +764,9 @@ __all__ = [
     "PayerContract",
     "analyze_contract_portfolio",
     "render_contract_diligence_markdown",
+    "ServiceLine",
+    "ServiceLinePortfolio",
+    "ServiceLineRisk",
+    "analyze_service_lines",
+    "render_service_lines_markdown",
 ]
