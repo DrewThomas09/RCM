@@ -167,6 +167,13 @@ from .board_memo import (
     render_board_memo,
     render_board_memo_markdown,
 )
+from .contract_diligence import (
+    ContractPortfolio,
+    ContractRisk,
+    PayerContract,
+    analyze_contract_portfolio,
+    render_contract_diligence_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -745,4 +752,9 @@ __all__ = [
     "score_deal_priority",
     "render_board_memo",
     "render_board_memo_markdown",
+    "ContractPortfolio",
+    "ContractRisk",
+    "PayerContract",
+    "analyze_contract_portfolio",
+    "render_contract_diligence_markdown",
 ]

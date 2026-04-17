@@ -6011,5 +6011,98 @@ class TestBoardMemo(unittest.TestCase):
         json.dumps(d)
 
 
+# ── Contract diligence ─────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ContractPortfolio,
+    ContractRisk,
+    PayerContract,
+    analyze_contract_portfolio,
+    render_contract_diligence_markdown,
+)
+
+
+class TestContractScoring(unittest.TestCase):
+
+    def test_high_risk_contract_scored_high(self) -> None:
+        c = PayerContract(
+            payer_name="BCBS-TX", revenue_share=0.35,
+            expiry_years=2.0, termination_mechanic="at_will",
+            rate_reset_mechanic="cpi_only",
+            is_top3=True,
+        )
+        pf = analyze_contract_portfolio([c], hold_years=5.0)
+        self.assertEqual(len(pf.per_contract), 1)
+        self.assertGreater(pf.per_contract[0].score, 0.60)
+        self.assertEqual(pf.per_contract[0].action, "renegotiate_pre_close")
+
+    def test_safe_contract_scored_low(self) -> None:
+        c = PayerContract(
+            payer_name="SmallRegional", revenue_share=0.05,
+            expiry_years=8.0, termination_mechanic="standard",
+            rate_reset_mechanic="market",
+        )
+        pf = analyze_contract_portfolio([c], hold_years=5.0)
+        self.assertLess(pf.per_contract[0].score, 0.35)
+        self.assertEqual(pf.per_contract[0].action, "note")
+
+    def test_maturity_wall_summed(self) -> None:
+        contracts = [
+            PayerContract(payer_name="A", revenue_share=0.30,
+                          expiry_years=2.0),
+            PayerContract(payer_name="B", revenue_share=0.20,
+                          expiry_years=3.0),
+            PayerContract(payer_name="C", revenue_share=0.10,
+                          expiry_years=8.0),
+        ]
+        pf = analyze_contract_portfolio(contracts, hold_years=5.0)
+        self.assertAlmostEqual(pf.maturity_wall_pct, 0.50, places=2)
+
+    def test_top3_concentration(self) -> None:
+        contracts = [
+            PayerContract(payer_name=f"P{i}", revenue_share=s)
+            for i, s in enumerate([0.30, 0.25, 0.15, 0.10, 0.08])
+        ]
+        pf = analyze_contract_portfolio(contracts, hold_years=5.0)
+        self.assertAlmostEqual(pf.portfolio_concentration, 0.70, places=2)
+
+    def test_volatile_state_government_score(self) -> None:
+        c = PayerContract(
+            payer_name="IL-Medicaid", revenue_share=0.20,
+            is_government=True, state="IL",
+            expiry_years=3.0,
+        )
+        pf = analyze_contract_portfolio([c], hold_years=5.0)
+        flags = pf.per_contract[0].flags
+        self.assertTrue(any("IL" in f or "volatile" in f for f in flags))
+
+    def test_empty_portfolio(self) -> None:
+        pf = analyze_contract_portfolio([], hold_years=5.0)
+        self.assertEqual(pf.per_contract, [])
+        self.assertEqual(pf.maturity_wall_pct, 0.0)
+        self.assertEqual(pf.high_risk_count, 0)
+
+    def test_actions_list_prioritizes_high_risk(self) -> None:
+        c = PayerContract(
+            payer_name="BadContract", revenue_share=0.40,
+            expiry_years=2.0, termination_mechanic="at_will",
+            is_top3=True,
+        )
+        pf = analyze_contract_portfolio([c], hold_years=5.0)
+        self.assertTrue(any("BadContract" in a for a in pf.actions_needed))
+
+    def test_markdown_renders(self) -> None:
+        c = PayerContract(payer_name="P", revenue_share=0.20, expiry_years=3.0)
+        md = render_contract_diligence_markdown(
+            analyze_contract_portfolio([c], hold_years=5.0))
+        self.assertIn("# Payer contract diligence", md)
+
+    def test_portfolio_to_dict(self) -> None:
+        import json
+        c = PayerContract(payer_name="P", revenue_share=0.20, expiry_years=3.0)
+        pf = analyze_contract_portfolio([c], hold_years=5.0)
+        json.dumps(pf.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
