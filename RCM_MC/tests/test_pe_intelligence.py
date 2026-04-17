@@ -11523,5 +11523,159 @@ class TestOBBBARegulatoryStress(unittest.TestCase):
         self.assertGreater(medicaid.ebitda_impact_m, 0)
 
 
+# ── Archetype subrunners (partner-voice diligence scenarios) ────────────
+
+from rcm_mc.pe_intelligence import (
+    ARCHETYPE_RUNNERS,
+    ArchetypeSubrunnerContext,
+    ArchetypeSubrunnerReport,
+    ArchetypeWarning,
+    back_office_consolidation_review,
+    capacity_expansion_review,
+    cmi_uplift_review,
+    cost_basis_compression_review,
+    outpatient_migration_review,
+    payer_mix_shift_review,
+    render_archetype_subrunner_markdown,
+    roll_up_review,
+    run_archetype,
+)
+
+
+class TestArchetypeSubrunners(unittest.TestCase):
+    """Diligence-scenario tests: named partner ask → named warning."""
+
+    # --- payer_mix_shift -------------------------------------------------
+
+    def test_medicaid_heavy_triggers_payer_shift_warning(self) -> None:
+        # Partner ask: "Are we assuming we can shift off Medicaid
+        # into commercial without contracting leverage?"
+        r = payer_mix_shift_review(ArchetypeSubrunnerContext(
+            medicaid_pct=0.45, commercial_pct=0.35,
+            commercial_pct_contracts_hard=True,
+            medicare_pct=0.20,
+        ) if hasattr(ArchetypeSubrunnerContext, "commercial_pct_contracts_hard")
+          else ArchetypeSubrunnerContext(
+            medicaid_pct=0.45, commercial_pct=0.35, medicare_pct=0.20,
+        ))
+        self.assertTrue(any(w.severity == "high"
+                            and "commercial payer leverage" in w.message
+                            for w in r.warnings))
+
+    def test_aggressive_rate_growth_flagged(self) -> None:
+        # Partner ask: "Rate growth above 6% is a fantasy — flag it."
+        r = payer_mix_shift_review(ArchetypeSubrunnerContext(
+            price_growth_pct=0.08,
+            medicaid_pct=0.10, commercial_pct=0.60,
+        ))
+        self.assertTrue(any("6%/yr are rare" in w.message
+                            for w in r.warnings))
+
+    # --- roll_up ---------------------------------------------------------
+
+    def test_young_platform_high_acquisition_pace_trips(self) -> None:
+        # Partner ask: "AdaptHealth pattern — acq pace vs integration."
+        r = roll_up_review(ArchetypeSubrunnerContext(
+            platform_age_years=2,
+            acquisitions_per_year=8,
+            integrated_pct=0.60,
+        ))
+        self.assertTrue(any("AdaptHealth" in w.message
+                            for w in r.warnings))
+
+    def test_flat_organic_volume_warning(self) -> None:
+        r = roll_up_review(ArchetypeSubrunnerContext(
+            platform_age_years=5, acquisitions_per_year=3,
+            integrated_pct=0.90, volume_growth_pct=0.01,
+        ))
+        self.assertTrue(any("organic volume" in w.message.lower()
+                            for w in r.warnings))
+
+    # --- cmi_uplift ------------------------------------------------------
+
+    def test_cmi_lift_greater_than_015_flagged(self) -> None:
+        # Partner voice: "0.15 CMI in 24 months is the ceiling; more
+        # invites RAC."
+        r = cmi_uplift_review(ArchetypeSubrunnerContext(
+            cmi_current=1.30, cmi_target=1.55,
+            denial_rate=0.05, days_in_ar=40,
+        ))
+        self.assertTrue(any("RAC" in w.message for w in r.warnings))
+
+    def test_high_denial_rate_compounds_cmi_risk(self) -> None:
+        r = cmi_uplift_review(ArchetypeSubrunnerContext(
+            cmi_current=1.35, cmi_target=1.40,
+            denial_rate=0.15,
+        ))
+        self.assertTrue(any("raise denials" in w.message
+                            for w in r.warnings))
+
+    # --- outpatient_migration --------------------------------------------
+
+    def test_high_hopd_exposure_site_neutral_warning(self) -> None:
+        r = outpatient_migration_review(ArchetypeSubrunnerContext(
+            inpatient_revenue_share=0.40,
+            ordered_hopd_revenue_share=0.50,
+        ))
+        self.assertTrue(any("site-neutral" in w.message.lower()
+                            for w in r.warnings))
+
+    # --- back_office_consolidation ---------------------------------------
+
+    def test_many_erps_high_severity(self) -> None:
+        r = back_office_consolidation_review(ArchetypeSubrunnerContext(
+            num_erps=5,
+        ))
+        self.assertTrue(any(w.severity == "high" for w in r.warnings))
+
+    # --- cost_basis_compression ------------------------------------------
+
+    def test_already_lean_cost_warning(self) -> None:
+        r = cost_basis_compression_review(ArchetypeSubrunnerContext(
+            labor_cost_pct_revenue=0.35,
+        ))
+        self.assertTrue(any("lean" in w.message.lower()
+                            for w in r.warnings))
+
+    # --- capacity_expansion ----------------------------------------------
+
+    def test_low_utilization_capacity_add_is_destructive(self) -> None:
+        r = capacity_expansion_review(ArchetypeSubrunnerContext(
+            utilization_pct=0.55, new_sites_planned=3,
+        ))
+        self.assertTrue(any("value-destructive" in w.message
+                            for w in r.warnings))
+
+    # --- orchestrator ----------------------------------------------------
+
+    def test_run_archetype_dispatches(self) -> None:
+        r = run_archetype("roll_up", ArchetypeSubrunnerContext(
+            platform_age_years=2, acquisitions_per_year=6,
+        ))
+        self.assertEqual(r.archetype, "roll_up")
+
+    def test_unknown_archetype(self) -> None:
+        r = run_archetype("does_not_exist", ArchetypeSubrunnerContext())
+        self.assertIn("Unknown", r.partner_note)
+
+    def test_all_archetypes_registered(self) -> None:
+        for name in ("payer_mix_shift", "roll_up", "cmi_uplift",
+                     "outpatient_migration", "back_office_consolidation",
+                     "cost_basis_compression", "capacity_expansion"):
+            self.assertIn(name, ARCHETYPE_RUNNERS)
+
+    def test_markdown_renders(self) -> None:
+        md = render_archetype_subrunner_markdown(
+            roll_up_review(ArchetypeSubrunnerContext(
+                platform_age_years=2, acquisitions_per_year=8)))
+        self.assertIn("Archetype review", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(roll_up_review(
+            ArchetypeSubrunnerContext(platform_age_years=2,
+                                        acquisitions_per_year=8)).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
