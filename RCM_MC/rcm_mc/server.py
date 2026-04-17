@@ -1832,6 +1832,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             sector = _qs.get("sector", [""])[0]
             from .ui.data_public.risk_matrix_page import render_risk_matrix
             return self._send_html(render_risk_matrix(sector_filter=sector))
+        if path == "/corpus-dashboard":
+            from .ui.data_public.corpus_dashboard_page import render_corpus_dashboard
+            return self._send_html(render_corpus_dashboard())
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
