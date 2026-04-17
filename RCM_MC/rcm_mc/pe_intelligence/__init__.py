@@ -541,6 +541,15 @@ from .portfolio_rollup_viewer import (
     build_portfolio_rollup,
     render_rollup_markdown,
 )
+from .bank_syndicate_picker import (
+    LENDER_UNIVERSE,
+    Lender,
+    LenderPick,
+    SyndicateInputs,
+    SyndicateRecommendation,
+    pick_syndicate,
+    render_syndicate_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1387,4 +1396,11 @@ __all__ = [
     "TopMover",
     "build_portfolio_rollup",
     "render_rollup_markdown",
+    "LENDER_UNIVERSE",
+    "Lender",
+    "LenderPick",
+    "SyndicateInputs",
+    "SyndicateRecommendation",
+    "pick_syndicate",
+    "render_syndicate_markdown",
 ]

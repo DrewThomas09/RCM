@@ -10552,5 +10552,100 @@ class TestPortfolioRollupViewer(unittest.TestCase):
         json.dumps(build_portfolio_rollup(self._book()).to_dict())
 
 
+# ── Bank syndicate picker ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    LENDER_UNIVERSE,
+    Lender,
+    LenderPick,
+    SyndicateInputs,
+    SyndicateRecommendation,
+    pick_syndicate,
+    render_syndicate_markdown,
+)
+
+
+class TestBankSyndicatePicker(unittest.TestCase):
+
+    def test_universe_populated(self) -> None:
+        self.assertGreater(len(LENDER_UNIVERSE), 15)
+
+    def test_large_deal_gets_bulge(self) -> None:
+        r = pick_syndicate(SyndicateInputs(
+            total_debt_m=1500.0, minimum_lenders=4,
+            maximum_lenders=6,
+        ))
+        bulge_names = {"JPMorgan", "Bank of America / BAML",
+                       "Goldman Sachs", "Morgan Stanley", "Citi"}
+        picks_names = {p.lender for p in r.picks}
+        self.assertTrue(picks_names & bulge_names)
+        self.assertIn("bulge-led", r.partner_note.lower())
+
+    def test_mid_market_deal_picks_commercial_or_direct(self) -> None:
+        r = pick_syndicate(SyndicateInputs(
+            total_debt_m=300.0, minimum_lenders=2,
+            maximum_lenders=4,
+        ))
+        types = set()
+        for p in r.picks:
+            for l in LENDER_UNIVERSE:
+                if l.name == p.lender:
+                    types.add(l.type)
+        self.assertTrue(types & {"commercial", "direct_lender"})
+
+    def test_small_deal_picks_direct_lender(self) -> None:
+        r = pick_syndicate(SyndicateInputs(
+            total_debt_m=50.0, minimum_lenders=1,
+            maximum_lenders=2,
+        ))
+        self.assertIn("smaller", r.partner_note.lower())
+
+    def test_healthcare_specialist_pref(self) -> None:
+        r = pick_syndicate(SyndicateInputs(
+            total_debt_m=200.0,
+            sponsor_needs_healthcare_specialist=True,
+            minimum_lenders=2, maximum_lenders=4,
+        ))
+        # Capital One Healthcare should be in the picks.
+        self.assertTrue(any("Capital One" in p.lender for p in r.picks))
+
+    def test_looser_covenant_pref_favors_direct_lenders(self) -> None:
+        r = pick_syndicate(SyndicateInputs(
+            total_debt_m=300.0, prefers_looser_covenants=True,
+            minimum_lenders=2, maximum_lenders=4,
+        ))
+        # At least one direct_lender in the list.
+        direct_lender_names = {l.name for l in LENDER_UNIVERSE
+                                if l.type == "direct_lender"}
+        self.assertTrue(any(p.lender in direct_lender_names
+                             for p in r.picks))
+
+    def test_tier_assignment(self) -> None:
+        r = pick_syndicate(SyndicateInputs(
+            total_debt_m=500.0, minimum_lenders=3, maximum_lenders=4,
+        ))
+        self.assertEqual(r.picks[0].tier, "lead")
+        self.assertEqual(r.picks[1].tier, "joint")
+
+    def test_fallback_populated(self) -> None:
+        r = pick_syndicate(SyndicateInputs(
+            total_debt_m=250.0, minimum_lenders=2, maximum_lenders=3,
+        ))
+        self.assertGreater(len(r.fallback_picks), 0)
+
+    def test_markdown_renders(self) -> None:
+        r = pick_syndicate(SyndicateInputs(
+            total_debt_m=400.0, minimum_lenders=2, maximum_lenders=4,
+        ))
+        md = render_syndicate_markdown(r)
+        self.assertIn("# Bank syndicate recommendation", md)
+        self.assertIn("Primary picks", md)
+
+    def test_json(self) -> None:
+        import json
+        r = pick_syndicate(SyndicateInputs(total_debt_m=400.0))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
