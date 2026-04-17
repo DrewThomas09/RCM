@@ -163,6 +163,10 @@ from .priority_scoring import (
     render_priority_list_markdown,
     score_deal_priority,
 )
+from .board_memo import (
+    render_board_memo,
+    render_board_memo_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -739,4 +743,6 @@ __all__ = [
     "rank_deal_portfolio",
     "render_priority_list_markdown",
     "score_deal_priority",
+    "render_board_memo",
+    "render_board_memo_markdown",
 ]

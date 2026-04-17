@@ -5940,5 +5940,76 @@ class TestPriorityScoring(unittest.TestCase):
         json.dumps(score.to_dict())
 
 
+# ── Board memo ─────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    render_board_memo,
+    render_board_memo_markdown,
+)
+
+
+class TestBoardMemo(unittest.TestCase):
+
+    def test_board_memo_has_all_sections(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"commercial": 0.55}, ebitda_m=30,
+            hospital_type="acute_care",
+        )
+        review = partner_review_from_context(ctx, deal_name="Test Co.")
+        d = render_board_memo(review)
+        for key in ("deal_name", "board_recommendation",
+                    "executive_summary", "fiduciary_reminder",
+                    "approval_matrix", "required_disclosures",
+                    "action_list"):
+            self.assertIn(key, d)
+
+    def test_board_rec_translates_ic_rec(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55}, ebitda_m=30,
+                               hospital_type="acute_care")
+        review = partner_review_from_context(ctx)
+        d = render_board_memo(review)
+        self.assertIn(d["board_recommendation"],
+                      {"APPROVE", "APPROVE subject to caveats", "DECLINE"})
+
+    def test_pass_becomes_decline(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=700)
+        review = partner_review_from_context(ctx)
+        d = render_board_memo(review)
+        self.assertEqual(d["board_recommendation"], "DECLINE")
+
+    def test_disclosures_include_lpa_reminder(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55}, ebitda_m=30,
+                               hospital_type="acute_care")
+        review = partner_review_from_context(ctx)
+        d = render_board_memo(review)
+        text = " ".join(d["required_disclosures"])
+        self.assertIn("LPA", text)
+
+    def test_approval_matrix_has_core_items(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55}, ebitda_m=30,
+                               hospital_type="acute_care")
+        review = partner_review_from_context(ctx)
+        d = render_board_memo(review)
+        items = {row["item"] for row in d["approval_matrix"]}
+        self.assertIn("Final purchase price / valuation", items)
+        self.assertIn("Capital structure at close (debt, equity)", items)
+
+    def test_markdown_renders(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55}, ebitda_m=30,
+                               hospital_type="acute_care")
+        review = partner_review_from_context(ctx, deal_name="Test Co.")
+        md = render_board_memo_markdown(review)
+        self.assertIn("# Board Memo — Test Co.", md)
+        self.assertIn("## Fiduciary reminder", md)
+        self.assertIn("## Approval matrix", md)
+
+    def test_json_serializable(self) -> None:
+        import json
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55}, ebitda_m=30,
+                               hospital_type="acute_care")
+        d = render_board_memo(partner_review_from_context(ctx))
+        json.dumps(d)
+
+
 if __name__ == "__main__":
     unittest.main()
