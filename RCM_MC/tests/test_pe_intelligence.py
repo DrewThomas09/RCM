@@ -1887,5 +1887,173 @@ class TestExitReadinessScoring(unittest.TestCase):
             self.assertIn(vl, report.headline.lower())
 
 
+# ── Payer math ───────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    PayerScenario,
+    ProjectionInputs,
+    ScenarioResult,
+    VBCInputs,
+    VBCProjection,
+    YearProjection,
+    blended_rate_growth,
+    compare_payer_scenarios,
+    project_ebitda_from_revenue,
+    project_revenue,
+    standard_scenarios,
+    vbc_revenue_projection,
+)
+
+
+class TestBlendedRateGrowth(unittest.TestCase):
+
+    def test_simple_mix(self) -> None:
+        # 50% commercial @ 4%, 50% medicare @ 0% = 2% blended
+        blend = blended_rate_growth(
+            {"commercial": 0.50, "medicare": 0.50},
+            {"commercial": 0.04, "medicare": 0.00},
+        )
+        self.assertAlmostEqual(blend, 0.02, places=4)
+
+    def test_unlisted_payer_contributes_zero(self) -> None:
+        # medicaid in mix but not in rate_growth → 0% growth on that share
+        blend = blended_rate_growth(
+            {"commercial": 0.50, "medicare": 0.30, "medicaid": 0.20},
+            {"commercial": 0.04, "medicare": 0.02},
+        )
+        # 0.5*0.04 + 0.3*0.02 + 0.2*0 = 0.02 + 0.006 + 0 = 0.026
+        self.assertAlmostEqual(blend, 0.026, places=4)
+
+    def test_handles_percent_input(self) -> None:
+        # Mix given as percents sums to 100.
+        blend = blended_rate_growth(
+            {"commercial": 50.0, "medicare": 50.0},
+            {"commercial": 0.04, "medicare": 0.00},
+        )
+        self.assertAlmostEqual(blend, 0.02, places=4)
+
+    def test_empty_mix_returns_zero(self) -> None:
+        self.assertEqual(blended_rate_growth({}, {"commercial": 0.04}), 0.0)
+
+
+class TestProjectRevenue(unittest.TestCase):
+
+    def test_base_projection_5yr(self) -> None:
+        inputs = ProjectionInputs(
+            base_revenue=100_000_000,
+            base_ebitda=8_000_000,
+            payer_mix={"commercial": 0.50, "medicare": 0.50},
+            rate_growth_by_payer={"commercial": 0.04, "medicare": 0.00},
+            volume_growth_pct=0.02,
+            contribution_margin=0.40,
+            years=5,
+        )
+        series = project_revenue(inputs)
+        self.assertEqual(len(series), 5)
+        # Revenue grows each year.
+        prev = inputs.base_revenue
+        for yp in series:
+            self.assertGreater(yp.revenue, prev)
+            prev = yp.revenue
+
+    def test_flat_growth_holds_revenue(self) -> None:
+        inputs = ProjectionInputs(
+            base_revenue=100_000_000,
+            base_ebitda=8_000_000,
+            payer_mix={"medicare": 1.0},
+            rate_growth_by_payer={"medicare": 0.0},
+            volume_growth_pct=0.0,
+        )
+        series = project_revenue(inputs)
+        for yp in series:
+            self.assertAlmostEqual(yp.revenue, 100_000_000, delta=1)
+
+    def test_negative_growth_declines(self) -> None:
+        inputs = ProjectionInputs(
+            base_revenue=100_000_000,
+            base_ebitda=8_000_000,
+            payer_mix={"medicaid": 1.0},
+            rate_growth_by_payer={"medicaid": -0.02},
+            volume_growth_pct=0.0,
+        )
+        series = project_revenue(inputs)
+        for yp in series:
+            self.assertLess(yp.revenue, 100_000_000)
+
+
+class TestProjectEBITDAFromRevenue(unittest.TestCase):
+
+    def test_flow_through_at_40_pct(self) -> None:
+        ebitda_series = project_ebitda_from_revenue(
+            base_ebitda=10_000_000,
+            revenue_series=[110_000_000, 120_000_000],
+            base_revenue=100_000_000,
+            contribution_margin=0.40,
+        )
+        # Y1: +10M revenue * 0.4 = +4M → 14M
+        # Y2: +10M revenue * 0.4 = +4M → 18M
+        self.assertAlmostEqual(ebitda_series[0], 14_000_000, delta=1)
+        self.assertAlmostEqual(ebitda_series[1], 18_000_000, delta=1)
+
+
+class TestCompareScenarios(unittest.TestCase):
+
+    def test_compare_standard_scenarios(self) -> None:
+        base = ProjectionInputs(
+            base_revenue=200_000_000,
+            base_ebitda=20_000_000,
+            payer_mix={"medicare": 0.45, "commercial": 0.40, "medicaid": 0.15},
+            rate_growth_by_payer={},  # overridden per scenario
+            volume_growth_pct=0.0,    # overridden
+            contribution_margin=0.40,
+            years=5,
+        )
+        results = compare_payer_scenarios(base, standard_scenarios())
+        self.assertEqual(len(results), 4)
+        names = [r.name for r in results]
+        self.assertIn("Base", names)
+        self.assertIn("CMS cut", names)
+        # CMS cut scenario should produce lower year-5 revenue than base.
+        base_r = next(r for r in results if r.name == "Base")
+        cms_r = next(r for r in results if r.name == "CMS cut")
+        self.assertLess(cms_r.year5_revenue, base_r.year5_revenue)
+
+
+class TestVBCProjection(unittest.TestCase):
+
+    def test_vbc_basic_math(self) -> None:
+        inputs = VBCInputs(
+            lives=50_000, pmpm=900, mlr=0.85,
+            admin_cost_rate=0.08, savings_pool=5_000_000, shared_savings_rate=0.40,
+        )
+        projection = vbc_revenue_projection(inputs)
+        # Premium = 50k * 900 * 12 = 540M
+        self.assertAlmostEqual(projection.premium_revenue, 540_000_000, delta=1)
+        # Claims = 540M * 0.85 = 459M
+        self.assertAlmostEqual(projection.claims_cost, 459_000_000, delta=1)
+        # Admin = 540M * 0.08 = 43.2M
+        self.assertAlmostEqual(projection.admin_cost, 43_200_000, delta=1)
+        # Underwriting = 540 - 459 - 43.2 = 37.8M
+        self.assertAlmostEqual(projection.underwriting_margin, 37_800_000, delta=10)
+        # Shared savings = 5M * 0.40 = 2M
+        self.assertAlmostEqual(projection.shared_savings_share, 2_000_000, delta=1)
+
+    def test_vbc_to_dict(self) -> None:
+        import json
+        p = vbc_revenue_projection(VBCInputs(lives=10_000, pmpm=500))
+        json.dumps(p.to_dict())
+
+
+class TestStandardScenarios(unittest.TestCase):
+
+    def test_four_scenarios_defined(self) -> None:
+        scenarios = standard_scenarios()
+        self.assertEqual(len(scenarios), 4)
+        for s in scenarios:
+            self.assertIsInstance(s, PayerScenario)
+            self.assertTrue(s.name)
+            self.assertIn("medicare", s.rate_growth_by_payer)
+
+
 if __name__ == "__main__":
     unittest.main()

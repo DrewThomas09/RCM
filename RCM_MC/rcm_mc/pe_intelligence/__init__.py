@@ -81,6 +81,20 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .payer_math import (
+    PayerScenario,
+    ProjectionInputs,
+    ScenarioResult,
+    VBCInputs,
+    VBCProjection,
+    YearProjection,
+    blended_rate_growth,
+    compare_payer_scenarios,
+    project_ebitda_from_revenue,
+    project_revenue,
+    standard_scenarios,
+    vbc_revenue_projection,
+)
 from .deal_archetype import (
     ArchetypeContext,
     ArchetypeHit,
@@ -166,4 +180,16 @@ __all__ = [
     "ExitReadinessReport",
     "ReadinessFinding",
     "score_exit_readiness",
+    "PayerScenario",
+    "ProjectionInputs",
+    "ScenarioResult",
+    "VBCInputs",
+    "VBCProjection",
+    "YearProjection",
+    "blended_rate_growth",
+    "compare_payer_scenarios",
+    "project_ebitda_from_revenue",
+    "project_revenue",
+    "standard_scenarios",
+    "vbc_revenue_projection",
 ]
