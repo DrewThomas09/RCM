@@ -99,10 +99,12 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_4 import EXTENDED_SEED_DEALS_4
         from rcm_mc.data_public.extended_seed_5 import EXTENDED_SEED_DEALS_5
         from rcm_mc.data_public.extended_seed_6 import EXTENDED_SEED_DEALS_6
+        from rcm_mc.data_public.extended_seed_7 import EXTENDED_SEED_DEALS_7
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
-                    + len(EXTENDED_SEED_DEALS_5) + len(EXTENDED_SEED_DEALS_6))
+                    + len(EXTENDED_SEED_DEALS_5) + len(EXTENDED_SEED_DEALS_6)
+                    + len(EXTENDED_SEED_DEALS_7))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3555,6 +3557,154 @@ class TestCmsCli(unittest.TestCase):
         out = buf.getvalue()
         # Should not crash; should report no data or errors
         self.assertIsInstance(out, str)
+
+
+class TestCorpusExport(unittest.TestCase):
+    """Tests for corpus_export module."""
+
+    def _sample_deals(self):
+        return [
+            {
+                "source_id": "e001", "deal_name": "=DANGEROUS() formula test",
+                "year": 2021, "buyer": "KKR", "seller": "Acme",
+                "ev_mm": 1000.0, "ebitda_at_entry_mm": 100.0,
+                "hold_years": 5.0, "realized_moic": 2.5, "realized_irr": 0.20,
+                "payer_mix": {"medicare": 0.40, "medicaid": 0.20, "commercial": 0.40},
+                "notes": "test deal",
+            },
+            {
+                "source_id": "e002", "deal_name": "Normal Deal",
+                "year": 2020, "buyer": "Blackstone", "seller": "Founders",
+                "ev_mm": 500.0, "ebitda_at_entry_mm": None,
+                "hold_years": None, "realized_moic": None, "realized_irr": None,
+                "payer_mix": None,
+                "notes": None,
+            },
+        ]
+
+    def test_to_csv_returns_string(self):
+        from rcm_mc.data_public.corpus_export import to_csv
+        csv_text = to_csv(self._sample_deals())
+        self.assertIsInstance(csv_text, str)
+        self.assertIn("source_id", csv_text)
+        self.assertIn("deal_name", csv_text)
+
+    def test_to_csv_defangs_formulas(self):
+        from rcm_mc.data_public.corpus_export import to_csv
+        csv_text = to_csv(self._sample_deals())
+        # The "=DANGEROUS()" field should be prefixed with ' (defanged)
+        self.assertIn("'=DANGEROUS()", csv_text)
+
+    def test_to_csv_payer_columns(self):
+        from rcm_mc.data_public.corpus_export import to_csv
+        csv_text = to_csv(self._sample_deals(), include_payer_mix=True)
+        self.assertIn("payer_medicare", csv_text)
+        self.assertIn("payer_medicaid", csv_text)
+
+    def test_to_csv_writes_file(self):
+        from rcm_mc.data_public.corpus_export import to_csv
+        import tempfile, os
+        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
+            path = f.name
+        try:
+            to_csv(self._sample_deals(), path=path)
+            self.assertGreater(os.path.getsize(path), 0)
+        finally:
+            os.unlink(path)
+
+    def test_to_json_valid(self):
+        from rcm_mc.data_public.corpus_export import to_json
+        text = to_json(self._sample_deals())
+        data = json.loads(text)
+        self.assertEqual(len(data), 2)
+        self.assertIn("deal_name", data[0])
+
+    def test_to_json_payer_expanded(self):
+        from rcm_mc.data_public.corpus_export import to_json
+        text = to_json(self._sample_deals())
+        data = json.loads(text)
+        # First deal has payer mix
+        self.assertIn("payer_medicare", data[0])
+
+    def test_to_markdown_header(self):
+        from rcm_mc.data_public.corpus_export import to_markdown
+        md = to_markdown(self._sample_deals(), include_scorecard=False)
+        self.assertIn("## Deal Corpus", md)
+        self.assertIn("| # |", md)
+
+    def test_to_markdown_scorecard(self):
+        from rcm_mc.data_public.corpus_export import to_markdown
+        md = to_markdown(self._sample_deals(), include_scorecard=True)
+        self.assertIn("Portfolio Corpus Scorecard", md)
+
+    def test_to_markdown_max_rows(self):
+        from rcm_mc.data_public.corpus_export import to_markdown
+        many = self._sample_deals() * 30  # 60 deals
+        md = to_markdown(many, max_rows=10)
+        self.assertIn("more deals", md)
+
+    def test_export_full_corpus(self):
+        from rcm_mc.data_public.corpus_export import export_full_corpus
+        import tempfile, os
+        db = tempfile.mktemp(suffix=".db")
+        out_dir = tempfile.mkdtemp()
+        try:
+            written = export_full_corpus(db_path=db, out_dir=out_dir, formats=["csv", "json"])
+            self.assertIn("csv", written)
+            self.assertIn("json", written)
+            self.assertTrue(os.path.exists(written["csv"]))
+            self.assertTrue(os.path.exists(written["json"]))
+            self.assertGreater(os.path.getsize(written["csv"]), 100)
+        finally:
+            os.unlink(db)
+            import shutil
+            shutil.rmtree(out_dir, ignore_errors=True)
+
+
+class TestExtendedSeed7(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def test_seed_loads_175_deals(self):
+        corpus = DealsCorpus(self.db_path)
+        stats = corpus.stats()
+        self.assertGreaterEqual(stats["total"], 175)
+
+    def test_seed_156_change_healthcare(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_156")
+        self.assertIsNotNone(deal)
+        self.assertIn("Change Healthcare", deal["deal_name"])
+        self.assertGreater(deal["ev_mm"], 10000)
+
+    def test_seed_171_bright_health_loss(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_171")
+        self.assertIsNotNone(deal)
+        self.assertLess(deal["realized_moic"], 0.1)
+
+    def test_seed_175_surgical_notes(self):
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_175")
+        self.assertIsNotNone(deal)
+        self.assertIn("Surgical Notes", deal["deal_name"])
+
+    def test_extended_seed_7_list_length(self):
+        from rcm_mc.data_public.extended_seed_7 import EXTENDED_SEED_DEALS_7
+        self.assertEqual(len(EXTENDED_SEED_DEALS_7), 20)
+
+    def test_all_seed_7_have_required_fields(self):
+        from rcm_mc.data_public.extended_seed_7 import EXTENDED_SEED_DEALS_7
+        for deal in EXTENDED_SEED_DEALS_7:
+            self.assertIn("source_id", deal)
+            self.assertIn("deal_name", deal)
+            self.assertEqual(deal["source"], "seed")
 
 
 class TestCmsWhiteSpaceMap(unittest.TestCase):

@@ -141,6 +141,12 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .corpus_export import (
+    to_csv,
+    to_json,
+    to_markdown,
+    export_full_corpus,
+)
 from .cms_white_space_map import (
     WhiteSpaceOpportunity,
     compute_white_space_map,
@@ -308,6 +314,10 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "to_csv",
+    "to_json",
+    "to_markdown",
+    "export_full_corpus",
     "WhiteSpaceOpportunity",
     "compute_white_space_map",
     "top_white_space",
