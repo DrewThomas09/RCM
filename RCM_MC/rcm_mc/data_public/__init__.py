@@ -59,6 +59,14 @@ from .exit_modeling import (
 )
 from .diligence_checklist import build_checklist, checklist_text, checklist_json
 from .corpus_report import deal_brief, corpus_summary_report
+from .rcm_benchmarks import (
+    RCMBenchmark,
+    get_benchmarks as get_rcm_benchmarks,
+    get_all_benchmarks as get_all_rcm_benchmarks,
+    benchmark_deal,
+    rcm_opportunity,
+    benchmarks_table as rcm_benchmarks_table,
+)
 from .regional_analysis import (
     classify_region,
     get_region_stats,
@@ -115,6 +123,12 @@ __all__ = [
     "checklist_json",
     "deal_brief",
     "corpus_summary_report",
+    "RCMBenchmark",
+    "get_rcm_benchmarks",
+    "get_all_rcm_benchmarks",
+    "benchmark_deal",
+    "rcm_opportunity",
+    "rcm_benchmarks_table",
     "classify_region",
     "get_region_stats",
     "get_all_regions",

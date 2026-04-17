@@ -2138,6 +2138,154 @@ class TestVintageAnalysis(unittest.TestCase):
 
 
 # ===========================================================================
+# RCM Benchmarks
+# ===========================================================================
+
+class TestRCMBenchmarks(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def _community_deal(self):
+        return {
+            "deal_name": "Community Hospital – PE Buyout",
+            "ev_mm": 600,
+            "ebitda_at_entry_mm": 65,
+            "buyer": "KKR",
+        }
+
+    def test_get_benchmarks_community(self):
+        from rcm_mc.data_public.rcm_benchmarks import get_benchmarks
+        bm = get_benchmarks("community")
+        self.assertEqual(bm.segment, "community")
+        self.assertGreater(bm.initial_denial_rate_p50, 0)
+        self.assertLess(bm.initial_denial_rate_p50, 1)
+
+    def test_get_benchmarks_asc(self):
+        from rcm_mc.data_public.rcm_benchmarks import get_benchmarks
+        bm = get_benchmarks("asc")
+        # ASCs should have lower denial rates than community
+        comm = get_benchmarks("community")
+        self.assertLess(bm.initial_denial_rate_p50, comm.initial_denial_rate_p50)
+
+    def test_get_benchmarks_behavioral_higher_denial(self):
+        from rcm_mc.data_public.rcm_benchmarks import get_benchmarks
+        beh = get_benchmarks("behavioral")
+        comm = get_benchmarks("community")
+        self.assertGreater(beh.initial_denial_rate_p50, comm.initial_denial_rate_p50)
+
+    def test_get_all_benchmarks(self):
+        from rcm_mc.data_public.rcm_benchmarks import get_all_benchmarks
+        all_bm = get_all_benchmarks()
+        self.assertGreater(len(all_bm), 4)
+        self.assertIn("community", all_bm)
+        self.assertIn("asc", all_bm)
+        self.assertIn("behavioral", all_bm)
+
+    def test_benchmark_deal_infers_type(self):
+        from rcm_mc.data_public.rcm_benchmarks import benchmark_deal
+        # "ambulatory surgery" is in ASC signals → should classify as ASC
+        asc_deal = {"deal_name": "National Ambulatory Surgery Centers – H.I.G.",
+                    "ev_mm": 400, "ebitda_at_entry_mm": 50}
+        bm = benchmark_deal(asc_deal)
+        self.assertEqual(bm.segment, "asc")
+
+    def test_rcm_opportunity_returns_dict(self):
+        from rcm_mc.data_public.rcm_benchmarks import rcm_opportunity
+        opp = rcm_opportunity(self._community_deal())
+        self.assertIn("segment", opp)
+        self.assertIn("estimated_total_ebitda_uplift_mm", opp)
+        self.assertIn("lever_details", opp)
+
+    def test_rcm_opportunity_positive_uplift(self):
+        from rcm_mc.data_public.rcm_benchmarks import rcm_opportunity
+        # Worst-quartile baseline → should show positive uplift
+        opp = rcm_opportunity(self._community_deal())
+        self.assertGreater(opp["estimated_total_ebitda_uplift_mm"], 0)
+
+    def test_rcm_opportunity_custom_metrics(self):
+        from rcm_mc.data_public.rcm_benchmarks import rcm_opportunity
+        # Start with best-quartile metrics — uplift should be near zero
+        metrics = {
+            "initial_denial_rate": 0.06,
+            "clean_claim_rate": 0.97,
+            "days_in_ar": 38.0,
+            "collection_rate": 0.98,
+            "write_off_pct": 0.03,
+            "cost_to_collect": 0.024,
+        }
+        opp = rcm_opportunity(self._community_deal(), current_metrics=metrics)
+        # Best-quartile → should be small or zero uplift
+        self.assertGreaterEqual(opp["estimated_total_ebitda_uplift_mm"], 0)
+
+    def test_benchmark_as_dict_serialisable(self):
+        from rcm_mc.data_public.rcm_benchmarks import get_benchmarks
+        bm = get_benchmarks("ltac")
+        d = bm.as_dict()
+        json.dumps(d)
+        self.assertIn("initial_denial_rate", d)
+        self.assertIn("days_in_ar", d)
+
+    def test_benchmarks_table_string(self):
+        from rcm_mc.data_public.rcm_benchmarks import benchmarks_table
+        out = benchmarks_table()
+        self.assertIn("RCM Benchmark", out)
+        self.assertIn("Denial", out)
+
+    def test_asc_lower_dar_than_community(self):
+        from rcm_mc.data_public.rcm_benchmarks import get_benchmarks
+        asc = get_benchmarks("asc")
+        comm = get_benchmarks("community")
+        self.assertLess(asc.days_in_ar_p50, comm.days_in_ar_p50)
+
+    def test_cli_rcm_table(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "rcm"])
+        out = buf.getvalue()
+        self.assertIn("RCM Benchmark", out)
+
+    def test_cli_rcm_segment(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "rcm", "--segment", "asc"])
+        out = buf.getvalue()
+        self.assertIn("Denial", out)
+
+    def test_cli_rcm_deal(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "rcm", "--deal-id", "seed_007"])
+        out = buf.getvalue()
+        self.assertIn("Opportunity", out)
+
+    def test_cli_rcm_json(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "rcm", "--json"])
+        data = json.loads(buf.getvalue())
+        self.assertIsInstance(data, dict)
+        self.assertIn("community", data)
+
+
+# ===========================================================================
 # Extended Seed Batch 2 + Corpus Size
 # ===========================================================================
 

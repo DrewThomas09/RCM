@@ -182,6 +182,51 @@ def _cmd_full_ingest(args: argparse.Namespace) -> None:
         print(_json.dumps(report.as_dict(), indent=2, default=str))
 
 
+def _cmd_rcm(args: argparse.Namespace) -> None:
+    from .rcm_benchmarks import (
+        get_benchmarks, get_all_benchmarks, benchmark_deal,
+        rcm_opportunity, benchmarks_table,
+    )
+    if args.deal_id:
+        corpus = DealsCorpus(args.db)
+        deal = corpus.get(args.deal_id)
+        if not deal:
+            print(f"Deal '{args.deal_id}' not found.")
+            sys.exit(1)
+        opp = rcm_opportunity(deal)
+        if args.json:
+            print(json.dumps(opp, indent=2, default=str))
+        else:
+            print(f"\n  RCM Opportunity: {opp['deal_name']}")
+            print(f"  Segment : {opp['benchmark_label']}")
+            print(f"  Revenue : ${opp.get('revenue_mm', 0):,.0f}M" if opp.get("revenue_mm") else "  Revenue : —")
+            print(f"  Est. EBITDA uplift: ${opp['estimated_total_ebitda_uplift_mm']:,.1f}M "
+                  f"({opp.get('uplift_pct_of_ebitda','?'):.1%} of EBITDA)"
+                  if opp.get("uplift_pct_of_ebitda") else
+                  f"  Est. EBITDA uplift: ${opp['estimated_total_ebitda_uplift_mm']:,.1f}M")
+            for lever, detail in opp["lever_details"].items():
+                uplift = detail.get("estimated_ebitda_uplift_mm", 0)
+                if uplift > 0:
+                    print(f"    • {lever}: +${uplift:.1f}M EBITDA")
+    elif args.segment:
+        bm = get_benchmarks(args.segment)
+        if args.json:
+            print(json.dumps(bm.as_dict(), indent=2))
+        else:
+            print(f"\n  Benchmarks: {bm.label}")
+            print(f"    Denial rate P50    : {bm.initial_denial_rate_p50:.1%}")
+            print(f"    Clean claim P50    : {bm.clean_claim_rate_p50:.1%}")
+            print(f"    Days in AR P50     : {bm.days_in_ar_p50:.0f} days")
+            print(f"    Collection rate P50: {bm.collection_rate_p50:.1%}")
+            print(f"    Write-off P50      : {bm.write_off_pct_p50:.1%}")
+    else:
+        if args.json:
+            all_bm = get_all_benchmarks()
+            print(json.dumps({k: v.as_dict() for k, v in all_bm.items()}, indent=2))
+        else:
+            print(benchmarks_table())
+
+
 def _cmd_region(args: argparse.Namespace) -> None:
     from .regional_analysis import region_table, region_report, get_region_stats, find_regional_comps
     if args.deal_id:
@@ -463,6 +508,15 @@ def main(argv=None) -> None:
     sv.add_argument("--deal-id", required=True, dest="deal_id")
     sv.add_argument("--json", action="store_true")
 
+    # rcm
+    rcm = sub.add_parser("rcm", help="RCM benchmarks and opportunity sizing for a deal")
+    rcm.add_argument("--deal-id", default=None, dest="deal_id",
+                     help="Score RCM opportunity for a corpus deal")
+    rcm.add_argument("--segment", default=None,
+                     help="Show benchmarks for a specific segment "
+                          "(community/academic/asc/behavioral/ltac/home_health/physician_group)")
+    rcm.add_argument("--json", action="store_true")
+
     # region
     rg = sub.add_parser("region", help="Regional return analysis or classify a deal's region")
     rg.add_argument("--deal-id", default=None, dest="deal_id",
@@ -540,6 +594,7 @@ def main(argv=None) -> None:
         "diligence": _cmd_diligence,
         "brief": _cmd_brief,
         "region": _cmd_region,
+        "rcm": _cmd_rcm,
     }
     dispatch[args.cmd](args)
 
