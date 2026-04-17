@@ -98,6 +98,7 @@ NAV_ITEMS = [
     {"label": "Underwriting", "href": "/underwriting", "icon": "chart"},
     {"label": "Market Rates", "href": "/market-rates", "icon": "chart"},
     {"label": "Backtest", "href": "/backtest", "icon": "chart"},
+    {"label": "Portfolio Optimizer", "href": "/portfolio-optimizer", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},

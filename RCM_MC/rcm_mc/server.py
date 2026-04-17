@@ -1832,6 +1832,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             sector = _qs.get("sector", [""])[0]
             from .ui.data_public.risk_matrix_page import render_risk_matrix
             return self._send_html(render_risk_matrix(sector_filter=sector))
+        if path == "/portfolio-optimizer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sectors = _qs.get("sector") or None
+            from .ui.data_public.portfolio_optimizer_page import render_portfolio_optimizer
+            return self._send_html(render_portfolio_optimizer(sectors=sectors))
         if path == "/underwriting":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qfloat(k):

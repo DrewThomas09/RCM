@@ -62,6 +62,7 @@ _CORPUS_NAV = [
     {"label": "Underwriting",   "href": "/underwriting",    "icon": "▣"},
     {"label": "Market Rates",   "href": "/market-rates",    "icon": "▦"},
     {"label": "Backtest",       "href": "/backtest",         "icon": "▣"},
+    {"label": "Portfolio Opt.", "href": "/portfolio-optimizer", "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",  "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
