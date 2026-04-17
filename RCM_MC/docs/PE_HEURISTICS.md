@@ -3148,7 +3148,41 @@ Partner reads: "this is a pitch, not a thesis — underwrite at
 
 ---
 
-## 137. Change log
+## 137. Labor shortage cascade (`labor_shortage_cascade.py`)
+
+Third canonical cross-module cascade (after RCM and payer-mix).
+When clinician turnover rises, the effects cascade:
+
+1. **Turnover delta** — pp above baseline; extra departures =
+   headcount × delta.
+2. **Agency premium cost** — backfill at agency rates (~70%
+   premium over W-2). Incremental = W-2 cost × premium × share
+   delta.
+3. **Margin compression** — labor is 100% pass-through to EBITDA;
+   no < 12-month offset lever.
+4. **Quality / volume impact** — high-turnover units reduce
+   throughput 3-8%; revenue dips.
+5. **Covenant pressure** — stressed EBITDA + possibly floating
+   debt compresses coverage. Breach flagged when coverage <
+   80% of pre-shock level.
+
+Partner note priority:
+
+- Covenant breach → "not tolerable given base posture."
+- EBITDA hit ≥ 15% of base → "material; focus diligence on
+  retention + agency contract terms."
+- Positive but modest → "manageable; monitor agency trends
+  quarterly."
+- Zero → "immaterial."
+
+**Why this cascade:** agency spend is a canary. If 2025 Q3
+agency trending up, 2026 EBITDA model needs a haircut. Partner
+checks quarterly labor data religiously; this module formalizes
+the propagation.
+
+---
+
+## 138. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3433,3 +3467,7 @@ Partner reads: "this is a pitch, not a thesis — underwrite at
   credibility score penalizing aggressive pace + thin contract
   pipeline. Full inventory: 134 modules, 1,352 pe_intelligence
   unit tests.
+- **2026-04-17** — Added `labor_shortage_cascade.py` (§137) —
+  turnover → agency premium → margin → quality/volume →
+  covenant pressure with breach flag. Full inventory: 135
+  modules, 1,361 pe_intelligence unit tests.
