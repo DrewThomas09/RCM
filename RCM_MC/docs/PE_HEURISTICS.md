@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 55
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 59
 modules + test suite:
 
 | Module | Role |
@@ -761,6 +761,10 @@ modules + test suite:
 | `memo_formats.py` | 5 IC memo renderers (one-pager / slack / email / pdf / deck) |
 | `extra_archetypes.py` | 8 specialized deal patterns |
 | `extra_red_flags.py` | 10 more deal-killer detectors |
+| `scenario_narrative.py` | Stress-grid → partner-voice prose |
+| `deal_comparison.py` | Side-by-side two-review comparison |
+| `priority_scoring.py` | Multi-deal partner-queue ranker |
+| `board_memo.py` | Governance memo w/ approval matrix + disclosures |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1295,7 +1299,69 @@ Field list exported as `EXTRA_RED_FLAG_FIELDS` for caller wiring.
 
 ---
 
-## 58. Change log
+## 58. Scenario narrative (`scenario_narrative.py`)
+
+Turns a `StressGridResult` into partner-voice prose:
+
+- **Headline** — grade-specific one-liner.
+- **Worst-case sentence** — names the single most damaging
+  downside scenario with $ / pct impact.
+- **Passing-downside summary** — the shocks the deal absorbs.
+- **Compound-shock warning** — pairs of marginal-pass scenarios that
+  together would break the deal.
+
+`render_scenario_markdown(grid_dict)` produces a ready-to-paste
+markdown block.
+
+---
+
+## 59. Deal comparison (`deal_comparison.py`)
+
+Side-by-side comparison of two :class:`PartnerReview` objects:
+
+- Per-metric deltas on IRR, MOIC, margin, leverage, AR days, denial
+  rate, write-offs, stress grade, downside pass rate, covenant
+  breaches, investability, critical / high-hit counts, and
+  recommendation.
+- Winner tally with a 2-vote buffer before declaring an overall
+  winner.
+- Partner-ready markdown table via `render_comparison_markdown`.
+
+---
+
+## 60. Priority scoring (`priority_scoring.py`)
+
+Ranks a portfolio of :class:`PartnerReview` objects by composite:
+
+- **Urgency** (30%) — days to next gate.
+- **Leverage of attention** (40%) — count of open stretch / high
+  items where partner input still matters.
+- **Investability** (20%) — composite score from
+  `investability_scorer`.
+- **Strategic** (10%) — flagship / strategic flags from caller.
+
+`rank_deal_portfolio([(review, inputs), ...])` returns a ranked list
+with `.rank` populated.
+
+---
+
+## 61. Board memo (`board_memo.py`)
+
+Governance-focused memo renderer:
+
+- **Fiduciary reminder** — board duties in one paragraph.
+- **Approval matrix** — item-by-item approve vs informed schedule.
+- **Required disclosures** — surfaced from heuristic hits (capital
+  structure, payer concentration, regulatory history, key-
+  dependency).
+- **Action list** — concrete asks of the board.
+
+Translates IC recommendation to board language (PROCEED → APPROVE,
+PASS → DECLINE).
+
+---
+
+## 62. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1385,3 +1451,6 @@ Field list exported as `EXTRA_RED_FLAG_FIELDS` for caller wiring.
 - **2026-04-17** — Added `extra_red_flags.py` (10 more deal-killer
   detectors). Full inventory: 55 modules, 622 pe_intelligence
   unit tests.
+- **2026-04-17** — Added `scenario_narrative.py`,
+  `deal_comparison.py`, `priority_scoring.py`, `board_memo.py`.
+  Full inventory: 59 modules, 648 pe_intelligence unit tests.
