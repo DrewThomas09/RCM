@@ -1744,5 +1744,148 @@ class TestBearBookPatterns(unittest.TestCase):
         self.assertGreaterEqual(len(low_bar), len(high_bar))
 
 
+# ── Exit readiness ──────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ExitReadinessInputs,
+    ExitReadinessReport,
+    ReadinessFinding,
+    score_exit_readiness,
+)
+
+
+class TestExitReadinessScoring(unittest.TestCase):
+
+    def test_fully_ready_scores_high(self) -> None:
+        inputs = ExitReadinessInputs(
+            has_audited_financials_3yr=True,
+            has_trailing_12mo_kpis=True,
+            data_room_organized=True,
+            quality_of_earnings_prepared=True,
+            ebitda_trending_up_last_2q=True,
+            margin_trending_up_last_2q=True,
+            buyer_universe_mapped=True,
+            management_retained_through_close=True,
+            legal_litigation_clean=True,
+            ebitda_adj_recon_documented=True,
+            ebitda_vs_plan=1.02,
+            revenue_vs_plan=1.01,
+        )
+        report = score_exit_readiness(HeuristicContext(), inputs)
+        self.assertGreaterEqual(report.score, 85)
+        self.assertEqual(report.verdict, "ready")
+
+    def test_not_ready_deal_scores_low(self) -> None:
+        inputs = ExitReadinessInputs(
+            has_audited_financials_3yr=False,
+            has_trailing_12mo_kpis=False,
+            data_room_organized=False,
+            quality_of_earnings_prepared=False,
+            ebitda_trending_up_last_2q=False,
+            margin_trending_up_last_2q=False,
+            buyer_universe_mapped=False,
+            management_retained_through_close=False,
+            legal_litigation_clean=False,
+            ebitda_adj_recon_documented=False,
+            ebitda_vs_plan=0.85,
+            revenue_vs_plan=0.90,
+        )
+        report = score_exit_readiness(HeuristicContext(), inputs)
+        self.assertLess(report.score, 30)
+        self.assertEqual(report.verdict, "not_ready")
+
+    def test_midpack_soft_launches(self) -> None:
+        inputs = ExitReadinessInputs(
+            has_audited_financials_3yr=True,
+            has_trailing_12mo_kpis=True,
+            data_room_organized=False,         # gap
+            quality_of_earnings_prepared=False,  # gap
+            ebitda_trending_up_last_2q=True,
+            margin_trending_up_last_2q=True,
+            buyer_universe_mapped=True,
+            management_retained_through_close=True,
+            legal_litigation_clean=True,
+            ebitda_adj_recon_documented=True,
+            ebitda_vs_plan=1.0,
+            revenue_vs_plan=1.0,
+        )
+        report = score_exit_readiness(HeuristicContext(), inputs)
+        self.assertIn(report.verdict, ("soft_launch", "ready"))
+
+    def test_unknown_fields_score_mid(self) -> None:
+        report = score_exit_readiness(HeuristicContext(), ExitReadinessInputs())
+        # Nothing populated — score ~= 50.
+        self.assertGreater(report.score, 30)
+        self.assertLess(report.score, 70)
+
+    def test_findings_have_all_dimensions(self) -> None:
+        report = score_exit_readiness(HeuristicContext(), ExitReadinessInputs(
+            has_audited_financials_3yr=True,
+        ))
+        dims = {f.dimension for f in report.findings}
+        expected = {
+            "audited_financials", "kpi_reporting", "data_room",
+            "quality_of_earnings", "ebitda_trend", "margin_trend",
+            "buyer_universe", "management_retention", "legal_clean",
+            "ebitda_adjustments", "ebitda_vs_plan", "revenue_vs_plan",
+        }
+        self.assertEqual(dims, expected)
+
+    def test_report_to_dict(self) -> None:
+        import json
+        report = score_exit_readiness(HeuristicContext(), ExitReadinessInputs())
+        d = report.to_dict()
+        json.dumps(d)
+
+    def test_performance_beating_plan_scores_high(self) -> None:
+        inputs = ExitReadinessInputs(ebitda_vs_plan=1.08)
+        report = score_exit_readiness(HeuristicContext(), inputs)
+        perf = next(f for f in report.findings if f.dimension == "ebitda_vs_plan")
+        self.assertEqual(perf.status, "ready")
+
+    def test_performance_missing_plan_scores_low(self) -> None:
+        inputs = ExitReadinessInputs(ebitda_vs_plan=0.80)
+        report = score_exit_readiness(HeuristicContext(), inputs)
+        perf = next(f for f in report.findings if f.dimension == "ebitda_vs_plan")
+        self.assertEqual(perf.status, "not_ready")
+
+    def test_headline_matches_verdict(self) -> None:
+        for score_hint, vl in [("ready", "banker"), ("soft_launch", "shore up"), ("not_ready", "not exit-ready")]:
+            if score_hint == "ready":
+                ins = ExitReadinessInputs(has_audited_financials_3yr=True,
+                                          has_trailing_12mo_kpis=True,
+                                          data_room_organized=True,
+                                          quality_of_earnings_prepared=True,
+                                          ebitda_trending_up_last_2q=True,
+                                          margin_trending_up_last_2q=True,
+                                          buyer_universe_mapped=True,
+                                          management_retained_through_close=True,
+                                          legal_litigation_clean=True,
+                                          ebitda_adj_recon_documented=True,
+                                          ebitda_vs_plan=1.02, revenue_vs_plan=1.01)
+            elif score_hint == "not_ready":
+                ins = ExitReadinessInputs(has_audited_financials_3yr=False,
+                                          data_room_organized=False,
+                                          ebitda_trending_up_last_2q=False,
+                                          ebitda_vs_plan=0.80, revenue_vs_plan=0.85)
+            else:
+                ins = ExitReadinessInputs(
+                    has_audited_financials_3yr=True,
+                    has_trailing_12mo_kpis=True,
+                    data_room_organized=False,          # gap
+                    quality_of_earnings_prepared=False,  # gap
+                    ebitda_trending_up_last_2q=True,
+                    margin_trending_up_last_2q=True,
+                    buyer_universe_mapped=True,
+                    management_retained_through_close=True,
+                    legal_litigation_clean=True,
+                    ebitda_adj_recon_documented=True,
+                    ebitda_vs_plan=1.0,
+                    revenue_vs_plan=1.0,
+                )
+            report = score_exit_readiness(HeuristicContext(), ins)
+            self.assertIn(vl, report.headline.lower())
+
+
 if __name__ == "__main__":
     unittest.main()

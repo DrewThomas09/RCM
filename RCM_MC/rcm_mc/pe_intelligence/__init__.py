@@ -75,6 +75,12 @@ from .bear_book import (
     BearPatternHit,
     scan_bear_book,
 )
+from .exit_readiness import (
+    ExitReadinessInputs,
+    ExitReadinessReport,
+    ReadinessFinding,
+    score_exit_readiness,
+)
 from .deal_archetype import (
     ArchetypeContext,
     ArchetypeHit,
@@ -156,4 +162,8 @@ __all__ = [
     "BEAR_PATTERNS",
     "BearPatternHit",
     "scan_bear_book",
+    "ExitReadinessInputs",
+    "ExitReadinessReport",
+    "ReadinessFinding",
+    "score_exit_readiness",
 ]
