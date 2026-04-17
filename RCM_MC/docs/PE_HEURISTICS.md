@@ -2613,7 +2613,62 @@ actually runs.
 
 ---
 
-## 122. Change log
+## 122. Recurring vs one-time EBITDA (`recurring_vs_onetime_ebitda.py`)
+
+**The exit multiple only applies to recurring EBITDA.**
+
+Worked example: $50M reported EBITDA that is $40M recurring +
+$10M from a one-time contract termination payment. At 12x exit:
+
+- Wrong: $50M × 12 = $600M exit EV.
+- Right: $40M × 12 + $10M × 1 = $490M exit EV.
+
+$110M error — the difference between a strong MOIC and a weak
+one.
+
+Recurring categories: `ongoing_operations`, `contracted_revenue`,
+`recurring_fees`, `subscription`, `run_rate_operating`.
+
+One-time categories: `working_capital_release`,
+`sale_leaseback_proceeds`, `contract_termination_payment`,
+`legal_settlement_recovery`, `insurance_recovery`,
+`gain_on_asset_sale`, `one_time_cost_takeout`,
+`grant_or_subsidy_one_time`, `covid_relief`.
+
+Unknown categories default to one-time (partner-prudent).
+
+Packet fields that trigger this: any `ebitda_bridge` item with a
+category keyword indicating a one-time event.
+
+---
+
+## 123. OBBBA / sequestration / site-neutral stress (`obbba_sequestration_stress.py`)
+
+Specific-dollar regulatory shocks partners underwrite against:
+
+- **OBBBA 3% Medicare cut** — applied to Medicare FFS + 50%
+  pass-through MA.
+- **Sequestration extension 2%** — same exposure base.
+- **Site-neutral HOPD** — 22% rate cut on HOPD revenue share.
+- **State Medicaid freeze 3%** — Medicaid exposure by subsector:
+  hospital 22%, safety-net 40%, home-health 25%, specialty 10%,
+  ASC 8%.
+
+Per-shock: `revenue_impact_pct`, `ebitda_impact_m`, and % of base
+EBITDA. Combined partner note:
+
+- ≥ 30% combined → "catastrophic; reduce leverage or pass".
+- 15-30% → "material; model at 50% probability; check covenants".
+- 5-15% → "manageable; fold into downside".
+- < 5% → "immaterial; largely insulated".
+
+Contribution margin on affected revenue is tunable (default
+0.50). Packet fields that trigger: `medicare_ffs_pct`,
+`medicare_advantage_pct`, `hopd_revenue_pct`, subsector.
+
+---
+
+## 124. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2836,3 +2891,10 @@ actually runs.
   recommendation-first IC memo; three-things-that-would-change-my-mind;
   hard rules (2+ deal-killers / 2+ historical matches → PASS).
   Full inventory: 119 modules, 1,184 pe_intelligence unit tests.
+- **2026-04-17** — Added `recurring_vs_onetime_ebitda.py` (§122)
+  — exit multiple applies only to recurring; one-time at 1x.
+  Worked 50M example showing $110M overstatement trap. Full
+  inventory: 120 modules, 1,195 pe_intelligence unit tests.
+- **2026-04-17** — Added `obbba_sequestration_stress.py` (§123) —
+  4 named regulatory shocks with specific $ EBITDA impacts.
+  Full inventory: 121 modules, 1,204 pe_intelligence unit tests.
