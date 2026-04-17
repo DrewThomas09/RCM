@@ -763,6 +763,14 @@ from .outpatient_migration_cascade import (
     render_op_migration_markdown,
     trace_op_migration,
 )
+from .quality_of_diligence_scorer import (
+    REQUIRED as QOD_REQUIRED,
+    DiligenceCompleted,
+    DimensionScore as QoDDimensionScore,
+    QoDReport,
+    render_qod_markdown,
+    score_diligence,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1775,4 +1783,10 @@ __all__ = [
     "OPMigrationStep",
     "render_op_migration_markdown",
     "trace_op_migration",
+    "QOD_REQUIRED",
+    "DiligenceCompleted",
+    "QoDDimensionScore",
+    "QoDReport",
+    "render_qod_markdown",
+    "score_diligence",
 ]

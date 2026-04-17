@@ -13697,5 +13697,106 @@ class TestOutpatientMigrationCascade(unittest.TestCase):
         json.dumps(trace_op_migration(OPMigrationInputs()).to_dict())
 
 
+# ── Quality of diligence scorer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    QOD_REQUIRED,
+    DiligenceCompleted,
+    QoDDimensionScore,
+    QoDReport,
+    render_qod_markdown,
+    score_diligence,
+)
+
+
+class TestQualityOfDiligenceScorer(unittest.TestCase):
+
+    def test_empty_completed_is_not_ic_ready(self) -> None:
+        r = score_diligence(DiligenceCompleted())
+        self.assertFalse(r.ic_ready)
+        self.assertIn("not ic-ready", r.partner_note.lower())
+
+    def test_all_required_present_is_ic_ready(self) -> None:
+        r = score_diligence(DiligenceCompleted(
+            financial=set(QOD_REQUIRED["financial"]),
+            commercial=set(QOD_REQUIRED["commercial"]),
+            clinical=set(QOD_REQUIRED["clinical"]),
+            operational=set(QOD_REQUIRED["operational"]),
+            legal=set(QOD_REQUIRED["legal"]),
+            management=set(QOD_REQUIRED["management"]),
+        ))
+        self.assertTrue(r.ic_ready)
+        self.assertIn("ic-ready", r.partner_note.lower())
+
+    def test_near_ready_partner_note(self) -> None:
+        # All dimensions > 50% but not all ≥ 80%.
+        items = {dim: set(list(REQ)[:len(REQ) - 1])
+                  for dim, REQ in QOD_REQUIRED.items()}
+        # Remove one more from legal to drop it below 80%.
+        items["legal"] = set(list(QOD_REQUIRED["legal"])[:2])
+        r = score_diligence(DiligenceCompleted(
+            financial=items["financial"],
+            commercial=items["commercial"],
+            clinical=items["clinical"],
+            operational=items["operational"],
+            legal=items["legal"],
+            management=items["management"],
+        ))
+        self.assertFalse(r.ic_ready)
+        self.assertEqual(r.weakest_dimension, "legal")
+
+    def test_weakest_dimension_tracked(self) -> None:
+        r = score_diligence(DiligenceCompleted(
+            financial=set(QOD_REQUIRED["financial"]),
+            commercial=set(QOD_REQUIRED["commercial"]),
+            clinical={"quality_metrics_pulled"},
+            operational=set(QOD_REQUIRED["operational"]),
+            legal=set(QOD_REQUIRED["legal"]),
+            management=set(QOD_REQUIRED["management"]),
+        ))
+        self.assertEqual(r.weakest_dimension, "clinical")
+
+    def test_ic_ready_requires_every_dim_80(self) -> None:
+        # Force one dimension to 75% exactly.
+        f = list(QOD_REQUIRED["financial"])
+        r = score_diligence(DiligenceCompleted(
+            financial=set(f[:int(len(f) * 0.66)]),  # ~66%
+            commercial=set(QOD_REQUIRED["commercial"]),
+            clinical=set(QOD_REQUIRED["clinical"]),
+            operational=set(QOD_REQUIRED["operational"]),
+            legal=set(QOD_REQUIRED["legal"]),
+            management=set(QOD_REQUIRED["management"]),
+        ))
+        self.assertFalse(r.ic_ready)
+
+    def test_overall_pct_computed(self) -> None:
+        r = score_diligence(DiligenceCompleted())
+        self.assertEqual(r.overall_pct, 0.0)
+
+    def test_missing_items_reported(self) -> None:
+        r = score_diligence(DiligenceCompleted(
+            financial={"qofe_final"},
+        ))
+        f_dim = next(d for d in r.dimensions if d.dimension == "financial")
+        self.assertIn("nwc_peg_agreed", f_dim.missing_items)
+
+    def test_library_has_six_dimensions(self) -> None:
+        self.assertEqual(set(QOD_REQUIRED.keys()), {
+            "financial", "commercial", "clinical",
+            "operational", "legal", "management",
+        })
+
+    def test_markdown_renders(self) -> None:
+        md = render_qod_markdown(score_diligence(DiligenceCompleted(
+            financial={"qofe_final"},
+        )))
+        self.assertIn("# Quality-of-diligence scorecard", md)
+        self.assertIn("IC-ready", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(score_diligence(DiligenceCompleted()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
