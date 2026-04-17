@@ -700,6 +700,13 @@ from .management_vs_packet_gap import (
     compare_claims,
     render_gap_markdown,
 )
+from .rcm_lever_cascade import (
+    CascadeInputs,
+    CascadeReport,
+    CascadeStep,
+    render_cascade_markdown,
+    trace_cascade,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1667,4 +1674,9 @@ __all__ = [
     "MgmtGapReport",
     "compare_claims",
     "render_gap_markdown",
+    "CascadeInputs",
+    "CascadeReport",
+    "CascadeStep",
+    "render_cascade_markdown",
+    "trace_cascade",
 ]

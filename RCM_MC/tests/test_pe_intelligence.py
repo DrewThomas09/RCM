@@ -12623,5 +12623,114 @@ class TestManagementVsPacketGap(unittest.TestCase):
         ]).to_dict())
 
 
+# ── RCM lever cascade ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CascadeInputs,
+    CascadeReport,
+    CascadeStep,
+    render_cascade_markdown,
+    trace_cascade,
+)
+
+
+class TestRCMLeverCascade(unittest.TestCase):
+
+    def test_denial_rise_produces_ebitda_hit(self) -> None:
+        # Denial rate +2pp, no CDI.
+        r = trace_cascade(CascadeInputs(
+            prior_year_denial_rate=0.08,
+            current_denial_rate=0.10,
+            cdi_program_in_place=False,
+        ))
+        self.assertLess(r.total_ebitda_impact_m, 0)
+
+    def test_cdi_program_offsets(self) -> None:
+        without = trace_cascade(CascadeInputs(
+            prior_year_denial_rate=0.08,
+            current_denial_rate=0.10,
+            cdi_program_in_place=False,
+        ))
+        with_cdi = trace_cascade(CascadeInputs(
+            prior_year_denial_rate=0.08,
+            current_denial_rate=0.10,
+            cdi_program_in_place=True,
+            expected_cdi_cmi_lift=0.08,
+        ))
+        self.assertGreater(with_cdi.total_ebitda_impact_m,
+                            without.total_ebitda_impact_m)
+
+    def test_cash_impact_separate_from_ebitda(self) -> None:
+        r = trace_cascade(CascadeInputs(
+            prior_year_denial_rate=0.08,
+            current_denial_rate=0.10,
+        ))
+        # Denial cascade should produce cash impact beyond EBITDA
+        # (via DAR extension).
+        self.assertLess(r.total_cash_impact_m, r.total_ebitda_impact_m)
+
+    def test_four_steps_present(self) -> None:
+        r = trace_cascade(CascadeInputs(
+            prior_year_denial_rate=0.08,
+            current_denial_rate=0.10,
+        ))
+        self.assertEqual(len(r.steps), 4)
+        names = [s.name for s in r.steps]
+        self.assertEqual(names, ["denial_rate_shift",
+                                   "coding_remediation",
+                                   "medicare_bridge",
+                                   "working_capital"])
+
+    def test_no_cdi_triggers_100_day_ask(self) -> None:
+        r = trace_cascade(CascadeInputs(
+            prior_year_denial_rate=0.08,
+            current_denial_rate=0.10,
+            cdi_program_in_place=False,
+        ))
+        cdi_step = next(s for s in r.steps
+                         if s.name == "coding_remediation")
+        self.assertIn("100-day plan", cdi_step.partner_note)
+
+    def test_cdi_in_place_warns_rac_exposure(self) -> None:
+        r = trace_cascade(CascadeInputs(
+            cdi_program_in_place=True,
+            expected_cdi_cmi_lift=0.10,
+        ))
+        cdi_step = next(s for s in r.steps
+                         if s.name == "coding_remediation")
+        self.assertIn("RAC", cdi_step.partner_note)
+
+    def test_material_cascade_note(self) -> None:
+        r = trace_cascade(CascadeInputs(
+            prior_year_denial_rate=0.05,
+            current_denial_rate=0.15,   # +10pp
+            medicare_cases_per_year=20000,
+            medicare_base_rate_per_case_k=10.0,
+            current_cmi=1.50,
+        ))
+        self.assertIn("material", r.partner_note.lower())
+
+    def test_positive_cascade_note_when_cdi_exceeds_denials(self) -> None:
+        r = trace_cascade(CascadeInputs(
+            prior_year_denial_rate=0.08,
+            current_denial_rate=0.085,   # tiny denial uptick
+            cdi_program_in_place=True,
+            expected_cdi_cmi_lift=0.15,
+        ))
+        self.assertGreater(r.total_ebitda_impact_m, 0)
+
+    def test_markdown_renders(self) -> None:
+        md = render_cascade_markdown(trace_cascade(CascadeInputs(
+            prior_year_denial_rate=0.08, current_denial_rate=0.10,
+        )))
+        self.assertIn("# RCM lever cascade", md)
+        self.assertIn("Step 1:", md)
+        self.assertIn("Step 4:", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(trace_cascade(CascadeInputs()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
