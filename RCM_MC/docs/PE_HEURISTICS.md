@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 70
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 72
 modules + test suite:
 
 | Module | Role |
@@ -776,6 +776,8 @@ modules + test suite:
 | `liquidity_monitor.py` | 13-week cash projection + runway |
 | `ma_pipeline.py` | Add-on acquisition funnel + capacity |
 | `esg_screen.py` | ESG exclusions + composite + reporting gaps |
+| `deepdive_heuristics.py` | 10 mature-diligence partner rules |
+| `master_bundle.py` | One-call build of every PE-intel artifact |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1531,7 +1533,43 @@ ESG diligence screen for LP reporting:
 
 ---
 
-## 73. Change log
+## 73. Deep-dive heuristics (`deepdive_heuristics.py`)
+
+Ten more mature-diligence partner rules:
+
+- `entry_equals_exit_same_year` — flat-multiple + short-hold combo.
+- `rural_govt_concentration` — rural / CAH + ≥60% government mix.
+- `teaching_cmi_mismatch` — major-teaching flag + low CMI.
+- `ebitda_growth_no_volume` — margin expansion > 250 bps with
+  < 5% revenue growth.
+- `long_hold_thin_conversion` — 7+ year hold on < 10% margin asset.
+- `no_operating_partner_assigned` — RCM thesis without named op
+  partner.
+- `mgmt_rollover_too_high` — equity rollover > 30% signals founder-
+  scale limits.
+- `staff_turnover_trend_up` — turnover trending up > 2 pp/yr.
+- `pending_cms_rule` — specific CMS rulemaking affects thesis.
+- `gp_valuation_too_aggressive` — GP mark well above peer comps.
+
+---
+
+## 74. Master bundle (`master_bundle.py`)
+
+One-call aggregator that produces every PE-intel artifact for a
+packet: review, IC memo (markdown / html / text), LP pitch
+(markdown / html), memo formats (one-pager / slack / email / pdf /
+deck), analyst cheatsheet, board memo, 100-day plan markdown,
+narrative styles (analyst / skeptic / three-sentence), extras
+(heuristics, red flags, deepdive, bear-book), regulatory items,
+scenario narrative, partner discussion, audit trail.
+
+Each artifact is guarded — a bug in any one does not take down the
+bundle. Returns a flat JSON-serializable dict for caller persistence
+(SQLite blob, S3, Notion page).
+
+---
+
+## 75. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1637,3 +1675,7 @@ ESG diligence screen for LP reporting:
 - **2026-04-17** — Added `liquidity_monitor.py`, `ma_pipeline.py`,
   `esg_screen.py`. Full inventory: 70 modules, 733
   pe_intelligence unit tests.
+- **2026-04-17** — Added `deepdive_heuristics.py` (10 mature-
+  diligence rules) and `master_bundle.py` (one-call all-artifacts
+  aggregator). Full inventory: 72 modules, 748 pe_intelligence
+  unit tests.
