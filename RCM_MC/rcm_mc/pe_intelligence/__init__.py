@@ -81,6 +81,14 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .pipeline_tracker import (
+    FunnelStats,
+    PIPELINE_STAGES,
+    PipelineDeal,
+    funnel_stats,
+    source_mix,
+    stale_deals,
+)
 from .lp_side_letter_flags import (
     ConformanceFinding,
     SideLetterRule,
@@ -433,4 +441,10 @@ __all__ = [
     "SideLetterSet",
     "check_side_letters",
     "has_breach",
+    "FunnelStats",
+    "PIPELINE_STAGES",
+    "PipelineDeal",
+    "funnel_stats",
+    "source_mix",
+    "stale_deals",
 ]

@@ -3816,5 +3816,89 @@ class TestSideLetterChecks(unittest.TestCase):
         json.dumps([f.to_dict() for f in findings])
 
 
+# ── Pipeline tracker ───────────────────────────────────────────────
+
+from datetime import date as _d
+
+from rcm_mc.pe_intelligence import (
+    FunnelStats,
+    PIPELINE_STAGES,
+    PipelineDeal,
+    funnel_stats,
+    source_mix,
+    stale_deals,
+)
+
+
+def _pipeline_sample() -> List[PipelineDeal]:
+    return [
+        PipelineDeal(deal_id="a", current_stage="sourced", source="banker"),
+        PipelineDeal(deal_id="b", current_stage="sourced", source="direct"),
+        PipelineDeal(deal_id="c", current_stage="screened", source="banker"),
+        PipelineDeal(deal_id="d", current_stage="ioi", source="sponsor"),
+        PipelineDeal(deal_id="e", current_stage="loi", source="banker"),
+        PipelineDeal(deal_id="f", current_stage="closed", source="direct"),
+        PipelineDeal(deal_id="g", current_stage="passed", source="banker"),
+    ]
+
+
+class TestFunnelStats(unittest.TestCase):
+
+    def test_counts_at_or_beyond(self) -> None:
+        stats = funnel_stats(_pipeline_sample())
+        # Exclude "passed" (g). Total non-passed = 6.
+        self.assertEqual(stats.n_by_stage["sourced"], 6)
+        self.assertEqual(stats.n_by_stage["ioi"], 3)  # d, e, f
+        self.assertEqual(stats.n_by_stage["closed"], 1)
+
+    def test_yields_populated(self) -> None:
+        stats = funnel_stats(_pipeline_sample())
+        self.assertIn("sourced->screened", stats.yields)
+        self.assertIn("loi->exclusive", stats.yields)
+
+    def test_empty_pipeline(self) -> None:
+        stats = funnel_stats([])
+        self.assertEqual(sum(stats.n_by_stage.values()), 0)
+
+
+class TestStaleDeals(unittest.TestCase):
+
+    def test_old_deals_flagged(self) -> None:
+        today = _d(2026, 4, 17)
+        deals = [
+            PipelineDeal(deal_id="x", current_stage="ioi",
+                         last_activity_date=_d(2025, 12, 1)),
+            PipelineDeal(deal_id="y", current_stage="ioi",
+                         last_activity_date=_d(2026, 3, 1)),
+        ]
+        stale = stale_deals(deals, today=today, days_threshold=60)
+        self.assertEqual([d.deal_id for d in stale], ["x"])
+
+    def test_terminal_stages_excluded(self) -> None:
+        today = _d(2026, 4, 17)
+        deals = [
+            PipelineDeal(deal_id="x", current_stage="closed",
+                         last_activity_date=_d(2024, 1, 1)),
+        ]
+        stale = stale_deals(deals, today=today, days_threshold=60)
+        self.assertEqual(stale, [])
+
+    def test_missing_activity_date_flagged(self) -> None:
+        today = _d(2026, 4, 17)
+        deals = [PipelineDeal(deal_id="x", current_stage="ioi")]
+        stale = stale_deals(deals, today=today)
+        self.assertEqual(len(stale), 1)
+
+
+class TestSourceMix(unittest.TestCase):
+
+    def test_breakdown_sums_to_one(self) -> None:
+        mix = source_mix(_pipeline_sample())
+        self.assertAlmostEqual(sum(mix.values()), 1.0, places=4)
+
+    def test_empty_returns_empty(self) -> None:
+        self.assertEqual(source_mix([]), {})
+
+
 if __name__ == "__main__":
     unittest.main()
