@@ -128,6 +128,14 @@ from .extra_heuristics import (
     run_all_plus_extras,
     run_extra_heuristics,
 )
+from .extra_bands import (
+    check_bed_occupancy,
+    check_capex_intensity,
+    check_case_mix_index,
+    check_length_of_stay,
+    check_rvu_per_provider,
+    run_extra_bands,
+)
 from .thesis_templates import (
     TEMPLATES as THESIS_TEMPLATES,
     ThesisTemplate,
@@ -651,4 +659,10 @@ __all__ = [
     "score_investability",
     "run_all_plus_extras",
     "run_extra_heuristics",
+    "check_bed_occupancy",
+    "check_capex_intensity",
+    "check_case_mix_index",
+    "check_length_of_stay",
+    "check_rvu_per_provider",
+    "run_extra_bands",
 ]

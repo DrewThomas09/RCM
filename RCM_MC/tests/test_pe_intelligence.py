@@ -5340,5 +5340,111 @@ class TestRunAllPlusExtras(unittest.TestCase):
         self.assertTrue(any(h.id == "clean_claim_rate_low" for h in hits))
 
 
+# ── Extra bands ─────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    check_bed_occupancy,
+    check_capex_intensity,
+    check_case_mix_index,
+    check_length_of_stay,
+    check_rvu_per_provider,
+    run_extra_bands,
+)
+
+
+class TestCapexIntensityBand(unittest.TestCase):
+
+    def test_acute_normal(self) -> None:
+        r = check_capex_intensity(0.05, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_acute_above_ceiling(self) -> None:
+        r = check_capex_intensity(0.18, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_missing_input_unknown(self) -> None:
+        r = check_capex_intensity(None, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+
+class TestBedOccupancyBand(unittest.TestCase):
+
+    def test_acute_normal(self) -> None:
+        r = check_bed_occupancy(0.65, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_acute_under_utilized(self) -> None:
+        r = check_bed_occupancy(0.45, hospital_type="acute_care")
+        self.assertIn(r.verdict, (VERDICT_OUT_OF_BAND, VERDICT_STRETCH,
+                                  VERDICT_IMPLAUSIBLE))
+
+    def test_unknown_sector_returns_unknown(self) -> None:
+        r = check_bed_occupancy(0.85, hospital_type="asc")
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+
+class TestRVUPerProviderBand(unittest.TestCase):
+
+    def test_outpatient_normal(self) -> None:
+        r = check_rvu_per_provider(6200, hospital_type="outpatient")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_outpatient_high(self) -> None:
+        # 9000 is above high=8000 but below stretch_high=10000 → STRETCH.
+        r = check_rvu_per_provider(9000, hospital_type="outpatient")
+        self.assertEqual(r.verdict, VERDICT_STRETCH)
+
+    def test_ignores_non_outpatient(self) -> None:
+        r = check_rvu_per_provider(6000, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+
+class TestCMIBand(unittest.TestCase):
+
+    def test_acute_normal(self) -> None:
+        r = check_case_mix_index(1.45, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_ignores_non_acute(self) -> None:
+        r = check_case_mix_index(1.45, hospital_type="asc")
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+    def test_high_cmi_flagged(self) -> None:
+        r = check_case_mix_index(4.0, hospital_type="acute_care")
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+
+class TestLOSBand(unittest.TestCase):
+
+    def test_behavioral_normal(self) -> None:
+        r = check_length_of_stay(12, hospital_type="behavioral")
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_post_acute_extreme(self) -> None:
+        r = check_length_of_stay(150, hospital_type="post_acute")
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_ignores_non_applicable(self) -> None:
+        r = check_length_of_stay(3, hospital_type="asc")
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+
+class TestRunExtraBands(unittest.TestCase):
+
+    def test_orchestrator_produces_five_checks(self) -> None:
+        checks = run_extra_bands(
+            hospital_type="acute_care",
+            capex_pct_of_revenue=0.05, bed_occupancy=0.65,
+            rvu_per_provider=None, case_mix_index=1.50,
+            avg_length_of_stay=None,
+        )
+        self.assertEqual(len(checks), 5)
+
+    def test_missing_inputs_produce_unknowns(self) -> None:
+        checks = run_extra_bands(hospital_type="acute_care")
+        for c in checks:
+            self.assertEqual(c.verdict, VERDICT_UNKNOWN)
+
+
 if __name__ == "__main__":
     unittest.main()
