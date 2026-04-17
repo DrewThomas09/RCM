@@ -1919,7 +1919,33 @@ coverage cost of that decision visible.
 
 ---
 
-## 97. Change log
+## 97. Refinancing window (`refinancing_window.py`)
+
+Rule-based refi decision engine over a debt stack. For each
+tranche, produces one of:
+
+- **refi_now** — maturity within 1 year, OR current rate is
+  ≥100 bps above market with healthy covenant headroom in a
+  flat/rising-rate environment.
+- **refi_in_1_year** — rates rising AND maturity in 2-3 years;
+  lock in before the squeeze.
+- **wait** — rates falling (better pricing coming), OR covenant
+  headroom too thin (< 15%) to approach lenders.
+- **hold_to_maturity** — no edge available.
+
+Aggregate output: `total_maturity_wall_m` (principal due in next
+24 months) + partner note. This replaces "should we refi?" gut
+calls with a rule-based board-ready memo.
+
+Healthcare-PE wrinkles not yet encoded:
+
+- PIK debt behaves differently; this module treats it as cash-pay.
+- Revolver reserves don't mature in the normal sense — treat
+  as operating runway, not refi object.
+
+---
+
+## 98. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2065,3 +2091,6 @@ coverage cost of that decision visible.
 - **2026-04-17** — Added `capital_structure_tradeoff.py` (§96) —
   leverage sweep with coverage + default-risk + status. Full
   inventory: 94 modules, 924 pe_intelligence unit tests.
+- **2026-04-17** — Added `refinancing_window.py` (§97) — per-tranche
+  refi/wait/hold recommendations + maturity wall aggregation. Full
+  inventory: 95 modules, 934 pe_intelligence unit tests.
