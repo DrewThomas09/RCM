@@ -1352,5 +1352,142 @@ class TestIngestPipeline(unittest.TestCase):
         os.unlink(db_path)
 
 
+# ===========================================================================
+# Comparables
+# ===========================================================================
+
+class TestComparables(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def _kkr_hca(self):
+        return {
+            "source_id": "seed_001",
+            "deal_name": "HCA Healthcare – KKR/Bain",
+            "ev_mm": 33000,
+            "ebitda_at_entry_mm": 2900,
+            "hold_years": 4.0,
+            "payer_mix": {"medicare": 0.40, "medicaid": 0.12, "commercial": 0.42, "self_pay": 0.06},
+        }
+
+    def _mid_market(self):
+        return {
+            "deal_name": "Fictional Mid-Market Hospital",
+            "ev_mm": 400,
+            "ebitda_at_entry_mm": 45,
+            "hold_years": 5.0,
+            "payer_mix": {"medicare": 0.48, "medicaid": 0.20, "commercial": 0.28, "self_pay": 0.04},
+        }
+
+    def test_find_comparables_returns_list(self):
+        from rcm_mc.data_public.comparables import find_comparables
+        comps = find_comparables(self._kkr_hca(), self.db_path, n=5)
+        self.assertIsInstance(comps, list)
+        self.assertGreater(len(comps), 0)
+
+    def test_find_comparables_excludes_self(self):
+        from rcm_mc.data_public.comparables import find_comparables
+        comps = find_comparables(self._kkr_hca(), self.db_path, n=10)
+        ids = [c.source_id for c in comps]
+        self.assertNotIn("seed_001", ids)
+
+    def test_find_comparables_sorted_by_score(self):
+        from rcm_mc.data_public.comparables import find_comparables
+        comps = find_comparables(self._kkr_hca(), self.db_path, n=5)
+        scores = [c.similarity_score for c in comps]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_scores_in_range(self):
+        from rcm_mc.data_public.comparables import find_comparables
+        comps = find_comparables(self._kkr_hca(), self.db_path, n=10)
+        for c in comps:
+            self.assertGreaterEqual(c.similarity_score, 0.0)
+            self.assertLessEqual(c.similarity_score, 100.0)
+
+    def test_comparable_has_required_fields(self):
+        from rcm_mc.data_public.comparables import find_comparables
+        comps = find_comparables(self._kkr_hca(), self.db_path, n=3)
+        self.assertTrue(len(comps) > 0)
+        c = comps[0]
+        self.assertIsInstance(c.deal_name, str)
+        self.assertIsInstance(c.matched_dimensions, list)
+        self.assertTrue(len(c.matched_dimensions) > 0)
+
+    def test_matched_dimensions_are_valid(self):
+        from rcm_mc.data_public.comparables import find_comparables
+        valid_dims = {"log_ev", "log_ebitda", "ev_ebitda_mult", "hold_years",
+                      "medicare", "medicaid", "commercial", "self_pay"}
+        comps = find_comparables(self._kkr_hca(), self.db_path, n=5)
+        for c in comps:
+            for dim in c.matched_dimensions:
+                self.assertIn(dim, valid_dims)
+
+    def test_find_by_metrics(self):
+        from rcm_mc.data_public.comparables import find_by_metrics
+        comps = find_by_metrics(
+            ev_mm=1200,
+            ebitda_mm=130,
+            payer_mix={"medicare": 0.45, "medicaid": 0.18, "commercial": 0.33, "self_pay": 0.04},
+            corpus_db_path=self.db_path,
+            n=5,
+        )
+        self.assertIsInstance(comps, list)
+        self.assertGreater(len(comps), 0)
+
+    def test_comparables_table_returns_string(self):
+        from rcm_mc.data_public.comparables import comparables_table
+        out = comparables_table(self._kkr_hca(), self.db_path, n=3)
+        self.assertIsInstance(out, str)
+        self.assertIn("Comparable Deals", out)
+        self.assertIn("Score", out)
+
+    def test_as_dict_serialisable(self):
+        from rcm_mc.data_public.comparables import find_comparables
+        comps = find_comparables(self._mid_market(), self.db_path, n=3)
+        for c in comps:
+            d = c.as_dict()
+            self.assertIn("source_id", d)
+            self.assertIn("similarity_score", d)
+            json.dumps(d)  # must be JSON-serialisable
+
+    def test_mid_market_finds_medium_size_deals(self):
+        from rcm_mc.data_public.comparables import find_comparables
+        comps = find_comparables(self._mid_market(), self.db_path, n=5, exclude_self=False)
+        # All should have ev_mm; the closest should be <$2B (not the mega-deals)
+        ev_values = [c.ev_mm for c in comps if c.ev_mm is not None]
+        if ev_values:
+            # At least some should be under $3B (mid-market)
+            self.assertTrue(any(ev < 3000 for ev in ev_values))
+
+    def test_cli_comps(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "comps", "--deal-id", "seed_007", "--n", "3"])
+        out = buf.getvalue()
+        self.assertIn("Comparable Deals", out)
+        self.assertIn("Score", out)
+
+    def test_cli_comps_json(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "comps", "--deal-id", "seed_001", "--n", "3", "--json"])
+        data = json.loads(buf.getvalue())
+        self.assertIsInstance(data, list)
+        self.assertLessEqual(len(data), 3)
+        self.assertIn("similarity_score", data[0])
+
+
 if __name__ == "__main__":
     unittest.main()

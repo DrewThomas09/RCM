@@ -182,6 +182,22 @@ def _cmd_full_ingest(args: argparse.Namespace) -> None:
         print(_json.dumps(report.as_dict(), indent=2, default=str))
 
 
+def _cmd_comps(args: argparse.Namespace) -> None:
+    from .comparables import find_comparables, comparables_table
+    corpus = DealsCorpus(args.db)
+    deal = corpus.get(args.deal_id)
+    if not deal:
+        print(f"Deal '{args.deal_id}' not found.")
+        sys.exit(1)
+
+    n = args.n
+    if args.json:
+        comps = find_comparables(deal, args.db, n=n)
+        print(json.dumps([c.as_dict() for c in comps], indent=2, default=str))
+    else:
+        print(comparables_table(deal, args.db, n=n))
+
+
 def _cmd_score(args: argparse.Namespace) -> None:
     from .deal_scorer import score_corpus, quality_report, score_deal
     corpus = DealsCorpus(args.db)
@@ -282,6 +298,12 @@ def main(argv=None) -> None:
     sv.add_argument("--deal-id", required=True, dest="deal_id")
     sv.add_argument("--json", action="store_true")
 
+    # comps
+    cp = sub.add_parser("comps", help="Find comparable closed deals from the corpus")
+    cp.add_argument("--deal-id", required=True, dest="deal_id")
+    cp.add_argument("--n", type=int, default=5, help="Number of comparables to return")
+    cp.add_argument("--json", action="store_true")
+
     # score
     sc = sub.add_parser("score", help="Score deal data quality (0-100, A-F grade)")
     sc.add_argument("--deal-id", default=None, dest="deal_id",
@@ -300,6 +322,7 @@ def main(argv=None) -> None:
         "intel": _cmd_intel,
         "sensitivity": _cmd_sensitivity,
         "score": _cmd_score,
+        "comps": _cmd_comps,
     }
     dispatch[args.cmd](args)
 
