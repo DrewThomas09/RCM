@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .diligence_tracker import (
+    DiligenceBoard,
+    DiligenceItem,
+    WORKSTREAMS,
+    board_from_review,
+    render_board_markdown,
+)
 from .ic_voting import (
     ROLE_WEIGHTS,
     Vote,
@@ -238,4 +245,9 @@ __all__ = [
     "aggregate_vote",
     "auto_vote_from_review",
     "default_committee",
+    "DiligenceBoard",
+    "DiligenceItem",
+    "WORKSTREAMS",
+    "board_from_review",
+    "render_board_markdown",
 ]

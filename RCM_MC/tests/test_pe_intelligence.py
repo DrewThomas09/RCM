@@ -2441,5 +2441,135 @@ class TestAutoVoteFromReview(unittest.TestCase):
         self.assertGreater(len(votes[0].conditions), 0)
 
 
+# ── Diligence tracker ──────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DiligenceBoard,
+    DiligenceItem,
+    WORKSTREAMS,
+    board_from_review,
+    render_board_markdown,
+)
+from rcm_mc.pe_intelligence.diligence_tracker import (
+    STATUS_BLOCKED,
+    STATUS_COMPLETE,
+    STATUS_IN_PROGRESS,
+    STATUS_NOT_STARTED,
+)
+
+
+class TestDiligenceBoard(unittest.TestCase):
+
+    def test_add_and_retrieve(self) -> None:
+        board = DiligenceBoard()
+        item = DiligenceItem(id="f_rev", workstream="financial", title="Revenue QoE")
+        board.add(item)
+        self.assertIn("f_rev", board.items)
+
+    def test_update_status(self) -> None:
+        board = DiligenceBoard()
+        board.add(DiligenceItem(id="op_ar", workstream="operational", title="AR aging"))
+        board.update_status("op_ar", STATUS_COMPLETE, finding="Clean across buckets")
+        self.assertEqual(board.items["op_ar"].status, STATUS_COMPLETE)
+        self.assertEqual(board.items["op_ar"].finding, "Clean across buckets")
+
+    def test_update_status_unknown_item_raises(self) -> None:
+        board = DiligenceBoard()
+        with self.assertRaises(KeyError):
+            board.update_status("nope", STATUS_COMPLETE)
+
+    def test_completion_pct(self) -> None:
+        board = DiligenceBoard()
+        board.add(DiligenceItem(id="a", workstream="financial", title="a"))
+        board.add(DiligenceItem(id="b", workstream="financial", title="b"))
+        board.add(DiligenceItem(id="c", workstream="financial", title="c"))
+        board.update_status("a", STATUS_COMPLETE)
+        board.update_status("b", STATUS_COMPLETE)
+        # 2/3 = 0.67
+        self.assertAlmostEqual(board.completion_pct(), 2 / 3, places=2)
+
+    def test_critical_open_lists_high_priority_open(self) -> None:
+        board = DiligenceBoard()
+        board.add(DiligenceItem(id="a", workstream="financial",
+                                title="a", is_critical=True,
+                                status=STATUS_IN_PROGRESS))
+        board.add(DiligenceItem(id="b", workstream="financial",
+                                title="b", is_critical=False,
+                                status=STATUS_IN_PROGRESS))
+        board.add(DiligenceItem(id="c", workstream="financial",
+                                title="c", is_critical=True,
+                                status=STATUS_COMPLETE))
+        critical = board.critical_open()
+        self.assertEqual({i.id for i in critical}, {"a"})
+
+    def test_is_ic_ready_checks_p0_and_critical_blocked(self) -> None:
+        board = DiligenceBoard()
+        board.add(DiligenceItem(id="a", workstream="financial",
+                                title="a", priority="P0",
+                                status=STATUS_COMPLETE))
+        self.assertTrue(board.is_ic_ready())
+        board.add(DiligenceItem(id="b", workstream="financial",
+                                title="b", priority="P0",
+                                status=STATUS_IN_PROGRESS))
+        self.assertFalse(board.is_ic_ready())
+
+    def test_blockers_returns_only_blocked(self) -> None:
+        board = DiligenceBoard()
+        board.add(DiligenceItem(id="a", workstream="financial",
+                                title="a", status=STATUS_BLOCKED,
+                                blocker="Seller stonewalling"))
+        board.add(DiligenceItem(id="b", workstream="financial",
+                                title="b", status=STATUS_IN_PROGRESS))
+        blockers = board.blockers()
+        self.assertEqual(len(blockers), 1)
+        self.assertEqual(blockers[0].id, "a")
+
+    def test_board_to_dict_roundtrip(self) -> None:
+        import json
+        board = DiligenceBoard(deal_id="x", deal_name="Acme")
+        board.add(DiligenceItem(id="op_x", workstream="operational", title="x"))
+        json.dumps(board.to_dict())
+
+
+class TestBoardFromReview(unittest.TestCase):
+
+    def test_board_created_from_review(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.60, "commercial": 0.30, "medicaid": 0.10},
+            exit_multiple=11.5, ebitda_m=50.0,
+            denial_improvement_bps_per_yr=400,
+            covenant_headroom_pct=0.10,
+        )
+        review = partner_review_from_context(ctx, deal_id="d1", deal_name="Test")
+        board = board_from_review(review)
+        self.assertEqual(board.deal_id, "d1")
+        self.assertGreater(len(board.items), 0)
+
+    def test_hits_mapped_to_workstreams(self) -> None:
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=400)
+        # contract_labor_share is a red-flag field, set via setattr.
+        setattr(ctx, "contract_labor_share", 0.22)
+        review = partner_review_from_context(ctx, deal_id="d2")
+        board = board_from_review(review)
+        ws = {i.workstream for i in board.items.values()}
+        # Denial hit → operational; labor red-flag → hr_benefits.
+        self.assertIn("operational", ws)
+
+
+class TestRenderBoardMarkdown(unittest.TestCase):
+
+    def test_markdown_renders_headers(self) -> None:
+        ctx = HeuristicContext(
+            payer_mix={"medicare": 0.60, "commercial": 0.30, "medicaid": 0.10},
+            exit_multiple=11.5, ebitda_m=50.0,
+            denial_improvement_bps_per_yr=400,
+        )
+        review = partner_review_from_context(ctx, deal_id="d1", deal_name="Test")
+        md = render_board_markdown(board_from_review(review))
+        self.assertIn("Diligence Board", md)
+        self.assertIn("IC-ready", md)
+        self.assertIn("Completion", md)
+
+
 if __name__ == "__main__":
     unittest.main()
