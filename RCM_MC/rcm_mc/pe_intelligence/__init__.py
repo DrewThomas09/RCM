@@ -679,6 +679,13 @@ from .first_thirty_minutes import (
     build_first_thirty,
     render_first_thirty_markdown,
 )
+from .thesis_coherence_check import (
+    CoherenceReport,
+    Incoherence,
+    ThesisPillar,
+    check_coherence,
+    render_coherence_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1631,4 +1638,9 @@ __all__ = [
     "PartnerQuestion",
     "build_first_thirty",
     "render_first_thirty_markdown",
+    "CoherenceReport",
+    "Incoherence",
+    "ThesisPillar",
+    "check_coherence",
+    "render_coherence_markdown",
 ]

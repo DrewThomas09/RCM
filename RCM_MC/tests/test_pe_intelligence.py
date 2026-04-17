@@ -12364,5 +12364,112 @@ class TestFirstThirtyMinutes(unittest.TestCase):
         json.dumps(plan.to_dict())
 
 
+# ── Thesis coherence check ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CoherenceReport,
+    Incoherence,
+    ThesisPillar,
+    check_coherence,
+    render_coherence_markdown,
+)
+
+
+class TestThesisCoherenceCheck(unittest.TestCase):
+
+    def test_volume_margin_without_labor_investment(self) -> None:
+        r = check_coherence([
+            ThesisPillar("volume_growth", 0.15),
+            ThesisPillar("margin_expansion", 0.03),
+        ])
+        pairs = [i.pair for i in r.incoherences]
+        self.assertIn(("volume_growth", "margin_expansion"), pairs)
+
+    def test_labor_reduction_without_enabling_investment(self) -> None:
+        r = check_coherence([
+            ThesisPillar("labor_cost_reduction", -0.08),
+        ])
+        pairs = [i.pair for i in r.incoherences]
+        self.assertIn(("labor_cost_reduction", "enabling_investment"),
+                       pairs)
+
+    def test_rate_growth_over_5_flagged(self) -> None:
+        r = check_coherence([
+            ThesisPillar("price_growth", 0.07),
+        ])
+        self.assertTrue(any(i.pair[0] == "price_growth"
+                             for i in r.incoherences))
+
+    def test_volume_plus_quality_tension(self) -> None:
+        r = check_coherence([
+            ThesisPillar("volume_growth", 0.18),
+            ThesisPillar("quality_improvement", 0.05),
+        ])
+        self.assertTrue(any(i.pair == ("volume_growth", "quality_improvement")
+                             for i in r.incoherences))
+
+    def test_rollup_without_integration_investment(self) -> None:
+        r = check_coherence([
+            ThesisPillar("roll_up_closings", 0.15),
+        ])
+        self.assertTrue(any(i.pair == ("roll_up_closings", "integration_investment")
+                             for i in r.incoherences))
+
+    def test_multiple_expansion_always_flagged(self) -> None:
+        r = check_coherence([
+            ThesisPillar("multiple_expansion", 0.10),
+        ])
+        self.assertTrue(any(i.pair[0] == "multiple_expansion"
+                             for i in r.incoherences))
+
+    def test_score_penalized_by_severity(self) -> None:
+        clean = check_coherence([
+            ThesisPillar("volume_growth", 0.05),
+            ThesisPillar("margin_expansion", 0.01),
+            ThesisPillar("labor_cost_reduction", -0.03),
+            ThesisPillar("technology_investment", 0.03),
+        ])
+        messy = check_coherence([
+            ThesisPillar("volume_growth", 0.20),
+            ThesisPillar("margin_expansion", 0.04),
+            ThesisPillar("labor_cost_reduction", -0.10),
+            ThesisPillar("roll_up_closings", 0.20),
+            ThesisPillar("price_growth", 0.07),
+        ])
+        self.assertGreater(clean.coherence_score_0_100,
+                            messy.coherence_score_0_100)
+
+    def test_incoherent_thesis_note(self) -> None:
+        r = check_coherence([
+            ThesisPillar("volume_growth", 0.20),
+            ThesisPillar("margin_expansion", 0.04),
+            ThesisPillar("labor_cost_reduction", -0.10),
+            ThesisPillar("roll_up_closings", 0.20),
+            ThesisPillar("price_growth", 0.08),
+            ThesisPillar("multiple_expansion", 0.05),
+        ])
+        self.assertIn("internally incoherent", r.partner_note.lower())
+
+    def test_clean_thesis_note(self) -> None:
+        r = check_coherence([
+            ThesisPillar("volume_growth", 0.04),
+            ThesisPillar("price_growth", 0.025),
+        ])
+        self.assertIn("fit together", r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_coherence_markdown(check_coherence([
+            ThesisPillar("volume_growth", 0.20),
+            ThesisPillar("margin_expansion", 0.04),
+        ]))
+        self.assertIn("# Thesis coherence check", md)
+        self.assertIn("Pillar tensions", md)
+
+    def test_json(self) -> None:
+        import json
+        r = check_coherence([ThesisPillar("volume_growth", 0.05)])
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
