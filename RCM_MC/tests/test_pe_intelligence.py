@@ -4427,5 +4427,52 @@ class TestSummarizeAlerts(unittest.TestCase):
         self.assertEqual(summary["counts"]["medium"], 1)
 
 
+# ── Recon ──────────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ReconFinding,
+    has_mismatch,
+    reconcile,
+)
+
+
+class TestReconcile(unittest.TestCase):
+
+    def test_clean_deal_reconciles(self) -> None:
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx)
+        findings = reconcile(review)
+        self.assertFalse(has_mismatch(findings))
+
+    def test_plan_coverage_check_with_high_hit(self) -> None:
+        from rcm_mc.pe_intelligence import generate_plan
+        ctx = HeuristicContext(denial_improvement_bps_per_yr=400,
+                               days_in_ar=70)
+        review = partner_review_from_context(ctx)
+        plan = generate_plan(review)
+        findings = reconcile(review, plan=plan)
+        # Should be OK because denial + AR hits map to plan actions.
+        # At minimum, no mismatch on CRITICAL (none fire).
+        plan_check = next(f for f in findings
+                          if f.check == "plan_covers_high_hits")
+        self.assertIsNotNone(plan_check)
+
+    def test_board_coverage_check(self) -> None:
+        from rcm_mc.pe_intelligence import DiligenceBoard
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        review = partner_review_from_context(ctx)
+        board = DiligenceBoard()
+        findings = reconcile(review, board=board)
+        # Only testing that the check runs, not whether it passes.
+        self.assertTrue(any(f.check == "board_p0_covers_critical"
+                            for f in findings))
+
+    def test_finding_to_dict(self) -> None:
+        import json
+        ctx = HeuristicContext(payer_mix={"commercial": 0.55})
+        findings = reconcile(partner_review_from_context(ctx))
+        json.dumps([f.to_dict() for f in findings])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -81,6 +81,11 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .recon import (
+    ReconFinding,
+    has_mismatch,
+    reconcile,
+)
 from .kpi_alert_rules import (
     DEFAULT_RULES as KPI_DEFAULT_RULES,
     KPIAlert,
@@ -525,4 +530,7 @@ __all__ = [
     "evaluate_kpi",
     "evaluate_kpi_alerts",
     "summarize_kpi_alerts",
+    "ReconFinding",
+    "has_mismatch",
+    "reconcile",
 ]
