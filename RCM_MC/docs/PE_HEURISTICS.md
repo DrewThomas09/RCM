@@ -2844,7 +2844,46 @@ third-party report that takes 4 weeks.
 
 ---
 
-## 129. Change log
+## 129. Partner traps library (`partner_traps_library.py`)
+
+Named thesis traps partners have seen before. Each has a
+seller_pitch, partner_rebuttal, and matching packet fields. The
+user explicitly cited three:
+
+- **fix_denials_in_12_months** — "we can get initial-denial rate
+  from 12% down to 5% in 12 months." Partner rebuttal: 200-300
+  bps/yr is the realistic ceiling; model 50% realization.
+- **payer_renegotiation_is_coming** — "we're up for renegotiation
+  next year; scale gives us leverage." Partner rebuttal: rate
+  cards rarely deliver 5%+; headline wins come from mix shifts.
+- **ma_will_make_it_up** — "Medicare Advantage enrollment growth
+  will offset Medicare FFS rate risk." Partner rebuttal: MA
+  plans pass through rate changes with 12-18mo lag — absorbs
+  risk, doesn't cushion it.
+
+Plus 7 more:
+
+- **back_office_synergies_year_1** — 25-30% is year-1 realization.
+- **robust_bolt_on_pipeline** — 10-15% close rate on pipeline.
+- **ceo_stays_through_exit** — founder retention past 3 years
+  runs ~40%.
+- **we_are_underpenetrated** — structural bottlenecks often
+  misdiagnosed as market-share gaps.
+- **quality_and_growth_together** — rapid growth depresses
+  quality 18-24 months.
+- **multiple_will_re_rate** — exit multiple expansion is the
+  weakest leg; underwrite ≤ entry.
+- **technology_platform_lift** — first-year gains are 3-5%, not
+  10%+.
+
+`match_traps(ctx)` scans the packet; each trap has a matcher that
+reads specific fields. Rendered markdown reads as "here's what
+the seller is likely to say and here's the partner response" — a
+drop-in tool for anyone preparing for IC.
+
+---
+
+## 130. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3096,3 +3135,7 @@ third-party report that takes 4 weeks.
   30-item canonical list with packet/MI/third-party source tags
   and answered/needs/stale/missing status per item. Full
   inventory: 126 modules, 1,263 pe_intelligence unit tests.
+- **2026-04-17** — Added `partner_traps_library.py` (§129) — 10
+  named thesis traps including the three user-cited: fix-denials-
+  in-12-months, payer-renegotiation-coming, MA-will-make-it-up.
+  Full inventory: 127 modules, 1,277 pe_intelligence unit tests.
