@@ -81,6 +81,15 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .commercial_due_diligence import (
+    CDDFinding,
+    CDDInputs,
+    competitive_position,
+    growth_plausibility,
+    market_share_check,
+    market_size_sanity,
+    run_cdd_checks,
+)
 from .operational_kpi_cascade import (
     KPICascadeInputs,
     KPIMovement,
@@ -459,4 +468,11 @@ __all__ = [
     "build_cascade",
     "top_levers",
     "total_ebitda_impact",
+    "CDDFinding",
+    "CDDInputs",
+    "competitive_position",
+    "growth_plausibility",
+    "market_share_check",
+    "market_size_sanity",
+    "run_cdd_checks",
 ]

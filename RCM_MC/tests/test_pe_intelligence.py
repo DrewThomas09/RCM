@@ -3981,5 +3981,115 @@ class TestTotalEBITDAImpact(unittest.TestCase):
         self.assertAlmostEqual(total, sum_all - ar_impact, delta=1)
 
 
+# ── Commercial due diligence ──────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CDDFinding,
+    CDDInputs,
+    competitive_position,
+    growth_plausibility,
+    market_share_check,
+    market_size_sanity,
+    run_cdd_checks,
+)
+
+
+class TestMarketSizeSanity(unittest.TestCase):
+
+    def test_tam_within_ceiling_passes(self) -> None:
+        finding = market_size_sanity(CDDInputs(
+            subsector="asc", stated_tam_usd_b=40.0,
+        ))
+        self.assertEqual(finding.status, "pass")
+
+    def test_tam_exceeds_ceiling_flagged(self) -> None:
+        finding = market_size_sanity(CDDInputs(
+            subsector="asc", stated_tam_usd_b=80.0,
+        ))
+        self.assertEqual(finding.status, "flag")
+
+    def test_missing_tam_unknown(self) -> None:
+        finding = market_size_sanity(CDDInputs(subsector="asc"))
+        self.assertEqual(finding.status, "unknown")
+
+
+class TestMarketShareCheck(unittest.TestCase):
+
+    def test_small_share_passes(self) -> None:
+        finding = market_share_check(CDDInputs(
+            subsector="asc", target_revenue_m=500, stated_tam_usd_b=40,
+        ))
+        self.assertEqual(finding.status, "pass")
+
+    def test_dominant_share_flagged(self) -> None:
+        finding = market_share_check(CDDInputs(
+            subsector="asc", target_revenue_m=12_000, stated_tam_usd_b=40,
+        ))
+        self.assertEqual(finding.status, "flag")
+
+
+class TestGrowthPlausibility(unittest.TestCase):
+
+    def test_norm_growth_passes(self) -> None:
+        finding = growth_plausibility(CDDInputs(
+            subsector="asc", stated_market_growth_pct=0.07,
+        ))
+        self.assertEqual(finding.status, "pass")
+
+    def test_above_norm_flagged(self) -> None:
+        finding = growth_plausibility(CDDInputs(
+            subsector="asc", stated_market_growth_pct=0.14,
+        ))
+        self.assertEqual(finding.status, "flag")
+
+    def test_percent_input_normalized(self) -> None:
+        finding = growth_plausibility(CDDInputs(
+            subsector="acute_care", stated_market_growth_pct=3.0,
+        ))
+        # 3.0 treated as 3% (normalized). Should pass.
+        self.assertEqual(finding.status, "pass")
+
+
+class TestCompetitivePosition(unittest.TestCase):
+
+    def test_leader_position(self) -> None:
+        finding = competitive_position(CDDInputs(
+            subsector="asc", differentiation="high",
+            competitive_intensity="low",
+        ))
+        self.assertEqual(finding.status, "pass")
+        self.assertIn("leader", finding.detail)
+
+    def test_weak_position_flagged(self) -> None:
+        finding = competitive_position(CDDInputs(
+            subsector="asc", differentiation="low",
+            competitive_intensity="high",
+        ))
+        self.assertEqual(finding.status, "flag")
+        self.assertIn("weak_position", finding.detail)
+
+    def test_missing_inputs_unknown(self) -> None:
+        finding = competitive_position(CDDInputs(subsector="asc"))
+        self.assertEqual(finding.status, "unknown")
+
+
+class TestRunCDDChecks(unittest.TestCase):
+
+    def test_full_cdd_run(self) -> None:
+        findings = run_cdd_checks(CDDInputs(
+            subsector="asc", stated_tam_usd_b=40, target_revenue_m=500,
+            stated_market_growth_pct=0.07, differentiation="moderate",
+            competitive_intensity="moderate",
+        ))
+        self.assertEqual(len(findings), 4)
+
+    def test_finding_to_dict(self) -> None:
+        import json
+        findings = run_cdd_checks(CDDInputs(
+            subsector="asc", stated_tam_usd_b=40,
+        ))
+        json.dumps([f.to_dict() for f in findings])
+
+
 if __name__ == "__main__":
     unittest.main()
