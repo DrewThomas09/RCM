@@ -733,7 +733,8 @@ class DealsCorpus:
         """Load built-in seed deals (core + extended batches). Returns count upserted."""
         from .extended_seed import EXTENDED_SEED_DEALS
         from .extended_seed_2 import EXTENDED_SEED_DEALS_2
-        all_seed = _SEED_DEALS + EXTENDED_SEED_DEALS + EXTENDED_SEED_DEALS_2
+        from .extended_seed_3 import EXTENDED_SEED_DEALS_3
+        all_seed = _SEED_DEALS + EXTENDED_SEED_DEALS + EXTENDED_SEED_DEALS_2 + EXTENDED_SEED_DEALS_3
 
         if skip_if_populated:
             with self._connect() as con:
