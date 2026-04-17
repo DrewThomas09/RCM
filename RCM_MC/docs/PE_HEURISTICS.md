@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 85
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 87
 modules + test suite:
 
 | Module | Role |
@@ -791,6 +791,8 @@ modules + test suite:
 | `post_mortem.py` | Exit-deal lessons-learned template |
 | `cycle_timing.py` | Market-cycle phase classifier |
 | `exit_planning.py` | Year-by-year exit preparation roadmap |
+| `benchmark_bands.py` | SG&A / interest / SSSG / NWC / outpatient bands |
+| `payer_mix_risk.py` | Payer HHI + MA / MMC / ACA / mix-shift flags |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1767,7 +1769,32 @@ Complement to `exit_readiness.py` (static scorecard) —
 
 ---
 
-## 88. Change log
+## 88. Benchmark bands (`benchmark_bands.py`)
+
+Additional subsector bands extending the reasonableness matrix:
+
+- **SG&A as % of revenue** — subsector-specific overhead bands.
+- **Interest-to-EBITDA** — LBO debt-service intensity.
+- **Same-store sales growth** — volume-vs-rate decomposition.
+- **Net working-capital days** — AR + inventory - AP.
+- **Outpatient revenue share** — for acute-care and CAH.
+
+---
+
+## 89. Payer-mix risk (`payer_mix_risk.py`)
+
+Finer-grained payer-mix analysis beyond simple regime classification:
+
+- Payer HHI (0-10000 scale).
+- Dominant-payer flag (single payer ≥ 50%).
+- Medicare Advantage ≥ 30% flag (MA behaves differently from FFS).
+- Medicaid Managed Care ≥ 30% flag.
+- ACA exchange ≥ 20% flag.
+- Mix-shift flags from year-over-year trend data.
+
+---
+
+## 90. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1895,4 +1922,7 @@ Complement to `exit_readiness.py` (static scorecard) —
   modules, 827 pe_intelligence unit tests.
 - **2026-04-17** — Added `post_mortem.py`, `cycle_timing.py`,
   `exit_planning.py`. Full inventory: 85 modules, 850
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `benchmark_bands.py` and
+  `payer_mix_risk.py`. Full inventory: 87 modules, 865
   pe_intelligence unit tests.
