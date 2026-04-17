@@ -81,6 +81,14 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .value_creation_tracker import (
+    LeverActual,
+    LeverPlan,
+    LeverStatus,
+    evaluate_lever,
+    evaluate_plan,
+    rollup_status,
+)
 from .workbench_integration import (
     archetype_summary,
     build_api_payload,
@@ -274,4 +282,10 @@ __all__ = [
     "archetype_summary",
     "build_api_payload",
     "build_workbench_bundle",
+    "LeverActual",
+    "LeverPlan",
+    "LeverStatus",
+    "evaluate_lever",
+    "evaluate_plan",
+    "rollup_status",
 ]

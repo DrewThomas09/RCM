@@ -2751,5 +2751,124 @@ class TestWorkbenchIntegration(unittest.TestCase):
         self.assertIsInstance(summary["ranked"], list)
 
 
+# ── Value creation tracker ─────────────────────────────────────────
+
+from datetime import date as _date
+
+from rcm_mc.pe_intelligence import (
+    LeverActual,
+    LeverPlan,
+    LeverStatus,
+    evaluate_lever,
+    evaluate_plan,
+    rollup_status,
+)
+
+
+class TestEvaluateLever(unittest.TestCase):
+
+    def test_on_track(self) -> None:
+        plan = LeverPlan(
+            name="denial_rate", unit="bps", baseline=1200,
+            year1_target=1000, year2_target=800, year3_target=600,
+            lower_is_better=True,
+        )
+        actual = LeverActual(lever_name="denial_rate", as_of=_date.today(),
+                             observed_value=1000)
+        status = evaluate_lever(plan, actual, year_in_hold=1)
+        self.assertEqual(status.status, "on_track")
+
+    def test_ahead_of_plan(self) -> None:
+        plan = LeverPlan(
+            name="ar_days", unit="days", baseline=60,
+            year1_target=55, lower_is_better=True,
+        )
+        actual = LeverActual(lever_name="ar_days", as_of=_date.today(),
+                             observed_value=50)
+        status = evaluate_lever(plan, actual, year_in_hold=1)
+        self.assertEqual(status.status, "ahead")
+
+    def test_behind_plan(self) -> None:
+        plan = LeverPlan(
+            name="ar_days", unit="days", baseline=60,
+            year1_target=50, lower_is_better=True,
+        )
+        actual = LeverActual(lever_name="ar_days", as_of=_date.today(),
+                             observed_value=56)
+        status = evaluate_lever(plan, actual, year_in_hold=1)
+        # Expected delta = -10, actual delta = -4 → pct = 0.4 → off_track.
+        self.assertIn(status.status, ("behind", "off_track"))
+
+    def test_off_track(self) -> None:
+        plan = LeverPlan(
+            name="margin", unit="pct", baseline=0.08,
+            year1_target=0.10, year2_target=0.12,
+        )
+        actual = LeverActual(lever_name="margin", as_of=_date.today(),
+                             observed_value=0.081)
+        status = evaluate_lever(plan, actual, year_in_hold=2)
+        # Expected = 0.04 delta; actual = 0.001; pct = 0.025 → off_track.
+        self.assertEqual(status.status, "off_track")
+
+    def test_no_target_unknown(self) -> None:
+        plan = LeverPlan(name="x", unit="pct", baseline=10)
+        actual = LeverActual(lever_name="x", as_of=_date.today(),
+                             observed_value=11)
+        status = evaluate_lever(plan, actual, year_in_hold=1)
+        self.assertEqual(status.status, "unknown")
+
+
+class TestEvaluatePlan(unittest.TestCase):
+
+    def test_missing_actual_becomes_unknown(self) -> None:
+        plans = [LeverPlan(name="x", unit="pct", baseline=10, year1_target=15)]
+        statuses = evaluate_plan(plans, [], year_in_hold=1)
+        self.assertEqual(len(statuses), 1)
+        self.assertEqual(statuses[0].status, "unknown")
+
+    def test_multiple_levers_mixed_status(self) -> None:
+        plans = [
+            LeverPlan(name="a", unit="pct", baseline=10, year1_target=15),
+            LeverPlan(name="b", unit="days", baseline=60,
+                      year1_target=50, lower_is_better=True),
+        ]
+        actuals = [
+            LeverActual(lever_name="a", as_of=_date.today(), observed_value=15),
+            LeverActual(lever_name="b", as_of=_date.today(), observed_value=58),
+        ]
+        statuses = evaluate_plan(plans, actuals, year_in_hold=1)
+        self.assertEqual(len(statuses), 2)
+
+
+class TestRollupStatus(unittest.TestCase):
+
+    def test_all_on_track_produces_positive_headline(self) -> None:
+        statuses = [
+            LeverStatus(lever_name="a", unit="pct", baseline=10,
+                        target_current=15, observed=15, delta_vs_plan=0,
+                        pct_of_plan=1.0, status="on_track"),
+            LeverStatus(lever_name="b", unit="pct", baseline=10,
+                        target_current=12, observed=13, delta_vs_plan=1,
+                        pct_of_plan=1.5, status="ahead"),
+        ]
+        summary = rollup_status(statuses)
+        self.assertEqual(summary["total"], 2)
+        self.assertIn("on pace", summary["headline"])
+
+    def test_off_track_escalates(self) -> None:
+        statuses = [
+            LeverStatus(lever_name="a", unit="pct", baseline=10,
+                        target_current=15, observed=10.2,
+                        delta_vs_plan=-4.8, pct_of_plan=0.04,
+                        status="off_track"),
+        ]
+        summary = rollup_status(statuses)
+        self.assertIn("off-track", summary["headline"])
+
+    def test_empty_returns_no_levers_headline(self) -> None:
+        summary = rollup_status([])
+        self.assertIn("No levers", summary["headline"])
+
+
 if __name__ == "__main__":
     unittest.main()
