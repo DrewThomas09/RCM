@@ -8191,5 +8191,91 @@ class TestPeerDiscovery(unittest.TestCase):
         self.assertEqual(matches, [])
 
 
+# ── Reimbursement cliffs ──────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CliffImpact,
+    CliffReport,
+    ReimbursementCliff,
+    default_cliff_library,
+    evaluate_cliffs,
+    render_cliff_report_markdown,
+)
+
+
+class TestReimbursementCliffs(unittest.TestCase):
+
+    def test_cliff_in_hold_flagged(self) -> None:
+        cliffs = [ReimbursementCliff(
+            id="cms_cut", name="CMS cut", effective_year=2028,
+            affected_payer="medicare", rate_change_bps=-200,
+        )]
+        report = evaluate_cliffs(
+            cliffs, current_year=2026, hold_years=5,
+            revenue_by_payer={"medicare": 100_000_000,
+                              "commercial": 100_000_000},
+        )
+        self.assertEqual(len(report.cliffs_in_hold), 1)
+        self.assertLess(report.total_dollar_impact, 0)
+
+    def test_cliff_outside_hold_excluded(self) -> None:
+        cliffs = [ReimbursementCliff(
+            id="future", name="Future", effective_year=2050,
+            affected_payer="medicare", rate_change_bps=-200,
+        )]
+        report = evaluate_cliffs(
+            cliffs, current_year=2026, hold_years=5,
+            revenue_by_payer={"medicare": 100_000_000},
+        )
+        self.assertEqual(report.cliffs_in_hold, [])
+
+    def test_state_specific_cliff_filtered(self) -> None:
+        cliffs = [ReimbursementCliff(
+            id="ny_only", name="NY Medicaid freeze", effective_year=2027,
+            affected_payer="medicaid", rate_change_bps=-300, state="NY",
+        )]
+        # Deal in TX — cliff should be filtered out.
+        report = evaluate_cliffs(
+            cliffs, current_year=2026, hold_years=5, state="TX",
+            revenue_by_payer={"medicaid": 50_000_000},
+        )
+        self.assertEqual(report.cliffs_in_hold, [])
+
+    def test_severity_scales_with_revenue(self) -> None:
+        cliffs = [ReimbursementCliff(
+            id="big", name="Big cut", effective_year=2028,
+            affected_payer="medicare", rate_change_bps=-500,
+        )]
+        report = evaluate_cliffs(
+            cliffs, current_year=2026, hold_years=5,
+            revenue_by_payer={"medicare": 200_000_000,
+                              "commercial": 100_000_000},
+        )
+        self.assertEqual(report.cliffs_in_hold[0].severity, "high")
+
+    def test_default_library_non_empty(self) -> None:
+        lib = default_cliff_library()
+        self.assertGreater(len(lib), 3)
+
+    def test_markdown_renders(self) -> None:
+        cliffs = default_cliff_library()
+        report = evaluate_cliffs(
+            cliffs, current_year=2026, hold_years=5,
+            revenue_by_payer={"medicare": 100_000_000,
+                              "medicaid": 50_000_000},
+        )
+        md = render_cliff_report_markdown(report)
+        self.assertIn("# Reimbursement cliffs", md)
+
+    def test_report_json(self) -> None:
+        import json
+        report = evaluate_cliffs(
+            default_cliff_library(),
+            current_year=2026, hold_years=5,
+            revenue_by_payer={"medicare": 100_000_000},
+        )
+        json.dumps(report.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

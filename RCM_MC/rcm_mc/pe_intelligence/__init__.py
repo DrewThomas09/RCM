@@ -355,6 +355,14 @@ from .peer_discovery import (
     find_peers,
     render_peers_markdown,
 )
+from .reimbursement_cliff import (
+    CliffImpact,
+    CliffReport,
+    ReimbursementCliff,
+    default_cliff_library,
+    evaluate_cliffs,
+    render_cliff_report_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1063,4 +1071,10 @@ __all__ = [
     "PeerMatch",
     "find_peers",
     "render_peers_markdown",
+    "CliffImpact",
+    "CliffReport",
+    "ReimbursementCliff",
+    "default_cliff_library",
+    "evaluate_cliffs",
+    "render_cliff_report_markdown",
 ]
