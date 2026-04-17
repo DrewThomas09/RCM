@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 30
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 32
 modules + test suite:
 
 | Module | Role |
@@ -736,6 +736,8 @@ modules + test suite:
 | `working_capital.py` | AR/AP/DIO days-to-cash release math |
 | `fund_model.py` | Fund-level DPI/TVPI/NAV + vintage percentile |
 | `regulatory_stress.py` | $ EBITDA impact of CMS/Medicaid/340B shocks |
+| `cash_conversion.py` | FCF/EBITDA by subsector with peer bands |
+| `lp_side_letter_flags.py` | LP conformance (sector / state / concentration / ESG) |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -900,7 +902,34 @@ hurt*.
 
 ---
 
-## 33. Change log
+## 33. Cash conversion (`cash_conversion.py`)
+
+Measures how much EBITDA actually shows up as free cash flow.
+`expected_conversion_by_subsector` returns target bands:
+ASC 70-85%, acute care 50-68%, behavioral 60-75%, post-acute 55-70%,
+specialty 60-75%, outpatient 65-82%, critical access 40-60%.
+`assess_conversion` returns status ("above" / "in_band" / "below")
+with partner commentary — low conversion with high leverage is the
+pattern that kills deals.
+
+---
+
+## 34. LP side-letter conformance (`lp_side_letter_flags.py`)
+
+Checks a candidate deal against an LP `SideLetterSet`:
+
+- Sector exclusions (e.g., "no ASCs").
+- Geographic exclusions.
+- Single-deal concentration cap.
+- Government-payer mix cap.
+- ESG screens (no tobacco, no short-term detention).
+
+Returns `ConformanceFinding` items flagged as "breach" / "warning" /
+"info". `has_breach(findings)` for quick gate check.
+
+---
+
+## 35. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -950,3 +979,6 @@ hurt*.
 - **2026-04-17** — Added `regulatory_stress.py` (quantifies $ EBITDA
   impact of CMS/Medicaid/340B/site-neutral/SNF-VBP shocks). Full
   inventory: 30 modules, 395 pe_intelligence unit tests.
+- **2026-04-17** — Added `cash_conversion.py` (FCF/EBITDA by
+  subsector) and `lp_side_letter_flags.py` (LP conformance screen).
+  Full inventory: 32 modules, 415 pe_intelligence unit tests.
