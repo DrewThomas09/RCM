@@ -10938,5 +10938,87 @@ class TestQofETracker(unittest.TestCase):
         json.dumps(track_qofe(QofEInputs()).to_dict())
 
 
+# ── Board composition analyzer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    REQUIRED_COMMITTEES,
+    REQUIRED_EXPERIENCE_AREAS,
+    BoardGap,
+    BoardInputs,
+    BoardMember,
+    BoardReport,
+    analyze_board,
+    render_board_markdown,
+)
+
+
+class TestBoardCompositionAnalyzer(unittest.TestCase):
+
+    def test_empty_board(self) -> None:
+        r = analyze_board(BoardInputs())
+        self.assertEqual(r.total_seats, 0)
+
+    def test_sponsor_heavy_flags_independence(self) -> None:
+        r = analyze_board(BoardInputs(members=[
+            BoardMember("A", "sponsor"),
+            BoardMember("B", "sponsor"),
+            BoardMember("C", "sponsor"),
+            BoardMember("D", "management"),
+        ], committees=["audit", "compensation", "compliance"]))
+        self.assertTrue(any(g.area == "independence" for g in r.gaps))
+
+    def test_missing_committee_flagged_healthcare(self) -> None:
+        r = analyze_board(BoardInputs(
+            members=[
+                BoardMember("A", "sponsor"),
+                BoardMember("B", "independent",
+                             experience_areas=["healthcare_ops", "clinical",
+                                               "public_co", "finance"]),
+                BoardMember("C", "management"),
+            ],
+            committees=["audit", "compensation"],
+            is_healthcare=True,
+        ))
+        self.assertIn("compliance", r.missing_committees)
+
+    def test_experience_coverage_flagged_missing(self) -> None:
+        r = analyze_board(BoardInputs(members=[
+            BoardMember("A", "sponsor", ["finance"]),
+            BoardMember("B", "independent", ["public_co"]),
+            BoardMember("C", "management"),
+        ], committees=["audit", "compensation", "compliance"]))
+        self.assertTrue(any(g.area == "clinical" for g in r.gaps))
+
+    def test_strong_board_note(self) -> None:
+        r = analyze_board(BoardInputs(members=[
+            BoardMember("A", "sponsor", ["finance"]),
+            BoardMember("B", "sponsor"),
+            BoardMember("C", "independent",
+                         ["healthcare_ops", "clinical"],
+                         is_diverse=True),
+            BoardMember("D", "independent",
+                         ["public_co", "finance"], is_diverse=True),
+            BoardMember("E", "management"),
+        ], committees=["audit", "compensation", "compliance"]))
+        self.assertIn("strong", r.partner_note.lower())
+
+    def test_constants_defined(self) -> None:
+        self.assertIn("clinical", REQUIRED_EXPERIENCE_AREAS)
+        self.assertIn("audit", REQUIRED_COMMITTEES)
+
+    def test_markdown_renders(self) -> None:
+        md = render_board_markdown(analyze_board(BoardInputs(members=[
+            BoardMember("A", "sponsor"),
+            BoardMember("B", "independent"),
+        ], committees=["audit"])))
+        self.assertIn("# Board composition analysis", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(analyze_board(BoardInputs(members=[
+            BoardMember("A", "sponsor"),
+        ])).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

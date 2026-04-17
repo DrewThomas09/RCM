@@ -575,6 +575,16 @@ from .qofe_tracker import (
     render_qofe_markdown,
     track_qofe,
 )
+from .board_composition_analyzer import (
+    REQUIRED_COMMITTEES,
+    REQUIRED_EXPERIENCE_AREAS,
+    BoardGap,
+    BoardInputs,
+    BoardMember,
+    BoardReport,
+    analyze_board,
+    render_board_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1447,4 +1457,12 @@ __all__ = [
     "QofETracker",
     "render_qofe_markdown",
     "track_qofe",
+    "REQUIRED_COMMITTEES",
+    "REQUIRED_EXPERIENCE_AREAS",
+    "BoardGap",
+    "BoardInputs",
+    "BoardMember",
+    "BoardReport",
+    "analyze_board",
+    "render_board_markdown",
 ]
