@@ -502,6 +502,14 @@ from .technology_debt_assessor import (
     assess_technology_debt,
     render_tech_debt_markdown,
 )
+from .roic_decomposition import (
+    ROICFinding,
+    ROICInputs,
+    ROICResult,
+    SUBSECTOR_BANDS as ROIC_SUBSECTOR_BANDS,
+    decompose_roic,
+    render_roic_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1319,4 +1327,10 @@ __all__ = [
     "TechDebtReport",
     "assess_technology_debt",
     "render_tech_debt_markdown",
+    "ROIC_SUBSECTOR_BANDS",
+    "ROICFinding",
+    "ROICInputs",
+    "ROICResult",
+    "decompose_roic",
+    "render_roic_markdown",
 ]

@@ -10090,5 +10090,98 @@ class TestTechnologyDebtAssessor(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── ROIC decomposition ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ROIC_SUBSECTOR_BANDS,
+    ROICFinding,
+    ROICInputs,
+    ROICResult,
+    decompose_roic,
+    render_roic_markdown,
+)
+
+
+class TestROICDecomposition(unittest.TestCase):
+
+    def test_in_band_specialty_practice(self) -> None:
+        r = decompose_roic(ROICInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, ebit_m=20.0, invested_capital_m=50.0,
+            tax_rate=0.25,
+        ))
+        # Margin 20% (in band 18-25).
+        # Turnover 2.0 (in band 1.5-2.5).
+        # NOPAT 15, ROIC 30% (in band 20-35).
+        self.assertAlmostEqual(r.ebit_margin, 0.20, places=2)
+        self.assertAlmostEqual(r.capital_turnover, 2.0, places=2)
+        self.assertAlmostEqual(r.roic, 0.30, places=2)
+        self.assertTrue(all(f.verdict == "in_band" for f in r.findings))
+
+    def test_weak_margin_flagged(self) -> None:
+        r = decompose_roic(ROICInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, ebit_m=10.0,  # 10% margin, below 18
+            invested_capital_m=50.0,
+        ))
+        margin = next(f for f in r.findings if f.component == "ebit_margin")
+        self.assertEqual(margin.verdict, "below_band")
+
+    def test_above_band_top_of_range_note(self) -> None:
+        r = decompose_roic(ROICInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, ebit_m=30.0,  # margin 30% above band
+            invested_capital_m=30.0,       # turnover 3.3x above band
+        ))
+        # 2+ above_band → strong note.
+        self.assertIn("top of peer range", r.partner_note.lower())
+
+    def test_multiple_weak_links_note(self) -> None:
+        r = decompose_roic(ROICInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, ebit_m=8.0,   # weak margin
+            invested_capital_m=120.0,       # weak turnover
+        ))
+        self.assertIn("needs", r.partner_note.lower())
+
+    def test_unknown_subsector(self) -> None:
+        r = decompose_roic(ROICInputs(
+            subsector="unknown", revenue_m=100.0, ebit_m=20.0,
+            invested_capital_m=50.0,
+        ))
+        self.assertIn("not in ROIC library", r.partner_note)
+        self.assertEqual(r.findings, [])
+
+    def test_nopat_tax_applied(self) -> None:
+        r = decompose_roic(ROICInputs(
+            subsector="hospital",
+            revenue_m=500.0, ebit_m=60.0, invested_capital_m=700.0,
+            tax_rate=0.30,
+        ))
+        # NOPAT = 60 × 0.7 = 42.
+        self.assertAlmostEqual(r.nopat_m, 42.0, places=1)
+
+    def test_subsector_library_non_empty(self) -> None:
+        self.assertIn("specialty_practice", ROIC_SUBSECTOR_BANDS)
+        self.assertIn("hospital", ROIC_SUBSECTOR_BANDS)
+
+    def test_markdown_renders(self) -> None:
+        r = decompose_roic(ROICInputs(
+            subsector="outpatient_asc",
+            revenue_m=100.0, ebit_m=30.0, invested_capital_m=60.0,
+        ))
+        md = render_roic_markdown(r)
+        self.assertIn("# ROIC decomposition", md)
+        self.assertIn("outpatient_asc", md)
+
+    def test_json(self) -> None:
+        import json
+        r = decompose_roic(ROICInputs(
+            subsector="hospital", revenue_m=100.0, ebit_m=12.0,
+            invested_capital_m=130.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
