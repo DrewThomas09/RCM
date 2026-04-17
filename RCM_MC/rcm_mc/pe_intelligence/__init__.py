@@ -472,6 +472,13 @@ from .ma_integration_scoreboard import (
     render_scoreboard_markdown,
     score_bolton,
 )
+from .customer_concentration_drilldown import (
+    ConcentrationAnalysis,
+    CustomerRecord,
+    CustomerRisk,
+    analyze_customers,
+    render_concentration_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1267,4 +1274,9 @@ __all__ = [
     "build_scoreboard",
     "render_scoreboard_markdown",
     "score_bolton",
+    "ConcentrationAnalysis",
+    "CustomerRecord",
+    "CustomerRisk",
+    "analyze_customers",
+    "render_concentration_markdown",
 ]

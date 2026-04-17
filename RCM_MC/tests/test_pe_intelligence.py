@@ -9670,5 +9670,102 @@ class TestMAIntegrationScoreboard(unittest.TestCase):
         json.dumps(build_scoreboard([good]).to_dict())
 
 
+# ── Customer concentration drilldown ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ConcentrationAnalysis,
+    CustomerRecord,
+    CustomerRisk,
+    analyze_customers,
+    render_concentration_markdown,
+)
+
+
+class TestCustomerConcentrationDrilldown(unittest.TestCase):
+
+    def _diversified(self) -> List[CustomerRecord]:
+        return [
+            CustomerRecord(name=f"Cust{i}", annual_revenue_m=10.0)
+            for i in range(20)
+        ]
+
+    def _concentrated(self) -> List[CustomerRecord]:
+        return [
+            CustomerRecord(name="Giant", annual_revenue_m=80.0),
+            CustomerRecord(name="Small1", annual_revenue_m=5.0),
+            CustomerRecord(name="Small2", annual_revenue_m=5.0),
+            CustomerRecord(name="Small3", annual_revenue_m=5.0),
+            CustomerRecord(name="Small4", annual_revenue_m=5.0),
+        ]
+
+    def test_top_n_shares(self) -> None:
+        a = analyze_customers(self._diversified())
+        # 20 equal customers → top-1 = 5%, top-5 = 25%, top-10 = 50%.
+        self.assertAlmostEqual(a.top_1_pct, 5.0, places=1)
+        self.assertAlmostEqual(a.top_5_pct, 25.0, places=1)
+        self.assertAlmostEqual(a.top_10_pct, 50.0, places=1)
+
+    def test_concentrated_partner_note(self) -> None:
+        a = analyze_customers(self._concentrated())
+        self.assertIn("material", a.partner_note.lower())
+        self.assertGreater(a.top_1_pct, 50)
+
+    def test_empty_book_note(self) -> None:
+        a = analyze_customers([])
+        self.assertIn("No customer revenue", a.partner_note)
+
+    def test_hhi_equal_customers_low(self) -> None:
+        a = analyze_customers(self._diversified())
+        # 20 equal customers: HHI = 20 * (5)^2 = 500.
+        self.assertLess(a.customer_hhi, 600)
+
+    def test_known_at_risk_high_churn_prob(self) -> None:
+        a = analyze_customers([
+            CustomerRecord(name="A", annual_revenue_m=10.0, known_at_risk=True),
+            CustomerRecord(name="B", annual_revenue_m=10.0),
+        ])
+        risky = next(r for r in a.customer_risks if r.name == "A")
+        self.assertGreater(risky.churn_probability, 0.50)
+
+    def test_expiring_near_renewal_flagged(self) -> None:
+        a = analyze_customers([
+            CustomerRecord(name="BigRenewSoon", annual_revenue_m=50.0,
+                            contract_status="expiring",
+                            months_until_renewal=3),
+            CustomerRecord(name="Other", annual_revenue_m=50.0),
+        ])
+        big = next(r for r in a.customer_risks if r.name == "BigRenewSoon")
+        self.assertTrue(any("renewing" in f.lower() for f in big.flags))
+
+    def test_revenue_at_risk_aggregates(self) -> None:
+        a = analyze_customers(self._concentrated())
+        self.assertGreater(a.total_revenue_at_risk_m, 0)
+
+    def test_cross_sell_upside_when_underpenetrated(self) -> None:
+        a = analyze_customers([
+            CustomerRecord(name="Big", annual_revenue_m=100.0,
+                            products_purchased=1, products_available=5),
+        ])
+        self.assertGreater(a.customer_risks[0].cross_sell_upside_m, 0)
+
+    def test_at_will_contract_flagged(self) -> None:
+        a = analyze_customers([
+            CustomerRecord(name="AtWillCo", annual_revenue_m=50.0,
+                            contract_status="at_will"),
+            CustomerRecord(name="Other", annual_revenue_m=50.0),
+        ])
+        aw = next(r for r in a.customer_risks if r.name == "AtWillCo")
+        self.assertTrue(any("at-will" in f.lower() for f in aw.flags))
+
+    def test_markdown_renders(self) -> None:
+        md = render_concentration_markdown(analyze_customers(self._concentrated()))
+        self.assertIn("# Customer concentration drilldown", md)
+        self.assertIn("Giant", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(analyze_customers(self._diversified()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
