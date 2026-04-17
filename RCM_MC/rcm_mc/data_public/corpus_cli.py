@@ -182,6 +182,31 @@ def _cmd_full_ingest(args: argparse.Namespace) -> None:
         print(_json.dumps(report.as_dict(), indent=2, default=str))
 
 
+def _cmd_diligence(args: argparse.Namespace) -> None:
+    from .diligence_checklist import build_checklist, checklist_text, checklist_json
+    corpus = DealsCorpus(args.db)
+    deal = corpus.get(args.deal_id)
+    if not deal:
+        print(f"Deal '{args.deal_id}' not found.")
+        sys.exit(1)
+
+    overrides: dict = {}
+    if args.assumptions:
+        try:
+            overrides = json.loads(args.assumptions)
+        except json.JSONDecodeError:
+            print("--assumptions must be JSON")
+            sys.exit(1)
+
+    entry_debt = overrides.pop("entry_debt_mm", None)
+    checklist = build_checklist(deal, args.db, entry_debt_mm=entry_debt)
+
+    if args.json:
+        print(json.dumps(checklist_json(checklist), indent=2, default=str))
+    else:
+        print(checklist_text(checklist))
+
+
 def _cmd_exit(args: argparse.Namespace) -> None:
     from .exit_modeling import (
         ExitAssumptions, model_all_exits, model_exit,
@@ -391,6 +416,13 @@ def main(argv=None) -> None:
     sv.add_argument("--deal-id", required=True, dest="deal_id")
     sv.add_argument("--json", action="store_true")
 
+    # diligence
+    dil = sub.add_parser("diligence", help="Full IC diligence checklist for a corpus deal")
+    dil.add_argument("--deal-id", required=True, dest="deal_id")
+    dil.add_argument("--assumptions", default=None,
+                     help="JSON overrides, e.g. '{\"entry_debt_mm\": 2000}'")
+    dil.add_argument("--json", action="store_true")
+
     # exit
     ex = sub.add_parser("exit", help="Model exit scenarios and IRR/MOIC for a deal")
     ex.add_argument("--deal-id", required=True, dest="deal_id")
@@ -442,6 +474,7 @@ def main(argv=None) -> None:
         "vintage": _cmd_vintage,
         "leverage": _cmd_leverage,
         "exit": _cmd_exit,
+        "diligence": _cmd_diligence,
     }
     dispatch[args.cmd](args)
 

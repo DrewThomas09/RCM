@@ -57,6 +57,7 @@ from .exit_modeling import (
     exit_table,
     irr_sensitivity,
 )
+from .diligence_checklist import build_checklist, checklist_text, checklist_json
 
 __all__ = [
     "DealsCorpus",
@@ -100,4 +101,7 @@ __all__ = [
     "build_value_bridge",
     "exit_table",
     "irr_sensitivity",
+    "build_checklist",
+    "checklist_text",
+    "checklist_json",
 ]

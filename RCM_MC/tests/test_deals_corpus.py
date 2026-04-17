@@ -1490,6 +1490,132 @@ class TestComparables(unittest.TestCase):
 
 
 # ===========================================================================
+# Diligence Checklist
+# ===========================================================================
+
+class TestDiligenceChecklist(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def _well_documented_deal(self):
+        return {
+            "deal_name": "Test Hospital – PE Buyout",
+            "year": 2018,
+            "buyer": "KKR",
+            "seller": "Health System Inc.",
+            "ev_mm": 800,
+            "ebitda_at_entry_mm": 90,
+            "hold_years": 5.0,
+            "realized_moic": 2.4,
+            "realized_irr": 0.19,
+            "payer_mix": {"medicare": 0.45, "medicaid": 0.20, "commercial": 0.30, "self_pay": 0.05},
+            "source": "seed",
+        }
+
+    def test_build_checklist_returns_object(self):
+        from rcm_mc.data_public.diligence_checklist import build_checklist
+        checklist = build_checklist(self._well_documented_deal(), self.db_path)
+        self.assertIsNotNone(checklist)
+        self.assertGreater(len(checklist.items), 5)
+
+    def test_checklist_has_all_sections(self):
+        from rcm_mc.data_public.diligence_checklist import build_checklist
+        checklist = build_checklist(self._well_documented_deal(), self.db_path)
+        sections = {item.section for item in checklist.items}
+        self.assertIn("1. Deal Overview", sections)
+        self.assertIn("2. Returns Analysis", sections)
+        self.assertIn("3. Capital Structure", sections)
+        self.assertIn("4. Payer Mix Risk", sections)
+        self.assertIn("5. PE Intelligence", sections)
+        self.assertIn("6. Data Quality", sections)
+
+    def test_checklist_counts(self):
+        from rcm_mc.data_public.diligence_checklist import build_checklist
+        checklist = build_checklist(self._well_documented_deal(), self.db_path)
+        self.assertGreaterEqual(checklist.critical_count, 0)
+        self.assertGreaterEqual(checklist.warning_count, 0)
+
+    def test_checklist_text_output(self):
+        from rcm_mc.data_public.diligence_checklist import build_checklist, checklist_text
+        checklist = build_checklist(self._well_documented_deal(), self.db_path)
+        text = checklist_text(checklist)
+        self.assertIsInstance(text, str)
+        self.assertIn("Diligence Checklist", text)
+        self.assertIn("Deal Overview", text)
+
+    def test_checklist_json_serialisable(self):
+        from rcm_mc.data_public.diligence_checklist import build_checklist, checklist_json
+        checklist = build_checklist(self._well_documented_deal(), self.db_path)
+        d = checklist_json(checklist)
+        json.dumps(d)
+        self.assertIn("deal_name", d)
+        self.assertIn("sections", d)
+        self.assertIn("open_questions", d)
+
+    def test_sparse_deal_has_missing_items(self):
+        from rcm_mc.data_public.diligence_checklist import build_checklist
+        sparse = {"deal_name": "Sparse Deal", "ev_mm": 300}
+        checklist = build_checklist(sparse, self.db_path)
+        statuses = {item.status for item in checklist.items}
+        self.assertIn("MISSING", statuses)
+
+    def test_high_leverage_deal_flags_critical(self):
+        from rcm_mc.data_public.diligence_checklist import build_checklist
+        deal = {
+            "deal_name": "High Leverage Deal",
+            "ev_mm": 1000,
+            "ebitda_at_entry_mm": 80,  # 12.5x entry multiple
+            "hold_years": 5,
+            "payer_mix": {"medicare": 0.50, "medicaid": 0.30, "commercial": 0.20},
+        }
+        checklist = build_checklist(deal, self.db_path,
+                                    entry_debt_mm=900)  # 90% debt → very high leverage
+        statuses = [item.status for item in checklist.items]
+        self.assertIn("CRITICAL", statuses)
+
+    def test_open_questions_list(self):
+        from rcm_mc.data_public.diligence_checklist import build_checklist
+        checklist = build_checklist(self._well_documented_deal(), self.db_path)
+        self.assertIsInstance(checklist.open_questions, list)
+
+    def test_corpus_deal_checklist(self):
+        from rcm_mc.data_public.diligence_checklist import build_checklist
+        corpus = DealsCorpus(self.db_path)
+        deal = corpus.get("seed_007")  # Envision / KKR
+        self.assertIsNotNone(deal)
+        checklist = build_checklist(deal, self.db_path)
+        self.assertGreater(len(checklist.items), 10)
+
+    def test_cli_diligence(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "diligence", "--deal-id", "seed_001"])
+        out = buf.getvalue()
+        self.assertIn("Diligence Checklist", out)
+        self.assertIn("Deal Overview", out)
+
+    def test_cli_diligence_json(self):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path, "diligence", "--deal-id", "seed_007", "--json"])
+        data = json.loads(buf.getvalue())
+        self.assertIn("deal_name", data)
+        self.assertIn("sections", data)
+
+
+# ===========================================================================
 # Exit Modeling
 # ===========================================================================
 
