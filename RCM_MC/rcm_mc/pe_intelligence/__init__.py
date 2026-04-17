@@ -383,6 +383,16 @@ from .coinvest_sizing import (
     render_coinvest_markdown,
     size_coinvest,
 )
+from .sensitivity_grid import (
+    SUPPORTED_VARIABLES as SENSITIVITY_VARIABLES,
+    SensitivityBase,
+    SensitivityGrid,
+    SensitivityPoint,
+    render_sensitivity_markdown,
+    render_tornado_markdown,
+    run_sensitivity,
+    tornado,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1111,4 +1121,12 @@ __all__ = [
     "CoInvestSizing",
     "render_coinvest_markdown",
     "size_coinvest",
+    "SENSITIVITY_VARIABLES",
+    "SensitivityBase",
+    "SensitivityGrid",
+    "SensitivityPoint",
+    "render_sensitivity_markdown",
+    "render_tornado_markdown",
+    "run_sensitivity",
+    "tornado",
 ]

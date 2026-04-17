@@ -8485,5 +8485,133 @@ class TestCoInvestSizing(unittest.TestCase):
         self.assertGreaterEqual(s.fund_commitment_m, 0.0)
 
 
+# ── Sensitivity grid ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    SENSITIVITY_VARIABLES,
+    SensitivityBase,
+    SensitivityGrid,
+    SensitivityPoint,
+    render_sensitivity_markdown,
+    render_tornado_markdown,
+    run_sensitivity,
+    tornado,
+)
+
+
+class TestSensitivityGrid(unittest.TestCase):
+
+    def _base(self) -> SensitivityBase:
+        return SensitivityBase(
+            ebitda_m=50.0, entry_multiple=11.0, exit_multiple=11.0,
+            ebitda_growth=0.10, leverage_multiple=5.5, hold_years=5,
+        )
+
+    def test_exit_multiple_sweep(self) -> None:
+        g = run_sensitivity(self._base(), "exit_multiple",
+                             [8.0, 9.0, 10.0, 11.0, 12.0, 13.0])
+        self.assertEqual(g.variable, "exit_multiple")
+        self.assertEqual(len(g.points), 6)
+        # MOIC rises with exit multiple.
+        moics = [p.moic for p in g.points]
+        self.assertEqual(moics, sorted(moics))
+
+    def test_entry_multiple_sweep_inverse(self) -> None:
+        g = run_sensitivity(self._base(), "entry_multiple",
+                             [9.0, 10.0, 11.0, 12.0, 13.0])
+        # Lower entry multiple → higher MOIC (holding exit flat).
+        moics = [p.moic for p in g.points]
+        self.assertGreater(moics[0], moics[-1])
+
+    def test_ebitda_growth_sweep(self) -> None:
+        g = run_sensitivity(self._base(), "ebitda_growth",
+                             [0.0, 0.05, 0.10, 0.15, 0.20])
+        moics = [p.moic for p in g.points]
+        self.assertEqual(moics, sorted(moics))  # growth up → MOIC up
+
+    def test_leverage_sweep(self) -> None:
+        g = run_sensitivity(self._base(), "leverage_multiple",
+                             [3.0, 4.0, 5.0, 6.0, 7.0])
+        # More leverage → higher MOIC (equity is smaller base).
+        moics = [p.moic for p in g.points]
+        self.assertEqual(moics, sorted(moics))
+
+    def test_hold_years_sweep(self) -> None:
+        g = run_sensitivity(self._base(), "hold_years",
+                             [3, 4, 5, 6, 7])
+        # Longer hold → more EBITDA growth → higher MOIC.
+        moics = [p.moic for p in g.points]
+        self.assertGreater(moics[-1], moics[0])
+
+    def test_base_moic_populated(self) -> None:
+        g = run_sensitivity(self._base(), "exit_multiple",
+                             [10.0, 11.0, 12.0])
+        self.assertGreater(g.base_moic, 0)
+        self.assertIsNotNone(g.base_irr)
+
+    def test_delta_at_base_value_is_zero(self) -> None:
+        g = run_sensitivity(self._base(), "exit_multiple",
+                             [9.0, 11.0, 13.0])
+        # The 11.0 point matches base → delta ≈ 0.
+        at_base = next(p for p in g.points if p.value == 11.0)
+        self.assertAlmostEqual(at_base.delta_moic, 0.0, places=3)
+
+    def test_swing_positive(self) -> None:
+        g = run_sensitivity(self._base(), "exit_multiple",
+                             [8.0, 10.0, 12.0, 14.0])
+        self.assertGreater(g.swing_moic, 0.0)
+
+    def test_unsupported_variable_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            run_sensitivity(self._base(), "unknown_var", [1, 2, 3])
+
+    def test_tornado_sorted_by_swing(self) -> None:
+        grids = tornado(self._base(), {
+            "exit_multiple": [8.0, 11.0, 14.0],
+            "ebitda_growth": [0.08, 0.10, 0.12],
+            "hold_years": [4, 5, 6],
+        })
+        self.assertEqual(len(grids), 3)
+        swings = [g.swing_moic for g in grids]
+        self.assertEqual(swings, sorted(swings, reverse=True))
+
+    def test_tornado_skips_bad_variables(self) -> None:
+        grids = tornado(self._base(), {
+            "exit_multiple": [10.0, 12.0],
+            "unknown": [1, 2],
+        })
+        self.assertEqual(len(grids), 1)
+        self.assertEqual(grids[0].variable, "exit_multiple")
+
+    def test_markdown_renders(self) -> None:
+        g = run_sensitivity(self._base(), "exit_multiple",
+                             [10.0, 11.0, 12.0])
+        md = render_sensitivity_markdown(g)
+        self.assertIn("# Sensitivity", md)
+        self.assertIn("exit_multiple", md)
+        self.assertIn("MOIC", md)
+
+    def test_tornado_markdown_renders(self) -> None:
+        grids = tornado(self._base(), {
+            "exit_multiple": [8.0, 12.0],
+            "ebitda_growth": [0.05, 0.15],
+        })
+        md = render_tornado_markdown(grids)
+        self.assertIn("Tornado", md)
+        self.assertIn("exit_multiple", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        g = run_sensitivity(self._base(), "exit_multiple",
+                             [10.0, 11.0, 12.0])
+        blob = json.dumps(g.to_dict())
+        data = json.loads(blob)
+        self.assertEqual(data["variable"], "exit_multiple")
+
+    def test_supported_variables_exposed(self) -> None:
+        self.assertIn("exit_multiple", SENSITIVITY_VARIABLES)
+        self.assertIn("hold_years", SENSITIVITY_VARIABLES)
+
+
 if __name__ == "__main__":
     unittest.main()
