@@ -8889,5 +8889,127 @@ class TestDividendRecapAnalyzer(unittest.TestCase):
         json.dumps(a.to_dict())
 
 
+# ── Carve-out risks ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CarveOutAssessment,
+    CarveOutInputs,
+    CarveOutRisk,
+    assess_carve_out,
+    render_carve_out_markdown,
+)
+
+
+class TestCarveOutRisks(unittest.TestCase):
+
+    def test_clean_carve_out_empty(self) -> None:
+        # All conditions benign.
+        a = assess_carve_out(CarveOutInputs(
+            is_healthcare=False,
+            tsa_scope_coverage_pct=1.0,
+            tsa_duration_months=24,
+            has_separate_financials=True,
+            change_of_control_contracts_pct=0.0,
+            shared_it_systems_count=0,
+            parent_brand_dependency=False,
+            payer_contracts_to_recredential=0,
+            key_employees_retained_pct=1.0,
+        ))
+        self.assertEqual(len(a.risks), 0)
+        self.assertEqual(a.high_severity_count, 0)
+
+    def test_tsa_gap_flagged(self) -> None:
+        a = assess_carve_out(CarveOutInputs(
+            tsa_scope_coverage_pct=0.40,
+            has_separate_financials=True,
+        ))
+        names = [r.name for r in a.risks]
+        self.assertIn("TSA coverage gap", names)
+        tsa = next(r for r in a.risks if r.name == "TSA coverage gap")
+        self.assertEqual(tsa.severity, "high")
+
+    def test_coc_contracts_flagged(self) -> None:
+        a = assess_carve_out(CarveOutInputs(
+            tsa_scope_coverage_pct=1.0,
+            tsa_duration_months=24,
+            has_separate_financials=True,
+            change_of_control_contracts_pct=0.50,
+        ))
+        names = [r.name for r in a.risks]
+        self.assertIn("Change-of-control contract exposure", names)
+
+    def test_unaudited_financials_always_flagged(self) -> None:
+        a = assess_carve_out(CarveOutInputs(
+            tsa_scope_coverage_pct=1.0,
+            tsa_duration_months=24,
+            has_separate_financials=False,
+        ))
+        names = [r.name for r in a.risks]
+        self.assertIn("Unaudited carve-out financials", names)
+
+    def test_payer_recredential_healthcare_only(self) -> None:
+        a_hc = assess_carve_out(CarveOutInputs(
+            is_healthcare=True,
+            tsa_scope_coverage_pct=1.0, tsa_duration_months=24,
+            has_separate_financials=True,
+            payer_contracts_to_recredential=30,
+        ))
+        a_nonhc = assess_carve_out(CarveOutInputs(
+            is_healthcare=False,
+            tsa_scope_coverage_pct=1.0, tsa_duration_months=24,
+            has_separate_financials=True,
+            payer_contracts_to_recredential=30,
+        ))
+        self.assertTrue(any(r.name == "Payer re-credentialing"
+                            for r in a_hc.risks))
+        self.assertFalse(any(r.name == "Payer re-credentialing"
+                             for r in a_nonhc.risks))
+
+    def test_severe_profile_partner_note(self) -> None:
+        a = assess_carve_out(CarveOutInputs(
+            is_healthcare=True,
+            tsa_scope_coverage_pct=0.40,  # high
+            tsa_duration_months=6,
+            has_separate_financials=False,  # high
+            change_of_control_contracts_pct=0.50,  # high
+            shared_it_systems_count=6,  # high
+            parent_brand_dependency=True,
+            payer_contracts_to_recredential=25,  # high
+            key_employees_retained_pct=0.50,  # high
+        ))
+        self.assertGreaterEqual(a.high_severity_count, 3)
+        self.assertIn("Severe", a.partner_note)
+
+    def test_total_cost_aggregates(self) -> None:
+        a = assess_carve_out(CarveOutInputs(
+            tsa_scope_coverage_pct=0.50,
+            has_separate_financials=False,
+            shared_it_systems_count=4,
+        ))
+        self.assertGreater(a.total_separation_cost_m, 0)
+
+    def test_markdown_renders(self) -> None:
+        a = assess_carve_out(CarveOutInputs(
+            tsa_scope_coverage_pct=0.50,
+            has_separate_financials=False,
+        ))
+        md = render_carve_out_markdown(a)
+        self.assertIn("# Carve-out risk assessment", md)
+        self.assertIn("TSA coverage gap", md)
+
+    def test_longest_path_max_of_risks(self) -> None:
+        a = assess_carve_out(CarveOutInputs(
+            tsa_scope_coverage_pct=0.40,
+            has_separate_financials=False,
+            shared_it_systems_count=5,
+        ))
+        self.assertGreaterEqual(a.longest_path_months, 14)
+
+    def test_json(self) -> None:
+        import json
+        a = assess_carve_out(CarveOutInputs(tsa_scope_coverage_pct=0.50))
+        json.dumps(a.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -414,6 +414,13 @@ from .dividend_recap_analyzer import (
     analyze_recap,
     render_recap_markdown,
 )
+from .carve_out_risks import (
+    CarveOutAssessment,
+    CarveOutInputs,
+    CarveOutRisk,
+    assess_carve_out,
+    render_carve_out_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1165,4 +1172,9 @@ __all__ = [
     "RecapInputs",
     "analyze_recap",
     "render_recap_markdown",
+    "CarveOutAssessment",
+    "CarveOutInputs",
+    "CarveOutRisk",
+    "assess_carve_out",
+    "render_carve_out_markdown",
 ]
