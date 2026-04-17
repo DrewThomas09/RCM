@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 72
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 74
 modules + test suite:
 
 | Module | Role |
@@ -778,6 +778,8 @@ modules + test suite:
 | `esg_screen.py` | ESG exclusions + composite + reporting gaps |
 | `deepdive_heuristics.py` | 10 mature-diligence partner rules |
 | `master_bundle.py` | One-call build of every PE-intel artifact |
+| `tax_structuring.py` | Step-up / 163(j) / QSBS / state drag checks |
+| `insurance_diligence.py` | PL / cyber / SIR / claims adequacy |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1569,7 +1571,44 @@ bundle. Returns a flat JSON-serializable dict for caller persistence
 
 ---
 
-## 75. Change log
+## 75. Tax structuring (`tax_structuring.py`)
+
+Partner-prudent tax structure checks:
+
+- **Step-up eligibility** — partnership/S-corp/LLC sellers enable
+  step-up; C-corp sellers require 338(h)(10) or F-reorg.
+- **State drag** — high-income-tax states (CA/NY/NJ/etc) vs no-
+  income-tax states (TX/FL/TN/etc).
+- **163(j) interest cap** — flags when interest exceeds 30% of
+  adjusted taxable income.
+- **QSBS** — Section 1202 eligibility with 5-yr hold tests.
+- **F-reorganization** — captures C-corp step-up complexity.
+- **International** — GILTI / Subpart-F exposure flag.
+
+Output includes estimated $ impact where computable (e.g., lost tax
+shield from 163(j) cap excess).
+
+---
+
+## 76. Insurance diligence (`insurance_diligence.py`)
+
+Insurance-program review across healthcare programs:
+
+- **Professional liability** — minimum multiple of EBITDA by sub-
+  sector (acute-care 3x, ASC 1.5x, behavioral 2.5x, etc.).
+- **Cyber** — $5M healthcare breach benchmark.
+- **Self-insured retention** — flags under-funded actuarial reserves.
+- **Claims frequency** — 24-month window; >15 claims = systemic.
+- **Largest open claim** — escrow / indemnity recommended when
+  >40% of EBITDA.
+- **Tail policy** — recommended on claims-made program changes.
+
+Partner-facing output: list of `InsuranceGap` items + overall gap
+score + tail-policy recommendation.
+
+---
+
+## 77. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1679,3 +1718,7 @@ bundle. Returns a flat JSON-serializable dict for caller persistence
   diligence rules) and `master_bundle.py` (one-call all-artifacts
   aggregator). Full inventory: 72 modules, 748 pe_intelligence
   unit tests.
+- **2026-04-17** — Added `tax_structuring.py` (step-up, 163(j),
+  QSBS, state drag) and `insurance_diligence.py` (PL / cyber /
+  SIR / claims / tail-policy). Full inventory: 74 modules, 767
+  pe_intelligence unit tests.
