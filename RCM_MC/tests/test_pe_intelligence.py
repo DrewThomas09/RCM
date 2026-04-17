@@ -14048,5 +14048,88 @@ class TestICDecisionSynthesizer(unittest.TestCase):
         json.dumps(synthesize_ic_decision(ICSignalBundle()).to_dict())
 
 
+# ── Healthcare regulatory calendar ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    REG_CALENDAR,
+    CalendarHit,
+    CalendarReport,
+    RegulatoryEvent,
+    events_for_deal,
+    list_all_events,
+    render_calendar_markdown,
+)
+
+
+class TestHealthcareRegulatoryCalendar(unittest.TestCase):
+
+    def test_calendar_has_events_2026_2028(self) -> None:
+        years = {e.effective_year for e in REG_CALENDAR}
+        self.assertTrue(years.issubset({2026, 2027, 2028}))
+        self.assertGreaterEqual(len(REG_CALENDAR), 10)
+
+    def test_hospital_deal_gets_headwinds(self) -> None:
+        r = events_for_deal("hospital", hold_start_year=2026,
+                             hold_years=5)
+        self.assertGreaterEqual(r.headwind_count, 2)
+        names = [h.event.name for h in r.hits]
+        self.assertIn("sequestration_extension_2026", names)
+
+    def test_asc_sees_tailwind(self) -> None:
+        r = events_for_deal("outpatient_asc", hold_start_year=2026,
+                             hold_years=5)
+        self.assertGreaterEqual(r.tailwind_count, 1)
+        names = [h.event.name for h in r.hits]
+        self.assertIn("asc_covered_procedures_expansion", names)
+
+    def test_staffing_nsa_event_hits(self) -> None:
+        r = events_for_deal("physician_staffing",
+                             hold_start_year=2026, hold_years=3)
+        names = [h.event.name for h in r.hits]
+        self.assertIn("no_surprises_act_idr_cycle_2026", names)
+
+    def test_events_outside_hold_not_included(self) -> None:
+        r = events_for_deal("hospital", hold_start_year=2030,
+                             hold_years=3)
+        self.assertEqual(r.hits, [])
+
+    def test_sorted_by_date(self) -> None:
+        r = events_for_deal("hospital", hold_start_year=2026,
+                             hold_years=5)
+        dates = [(h.event.effective_year, h.event.effective_quarter)
+                 for h in r.hits]
+        self.assertEqual(dates, sorted(dates))
+
+    def test_cumulative_impact_aggregated(self) -> None:
+        r = events_for_deal("hospital", hold_start_year=2026,
+                             hold_years=5)
+        # Hospitals get multiple headwinds → cumulative should be negative.
+        self.assertLess(r.cumulative_revenue_impact_pct, 0)
+
+    def test_heavy_headwind_drives_note(self) -> None:
+        r = events_for_deal("hospital", hold_start_year=2026,
+                             hold_years=5)
+        self.assertIn("headwind", r.partner_note.lower())
+
+    def test_list_all_events_returns_full_library(self) -> None:
+        self.assertEqual(len(list_all_events()), len(REG_CALENDAR))
+
+    def test_markdown_renders(self) -> None:
+        md = render_calendar_markdown(events_for_deal(
+            "hospital", 2026, 5))
+        self.assertIn("# Regulatory calendar", md)
+        self.assertIn("Rev impact", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(events_for_deal("hospital", 2026, 5).to_dict())
+
+    def test_home_health_pdgm_is_specific(self) -> None:
+        r = events_for_deal("home_health", hold_start_year=2026,
+                             hold_years=3)
+        self.assertTrue(any("pdgm" in h.event.name.lower()
+                             for h in r.hits))
+
+
 if __name__ == "__main__":
     unittest.main()

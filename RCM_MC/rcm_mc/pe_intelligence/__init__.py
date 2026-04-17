@@ -784,6 +784,15 @@ from .ic_decision_synthesizer import (
     render_ic_decision_markdown,
     synthesize_ic_decision,
 )
+from .healthcare_regulatory_calendar import (
+    CALENDAR as REG_CALENDAR,
+    CalendarHit,
+    CalendarReport,
+    RegulatoryEvent,
+    events_for_deal,
+    list_all_events,
+    render_calendar_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1811,4 +1820,11 @@ __all__ = [
     "ICSignalBundle",
     "render_ic_decision_markdown",
     "synthesize_ic_decision",
+    "REG_CALENDAR",
+    "CalendarHit",
+    "CalendarReport",
+    "RegulatoryEvent",
+    "events_for_deal",
+    "list_all_events",
+    "render_calendar_markdown",
 ]
