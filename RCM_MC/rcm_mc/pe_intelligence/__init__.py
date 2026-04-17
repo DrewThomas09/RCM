@@ -656,6 +656,14 @@ from .cross_module_connective_tissue import (
     connect_signals,
     render_connected_markdown,
 )
+from .diligence_checklist_live import (
+    CANONICAL_ITEMS as DILIGENCE_CANONICAL_ITEMS,
+    ChecklistItem as DiligenceChecklistItem,
+    ChecklistReport as DiligenceChecklistReport,
+    ChecklistStatus as DiligenceChecklistStatus,
+    render_checklist_markdown as render_diligence_checklist_markdown,
+    walk_checklist,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1591,4 +1599,10 @@ __all__ = [
     "SignalBundle",
     "connect_signals",
     "render_connected_markdown",
+    "DILIGENCE_CANONICAL_ITEMS",
+    "DiligenceChecklistItem",
+    "DiligenceChecklistReport",
+    "DiligenceChecklistStatus",
+    "render_diligence_checklist_markdown",
+    "walk_checklist",
 ]

@@ -12012,5 +12012,93 @@ class TestConnectiveTissue(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Live diligence checklist ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DILIGENCE_CANONICAL_ITEMS,
+    DiligenceChecklistItem,
+    DiligenceChecklistReport,
+    DiligenceChecklistStatus,
+    render_diligence_checklist_markdown,
+    walk_checklist,
+)
+
+
+class TestDiligenceChecklistLive(unittest.TestCase):
+
+    def test_canonical_list_is_meaningful(self) -> None:
+        self.assertGreaterEqual(len(DILIGENCE_CANONICAL_ITEMS), 25)
+
+    def test_empty_context_all_missing(self) -> None:
+        r = walk_checklist({})
+        self.assertEqual(r.answered_count, 0)
+        self.assertIn("missing-both", r.partner_note.lower())
+
+    def test_packet_items_answered_when_supplied(self) -> None:
+        r = walk_checklist({
+            "packet_fields": {
+                "historical_ebitda_trend", "revenue_by_payer",
+                "capex_history", "debt_maturity_schedule",
+                "recurring_vs_onetime_split",
+            },
+        })
+        self.assertGreaterEqual(r.answered_count, 5)
+
+    def test_stale_item_marked(self) -> None:
+        r = walk_checklist({
+            "packet_fields": {"historical_ebitda_trend"},
+            "stale_fields": {"historical_ebitda_trend"},
+        })
+        stale = next(s for s in r.items
+                      if s.item.name == "historical_ebitda_trend")
+        self.assertEqual(stale.status, "stale")
+
+    def test_mi_scheduled_shows_needs_mi(self) -> None:
+        r = walk_checklist({
+            "mi_scheduled": {"management_succession"},
+        })
+        item = next(s for s in r.items
+                     if s.item.name == "management_succession")
+        self.assertEqual(item.status, "needs_mi")
+
+    def test_mi_complete_shows_answered(self) -> None:
+        r = walk_checklist({
+            "mi_complete": {"management_succession"},
+        })
+        item = next(s for s in r.items
+                     if s.item.name == "management_succession")
+        self.assertEqual(item.status, "answered")
+
+    def test_third_party_outstanding(self) -> None:
+        r = walk_checklist({})
+        tp_item = next(s for s in r.items if s.item.name == "qofe_final")
+        self.assertEqual(tp_item.status, "needs_third_party")
+
+    def test_high_completion_ic_ready_note(self) -> None:
+        # All items answered.
+        packet_names = {i.name for i in DILIGENCE_CANONICAL_ITEMS
+                         if i.source == "packet"}
+        mi_names = {i.name for i in DILIGENCE_CANONICAL_ITEMS
+                     if i.source == "mi"}
+        tp_names = {i.name for i in DILIGENCE_CANONICAL_ITEMS
+                     if i.source == "third_party"}
+        r = walk_checklist({
+            "packet_fields": packet_names,
+            "mi_complete": mi_names,
+            "third_party_complete": tp_names,
+        })
+        self.assertGreaterEqual(r.ic_ready_pct, 0.99)
+        self.assertIn("IC-ready", r.partner_note)
+
+    def test_markdown_renders(self) -> None:
+        md = render_diligence_checklist_markdown(walk_checklist({}))
+        self.assertIn("# Live diligence checklist", md)
+        self.assertIn("IC-ready", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(walk_checklist({}).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
