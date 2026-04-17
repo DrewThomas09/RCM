@@ -2111,7 +2111,34 @@ partner-prudent posture when in doubt.
 
 ---
 
-## 104. Change log
+## 104. Staffing pipeline analyzer (`staffing_pipeline_analyzer.py`)
+
+Healthcare services live or die on clinician supply. Projects
+4-quarter headcount trajectory per role with:
+
+- **Hire yield** — assumes 60% of offers convert.
+- **Attrition** — quarterly rate applied to current headcount.
+- **Floor breach** — first quarter headcount drops below required
+  minimum (regulatory / contractual).
+- **Lost revenue** — open reqs × time-to-fill × daily revenue.
+
+Default TTF: 90d physician, 45d NP/PA, 60d RN, 30d tech. Default
+productivity ramp: 6mo / 3mo / 2mo / 1mo.
+
+Findings flagged:
+
+- **High** — attrition ≥ 10%/qtr, or headcount projected below
+  floor.
+- **Medium** — open reqs > max(3, HC/10), or pipeline < 2× open
+  reqs.
+
+Aggregate partner note: 2+ high findings = "material deal risk";
+1 high = "address at 100-day plan"; none = "manageable" or
+"healthy posture".
+
+---
+
+## 105. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -2278,3 +2305,6 @@ partner-prudent posture when in doubt.
 - **2026-04-17** — Added `ebitda_normalization.py` (§103) — seller
   bridge haircut + partner-prudent Adj EBITDA. Full inventory:
   101 modules, 995 pe_intelligence unit tests.
+- **2026-04-17** — Added `staffing_pipeline_analyzer.py` (§104) —
+  4Q headcount + attrition + lost revenue for healthcare services.
+  Full inventory: 102 modules, 1,006 pe_intelligence unit tests.
