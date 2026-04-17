@@ -64,6 +64,17 @@ from .valuation_checks import (
     check_wacc,
     run_valuation_checks,
 )
+from .scenario_stress import (
+    StressInputs,
+    StressResult,
+    run_partner_stresses,
+    stress_labor_shock,
+    stress_lever_slip,
+    stress_multiple_compression,
+    stress_rate_down,
+    stress_volume_down,
+    worst_case_summary,
+)
 
 __all__ = [
     "Band",
@@ -94,4 +105,13 @@ __all__ = [
     "run_reasonableness_checks",
     "run_red_flags",
     "run_valuation_checks",
+    "StressInputs",
+    "StressResult",
+    "run_partner_stresses",
+    "stress_labor_shock",
+    "stress_lever_slip",
+    "stress_multiple_compression",
+    "stress_rate_down",
+    "stress_volume_down",
+    "worst_case_summary",
 ]

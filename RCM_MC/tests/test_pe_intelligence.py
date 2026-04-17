@@ -1132,5 +1132,150 @@ class TestRunValuationChecks(unittest.TestCase):
         self.assertEqual(len(in_band), 6)
 
 
+# ── Scenario stresses ────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    StressInputs,
+    StressResult,
+    run_partner_stresses,
+    stress_labor_shock,
+    stress_lever_slip,
+    stress_multiple_compression,
+    stress_rate_down,
+    stress_volume_down,
+    worst_case_summary,
+)
+
+
+def _stress_inputs() -> StressInputs:
+    return StressInputs(
+        base_ebitda=30_000_000,
+        target_ebitda=45_000_000,
+        base_revenue=250_000_000,
+        entry_multiple=8.0,
+        exit_multiple=9.5,
+        debt_at_close=150_000_000,
+        interest_rate=0.09,
+        covenant_leverage=6.0,
+        covenant_coverage=2.5,
+        contract_labor_spend=30_000_000,
+        lever_contribution=10_000_000,
+        hold_years=5.0,
+        base_moic=2.6,
+        medicare_revenue=100_000_000,
+        commercial_revenue=120_000_000,
+    )
+
+
+class TestStressRateDown(unittest.TestCase):
+
+    def test_absorbs_modest_shock(self) -> None:
+        r = stress_rate_down(_stress_inputs(), bps=100)
+        # 100bp on 100M medicare = 1M; ebitda 30M → 29M
+        self.assertAlmostEqual(r.shocked_ebitda, 29_000_000, delta=1)
+        self.assertTrue(r.passes)
+
+    def test_large_shock_breaches_covenant(self) -> None:
+        inputs = _stress_inputs()
+        inputs.debt_at_close = 200_000_000  # leverage 6.67x already high
+        inputs.covenant_leverage = 5.0
+        r = stress_rate_down(inputs, bps=300)
+        self.assertTrue(r.covenant_breach)
+
+    def test_missing_inputs_returns_result_with_note(self) -> None:
+        r = stress_rate_down(StressInputs(), bps=100)
+        self.assertIn("Cannot run", r.partner_note)
+
+
+class TestStressVolumeDown(unittest.TestCase):
+
+    def test_volume_shock_reduces_ebitda(self) -> None:
+        r = stress_volume_down(_stress_inputs(), pct=0.05)
+        self.assertIsNotNone(r.shocked_ebitda)
+        self.assertLess(r.shocked_ebitda, _stress_inputs().base_ebitda)
+
+    def test_large_volume_shock_breaks(self) -> None:
+        inputs = _stress_inputs()
+        inputs.base_ebitda = 5_000_000  # thin
+        inputs.debt_at_close = 20_000_000
+        inputs.covenant_leverage = 5.0
+        r = stress_volume_down(inputs, pct=0.20)
+        self.assertTrue(r.covenant_breach or not r.passes)
+
+
+class TestStressMultipleCompression(unittest.TestCase):
+
+    def test_flat_multiple_reduces_moic(self) -> None:
+        r = stress_multiple_compression(_stress_inputs(), flat_multiple=True)
+        self.assertLess(r.shocked_moic, _stress_inputs().base_moic)
+
+    def test_strong_deal_still_clears_2x(self) -> None:
+        inputs = _stress_inputs()
+        inputs.base_moic = 3.0
+        inputs.exit_multiple = 9.0
+        inputs.entry_multiple = 8.5
+        r = stress_multiple_compression(inputs, flat_multiple=True)
+        # 3.0 * (8.5/9.0) = 2.83 > 2.0
+        self.assertTrue(r.passes)
+
+    def test_compression_turns_mode(self) -> None:
+        r = stress_multiple_compression(_stress_inputs(), flat_multiple=False,
+                                        compression_turns=2.0)
+        self.assertIsNotNone(r.shocked_moic)
+
+
+class TestStressLeverSlip(unittest.TestCase):
+
+    def test_slip_reduces_target_ebitda(self) -> None:
+        r = stress_lever_slip(_stress_inputs(), realization=0.60)
+        # 40% of 10M lost = 4M lost; target 45M → 41M
+        self.assertAlmostEqual(r.shocked_ebitda, 41_000_000, delta=1)
+        self.assertTrue(r.passes)
+
+    def test_full_slip_zero_realization(self) -> None:
+        r = stress_lever_slip(_stress_inputs(), realization=0.0)
+        # Target 45M - 10M = 35M (still > base 30M), passes.
+        self.assertAlmostEqual(r.shocked_ebitda, 35_000_000, delta=1)
+
+
+class TestStressLaborShock(unittest.TestCase):
+
+    def test_labor_shock_hits_ebitda(self) -> None:
+        r = stress_labor_shock(_stress_inputs(), pct=0.10)
+        # 10% of 30M = 3M hit; ebitda 30M → 27M
+        self.assertAlmostEqual(r.shocked_ebitda, 27_000_000, delta=1)
+
+    def test_large_labor_shock_breaks_deal(self) -> None:
+        inputs = _stress_inputs()
+        inputs.base_ebitda = 8_000_000
+        inputs.contract_labor_spend = 40_000_000
+        r = stress_labor_shock(inputs, pct=0.25)  # -10M on 8M ebitda
+        self.assertFalse(r.passes)
+
+
+class TestRunPartnerStresses(unittest.TestCase):
+
+    def test_runs_five_scenarios(self) -> None:
+        results = run_partner_stresses(_stress_inputs())
+        self.assertEqual(len(results), 5)
+        scenarios = {r.scenario for r in results}
+        self.assertEqual(scenarios, {
+            "rate_down", "volume_down", "multiple_compression",
+            "lever_slip", "labor_shock",
+        })
+
+    def test_worst_case_summary(self) -> None:
+        results = run_partner_stresses(_stress_inputs())
+        summary = worst_case_summary(results)
+        self.assertIn("scenarios_run", summary)
+        self.assertEqual(summary["scenarios_run"], 5)
+
+    def test_result_to_dict_roundtrip(self) -> None:
+        import json
+        r = stress_rate_down(_stress_inputs(), bps=150)
+        d = r.to_dict()
+        json.dumps(d)  # must not raise
+
+
 if __name__ == "__main__":
     unittest.main()
