@@ -109,6 +109,7 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_14 import EXTENDED_SEED_DEALS_14
         from rcm_mc.data_public.extended_seed_15 import EXTENDED_SEED_DEALS_15
         from rcm_mc.data_public.extended_seed_16 import EXTENDED_SEED_DEALS_16
+        from rcm_mc.data_public.extended_seed_17 import EXTENDED_SEED_DEALS_17
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
@@ -117,7 +118,8 @@ class TestDealsCorpus(unittest.TestCase):
                     + len(EXTENDED_SEED_DEALS_9) + len(EXTENDED_SEED_DEALS_10)
                     + len(EXTENDED_SEED_DEALS_11) + len(EXTENDED_SEED_DEALS_12)
                     + len(EXTENDED_SEED_DEALS_13) + len(EXTENDED_SEED_DEALS_14)
-                    + len(EXTENDED_SEED_DEALS_15) + len(EXTENDED_SEED_DEALS_16))
+                    + len(EXTENDED_SEED_DEALS_15) + len(EXTENDED_SEED_DEALS_16)
+                    + len(EXTENDED_SEED_DEALS_17))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3582,10 +3584,10 @@ class TestExtendedSeed8(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_355_deals(self):
+    def test_seed_loads_375_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
-        self.assertGreaterEqual(stats["total"], 355)
+        self.assertGreaterEqual(stats["total"], 375)
 
     def test_seed_187_signify_high_moic(self):
         corpus = DealsCorpus(self.db_path)
@@ -6273,6 +6275,158 @@ class TestCorpusHealthCheck(unittest.TestCase):
         self.assertGreater(result.health_score, 0.5)
         text = health_check_text(result)
         self.assertIn("Corpus Health Check Report", text)
+
+
+class TestExtendedSeed17(unittest.TestCase):
+    """Tests for extended_seed_17.py (deals 356-375)."""
+
+    def setUp(self):
+        import tempfile, os
+        self.tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.db_path = self.tmp.name
+        self.tmp.close()
+        self.corpus = DealsCorpus(self.db_path)
+        self.corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        import os
+        os.unlink(self.db_path)
+
+    def test_seed_17_count(self):
+        from rcm_mc.data_public.extended_seed_17 import EXTENDED_SEED_DEALS_17
+        self.assertEqual(len(EXTENDED_SEED_DEALS_17), 20)
+
+    def test_seed_356_steward(self):
+        deal = self.corpus.get("seed_356")
+        self.assertIsNotNone(deal)
+        self.assertIn("Steward", deal["deal_name"])
+
+    def test_seed_374_acadia_homerun(self):
+        deal = self.corpus.get("seed_374")
+        self.assertIsNotNone(deal)
+        self.assertGreaterEqual(deal["realized_moic"], 5.0)
+
+    def test_seed_375_present(self):
+        deal = self.corpus.get("seed_375")
+        self.assertIsNotNone(deal)
+
+    def test_seed_17_unique_ids(self):
+        from rcm_mc.data_public.extended_seed_17 import EXTENDED_SEED_DEALS_17
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_17]
+        self.assertEqual(len(ids), len(set(ids)))
+
+
+class TestSubsectorBenchmarks(unittest.TestCase):
+    """Tests for subsector_benchmarks.py."""
+
+    def _make_deals(self):
+        return [
+            {"source_id": "b001", "sector": "behavioral_health", "realized_moic": 3.5,
+             "realized_irr": 0.28, "hold_years": 4.0, "ev_mm": 500.0, "deal_type": "lbo", "year": 2018},
+            {"source_id": "b002", "sector": "behavioral_health", "realized_moic": 2.0,
+             "realized_irr": 0.18, "hold_years": 5.0, "ev_mm": 300.0, "deal_type": "add-on", "year": 2019},
+            {"source_id": "b003", "sector": "behavioral_health", "realized_moic": 0.8,
+             "realized_irr": -0.05, "hold_years": 6.0, "ev_mm": 700.0, "deal_type": "lbo", "year": 2017},
+            {"source_id": "b004", "sector": "behavioral_health", "realized_moic": 4.5,
+             "realized_irr": 0.38, "hold_years": 3.5, "ev_mm": 800.0, "deal_type": "lbo", "year": 2016},
+            {"source_id": "d001", "sector": "dialysis", "realized_moic": 2.5,
+             "realized_irr": 0.20, "hold_years": 5.0, "ev_mm": 1000.0, "deal_type": "lbo", "year": 2015},
+            {"source_id": "d002", "sector": "dialysis", "realized_moic": 3.0,
+             "realized_irr": 0.24, "hold_years": 5.0, "ev_mm": 1100.0, "deal_type": "lbo", "year": 2017},
+            {"source_id": "d003", "sector": "dialysis", "realized_moic": 1.8,
+             "realized_irr": 0.14, "hold_years": 4.0, "ev_mm": 450.0, "deal_type": "lbo", "year": 2018},
+        ]
+
+    def test_compute_returns_dict(self):
+        from rcm_mc.data_public.subsector_benchmarks import compute_subsector_benchmarks
+        stats = compute_subsector_benchmarks(self._make_deals())
+        self.assertIn("Behavioral Health", stats)
+        self.assertIn("Dialysis", stats)
+
+    def test_bh_moic_percentiles(self):
+        from rcm_mc.data_public.subsector_benchmarks import compute_subsector_benchmarks
+        stats = compute_subsector_benchmarks(self._make_deals())
+        bh = stats["Behavioral Health"]
+        self.assertIsNotNone(bh.moic_p25)
+        self.assertIsNotNone(bh.moic_p50)
+        self.assertIsNotNone(bh.moic_p75)
+        # p25 <= p50 <= p75
+        self.assertLessEqual(bh.moic_p25, bh.moic_p50)
+        self.assertLessEqual(bh.moic_p50, bh.moic_p75)
+
+    def test_bh_loss_rate(self):
+        from rcm_mc.data_public.subsector_benchmarks import compute_subsector_benchmarks
+        stats = compute_subsector_benchmarks(self._make_deals())
+        bh = stats["Behavioral Health"]
+        # 1 out of 4 deals is < 1.0x
+        self.assertAlmostEqual(bh.loss_rate, 0.25, places=2)
+
+    def test_bh_home_run_rate(self):
+        from rcm_mc.data_public.subsector_benchmarks import compute_subsector_benchmarks
+        stats = compute_subsector_benchmarks(self._make_deals())
+        bh = stats["Behavioral Health"]
+        # 2 out of 4 are > 3.0x
+        self.assertAlmostEqual(bh.home_run_rate, 0.50, places=2)
+
+    def test_get_sector_benchmark(self):
+        from rcm_mc.data_public.subsector_benchmarks import get_sector_benchmark
+        deals = self._make_deals()
+        bench = get_sector_benchmark(deals, "behavioral_health")
+        self.assertIsNotNone(bench)
+        self.assertEqual(bench.sector, "Behavioral Health")
+
+    def test_benchmark_deal_vs_sector_above_median(self):
+        from rcm_mc.data_public.subsector_benchmarks import benchmark_deal_vs_sector
+        deals = self._make_deals()
+        deal = {"source_id": "test", "sector": "behavioral_health", "realized_moic": 4.0}
+        result = benchmark_deal_vs_sector(deal, deals)
+        self.assertIn(result["signal"], {"above_p75", "above_median"})
+
+    def test_benchmark_deal_vs_sector_bottom_quartile(self):
+        from rcm_mc.data_public.subsector_benchmarks import benchmark_deal_vs_sector
+        deals = self._make_deals()
+        deal = {"source_id": "test", "sector": "behavioral_health", "realized_moic": 0.5}
+        result = benchmark_deal_vs_sector(deal, deals)
+        self.assertEqual(result["signal"], "bottom_quartile")
+
+    def test_sector_peer_group(self):
+        from rcm_mc.data_public.subsector_benchmarks import sector_peer_group
+        deals = self._make_deals()
+        peers = sector_peer_group(deals, "dialysis", n=5)
+        self.assertLessEqual(len(peers), 5)
+        moics = [d["realized_moic"] for d in peers]
+        self.assertEqual(moics, sorted(moics, reverse=True))
+
+    def test_subsector_table_format(self):
+        from rcm_mc.data_public.subsector_benchmarks import compute_subsector_benchmarks, subsector_table
+        stats = compute_subsector_benchmarks(self._make_deals())
+        text = subsector_table(stats)
+        self.assertIn("Sector", text)
+        self.assertIn("P50", text)
+        self.assertIn("Behavioral Health", text)
+
+    def test_corpus_subsector_benchmarks(self):
+        from rcm_mc.data_public.subsector_benchmarks import compute_subsector_benchmarks, subsector_table
+        from rcm_mc.data_public.extended_seed_9 import EXTENDED_SEED_DEALS_9
+        from rcm_mc.data_public.extended_seed_10 import EXTENDED_SEED_DEALS_10
+        from rcm_mc.data_public.extended_seed_11 import EXTENDED_SEED_DEALS_11
+        from rcm_mc.data_public.extended_seed_12 import EXTENDED_SEED_DEALS_12
+        from rcm_mc.data_public.extended_seed_13 import EXTENDED_SEED_DEALS_13
+        from rcm_mc.data_public.extended_seed_14 import EXTENDED_SEED_DEALS_14
+        from rcm_mc.data_public.extended_seed_15 import EXTENDED_SEED_DEALS_15
+        from rcm_mc.data_public.extended_seed_16 import EXTENDED_SEED_DEALS_16
+        from rcm_mc.data_public.extended_seed_17 import EXTENDED_SEED_DEALS_17
+        all_deals = (EXTENDED_SEED_DEALS_9 + EXTENDED_SEED_DEALS_10 + EXTENDED_SEED_DEALS_11
+                     + EXTENDED_SEED_DEALS_12 + EXTENDED_SEED_DEALS_13 + EXTENDED_SEED_DEALS_14
+                     + EXTENDED_SEED_DEALS_15 + EXTENDED_SEED_DEALS_16 + EXTENDED_SEED_DEALS_17)
+        stats = compute_subsector_benchmarks(all_deals)
+        self.assertGreater(len(stats), 5)
+        text = subsector_table(stats, min_realized=2)
+        # At least one known sector must appear
+        self.assertTrue(
+            any(s in text for s in ["Behavioral Health", "Dialysis", "Post-Acute", "Physician"]),
+            f"No expected sector found in: {text[:200]}"
+        )
 
 
 class TestExtendedSeed16(unittest.TestCase):

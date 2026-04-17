@@ -302,6 +302,14 @@ from .sponsor_track_record import (
     sponsor_report,
     league_table_text,
 )
+from .subsector_benchmarks import (
+    SubsectorStats,
+    compute_subsector_benchmarks,
+    get_sector_benchmark,
+    benchmark_deal_vs_sector,
+    sector_peer_group,
+    subsector_table,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -533,4 +541,10 @@ __all__ = [
     "sponsor_consistency_score",
     "sponsor_report",
     "league_table_text",
+    "SubsectorStats",
+    "compute_subsector_benchmarks",
+    "get_sector_benchmark",
+    "benchmark_deal_vs_sector",
+    "sector_peer_group",
+    "subsector_table",
 ]
