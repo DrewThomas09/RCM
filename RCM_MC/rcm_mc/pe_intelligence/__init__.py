@@ -269,6 +269,13 @@ from .portfolio_dashboard import (
     build_portfolio_dashboard,
     render_portfolio_dashboard_markdown,
 )
+from .integration_readiness import (
+    IntegrationFinding,
+    IntegrationInputs,
+    IntegrationReport,
+    assess_integration_readiness,
+    render_integration_report_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -917,4 +924,9 @@ __all__ = [
     "PortfolioDashboard",
     "build_portfolio_dashboard",
     "render_portfolio_dashboard_markdown",
+    "IntegrationFinding",
+    "IntegrationInputs",
+    "IntegrationReport",
+    "assess_integration_readiness",
+    "render_integration_report_markdown",
 ]

@@ -7234,5 +7234,106 @@ class TestPortfolioDashboard(unittest.TestCase):
         json.dumps(d.to_dict())
 
 
+# ── Integration readiness ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    IntegrationFinding,
+    IntegrationInputs,
+    IntegrationReport,
+    assess_integration_readiness,
+    render_integration_report_markdown,
+)
+
+
+class TestIntegrationReadiness(unittest.TestCase):
+
+    def test_fully_ready(self) -> None:
+        r = assess_integration_readiness(IntegrationInputs(
+            integration_officer_named=True,
+            day_one_system_plan_ready=True,
+            management_retention_signed=True,
+            management_comp_aligned=True,
+            rcm_lead_named=True, it_lead_named=True,
+            clinical_lead_named=True, finance_lead_named=True,
+            hr_lead_named=True,
+            integration_budget_sized=True,
+            communications_plan_ready=True,
+            tsa_duration_months=6,
+        ))
+        self.assertEqual(r.verdict, "ready")
+        self.assertEqual(r.gap_count, 0)
+
+    def test_not_ready_no_officer(self) -> None:
+        r = assess_integration_readiness(IntegrationInputs(
+            integration_officer_named=False,
+            day_one_system_plan_ready=False,
+            management_retention_signed=False,
+            rcm_lead_named=False, it_lead_named=False,
+            clinical_lead_named=False, finance_lead_named=False,
+            hr_lead_named=False,
+            integration_budget_sized=False,
+            communications_plan_ready=False,
+        ))
+        self.assertEqual(r.verdict, "not_ready")
+        self.assertGreater(r.gap_count, 5)
+
+    def test_long_tsa_penalty(self) -> None:
+        ready_inputs = IntegrationInputs(
+            integration_officer_named=True,
+            day_one_system_plan_ready=True,
+            management_retention_signed=True,
+            management_comp_aligned=True,
+            rcm_lead_named=True, it_lead_named=True,
+            clinical_lead_named=True, finance_lead_named=True,
+            hr_lead_named=True,
+            integration_budget_sized=True,
+            communications_plan_ready=True,
+        )
+        baseline = assess_integration_readiness(ready_inputs)
+        with_long_tsa = assess_integration_readiness(
+            IntegrationInputs(**ready_inputs.__dict__, )
+        )
+        with_long_tsa.score = baseline.score  # sanity baseline
+        # Now apply long TSA.
+        inputs_long_tsa = IntegrationInputs(**{
+            **ready_inputs.__dict__,
+            "tsa_duration_months": 18,
+        })
+        r_long = assess_integration_readiness(inputs_long_tsa)
+        self.assertLess(r_long.score, baseline.score)
+
+    def test_rollup_without_officer_penalized(self) -> None:
+        baseline = assess_integration_readiness(IntegrationInputs(
+            integration_officer_named=False,
+            day_one_system_plan_ready=True,
+            management_retention_signed=True,
+        ))
+        with_rollup = assess_integration_readiness(IntegrationInputs(
+            integration_officer_named=False,
+            day_one_system_plan_ready=True,
+            management_retention_signed=True,
+            has_rollup_thesis=True,
+        ))
+        self.assertLess(with_rollup.score, baseline.score)
+
+    def test_empty_inputs_unknown_majority(self) -> None:
+        r = assess_integration_readiness(IntegrationInputs())
+        # All dimensions unknown → score ~ 50.
+        self.assertGreater(r.score, 30)
+        self.assertLess(r.score, 70)
+
+    def test_markdown_renders(self) -> None:
+        md = render_integration_report_markdown(
+            assess_integration_readiness(IntegrationInputs(
+                integration_officer_named=True,
+            )))
+        self.assertIn("# Integration readiness", md)
+
+    def test_json(self) -> None:
+        import json
+        r = assess_integration_readiness(IntegrationInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
