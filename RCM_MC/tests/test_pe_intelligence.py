@@ -3900,5 +3900,86 @@ class TestSourceMix(unittest.TestCase):
         self.assertEqual(source_mix([]), {})
 
 
+# ── KPI cascade ────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    KPICascadeInputs,
+    KPIMovement,
+    build_cascade,
+    top_levers,
+    total_ebitda_impact,
+)
+
+
+def _kpi_cascade_inputs() -> KPICascadeInputs:
+    return KPICascadeInputs(
+        annual_revenue=500_000_000,
+        current_denial_rate=0.12, target_denial_rate=0.08,
+        current_final_writeoff=0.06, target_final_writeoff=0.04,
+        current_days_in_ar=60, target_days_in_ar=50,
+        current_clean_claim_rate=0.88, target_clean_claim_rate=0.94,
+        current_labor_pct_of_rev=0.52, target_labor_pct_of_rev=0.50,
+    )
+
+
+class TestBuildCascade(unittest.TestCase):
+
+    def test_cascade_produces_movements(self) -> None:
+        cascade = build_cascade(_kpi_cascade_inputs())
+        self.assertEqual(len(cascade), 5)
+
+    def test_sorted_desc_by_abs_impact(self) -> None:
+        cascade = build_cascade(_kpi_cascade_inputs())
+        impacts = [abs(m.ebitda_impact) for m in cascade]
+        self.assertEqual(impacts, sorted(impacts, reverse=True))
+
+    def test_denial_impact_calculation(self) -> None:
+        cascade = build_cascade(_kpi_cascade_inputs())
+        denial = next(m for m in cascade if m.kpi == "initial_denial_rate")
+        # 500M * 4% * 50% = 10M
+        self.assertAlmostEqual(denial.ebitda_impact, 10_000_000, delta=1)
+        self.assertAlmostEqual(denial.delta, 400, delta=1)  # 400 bps
+
+    def test_writeoff_full_flowthrough(self) -> None:
+        cascade = build_cascade(_kpi_cascade_inputs())
+        wo = next(m for m in cascade if m.kpi == "final_writeoff_rate")
+        # 500M * 2% = 10M
+        self.assertAlmostEqual(wo.ebitda_impact, 10_000_000, delta=1)
+
+    def test_ar_days_reports_cash_not_ebitda(self) -> None:
+        cascade = build_cascade(_kpi_cascade_inputs())
+        ar = next(m for m in cascade if m.kpi == "days_in_ar")
+        # 500M * 10 / 365 = ~13.7M
+        self.assertAlmostEqual(ar.ebitda_impact, 13_698_630, delta=5)
+        self.assertIn("one-time", ar.partner_note)
+
+    def test_missing_fields_skipped(self) -> None:
+        inputs = KPICascadeInputs(
+            annual_revenue=500_000_000,
+            current_denial_rate=0.10, target_denial_rate=0.08,
+        )
+        cascade = build_cascade(inputs)
+        self.assertEqual(len(cascade), 1)
+
+
+class TestTopLevers(unittest.TestCase):
+
+    def test_returns_top_n(self) -> None:
+        cascade = build_cascade(_kpi_cascade_inputs())
+        top = top_levers(cascade, n=3)
+        self.assertEqual(len(top), 3)
+
+
+class TestTotalEBITDAImpact(unittest.TestCase):
+
+    def test_excludes_ar_days(self) -> None:
+        cascade = build_cascade(_kpi_cascade_inputs())
+        total = total_ebitda_impact(cascade)
+        # Should exclude the AR one-time cash.
+        ar_impact = next(m for m in cascade if m.kpi == "days_in_ar").ebitda_impact
+        sum_all = sum(m.ebitda_impact for m in cascade)
+        self.assertAlmostEqual(total, sum_all - ar_impact, delta=1)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .operational_kpi_cascade import (
+    KPICascadeInputs,
+    KPIMovement,
+    build_cascade,
+    top_levers,
+    total_ebitda_impact,
+)
 from .pipeline_tracker import (
     FunnelStats,
     PIPELINE_STAGES,
@@ -447,4 +454,9 @@ __all__ = [
     "funnel_stats",
     "source_mix",
     "stale_deals",
+    "KPICascadeInputs",
+    "KPIMovement",
+    "build_cascade",
+    "top_levers",
+    "total_ebitda_impact",
 ]
