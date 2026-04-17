@@ -730,17 +730,20 @@ class DealsCorpus:
             return cur.rowcount > 0
 
     def seed(self, skip_if_populated: bool = True) -> int:
-        """Load built-in seed deals. Returns number of deals inserted/updated."""
+        """Load built-in seed deals (core + extended batch). Returns count upserted."""
+        from .extended_seed import EXTENDED_SEED_DEALS
+        all_seed = _SEED_DEALS + EXTENDED_SEED_DEALS
+
         if skip_if_populated:
             with self._connect() as con:
                 count = con.execute(
                     "SELECT COUNT(*) FROM public_deals WHERE source = 'seed'"
                 ).fetchone()[0]
-            if count >= len(_SEED_DEALS):
+            if count >= len(all_seed):
                 return 0
 
         inserted = 0
-        for deal in _SEED_DEALS:
+        for deal in all_seed:
             self.upsert(deal)
             inserted += 1
         return inserted

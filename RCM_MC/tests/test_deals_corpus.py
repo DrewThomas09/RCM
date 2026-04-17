@@ -13,6 +13,7 @@ import unittest
 from pathlib import Path
 
 from rcm_mc.data_public.deals_corpus import DealsCorpus, _SEED_DEALS
+from rcm_mc.data_public.extended_seed import EXTENDED_SEED_DEALS
 from rcm_mc.data_public.normalizer import normalize_raw, normalize_batch, validate
 from rcm_mc.data_public.base_rates import (
     Benchmarks,
@@ -77,9 +78,10 @@ class TestDealsCorpus(unittest.TestCase):
 
     def test_seed_inserts_expected_count(self):
         n = self.corpus.seed(skip_if_populated=False)
-        self.assertEqual(n, len(_SEED_DEALS))
+        expected = len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS)
+        self.assertEqual(n, expected)
         stats = self.corpus.stats()
-        self.assertEqual(stats["total"], len(_SEED_DEALS))
+        self.assertEqual(stats["total"], expected)
 
     def test_seed_idempotent_skip(self):
         self.corpus.seed(skip_if_populated=False)
@@ -856,6 +858,149 @@ class TestScraperFallbacks(unittest.TestCase):
         self.assertEqual(_parse_year_from_date("2021-05-15"), 2021)
         self.assertIsNone(_parse_year_from_date(""))
         self.assertIsNone(_parse_year_from_date(None))
+
+
+# ===========================================================================
+# Extended Seed + News Deals
+# ===========================================================================
+
+class TestExtendedSeed(unittest.TestCase):
+
+    def test_extended_seed_count(self):
+        self.assertGreaterEqual(len(EXTENDED_SEED_DEALS), 20)
+
+    def test_extended_seed_unique_ids(self):
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS]
+        self.assertEqual(len(ids), len(set(ids)), "Duplicate source_id in extended seed")
+
+    def test_extended_source_ids_no_collision_with_core(self):
+        core_ids = {d["source_id"] for d in _SEED_DEALS}
+        ext_ids  = {d["source_id"] for d in EXTENDED_SEED_DEALS}
+        collision = core_ids & ext_ids
+        self.assertEqual(collision, set(), f"source_id collision: {collision}")
+
+    def test_combined_corpus_50_plus_deals(self):
+        db_path = _tmp_db()
+        corpus = DealsCorpus(db_path)
+        corpus.seed(skip_if_populated=False)
+        self.assertGreaterEqual(corpus.stats()["total"], 50)
+        os.unlink(db_path)
+
+    def test_news_deals_curated_count(self):
+        from rcm_mc.data_public.scrapers.news_deals import _NEWS_DEALS
+        self.assertGreaterEqual(len(_NEWS_DEALS), 10)
+
+    def test_news_deals_unique_ids(self):
+        from rcm_mc.data_public.scrapers.news_deals import _NEWS_DEALS
+        ids = [d["source_id"] for d in _NEWS_DEALS]
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_news_scrape_returns_curated_baseline(self):
+        from rcm_mc.data_public.scrapers.news_deals import scrape_news_deals, _NEWS_DEALS
+        # Asking for fewer than curated count still returns all curated
+        result = scrape_news_deals(max_articles=5)
+        self.assertGreaterEqual(len(result), len(_NEWS_DEALS))
+
+    def test_news_rss_item_parse(self):
+        from rcm_mc.data_public.scrapers.news_deals import _extract_rss_items
+        sample_rss = """
+        <rss><channel>
+        <item>
+            <title>KKR acquires hospital system for $4.3 billion</title>
+            <link>https://example.com/article</link>
+            <pubDate>Mon, 15 May 2023 12:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title>Unrelated technology news</title>
+            <link>https://example.com/tech</link>
+            <pubDate>Tue, 16 May 2023 12:00:00 GMT</pubDate>
+        </item>
+        </channel></rss>
+        """
+        items = _extract_rss_items(sample_rss)
+        self.assertEqual(len(items), 2)
+        self.assertIn("KKR", items[0]["title"])
+
+    def test_news_ma_filter(self):
+        from rcm_mc.data_public.scrapers.news_deals import _is_ma_article
+        self.assertTrue(_is_ma_article("KKR acquires hospital system for $4B"))
+        self.assertFalse(_is_ma_article("New restaurant opens in downtown Chicago"))
+        self.assertTrue(_is_ma_article("Health system merger creates $8B entity"))
+
+
+# ===========================================================================
+# Corpus CLI (unit-level, no live HTTP)
+# ===========================================================================
+
+class TestCorpusCLI(unittest.TestCase):
+
+    def setUp(self):
+        self.db_path = _tmp_db()
+        corpus = DealsCorpus(self.db_path)
+        corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        os.unlink(self.db_path)
+
+    def _run(self, args):
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", self.db_path] + args)
+        return buf.getvalue()
+
+    def test_cli_stats(self):
+        out = self._run(["stats"])
+        data = json.loads(out)
+        self.assertIn("total", data)
+        self.assertGreaterEqual(data["total"], 50)
+
+    def test_cli_query_no_filter(self):
+        out = self._run(["query"])
+        self.assertIn("Deal", out)
+
+    def test_cli_query_with_buyer(self):
+        out = self._run(["query", "--buyer", "KKR"])
+        self.assertIn("KKR", out)
+
+    def test_cli_query_json(self):
+        out = self._run(["query", "--json", "--limit", "5"])
+        data = json.loads(out)
+        self.assertIsInstance(data, list)
+        self.assertLessEqual(len(data), 5)
+
+    def test_cli_rates(self):
+        out = self._run(["rates"])
+        self.assertIn("Base Rates", out)
+        self.assertIn("MOIC", out)
+
+    def test_cli_rates_json(self):
+        out = self._run(["rates", "--json"])
+        data = json.loads(out)
+        self.assertIn("overall", data)
+        self.assertIn("by_size", data)
+
+    def test_cli_intel(self):
+        out = self._run(["intel", "--deal-id", "seed_007"])
+        self.assertIn("Intelligence Report", out)
+        self.assertIn("Envision", out)
+
+    def test_cli_intel_json(self):
+        out = self._run(["intel", "--deal-id", "seed_001", "--json"])
+        data = json.loads(out)
+        self.assertIn("deal_name", data)
+        self.assertIn("risk_score", data)
+
+    def test_cli_intel_with_assumptions(self):
+        assumptions = json.dumps({"entry_debt_mm": 3500})
+        out = self._run(["intel", "--deal-id", "seed_008", "--assumptions", assumptions])
+        self.assertIn("Intelligence Report", out)
+
+    def test_cli_seed_force(self):
+        out = self._run(["seed", "--force"])
+        self.assertIn("deals", out.lower())
 
 
 if __name__ == "__main__":
