@@ -28,14 +28,42 @@ _REGIONS = {
 
 
 def _add_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add ML features needed for screening."""
+    """Add ML features needed for screening.
+
+    Emits a ``data_quality_ok`` boolean per row — False when the HCRIS
+    filing produces implausible raw values (opex > 2x revenue, negative
+    revenue, sub-$100K revenue, etc.). Downstream code should use this
+    to exclude junk filings from "distressed" counts and rankings.
+    """
     df = df.copy()
-    rev = df.get("net_patient_revenue", pd.Series(dtype=float))
-    opex = df.get("operating_expenses", pd.Series(dtype=float))
+    rev = pd.to_numeric(df.get("net_patient_revenue"), errors="coerce")
+    opex = pd.to_numeric(df.get("operating_expenses"), errors="coerce")
 
     if "operating_margin" not in df.columns:
         safe_rev = rev.where(rev > 1e5)
-        df["operating_margin"] = ((safe_rev - opex) / safe_rev).clip(-0.5, 1.0)
+        # Compute raw margin first, then clamp. Rows where raw margin
+        # exceeded the clamp boundary are marked data_quality_ok=False.
+        raw_margin = (safe_rev - opex) / safe_rev
+        df["operating_margin"] = raw_margin.clip(-0.5, 1.0)
+        df["_raw_margin"] = raw_margin
+
+    # Data-quality flag: conservative. False when any of:
+    #   - revenue is NaN, <= $100K, or negative
+    #   - opex is NaN, negative, or > 2x revenue (opex>2xNPR is implausible)
+    #   - raw margin fell outside [-1.0, +1.0] (got heavily clamped)
+    #   - beds missing or <1
+    beds = pd.to_numeric(df.get("beds"), errors="coerce")
+    dq = (
+        rev.notna() & (rev > 1e5)
+        & opex.notna() & (opex >= 0) & (opex < rev * 2)
+        & beds.notna() & (beds >= 1)
+    )
+    if "_raw_margin" in df.columns:
+        raw = df["_raw_margin"]
+        dq = dq & (raw.between(-1.0, 1.0) | raw.isna())
+        df = df.drop(columns=["_raw_margin"])
+    df["data_quality_ok"] = dq.fillna(False)
+
     if "revenue_per_bed" not in df.columns and "beds" in df.columns:
         df["revenue_per_bed"] = rev / df["beds"].replace(0, np.nan)
     if "occupancy_rate" not in df.columns:
@@ -51,14 +79,36 @@ def _add_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _predict_rcm_fast(row: pd.Series) -> Dict[str, float]:
-    """Fast RCM prediction for screening (no conformal, just point estimates)."""
-    mc = float(row.get("medicare_day_pct", 0.4) or 0.4)
-    md = float(row.get("medicaid_day_pct", 0.15) or 0.15)
-    beds = float(row.get("beds", 100) or 100)
-    margin = float(row.get("operating_margin", 0) or 0)
-    n2g = float(row.get("net_to_gross_ratio", 0.3) or 0.3)
-    occ = float(row.get("occupancy_rate", 0.5) or 0.5)
-    rev = float(row.get("net_patient_revenue", 1e8) or 1e8)
+    """Fast RCM prediction for screening (no conformal, just point estimates).
+
+    Returns NaN for estimates when required fields are missing, so the
+    screener never hallucinates uplift dollars on hospitals with no
+    revenue data. Defaults are only used when the HCRIS row is otherwise
+    complete but a secondary field is missing (payer mix, n2g, etc.).
+    """
+    raw_rev = row.get("net_patient_revenue")
+    raw_beds = row.get("beds")
+
+    # Hard requirements: revenue must be a real positive number.
+    try:
+        rev = float(raw_rev) if raw_rev is not None else float("nan")
+    except (TypeError, ValueError):
+        rev = float("nan")
+    try:
+        beds = float(raw_beds) if raw_beds is not None else float("nan")
+    except (TypeError, ValueError):
+        beds = float("nan")
+    if not (rev > 1e5) or not (beds >= 1) or rev != rev or beds != beds:
+        return {
+            "est_denial": float("nan"),
+            "est_ar_days": float("nan"),
+            "est_uplift": float("nan"),
+        }
+
+    mc = float(row.get("medicare_day_pct") or 0.4)
+    md = float(row.get("medicaid_day_pct") or 0.15)
+    margin = float(row.get("operating_margin") or 0)
+    n2g = float(row.get("net_to_gross_ratio") or 0.3)
 
     denial = 0.095 + mc * 0.15 + md * 0.20 - np.log(max(1, beds)) * 0.012 - n2g * 0.25 - margin * 0.18
     denial = max(0.02, min(0.25, denial))
@@ -66,11 +116,12 @@ def _predict_rcm_fast(row: pd.Series) -> Dict[str, float]:
     ar_days = 45 + mc * 5 + md * 8 - np.log(max(1, beds)) * 3 - n2g * 10 - margin * 8
     ar_days = max(25, min(75, ar_days))
 
-    # RCM uplift estimate: gap between current and P75 benchmarks
     denial_gap = max(0, denial - 0.05)
     margin_gap = max(0, 0.08 - margin)
     uplift = rev * (denial_gap * 0.5 + margin_gap * 0.3) * 0.6
-    uplift = max(0, uplift)
+    # Cap uplift at 15% of revenue — beyond that is not credible for any
+    # single-lever RCM intervention.
+    uplift = max(0, min(uplift, rev * 0.15))
 
     return {
         "est_denial": round(denial, 4),

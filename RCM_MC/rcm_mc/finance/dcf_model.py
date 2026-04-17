@@ -176,10 +176,29 @@ def _build_sensitivity(
 
 
 def build_dcf_from_deal(profile: Dict[str, Any]) -> DCFResult:
-    """Convenience: build DCF directly from a deal profile dict."""
+    """Convenience: build DCF directly from a deal profile dict.
+
+    Precedence for margin: current_ebitda/revenue > ebitda_margin field >
+    industry default (12%). Negative / implausible margins (>50% or <-50%)
+    are clamped so the DCF projection stays sane; callers should surface
+    data-quality warnings elsewhere.
+    """
     revenue = float(profile.get("net_revenue") or profile.get("revenue") or 0)
-    ebitda = float(profile.get("current_ebitda") or 0)
-    margin = ebitda / revenue if revenue > 0 and ebitda > 0 else 0.12
+    ebitda_raw = profile.get("current_ebitda")
+    ebitda = float(ebitda_raw) if ebitda_raw not in (None, "") else 0.0
+
+    if revenue > 0 and ebitda != 0:
+        margin = ebitda / revenue
+    elif profile.get("ebitda_margin") not in (None, ""):
+        try:
+            margin = float(profile["ebitda_margin"])
+        except (TypeError, ValueError):
+            margin = 0.12
+    else:
+        margin = 0.12
+
+    # Clamp to plausible range for a going-concern hospital
+    margin = max(-0.50, min(0.50, margin))
 
     return build_dcf(
         revenue_base=revenue,

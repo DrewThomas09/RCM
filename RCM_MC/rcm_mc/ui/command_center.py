@@ -95,11 +95,22 @@ def render_command_center(
     if "operating_margin" not in hcris_df.columns:
         safe_rev = hcris_df["net_patient_revenue"].where(hcris_df["net_patient_revenue"] > 1e5)
         hcris_df = hcris_df.copy()
-        hcris_df["operating_margin"] = (
-            (safe_rev - hcris_df["operating_expenses"]) / safe_rev
-        ).clip(-0.5, 1.0)
-    median_margin = float(hcris_df["operating_margin"].dropna().median())
-    distressed = int((hcris_df["operating_margin"].dropna() < -0.05).sum())
+        raw_margin = (safe_rev - hcris_df["operating_expenses"]) / safe_rev
+        hcris_df["operating_margin"] = raw_margin.clip(-0.5, 1.0)
+        # Data-quality: flag hospitals whose raw margin was outside
+        # [-100%, +100%] (obvious HCRIS filing artifacts — opex 2-1000x revenue,
+        # negative revenue, etc.) so they don't inflate the distressed count.
+        hcris_df["_dq_ok_margin"] = raw_margin.between(-1.0, 1.0) | raw_margin.isna()
+    else:
+        hcris_df = hcris_df.copy()
+        hcris_df["_dq_ok_margin"] = True
+
+    # Median uses only margins that survived the clamp (excludes garbage filings)
+    dq_mask = hcris_df.get("_dq_ok_margin", pd.Series(True, index=hcris_df.index))
+    clean_margins = hcris_df.loc[dq_mask.fillna(False), "operating_margin"].dropna()
+    median_margin = float(clean_margins.median()) if len(clean_margins) else 0.0
+    # Distressed = operating margin < -5% AND data is credible
+    distressed = int((clean_margins < -0.05).sum())
 
     pe_targets = hcris_df[
         (hcris_df["beds"] >= 100) & (hcris_df["beds"] <= 500) &

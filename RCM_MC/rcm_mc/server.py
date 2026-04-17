@@ -2909,16 +2909,54 @@ class RCMHandler(BaseHTTPRequestHandler):
         import re
         return re.sub(r'[^A-Za-z0-9]', '', raw)[:10]
 
-    def _error_page(self, title: str, message: str) -> None:
+    def _error_page(self, title: str, message: str, *, code: str = "404") -> None:
+        """Bloomberg-style terminal error page — code, timestamp, actions."""
         from .ui.shell_v2 import shell_v2
-        return self._send_html(shell_v2(
-            f'<div class="cad-card" style="border-left:3px solid var(--cad-neg);">'
-            f'<h2 style="color:var(--cad-neg);">{html.escape(title)}</h2>'
-            f'<p style="color:var(--cad-text2);">{html.escape(message)}</p>'
-            f'<a href="/home" class="cad-btn" style="text-decoration:none;margin-top:12px;">'
-            f'Return to Home</a></div>',
-            title,
-        ))
+        from datetime import datetime, timezone
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        req_path = html.escape(getattr(self, "path", "—")[:120])
+        body = (
+            f'<div class="cad-card" style="border-left:3px solid var(--cad-neg);'
+            f'padding:18px 22px;">'
+            f'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
+            f'<span class="cad-section-code" style="color:var(--cad-neg);'
+            f'border-color:var(--cad-neg);padding:3px 10px;font-size:11px;">ERR · {html.escape(code)}</span>'
+            f'<h2 style="margin:0;color:var(--cad-text);font-size:15px;'
+            f'letter-spacing:0.1em;text-transform:uppercase;">{html.escape(title)}</h2>'
+            f'</div>'
+            f'<div style="font-family:var(--cad-mono);font-size:11.5px;'
+            f'color:var(--cad-text2);background:#03050a;border:1px solid var(--cad-border);'
+            f'padding:12px 14px;line-height:1.7;letter-spacing:0.02em;">'
+            f'<div><span style="color:var(--cad-text3);">&gt; CODE&nbsp;&nbsp;</span>'
+            f'<span style="color:var(--cad-neg);">{html.escape(code)}</span></div>'
+            f'<div><span style="color:var(--cad-text3);">&gt; PATH&nbsp;&nbsp;</span>'
+            f'<span>{req_path}</span></div>'
+            f'<div><span style="color:var(--cad-text3);">&gt; TIME&nbsp;&nbsp;</span>'
+            f'<span>{ts}</span></div>'
+            f'<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--cad-border);">'
+            f'<span style="color:var(--cad-text3);">&gt; MSG&nbsp;&nbsp;&nbsp;</span>'
+            f'<span style="color:var(--cad-text);">{html.escape(message)}</span></div>'
+            f'</div>'
+            f'<div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;">'
+            f'<a href="javascript:history.back()" class="cad-btn" '
+            f'style="text-decoration:none;">&larr; Back</a>'
+            f'<a href="/home" class="cad-btn cad-btn-primary" '
+            f'style="text-decoration:none;">Home</a>'
+            f'<a href="/portfolio" class="cad-btn" style="text-decoration:none;">Portfolio</a>'
+            f'<a href="/predictive-screener" class="cad-btn" '
+            f'style="text-decoration:none;">Screener</a>'
+            f'<a href="/api/docs" class="cad-btn" style="text-decoration:none;">API Docs</a>'
+            f'</div>'
+            f'<div style="margin-top:14px;padding-top:10px;'
+            f'border-top:1px solid var(--cad-border);'
+            f'font-family:var(--cad-mono);font-size:9.5px;'
+            f'letter-spacing:0.12em;color:var(--cad-text3);text-transform:uppercase;">'
+            f'<span style="color:var(--cad-pos);">&#9679;</span> Platform healthy &middot; '
+            f'this is a specific resource error &middot; <kbd>&#8984;K</kbd> palette &middot; '
+            f'<kbd>?</kbd> shortcuts</div>'
+            f'</div>'
+        )
+        return self._send_html(shell_v2(body, title))
 
     def _route_ml_insights(self) -> None:
         """GET /ml-insights — national ML analysis dashboard."""

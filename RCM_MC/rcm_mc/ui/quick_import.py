@@ -12,136 +12,139 @@ from .shell_v2 import shell_v2
 from .brand import PALETTE
 
 
+def _field(
+    name: str,
+    label: str,
+    *,
+    placeholder: str = "",
+    required: bool = False,
+    type_: str = "text",
+    step: str = "",
+    maxlength: str = "",
+) -> str:
+    req = " required" if required else ""
+    req_mark = ' <span style="color:var(--cad-amber);">*</span>' if required else ""
+    ml = f' maxlength="{maxlength}"' if maxlength else ""
+    st = f' step="{step}"' if step else ""
+    return (
+        f'<div class="cad-field">'
+        f'<label>{html.escape(label)}{req_mark}</label>'
+        f'<input class="cad-input" type="{type_}" name="{name}" '
+        f'placeholder="{html.escape(placeholder)}"{req}{st}{ml}>'
+        f'</div>'
+    )
+
+
 def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
     """Render the quick import form page."""
 
     alert = ""
     if success_msg:
         alert = (
-            f'<div class="cad-card" style="border-left:3px solid {PALETTE["positive"]};">'
-            f'<p style="color:{PALETTE["positive"]};font-weight:600;">'
-            f'{html.escape(success_msg)}</p></div>'
+            f'<div class="cad-card" style="border-left:3px solid {PALETTE["positive"]};'
+            f'padding:10px 14px;">'
+            f'<div style="display:flex;align-items:center;gap:10px;">'
+            f'<span class="cad-section-code" style="color:{PALETTE["positive"]};'
+            f'border-color:{PALETTE["positive"]};">OK</span>'
+            f'<p style="margin:0;color:{PALETTE["positive"]};font-family:var(--cad-mono);'
+            f'font-size:11.5px;letter-spacing:0.04em;text-transform:uppercase;">'
+            f'{html.escape(success_msg)}</p></div></div>'
         )
     if error_msg:
         alert = (
-            f'<div class="cad-card" style="border-left:3px solid {PALETTE["negative"]};">'
-            f'<p style="color:{PALETTE["negative"]};font-weight:600;">'
-            f'{html.escape(error_msg)}</p></div>'
+            f'<div class="cad-card" style="border-left:3px solid {PALETTE["negative"]};'
+            f'padding:10px 14px;">'
+            f'<div style="display:flex;align-items:center;gap:10px;">'
+            f'<span class="cad-section-code" style="color:{PALETTE["negative"]};'
+            f'border-color:{PALETTE["negative"]};">ERR</span>'
+            f'<p style="margin:0;color:{PALETTE["negative"]};font-family:var(--cad-mono);'
+            f'font-size:11.5px;letter-spacing:0.04em;text-transform:uppercase;">'
+            f'{html.escape(error_msg)}</p></div></div>'
         )
+
+    # Required section
+    required_fields = (
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h3 style="margin:0;font-size:11.5px;font-weight:700;letter-spacing:0.1em;'
+        f'text-transform:uppercase;color:{PALETTE["text_primary"]};">Required Identity</h3>'
+        f'<span class="cad-section-code">IDN</span></div>'
+        f'<div class="cad-form-row" style="margin-bottom:18px;">'
+        + _field("deal_id", "Deal ID", placeholder="e.g. southeast_health", required=True)
+        + _field("name", "Hospital Name", placeholder="e.g. Southeast Health Medical Ctr", required=True)
+        + '</div>'
+    )
+
+    rcm_fields = (
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h3 style="margin:0;font-size:11.5px;font-weight:700;letter-spacing:0.1em;'
+        f'text-transform:uppercase;color:{PALETTE["text_primary"]};">RCM Metrics</h3>'
+        f'<span class="cad-section-code">RCM</span>'
+        f'<span style="font-family:var(--cad-mono);font-size:9.5px;'
+        f'letter-spacing:0.1em;color:{PALETTE["text_muted"]};text-transform:uppercase;">Optional</span>'
+        f'</div>'
+        f'<div class="cad-form-row" style="margin-bottom:18px;">'
+        + _field("denial_rate", "Denial Rate (%)", placeholder="14.2", type_="number", step="0.1")
+        + _field("days_in_ar", "Days in AR", placeholder="52", type_="number", step="1")
+        + _field("net_collection_rate", "Net Collection (%)", placeholder="94.5", type_="number", step="0.1")
+        + _field("clean_claim_rate", "Clean Claim (%)", placeholder="88", type_="number", step="0.1")
+        + _field("cost_to_collect", "Cost to Collect (%)", placeholder="5.1", type_="number", step="0.1")
+        + _field("claims_volume", "Claims Volume", placeholder="180000", type_="number", step="1000")
+        + '</div>'
+    )
+
+    fin_fields = (
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h3 style="margin:0;font-size:11.5px;font-weight:700;letter-spacing:0.1em;'
+        f'text-transform:uppercase;color:{PALETTE["text_primary"]};">Financial Metrics</h3>'
+        f'<span class="cad-section-code">FIN</span>'
+        f'<span style="font-family:var(--cad-mono);font-size:9.5px;'
+        f'letter-spacing:0.1em;color:{PALETTE["text_muted"]};text-transform:uppercase;">Optional</span>'
+        f'</div>'
+        f'<div class="cad-form-row" style="margin-bottom:18px;">'
+        + _field("net_revenue", "Net Revenue ($)", placeholder="386000000", type_="number", step="1000000")
+        + _field("bed_count", "Bed Count", placeholder="332", type_="number", step="1")
+        + _field("state", "State", placeholder="AL", maxlength="2")
+        + '</div>'
+    )
 
     form = (
         f'{alert}'
         f'<div class="cad-card">'
-        f'<h2>Create a New Deal</h2>'
-        f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:16px;">'
-        f'Fill in the fields below to create a new deal in your portfolio. '
-        f'Only Deal ID and Name are required — add more fields for richer analysis.</p>'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h2 style="margin:0;">New Deal</h2>'
+        f'<span class="cad-section-code">IMP</span></div>'
+        f'<p style="font-family:var(--cad-mono);font-size:10.5px;'
+        f'letter-spacing:0.04em;color:{PALETTE["text_muted"]};'
+        f'text-transform:uppercase;margin-bottom:16px;">'
+        f'Only Deal ID and Name required · more fields = richer analysis</p>'
         f'<form method="POST" action="/quick-import" id="quick-import-form">'
+        + required_fields
+        + rcm_fields
+        + fin_fields
+        + '<div style="display:flex;gap:8px;padding-top:12px;'
+          f'border-top:1px solid {PALETTE["border"]};">'
+        + '<button type="submit" class="cad-btn cad-btn-primary">Create Deal &rarr;</button>'
+        + '<a href="/portfolio" class="cad-btn" style="text-decoration:none;">Cancel</a>'
+        + '</div>'
+        + '</form></div>'
 
-        # Required fields
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">'
-        f'<div>'
-        f'<label style="font-size:12px;color:{PALETTE["text_secondary"]};display:block;margin-bottom:4px;">'
-        f'Deal ID *</label>'
-        f'<input name="deal_id" required placeholder="e.g. southeast_health" '
-        f'style="width:100%;padding:8px 12px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'<div>'
-        f'<label style="font-size:12px;color:{PALETTE["text_secondary"]};display:block;margin-bottom:4px;">'
-        f'Hospital Name *</label>'
-        f'<input name="name" required placeholder="e.g. Southeast Health Medical Center" '
-        f'style="width:100%;padding:8px 12px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'</div>'
-
-        # RCM metrics
-        f'<h3 style="font-size:13px;color:{PALETTE["text_secondary"]};margin-bottom:8px;'
-        f'padding-bottom:4px;border-bottom:1px solid {PALETTE["border"]};">'
-        f'RCM Metrics (Optional)</h3>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">'
-        f'<div>'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
-        f'Denial Rate (%)</label>'
-        f'<input name="denial_rate" type="number" step="0.1" placeholder="e.g. 14.2" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
-        f'Days in AR</label>'
-        f'<input name="days_in_ar" type="number" step="1" placeholder="e.g. 52" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
-        f'Net Collection Rate (%)</label>'
-        f'<input name="net_collection_rate" type="number" step="0.1" placeholder="e.g. 94.5" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
-        f'Clean Claim Rate (%)</label>'
-        f'<input name="clean_claim_rate" type="number" step="0.1" placeholder="e.g. 88" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
-        f'Cost to Collect (%)</label>'
-        f'<input name="cost_to_collect" type="number" step="0.1" placeholder="e.g. 5.1" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
-        f'Claims Volume</label>'
-        f'<input name="claims_volume" type="number" step="1000" placeholder="e.g. 180000" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'</div>'
-
-        # Financial metrics
-        f'<h3 style="font-size:13px;color:{PALETTE["text_secondary"]};margin-bottom:8px;'
-        f'padding-bottom:4px;border-bottom:1px solid {PALETTE["border"]};">'
-        f'Financial Metrics (Optional)</h3>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">'
-        f'<div>'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
-        f'Net Revenue ($)</label>'
-        f'<input name="net_revenue" type="number" step="1000000" placeholder="e.g. 386000000" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
-        f'Bed Count</label>'
-        f'<input name="bed_count" type="number" step="1" placeholder="e.g. 332" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'<div>'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
-        f'State</label>'
-        f'<input name="state" maxlength="2" placeholder="e.g. AL" '
-        f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
-        f'</div>'
-
-        f'<div style="display:flex;gap:8px;margin-top:8px;">'
-        f'<button type="submit" class="cad-btn cad-btn-primary">Create Deal</button>'
-        f'<a href="/portfolio" class="cad-btn" style="text-decoration:none;">Cancel</a>'
-        f'</div>'
-        f'</form></div>'
-
-        # JSON import option
+        # JSON bulk-import
         f'<div class="cad-card">'
-        f'<h2>Bulk Import (JSON)</h2>'
-        f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:12px;">'
-        f'Paste a JSON array of deals to import multiple at once.</p>'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h2 style="margin:0;">Bulk Import</h2>'
+        f'<span class="cad-section-code">JSON</span></div>'
+        f'<p style="font-family:var(--cad-mono);font-size:10.5px;'
+        f'letter-spacing:0.04em;color:{PALETTE["text_muted"]};'
+        f'text-transform:uppercase;margin-bottom:12px;">'
+        f'Paste a JSON array of deals to import multiple at once</p>'
         f'<form method="POST" action="/quick-import-json">'
-        f'<textarea name="json_data" rows="8" '
+        f'<textarea name="json_data" rows="8" class="cad-input" '
         f'placeholder=\'[{{"deal_id": "southeast", "name": "Southeast Health", '
         f'"profile": {{"denial_rate": 14.2, "days_in_ar": 52, "net_revenue": 386000000}}}}]\' '
-        f'style="width:100%;background:var(--cad-bg3);color:var(--cad-text);'
-        f'border:1px solid var(--cad-border);padding:12px;font-family:var(--cad-mono);'
-        f'font-size:12px;border-radius:6px;resize:vertical;"></textarea>'
-        f'<div style="margin-top:8px;">'
-        f'<button type="submit" class="cad-btn cad-btn-primary">Import JSON</button>'
+        f'style="width:100%;resize:vertical;line-height:1.5;"></textarea>'
+        f'<div style="display:flex;gap:8px;margin-top:10px;">'
+        f'<button type="submit" class="cad-btn cad-btn-primary">Import JSON &rarr;</button>'
+        f'<a href="/api/docs" class="cad-btn" style="text-decoration:none;">Schema Docs</a>'
         f'</div></form></div>'
     )
 

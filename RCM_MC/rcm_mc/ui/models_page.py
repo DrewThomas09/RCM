@@ -13,44 +13,69 @@ from .brand import PALETTE
 
 
 def _model_nav(deal_id: str, active: str = "") -> str:
-    """Shared navigation bar for all model pages."""
+    """Shared Bloomberg-style model ribbon — section codes + amber active state."""
     did = html.escape(deal_id)
-    links = [
-        ("Profile", f"/hospital/{did}", "profile"),
-        ("IC Memo", f"/ic-memo/{did}", "ic_memo"),
-        ("EBITDA Bridge", f"/ebitda-bridge/{did}", "ebitda_bridge"),
-        ("Comp Intel", f"/competitive-intel/{did}", "comp_intel"),
-        ("Scenarios", f"/scenarios/{did}", "scenarios"),
-        ("ML", f"/ml-insights/hospital/{did}", "ml"),
-        ("DCF", f"/models/dcf/{did}", "dcf"),
-        ("LBO", f"/models/lbo/{did}", "lbo"),
-        ("3-Statement", f"/models/financials/{did}", "financials"),
-        ("Market", f"/models/market/{did}", "market"),
-        ("Denial", f"/models/denial/{did}", "denial"),
-        ("Returns", f"/models/returns/{did}", "returns"),
-        ("Bridge", f"/models/bridge/{did}", "bridge"),
-        ("Waterfall", f"/models/waterfall/{did}", "waterfall"),
-        ("Playbook", f"/models/playbook/{did}", "playbook"),
-        ("Trends", f"/models/trends/{did}", "trends"),
-        ("Predicted", f"/models/predicted/{did}", "predicted"),
-        ("Memo", f"/models/memo/{did}", "memo"),
+    # (code, label, href, key)
+    groups = [
+        ("PRF", "Profile", f"/hospital/{did}", "profile"),
+        ("MEM", "IC Memo", f"/ic-memo/{did}", "ic_memo"),
+        ("BRG", "Bridge", f"/ebitda-bridge/{did}", "ebitda_bridge"),
+        ("CI", "Comp Intel", f"/competitive-intel/{did}", "comp_intel"),
+        ("SCN", "Scenarios", f"/scenarios/{did}", "scenarios"),
+        ("AI", "ML", f"/ml-insights/hospital/{did}", "ml"),
+        ("DCF", "DCF", f"/models/dcf/{did}", "dcf"),
+        ("LBO", "LBO", f"/models/lbo/{did}", "lbo"),
+        ("FIN", "3-Stmt", f"/models/financials/{did}", "financials"),
+        ("MKT", "Market", f"/models/market/{did}", "market"),
+        ("DEN", "Denial", f"/models/denial/{did}", "denial"),
+        ("RET", "Returns", f"/models/returns/{did}", "returns"),
+        ("LVR", "Levers", f"/models/bridge/{did}", "bridge"),
+        ("WFL", "Waterfall", f"/models/waterfall/{did}", "waterfall"),
+        ("PLY", "Playbook", f"/models/playbook/{did}", "playbook"),
+        ("TRD", "Trends", f"/models/trends/{did}", "trends"),
+        ("PRED", "Predicted", f"/models/predicted/{did}", "predicted"),
+        ("MEM2", "Memo", f"/models/memo/{did}", "memo"),
     ]
-    items = ""
-    for label, href, key in links:
-        style = (
-            f'background:{PALETTE["brand_accent"]};color:white;border-color:{PALETTE["brand_accent"]};'
-            if key == active else ""
-        )
-        items += (
-            f'<a href="{href}" class="cad-btn" '
-            f'style="text-decoration:none;font-size:11px;padding:5px 10px;{style}">{label}</a>'
+    items = []
+    for code, label, href, key in groups:
+        is_active = " active" if key == active else ""
+        items.append(
+            f'<a href="{href}" class="cad-modelnav-item{is_active}">'
+            f'<span class="cad-modelnav-code">{code}</span>'
+            f'<span class="cad-modelnav-label">{html.escape(label)}</span>'
+            f'</a>'
         )
     return (
-        f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;'
-        f'padding-bottom:12px;border-bottom:1px solid {PALETTE["border"]};">'
-        f'<a href="/deal/{did}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;font-size:11px;padding:5px 10px;">Dashboard</a>'
-        f'{items}</div>'
+        f'<style>'
+        f'.cad-modelnav{{display:flex;flex-wrap:wrap;gap:0;margin-bottom:14px;'
+        f'border:1px solid {PALETTE["border"]};background:{PALETTE["bg_secondary"]};'
+        f'border-left:3px solid {PALETTE["accent_amber"]};}}'
+        f'.cad-modelnav-dash{{display:flex;align-items:center;gap:6px;padding:8px 12px;'
+        f'text-decoration:none;color:{PALETTE["text_primary"]};'
+        f'background:#03050a;border-right:1px solid {PALETTE["border"]};'
+        f'font-family:var(--cad-mono);font-size:10px;font-weight:700;'
+        f'letter-spacing:0.14em;text-transform:uppercase;}}'
+        f'.cad-modelnav-dash:hover{{color:{PALETTE["accent_amber"]};}}'
+        f'.cad-modelnav-item{{display:flex;align-items:center;gap:6px;padding:6px 10px;'
+        f'text-decoration:none;color:{PALETTE["text_secondary"]};'
+        f'border-right:1px solid {PALETTE["border"]};'
+        f'transition:background 0.1s,color 0.1s;}}'
+        f'.cad-modelnav-item:hover{{background:{PALETTE["bg_tertiary"]};color:{PALETTE["text_primary"]};}}'
+        f'.cad-modelnav-item.active{{background:{PALETTE["bg_tertiary"]};'
+        f'color:{PALETTE["accent_amber"]};'
+        f'box-shadow:inset 0 -2px 0 {PALETTE["accent_amber"]};}}'
+        f'.cad-modelnav-code{{font-family:var(--cad-mono);font-size:9px;font-weight:700;'
+        f'letter-spacing:0.14em;color:{PALETTE["accent_amber"]};'
+        f'padding:1px 4px;border:1px solid {PALETTE["border_light"]};}}'
+        f'.cad-modelnav-item.active .cad-modelnav-code{{'
+        f'background:{PALETTE["accent_amber"]};color:#000;border-color:{PALETTE["accent_amber"]};}}'
+        f'.cad-modelnav-label{{font-size:11px;font-weight:600;'
+        f'letter-spacing:0.04em;text-transform:uppercase;}}'
+        f'</style>'
+        f'<div class="cad-modelnav">'
+        f'<a href="/deal/{did}" class="cad-modelnav-dash">&larr; Dashboard</a>'
+        f'{"".join(items)}'
+        f'</div>'
     )
 
 
@@ -131,54 +156,90 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
         )
     proj_table = (
         f'<div class="cad-card">'
-        f'<h2>Cash Flow Projections</h2>'
-        f'<table class="cad-table"><thead><tr>'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h2 style="margin:0;">Cash Flow Projections</h2>'
+        f'<span class="cad-section-code">PROJ</span></div>'
+        f'<table class="cad-table crosshair"><thead><tr>'
         f'<th>Year</th><th>Revenue</th><th>EBITDA</th>'
         f'<th>Margin</th><th>FCF</th><th>PV(FCF)</th>'
         f'</tr></thead><tbody>{proj_rows}</tbody></table></div>'
     ) if proj_rows else ""
 
-    # Sensitivity matrix
+    # Sensitivity matrix with heatmap cells
     sensitivity = dcf.get("sensitivity", {})
     sens_html = ""
     if sensitivity:
         matrix = sensitivity.get("wacc_x_growth", sensitivity.get("matrix", []))
         if isinstance(matrix, list) and matrix:
+            # First compute min/max across all cells for heatmap scaling
+            all_vals = []
+            for row in matrix[:8]:
+                for cell in (row.get("values", []) if isinstance(row, dict) else []):
+                    v = cell.get("ev", cell.get("value", 0)) if isinstance(cell, dict) else cell
+                    try:
+                        all_vals.append(float(v))
+                    except (TypeError, ValueError):
+                        pass
+            vmin = min(all_vals) if all_vals else 0
+            vmax = max(all_vals) if all_vals else 1
+            vrange = (vmax - vmin) or 1
+
             rows_h = ""
             for row in matrix[:8]:
                 cells = ""
                 for cell in (row.get("values", []) if isinstance(row, dict) else []):
                     v = cell.get("ev", cell.get("value", 0)) if isinstance(cell, dict) else cell
-                    cells += f'<td class="num">{_fmt_m(v)}</td>'
+                    try:
+                        pos = (float(v) - vmin) / vrange
+                    except (TypeError, ValueError):
+                        pos = 0.5
+                    # reverse: high EV = green (heat-1), low EV = red (heat-5)
+                    if pos > 0.8: heat = "cad-heat-1"
+                    elif pos > 0.6: heat = "cad-heat-2"
+                    elif pos > 0.4: heat = "cad-heat-3"
+                    elif pos > 0.2: heat = "cad-heat-4"
+                    else: heat = "cad-heat-5"
+                    cells += f'<td class="num {heat}" style="font-weight:600;">{_fmt_m(v)}</td>'
                 label = row.get("wacc", row.get("label", "")) if isinstance(row, dict) else ""
-                rows_h += f'<tr><td class="num" style="font-weight:600;">{_fmt_pct(label)}</td>{cells}</tr>'
+                rows_h += (
+                    f'<tr><td class="num" style="font-weight:700;background:'
+                    f'{PALETTE["bg_tertiary"]};">{_fmt_pct(label)}</td>{cells}</tr>'
+                )
 
             sens_html = (
                 f'<div class="cad-card">'
-                f'<h2>Sensitivity: WACC x Terminal Growth</h2>'
-                f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:8px;">'
-                f'Enterprise value under different WACC and terminal growth rate combinations.</p>'
+                f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+                f'<h2 style="margin:0;">Sensitivity: WACC × Terminal Growth</h2>'
+                f'<span class="cad-section-code">SENS</span></div>'
+                f'<p style="font-family:var(--cad-mono);font-size:10.5px;'
+                f'letter-spacing:0.06em;color:{PALETTE["text_muted"]};'
+                f'text-transform:uppercase;margin-bottom:8px;">'
+                f'Enterprise value · green = high EV · red = low EV</p>'
                 f'<table class="cad-table"><thead><tr><th>WACC ↓ / Growth →</th>'
                 f'</tr></thead><tbody>{rows_h}</tbody></table></div>'
             )
 
-    # Assumptions
+    # Assumptions panel
     assume_items = ""
     for k, v in assumptions.items():
         if k in ("wacc", "terminal_growth"):
             continue
         assume_items += (
-            f'<div style="display:flex;justify-content:space-between;padding:4px 0;'
-            f'border-bottom:1px solid {PALETTE["border"]};">'
-            f'<span style="color:{PALETTE["text_secondary"]};">'
-            f'{html.escape(k.replace("_", " ").title())}</span>'
-            f'<span class="cad-mono">{_fmt_m(v) if isinstance(v, (int, float)) and abs(float(v)) > 1000 else html.escape(str(v))}</span>'
+            f'<div style="display:flex;justify-content:space-between;padding:6px 0;'
+            f'border-bottom:1px solid {PALETTE["border"]};font-family:var(--cad-mono);'
+            f'font-size:11px;letter-spacing:0.04em;">'
+            f'<span style="color:{PALETTE["text_muted"]};text-transform:uppercase;">'
+            f'{html.escape(k.replace("_", " "))}</span>'
+            f'<span style="color:{PALETTE["text_primary"]};font-weight:600;">'
+            f'{_fmt_m(v) if isinstance(v, (int, float)) and abs(float(v)) > 1000 else html.escape(str(v))}</span>'
             f'</div>'
         )
     assume_section = (
         f'<div class="cad-card">'
-        f'<h2>Assumptions</h2>'
-        f'<div style="font-size:12.5px;">{assume_items}</div></div>'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h2 style="margin:0;">Assumptions</h2>'
+        f'<span class="cad-section-code">ASSM</span></div>'
+        f'<div>{assume_items}</div></div>'
     ) if assume_items else ""
 
     # Actions
@@ -200,13 +261,15 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     tv_pct = pv_term / ev * 100 if ev > 0 else 0
     interp = (
         f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
-        f'<h2>What This Means</h2>'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h2 style="margin:0;">Interpretation</h2>'
+        f'<span class="cad-section-code">INT</span></div>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>At a WACC of {wacc:.1%} and terminal growth of {growth:.1%}, '
-        f'this hospital\'s enterprise value is <strong>{_fmt_m(ev)}</strong>. '
-        f'Terminal value accounts for {tv_pct:.0f}% of total EV — '
-        f'{"this is typical (60-80%)" if 55 < tv_pct < 85 else "consider sensitivity to terminal assumptions"}.</p>'
-        f'<p style="margin-top:6px;"><strong>Next steps:</strong> '
+        f'<p>At a WACC of <strong>{wacc:.1%}</strong> and terminal growth of '
+        f'<strong>{growth:.1%}</strong>, enterprise value is <strong>{_fmt_m(ev)}</strong>. '
+        f'Terminal value accounts for <strong>{tv_pct:.0f}%</strong> of total EV — '
+        f'{"typical range (60-80%)" if 55 < tv_pct < 85 else "consider sensitivity to terminal assumptions"}.</p>'
+        f'<p style="margin-top:8px;"><strong>Next steps:</strong> '
         f'Check the <a href="/models/lbo/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">LBO model</a> '
         f'to see equity returns at this entry price, or the '
         f'<a href="/models/bridge/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">EBITDA bridge</a> '
@@ -257,41 +320,77 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     # Sources & Uses
     su_html = ""
     if sources:
+        total_s = sources.get("total_sources", 0) or sum(
+            float(v) for k, v in sources.items()
+            if k != "total_sources" and isinstance(v, (int, float))
+        )
         su_rows = ""
         for k, v in sources.items():
             if k == "total_sources":
                 continue
+            try:
+                pct = float(v) / total_s * 100 if total_s else 0
+            except (TypeError, ValueError):
+                pct = 0
             su_rows += (
-                f'<tr><td>{html.escape(k.replace("_", " ").title())}</td>'
-                f'<td class="num">{_fmt_m(v)}</td></tr>'
+                f'<tr><td style="font-weight:600;">{html.escape(k.replace("_", " ").title())}</td>'
+                f'<td class="num">{_fmt_m(v)}</td>'
+                f'<td class="num">{pct:.1f}%</td>'
+                f'<td><div class="cad-bar" style="width:100%;">'
+                f'<div class="cad-bar-fill" style="width:{pct:.0f}%;background:{PALETTE["brand_accent"]};"></div>'
+                f'</div></td></tr>'
             )
         su_html = (
             f'<div class="cad-card">'
-            f'<h2>Sources &amp; Uses</h2>'
+            f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+            f'<h2 style="margin:0;">Sources &amp; Uses</h2>'
+            f'<span class="cad-section-code">S&amp;U</span>'
+            f'<span style="font-family:var(--cad-mono);font-size:10px;'
+            f'letter-spacing:0.08em;color:{PALETTE["text_muted"]};'
+            f'text-transform:uppercase;margin-left:auto;">'
+            f'Total · {_fmt_m(total_s)}</span></div>'
             f'<table class="cad-table"><thead><tr>'
-            f'<th>Item</th><th>Amount</th>'
+            f'<th>Item</th><th>Amount</th><th>%</th><th>Distribution</th>'
             f'</tr></thead><tbody>{su_rows}</tbody></table></div>'
         )
 
-    # Annual projections
+    # Annual projections with leverage heatmap
     annual_html = ""
     if annual:
         ann_rows = ""
         for yr in annual[:7]:
+            lev = yr.get("leverage") or yr.get("net_debt_ebitda")
+            try:
+                lev_v = float(lev) if lev is not None else None
+            except (TypeError, ValueError):
+                lev_v = None
+            if lev_v is None:
+                heat = ""
+            elif lev_v < 3: heat = "cad-heat-1"
+            elif lev_v < 4.5: heat = "cad-heat-2"
+            elif lev_v < 6: heat = "cad-heat-3"
+            elif lev_v < 7.5: heat = "cad-heat-4"
+            else: heat = "cad-heat-5"
             ann_rows += (
                 f'<tr>'
-                f'<td class="num" style="font-weight:600;">Year {yr.get("year", "")}</td>'
+                f'<td class="num" style="font-weight:700;color:{PALETTE["accent_amber"]};">Y{yr.get("year", "")}</td>'
                 f'<td class="num">{_fmt_m(yr.get("revenue"))}</td>'
                 f'<td class="num">{_fmt_m(yr.get("ebitda"))}</td>'
                 f'<td class="num">{_fmt_m(yr.get("debt_balance") or yr.get("total_debt"))}</td>'
                 f'<td class="num">{_fmt_m(yr.get("interest_expense") or yr.get("interest"))}</td>'
-                f'<td class="num">{_fmt_x(yr.get("leverage") or yr.get("net_debt_ebitda"))}</td>'
+                f'<td class="num {heat}" style="font-weight:600;">{_fmt_x(lev)}</td>'
                 f'</tr>'
             )
         annual_html = (
             f'<div class="cad-card">'
-            f'<h2>Annual Projections</h2>'
-            f'<table class="cad-table"><thead><tr>'
+            f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+            f'<h2 style="margin:0;">Annual Projections</h2>'
+            f'<span class="cad-section-code">ANN</span>'
+            f'<span style="font-family:var(--cad-mono);font-size:10px;'
+            f'letter-spacing:0.08em;color:{PALETTE["text_muted"]};'
+            f'text-transform:uppercase;margin-left:auto;">'
+            f'Leverage · green &lt;3x · red &gt;7.5x</span></div>'
+            f'<table class="cad-table crosshair"><thead><tr>'
             f'<th>Year</th><th>Revenue</th><th>EBITDA</th>'
             f'<th>Debt</th><th>Interest</th><th>Leverage</th>'
             f'</tr></thead><tbody>{ann_rows}</tbody></table></div>'
@@ -305,12 +404,14 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
             if k in ("irr", "moic"):
                 continue
             wf_rows += (
-                f'<tr><td>{html.escape(k.replace("_", " ").title())}</td>'
+                f'<tr><td style="font-weight:600;">{html.escape(k.replace("_", " ").title())}</td>'
                 f'<td class="num">{_fmt_m(v) if isinstance(v, (int, float)) and abs(float(v)) > 1000 else _fmt_pct(v) if isinstance(v, float) and abs(v) < 10 else html.escape(str(v))}</td></tr>'
             )
         waterfall_html = (
             f'<div class="cad-card">'
-            f'<h2>Returns Waterfall</h2>'
+            f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+            f'<h2 style="margin:0;">Returns Waterfall</h2>'
+            f'<span class="cad-section-code">WFL</span></div>'
             f'<table class="cad-table"><thead><tr>'
             f'<th>Component</th><th>Value</th>'
             f'</tr></thead><tbody>{wf_rows}</tbody></table></div>'
@@ -337,15 +438,17 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     )
     interp = (
         f'<div class="cad-card" style="border-left:3px solid {irr_color};">'
-        f'<h2>What This Means</h2>'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h2 style="margin:0;">Interpretation</h2>'
+        f'<span class="cad-section-code" style="color:{irr_color};border-color:{irr_color};">INT</span></div>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>At {_fmt_x(moic)} MOIC and {_fmt_pct(irr)} IRR over {hold_years:.0f} years, '
-        f'this deal {irr_assessment}.</p>'
-        f'<p style="margin-top:6px;"><strong>Key drivers:</strong> '
+        f'<p>At <strong>{_fmt_x(moic)}</strong> MOIC and <strong>{_fmt_pct(irr)}</strong> IRR '
+        f'over <strong>{hold_years:.0f} years</strong>, this deal {irr_assessment}.</p>'
+        f'<p style="margin-top:8px;"><strong>Key drivers:</strong> '
         f'Check the <a href="/models/bridge/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">EBITDA bridge</a> '
-        f'to identify the highest-probability value levers, and the '
+        f'to identify highest-probability levers, the '
         f'<a href="/models/debt/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">debt schedule</a> '
-        f'for the leverage trajectory. Use the '
+        f'for leverage trajectory, or the '
         f'<a href="/models/challenge/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">challenge solver</a> '
         f'to see what breaks the deal.</p>'
         f'</div></div>'

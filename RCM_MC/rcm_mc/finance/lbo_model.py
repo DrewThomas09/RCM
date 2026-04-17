@@ -238,11 +238,36 @@ def build_lbo(
 
 
 def build_lbo_from_deal(profile: Dict[str, Any]) -> LBOResult:
-    """Convenience: build LBO from deal profile."""
+    """Convenience: build LBO from deal profile.
+
+    Precedence for margin: current_ebitda/revenue > ebitda_margin field >
+    12% default. Revenue must be present; callers upstream should guard
+    against running the LBO on empty profiles.
+    """
     revenue = float(profile.get("net_revenue") or profile.get("revenue") or 400e6)
-    ebitda = float(profile.get("current_ebitda") or revenue * 0.12)
+
+    # Resolve margin
+    ebitda_raw = profile.get("current_ebitda")
+    if ebitda_raw not in (None, ""):
+        ebitda = float(ebitda_raw)
+        margin = ebitda / revenue if revenue > 0 else 0.12
+    elif profile.get("ebitda_margin") not in (None, ""):
+        try:
+            margin = float(profile["ebitda_margin"])
+        except (TypeError, ValueError):
+            margin = 0.12
+        ebitda = revenue * margin
+    else:
+        margin = 0.12
+        ebitda = revenue * margin
+
+    # Clamp to plausible LBO-target range. Sub-zero EBITDA can't be
+    # financed with traditional senior debt turns, so we floor at 2%.
+    margin = max(0.02, min(0.40, margin))
+    ebitda = revenue * margin
+
     return build_lbo(
         entry_ebitda=ebitda,
         revenue_base=revenue,
-        ebitda_margin_base=ebitda / revenue if revenue > 0 else 0.12,
+        ebitda_margin_base=margin,
     )
