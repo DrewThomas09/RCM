@@ -1909,6 +1909,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/corpus-dashboard":
             from .ui.data_public.corpus_dashboard_page import render_corpus_dashboard
             return self._send_html(render_corpus_dashboard())
+        if path == "/corpus-ic-memo":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.ic_memo_page import render_ic_memo_gen
+            return self._send_html(render_ic_memo_gen(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
