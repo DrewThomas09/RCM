@@ -4346,5 +4346,86 @@ class TestRenderDiscussionMarkdown(unittest.TestCase):
         self.assertIn("No discussion", md)
 
 
+# ── KPI alert rules ────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    KPI_DEFAULT_RULES,
+    KPIAlert,
+    KPIObservation,
+    KPIRule,
+    evaluate_kpi,
+    evaluate_kpi_alerts,
+    summarize_kpi_alerts,
+)
+
+
+class TestEvaluateKPI(unittest.TestCase):
+
+    def test_denial_within_band_no_alert(self) -> None:
+        rule = next(r for r in KPI_DEFAULT_RULES if r.kpi == "initial_denial_rate")
+        alert = evaluate_kpi(KPIObservation(kpi="initial_denial_rate", value=0.09), rule)
+        self.assertIsNone(alert)
+
+    def test_denial_above_guardrail_medium(self) -> None:
+        rule = next(r for r in KPI_DEFAULT_RULES if r.kpi == "initial_denial_rate")
+        alert = evaluate_kpi(KPIObservation(kpi="initial_denial_rate", value=0.16), rule)
+        self.assertIsNotNone(alert)
+        self.assertEqual(alert.severity, "medium")
+
+    def test_denial_above_ceiling_high(self) -> None:
+        rule = next(r for r in KPI_DEFAULT_RULES if r.kpi == "initial_denial_rate")
+        alert = evaluate_kpi(KPIObservation(kpi="initial_denial_rate", value=0.22), rule)
+        self.assertEqual(alert.severity, "high")
+
+    def test_clean_claim_below_floor_high(self) -> None:
+        rule = next(r for r in KPI_DEFAULT_RULES if r.kpi == "clean_claim_rate")
+        alert = evaluate_kpi(KPIObservation(kpi="clean_claim_rate", value=0.75), rule)
+        self.assertEqual(alert.severity, "high")
+
+    def test_high_margin_not_flagged_for_higher_is_better(self) -> None:
+        # EBITDA margin above upper guardrail is NOT flagged when
+        # higher-is-better (no ceiling defined for the upside).
+        rule = next(r for r in KPI_DEFAULT_RULES if r.kpi == "ebitda_margin")
+        alert = evaluate_kpi(KPIObservation(kpi="ebitda_margin", value=0.30), rule)
+        self.assertIsNone(alert)
+
+
+class TestEvaluateAll(unittest.TestCase):
+
+    def test_mixed_batch(self) -> None:
+        obs = [
+            KPIObservation(kpi="initial_denial_rate", value=0.16),  # medium alert
+            KPIObservation(kpi="days_in_ar", value=50),               # no alert
+            KPIObservation(kpi="clean_claim_rate", value=0.72),       # high alert
+        ]
+        alerts = evaluate_kpi_alerts(obs)
+        self.assertEqual(len(alerts), 2)
+        # Highest severity first.
+        self.assertEqual(alerts[0].severity, "high")
+
+    def test_unknown_kpi_ignored(self) -> None:
+        alerts = evaluate_kpi_alerts([
+            KPIObservation(kpi="made_up", value=100),
+        ])
+        self.assertEqual(alerts, [])
+
+
+class TestSummarizeAlerts(unittest.TestCase):
+
+    def test_empty_summary(self) -> None:
+        summary = summarize_kpi_alerts([])
+        self.assertEqual(summary["total"], 0)
+        self.assertIn("No", summary["headline"])
+
+    def test_mixed_summary(self) -> None:
+        alerts = evaluate_kpi_alerts([
+            KPIObservation(kpi="initial_denial_rate", value=0.22),   # high
+            KPIObservation(kpi="days_in_ar", value=65),                # medium
+        ])
+        summary = summarize_kpi_alerts(alerts)
+        self.assertEqual(summary["counts"]["high"], 1)
+        self.assertEqual(summary["counts"]["medium"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

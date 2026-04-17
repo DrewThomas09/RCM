@@ -81,6 +81,15 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .kpi_alert_rules import (
+    DEFAULT_RULES as KPI_DEFAULT_RULES,
+    KPIAlert,
+    KPIObservation,
+    KPIRule,
+    evaluate_all as evaluate_kpi_alerts,
+    evaluate_kpi,
+    summarize_alerts as summarize_kpi_alerts,
+)
 from .partner_discussion import (
     DiscussionItem,
     build_discussion,
@@ -509,4 +518,11 @@ __all__ = [
     "DiscussionItem",
     "build_discussion",
     "render_discussion_markdown",
+    "KPI_DEFAULT_RULES",
+    "KPIAlert",
+    "KPIObservation",
+    "KPIRule",
+    "evaluate_kpi",
+    "evaluate_kpi_alerts",
+    "summarize_kpi_alerts",
 ]
