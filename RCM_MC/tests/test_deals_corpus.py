@@ -10,6 +10,7 @@ import json
 import os
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 from rcm_mc.data_public.deals_corpus import DealsCorpus, _SEED_DEALS
@@ -2460,6 +2461,330 @@ class TestRegionalAnalysis(unittest.TestCase):
             main(["--db", self.db_path, "region", "--deal-id", "seed_001"])
         out = buf.getvalue()
         self.assertIn("region", out.lower())
+
+
+# ===========================================================================
+# TestCmsApiClient
+# ===========================================================================
+
+class TestCmsApiClient(unittest.TestCase):
+    """Unit tests for cms_api_client — mocks urllib to avoid real HTTP calls."""
+
+    def _make_json_response(self, payload):
+        import io
+        raw = json.dumps(payload).encode("utf-8")
+        resp = unittest.mock.MagicMock()
+        resp.read.return_value = raw
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = unittest.mock.MagicMock(return_value=False)
+        return resp
+
+    def test_fetch_pages_returns_flat_list(self):
+        from rcm_mc.data_public.cms_api_client import fetch_pages
+        rows = [{"a": i} for i in range(10)]
+        resp = self._make_json_response(rows)
+        with unittest.mock.patch("rcm_mc.data_public.cms_api_client.urlopen", return_value=resp):
+            result = fetch_pages("http://example.com/data", limit=100, max_pages=1)
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 10)
+
+    def test_fetch_pages_unwraps_data_envelope(self):
+        from rcm_mc.data_public.cms_api_client import fetch_pages
+        rows = [{"x": 1}]
+        resp = self._make_json_response({"data": rows, "meta": {"total": 1}})
+        with unittest.mock.patch("rcm_mc.data_public.cms_api_client.urlopen", return_value=resp):
+            result = fetch_pages("http://example.com/data", limit=100, max_pages=1)
+        self.assertEqual(result, rows)
+
+    def test_fetch_pages_stops_on_empty(self):
+        from rcm_mc.data_public.cms_api_client import fetch_pages
+        call_count = 0
+        responses = [[{"a": 1}] * 5000, []]
+
+        def fake_urlopen(req, timeout):
+            nonlocal call_count
+            resp = self._make_json_response(responses[min(call_count, len(responses)-1)])
+            call_count += 1
+            return resp
+
+        with unittest.mock.patch("rcm_mc.data_public.cms_api_client.urlopen", side_effect=fake_urlopen):
+            result = fetch_pages("http://example.com/data", limit=5000, max_pages=5)
+        self.assertEqual(call_count, 2)
+        self.assertEqual(len(result), 5000)
+
+    def test_fetch_pages_stops_on_partial_page(self):
+        from rcm_mc.data_public.cms_api_client import fetch_pages
+        rows = [{"a": 1}] * 42
+        resp = self._make_json_response(rows)
+        with unittest.mock.patch("rcm_mc.data_public.cms_api_client.urlopen", return_value=resp):
+            result = fetch_pages("http://example.com/data", limit=100, max_pages=5)
+        self.assertEqual(len(result), 42)
+
+    def test_fetch_pages_raises_on_bad_json(self):
+        from rcm_mc.data_public.cms_api_client import fetch_pages, CmsApiError
+        bad_resp = unittest.mock.MagicMock()
+        bad_resp.read.return_value = b"not json"
+        bad_resp.__enter__ = lambda s: s
+        bad_resp.__exit__ = unittest.mock.MagicMock(return_value=False)
+        with unittest.mock.patch("rcm_mc.data_public.cms_api_client.urlopen", return_value=bad_resp):
+            with self.assertRaises(CmsApiError):
+                fetch_pages("http://example.com/data", limit=10, max_pages=1, retry_count=0)
+
+    def test_fetch_pages_raises_after_retries_exhausted(self):
+        from rcm_mc.data_public.cms_api_client import fetch_pages, CmsApiError
+        from urllib.error import URLError
+        with unittest.mock.patch("rcm_mc.data_public.cms_api_client.urlopen", side_effect=URLError("down")):
+            with unittest.mock.patch("rcm_mc.data_public.cms_api_client.time.sleep"):
+                with self.assertRaises(CmsApiError):
+                    fetch_pages("http://example.com/data", limit=10, max_pages=1, retry_count=1)
+
+    def test_resolve_column_canonical(self):
+        from rcm_mc.data_public.cms_api_client import resolve_column
+        row = {"rndrng_prvdr_type": "Cardiology", "tot_srvcs": 100}
+        self.assertEqual(resolve_column(row, "provider_type"), "rndrng_prvdr_type")
+
+    def test_resolve_column_missing(self):
+        from rcm_mc.data_public.cms_api_client import resolve_column
+        self.assertIsNone(resolve_column({}, "provider_type"))
+
+    def test_normalize_row_renames_aliases(self):
+        from rcm_mc.data_public.cms_api_client import normalize_row
+        row = {"rndrng_prvdr_type": "Cardiology", "tot_srvcs": "500", "tot_mdcr_pymt_amt": "1000.0"}
+        out = normalize_row(row)
+        self.assertIn("provider_type", out)
+        self.assertIn("total_services", out)
+        self.assertIn("total_medicare_payment_amt", out)
+        self.assertEqual(out["provider_type"], "Cardiology")
+
+    def test_normalize_row_no_clobber(self):
+        from rcm_mc.data_public.cms_api_client import normalize_row
+        # canonical already present — should not overwrite
+        row = {"provider_type": "Surgery", "rndrng_prvdr_type": "Other"}
+        out = normalize_row(row)
+        self.assertEqual(out["provider_type"], "Surgery")
+
+    def test_normalize_rows_list(self):
+        from rcm_mc.data_public.cms_api_client import normalize_rows
+        rows = [{"tot_srvcs": "100"}, {"tot_srvcs": "200"}]
+        out = normalize_rows(rows)
+        self.assertTrue(all("total_services" in r for r in out))
+
+    def test_safe_float_converts(self):
+        from rcm_mc.data_public.cms_api_client import safe_float
+        self.assertAlmostEqual(safe_float("1,234.56"), 1234.56)
+        self.assertAlmostEqual(safe_float(42), 42.0)
+        self.assertAlmostEqual(safe_float(None), 0.0)
+        self.assertAlmostEqual(safe_float("bad"), 0.0)
+
+    def test_safe_int_converts(self):
+        from rcm_mc.data_public.cms_api_client import safe_int
+        self.assertEqual(safe_int("1,234"), 1234)
+        self.assertEqual(safe_int("12.9"), 12)
+        self.assertEqual(safe_int(None), 0)
+        self.assertEqual(safe_int("bad"), 0)
+
+    def test_cms_api_error_is_runtime_error(self):
+        from rcm_mc.data_public.cms_api_client import CmsApiError
+        self.assertTrue(issubclass(CmsApiError, RuntimeError))
+
+    def test_dataset_ids_configured(self):
+        from rcm_mc.data_public.cms_api_client import DATASET_IDS
+        self.assertIn("provider_utilization_2021", DATASET_IDS)
+        self.assertIn("provider_utilization_2022", DATASET_IDS)
+
+    def test_fetch_provider_utilization_bad_year_raises(self):
+        from rcm_mc.data_public.cms_api_client import fetch_provider_utilization, CmsApiError
+        with self.assertRaises(CmsApiError):
+            fetch_provider_utilization(year=1999)
+
+    def test_column_aliases_keys(self):
+        from rcm_mc.data_public.cms_api_client import COLUMN_ALIASES
+        required = {"provider_type", "state", "total_services", "total_medicare_payment_amt"}
+        self.assertTrue(required.issubset(COLUMN_ALIASES.keys()))
+
+
+# ===========================================================================
+# TestMarketConcentration
+# ===========================================================================
+
+class TestMarketConcentration(unittest.TestCase):
+
+    def _sample_df(self):
+        import pandas as pd
+        data = [
+            {"state": "TX", "year": 2021, "provider_type": "Cardiology", "total_medicare_payment_amt": 1000.0},
+            {"state": "TX", "year": 2021, "provider_type": "Orthopedic", "total_medicare_payment_amt": 600.0},
+            {"state": "TX", "year": 2021, "provider_type": "Neurology",  "total_medicare_payment_amt": 400.0},
+            {"state": "CA", "year": 2021, "provider_type": "Cardiology", "total_medicare_payment_amt": 2000.0},
+            {"state": "CA", "year": 2021, "provider_type": "Orthopedic", "total_medicare_payment_amt": 500.0},
+            {"state": "TX", "year": 2020, "provider_type": "Cardiology", "total_medicare_payment_amt": 900.0},
+            {"state": "TX", "year": 2020, "provider_type": "Orthopedic", "total_medicare_payment_amt": 500.0},
+        ]
+        return pd.DataFrame(data)
+
+    def test_market_concentration_returns_dataframe(self):
+        from rcm_mc.data_public.market_concentration import market_concentration_summary
+        import pandas as pd
+        out = market_concentration_summary(self._sample_df())
+        self.assertIsInstance(out, pd.DataFrame)
+        self.assertFalse(out.empty)
+
+    def test_hhi_in_range(self):
+        from rcm_mc.data_public.market_concentration import market_concentration_summary
+        out = market_concentration_summary(self._sample_df())
+        for _, row in out.iterrows():
+            self.assertGreater(row["hhi"], 0)
+            self.assertLessEqual(row["hhi"], 1.0)
+
+    def test_cr3_leq_1(self):
+        from rcm_mc.data_public.market_concentration import market_concentration_summary
+        out = market_concentration_summary(self._sample_df())
+        for _, row in out.iterrows():
+            self.assertLessEqual(row["cr3"], 1.01)
+
+    def test_missing_required_columns_returns_empty(self):
+        from rcm_mc.data_public.market_concentration import market_concentration_summary
+        import pandas as pd
+        out = market_concentration_summary(pd.DataFrame({"state": ["TX"]}))
+        self.assertTrue(out.empty)
+
+    def test_provider_geo_dependency(self):
+        from rcm_mc.data_public.market_concentration import provider_geo_dependency
+        out = provider_geo_dependency(self._sample_df())
+        self.assertIn("provider_type", out.columns)
+        self.assertIn("geo_hhi", out.columns)
+        self.assertIn("top_state_share", out.columns)
+
+    def test_geo_dependency_flag_set(self):
+        from rcm_mc.data_public.market_concentration import provider_geo_dependency
+        import pandas as pd
+        # Cardiology concentrated in CA
+        out = provider_geo_dependency(self._sample_df(), dependency_threshold=0.50)
+        cardi = out[out["provider_type"] == "Cardiology"]
+        if not cardi.empty:
+            self.assertIn("geo_dependency_flag", cardi.columns)
+
+    def test_state_volatility_summary(self):
+        from rcm_mc.data_public.market_concentration import state_volatility_summary
+        out = state_volatility_summary(self._sample_df())
+        self.assertIn("state", out.columns)
+        self.assertIn("yoy_volatility", out.columns)
+
+    def test_state_growth_summary(self):
+        from rcm_mc.data_public.market_concentration import state_growth_summary
+        out = state_growth_summary(self._sample_df())
+        self.assertIn("state", out.columns)
+        self.assertIn("latest_payment", out.columns)
+
+    def test_concentration_table_string(self):
+        from rcm_mc.data_public.market_concentration import market_concentration_summary, concentration_table
+        out = market_concentration_summary(self._sample_df())
+        txt = concentration_table(out)
+        self.assertIn("HHI", txt)
+        self.assertIn("CR3", txt)
+
+
+# ===========================================================================
+# TestProviderRegime
+# ===========================================================================
+
+class TestProviderRegime(unittest.TestCase):
+
+    def _trends_df(self):
+        import pandas as pd
+        data = []
+        for pt, base, growth in [("Cardiology", 1000, 0.15), ("Orthopedic", 500, 0.02), ("Neurology", 800, -0.05)]:
+            for yr in [2019, 2020, 2021, 2022]:
+                data.append({
+                    "provider_type": pt,
+                    "year": yr,
+                    "total_medicare_payment_amt": base * ((1 + growth) ** (yr - 2019)),
+                    "total_services": 100 * (yr - 2018),
+                    "total_unique_benes": 80 * (yr - 2018),
+                })
+        return pd.DataFrame(data)
+
+    def test_yearly_trends_returns_yoy(self):
+        from rcm_mc.data_public.provider_regime import yearly_trends
+        out = yearly_trends(self._trends_df())
+        self.assertIn("payment_yoy_pct", out.columns)
+        self.assertIn("provider_type", out.columns)
+
+    def test_provider_volatility_from_trends(self):
+        from rcm_mc.data_public.provider_regime import yearly_trends, provider_volatility
+        trends = yearly_trends(self._trends_df())
+        vol = provider_volatility(trends)
+        self.assertIn("yoy_payment_volatility", vol.columns)
+        self.assertFalse(vol.empty)
+
+    def test_provider_momentum_profile(self):
+        from rcm_mc.data_public.provider_regime import yearly_trends, provider_momentum_profile
+        trends = yearly_trends(self._trends_df())
+        mom = provider_momentum_profile(trends)
+        self.assertIn("growth_cagr", mom.columns)
+        self.assertIn("consistency_score", mom.columns)
+
+    def test_regime_classification_returns_five_regimes(self):
+        from rcm_mc.data_public.provider_regime import (
+            yearly_trends, provider_volatility, provider_momentum_profile,
+            provider_regime_classification,
+        )
+        trends = yearly_trends(self._trends_df())
+        vol = provider_volatility(trends)
+        mom = provider_momentum_profile(trends)
+        regimes = provider_regime_classification(mom, vol)
+        self.assertIn("regime", regimes.columns)
+        valid = {"durable_growth", "emerging_volatile", "steady_compounders", "stagnant", "declining_risk"}
+        for r in regimes["regime"]:
+            self.assertIn(str(r), valid)
+
+    def test_high_growth_low_vol_is_durable(self):
+        from rcm_mc.data_public.provider_regime import provider_regime_classification
+        import pandas as pd
+        mom = pd.DataFrame([{"provider_type": "A", "growth_cagr": 0.20, "consistency_score": 0.8,
+                             "positive_yoy_share": 1.0, "yoy_growth_volatility": 0.05}])
+        vol = pd.DataFrame([{"provider_type": "A", "yoy_payment_volatility": 0.05,
+                             "avg_payment_growth": 0.20, "last_payment_growth": 0.20}])
+        regimes = provider_regime_classification(mom, vol)
+        self.assertEqual(str(regimes.iloc[0]["regime"]), "durable_growth")
+
+    def test_negative_growth_high_vol_is_declining_risk(self):
+        from rcm_mc.data_public.provider_regime import provider_regime_classification
+        import pandas as pd
+        mom = pd.DataFrame([{"provider_type": "B", "growth_cagr": -0.10, "consistency_score": -0.2,
+                             "positive_yoy_share": 0.2, "yoy_growth_volatility": 0.50}])
+        vol = pd.DataFrame([{"provider_type": "B", "yoy_payment_volatility": 0.50,
+                             "avg_payment_growth": -0.10, "last_payment_growth": -0.10}])
+        regimes = provider_regime_classification(mom, vol)
+        self.assertEqual(str(regimes.iloc[0]["regime"]), "declining_risk")
+
+    def test_growth_volatility_watchlist(self):
+        from rcm_mc.data_public.provider_regime import yearly_trends, provider_volatility, growth_volatility_watchlist
+        trends = yearly_trends(self._trends_df())
+        vol = provider_volatility(trends)
+        wl = growth_volatility_watchlist(vol)
+        self.assertIn("watchlist_bucket", wl.columns)
+        valid = {"priority", "monitor", "high_risk"}
+        for b in wl["watchlist_bucket"]:
+            self.assertIn(str(b), valid)
+
+    def test_regime_table_string(self):
+        from rcm_mc.data_public.provider_regime import (
+            yearly_trends, provider_volatility, provider_momentum_profile,
+            provider_regime_classification, regime_table,
+        )
+        trends = yearly_trends(self._trends_df())
+        vol = provider_volatility(trends)
+        mom = provider_momentum_profile(trends)
+        regimes = provider_regime_classification(mom, vol)
+        txt = regime_table(regimes)
+        self.assertIn("Regime", txt)
+
+    def test_empty_input_returns_empty(self):
+        from rcm_mc.data_public.provider_regime import yearly_trends
+        import pandas as pd
+        out = yearly_trends(pd.DataFrame())
+        self.assertTrue(out.empty)
 
 
 if __name__ == "__main__":
