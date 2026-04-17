@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 82
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 85
 modules + test suite:
 
 | Module | Role |
@@ -788,6 +788,9 @@ modules + test suite:
 | `workstream_tracker.py` | Post-close integration milestone aggregator |
 | `negotiation_position.py` | Anchor / walkaway / leverage / concessions |
 | `loi_drafter.py` | LOI term-sheet generator |
+| `post_mortem.py` | Exit-deal lessons-learned template |
+| `cycle_timing.py` | Market-cycle phase classifier |
+| `exit_planning.py` | Year-by-year exit preparation roadmap |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1727,7 +1730,44 @@ non-binding delineation.
 
 ---
 
-## 85. Change log
+## 85. Post-mortem (`post_mortem.py`)
+
+Structured lessons-learned template for exited deals. Compares
+actual vs planned across IRR / MOIC / exit multiple / exit EBITDA.
+Classifies net-vs-plan (outperform / on_plan / underperform) and
+surfaces lessons tied to the underperformance dimension, with
+concrete playbook-update suggestions that map back to
+`heuristics.py`.
+
+---
+
+## 86. Cycle timing (`cycle_timing.py`)
+
+Classifies the current healthcare-PE market into one of four cycle
+phases (early_expansion / mid_expansion / peak / contraction)
+using indicators: current vs 10-year avg multiple, deal-volume
+YoY, LP commitment YoY, fed-funds direction, debt spreads.
+
+Returns phase + confidence + entry implication + exit implication.
+Used when the partner asks "should we be deploying aggressively
+right now."
+
+---
+
+## 87. Exit planning (`exit_planning.py`)
+
+Generates a year-by-year exit preparation roadmap tailored to hold
+length + thesis type. Year-1 front-loads audit/close discipline;
+mid-years build buyer-candidate lists and data hygiene; last
+year is the formal process. Extra milestones for roll-up, RCM,
+distressed, and IPO theses.
+
+Complement to `exit_readiness.py` (static scorecard) —
+`exit_planning.py` is the dynamic roadmap.
+
+---
+
+## 88. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1853,3 +1893,6 @@ non-binding delineation.
   81 modules, 820 pe_intelligence unit tests.
 - **2026-04-17** — Added `loi_drafter.py`. Full inventory: 82
   modules, 827 pe_intelligence unit tests.
+- **2026-04-17** — Added `post_mortem.py`, `cycle_timing.py`,
+  `exit_planning.py`. Full inventory: 85 modules, 850
+  pe_intelligence unit tests.
