@@ -686,6 +686,13 @@ from .thesis_coherence_check import (
     check_coherence,
     render_coherence_markdown,
 )
+from .margin_of_safety import (
+    LeverSafety,
+    SafetyInputs,
+    SafetyReport,
+    analyze_safety,
+    render_safety_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1643,4 +1650,9 @@ __all__ = [
     "ThesisPillar",
     "check_coherence",
     "render_coherence_markdown",
+    "LeverSafety",
+    "SafetyInputs",
+    "SafetyReport",
+    "analyze_safety",
+    "render_safety_markdown",
 ]

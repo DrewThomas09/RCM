@@ -12471,5 +12471,80 @@ class TestThesisCoherenceCheck(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Margin of safety ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    LeverSafety,
+    SafetyInputs,
+    SafetyReport,
+    analyze_safety,
+    render_safety_markdown,
+)
+
+
+class TestMarginOfSafety(unittest.TestCase):
+
+    def _base(self) -> SafetyInputs:
+        return SafetyInputs(
+            ebitda_m=50.0, entry_multiple=11.0, exit_multiple=11.0,
+            ebitda_growth=0.10, leverage_multiple=5.5,
+            hold_years=5, hurdle_moic=2.0,
+        )
+
+    def test_base_moic_above_hurdle(self) -> None:
+        r = analyze_safety(self._base())
+        self.assertGreater(r.base_moic, r.hurdle_moic)
+
+    def test_below_hurdle_pass_note(self) -> None:
+        r = analyze_safety(SafetyInputs(
+            ebitda_m=50.0, entry_multiple=14.0, exit_multiple=9.0,
+            ebitda_growth=0.03, leverage_multiple=3.0,
+            hold_years=5, hurdle_moic=2.5,
+        ))
+        self.assertLess(r.base_moic, r.hurdle_moic)
+        self.assertIn("pass", r.partner_note.lower())
+
+    def test_all_four_levers_present(self) -> None:
+        r = analyze_safety(self._base())
+        names = {l.lever for l in r.levers}
+        self.assertEqual(names, {
+            "ebitda_growth", "exit_multiple", "entry_multiple",
+            "leverage_multiple",
+        })
+
+    def test_combined_shock_below_base(self) -> None:
+        r = analyze_safety(self._base())
+        self.assertLess(r.combined_shock_moic, r.base_moic)
+
+    def test_safety_grade_assigned(self) -> None:
+        r = analyze_safety(self._base())
+        for l in r.levers:
+            self.assertIn(l.safety_grade, ("thin", "moderate", "ample"))
+
+    def test_aggressive_deal_has_thin_margins(self) -> None:
+        # High entry mult, modest growth, tight hurdle.
+        r = analyze_safety(SafetyInputs(
+            ebitda_m=50.0, entry_multiple=13.0, exit_multiple=12.0,
+            ebitda_growth=0.08, leverage_multiple=6.0,
+            hold_years=5, hurdle_moic=2.3,
+        ))
+        # At least one should be thin.
+        thin = [l for l in r.levers if l.safety_grade == "thin"]
+        self.assertGreaterEqual(len(thin), 1)
+
+    def test_markdown_renders(self) -> None:
+        md = render_safety_markdown(analyze_safety(self._base()))
+        self.assertIn("# Margin of safety", md)
+        self.assertIn("Breakeven", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(analyze_safety(self._base()).to_dict())
+
+    def test_base_irr_populated(self) -> None:
+        r = analyze_safety(self._base())
+        self.assertIsNotNone(r.base_irr)
+
+
 if __name__ == "__main__":
     unittest.main()
