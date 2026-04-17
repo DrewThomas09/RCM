@@ -141,6 +141,12 @@ from .cms_data_quality import (
     winsorize_metrics,
     quality_report_text,
 )
+from .cms_benchmark_calibration import (
+    CalibrationResult,
+    calibrate_from_cms,
+    apply_calibration,
+    calibration_text,
+)
 from .deal_comparables_enhanced import (
     similarity_score,
     find_enhanced_comps,
@@ -269,6 +275,10 @@ __all__ = [
     "cms_run_summary",
     "winsorize_metrics",
     "quality_report_text",
+    "CalibrationResult",
+    "calibrate_from_cms",
+    "apply_calibration",
+    "calibration_text",
     "similarity_score",
     "find_enhanced_comps",
     "peer_group_percentiles",

@@ -3556,6 +3556,122 @@ class TestCmsCli(unittest.TestCase):
         self.assertIsInstance(out, str)
 
 
+class TestCmsBenchmarkCalibration(unittest.TestCase):
+    """Tests for cms_benchmark_calibration module."""
+
+    def _empty_report(self, year=2021):
+        from rcm_mc.data_public.cms_market_analysis import MarketAnalysisReport
+        import pandas as pd
+        return MarketAnalysisReport(
+            year=year,
+            state_filter=None,
+            provider_type_filter=None,
+            row_count=0,
+            concentration=pd.DataFrame(),
+            geo_dependency=pd.DataFrame(),
+            state_growth=pd.DataFrame(),
+            state_volatility=pd.DataFrame(),
+            portfolio_fit=pd.DataFrame(),
+            regimes=pd.DataFrame(),
+            watchlist=pd.DataFrame(),
+            errors=[],
+        )
+
+    def _make_df(self, rows=300):
+        import pandas as pd
+        import numpy as np
+        rng = np.random.default_rng(42)
+        pt = (["SNF", "HHA", "ASC"] * (rows // 3 + 1))[:rows]
+        st = (["CA", "TX", "FL"] * (rows // 3 + 1))[:rows]
+        return pd.DataFrame({
+            "provider_type": pt,
+            "state": st,
+            "year": [2021] * rows,
+            "_cms_total_payment_mm": rng.uniform(1, 100, rows).tolist(),
+            "bene_cnt": rng.integers(10, 500, rows).tolist(),
+            "srvcs_cnt": rng.integers(50, 2000, rows).tolist(),
+            "avg_mdcr_alowd_amt": rng.uniform(50, 300, rows).tolist(),
+            "avg_mdcr_pymt_amt": rng.uniform(40, 250, rows).tolist(),
+            "avg_mdcr_stdzd_amt": rng.uniform(40, 250, rows).tolist(),
+        })
+
+    def test_calibrate_no_data(self):
+        from rcm_mc.data_public.cms_benchmark_calibration import calibrate_from_cms
+        import pandas as pd
+        # Pass empty df so no HTTP; should not raise
+        cal = calibrate_from_cms(year=2021, df=pd.DataFrame())
+        self.assertEqual(cal.year, 2021)
+        self.assertIsInstance(cal.moic_uplift_factor, float)
+
+    def test_calibrate_with_data(self):
+        from rcm_mc.data_public.cms_benchmark_calibration import calibrate_from_cms
+        df = self._make_df()
+        cal = calibrate_from_cms(year=2021, df=df)
+        self.assertIsInstance(cal.moic_uplift_factor, float)
+        self.assertGreater(cal.moic_uplift_factor, 0.5)
+
+    def test_calibration_result_defaults(self):
+        from rcm_mc.data_public.cms_benchmark_calibration import CalibrationResult
+        cal = CalibrationResult(year=2022, state_filter=None, provider_type_filter=None)
+        self.assertEqual(cal.moic_uplift_factor, 1.0)
+        self.assertEqual(cal.confidence, "low")
+
+    def test_apply_calibration_scales_moic(self):
+        from rcm_mc.data_public.cms_benchmark_calibration import (
+            CalibrationResult, apply_calibration
+        )
+        cal = CalibrationResult(year=2021, state_filter=None, provider_type_filter=None)
+        cal.moic_uplift_factor = 1.10
+        benchmarks = {"moic_p25": 1.5, "moic_p50": 2.0, "moic_p75": 3.0}
+        adj = apply_calibration(benchmarks, cal)
+        self.assertAlmostEqual(adj["moic_p50"], 2.2, places=2)
+        self.assertAlmostEqual(adj["moic_p25"], 1.65, places=2)
+
+    def test_apply_calibration_preserves_other_fields(self):
+        from rcm_mc.data_public.cms_benchmark_calibration import (
+            CalibrationResult, apply_calibration
+        )
+        cal = CalibrationResult(year=2021, state_filter=None, provider_type_filter=None)
+        benchmarks = {"moic_p50": 2.0, "deal_count": 50, "irr_p50": 0.20}
+        adj = apply_calibration(benchmarks, cal)
+        self.assertEqual(adj["deal_count"], 50)
+        self.assertIn("calibration_factor", adj)
+
+    def test_apply_calibration_none_safe(self):
+        from rcm_mc.data_public.cms_benchmark_calibration import (
+            CalibrationResult, apply_calibration
+        )
+        cal = CalibrationResult(year=2021, state_filter=None, provider_type_filter=None)
+        benchmarks = {"moic_p25": None, "moic_p50": 2.0}
+        adj = apply_calibration(benchmarks, cal)
+        self.assertIsNone(adj["moic_p25"])
+
+    def test_calibration_text(self):
+        from rcm_mc.data_public.cms_benchmark_calibration import (
+            CalibrationResult, calibration_text
+        )
+        cal = CalibrationResult(
+            year=2021, state_filter="CA", provider_type_filter=None,
+            median_hhi=2800.0, durable_growth_count=5, declining_risk_count=2,
+            moic_uplift_factor=1.08, confidence="medium"
+        )
+        text = calibration_text(cal)
+        self.assertIn("2021", text)
+        self.assertIn("MOIC uplift factor", text)
+        self.assertIn("medium", text)
+
+    def test_calibration_confidence_levels(self):
+        from rcm_mc.data_public.cms_benchmark_calibration import calibrate_from_cms
+        import pandas as pd
+        # Small df → low confidence
+        cal_small = calibrate_from_cms(year=2021, df=pd.DataFrame())
+        self.assertEqual(cal_small.confidence, "low")
+        # Large df → medium or high
+        df = self._make_df(rows=400)
+        cal_large = calibrate_from_cms(year=2021, df=df)
+        self.assertIn(cal_large.confidence, ("low", "medium", "high"))
+
+
 class TestDealComparablesEnhanced(unittest.TestCase):
     """Tests for deal_comparables_enhanced module."""
 
