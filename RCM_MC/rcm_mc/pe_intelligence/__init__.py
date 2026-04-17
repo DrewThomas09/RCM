@@ -488,6 +488,13 @@ from .geographic_reach_analyzer import (
     analyze_geography,
     render_geo_markdown,
 )
+from .growth_algorithm_diagnostic import (
+    GrowthComponent,
+    GrowthDiagnostic,
+    GrowthInputs,
+    diagnose_growth,
+    render_growth_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1295,4 +1302,9 @@ __all__ = [
     "StateFootprint",
     "analyze_geography",
     "render_geo_markdown",
+    "GrowthComponent",
+    "GrowthDiagnostic",
+    "GrowthInputs",
+    "diagnose_growth",
+    "render_growth_markdown",
 ]

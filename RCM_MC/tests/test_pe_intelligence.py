@@ -9877,5 +9877,109 @@ class TestGeographicReachAnalyzer(unittest.TestCase):
         self.assertGreater(len(EXPANSION_FAVORABLE_STATES), 5)
 
 
+# ── Growth algorithm diagnostic ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    GrowthComponent,
+    GrowthDiagnostic,
+    GrowthInputs,
+    diagnose_growth,
+    render_growth_markdown,
+)
+
+
+class TestGrowthAlgorithmDiagnostic(unittest.TestCase):
+
+    def test_total_growth_computed(self) -> None:
+        d = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=120.0,
+            acquisition_revenue_m=5.0,
+            price_growth_pct=0.04, volume_growth_pct=0.08,
+        ))
+        self.assertAlmostEqual(d.total_growth_pct, 20.0, places=1)
+        self.assertAlmostEqual(d.acquisition_growth_pct, 5.0, places=1)
+        self.assertAlmostEqual(d.organic_growth_pct, 15.0, places=1)
+
+    def test_mix_inferred_when_none(self) -> None:
+        d = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=120.0,
+            acquisition_revenue_m=5.0,
+            price_growth_pct=0.04, volume_growth_pct=0.08,
+        ))
+        # Organic = 15%, price + volume = 12% → mix = 3%.
+        mix = next(c for c in d.components if c.name == "mix")
+        self.assertAlmostEqual(mix.growth_pct, 3.0, places=1)
+
+    def test_organic_contraction_flagged(self) -> None:
+        d = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=110.0,
+            acquisition_revenue_m=15.0,
+            price_growth_pct=0.0, volume_growth_pct=-0.05,
+        ))
+        # Total 10%, acquisition 15% → organic -5%.
+        self.assertLess(d.organic_growth_pct, 0)
+        self.assertIn("contracting", d.partner_note.lower())
+
+    def test_acquisition_dominant_flagged(self) -> None:
+        d = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=120.0,
+            acquisition_revenue_m=18.0,
+            price_growth_pct=0.01, volume_growth_pct=0.01,
+        ))
+        self.assertIn("acquisition-driven", d.partner_note.lower())
+
+    def test_strong_volume_organic_praised(self) -> None:
+        d = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=115.0,
+            acquisition_revenue_m=0.0,
+            price_growth_pct=0.03, volume_growth_pct=0.08,
+        ))
+        self.assertIn("defensible", d.partner_note.lower())
+
+    def test_price_led_flagged(self) -> None:
+        d = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=107.0,
+            acquisition_revenue_m=0.0,
+            price_growth_pct=0.07, volume_growth_pct=0.0,
+        ))
+        self.assertIn("price", d.partner_note.lower())
+
+    def test_quality_score_higher_for_organic_volume(self) -> None:
+        volume_led = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=110.0,
+            price_growth_pct=0.0, volume_growth_pct=0.10,
+        ))
+        acq_led = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=110.0,
+            acquisition_revenue_m=10.0,
+        ))
+        self.assertGreater(volume_led.quality_score_0_100,
+                            acq_led.quality_score_0_100)
+
+    def test_components_sum_to_organic_plus_acquisition(self) -> None:
+        d = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=120.0,
+            acquisition_revenue_m=5.0,
+            price_growth_pct=0.04, volume_growth_pct=0.08,
+        ))
+        total_components = sum(c.growth_pct for c in d.components)
+        self.assertAlmostEqual(total_components, d.total_growth_pct, places=1)
+
+    def test_markdown_renders(self) -> None:
+        d = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=115.0,
+            price_growth_pct=0.05, volume_growth_pct=0.10,
+        ))
+        md = render_growth_markdown(d)
+        self.assertIn("# Growth algorithm diagnostic", md)
+        self.assertIn("Organic", md)
+
+    def test_json(self) -> None:
+        import json
+        d = diagnose_growth(GrowthInputs(
+            prior_revenue_m=100.0, current_revenue_m=115.0))
+        json.dumps(d.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
