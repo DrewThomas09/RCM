@@ -965,5 +965,172 @@ class TestRedFlagFieldsConstant(unittest.TestCase):
             self.assertIsInstance(f, str)
 
 
+# ── Valuation checks ─────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ValuationInputs,
+    check_equity_concentration,
+    check_ev_walk,
+    check_interest_coverage,
+    check_terminal_growth,
+    check_terminal_value_share,
+    check_wacc,
+    run_valuation_checks,
+)
+
+
+class TestWACCCheck(unittest.TestCase):
+
+    def test_normal_wacc_in_band(self) -> None:
+        self.assertEqual(check_wacc(0.10).verdict, VERDICT_IN_BAND)
+
+    def test_low_wacc_stretch(self) -> None:
+        self.assertEqual(check_wacc(0.075).verdict, VERDICT_STRETCH)
+
+    def test_impossible_low_wacc_implausible(self) -> None:
+        self.assertEqual(check_wacc(0.04).verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_impossible_high_wacc_implausible(self) -> None:
+        self.assertEqual(check_wacc(0.22).verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_missing_wacc_unknown(self) -> None:
+        self.assertEqual(check_wacc(None).verdict, VERDICT_UNKNOWN)
+
+    def test_out_of_band_above_stretch_ceiling(self) -> None:
+        # 15% is above WACC_STRETCH top (14%) but below implausible high (18%).
+        self.assertEqual(check_wacc(0.15).verdict, VERDICT_OUT_OF_BAND)
+
+
+class TestEVWalk(unittest.TestCase):
+
+    def test_clean_walk_reconciles(self) -> None:
+        r = check_ev_walk(
+            enterprise_value=1_000_000_000,
+            equity_value=600_000_000,
+            net_debt=400_000_000,
+        )
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_walk_off_by_2pct_stretch(self) -> None:
+        r = check_ev_walk(
+            enterprise_value=1_000_000_000,
+            equity_value=620_000_000,  # expected 600, residual 20 = 2%
+            net_debt=400_000_000,
+        )
+        self.assertEqual(r.verdict, VERDICT_STRETCH)
+
+    def test_walk_large_residual_implausible(self) -> None:
+        r = check_ev_walk(
+            enterprise_value=1_000_000_000,
+            equity_value=800_000_000,  # expected 600, residual 200 = 20%
+            net_debt=400_000_000,
+        )
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_walk_includes_minorities_and_preferred(self) -> None:
+        r = check_ev_walk(
+            enterprise_value=1_000_000_000,
+            equity_value=500_000_000,
+            net_debt=400_000_000,
+            minority_interest=60_000_000,
+            preferred=40_000_000,
+        )
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_walk_missing_inputs_unknown(self) -> None:
+        r = check_ev_walk(enterprise_value=None, equity_value=None)
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+
+class TestTerminalValueShare(unittest.TestCase):
+
+    def test_normal_share_in_band(self) -> None:
+        r = check_terminal_value_share(700, 1000)
+        self.assertEqual(r.verdict, VERDICT_IN_BAND)
+
+    def test_high_share_stretch(self) -> None:
+        r = check_terminal_value_share(850, 1000)
+        self.assertEqual(r.verdict, VERDICT_STRETCH)
+
+    def test_extreme_share_implausible(self) -> None:
+        r = check_terminal_value_share(980, 1000)
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_very_low_share_implausible(self) -> None:
+        r = check_terminal_value_share(250, 1000)
+        self.assertEqual(r.verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_zero_denominator_unknown(self) -> None:
+        r = check_terminal_value_share(500, 0)
+        self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+
+class TestTerminalGrowth(unittest.TestCase):
+
+    def test_gdp_like_growth_in_band(self) -> None:
+        self.assertEqual(check_terminal_growth(0.025).verdict, VERDICT_IN_BAND)
+
+    def test_low_growth_stretch(self) -> None:
+        self.assertEqual(check_terminal_growth(0.010).verdict, VERDICT_STRETCH)
+
+    def test_too_high_growth_implausible(self) -> None:
+        self.assertEqual(check_terminal_growth(0.07).verdict, VERDICT_IMPLAUSIBLE)
+
+    def test_negative_growth_implausible(self) -> None:
+        self.assertEqual(check_terminal_growth(-0.01).verdict, VERDICT_IMPLAUSIBLE)
+
+
+class TestInterestCoverage(unittest.TestCase):
+
+    def test_comfortable_coverage(self) -> None:
+        self.assertEqual(check_interest_coverage(4.0).verdict, VERDICT_IN_BAND)
+
+    def test_tight_coverage_stretch(self) -> None:
+        self.assertEqual(check_interest_coverage(2.5).verdict, VERDICT_STRETCH)
+
+    def test_very_tight_out_of_band(self) -> None:
+        self.assertEqual(check_interest_coverage(1.7).verdict, VERDICT_OUT_OF_BAND)
+
+    def test_below_one_implausible(self) -> None:
+        self.assertEqual(check_interest_coverage(1.2).verdict, VERDICT_IMPLAUSIBLE)
+
+
+class TestEquityConcentration(unittest.TestCase):
+
+    def test_small_check_in_band(self) -> None:
+        self.assertEqual(check_equity_concentration(100, 2000).verdict, VERDICT_IN_BAND)
+
+    def test_concentration_out_of_band(self) -> None:
+        self.assertEqual(check_equity_concentration(600, 2000).verdict, VERDICT_OUT_OF_BAND)
+
+    def test_extreme_concentration_implausible(self) -> None:
+        self.assertEqual(check_equity_concentration(900, 2000).verdict, VERDICT_IMPLAUSIBLE)
+
+
+class TestRunValuationChecks(unittest.TestCase):
+
+    def test_empty_inputs_still_emits_checks(self) -> None:
+        results = run_valuation_checks(ValuationInputs())
+        self.assertEqual(len(results), 6)
+        # All UNKNOWN when nothing is populated.
+        for r in results:
+            self.assertEqual(r.verdict, VERDICT_UNKNOWN)
+
+    def test_full_inputs_produces_six_verdicts(self) -> None:
+        results = run_valuation_checks(ValuationInputs(
+            wacc=0.10,
+            enterprise_value=1_000_000_000,
+            equity_value=600_000_000,
+            net_debt=400_000_000,
+            tv_pv=700, total_dcf_ev=1000,
+            terminal_growth=0.025,
+            interest_coverage=3.2,
+            equity_check=150, fund_size=2000,
+        ))
+        self.assertEqual(len(results), 6)
+        in_band = [r for r in results if r.verdict == VERDICT_IN_BAND]
+        self.assertEqual(len(in_band), 6)
+
+
 if __name__ == "__main__":
     unittest.main()
