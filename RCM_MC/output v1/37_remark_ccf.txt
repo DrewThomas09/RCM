@@ -1,0 +1,11 @@
+Underwrite re-mark — ccf_2026 as of 2026Q2
+──────────────────────────────────────────────────────────────────────
+  Quarters of actuals:    4
+  TTM EBITDA:             $46.1M
+  Cumulative Δ vs plan:   $-3.6M
+  Years remaining:        4.00
+
+                              Original       Re-mark         Δ
+  Exit EBITDA                   $75.5M        $46.1M  -29.4M
+  MOIC                           2.69x         1.06x    -1.63x
+  IRR                            21.9%          1.2%   -20.7pp

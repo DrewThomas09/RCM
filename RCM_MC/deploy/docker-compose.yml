@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  rcm-mc:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - rcm-data:/data
+    environment:
+      - RCM_MC_DB=/data/rcm_mc.db
+    restart: unless-stopped
+
+volumes:
+  rcm-data:
+    driver: local

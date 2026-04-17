@@ -1,0 +1,20 @@
+# Scenario: Commercial payer policy tightening
+# Shocks: higher IDR, slightly higher FWR, shift to L2/L3 appeals
+name: Commercial Tightening
+description: Commercial payer prior-auth expansion and stricter denial codes
+shocks:
+  - payer: Commercial
+    param: idr
+    type: mult
+    value: 1.20
+  - payer: Commercial
+    param: fwr
+    type: mult
+    value: 1.10
+  - payer: Commercial
+    param: appeal_stage_mix
+    type: delta
+    value:
+      L1: -0.05
+      L2: 0.04
+      L3: 0.01

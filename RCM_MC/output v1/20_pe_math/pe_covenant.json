@@ -1,0 +1,10 @@
+{
+  "ebitda": 50000000.0,
+  "debt": 270000000.0,
+  "covenant_max_leverage": 6.5,
+  "actual_leverage": 5.4,
+  "covenant_headroom_turns": 1.0999999999999996,
+  "ebitda_cushion_pct": 0.16923076923076927,
+  "covenant_trips_at_ebitda": 41538461.538461536,
+  "interest_coverage": 2.314814814814815
+}

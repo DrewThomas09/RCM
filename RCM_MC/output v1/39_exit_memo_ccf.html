@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Project CCF — Exit Readiness</title>
+<style>
+:root { --bg: #FAFAFA; --card: #FFFFFF; --border: #E5E7EB;
+        --text: #111827; --muted: #6B7280; --accent: #1F4E78;
+        --green: #10B981; --amber: #F59E0B; --red: #EF4444; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+       margin: 0; padding: 2rem; background: var(--bg); color: var(--text); }
+.container { max-width: 900px; margin: 0 auto; }
+h1 { color: var(--accent); margin: 0 0 0.25rem 0; }
+.subtitle { color: var(--muted); margin-bottom: 2rem; }
+.card { background: var(--card); border: 1px solid var(--border);
+        border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.card h2 { margin-top: 0; color: var(--accent); }
+.facts-table, .track-table { width: 100%; border-collapse: collapse; }
+.facts-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+.facts-table td.label { color: var(--muted); width: 45%; }
+.facts-table td.val { font-weight: 600; font-variant-numeric: tabular-nums; }
+.track-table th, .track-table td { padding: 0.5rem; border-bottom: 1px solid var(--border);
+        font-variant-numeric: tabular-nums; }
+.track-table th { text-align: center; color: var(--muted); font-weight: 600;
+        background: #F3F4F6; }
+.track-table th:first-child, .track-table td:first-child { text-align: left; }
+ul { padding-left: 1.25rem; }
+footer { color: var(--muted); font-size: 0.8rem; margin-top: 2rem; text-align: center; }
+</style>
+</head><body>
+
+    <div class="container">
+      <h1>Project CCF — Exit Readiness</h1>
+      <div class="subtitle">
+        Prepared 2026-04-15 03:28 UTC ·
+        Hold-period track record for buyer diligence
+      </div>
+
+      <div class="card"><h2>Deal facts</h2><table class="facts-table"><tr><td class='label'>Deal ID</td><td class='val'>ccf_2026</td></tr><tr><td class='label'>Current stage</td><td class='val'>Hold</td></tr><tr><td class='label'>Entry EBITDA</td><td class='val' class="num">$50M</td></tr><tr><td class='label'>Entry EV</td><td class='val' class="num">$450M</td></tr><tr><td class='label'>Entry multiple</td><td class='val' class="num">9.0x</td></tr><tr><td class='label'>Hold (years)</td><td class='val' class="num">5</td></tr><tr><td class='label'>Underwritten MOIC</td><td class='val' class="num">2.69x</td></tr><tr><td class='label'>Underwritten IRR</td><td class='val' class="num">21.9%</td></tr></table></div>
+      <div class="card"><h2>Track record — actual vs plan (variance %)</h2><p style="color: var(--muted); font-size: 0.85rem;">Green = on track (|Δ|&lt;5%), amber = lagging, red = off track. Each cell is one quarter's variance.</p><table class="track-table"><thead><tr><th>KPI</th><th>2025Q3</th><th>2025Q4</th><th>2026Q1</th><th>2026Q2</th></tr></thead><tbody><tr><td><strong>ebitda</strong></td><td style="color: #10B981; font-weight: 600; text-align: center;" class="num">-4.2%</td><td style="color: #10B981; font-weight: 600; text-align: center;" class="num">-4.1%</td><td style="color: #F59E0B; font-weight: 600; text-align: center;" class="num">-7.2%</td><td style="color: #F59E0B; font-weight: 600; text-align: center;" class="num">-13.5%</td></tr></tbody></table></div>
+      <div class="card"><h2>Current pace</h2><p style="font-size: 1.1rem; margin: 0;">Latest quarter <strong>2026Q2</strong>: EBITDA $11M vs plan $13M (<span style="color: #EF4444; font-weight: 600;">-13.5%</span>).</p><p style="font-size: 1.1rem; margin: 0.5rem 0 0 0;">Cumulative drift over <strong>4</strong> quarters: <span style="color: #EF4444; font-weight: 600;">-28.9%</span></p></div>
+      <div class="card"><h2>Initiative attribution — what drove the EBITDA delivery</h2><p style="color: var(--muted); font-size: 0.85rem;">Cumulative actual vs pro-rated plan per RCM initiative. Lagging initiatives represent remaining upside for the next owner.</p><table class="track-table"><thead><tr><th>Initiative</th><th style="text-align:right;">Actual</th><th style="text-align:right;">Plan</th><th style="text-align:right;">Variance</th><th style="text-align:right;">Quarters</th></tr></thead><tbody><tr><td><strong>coding_cdi_improvement</strong></td><td class='val' style='text-align:right;' class="num">$0.02M</td><td class='val' style='text-align:right;' class="num">$0.02M</td><td style='text-align:right; color:#F59E0B; font-weight:600;' class="num">-10.0%</td><td style='text-align:right;' class="num">1</td></tr><tr><td><strong>prior_auth_improvement</strong></td><td class='val' style='text-align:right;' class="num">$0.01M</td><td class='val' style='text-align:right;' class="num">$0.01M</td><td style='text-align:right; color:#EF4444; font-weight:600;' class="num">+28.0%</td><td style='text-align:right;' class="num">1</td></tr></tbody></table></div>
+      <div class="card"><h2>Risk factors</h2><p style="color: var(--green); font-weight: 600;">No material risk flags — covenant SAFE, no concerning HCRIS trend signals.</p></div>
+
+      <footer>
+        Generated by rcm-mc portfolio exit-memo · Track record sourced from
+        deal snapshots + quarterly actuals in this portfolio store.
+      </footer>
+    </div>
+    
+</body></html>

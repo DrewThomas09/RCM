@@ -1,0 +1,27 @@
+# Example management value-creation plan.
+#
+# Fill in the KPIs that management is claiming they'll hit, then run:
+#
+#   rcm-mc --actual actual.yaml --benchmark configs/benchmark.yaml \
+#          --pressure-test scenarios/management_plan_example.yaml \
+#          --outdir outputs
+#
+# The pressure test classifies each target as conservative / stretch /
+# aggressive / aspirational based on its position between the actual
+# hospital and published top-decile, and runs Monte Carlo at 100 / 75 /
+# 50 / 0% of claimed improvement so the cost of missing is in dollars.
+
+horizon_months: 12            # window over which management claims delivery
+
+targets:
+  # Blended initial denial rate across all payers (management's claim).
+  idr_blended: 0.11
+  # Blended final write-off rate as share of denials.
+  fwr_blended: 0.22
+  # Blended A/R days (clean).
+  dar_blended: 42
+
+notes: >
+  Based on the management value-creation deck shared in diligence —
+  new denial-prevention program, upgraded revenue-cycle platform,
+  and dedicated A/R follow-up team.

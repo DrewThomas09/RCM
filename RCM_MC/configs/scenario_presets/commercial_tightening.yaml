@@ -1,0 +1,11 @@
+# Scenario Preset: Commercial Payer Tightening
+# Models increased prior auth requirements and denial rates from commercial payers
+description: "Commercial payers tighten utilization management and increase denial rates by 3-5pp"
+
+shocks:
+  Commercial:
+    denials:
+      idr_additive: 0.04
+      fwr_additive: 0.02
+    underpayments:
+      upr_additive: 0.01

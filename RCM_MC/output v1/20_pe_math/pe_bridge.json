@@ -1,0 +1,46 @@
+{
+  "inputs": {
+    "entry_ebitda": 50000000.0,
+    "uplift": 8000000.0,
+    "entry_multiple": 9.0,
+    "exit_multiple": 10.0,
+    "hold_years": 5.0,
+    "organic_growth_pct": 0.03
+  },
+  "entry_ev": 450000000.0,
+  "exit_ev": 659637037.1500001,
+  "exit_ebitda": 65963703.715,
+  "components": [
+    {
+      "step": "Entry EV",
+      "value": 450000000.0,
+      "share_of_creation": null,
+      "note": "9.0x \u00d7 entry EBITDA"
+    },
+    {
+      "step": "Organic EBITDA",
+      "value": 71673333.43500003,
+      "share_of_creation": 0.3418925129327988,
+      "note": "+3.0%/yr \u00d7 5y"
+    },
+    {
+      "step": "RCM uplift",
+      "value": 72000000.0,
+      "share_of_creation": 0.34345076127212365,
+      "note": "\u00d7 9.0x entry multiple"
+    },
+    {
+      "step": "Multiple expansion",
+      "value": 65963703.715,
+      "share_of_creation": 0.31465672579507725,
+      "note": "\u0394+1.0x \u00d7 exit EBITDA"
+    },
+    {
+      "step": "Exit EV",
+      "value": 659637037.1500001,
+      "share_of_creation": null,
+      "note": "10.0x \u00d7 exit EBITDA"
+    }
+  ],
+  "total_value_created": 209637037.1500001
+}

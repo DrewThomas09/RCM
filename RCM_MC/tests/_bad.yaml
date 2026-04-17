@@ -1,0 +1,34 @@
+appeals:
+  stages:
+    L1:
+      cost:
+        dist: fixed
+        value: 1
+      days:
+        dist: fixed
+        value: 1
+    L2:
+      cost:
+        dist: fixed
+        value: 1
+      days:
+        dist: fixed
+        value: 1
+    L3:
+      cost:
+        dist: fixed
+        value: 1
+      days:
+        dist: fixed
+        value: 1
+hospital:
+  annual_revenue: 100
+payers:
+  Medicare:
+    avg_claim_dollars: 1000
+    dar_clean_days:
+      dist: fixed
+      value: 30
+    include_denials: false
+    include_underpayments: false
+    revenue_share: 1.0

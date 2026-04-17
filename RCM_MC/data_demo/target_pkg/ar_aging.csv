@@ -1,0 +1,5 @@
+payer,ar_amount
+Medicare,450000
+Medicaid,320000
+Commercial,410000
+SelfPay,120000

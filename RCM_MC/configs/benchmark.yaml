@@ -1,0 +1,137 @@
+# Benchmark metadata (for report provenance)
+# Sources: HFMA MAP Keys, AHA market scan, Kodiak benchmarking (HealthLeaders), AKASA/HFMA Cost-to-Collect
+# Top-decile / best-practice targets. Currency: FY24. Update when new MAP/peer data available.
+# Refs: https://www.hfma.org/guidance/standardizing-denial-metrics-revenue-cycle-benchmarking-process-improvement/
+#       https://www.healthleadersmedia.com/revenue-cycle/quick-tips-improve-rev-cycle-performance-against-8-kpis
+#       https://www.aha.org/aha-center-health-innovation-market-scan/2024-04-02-payer-denial-tactics-how-confront-20-billion-problem
+
+# Source tagging: every value here is a published industry prior (see refs above).
+_source_map:
+  _default: prior
+
+hospital:
+  name: Benchmark best-practice RCM
+  annual_revenue: 500000000
+
+analysis:
+  n_sims: 30000
+  seed: 43
+  working_days: 250
+
+economics:
+  wacc_annual: 0.12
+
+operations:
+  denial_capacity:
+    enabled: true
+    fte: 14
+    denials_per_fte_per_day: 13
+    backlog:
+      enabled: true
+      stage_shift_per_x: 0.16
+      fwr_logit_penalty_per_x: 0.45
+      days_multiplier_per_x: 0.12
+      max_over_capacity_x: 3.0
+
+underpayments:
+  enabled: true
+
+appeals:
+  stages:
+    L1:
+      cost: {dist: lognormal, mean: 15, sd: 5}
+      days: {dist: lognormal, mean: 12, sd: 4}
+    L2:
+      cost: {dist: lognormal, mean: 65, sd: 25}
+      days: {dist: lognormal, mean: 32, sd: 10}
+    L3:
+      cost: {dist: lognormal, mean: 500, sd: 200}
+      days: {dist: lognormal, mean: 120, sd: 35}
+
+payers:
+  # Top-decile: Medicare FFS ~8–9% IDR (Fierce); FWR aligned to 2.2% NPSR (Kodiak top-10); DAR ~44 (Kodiak top-10)
+  Medicare:
+    revenue_share: 0.35
+    avg_claim_dollars: 2400
+    include_denials: true
+    include_underpayments: true
+    dar_clean_days: {dist: normal_trunc, mean: 28, sd: 3, min: 16, max: 50}
+
+    denials:
+      idr: {dist: beta, mean: 0.085, sd: 0.015, min: 0.04, max: 0.15}  # FFS 8–9% (Fierce)
+      fwr: {dist: beta, mean: 0.10, sd: 0.03, min: 0.02, max: 0.35}   # Top-10 FWR ~2.2% NPSR
+      denial_mix_concentration: 150
+      stage_mix: {L1: 0.82, L2: 0.16, L3: 0.02}
+      denial_types:
+        clinical: {share: 0.45, fwr_odds_mult: 1.30, stage_bias: {L3: 0.03}}
+        coding:   {share: 0.35, fwr_odds_mult: 1.10, stage_bias: {L2: 0.02}}
+        admin:    {share: 0.15, fwr_odds_mult: 1.02}
+        other:    {share: 0.05, fwr_odds_mult: 1.08}
+
+    underpayments:
+      upr: {dist: beta, mean: 0.012, sd: 0.005, min: 0.0, max: 0.06}
+      severity: {dist: beta, mean: 0.06, sd: 0.02, min: 0.01, max: 0.20}
+      recovery: {dist: beta, mean: 0.85, sd: 0.06, min: 0.30, max: 0.98}
+      followup_cost: {dist: lognormal, mean: 25, sd: 10}
+      resolution_days: {dist: lognormal, mean: 25, sd: 8}
+
+  # Top-decile: Medicaid IDR 15–16% (Fierce); FWR lower; DAR 43.6 top-10 (Kodiak)
+  Medicaid:
+    revenue_share: 0.20
+    avg_claim_dollars: 2000
+    include_denials: true
+    include_underpayments: true
+    dar_clean_days: {dist: normal_trunc, mean: 32, sd: 4, min: 20, max: 55}
+
+    denials:
+      idr: {dist: beta, mean: 0.15, sd: 0.02, min: 0.08, max: 0.25}
+      fwr: {dist: beta, mean: 0.12, sd: 0.04, min: 0.02, max: 0.45}
+      denial_mix_concentration: 120
+      stage_mix: {L1: 0.82, L2: 0.16, L3: 0.02}
+      denial_types:
+        eligibility: {share: 0.32, fwr_odds_mult: 1.40, stage_bias: {L2: 0.02}}
+        coding:      {share: 0.28, fwr_odds_mult: 1.12}
+        clinical:    {share: 0.22, fwr_odds_mult: 1.15, stage_bias: {L3: 0.03}}
+        admin:       {share: 0.13, fwr_odds_mult: 1.05}
+        other:       {share: 0.05, fwr_odds_mult: 1.08}
+
+    underpayments:
+      upr: {dist: beta, mean: 0.018, sd: 0.007, min: 0.0, max: 0.09}
+      severity: {dist: beta, mean: 0.08, sd: 0.03, min: 0.01, max: 0.25}
+      recovery: {dist: beta, mean: 0.75, sd: 0.09, min: 0.20, max: 0.98}
+      followup_cost: {dist: lognormal, mean: 32, sd: 14}
+      resolution_days: {dist: lognormal, mean: 35, sd: 10}
+
+  # Top-decile: Commercial IDR 13.9% (AHA) → target ~11–12%; FWR 2.2% NPSR; DAR 43.6 (Kodiak)
+  Commercial:
+    revenue_share: 0.40
+    avg_claim_dollars: 3000
+    include_denials: true
+    include_underpayments: true
+    dar_clean_days: {dist: normal_trunc, mean: 24, sd: 3, min: 14, max: 50}
+
+    denials:
+      idr: {dist: beta, mean: 0.12, sd: 0.02, min: 0.05, max: 0.22}   # Better than AHA 13.9%
+      fwr: {dist: beta, mean: 0.08, sd: 0.025, min: 0.01, max: 0.35}
+      denial_mix_concentration: 140
+      stage_mix: {L1: 0.80, L2: 0.18, L3: 0.02}
+      denial_types:
+        auth_admin: {share: 0.38, fwr_odds_mult: 1.18, stage_bias: {L2: 0.02}}
+        coding:     {share: 0.26, fwr_odds_mult: 1.05}
+        clinical:   {share: 0.16, fwr_odds_mult: 1.12, stage_bias: {L3: 0.03}}
+        eligibility: {share: 0.10, fwr_odds_mult: 1.25}
+        other:      {share: 0.10, fwr_odds_mult: 1.06}
+
+    underpayments:
+      upr: {dist: beta, mean: 0.025, sd: 0.008, min: 0.0, max: 0.12}
+      severity: {dist: beta, mean: 0.09, sd: 0.03, min: 0.01, max: 0.35}
+      recovery: {dist: beta, mean: 0.82, sd: 0.07, min: 0.25, max: 0.99}
+      followup_cost: {dist: lognormal, mean: 35, sd: 15}
+      resolution_days: {dist: lognormal, mean: 40, sd: 12}
+
+  SelfPay:
+    revenue_share: 0.05
+    avg_claim_dollars: 1500
+    include_denials: false
+    include_underpayments: false
+    dar_clean_days: {dist: normal_trunc, mean: 60, sd: 10, min: 25, max: 120}

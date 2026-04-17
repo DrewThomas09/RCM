@@ -1,0 +1,42 @@
+# Action plan playbook: maps driver buckets to operational levers, KPIs, and diligence data.
+# Edit this file to customize action plan text without code changes.
+
+Commercial Denials:
+   lever: "Reduce initial denial rate (IDR) and improve first-pass resolution"
+   kpi: "IDR, FWR, stage mix (L1/L2/L3)"
+   diligence: "denials.csv: denial_amount, writeoff_amount, appeal_level, denial_reason"
+
+Medicare Denials:
+   lever: "Improve Medicare-specific appeal workflow and clinical documentation"
+   kpi: "IDR, FWR by denial type"
+   diligence: "Medicare denial volume and resolution rates by type"
+
+ Medicaid Denials:
+   lever: "Strengthen eligibility verification and Medicaid-specific workflows"
+   kpi: "IDR, FWR, eligibility denial share"
+   diligence: "Medicaid denial data by category"
+
+ Commercial Underpayments:
+   lever: "Contract management and underpayment recovery team focus"
+   kpi: "Underpayment rate, recovery rate, severity"
+   diligence: "Contract variance reports, underpayment recovery logs"
+
+ Medicare Underpayments:
+   lever: "Medicare fee schedule compliance and rebilling process"
+   kpi: "Underpayment rate, recovery rate"
+   diligence: "Medicare underpayment and recovery data"
+
+ Medicaid Underpayments:
+   lever: "Medicaid rate and authorization alignment"
+   kpi: "Underpayment rate, recovery rate"
+   diligence: "Medicaid contract and underpayment data"
+
+ "Clean-claim A/R days":
+   lever: "Faster clean-claim submission and follow-up"
+   kpi: "DAR by payer, first-pass clean rate"
+   diligence: "ar_aging.csv, claims aging by payer"
+
+ "Appeals costs and days":
+   lever: "Appeal unit economics: cost per stage, cycle time"
+   kpi: "L1/L2/L3 cost, days to resolve"
+   diligence: "Appeal cost and resolution time by stage"

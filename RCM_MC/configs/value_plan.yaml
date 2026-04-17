@@ -1,0 +1,45 @@
+# Value-creation plan: close a fraction of the Actual-to-Benchmark gap.
+#
+# Keep this simple and explainable:
+# - "gap_closure" is the fraction of the gap you expect to close (0.0 to 1.0).
+# - You can override specific payers in "gap_closure_by_payer".
+# - Costs are deliberately minimal: one-time + annual run-rate.
+# - Timeline uses a linear ramp over ramp_months.
+
+name: "Base case: close meaningful RCM gap"
+
+gap_closure:
+  # Denials
+  idr: 0.30               # close 30% of initial denials gap
+  fwr: 0.40               # close 40% of final write-off rate gap
+  stage_mix: 0.25         # shift 25% of the way toward benchmark stage mix (more L1 automation, fewer L3 escalations)
+
+  # Cycle time / working capital
+  dar_clean_days: 0.25
+
+  # Underpayments
+  upr: 0.30
+  underpay_recovery: 0.20
+
+gap_closure_by_payer:
+  Commercial:
+    fwr: 0.50             # focus on commercial friction first
+    idr: 0.35
+
+operations:
+  denial_capacity:
+    # Example operational lever: add capacity to prevent backlog-driven stage shifts.
+    # You can set an absolute FTE value OR a delta.
+    fte_delta: 2
+
+costs:
+  one_time: 250000        # consulting / implementation
+  annual_run_rate: 600000 # incremental denial team / contract mgmt tooling
+
+timeline:
+  ramp_months: 12
+  horizon_years: 3
+  discount_rate: 0.12
+
+deal:
+  escrow_percentile: 0.90

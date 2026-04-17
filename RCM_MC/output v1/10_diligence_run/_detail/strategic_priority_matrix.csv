@@ -1,0 +1,11 @@
+Variable,Impact (Correlation),Ease of Implementation,Strategic Designation
+Initial Denial Rate (Medicare),0.59 (High),Moderate,Tier 1: Strategic Fix
+Initial Denial Rate (Commercial),0.47 (High),Moderate,Tier 1: Strategic Fix
+Initial Denial Rate (Medicaid),0.35 (High),Moderate,Tier 1: Strategic Fix
+Final Write-Off Rate (Medicare),0.32 (Med),Moderate,Tier 2: Efficiency Play
+Final Write-Off Rate (Commercial),0.29 (Med),Moderate,Tier 2: Efficiency Play
+Final Write-Off Rate (Medicaid),0.18 (Low),Moderate,Tier 3: Monitor Only
+Underpayment Rate (Commercial),0.02 (Low),Low,Tier 3: Monitor Only
+Underpayment Rate (Medicare),0.01 (Low),Low,Tier 3: Monitor Only
+Days in A/R (Medicaid),0.01 (Low),High (Automation),Tier 3: Monitor Only
+Days in A/R (Selfpay),-0.01 (Low),High (Automation),Tier 3: Monitor Only

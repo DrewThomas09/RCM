@@ -1,0 +1,252 @@
+# Initiatives Library — 8–12 standard RCM initiatives
+# Each initiative: impacted params, expected lift, costs, ramp, confidence.
+# Used by the Value Creation Engine (ranking, ROI, 100-day plan).
+# Do not change the Monte Carlo kernel; this layer consumes outputs.
+
+initiatives:
+  - id: prior_auth_improvement
+    name: Prior authorization process improvement
+    description: Centralize auth verification, reduce pre-auth denials (auth team, payer portals)
+    affected_parameters:
+      - payer: Commercial
+        param: idr
+        delta_type: mult
+        delta_mean: 0.85
+        delta_sd: 0.05
+      - payer: Medicare
+        param: idr
+        delta_type: mult
+        delta_mean: 0.90
+        delta_sd: 0.05
+    one_time_cost: 75000
+    annual_run_rate: 25000
+    ramp_months: 6
+    confidence: B
+    owner: Auth team
+    kpi: Auth denial rate
+
+  - id: coding_cdi_improvement
+    name: Coding / CDI improvement
+    description: Strengthen clinical documentation and coding accuracy (CDI team, education)
+    affected_parameters:
+      - payer: Medicare
+        param: fwr
+        delta_type: mult
+        delta_mean: 0.88
+        delta_sd: 0.06
+      - payer: Commercial
+        param: fwr
+        delta_type: mult
+        delta_mean: 0.88
+        delta_sd: 0.06
+    one_time_cost: 120000
+    annual_run_rate: 80000
+    ramp_months: 9
+    confidence: B
+    owner: Coding / CDI
+    kpi: FWR by denial type, DRG accuracy
+
+  - id: denial_workflow_automation
+    name: Denial workflow automation
+    description: Automate L1 resolution, triage, and follow-up (RCM platform, rules engine)
+    affected_parameters:
+      - payer: Commercial
+        param: appeal_stage_mix
+        delta_type: delta
+        delta_mean:
+          L1: 0.05
+          L2: -0.03
+          L3: -0.02
+      - payer: Medicaid
+        param: appeal_stage_mix
+        delta_type: delta
+        delta_mean:
+          L1: 0.04
+          L2: -0.02
+          L3: -0.02
+    one_time_cost: 150000
+    annual_run_rate: 60000
+    ramp_months: 8
+    confidence: B
+    owner: Denials team
+    kpi: L1 resolution rate, cycle time
+
+  - id: contract_modeling_underpayments
+    name: Contract modeling and underpayment focus
+    description: Model expected reimbursement, prioritize underpayment recovery
+    affected_parameters:
+      - payer: Commercial
+        param: upr
+        delta_type: mult
+        delta_mean: 0.80
+        delta_sd: 0.08
+      - payer: Commercial
+        param: underpay_recovery
+        delta_type: add
+        delta_mean: 0.10
+        delta_sd: 0.04
+    one_time_cost: 90000
+    annual_run_rate: 50000
+    ramp_months: 6
+    confidence: B
+    owner: Contracting
+    kpi: Underpayment rate, recovery rate
+
+  - id: charge_capture_audits
+    name: Charge capture audits
+    description: Proactive charge capture review (coding, edits, missing charges)
+    affected_parameters:
+      - payer: Medicare
+        param: upr
+        delta_type: mult
+        delta_mean: 0.85
+        delta_sd: 0.07
+      - payer: Commercial
+        param: upr
+        delta_type: mult
+        delta_mean: 0.88
+        delta_sd: 0.06
+    one_time_cost: 60000
+    annual_run_rate: 35000
+    ramp_months: 4
+    confidence: A
+    owner: Coding / Revenue Integrity
+    kpi: Charge lag, edit resolution rate
+
+  - id: clean_claim_improvement
+    name: Clean claim improvement
+    description: Reduce front-end errors, improve first-pass clean rate
+    affected_parameters:
+      - payer: Commercial
+        param: idr
+        delta_type: mult
+        delta_mean: 0.90
+        delta_sd: 0.04
+      - payer: Medicaid
+        param: idr
+        delta_type: mult
+        delta_mean: 0.88
+        delta_sd: 0.05
+      - payer: Medicare
+        param: dar_clean_days
+        delta_type: mult
+        delta_mean: 0.90
+        delta_sd: 0.05
+    one_time_cost: 55000
+    annual_run_rate: 30000
+    ramp_months: 5
+    confidence: A
+    owner: HIM / Registration
+    kpi: First-pass clean rate, rejection rate
+
+  - id: eligibility_verification
+    name: Eligibility and authorization verification
+    description: Strengthen eligibility checks and pre-auth for Medicaid
+    affected_parameters:
+      - payer: Medicaid
+        param: idr
+        delta_type: mult
+        delta_mean: 0.82
+        delta_sd: 0.06
+      - payer: Medicaid
+        param: fwr
+        delta_type: mult
+        delta_mean: 0.90
+        delta_sd: 0.05
+    one_time_cost: 45000
+    annual_run_rate: 20000
+    ramp_months: 4
+    confidence: A
+    owner: Registration / Auth
+    kpi: Eligibility denial share, auth capture rate
+
+  - id: ar_follow_up_acceleration
+    name: A/R follow-up acceleration
+    description: Faster clean-claim submission and payer follow-up
+    affected_parameters:
+      - payer: Commercial
+        param: dar_clean_days
+        delta_type: mult
+        delta_mean: 0.85
+        delta_sd: 0.06
+      - payer: Medicaid
+        param: dar_clean_days
+        delta_type: mult
+        delta_mean: 0.88
+        delta_sd: 0.05
+      - payer: Medicare
+        param: dar_clean_days
+        delta_type: mult
+        delta_mean: 0.92
+        delta_sd: 0.04
+    one_time_cost: 40000
+    annual_run_rate: 25000
+    ramp_months: 6
+    confidence: B
+    owner: Patient Financial Services
+    kpi: DAR by payer, clean-claim days
+
+  - id: appeals_capacity_expansion
+    name: Appeals capacity expansion
+    description: Add FTE and automation to prevent backlog-driven stage shifts
+    affected_parameters:
+      - payer: Commercial
+        param: appeal_stage_mix
+        delta_type: delta
+        delta_mean:
+          L1: 0.03
+          L2: -0.02
+          L3: -0.01
+      - payer: Medicare
+        param: fwr
+        delta_type: mult
+        delta_mean: 0.93
+        delta_sd: 0.05
+    one_time_cost: 80000
+    annual_run_rate: 120000
+    ramp_months: 3
+    confidence: B
+    owner: Denials team
+    kpi: Appeals backlog, L2/L3 volume
+
+  - id: medicaid_rate_alignment
+    name: Medicaid rate and authorization alignment
+    description: Contract alignment, rate disputes, Medicaid-specific workflows
+    affected_parameters:
+      - payer: Medicaid
+        param: upr
+        delta_type: mult
+        delta_mean: 0.85
+        delta_sd: 0.08
+      - payer: Medicaid
+        param: underpay_recovery
+        delta_type: add
+        delta_mean: 0.08
+        delta_sd: 0.04
+    one_time_cost: 65000
+    annual_run_rate: 40000
+    ramp_months: 7
+    confidence: C
+    owner: Contracting
+    kpi: Medicaid underpayment rate, recovery rate
+
+  - id: denial_root_cause_reduction
+    name: Denial root-cause reduction (payer-specific)
+    description: Payer-specific denial reduction programs (policy, coding, medical necessity)
+    affected_parameters:
+      - payer: Commercial
+        param: fwr
+        delta_type: mult
+        delta_mean: 0.85
+        delta_sd: 0.07
+      - payer: Medicare
+        param: idr
+        delta_type: mult
+        delta_mean: 0.90
+        delta_sd: 0.05
+    one_time_cost: 100000
+    annual_run_rate: 55000
+    ramp_months: 10
+    confidence: C
+    owner: Denials / Clinical
+    kpi: Denial reason trends, appeal win rate by type

@@ -1,0 +1,6 @@
+Portfolio — 3 deals
+────────────────────────────────────────────────────────────────────────────────
+  Deal ID               Stage       MOIC     IRR  Covenant   Signals     Snapshot            
+  ccf_2026              hold       2.69x     22%  SAFE       —           2026-04-15T03:28:18 
+  nyp_2026              ioi            —       —  —          —           2026-04-15T03:28:17 
+  mgh_2026              sourced        —       —  —          —           2026-04-15T03:28:17 

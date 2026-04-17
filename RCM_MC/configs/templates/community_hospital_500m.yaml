@@ -1,0 +1,110 @@
+# Template: Community Hospital (~$500M annual revenue)
+# Use as starting point: rcm-mc --template community_hospital_500m
+schema_version: "1.0"
+
+hospital:
+  name: "Community Hospital"
+  annual_revenue: 500000000
+
+payers:
+  Medicare:
+    revenue_share: 0.42
+    avg_claim_dollars: 8500
+    include_denials: true
+    include_underpayments: true
+    dar_clean_days: {dist: normal_trunc, mean: 22, sd: 3, min: 12, max: 45}
+    denials:
+      idr: {dist: beta, mean: 0.08, sd: 0.015, min: 0.03, max: 0.20}
+      fwr: {dist: beta, mean: 0.35, sd: 0.06, min: 0.10, max: 0.65}
+      stage_mix: {L1: 0.65, L2: 0.25, L3: 0.10}
+      denial_types:
+        eligibility: {share: 0.22, fwr_odds_mult: 0.85}
+        auth_admin: {share: 0.18, fwr_odds_mult: 1.10}
+        coding: {share: 0.28, fwr_odds_mult: 0.75}
+        clinical: {share: 0.20, fwr_odds_mult: 1.40}
+        other: {share: 0.12, fwr_odds_mult: 1.00}
+    underpayments:
+      upr: {dist: beta, mean: 0.06, sd: 0.015}
+      severity: {dist: beta, mean: 0.04, sd: 0.01}
+      recovery: {dist: beta, mean: 0.55, sd: 0.08}
+      followup_cost: {dist: lognormal, mean: 45, sd: 15}
+      resolution_days: {dist: lognormal, mean: 35, sd: 12}
+  Medicaid:
+    revenue_share: 0.20
+    avg_claim_dollars: 5200
+    include_denials: true
+    include_underpayments: true
+    dar_clean_days: {dist: normal_trunc, mean: 28, sd: 5, min: 15, max: 60}
+    denials:
+      idr: {dist: beta, mean: 0.10, sd: 0.02, min: 0.04, max: 0.25}
+      fwr: {dist: beta, mean: 0.40, sd: 0.07, min: 0.15, max: 0.70}
+      stage_mix: {L1: 0.70, L2: 0.20, L3: 0.10}
+      denial_types:
+        eligibility: {share: 0.30, fwr_odds_mult: 0.90}
+        auth_admin: {share: 0.20, fwr_odds_mult: 1.05}
+        coding: {share: 0.22, fwr_odds_mult: 0.80}
+        clinical: {share: 0.15, fwr_odds_mult: 1.30}
+        other: {share: 0.13, fwr_odds_mult: 1.00}
+    underpayments:
+      upr: {dist: beta, mean: 0.05, sd: 0.012}
+      severity: {dist: beta, mean: 0.03, sd: 0.008}
+      recovery: {dist: beta, mean: 0.45, sd: 0.10}
+      followup_cost: {dist: lognormal, mean: 40, sd: 12}
+      resolution_days: {dist: lognormal, mean: 40, sd: 15}
+  Commercial:
+    revenue_share: 0.33
+    avg_claim_dollars: 12000
+    include_denials: true
+    include_underpayments: true
+    dar_clean_days: {dist: normal_trunc, mean: 18, sd: 3, min: 10, max: 40}
+    denials:
+      idr: {dist: beta, mean: 0.12, sd: 0.025, min: 0.05, max: 0.30}
+      fwr: {dist: beta, mean: 0.30, sd: 0.05, min: 0.10, max: 0.60}
+      stage_mix: {L1: 0.60, L2: 0.28, L3: 0.12}
+      denial_types:
+        eligibility: {share: 0.20, fwr_odds_mult: 0.80}
+        auth_admin: {share: 0.25, fwr_odds_mult: 1.15}
+        coding: {share: 0.25, fwr_odds_mult: 0.70}
+        clinical: {share: 0.18, fwr_odds_mult: 1.35}
+        other: {share: 0.12, fwr_odds_mult: 1.00}
+    underpayments:
+      upr: {dist: beta, mean: 0.08, sd: 0.02}
+      severity: {dist: beta, mean: 0.05, sd: 0.012}
+      recovery: {dist: beta, mean: 0.60, sd: 0.08}
+      followup_cost: {dist: lognormal, mean: 55, sd: 18}
+      resolution_days: {dist: lognormal, mean: 30, sd: 10}
+  SelfPay:
+    revenue_share: 0.05
+    avg_claim_dollars: 3000
+    include_denials: false
+    include_underpayments: false
+    dar_clean_days: {dist: normal_trunc, mean: 45, sd: 10, min: 20, max: 90}
+
+appeals:
+  stages:
+    L1: {cost: {dist: lognormal, mean: 25, sd: 8}, days: {dist: lognormal, mean: 15, sd: 5}}
+    L2: {cost: {dist: lognormal, mean: 85, sd: 25}, days: {dist: lognormal, mean: 45, sd: 15}}
+    L3: {cost: {dist: lognormal, mean: 250, sd: 80}, days: {dist: lognormal, mean: 120, sd: 40}}
+
+operations:
+  denial_capacity:
+    fte: 12
+    denials_per_fte_per_day: 12
+    enabled: true
+    mode: queue
+    touches_per_case: {L1: 1.0, L2: 3.0, L3: 8.0}
+    queue:
+      enabled: true
+      months: 12
+      days_per_month: 30.0
+      fwr_age_logit_slope_per_30d: 0.25
+      max_age_logit_penalty: 2.0
+      priority: fifo
+
+economics:
+  wacc_annual: 0.12
+
+analysis:
+  n_sims: 30000
+  seed: 42
+  working_days: 250

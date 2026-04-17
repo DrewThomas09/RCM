@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Portfolio Audit Trail</title><style>
+:root {
+  --bg: #F9FAFB;
+  --card: #FFFFFF;
+  --border: #E5E7EB;
+  --text: #111827;
+  --muted: #6B7280;
+  --accent: #1F4E78;
+  --accent-soft: #EFF4F8;
+  --accent-hover: #154061;
+  --green: #10B981;
+  --green-soft: #D1FAE5;
+  --green-text: #065F46;
+  --amber: #F59E0B;
+  --amber-soft: #FEF3C7;
+  --amber-text: #92400E;
+  --red: #EF4444;
+  --red-soft: #FEE2E2;
+  --red-text: #991B1B;
+  --blue: #3B82F6;
+  --blue-soft: #E0E7FF;
+  --blue-text: #3730A3;
+  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.04);
+  --shadow-md: 0 4px 12px rgba(17, 24, 39, 0.06);
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body { padding: 2rem 1.5rem; }
+.container { max-width: 1200px; margin: 0 auto; }
+
+h1 {
+  color: var(--accent);
+  margin: 0 0 0.4rem 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+h2 {
+  color: var(--accent);
+  margin: 2rem 0 0.75rem 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--border);
+}
+h3 { font-size: 1rem; font-weight: 600; margin: 0.75rem 0 0.4rem 0; }
+p { margin: 0.5rem 0; }
+.muted { color: var(--muted); }
+.subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+}
+.breadcrumb a {
+  color: var(--accent); text-decoration: none;
+  border-bottom: 1px dotted transparent;
+  transition: border-color 0.15s;
+}
+.breadcrumb a:hover { border-bottom-color: var(--accent); }
+
+/* ── Cards ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+.card h2 { margin-top: 0; border-bottom: none; padding-bottom: 0; }
+
+/* ── KPI grid ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+.kpi-value {
+  font-size: 1.6rem; font-weight: 700; line-height: 1.1;
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+.kpi-label {
+  font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem;
+  text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+}
+
+/* ── Tables ── */
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+th {
+  text-align: left; color: var(--muted); font-weight: 600;
+  background: #F3F4F6;
+  text-transform: uppercase; font-size: 0.72rem;
+  letter-spacing: 0.05em; white-space: nowrap;
+}
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody tr:hover { background: var(--accent-soft); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-block; padding: 2px 10px; border-radius: 4px;
+  font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.badge-green  { background: var(--green-soft);  color: var(--green-text); }
+.badge-amber  { background: var(--amber-soft);  color: var(--amber-text); }
+.badge-red    { background: var(--red-soft);    color: var(--red-text); }
+.badge-blue   { background: var(--blue-soft);   color: var(--blue-text); }
+.badge-muted  { background: #E5E7EB; color: #374151; }
+
+/* ── Semantic text colors (used by text_to_html glyph wrapping) ── */
+.ok    { color: var(--green-text); font-weight: 600; }
+.warn  { color: var(--amber-text); font-weight: 600; }
+.err   { color: var(--red-text);   font-weight: 600; }
+.up    { color: var(--green); }
+.down  { color: var(--red);   }
+.flat  { color: var(--muted); }
+.info  { color: var(--blue);  }
+
+/* ── Pre blocks (for text wrapper) ── */
+pre {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.25rem 1.5rem;
+  overflow-x: auto; font-size: 0.88rem;
+  font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  line-height: 1.55; color: var(--text); white-space: pre;
+  box-shadow: var(--shadow-sm);
+}
+pre a {
+  color: var(--accent); text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
+}
+pre a:hover { border-bottom-style: solid; }
+
+/* ── Footer ── */
+footer {
+  color: var(--muted); font-size: 0.78rem; margin-top: 3rem;
+  text-align: center; border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+}
+</style></head><body><div class="container"><div class="breadcrumb"><a href="index.html">← Back to index</a></div><h1>Portfolio Audit Trail</h1><pre>Audit trail — ccf_2026
+────────────────────────────────────────────────────────────
+  2026-04-15T03:28:16  loi       MOIC 2.69x  IRR 21.9%  Cov <span class="ok">SAFE</span>  — Post-QoE greenlight
+  2026-04-15T03:28:17  spa       Cov nan
+  2026-04-15T03:28:18  closed    Cov nan
+  2026-04-15T03:28:18  hold      MOIC 2.69x  IRR 21.9%  Cov <span class="ok">SAFE</span></pre><footer>Generated 2026-04-15 03:28 UTC · rcm-mc</footer></div></body></html>

@@ -1,0 +1,100 @@
+"""SeekingChartis brand system — single source of truth for all visual identity.
+
+Healthcare PE diligence platform. Every page, export, and audit trail
+references this module for brand consistency.
+"""
+from __future__ import annotations
+
+from typing import Any, Dict
+
+
+BRAND = {
+    "name": "SeekingChartis",
+    "tagline": "Healthcare diligence, instrument-grade",
+    "version": "1.0.0",
+    "copyright": "SeekingChartis",
+    "footer_text": "SeekingChartis v1.0.0 — Healthcare diligence, instrument-grade",
+}
+
+LOGO_SVG = (
+    '<svg viewBox="0 0 32 32" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    '<path d="M16 2L16 28" stroke="#1F4E78" stroke-width="2.5" stroke-linecap="round"/>'
+    '<path d="M10 6C10 6 13 8 16 8C19 8 22 6 22 6" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M10 12C10 12 13 14 16 14C19 14 22 12 22 12" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M10 18C10 18 13 20 16 20C19 20 22 18 22 18" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M12 2L20 2" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
+    '<circle cx="10" cy="3" r="1.5" fill="#3b82f6"/>'
+    '<circle cx="22" cy="3" r="1.5" fill="#3b82f6"/>'
+    '</svg>'
+)
+
+WORDMARK_SVG = (
+    '<svg viewBox="0 0 200 24" width="200" height="24" xmlns="http://www.w3.org/2000/svg">'
+    '<text x="0" y="18" font-family="Source Serif Pro, Georgia, serif" '
+    'font-size="20" font-weight="600" fill="#e2e8f0" letter-spacing="0.5">SeekingChartis</text>'
+    '</svg>'
+)
+
+PALETTE = {
+    # Bloomberg Terminal-inspired professional dark — near-black base,
+    # high-contrast data, amber accent for status, blue for links.
+    "bg": "#05070b",
+    "bg_secondary": "#0b0f16",
+    "bg_tertiary": "#131922",
+    "border": "#1c2430",
+    "border_light": "#2b3646",
+    "text_primary": "#e6edf5",
+    "text_secondary": "#9aa7b8",
+    "text_muted": "#5f6b7c",
+    "text_link": "#5b9bd5",
+    "brand_primary": "#1a3a5c",
+    "brand_accent": "#2d6ba4",
+    "accent_amber": "#e8a33d",
+    "positive": "#22c55e",
+    "negative": "#ef4444",
+    "warning": "#f59e0b",
+    "neutral": "#5b6abf",
+    "critical": "#dc2626",
+    "high": "#ea580c",
+    "medium": "#ca8a04",
+    "low": "#64748b",
+    "ticker_up": "#22c55e",
+    "ticker_down": "#ef4444",
+    "ticker_flat": "#9aa7b8",
+}
+
+TYPOGRAPHY = {
+    "font_serif": "Georgia, 'Times New Roman', serif",
+    "font_sans": "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    "font_mono": "'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace",
+}
+
+NAV_ITEMS = [
+    {"label": "Home", "href": "/home", "icon": "home"},
+    {"separator": True, "label": "DISCOVER"},
+    {"label": "Deal Screener", "href": "/predictive-screener", "icon": "filter"},
+    {"label": "Market Data", "href": "/market-data/map", "icon": "map"},
+    {"label": "Hospital Screener", "href": "/screen", "icon": "filter"},
+    {"label": "News & Research", "href": "/news", "icon": "news"},
+    {"separator": True, "label": "PORTFOLIO"},
+    {"label": "Pipeline", "href": "/pipeline", "icon": "filter"},
+    {"label": "Deals", "href": "/portfolio", "icon": "grid"},
+    {"label": "Monitor", "href": "/portfolio/monitor", "icon": "chart"},
+    {"label": "Team", "href": "/team", "icon": "grid"},
+    {"label": "Import Deal", "href": "/import", "icon": "grid"},
+    {"separator": True, "label": "ANALYTICS"},
+    {"label": "Regression", "href": "/portfolio/regression", "icon": "chart"},
+    {"label": "ML Insights", "href": "/ml-insights", "icon": "chart"},
+    {"label": "Quant Lab", "href": "/quant-lab", "icon": "chart"},
+    {"label": "Model Validation", "href": "/model-validation", "icon": "chart"},
+    {"separator": True, "label": "REFERENCE"},
+    {"label": "Methodology", "href": "/methodology", "icon": "bookmark"},
+    {"label": "Data Sources", "href": "/data", "icon": "bookmark"},
+    {"label": "Settings", "href": "/settings", "icon": "gear"},
+]
+
+NAV_ICONS = {
+    "home": "&#9679;", "chart": "&#9672;", "news": "&#9993;",
+    "map": "&#9728;", "filter": "&#9707;", "grid": "&#9638;",
+    "bookmark": "&#9733;", "gear": "&#9881;",
+}

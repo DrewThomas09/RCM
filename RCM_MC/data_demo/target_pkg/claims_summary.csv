@@ -1,0 +1,5 @@
+payer,net_revenue,claim_count
+Medicare,3500000,200
+Medicaid,2000000,200
+Commercial,4000000,200
+SelfPay,500000,100

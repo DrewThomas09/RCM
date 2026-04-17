@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seekingchartis"
+version = "1.0.0"
+description = "SeekingChartis — Healthcare PE Diligence Platform"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Proprietary"}
+keywords = ["healthcare", "private-equity", "rcm", "monte-carlo", "diligence"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+dependencies = [
+    "numpy>=1.24,<3.0",
+    "pandas>=2.0,<4.0",
+    "pyyaml>=6.0,<7.0",
+    "matplotlib>=3.7,<4.0",
+    "openpyxl>=3.1,<4.0",
+]
+
+[project.optional-dependencies]
+interactive = ["plotly>=5.0"]
+pptx = ["python-pptx>=0.6"]
+# Prompt 22: ``pip install rcm-mc[exports]`` adds the formatted-
+# export optional deps. ``openpyxl`` is also in base deps (the xlsx
+# export is a core partner workflow); ``python-pptx`` is the nice-
+# to-have that upgrades the PPTX output over the stdlib-zip
+# fallback.
+exports = ["python-pptx>=0.6", "openpyxl>=3.1"]
+api = ["fastapi>=0.100", "uvicorn>=0.23"]
+all = [
+    "openpyxl>=3.1",
+    "plotly>=5.0",
+    "python-pptx>=0.6",
+    "fastapi>=0.100",
+    "uvicorn>=0.23",
+    "scipy>=1.11",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "mypy>=1.5",
+]
+
+[project.scripts]
+rcm-mc = "rcm_mc.cli:main"
+rcm-intake = "rcm_mc.intake:main"
+rcm-lookup = "rcm_mc.lookup:main"
+
+[tool.setuptools.packages.find]
+include = ["rcm_mc*"]
+
+[tool.setuptools.package-data]
+rcm_mc = ["data/*.csv.gz"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+markers = [
+    "api: API endpoint tests",
+    "ui: UI rendering tests",
+    "store: database/store tests",
+    "security: auth/CSRF/rate-limit tests",
+    "integration: multi-module integration tests",
+    "slow: tests that take >5 seconds",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501", "RUF012"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+strict_optional = true
+ignore_missing_imports = true

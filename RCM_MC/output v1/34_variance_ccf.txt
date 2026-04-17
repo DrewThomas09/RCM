@@ -1,0 +1,14 @@
+Quarterly variance — ccf_2026
+────────────────────────────────────────────────────────────────
+
+  2025Q3
+    ✓ ebitda                 actual     $11.5M  plan     $12.0M  Δ   -4.2%
+
+  2025Q4
+    ✓ ebitda                 actual     $11.8M  plan     $12.2M  Δ   -4.1%
+
+  2026Q1
+    ⚠ ebitda                 actual     $11.6M  plan     $12.5M  Δ   -7.2%
+
+  2026Q2
+    ⚠ ebitda                 actual     $11.2M  plan     $13.0M  Δ  -13.5%

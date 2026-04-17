@@ -1,0 +1,4 @@
+Initiative variance — ccf_2026
+──────────────────────────────────────────────────────────────────────
+  ⚠ coding_cdi_improvement         actual    $0.02M  plan    $0.02M  Δ  -10.0%  (1 qtr)
+  ✗ prior_auth_improvement         actual    $0.01M  plan    $0.01M  Δ  +28.0%  (1 qtr)

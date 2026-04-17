@@ -1,0 +1,6 @@
+Audit trail — ccf_2026
+────────────────────────────────────────────────────────────
+  2026-04-15T03:28:16  loi       MOIC 2.69x  IRR 21.9%  Cov SAFE  — Post-QoE greenlight
+  2026-04-15T03:28:17  spa       Cov nan
+  2026-04-15T03:28:18  closed    Cov nan
+  2026-04-15T03:28:18  hold      MOIC 2.69x  IRR 21.9%  Cov SAFE

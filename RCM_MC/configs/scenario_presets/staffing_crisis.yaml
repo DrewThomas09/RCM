@@ -1,0 +1,8 @@
+# Scenario Preset: Staffing Crisis
+# Models 30% reduction in denial management FTE capacity
+description: "Revenue cycle staffing drops 30% due to turnover; backlog increases across all payers"
+
+shocks:
+  _operations:
+    denial_capacity:
+      fte_multiplier: 0.70

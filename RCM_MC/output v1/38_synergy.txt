@@ -1,0 +1,16 @@
+Cross-platform RCM synergy — 1 platform(s) in scope
+────────────────────────────────────────────────────────────────
+  Portfolio deal count:         3
+  Platforms contributing:       1
+  Total RCM cost base:          $4.0M
+  Shared-service %:             40%
+  Savings rate on shared:       15%
+  Annual synergy EBITDA:        $240,000
+
+  Per-platform attribution:
+    Deal                  Stage       RCM cost     Synergy
+    ccf_2026              hold           $4.0M    $240,000
+
+  Notes:
+    · Excluded 2 deal(s) not at ['closed', 'hold'] stages
+    · Only 1 platform(s) in scope — shared-services economics typically require 3+ platforms

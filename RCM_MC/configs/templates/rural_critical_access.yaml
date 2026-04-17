@@ -1,0 +1,100 @@
+# Template: Rural Critical Access Hospital (~$50M annual revenue)
+# Higher Medicare share, fewer payers, smaller staff
+schema_version: "1.0"
+
+hospital:
+  name: "Rural Critical Access Hospital"
+  annual_revenue: 50000000
+
+payers:
+  Medicare:
+    revenue_share: 0.55
+    avg_claim_dollars: 4500
+    include_denials: true
+    include_underpayments: true
+    dar_clean_days: {dist: normal_trunc, mean: 25, sd: 4, min: 14, max: 50}
+    denials:
+      idr: {dist: beta, mean: 0.06, sd: 0.012, min: 0.02, max: 0.15}
+      fwr: {dist: beta, mean: 0.40, sd: 0.07, min: 0.15, max: 0.70}
+      stage_mix: {L1: 0.75, L2: 0.25}
+      denial_types:
+        eligibility: {share: 0.25, fwr_odds_mult: 0.85}
+        coding: {share: 0.35, fwr_odds_mult: 0.75}
+        clinical: {share: 0.25, fwr_odds_mult: 1.40}
+        other: {share: 0.15, fwr_odds_mult: 1.00}
+    underpayments:
+      upr: {dist: beta, mean: 0.04, sd: 0.01}
+      severity: {dist: beta, mean: 0.03, sd: 0.008}
+      recovery: {dist: beta, mean: 0.40, sd: 0.10}
+      followup_cost: {dist: lognormal, mean: 35, sd: 12}
+      resolution_days: {dist: lognormal, mean: 40, sd: 15}
+  Medicaid:
+    revenue_share: 0.25
+    avg_claim_dollars: 3200
+    include_denials: true
+    include_underpayments: true
+    dar_clean_days: {dist: normal_trunc, mean: 32, sd: 6, min: 18, max: 65}
+    denials:
+      idr: {dist: beta, mean: 0.09, sd: 0.018, min: 0.03, max: 0.20}
+      fwr: {dist: beta, mean: 0.45, sd: 0.08, min: 0.20, max: 0.75}
+      stage_mix: {L1: 0.80, L2: 0.20}
+      denial_types:
+        eligibility: {share: 0.35, fwr_odds_mult: 0.90}
+        coding: {share: 0.30, fwr_odds_mult: 0.80}
+        clinical: {share: 0.20, fwr_odds_mult: 1.30}
+        other: {share: 0.15, fwr_odds_mult: 1.00}
+    underpayments:
+      upr: {dist: beta, mean: 0.04, sd: 0.01}
+      severity: {dist: beta, mean: 0.025, sd: 0.007}
+      recovery: {dist: beta, mean: 0.35, sd: 0.10}
+      followup_cost: {dist: lognormal, mean: 35, sd: 10}
+      resolution_days: {dist: lognormal, mean: 45, sd: 18}
+  Commercial:
+    revenue_share: 0.15
+    avg_claim_dollars: 8000
+    include_denials: true
+    include_underpayments: true
+    dar_clean_days: {dist: normal_trunc, mean: 20, sd: 4, min: 12, max: 42}
+    denials:
+      idr: {dist: beta, mean: 0.10, sd: 0.02, min: 0.04, max: 0.25}
+      fwr: {dist: beta, mean: 0.30, sd: 0.06, min: 0.10, max: 0.55}
+      stage_mix: {L1: 0.70, L2: 0.30}
+      denial_types:
+        eligibility: {share: 0.25, fwr_odds_mult: 0.80}
+        auth_admin: {share: 0.20, fwr_odds_mult: 1.15}
+        coding: {share: 0.30, fwr_odds_mult: 0.70}
+        clinical: {share: 0.15, fwr_odds_mult: 1.35}
+        other: {share: 0.10, fwr_odds_mult: 1.00}
+    underpayments:
+      upr: {dist: beta, mean: 0.06, sd: 0.015}
+      severity: {dist: beta, mean: 0.04, sd: 0.01}
+      recovery: {dist: beta, mean: 0.50, sd: 0.10}
+      followup_cost: {dist: lognormal, mean: 45, sd: 15}
+      resolution_days: {dist: lognormal, mean: 30, sd: 12}
+  SelfPay:
+    revenue_share: 0.05
+    avg_claim_dollars: 2000
+    include_denials: false
+    include_underpayments: false
+    dar_clean_days: {dist: normal_trunc, mean: 50, sd: 12, min: 25, max: 100}
+
+appeals:
+  stages:
+    L1: {cost: {dist: lognormal, mean: 20, sd: 7}, days: {dist: lognormal, mean: 18, sd: 6}}
+    L2: {cost: {dist: lognormal, mean: 70, sd: 20}, days: {dist: lognormal, mean: 50, sd: 18}}
+
+operations:
+  denial_capacity:
+    fte: 3
+    denials_per_fte_per_day: 10
+    enabled: true
+    mode: annual_backlog
+    touches_per_case: {L1: 1.0, L2: 3.0}
+
+economics:
+  wacc_annual: 0.10
+
+analysis:
+  n_sims: 20000
+  seed: 42
+  working_days: 250

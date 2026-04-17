@@ -1,0 +1,64 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# OS junk
+.DS_Store
+Thumbs.db
+.Rhistory
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Matplotlib
+.matplotlib/
+
+# Project run artifacts — model outputs are never committed
+outputs/
+outputs_*/
+*.sqlite
+*.duckdb
+simulation_trace.json
+report.html
+report.pptx
+report.md
+summary.csv
+simulations.csv
+provenance.json
+data_quality_report.json
+calibrated_*.yaml
+calibration_*_report.csv
+anomalies.json
+*.png
+
+# Environment / secrets
+.env
+.env.local
+*.pem

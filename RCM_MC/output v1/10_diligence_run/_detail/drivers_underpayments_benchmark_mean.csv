@@ -1,0 +1,9 @@
+payer,metric,mean_value
+Commercial,underpay_cost,50860.149409043
+Commercial,underpay_leakage,69644.95936301973
+Medicaid,underpay_cost,25879.693964341583
+Medicaid,underpay_leakage,32544.50122813214
+Medicare,underpay_cost,26367.053453809902
+Medicare,underpay_leakage,22701.17630056777
+SelfPay,underpay_cost,0.0
+SelfPay,underpay_leakage,0.0
