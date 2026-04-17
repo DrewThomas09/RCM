@@ -81,6 +81,15 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .comparative_analytics import (
+    DealSnapshot,
+    DealVsBookFinding,
+    concentration_warnings,
+    correlation_risk,
+    deal_rank_vs_peers,
+    deal_vs_book,
+    portfolio_concentration,
+)
 from .diligence_tracker import (
     DiligenceBoard,
     DiligenceItem,
@@ -250,4 +259,11 @@ __all__ = [
     "WORKSTREAMS",
     "board_from_review",
     "render_board_markdown",
+    "DealSnapshot",
+    "DealVsBookFinding",
+    "concentration_warnings",
+    "correlation_risk",
+    "deal_rank_vs_peers",
+    "deal_vs_book",
+    "portfolio_concentration",
 ]

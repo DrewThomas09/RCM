@@ -2571,5 +2571,134 @@ class TestRenderBoardMarkdown(unittest.TestCase):
         self.assertIn("Completion", md)
 
 
+# ── Comparative analytics ──────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DealSnapshot,
+    DealVsBookFinding,
+    concentration_warnings,
+    correlation_risk,
+    deal_rank_vs_peers,
+    deal_vs_book,
+    portfolio_concentration,
+)
+
+
+def _sample_book() -> List[DealSnapshot]:
+    return [
+        DealSnapshot(
+            deal_id="d1", sector="acute_care", state="TX", ebitda_m=30,
+            payer_mix={"medicare": 0.40, "commercial": 0.40, "medicaid": 0.20},
+            projected_irr=0.20, projected_moic=2.3,
+            ebitda_margin=0.09, leverage_multiple=4.5,
+            days_in_ar=52, denial_rate=0.09,
+        ),
+        DealSnapshot(
+            deal_id="d2", sector="asc", state="CA", ebitda_m=15,
+            payer_mix={"commercial": 0.70, "medicare": 0.20, "medicaid": 0.10},
+            projected_irr=0.24, projected_moic=2.6,
+            ebitda_margin=0.24, leverage_multiple=4.0,
+            days_in_ar=35, denial_rate=0.06,
+        ),
+        DealSnapshot(
+            deal_id="d3", sector="acute_care", state="TX", ebitda_m=50,
+            payer_mix={"medicare": 0.55, "commercial": 0.30, "medicaid": 0.15},
+            projected_irr=0.17, projected_moic=2.1,
+            ebitda_margin=0.07, leverage_multiple=5.0,
+            days_in_ar=58, denial_rate=0.11,
+        ),
+    ]
+
+
+class TestPortfolioConcentration(unittest.TestCase):
+
+    def test_concentration_returns_shares(self) -> None:
+        conc = portfolio_concentration(_sample_book())
+        self.assertEqual(conc["n_deals"], 3)
+        self.assertIn("sector_shares", conc)
+        # acute_care = (30 + 50) / 95 = 0.84; should be top sector.
+        self.assertIn("acute_care", conc["sector_shares"])
+        self.assertAlmostEqual(conc["top_sector"]["share"], 80/95, places=2)
+
+    def test_empty_portfolio_handled(self) -> None:
+        conc = portfolio_concentration([])
+        self.assertEqual(conc["n_deals"], 0)
+
+    def test_concentration_warnings_fire(self) -> None:
+        # 80% acute_care in our sample — should warn.
+        conc = portfolio_concentration(_sample_book())
+        warnings = concentration_warnings(conc)
+        self.assertTrue(any("Sector concentration" in w for w in warnings))
+
+
+class TestDealVsBook(unittest.TestCase):
+
+    def test_candidate_with_higher_irr_is_better(self) -> None:
+        candidate = DealSnapshot(
+            deal_id="cand", sector="acute_care", state="NC",
+            projected_irr=0.30, ebitda_margin=0.11, days_in_ar=40,
+            denial_rate=0.05, leverage_multiple=3.5, projected_moic=2.8,
+        )
+        findings = deal_vs_book(candidate, _sample_book())
+        irr_f = next(f for f in findings if f.metric == "projected_irr")
+        self.assertEqual(irr_f.direction, "better")
+
+    def test_days_in_ar_low_is_better(self) -> None:
+        candidate = DealSnapshot(
+            deal_id="cand", days_in_ar=30, projected_irr=0.20,
+        )
+        findings = deal_vs_book(candidate, _sample_book())
+        ar_f = next(f for f in findings if f.metric == "days_in_ar")
+        self.assertEqual(ar_f.direction, "better")
+
+    def test_insufficient_data_returns_na(self) -> None:
+        candidate = DealSnapshot(deal_id="cand")
+        findings = deal_vs_book(candidate, _sample_book())
+        self.assertTrue(any(f.direction == "n/a" for f in findings))
+
+
+class TestDealRankVsPeers(unittest.TestCase):
+
+    def test_rank_against_peers(self) -> None:
+        candidate = DealSnapshot(
+            deal_id="best", projected_irr=0.35, ebitda_margin=0.25,
+            leverage_multiple=3.0,
+        )
+        result = deal_rank_vs_peers(candidate, _sample_book())
+        self.assertEqual(result["candidate_rank"], 1)
+
+    def test_weak_candidate_ranks_low(self) -> None:
+        candidate = DealSnapshot(
+            deal_id="weak", projected_irr=0.10, ebitda_margin=0.03,
+            leverage_multiple=7.5,
+        )
+        result = deal_rank_vs_peers(candidate, _sample_book())
+        self.assertEqual(result["candidate_rank"], len(_sample_book()) + 1)
+
+
+class TestCorrelationRisk(unittest.TestCase):
+
+    def test_same_sector_state_flagged(self) -> None:
+        candidate = DealSnapshot(
+            deal_id="cand", sector="acute_care", state="TX",
+            payer_mix={"commercial": 0.60, "medicare": 0.30, "medicaid": 0.10},
+        )
+        warnings = correlation_risk(candidate, _sample_book())
+        # d1 and d3 are TX acute → both flagged.
+        tx_flags = [w for w in warnings if "TX" in w or "d1" in w or "d3" in w]
+        self.assertGreaterEqual(len(warnings), 1)
+
+    def test_medicare_heavy_correlation(self) -> None:
+        candidate = DealSnapshot(
+            deal_id="cand", sector="asc", state="FL",
+            payer_mix={"medicare": 0.65, "medicaid": 0.15, "commercial": 0.20},
+        )
+        warnings = correlation_risk(candidate, _sample_book())
+        # d3 is Medicare 55%, below 60% threshold → shouldn't pair.
+        # None should pair on Medicare-heavy since d1 is 40%, d3 is 55%.
+        medicare_flags = [w for w in warnings if "Medicare" in w]
+        self.assertEqual(len(medicare_flags), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
