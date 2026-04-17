@@ -81,6 +81,11 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .thesis_validator import (
+    ConsistencyFinding,
+    ThesisStatement,
+    validate_thesis,
+)
 from .management_assessment import (
     DimensionScore,
     ManagementInputs,
@@ -332,4 +337,7 @@ __all__ = [
     "ManagementInputs",
     "ManagementScore",
     "score_management",
+    "ConsistencyFinding",
+    "ThesisStatement",
+    "validate_thesis",
 ]

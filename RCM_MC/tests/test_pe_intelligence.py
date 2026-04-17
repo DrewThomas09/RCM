@@ -3224,5 +3224,98 @@ class TestManagementScoring(unittest.TestCase):
         json.dumps(score.to_dict())
 
 
+# ── Thesis validator ───────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ConsistencyFinding,
+    ThesisStatement,
+    validate_thesis,
+)
+
+
+class TestThesisValidator(unittest.TestCase):
+
+    def test_rcm_with_short_hold_fires(self) -> None:
+        t = ThesisStatement(has_rcm_thesis=True, hold_years=3.0)
+        findings = validate_thesis(t)
+        self.assertTrue(any(f.rule == "rcm_thesis_needs_4yr_hold"
+                            for f in findings))
+
+    def test_vbc_with_ffs_growth_fires(self) -> None:
+        t = ThesisStatement(deal_structure="capitation", revenue_cagr=0.08)
+        findings = validate_thesis(t)
+        self.assertTrue(any(f.rule == "vbc_with_ffs_growth" for f in findings))
+
+    def test_aggressive_irr_flat_multiples_fires(self) -> None:
+        t = ThesisStatement(entry_multiple=9.0, exit_multiple=9.0,
+                            target_irr=0.22)
+        findings = validate_thesis(t)
+        self.assertTrue(any(f.rule == "irr_ambition_without_multiple_expansion"
+                            for f in findings))
+
+    def test_margin_leapfrog_fires(self) -> None:
+        t = ThesisStatement(margin_expansion_bps_per_yr=400, revenue_cagr=0.03)
+        findings = validate_thesis(t)
+        self.assertTrue(any(f.rule == "margin_leapfrogs_revenue" for f in findings))
+
+    def test_leverage_vs_govt_fires(self) -> None:
+        t = ThesisStatement(
+            leverage_multiple=6.0,
+            payer_mix={"medicare": 0.55, "medicaid": 0.20, "commercial": 0.25},
+        )
+        findings = validate_thesis(t)
+        self.assertTrue(any(f.rule == "leverage_exceeds_govt_stability"
+                            for f in findings))
+
+    def test_turnaround_plus_rollup_fires(self) -> None:
+        t = ThesisStatement(has_turnaround_thesis=True, has_rollup_thesis=True)
+        findings = validate_thesis(t)
+        self.assertTrue(any(f.rule == "turnaround_plus_rollup_too_ambitious"
+                            for f in findings))
+
+    def test_moic_irr_mismatch_fires(self) -> None:
+        # 3x MOIC over 5yr → 24.6% CAGR; stated IRR 15% → mismatch
+        t = ThesisStatement(target_moic=3.0, target_irr=0.15, hold_years=5.0)
+        findings = validate_thesis(t)
+        self.assertTrue(any(f.rule == "moic_irr_disagree" for f in findings))
+
+    def test_denial_improvement_without_rcm_fires(self) -> None:
+        t = ThesisStatement(denial_improvement_bps_per_yr=250,
+                            has_rcm_thesis=False)
+        findings = validate_thesis(t)
+        self.assertTrue(any(f.rule == "denial_improvement_without_rcm_thesis"
+                            for f in findings))
+
+    def test_denial_with_rcm_thesis_doesnt_fire(self) -> None:
+        t = ThesisStatement(denial_improvement_bps_per_yr=250,
+                            has_rcm_thesis=True)
+        findings = validate_thesis(t)
+        self.assertFalse(any(f.rule == "denial_improvement_without_rcm_thesis"
+                             for f in findings))
+
+    def test_empty_thesis_no_findings(self) -> None:
+        findings = validate_thesis(ThesisStatement())
+        self.assertEqual(findings, [])
+
+    def test_findings_sorted_by_severity(self) -> None:
+        t = ThesisStatement(
+            has_turnaround_thesis=True, has_rollup_thesis=True,  # high
+            has_rcm_thesis=True, hold_years=3.0,                 # medium
+            target_moic=3.0, target_irr=0.15,                    # low
+        )
+        findings = validate_thesis(t)
+        severities = [f.severity for f in findings]
+        # High first, then medium, then low.
+        self.assertEqual(severities, sorted(
+            severities, key=lambda s: {"high": 0, "medium": 1, "low": 2}.get(s, 3)
+        ))
+
+    def test_finding_to_dict(self) -> None:
+        import json
+        t = ThesisStatement(deal_structure="capitation", revenue_cagr=0.10)
+        findings = validate_thesis(t)
+        json.dumps(findings[0].to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
