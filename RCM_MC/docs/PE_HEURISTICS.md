@@ -701,7 +701,7 @@ Portfolio-level cross-deal comparison helpers:
 
 ## 21. Module inventory
 
-As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 66
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 67
 modules + test suite:
 
 | Module | Role |
@@ -772,6 +772,7 @@ modules + test suite:
 | `analyst_cheatsheet.py` | 1-page associate IC pre-read |
 | `reimbursement_bands.py` | Payer rate growth / gross-to-net / site-neutral parity |
 | `ebitda_quality.py` | Add-back classifier → partner-EBITDA |
+| `covenant_monitor.py` | Live covenant tracking + break-EBITDA |
 
 Every module has corresponding tests in
 `tests/test_pe_intelligence.py`.
@@ -1467,7 +1468,24 @@ on both the add-back ratio and phantom-share.
 
 ---
 
-## 69. Change log
+## 69. Covenant monitor (`covenant_monitor.py`)
+
+Live covenant-compliance tracker for Ops partners:
+
+- Per-covenant status (green / amber / red) based on headroom %.
+- Break-EBITDA math — the EBITDA level that triggers a technical
+  default given known debt + interest.
+- Trend projection — status at end of next quarter given per-
+  quarter trend.
+- Aggregate report flags the worst status and counts red/amber
+  covenants.
+
+Intended for the monthly ops-partner review cadence alongside
+`value_creation_tracker.py`.
+
+---
+
+## 70. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -1567,3 +1585,6 @@ on both the add-back ratio and phantom-share.
 - **2026-04-17** — Added `analyst_cheatsheet.py`,
   `reimbursement_bands.py`, `ebitda_quality.py`. Full inventory:
   66 modules, 702 pe_intelligence unit tests.
+- **2026-04-17** — Added `covenant_monitor.py` (live covenant
+  tracking + break-EBITDA math). Full inventory: 67 modules, 713
+  pe_intelligence unit tests.
