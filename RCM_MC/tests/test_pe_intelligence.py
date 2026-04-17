@@ -13608,5 +13608,94 @@ class TestOneHundredDayPlanFromPacket(unittest.TestCase):
         json.dumps(generate_plan_from_packet(AutoPlanContext()).to_dict())
 
 
+# ── Outpatient migration cascade ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    OPMigrationInputs,
+    OPMigrationReport,
+    OPMigrationStep,
+    render_op_migration_markdown,
+    trace_op_migration,
+)
+
+
+class TestOutpatientMigrationCascade(unittest.TestCase):
+
+    def test_five_steps(self) -> None:
+        r = trace_op_migration(OPMigrationInputs(
+            current_ip_revenue_m=200.0,
+            current_op_revenue_m=100.0,
+        ))
+        self.assertEqual(len(r.steps), 5)
+        names = [s.name for s in r.steps]
+        self.assertEqual(names, [
+            "migration_magnitude", "op_rate_differential",
+            "margin_swap", "capacity_unlock", "site_neutral_risk",
+        ])
+
+    def test_positive_migration_with_backfill(self) -> None:
+        r = trace_op_migration(OPMigrationInputs(
+            current_ip_revenue_m=200.0,
+            migration_pct_of_ip=0.15,
+            ip_margin=0.10, op_margin=0.25,
+            op_rate_as_pct_of_ip=0.70,
+            ip_capacity_utilization=0.80,
+            hopd_share_of_op=0.20,
+            expects_backfill_high_acuity=True,
+        ))
+        self.assertGreater(r.net_ebitda_impact_m, 0)
+
+    def test_negative_when_no_backfill_and_low_op_margin(self) -> None:
+        r = trace_op_migration(OPMigrationInputs(
+            current_ip_revenue_m=200.0,
+            migration_pct_of_ip=0.25,
+            ip_margin=0.12, op_margin=0.15,
+            op_rate_as_pct_of_ip=0.55,
+            hopd_share_of_op=0.50,
+            expects_backfill_high_acuity=False,
+        ))
+        self.assertLess(r.net_ebitda_impact_m, 0)
+        self.assertIn("net negative", r.partner_note.lower())
+
+    def test_site_neutral_regulatory_bet(self) -> None:
+        r = trace_op_migration(OPMigrationInputs(
+            current_ip_revenue_m=200.0,
+            migration_pct_of_ip=0.15,
+            ip_margin=0.10, op_margin=0.20,
+            op_rate_as_pct_of_ip=0.70,
+            hopd_share_of_op=0.70,   # heavy HOPD
+        ))
+        self.assertGreater(r.site_neutral_exposure_m, 0)
+
+    def test_no_backfill_note_when_disabled(self) -> None:
+        r = trace_op_migration(OPMigrationInputs(
+            current_ip_revenue_m=200.0,
+            expects_backfill_high_acuity=False,
+        ))
+        backfill = next(s for s in r.steps
+                         if s.name == "capacity_unlock")
+        self.assertIn("no backfill", backfill.partner_note.lower())
+
+    def test_rate_differential_step_negative(self) -> None:
+        r = trace_op_migration(OPMigrationInputs(
+            current_ip_revenue_m=100.0,
+            migration_pct_of_ip=0.10,
+            op_rate_as_pct_of_ip=0.60,
+        ))
+        rate_step = next(s for s in r.steps
+                          if s.name == "op_rate_differential")
+        self.assertLess(rate_step.value, 0)
+
+    def test_markdown_renders(self) -> None:
+        md = render_op_migration_markdown(trace_op_migration(
+            OPMigrationInputs(current_ip_revenue_m=200.0)))
+        self.assertIn("# Outpatient migration cascade", md)
+        self.assertIn("Step 1:", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(trace_op_migration(OPMigrationInputs()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

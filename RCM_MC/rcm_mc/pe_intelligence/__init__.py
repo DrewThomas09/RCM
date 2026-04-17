@@ -756,6 +756,13 @@ from .one_hundred_day_plan_from_packet import (
     generate_plan as generate_plan_from_packet,
     render_plan_markdown as render_auto_plan_markdown,
 )
+from .outpatient_migration_cascade import (
+    OPMigrationInputs,
+    OPMigrationReport,
+    OPMigrationStep,
+    render_op_migration_markdown,
+    trace_op_migration,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1763,4 +1770,9 @@ __all__ = [
     "AutoPlanContext",
     "generate_plan_from_packet",
     "render_auto_plan_markdown",
+    "OPMigrationInputs",
+    "OPMigrationReport",
+    "OPMigrationStep",
+    "render_op_migration_markdown",
+    "trace_op_migration",
 ]
