@@ -49,6 +49,11 @@ from .partner_review import (
     partner_review,
     partner_review_from_context,
 )
+from .red_flags import (
+    RED_FLAG_FIELDS,
+    run_all_rules,
+    run_red_flags,
+)
 
 __all__ = [
     "Band",
@@ -66,6 +71,9 @@ __all__ = [
     "compose_narrative",
     "partner_review",
     "partner_review_from_context",
+    "RED_FLAG_FIELDS",
+    "run_all_rules",
     "run_heuristics",
     "run_reasonableness_checks",
+    "run_red_flags",
 ]

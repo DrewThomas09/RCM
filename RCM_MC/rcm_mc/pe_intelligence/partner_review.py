@@ -32,6 +32,7 @@ from .heuristics import (
     SEV_MEDIUM,
     SEV_LOW,
 )
+from .red_flags import RED_FLAG_FIELDS, run_all_rules
 from .narrative import (
     NarrativeBlock,
     REC_PASS,
@@ -451,7 +452,24 @@ def _extract_context(packet: Any) -> HeuristicContext:
 
     has_cmi = cmi is not None
 
-    return HeuristicContext(
+    # Red-flag fields: pulled from profile or observed (duck-typed).
+    red_flag_values: Dict[str, Any] = {}
+    for field_name in RED_FLAG_FIELDS:
+        for source in (profile, observed, vb, ev):
+            if source is None:
+                continue
+            val = None
+            if isinstance(source, dict):
+                val = source.get(field_name)
+                if isinstance(val, dict):
+                    val = val.get("value")
+            else:
+                val = getattr(source, field_name, None)
+            if val is not None:
+                red_flag_values[field_name] = val
+                break
+
+    ctx_obj = HeuristicContext(
         payer_mix=_payer_mix(profile),
         ebitda_m=ebitda_m,
         revenue_m=_get_metric_value(observed, "net_patient_revenue_m")
@@ -482,6 +500,10 @@ def _extract_context(packet: Any) -> HeuristicContext:
         data_coverage_pct=data_coverage,
         has_case_mix_data=has_cmi,
     )
+    # Attach red-flag fields (duck-typed; not declared on the dataclass).
+    for key, val in red_flag_values.items():
+        setattr(ctx_obj, key, val)
+    return ctx_obj
 
 
 def _context_summary(ctx: HeuristicContext) -> Dict[str, Any]:
@@ -539,7 +561,7 @@ def partner_review(packet: Any) -> PartnerReview:
         payer_mix=ctx.payer_mix,
         lever_claims=lever_claims,
     )
-    hits = run_heuristics(ctx)
+    hits = run_all_rules(ctx)
     narrative = compose_narrative(
         bands=bands,
         hits=hits,
@@ -590,7 +612,7 @@ def partner_review_from_context(ctx: HeuristicContext, *, deal_id: str = "",
         payer_mix=ctx.payer_mix,
         lever_claims=lever_claims,
     )
-    hits = run_heuristics(ctx)
+    hits = run_all_rules(ctx)
     narrative = compose_narrative(
         bands=bands,
         hits=hits,

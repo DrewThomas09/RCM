@@ -304,9 +304,151 @@ Calibration sources by band section:
 
 ---
 
-## 5. Change log
+## 5. Red-flag detectors
+
+Red flags are the subset of rules a partner treats as categorical.
+They live in `red_flags.py` so the base heuristics file stays clean;
+they compose via `run_all_rules()` which `partner_review` calls.
+
+Each red flag requires a field not present on the base
+`HeuristicContext` dataclass — populate via `setattr` on a context or
+via a profile/observed key on the packet. Field list is exported as
+`RED_FLAG_FIELDS`.
+
+### 5.1 `payer_concentration_risk` — single (non-govt) payer ≥ 40%
+
+Commercial payer concentration is a contract-negotiation risk.
+Exclude Medicare, Medicaid, and aggregate "commercial" buckets from
+the calculation — only single named payers count.
+
+**Partner voice:** "What's the current contract expiry, and have we
+modeled a down-rate renewal? If the answer is 'no change', we're not
+actually diligencing."
+
+### 5.2 `contract_labor_dependency` — agency labor ≥ 15% of labor
+
+Rates are volatile and 2022 taught everyone that a 10% agency-rate
+reset is a real line item.
+
+### 5.3 `service_line_concentration` — top DRG ≥ 30%
+
+One CMS update can wipe out margin if the top service line is a
+single point of concentration.
+
+### 5.4 `340b_margin_dependency` — 340B ≥ 15% of EBITDA
+
+The 340B program has been cut twice by CMS since 2018. Build an
+ex-340B sensitivity; hold the bid to clearing at half the current
+benefit.
+
+### 5.5 `covid_relief_unwind` — COVID relief ≥ 5% of baseline EBITDA
+
+PRF, ERC, and temporary rate add-ons do not recur. Strip from
+baseline before applying entry multiple.
+
+### 5.6 `known_rate_cliff_in_hold` — named reimbursement cliff in hold window
+
+IMD waiver expirations, sequestration resets, 340B rule changes.
+Don't exit into the cliff — shorten the hold or discount the exit.
+
+### 5.7 `ehr_migration_planned` — EHR swap inside hold
+
+Every EHR conversion the partner has seen produced 6–12 months of
+claims lag, DNFB growth, DSO extension. Model a 9–12 month
+revenue-drag period.
+
+### 5.8 `prior_regulatory_action` — CIA, OIG, CMS penalty on record
+
+Not a walk-away but posture-shaping. Document current compliance
+program + corrective-action outcomes before LOI.
+
+### 5.9 `quality_score_below_peer` — CMS Star Rating < 3
+
+Triggers VBP penalty schedules on ~2% of Medicare revenue and
+correlates with weaker operating maturity. Discount RCM-lever
+realization 15–25%.
+
+### 5.10 `debt_maturity_in_hold` — existing term debt matures before exit
+
+Refinance rates inside the hold shape exit cash coverage. Term-out
+at close or build a rate-shock sensitivity.
+
+---
+
+## 6. Worked examples
+
+### 6.1 The Medicare-heavy acute hospital at 11.5x
+
+**Inputs:**
+- Mid-size acute-care hospital, $50M EBITDA, 220 beds
+- Payer mix: 60% Medicare, 30% commercial, 10% Medicaid
+- Projected IRR 22%, exit multiple 11.5x, leverage 5.8x at close
+- Denial improvement plan: 350 bps/yr over 5yr hold
+
+**What fires:**
+- Reasonableness: IRR `STRETCH` (band: 9–16% IN_BAND, ≤21% STRETCH,
+  >28% IMPLAUSIBLE for mid × medicare_heavy).
+- `medicare_heavy_multiple_ceiling` HIGH — 11.5x above 9.5x ceiling
+  for Medicare ≥ 60%.
+- `aggressive_denial_improvement` MEDIUM — 350 bps/yr is stretch.
+
+**Narrative recommendation:** `PROCEED_WITH_CAVEATS`.
+
+**Key questions surfaced:**
+1. Name a closed comp with a Medicare mix this high that cleared
+   the modeled exit multiple.
+2. What evidence supports >200 bps/yr of denial-rate improvement —
+   capex, vendor, or staffing change?
+3. What is the single operating advantage that produces the modeled
+   IRR, and has it been validated by a comparable deal?
+
+### 6.2 The clean mid-market commercial deal
+
+**Inputs:**
+- Mid-size acute-care hospital, $40M EBITDA
+- Payer mix: 50% commercial, 35% Medicare, 15% Medicaid
+- IRR 19%, exit 9.0x (entering at 8.5x), leverage 4.8x
+- Denial improvement 150 bps/yr, AR reduction 6 days/yr, 5yr hold
+
+**What fires:** Nothing above LOW. All bands IN_BAND.
+
+**Recommendation:** `STRONG_PROCEED`.
+
+### 6.3 The crisis scenario — don't bring to IC
+
+**Inputs:**
+- $30M EBITDA lower-middle acute-care
+- 70% Medicare, 20% Medicaid (= 90% government)
+- Projected IRR 35%, exit 14x, leverage 6.8x, headroom 8%
+- Denial improvement 700 bps/yr (!)
+- Data coverage 35%
+- Contract labor 28% of labor spend
+
+**What fires:**
+- IRR `IMPLAUSIBLE` (government-heavy cap at 24% for lower_mid).
+- Exit multiple `IMPLAUSIBLE` (govt-heavy ceiling 11.5x).
+- `aggressive_denial_improvement` CRITICAL (> 600 bps/yr).
+- `leverage_too_high_govt_mix` CRITICAL.
+- `contract_labor_dependency` HIGH.
+- `insufficient_data_coverage` HIGH.
+- `covenant_headroom_tight` HIGH.
+
+**Recommendation:** `PASS`.
+
+**Narrative:** "Critical-risk flag on this acute-care hospital —
+the deal does not clear as modeled."
+
+---
+
+## 7. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
   realizability table, 19 heuristics covering VALUATION, OPERATIONS,
   STRUCTURE, PAYER, and DATA categories.
+- **2026-04-17** — Added 10 red-flag detectors in `red_flags.py`:
+  single-payer concentration, contract labor, service-line
+  concentration, 340B dependency, COVID unwind, rate-cliff,
+  EHR migration, prior regulatory action, quality rating,
+  debt maturity. Added three worked IC examples (Medicare-heavy
+  11.5x, clean commercial mid-market, crisis scenario).

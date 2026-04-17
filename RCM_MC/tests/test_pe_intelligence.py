@@ -826,5 +826,144 @@ class TestNoPacketBuilderModification(unittest.TestCase):
                                  f"{mod} should not import packet_builder")
 
 
+# ── Red flags ────────────────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    RED_FLAG_FIELDS,
+    run_all_rules,
+    run_red_flags,
+)
+
+
+def _red_ctx(**extras) -> HeuristicContext:
+    """Build a context with red-flag fields set via setattr."""
+    ctx = HeuristicContext(
+        payer_mix={"commercial": 0.50, "medicare": 0.30, "medicaid": 0.20},
+        ebitda_m=40.0, hold_years=5.0,
+    )
+    for k, v in extras.items():
+        setattr(ctx, k, v)
+    return ctx
+
+
+class TestRedFlagDetectors(unittest.TestCase):
+
+    def test_payer_concentration_single_payer_over_40_fires(self) -> None:
+        ctx = HeuristicContext(payer_mix={"bcbs": 0.45, "medicare": 0.30, "medicaid": 0.25})
+        hits = run_red_flags(ctx)
+        self.assertTrue(any(h.id == "payer_concentration_risk" for h in hits))
+
+    def test_payer_concentration_doesnt_fire_under_40(self) -> None:
+        ctx = HeuristicContext(payer_mix={"bcbs": 0.30, "united": 0.30, "medicare": 0.40})
+        hits = run_red_flags(ctx)
+        self.assertFalse(any(h.id == "payer_concentration_risk" for h in hits))
+
+    def test_contract_labor_dependency_fires(self) -> None:
+        ctx = _red_ctx(contract_labor_share=0.22)
+        hits = run_red_flags(ctx)
+        hit = next((h for h in hits if h.id == "contract_labor_dependency"), None)
+        self.assertIsNotNone(hit)
+        self.assertEqual(hit.severity, SEV_MEDIUM)
+
+    def test_contract_labor_critical_at_high_share(self) -> None:
+        ctx = _red_ctx(contract_labor_share=0.30)
+        hits = run_red_flags(ctx)
+        hit = next((h for h in hits if h.id == "contract_labor_dependency"), None)
+        self.assertEqual(hit.severity, SEV_HIGH)
+
+    def test_service_line_concentration_fires(self) -> None:
+        ctx = _red_ctx(top_service_line_share=0.42)
+        hits = run_red_flags(ctx)
+        self.assertTrue(any(h.id == "service_line_concentration" for h in hits))
+
+    def test_340b_dependency_fires(self) -> None:
+        ctx = _red_ctx(share_340b_of_margin=0.20)
+        hits = run_red_flags(ctx)
+        self.assertTrue(any(h.id == "340b_margin_dependency" for h in hits))
+
+    def test_covid_unwind_fires(self) -> None:
+        ctx = _red_ctx(covid_relief_share_of_ebitda=0.15)
+        hits = run_red_flags(ctx)
+        self.assertTrue(any(h.id == "covid_relief_unwind" for h in hits))
+
+    def test_rate_cliff_fires_with_string_marker(self) -> None:
+        ctx = _red_ctx(known_rate_cliff_in_hold="IMD waiver expires 2028")
+        hits = run_red_flags(ctx)
+        self.assertTrue(any(h.id == "known_rate_cliff_in_hold" for h in hits))
+
+    def test_ehr_migration_fires(self) -> None:
+        ctx = _red_ctx(ehr_migration_planned=True)
+        hits = run_red_flags(ctx)
+        self.assertTrue(any(h.id == "ehr_migration_planned" for h in hits))
+
+    def test_prior_regulatory_action_fires(self) -> None:
+        ctx = _red_ctx(prior_regulatory_action="2022 CMS CIA")
+        hits = run_red_flags(ctx)
+        self.assertTrue(any(h.id == "prior_regulatory_action" for h in hits))
+
+    def test_low_star_rating_fires(self) -> None:
+        ctx = _red_ctx(cms_star_rating=2.0)
+        hits = run_red_flags(ctx)
+        self.assertTrue(any(h.id == "quality_score_below_peer" for h in hits))
+
+    def test_high_star_rating_doesnt_fire(self) -> None:
+        ctx = _red_ctx(cms_star_rating=4.0)
+        hits = run_red_flags(ctx)
+        self.assertFalse(any(h.id == "quality_score_below_peer" for h in hits))
+
+    def test_debt_maturity_in_hold_fires(self) -> None:
+        ctx = _red_ctx(debt_maturity_years=3.0)  # hold=5yr
+        hits = run_red_flags(ctx)
+        self.assertTrue(any(h.id == "debt_maturity_in_hold" for h in hits))
+
+    def test_debt_maturity_after_hold_does_not_fire(self) -> None:
+        ctx = _red_ctx(debt_maturity_years=7.0)  # hold=5yr
+        hits = run_red_flags(ctx)
+        self.assertFalse(any(h.id == "debt_maturity_in_hold" for h in hits))
+
+    def test_no_red_flag_fields_produces_no_hits(self) -> None:
+        ctx = HeuristicContext()
+        hits = run_red_flags(ctx)
+        self.assertEqual(hits, [])
+
+
+class TestRunAllRules(unittest.TestCase):
+
+    def test_merges_base_and_red_flags(self) -> None:
+        ctx = _red_ctx(
+            denial_improvement_bps_per_yr=400,  # base heuristic
+            contract_labor_share=0.22,          # red flag
+        )
+        merged = run_all_rules(ctx)
+        ids = {h.id for h in merged}
+        self.assertIn("aggressive_denial_improvement", ids)
+        self.assertIn("contract_labor_dependency", ids)
+
+    def test_merged_list_is_severity_sorted(self) -> None:
+        ctx = _red_ctx(
+            denial_improvement_bps_per_yr=650,  # CRITICAL
+            contract_labor_share=0.22,          # MEDIUM
+        )
+        merged = run_all_rules(ctx)
+        ranks = [h.severity_rank() for h in merged]
+        self.assertEqual(ranks, sorted(ranks, reverse=True))
+
+    def test_partner_review_runs_red_flags(self) -> None:
+        packet = _make_packet_dict()
+        # Add a red-flag field to the profile.
+        packet["profile"]["contract_labor_share"] = 0.30
+        review = partner_review(packet)
+        ids = {h.id for h in review.heuristic_hits}
+        self.assertIn("contract_labor_dependency", ids)
+
+
+class TestRedFlagFieldsConstant(unittest.TestCase):
+
+    def test_red_flag_fields_list_is_populated(self) -> None:
+        self.assertGreater(len(RED_FLAG_FIELDS), 5)
+        for f in RED_FLAG_FIELDS:
+            self.assertIsInstance(f, str)
+
+
 if __name__ == "__main__":
     unittest.main()
