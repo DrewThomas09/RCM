@@ -510,6 +510,14 @@ from .roic_decomposition import (
     decompose_roic,
     render_roic_markdown,
 )
+from .working_capital_peer_band import (
+    WC_PEER_BANDS,
+    WCInputs,
+    WCLever,
+    WCPeerReport,
+    benchmark_working_capital,
+    render_wc_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1333,4 +1341,10 @@ __all__ = [
     "ROICResult",
     "decompose_roic",
     "render_roic_markdown",
+    "WC_PEER_BANDS",
+    "WCInputs",
+    "WCLever",
+    "WCPeerReport",
+    "benchmark_working_capital",
+    "render_wc_markdown",
 ]

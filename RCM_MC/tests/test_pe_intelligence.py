@@ -10183,5 +10183,109 @@ class TestROICDecomposition(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Working capital peer band ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    WC_PEER_BANDS,
+    WCInputs,
+    WCLever,
+    WCPeerReport,
+    benchmark_working_capital,
+    render_wc_markdown,
+)
+
+
+class TestWorkingCapitalPeerBand(unittest.TestCase):
+
+    def test_in_band_specialty_practice(self) -> None:
+        r = benchmark_working_capital(WCInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, cogs_m=60.0,
+            dso_days=45.0, dpo_days=37.0, dio_days=10.0,
+        ))
+        for l in r.levers:
+            self.assertEqual(l.verdict, "in_band")
+
+    def test_high_dso_unfavorable(self) -> None:
+        r = benchmark_working_capital(WCInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, cogs_m=60.0,
+            dso_days=80.0, dpo_days=37.0, dio_days=10.0,
+        ))
+        dso = next(l for l in r.levers if l.component == "dso")
+        self.assertEqual(dso.verdict, "unfavorable")
+        self.assertGreater(dso.cash_release_m, 0)
+
+    def test_low_dpo_unfavorable(self) -> None:
+        r = benchmark_working_capital(WCInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, cogs_m=60.0,
+            dso_days=45.0, dpo_days=15.0, dio_days=10.0,
+        ))
+        dpo = next(l for l in r.levers if l.component == "dpo")
+        self.assertEqual(dpo.verdict, "unfavorable")
+        self.assertGreater(dpo.cash_release_m, 0)
+
+    def test_high_dio_unfavorable(self) -> None:
+        r = benchmark_working_capital(WCInputs(
+            subsector="dme_supplier",
+            revenue_m=100.0, cogs_m=60.0,
+            dso_days=60.0, dpo_days=50.0, dio_days=100.0,
+        ))
+        dio = next(l for l in r.levers if l.component == "dio")
+        self.assertEqual(dio.verdict, "unfavorable")
+
+    def test_cash_conversion_cycle_computed(self) -> None:
+        r = benchmark_working_capital(WCInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, cogs_m=60.0,
+            dso_days=50.0, dpo_days=30.0, dio_days=10.0,
+        ))
+        # CCC = 50 + 10 - 30 = 30.
+        self.assertEqual(r.cash_conversion_cycle, 30.0)
+
+    def test_strong_posture_preserve_note(self) -> None:
+        r = benchmark_working_capital(WCInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, cogs_m=60.0,
+            dso_days=30.0, dpo_days=48.0, dio_days=4.0,
+        ))
+        self.assertIn("strong", r.partner_note.lower())
+
+    def test_multi_unfavorable_high_priority_note(self) -> None:
+        r = benchmark_working_capital(WCInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, cogs_m=60.0,
+            dso_days=80.0, dpo_days=15.0, dio_days=30.0,
+        ))
+        self.assertIn("high priority", r.partner_note.lower())
+
+    def test_unknown_subsector(self) -> None:
+        r = benchmark_working_capital(WCInputs(
+            subsector="unknown", revenue_m=100.0, cogs_m=60.0,
+            dso_days=50.0, dpo_days=30.0, dio_days=10.0,
+        ))
+        self.assertIn("not in WC library", r.partner_note)
+
+    def test_markdown_renders(self) -> None:
+        r = benchmark_working_capital(WCInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, cogs_m=60.0,
+            dso_days=50.0, dpo_days=30.0, dio_days=10.0,
+        ))
+        md = render_wc_markdown(r)
+        self.assertIn("# Working capital peer band", md)
+        self.assertIn("DSO", md)
+
+    def test_json(self) -> None:
+        import json
+        r = benchmark_working_capital(WCInputs(
+            subsector="specialty_practice",
+            revenue_m=100.0, cogs_m=60.0,
+            dso_days=50.0, dpo_days=30.0, dio_days=10.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
