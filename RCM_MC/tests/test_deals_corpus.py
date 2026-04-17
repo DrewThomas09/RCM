@@ -14,6 +14,14 @@ from pathlib import Path
 
 from rcm_mc.data_public.deals_corpus import DealsCorpus, _SEED_DEALS
 from rcm_mc.data_public.extended_seed import EXTENDED_SEED_DEALS
+from rcm_mc.data_public.deal_scorer import (
+    score_deal,
+    score_corpus,
+    top_n,
+    bottom_n,
+    quality_report,
+    DealQualityScore,
+)
 from rcm_mc.data_public.payer_sensitivity import (
     run_medicaid_cut_scenario,
     run_ma_creep_scenario,
@@ -1158,6 +1166,116 @@ class TestPayerSensitivity(unittest.TestCase):
 # ===========================================================================
 # Ingest Pipeline
 # ===========================================================================
+
+# ===========================================================================
+# Deal Scorer
+# ===========================================================================
+
+class TestDealScorer(unittest.TestCase):
+
+    def _full_deal(self):
+        return {
+            "source_id": "test_full",
+            "source": "seed",
+            "deal_name": "Full Data Deal",
+            "year": 2020,
+            "buyer": "KKR",
+            "seller": "Public Co",
+            "ev_mm": 1000.0,
+            "ebitda_at_entry_mm": 100.0,
+            "hold_years": 5.0,
+            "realized_moic": 2.5,
+            "realized_irr": 0.20,
+            "payer_mix": {"medicare": 0.4, "medicaid": 0.2, "commercial": 0.35, "self_pay": 0.05},
+            "notes": "Full data",
+        }
+
+    def _sparse_deal(self):
+        return {
+            "source_id": "test_sparse",
+            "source": "sec_edgar",
+            "deal_name": "Sparse Deal",
+            "year": 2021,
+        }
+
+    def test_full_deal_scores_high(self):
+        score = score_deal(self._full_deal())
+        self.assertGreaterEqual(score.total_score, 85)
+        self.assertEqual(score.grade, "A")
+
+    def test_sparse_deal_scores_low(self):
+        score = score_deal(self._sparse_deal())
+        self.assertLess(score.total_score, 70)
+
+    def test_full_beats_sparse(self):
+        full = score_deal(self._full_deal())
+        sparse = score_deal(self._sparse_deal())
+        self.assertGreater(full.total_score, sparse.total_score)
+
+    def test_seed_source_beats_edgar(self):
+        seed = score_deal({**self._sparse_deal(), "source": "seed"})
+        edgar = score_deal({**self._sparse_deal(), "source": "sec_edgar"})
+        self.assertGreater(seed.source_score, edgar.source_score)
+
+    def test_implausible_ev_ebitda_penalized(self):
+        deal = {**self._full_deal(), "ev_mm": 5000, "ebitda_at_entry_mm": 100}  # 50x
+        score = score_deal(deal)
+        # Should have credibility deduction
+        full_score = score_deal(self._full_deal())
+        self.assertLess(score.credibility_score, full_score.credibility_score)
+
+    def test_missing_payer_mix_flagged(self):
+        deal = {**self._full_deal(), "payer_mix": None}
+        score = score_deal(deal)
+        self.assertTrue(any("payer_mix" in i for i in score.issues))
+
+    def test_moic_irr_hold_consistency_flagged(self):
+        # 2.5x MOIC at 20% IRR for 5y implies ~2.49x — consistent
+        # 2.5x MOIC at 20% IRR for 1y is inconsistent
+        deal = {**self._full_deal(), "hold_years": 1.0}
+        score = score_deal(deal)
+        self.assertTrue(any("inconsistent" in i for i in score.issues))
+
+    def test_score_as_dict(self):
+        score = score_deal(self._full_deal())
+        d = score.as_dict()
+        self.assertIn("grade", d)
+        self.assertIn("total_score", d)
+        self.assertIn("issues", d)
+
+    def test_score_corpus_returns_sorted(self):
+        db_path = _tmp_db()
+        corpus = DealsCorpus(db_path)
+        corpus.seed()
+        scores = score_corpus(db_path)
+        for i in range(len(scores) - 1):
+            self.assertGreaterEqual(scores[i].total_score, scores[i+1].total_score)
+        os.unlink(db_path)
+
+    def test_top_n_length(self):
+        db_path = _tmp_db()
+        corpus = DealsCorpus(db_path)
+        corpus.seed()
+        top = top_n(db_path, 5)
+        self.assertEqual(len(top), 5)
+        os.unlink(db_path)
+
+    def test_quality_report_string(self):
+        db_path = _tmp_db()
+        corpus = DealsCorpus(db_path)
+        corpus.seed()
+        report = quality_report(db_path)
+        self.assertIn("Grade", report)
+        self.assertIn("Score", report)
+        os.unlink(db_path)
+
+    def test_public_api_imports(self):
+        from rcm_mc.data_public import (
+            DealsCorpus, normalize_raw, get_benchmarks,
+            full_intelligence_report, run_all_scenarios,
+            score_deal, run_full_ingest,
+        )
+
 
 class TestIngestPipeline(unittest.TestCase):
 
