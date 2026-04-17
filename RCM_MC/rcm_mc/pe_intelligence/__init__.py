@@ -453,6 +453,16 @@ from .ebitda_normalization import (
     normalize_ebitda,
     render_normalization_markdown,
 )
+from .staffing_pipeline_analyzer import (
+    DEFAULT_RAMP_MONTHS,
+    DEFAULT_TTF_DAYS,
+    RoleProjection,
+    RoleState,
+    StaffingFinding,
+    StaffingReport,
+    analyze_staffing,
+    render_staffing_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1233,4 +1243,12 @@ __all__ = [
     "NormalizationResult",
     "normalize_ebitda",
     "render_normalization_markdown",
+    "DEFAULT_RAMP_MONTHS",
+    "DEFAULT_TTF_DAYS",
+    "RoleProjection",
+    "RoleState",
+    "StaffingFinding",
+    "StaffingReport",
+    "analyze_staffing",
+    "render_staffing_markdown",
 ]

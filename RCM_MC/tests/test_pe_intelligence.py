@@ -9411,5 +9411,120 @@ class TestEBITDANormalization(unittest.TestCase):
         json.dumps(normalize_ebitda(100.0, items).to_dict())
 
 
+# ── Staffing pipeline analyzer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DEFAULT_RAMP_MONTHS,
+    DEFAULT_TTF_DAYS,
+    RoleProjection,
+    RoleState,
+    StaffingFinding,
+    StaffingReport,
+    analyze_staffing,
+    render_staffing_markdown,
+)
+
+
+class TestStaffingPipelineAnalyzer(unittest.TestCase):
+
+    def test_healthy_profile_no_high(self) -> None:
+        rep = analyze_staffing([RoleState(
+            role="physician", current_headcount=30, open_reqs=1,
+            pipeline_candidates=10, offers_extended=2,
+            quarterly_attrition_rate=0.03,
+        )])
+        self.assertEqual(
+            sum(1 for f in rep.findings if f.severity == "high"), 0)
+
+    def test_high_attrition_flagged(self) -> None:
+        rep = analyze_staffing([RoleState(
+            role="rn", current_headcount=50, open_reqs=5,
+            pipeline_candidates=30, offers_extended=5,
+            quarterly_attrition_rate=0.15,
+        )])
+        self.assertTrue(any(f.severity == "high"
+                            and "attrition" in f.message.lower()
+                            for f in rep.findings))
+
+    def test_floor_breach_flagged(self) -> None:
+        rep = analyze_staffing([RoleState(
+            role="physician", current_headcount=10, open_reqs=0,
+            pipeline_candidates=0, offers_extended=0,
+            quarterly_attrition_rate=0.20,
+            floor_headcount=8,
+        )])
+        # 20% attrition on 10 → 2 depart → 8 → 6 → ...
+        proj = rep.projections[0]
+        self.assertIsNotNone(proj.below_floor_q)
+        self.assertTrue(any("floor" in f.message.lower()
+                            for f in rep.findings))
+
+    def test_thin_pipeline_flagged(self) -> None:
+        rep = analyze_staffing([RoleState(
+            role="rn", current_headcount=50, open_reqs=10,
+            pipeline_candidates=5, offers_extended=3,
+        )])
+        self.assertTrue(any("pipeline" in f.message.lower()
+                            for f in rep.findings))
+
+    def test_many_open_reqs_flagged(self) -> None:
+        rep = analyze_staffing([RoleState(
+            role="physician", current_headcount=50, open_reqs=20,
+            pipeline_candidates=60, offers_extended=10,
+        )])
+        self.assertTrue(any("open reqs" in f.message.lower()
+                            for f in rep.findings))
+
+    def test_lost_revenue_positive(self) -> None:
+        rep = analyze_staffing([RoleState(
+            role="physician", current_headcount=10, open_reqs=3,
+            pipeline_candidates=10, offers_extended=2,
+        )])
+        self.assertGreater(rep.projections[0].lost_revenue_q1_m, 0)
+
+    def test_q4_projection_declines_without_hiring(self) -> None:
+        rep = analyze_staffing([RoleState(
+            role="physician", current_headcount=30, open_reqs=0,
+            pipeline_candidates=0, offers_extended=0,
+            quarterly_attrition_rate=0.10,
+        )])
+        p = rep.projections[0]
+        self.assertLess(p.q4_projection, p.current_headcount)
+
+    def test_multiple_high_findings_material_risk_note(self) -> None:
+        rep = analyze_staffing([
+            RoleState(role="physician", current_headcount=20, open_reqs=10,
+                      pipeline_candidates=5, offers_extended=1,
+                      quarterly_attrition_rate=0.15,
+                      floor_headcount=30),
+            RoleState(role="rn", current_headcount=50, open_reqs=15,
+                      pipeline_candidates=10, offers_extended=3,
+                      quarterly_attrition_rate=0.20),
+        ])
+        high_count = sum(1 for f in rep.findings if f.severity == "high")
+        self.assertGreaterEqual(high_count, 2)
+        self.assertIn("material", rep.partner_note.lower())
+
+    def test_ttf_library(self) -> None:
+        self.assertIn("physician", DEFAULT_TTF_DAYS)
+        self.assertIn("rn", DEFAULT_TTF_DAYS)
+
+    def test_markdown_renders(self) -> None:
+        rep = analyze_staffing([RoleState(
+            role="physician", current_headcount=10, open_reqs=2,
+            pipeline_candidates=5, offers_extended=1,
+        )])
+        md = render_staffing_markdown(rep)
+        self.assertIn("# Staffing pipeline analysis", md)
+        self.assertIn("physician", md)
+
+    def test_json(self) -> None:
+        import json
+        rep = analyze_staffing([RoleState(
+            role="physician", current_headcount=10, open_reqs=0,
+            pipeline_candidates=0, offers_extended=0)])
+        json.dumps(rep.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
