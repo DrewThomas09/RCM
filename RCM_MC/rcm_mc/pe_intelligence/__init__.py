@@ -363,6 +363,13 @@ from .reimbursement_cliff import (
     evaluate_cliffs,
     render_cliff_report_markdown,
 )
+from .scenario_comparison import (
+    ScenarioComparison,
+    ScenarioInputs,
+    ScenarioOutcome as ScenarioComparisonOutcome,
+    compare_scenarios,
+    render_scenario_comparison_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1077,4 +1084,9 @@ __all__ = [
     "default_cliff_library",
     "evaluate_cliffs",
     "render_cliff_report_markdown",
+    "ScenarioComparison",
+    "ScenarioInputs",
+    "ScenarioComparisonOutcome",
+    "compare_scenarios",
+    "render_scenario_comparison_markdown",
 ]

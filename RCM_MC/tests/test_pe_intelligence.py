@@ -8277,5 +8277,56 @@ class TestReimbursementCliffs(unittest.TestCase):
         json.dumps(report.to_dict())
 
 
+# ── Scenario comparison ────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ScenarioComparison,
+    ScenarioInputs as SCScenarioInputs,
+    ScenarioComparisonOutcome,
+    compare_scenarios,
+    render_scenario_comparison_markdown,
+)
+
+
+class TestScenarioComparison(unittest.TestCase):
+
+    def _inputs(self):
+        return SCScenarioInputs(
+            deal_id="sc1", base_ebitda_m=30, base_exit_ebitda_m=45,
+            base_entry_multiple=8.0, base_exit_multiple=9.5,
+            hold_years=5.0, equity_invested_m=150,
+            debt_at_close_m=150, debt_paydown_m=50,
+        )
+
+    def test_three_scenarios_produced(self) -> None:
+        cmp = compare_scenarios(self._inputs())
+        self.assertEqual(cmp.base.name, "base")
+        self.assertEqual(cmp.bull.name, "bull")
+        self.assertEqual(cmp.bear.name, "bear")
+
+    def test_bull_beats_base_beats_bear(self) -> None:
+        cmp = compare_scenarios(self._inputs())
+        self.assertGreater(cmp.bull.moic, cmp.base.moic)
+        self.assertGreater(cmp.base.moic, cmp.bear.moic)
+
+    def test_spread_positive(self) -> None:
+        cmp = compare_scenarios(self._inputs())
+        self.assertGreater(cmp.bull_bear_spread_moic, 0)
+
+    def test_irr_populated(self) -> None:
+        cmp = compare_scenarios(self._inputs())
+        self.assertIsNotNone(cmp.base.irr)
+
+    def test_markdown_renders(self) -> None:
+        md = render_scenario_comparison_markdown(
+            compare_scenarios(self._inputs()))
+        self.assertIn("# Scenario comparison", md)
+
+    def test_json(self) -> None:
+        import json
+        cmp = compare_scenarios(self._inputs())
+        json.dumps(cmp.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
