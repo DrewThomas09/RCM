@@ -3113,7 +3113,42 @@ knows exactly what they are betting against.
 
 ---
 
-## 136. Change log
+## 136. Payer-mix shift cascade (`payer_mix_shift_cascade.py`)
+
+Sister module to `rcm_lever_cascade`. When a deck claims payer-mix
+shift (Medicaid → commercial), the cascade has 5 steps:
+
+1. **Magnitude** — pp of commercial share moving; annualized.
+2. **Effective rate change** — blended rate lift using partner-
+   approximated multipliers: commercial 1.60x, Medicare FFS 1.0x,
+   MA 1.05x, Medicaid 0.65x, self-pay 0.45x.
+3. **Revenue impact** — revenue × rate delta.
+4. **EBITDA impact** — revenue × contribution margin.
+5. **Exit multiple uplift** — ~0.25x per 10pp commercial shift;
+   buyers discount un-contracted mix by 50%.
+
+Credibility score 0-100:
+
+- -30 if pace > 3pp/yr.
+- -25 if no signed commercial contracts with claimed shift.
+- -15 if pipeline < (pp_shift / 2).
+
+Partner note:
+
+- < 40 → "aggressive AND thin pipeline; underwrite at ≤ 25%
+  realization."
+- 40-70 → "some backing; underwrite 50%."
+- ≥ 70 with signed contracts → "credible; 70-80% realization."
+- No shift → "straight on current blended rate."
+
+**Worked example:** a deck claims 30% → 60% commercial over 3
+years with 1 contract in pipeline. Credibility drops below 40.
+Partner reads: "this is a pitch, not a thesis — underwrite at
+25% of claimed lift."
+
+---
+
+## 137. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3393,3 +3428,8 @@ knows exactly what they are betting against.
 - **2026-04-17** — Added `bear_case_generator.py` (§135) —
   deal-specific bear drivers + story + probability-weighted MOIC.
   Full inventory: 133 modules, 1,342 pe_intelligence unit tests.
+- **2026-04-17** — Added `payer_mix_shift_cascade.py` (§136) —
+  mix shift → rate → revenue → EBITDA → multiple uplift with
+  credibility score penalizing aggressive pace + thin contract
+  pipeline. Full inventory: 134 modules, 1,352 pe_intelligence
+  unit tests.
