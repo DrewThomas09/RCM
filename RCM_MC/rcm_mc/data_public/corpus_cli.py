@@ -182,6 +182,32 @@ def _cmd_full_ingest(args: argparse.Namespace) -> None:
         print(_json.dumps(report.as_dict(), indent=2, default=str))
 
 
+def _cmd_leverage(args: argparse.Namespace) -> None:
+    from .leverage_analysis import model_leverage, covenant_headroom, leverage_table
+    corpus = DealsCorpus(args.db)
+    deal = corpus.get(args.deal_id)
+    if not deal:
+        print(f"Deal '{args.deal_id}' not found.")
+        sys.exit(1)
+
+    overrides: dict = {}
+    if args.assumptions:
+        try:
+            overrides = json.loads(args.assumptions)
+        except json.JSONDecodeError:
+            print("--assumptions must be a JSON object, e.g. '{\"interest_rate\": 0.085}'")
+            sys.exit(1)
+
+    profile = model_leverage(deal, overrides if overrides else None)
+
+    if args.json:
+        print(json.dumps(profile.as_dict(), indent=2, default=str))
+    else:
+        print(leverage_table(profile))
+        ch = covenant_headroom(profile)
+        print(f"\n  Min headroom: {ch['min_headroom_turns']:.2f}x turns (Year {ch['min_headroom_year']})")
+
+
 def _cmd_vintage(args: argparse.Namespace) -> None:
     from .vintage_analysis import (
         vintage_table, vintage_report, entry_timing_assessment, get_vintage_stats
@@ -330,6 +356,13 @@ def main(argv=None) -> None:
     sv.add_argument("--deal-id", required=True, dest="deal_id")
     sv.add_argument("--json", action="store_true")
 
+    # leverage
+    lv = sub.add_parser("leverage", help="Model leverage structure and covenant headroom for a deal")
+    lv.add_argument("--deal-id", required=True, dest="deal_id")
+    lv.add_argument("--assumptions", default=None,
+                    help="JSON overrides, e.g. '{\"interest_rate\": 0.085}'")
+    lv.add_argument("--json", action="store_true")
+
     # vintage
     vt = sub.add_parser("vintage", help="Vintage year return analysis and entry timing")
     vt.add_argument("--year", type=int, default=None, help="Specific entry year to analyse")
@@ -363,6 +396,7 @@ def main(argv=None) -> None:
         "score": _cmd_score,
         "comps": _cmd_comps,
         "vintage": _cmd_vintage,
+        "leverage": _cmd_leverage,
     }
     dispatch[args.cmd](args)
 

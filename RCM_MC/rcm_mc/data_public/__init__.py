@@ -40,6 +40,14 @@ from .vintage_analysis import (
     entry_timing_assessment,
     vintage_table,
 )
+from .leverage_analysis import (
+    model_leverage,
+    debt_capacity,
+    coverage_ratio,
+    covenant_headroom,
+    stress_leverage,
+    leverage_table,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -70,4 +78,10 @@ __all__ = [
     "vintage_report",
     "entry_timing_assessment",
     "vintage_table",
+    "model_leverage",
+    "debt_capacity",
+    "coverage_ratio",
+    "covenant_headroom",
+    "stress_leverage",
+    "leverage_table",
 ]

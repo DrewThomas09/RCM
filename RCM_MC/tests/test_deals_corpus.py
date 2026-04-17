@@ -1490,6 +1490,155 @@ class TestComparables(unittest.TestCase):
 
 
 # ===========================================================================
+# Leverage Analysis
+# ===========================================================================
+
+class TestLeverageAnalysis(unittest.TestCase):
+
+    def _hca_deal(self):
+        return {
+            "deal_name": "HCA Healthcare – KKR/Bain",
+            "ev_mm": 33000,
+            "ebitda_at_entry_mm": 2900,
+            "hold_years": 4,
+        }
+
+    def _small_deal(self):
+        return {
+            "deal_name": "Small Hospital",
+            "ev_mm": 300,
+            "ebitda_at_entry_mm": 30,
+            "hold_years": 5,
+        }
+
+    def test_model_leverage_returns_profile(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage
+        profile = model_leverage(self._hca_deal())
+        self.assertIsNotNone(profile)
+        self.assertGreater(profile.entry_leverage, 0)
+
+    def test_entry_leverage_in_range(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage
+        profile = model_leverage(self._hca_deal())
+        # 60% debt/40% equity default → ~6x leverage on 2900 EBITDA
+        self.assertGreater(profile.entry_leverage, 3.0)
+        self.assertLess(profile.entry_leverage, 12.0)
+
+    def test_annual_metrics_count(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage
+        profile = model_leverage(self._hca_deal())
+        # year 0 through year 4 → 5 entries
+        self.assertEqual(len(profile.annual_metrics), 5)
+
+    def test_debt_declines_over_time(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage
+        profile = model_leverage(self._hca_deal())
+        debts = [m.debt_balance for m in profile.annual_metrics]
+        self.assertGreater(debts[0], debts[-1])
+
+    def test_ebitda_grows_over_time(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage
+        profile = model_leverage(self._hca_deal())
+        ebitdas = [m.ebitda for m in profile.annual_metrics]
+        self.assertGreater(ebitdas[-1], ebitdas[0])
+
+    def test_interest_coverage_positive(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage
+        profile = model_leverage(self._hca_deal())
+        for m in profile.annual_metrics:
+            self.assertGreater(m.interest_coverage, 0)
+
+    def test_leverage_decreases_over_hold(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage
+        profile = model_leverage(self._hca_deal())
+        levs = [m.net_leverage for m in profile.annual_metrics]
+        self.assertGreater(levs[0], levs[-1])
+
+    def test_covenant_headroom_dict(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage, covenant_headroom
+        profile = model_leverage(self._hca_deal())
+        ch = covenant_headroom(profile)
+        self.assertIn("covenant_leverage_trigger", ch)
+        self.assertIn("min_headroom_turns", ch)
+        self.assertIn("covenant_at_risk", ch)
+
+    def test_debt_capacity_formula(self):
+        from rcm_mc.data_public.leverage_analysis import debt_capacity
+        # At 7.5% interest, 1.5x coverage floor, $100M EBITDA:
+        # max_interest = 100/1.5 = 66.67, max_debt = 66.67/0.075 = 888.9
+        cap = debt_capacity(100.0, coverage_floor=1.5)
+        self.assertAlmostEqual(cap, 100.0 / 1.5 / 0.075, places=0)
+
+    def test_coverage_ratio_function(self):
+        from rcm_mc.data_public.leverage_analysis import coverage_ratio
+        result = coverage_ratio(ebitda=100, interest=30, capex=15, amort=5)
+        self.assertAlmostEqual(result["interest_coverage"], 100/30, places=2)
+        self.assertAlmostEqual(result["fixed_charge_coverage"], (100-15)/(30+5), places=2)
+
+    def test_stress_leverage_worse_than_base(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage, stress_leverage
+        base = model_leverage(self._hca_deal())
+        stressed = stress_leverage(base, ebitda_shock=-0.15, shock_year=1)
+        # Stressed entry_interest_coverage should be ≤ base (less EBITDA growth)
+        self.assertLessEqual(
+            stressed.entry_interest_coverage,
+            base.entry_interest_coverage + 0.01,
+        )
+
+    def test_as_dict_serialisable(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage
+        import json
+        profile = model_leverage(self._small_deal())
+        d = profile.as_dict()
+        json.dumps(d)  # must not raise
+        self.assertIn("annual_metrics", d)
+        self.assertIn("entry_leverage", d)
+
+    def test_leverage_table_string(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage, leverage_table
+        profile = model_leverage(self._hca_deal())
+        out = leverage_table(profile)
+        self.assertIn("Leverage Profile", out)
+        self.assertIn("Int Cov", out)
+
+    def test_cli_leverage(self):
+        db_path = _tmp_db()
+        corpus = DealsCorpus(db_path)
+        corpus.seed(skip_if_populated=False)
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", db_path, "leverage", "--deal-id", "seed_001"])
+        out = buf.getvalue()
+        self.assertIn("Leverage Profile", out)
+        os.unlink(db_path)
+
+    def test_cli_leverage_json(self):
+        db_path = _tmp_db()
+        corpus = DealsCorpus(db_path)
+        corpus.seed(skip_if_populated=False)
+        from rcm_mc.data_public.corpus_cli import main
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--db", db_path, "leverage", "--deal-id", "seed_001", "--json"])
+        data = json.loads(buf.getvalue())
+        self.assertIn("entry_leverage", data)
+        self.assertIn("annual_metrics", data)
+        os.unlink(db_path)
+
+    def test_custom_interest_rate_assumption(self):
+        from rcm_mc.data_public.leverage_analysis import model_leverage
+        base = model_leverage(self._hca_deal())
+        high_rate = model_leverage(self._hca_deal(), {"interest_rate": 0.12})
+        # Higher rate → lower interest coverage
+        self.assertLess(high_rate.entry_interest_coverage, base.entry_interest_coverage)
+
+
+# ===========================================================================
 # Vintage Analysis
 # ===========================================================================
 
