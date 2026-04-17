@@ -12546,5 +12546,82 @@ class TestMarginOfSafety(unittest.TestCase):
         self.assertIsNotNone(r.base_irr)
 
 
+# ── Management-vs-packet gap ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    Claim,
+    GapFinding,
+    MgmtGapReport,
+    compare_claims,
+    render_gap_markdown,
+)
+
+
+class TestManagementVsPacketGap(unittest.TestCase):
+
+    def test_aligned_minor_only(self) -> None:
+        # All gaps < 5% → all minor.
+        r = compare_claims([
+            Claim("ebitda_margin", 0.20, 0.205, higher_is_better=True),
+            Claim("growth", 0.10, 0.098, higher_is_better=True),
+        ])
+        self.assertEqual(r.contradicted_count, 0)
+        self.assertEqual(r.material_count, 0)
+        self.assertIn("align", r.partner_note.lower())
+
+    def test_material_gap_flagged(self) -> None:
+        # Gap ~11% → material (5-15% band).
+        r = compare_claims([
+            Claim("growth", 0.10, 0.09, higher_is_better=True),
+        ])
+        self.assertEqual(r.material_count, 1)
+
+    def test_contradicted_when_large_favorable_gap(self) -> None:
+        r = compare_claims([
+            # Mgmt claims 25% margin but packet shows 15%.
+            Claim("ebitda_margin", 0.25, 0.15, higher_is_better=True),
+        ])
+        self.assertEqual(r.contradicted_count, 1)
+        self.assertIn("contradicted", r.partner_note.lower())
+
+    def test_two_contradictions_pause_note(self) -> None:
+        r = compare_claims([
+            Claim("margin", 0.25, 0.15, higher_is_better=True),
+            Claim("growth", 0.18, 0.08, higher_is_better=True),
+        ])
+        self.assertIn("pause diligence", r.partner_note.lower())
+
+    def test_sandbag_direction_also_flagged(self) -> None:
+        # Mgmt claims 5% but packet shows 20% — "sandbagging" or
+        # something changed.
+        r = compare_claims([
+            Claim("growth", 0.05, 0.20, higher_is_better=True),
+        ])
+        self.assertEqual(r.contradicted_count, 1)
+
+    def test_lower_is_better_semantics(self) -> None:
+        # Mgmt claims 7.5% denial rate, packet says 8% — small favorable
+        # gap for mgmt (lower is better).
+        r = compare_claims([
+            Claim("denial_rate", 0.075, 0.08, unit="pct",
+                  higher_is_better=False),
+        ])
+        finding = r.findings[0]
+        # ~6% gap, favorable-for-mgmt → "rounding up" interpretation.
+        self.assertIn("rounding", finding.partner_interpretation.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_gap_markdown(compare_claims([
+            Claim("margin", 0.20, 0.18, higher_is_better=True),
+        ]))
+        self.assertIn("# Management vs packet gap", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(compare_claims([
+            Claim("margin", 0.20, 0.18, higher_is_better=True),
+        ]).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

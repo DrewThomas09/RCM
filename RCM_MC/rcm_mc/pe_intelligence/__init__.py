@@ -693,6 +693,13 @@ from .margin_of_safety import (
     analyze_safety,
     render_safety_markdown,
 )
+from .management_vs_packet_gap import (
+    Claim,
+    GapFinding,
+    GapReport as MgmtGapReport,
+    compare_claims,
+    render_gap_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1655,4 +1662,9 @@ __all__ = [
     "SafetyReport",
     "analyze_safety",
     "render_safety_markdown",
+    "Claim",
+    "GapFinding",
+    "MgmtGapReport",
+    "compare_claims",
+    "render_gap_markdown",
 ]
