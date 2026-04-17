@@ -106,6 +106,7 @@ class TestDealsCorpus(unittest.TestCase):
         from rcm_mc.data_public.extended_seed_11 import EXTENDED_SEED_DEALS_11
         from rcm_mc.data_public.extended_seed_12 import EXTENDED_SEED_DEALS_12
         from rcm_mc.data_public.extended_seed_13 import EXTENDED_SEED_DEALS_13
+        from rcm_mc.data_public.extended_seed_14 import EXTENDED_SEED_DEALS_14
         n = self.corpus.seed(skip_if_populated=False)
         expected = (len(_SEED_DEALS) + len(EXTENDED_SEED_DEALS) + len(EXTENDED_SEED_DEALS_2)
                     + len(EXTENDED_SEED_DEALS_3) + len(EXTENDED_SEED_DEALS_4)
@@ -113,7 +114,7 @@ class TestDealsCorpus(unittest.TestCase):
                     + len(EXTENDED_SEED_DEALS_7) + len(EXTENDED_SEED_DEALS_8)
                     + len(EXTENDED_SEED_DEALS_9) + len(EXTENDED_SEED_DEALS_10)
                     + len(EXTENDED_SEED_DEALS_11) + len(EXTENDED_SEED_DEALS_12)
-                    + len(EXTENDED_SEED_DEALS_13))
+                    + len(EXTENDED_SEED_DEALS_13) + len(EXTENDED_SEED_DEALS_14))
         self.assertEqual(n, expected)
         stats = self.corpus.stats()
         self.assertEqual(stats["total"], expected)
@@ -3578,10 +3579,10 @@ class TestExtendedSeed8(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.db_path)
 
-    def test_seed_loads_295_deals(self):
+    def test_seed_loads_315_deals(self):
         corpus = DealsCorpus(self.db_path)
         stats = corpus.stats()
-        self.assertGreaterEqual(stats["total"], 295)
+        self.assertGreaterEqual(stats["total"], 315)
 
     def test_seed_187_signify_high_moic(self):
         corpus = DealsCorpus(self.db_path)
@@ -6269,6 +6270,221 @@ class TestCorpusHealthCheck(unittest.TestCase):
         self.assertGreater(result.health_score, 0.5)
         text = health_check_text(result)
         self.assertIn("Corpus Health Check Report", text)
+
+
+class TestExtendedSeed14(unittest.TestCase):
+    """Tests for extended_seed_14.py (deals 296-315)."""
+
+    def setUp(self):
+        import tempfile, os
+        self.tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.db_path = self.tmp.name
+        self.tmp.close()
+        self.corpus = DealsCorpus(self.db_path)
+        self.corpus.seed(skip_if_populated=False)
+
+    def tearDown(self):
+        import os
+        os.unlink(self.db_path)
+
+    def test_seed_14_count(self):
+        from rcm_mc.data_public.extended_seed_14 import EXTENDED_SEED_DEALS_14
+        self.assertEqual(len(EXTENDED_SEED_DEALS_14), 20)
+
+    def test_seed_14_required_fields(self):
+        from rcm_mc.data_public.extended_seed_14 import EXTENDED_SEED_DEALS_14
+        for deal in EXTENDED_SEED_DEALS_14:
+            self.assertIn("source_id", deal)
+            self.assertIn("deal_name", deal)
+            self.assertIn("deal_type", deal)
+
+    def test_seed_296_american_oncology(self):
+        deal = self.corpus.get("seed_296")
+        self.assertIsNotNone(deal)
+        self.assertIn("Oncology", deal["deal_name"])
+
+    def test_seed_306_select_medical(self):
+        deal = self.corpus.get("seed_306")
+        self.assertIsNotNone(deal)
+        self.assertEqual(deal["realized_moic"], 4.2)
+
+    def test_seed_310_livongo_disaster(self):
+        deal = self.corpus.get("seed_305")
+        self.assertIsNotNone(deal)
+
+    def test_seed_315_color_genomics(self):
+        deal = self.corpus.get("seed_315")
+        self.assertIsNotNone(deal)
+
+    def test_seed_14_all_unique_ids(self):
+        from rcm_mc.data_public.extended_seed_14 import EXTENDED_SEED_DEALS_14
+        ids = [d["source_id"] for d in EXTENDED_SEED_DEALS_14]
+        self.assertEqual(len(ids), len(set(ids)))
+
+
+class TestProviderTrendReliability(unittest.TestCase):
+    """Tests for provider_trend_reliability.py."""
+
+    def _make_trends_df(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            return None
+        data = []
+        for pt in ["Cardiology", "Orthopedics", "Nephrology"]:
+            for yr in range(2017, 2023):
+                data.append({
+                    "provider_type": pt,
+                    "year": yr,
+                    "total_medicare_payment_amt": 1_000_000 * (1 + 0.05) ** (yr - 2017),
+                    "payment_yoy_pct": 0.05 if yr > 2017 else None,
+                    "payment_yoy_accel": 0.0,
+                })
+        return pd.DataFrame(data)
+
+    def test_reliability_returns_dataframe(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import provider_trend_reliability
+        df = self._make_trends_df()
+        result = provider_trend_reliability(df, min_observations=3)
+        self.assertFalse(result.empty)
+        self.assertIn("reliability_score", result.columns)
+
+    def test_reliability_sorted_descending(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import provider_trend_reliability
+        df = self._make_trends_df()
+        result = provider_trend_reliability(df)
+        scores = result["reliability_score"].tolist()
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_reliability_empty_input(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import provider_trend_reliability
+        result = provider_trend_reliability(pd.DataFrame())
+        self.assertTrue(result.empty)
+
+    def test_reliability_percentile_range(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import provider_trend_reliability
+        df = self._make_trends_df()
+        result = provider_trend_reliability(df)
+        self.assertTrue((result["reliability_percentile"] >= 0).all())
+        self.assertTrue((result["reliability_percentile"] <= 1).all())
+
+    def test_watchlist_buckets(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import growth_volatility_watchlist
+        data = pd.DataFrame([
+            {"provider_type": "A", "last_payment_growth": 0.10, "yoy_payment_volatility": 0.20},
+            {"provider_type": "B", "last_payment_growth": -0.05, "yoy_payment_volatility": 0.50},
+            {"provider_type": "C", "last_payment_growth": 0.02, "yoy_payment_volatility": 0.30},
+        ])
+        result = growth_volatility_watchlist(data)
+        self.assertIn("watchlist_bucket", result.columns)
+        buckets = result["watchlist_bucket"].astype(str).tolist()
+        self.assertIn("priority", buckets)
+        self.assertIn("high_risk", buckets)
+
+    def test_watchlist_empty_input(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import growth_volatility_watchlist
+        result = growth_volatility_watchlist(pd.DataFrame())
+        self.assertTrue(result.empty)
+
+    def test_momentum_profile_trend_types(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import provider_momentum_profile
+        df = self._make_trends_df()
+        result = provider_momentum_profile(df, min_years=3)
+        self.assertIn("trend_type", result.columns)
+        valid = {"durable_grower", "volatile_grower", "decliner", "slow_steady"}
+        for t in result["trend_type"].tolist():
+            self.assertIn(t, valid)
+
+    def test_momentum_profile_consistency_score(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import provider_momentum_profile
+        df = self._make_trends_df()
+        result = provider_momentum_profile(df)
+        self.assertIn("consistency_score", result.columns)
+        self.assertTrue((result["consistency_score"].notna()).all())
+
+    def test_trend_shift_computes_delta(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import provider_trend_shift
+        df = self._make_trends_df()
+        result = provider_trend_shift(df, baseline_year=2017, compare_year=2022)
+        self.assertIn("payment_delta", result.columns)
+        self.assertIn("payment_delta_pct", result.columns)
+        self.assertTrue(len(result) > 0)
+
+    def test_trend_shift_none_years(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import provider_trend_shift
+        df = self._make_trends_df()
+        result = provider_trend_shift(df, baseline_year=None, compare_year=2022)
+        self.assertTrue(result.empty)
+
+    def test_reliability_table_format(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import (
+            provider_trend_reliability, reliability_table,
+        )
+        df = self._make_trends_df()
+        rel = provider_trend_reliability(df)
+        text = reliability_table(rel)
+        self.assertIn("Provider Type", text)
+        self.assertIn("Reliability", text)
+
+    def test_watchlist_text_format(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("pandas not available")
+        from rcm_mc.data_public.provider_trend_reliability import (
+            growth_volatility_watchlist, watchlist_text,
+        )
+        data = pd.DataFrame([
+            {"provider_type": "A", "last_payment_growth": 0.10, "yoy_payment_volatility": 0.20},
+        ])
+        wl = growth_volatility_watchlist(data)
+        text = watchlist_text(wl)
+        self.assertIn("Provider Type", text)
+        self.assertIn("Bucket", text)
 
 
 if __name__ == "__main__":

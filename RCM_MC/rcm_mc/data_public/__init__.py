@@ -285,6 +285,14 @@ from .deal_timeline import (
     timeline_table,
     pacing_recommendation,
 )
+from .provider_trend_reliability import (
+    provider_trend_reliability,
+    growth_volatility_watchlist as trend_growth_volatility_watchlist,
+    provider_momentum_profile as trend_momentum_profile,
+    provider_trend_shift,
+    reliability_table,
+    watchlist_text,
+)
 
 __all__ = [
     "DealsCorpus",
@@ -503,4 +511,10 @@ __all__ = [
     "deal_cycle_phase",
     "timeline_table",
     "pacing_recommendation",
+    "provider_trend_reliability",
+    "trend_growth_volatility_watchlist",
+    "trend_momentum_profile",
+    "provider_trend_shift",
+    "reliability_table",
+    "watchlist_text",
 ]
