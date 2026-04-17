@@ -2972,5 +2972,79 @@ class TestRequiredExitEBITDA(unittest.TestCase):
                                target_moic, places=4)
 
 
+# ── Deal comparables ───────────────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    COMPS,
+    Comparable,
+    filter_comps,
+    multiple_stats,
+    position_in_comps,
+)
+
+
+class TestCompsRegistry(unittest.TestCase):
+
+    def test_registry_non_empty(self) -> None:
+        self.assertGreater(len(COMPS), 10)
+
+    def test_each_comp_has_core_fields(self) -> None:
+        for c in COMPS:
+            self.assertTrue(c.id)
+            self.assertTrue(c.target_name)
+            self.assertTrue(c.sector)
+            self.assertIsNotNone(c.ev_ebitda_multiple)
+
+
+class TestFilterComps(unittest.TestCase):
+
+    def test_filter_by_sector(self) -> None:
+        acute = filter_comps(sector="acute_care")
+        self.assertTrue(all(c.sector == "acute_care" for c in acute))
+
+    def test_filter_by_payer_regime(self) -> None:
+        commercial = filter_comps(payer_regime="commercial_heavy")
+        self.assertTrue(all(c.payer_regime == "commercial_heavy" for c in commercial))
+
+    def test_filter_by_year_range(self) -> None:
+        recent = filter_comps(min_year=2023)
+        self.assertTrue(all(c.close_year >= 2023 for c in recent))
+
+    def test_filter_by_size_bucket(self) -> None:
+        mid = filter_comps(size_bucket="mid")
+        for c in mid:
+            self.assertGreaterEqual(c.ebitda_m, 25)
+            self.assertLess(c.ebitda_m, 75)
+
+
+class TestMultipleStats(unittest.TestCase):
+
+    def test_stats_on_full_registry(self) -> None:
+        stats = multiple_stats(COMPS)
+        self.assertGreater(stats["n"], 0)
+        self.assertLess(stats["min"], stats["max"])
+        self.assertLessEqual(stats["min"], stats["median"])
+        self.assertLessEqual(stats["median"], stats["max"])
+
+    def test_empty_set_returns_zero_n(self) -> None:
+        stats = multiple_stats([])
+        self.assertEqual(stats["n"], 0)
+
+
+class TestPositionInComps(unittest.TestCase):
+
+    def test_high_multiple_flags_above_ceiling(self) -> None:
+        out = position_in_comps(14.0, filter_comps(sector="acute_care"))
+        self.assertGreaterEqual(out["percentile"], 85)
+
+    def test_low_multiple_flags_below_median(self) -> None:
+        out = position_in_comps(6.0, filter_comps(sector="acute_care"))
+        self.assertLess(out["percentile"], 40)
+
+    def test_empty_returns_none(self) -> None:
+        out = position_in_comps(10.0, [])
+        self.assertIsNone(out["percentile"])
+
+
 if __name__ == "__main__":
     unittest.main()

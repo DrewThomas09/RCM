@@ -81,6 +81,13 @@ from .exit_readiness import (
     ReadinessFinding,
     score_exit_readiness,
 )
+from .deal_comparables import (
+    COMPS,
+    Comparable,
+    filter_comps,
+    multiple_stats,
+    position_in_comps,
+)
 from .exit_math import (
     WaterfallResult,
     exit_waterfall,
@@ -300,4 +307,9 @@ __all__ = [
     "moic_cagr_to_irr",
     "project_exit_ev",
     "required_exit_ebitda_for_moic",
+    "COMPS",
+    "Comparable",
+    "filter_comps",
+    "multiple_stats",
+    "position_in_comps",
 ]
