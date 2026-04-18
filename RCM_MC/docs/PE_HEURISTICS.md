@@ -7915,7 +7915,90 @@ sentences), `flip_to_pass_hypotheses`, `diligence_window_days`,
 
 ---
 
-## 231. Change log
+## 231. Roll-up arbitrage math (`rollup_arbitrage_math.py`)
+
+**Partner statement.** "Roll-ups are sold as synergy stories. The
+truth is the math is mostly multiple arbitrage — we buy the platform
+at 11x, tuck in at 5-6x, and the exit values both blocks at the higher
+multiple. If multiple arbitrage is more than half the MOIC, we're
+betting on the multiple, not the company."
+
+### Why it matters
+
+Every roll-up IC pitch blends three distinct return drivers into one
+deck page. Partner discipline: separate them. The 2x rule of thumb —
+"if you kill multiple expansion, does the deal still clear 2x?" — is
+exactly the `same_multiple_exit_moic` test.
+
+### Four-driver MOIC decomposition
+
+1. **Tuck-in arbitrage** — `Σ tuck_ebitda × (exit_multiple −
+   tuck_entry_multiple)`. Pure spread on acquired EBITDA.
+2. **Platform multiple expansion** — `platform_entry_ebitda ×
+   (exit_multiple − platform_entry_multiple)`. What the platform
+   earns just by getting re-rated.
+3. **EBITDA growth** — `max(0, exit_ebitda − total_entry_ebitda) ×
+   exit_multiple`. Dollars created after all acquisitions, valued at
+   the exit multiple.
+4. **Financial engineering** — `entry_debt − exit_debt`. Debt paydown
+   + amortization. Negative if relevered for dividend recap.
+
+Attribution is rescaled to close to actual MOIC dollars ($exit_equity
+− $entry_equity) for reporting.
+
+### Multiple-bet flag
+
+If `(arbitrage% + multiple_expansion%) > 50%` of MOIC, flag
+**multiple_bet_flag=True**. Partner note explicit: "this is a
+multiple bet, not an operating bet; stress against flat exit
+multiple before underwriting."
+
+### Partner-voice notes by driver
+
+- Multiple-bet dominant → "stress against flat exit multiple; do not
+  let the deal live or die on the multiple not compressing."
+- EBITDA-growth dominant (> 50%) → "earns its return operationally —
+  credible under multiple compression."
+- Financial-engineering dominant (> 40%) → "acceptable in stable-
+  cash-flow platform; dangerous if EBITDA is cyclical; debt-paydown
+  thesis needs its own stress."
+- Balanced (no single driver > 50%) → "proceed to standard
+  diligence."
+
+### Worked example
+
+Platform: $30M EBITDA @ 11x entry. Three tuck-ins at $10M each, 5x
+entry. Exit: $55M blended EBITDA, 13x exit multiple, debt from $100M
+→ $50M. Sponsor equity: $100M.
+
+- Blended entry multiple: ($330 + $150) / $60 = 8.0x
+- Exit EV: $55 × 13 = $715M; exit equity: $665M → base MOIC 6.65x
+- Same-multiple (8.0x) exit: $55 × 8 = $440M − $50 = $390M → 3.9x
+- Arbitrage share: ~45-55%, multiple-bet flag fires
+- Partner note: "stress against flat exit multiple."
+
+### Packet fields
+
+`platform_entry_ebitda_m`, `platform_entry_multiple`,
+`platform_entry_equity_m`, `platform_entry_debt_m`, `tuck_ins` (list
+of `TuckInDeal(name, entry_ebitda_m, entry_multiple,
+post_synergy_ebitda_m)`), `exit_year`, `exit_ebitda_m`,
+`exit_multiple`, `exit_debt_m`.
+
+### Distinct from existing modules
+
+- `deal_archetype` — identifies the archetype exists.
+- `synergy_modeler` — models synergy lines by category.
+- `exit_math` — general MOIC/IRR computation.
+- `value_creation_attribution` — 6-source MOIC decomposition at a
+  different granularity.
+- This module — roll-up-specific, separates tuck-in arbitrage from
+  platform expansion explicitly (the dollar-weighted share of each
+  turn of multiple delta against the right EBITDA block).
+
+---
+
+## 232. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
