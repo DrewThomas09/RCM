@@ -154,6 +154,7 @@ NAV_ITEMS = [
     {"label": "Payer Shift", "href": "/payer-shift", "icon": "chart"},
     {"label": "Key Person Risk", "href": "/key-person", "icon": "chart"},
     {"label": "Scenario MC", "href": "/scenario-mc", "icon": "chart"},
+    {"label": "TSA Tracker", "href": "/transition-services", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
