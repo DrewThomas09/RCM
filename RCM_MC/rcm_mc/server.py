@@ -1796,6 +1796,947 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/methodology":
             from .ui.methodology_page import render_methodology
             return self._send_html(render_methodology())
+        # Corpus Intelligence pages
+        if path == "/deals-library":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sector = _qs.get("sector", [""])[0]
+            regime = _qs.get("regime", [""])[0]
+            q = _qs.get("q", [""])[0]
+            from .ui.data_public.deals_library_page import render_deals_library
+            return self._send_html(render_deals_library(sector_filter=sector, regime_filter=regime, search=q))
+        if path == "/cms-sources":
+            from .ui.data_public.cms_sources_page import render_cms_sources
+            return self._send_html(render_cms_sources())
+        if path == "/market-rates":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            group_by = _qs.get("group_by", ["sector"])[0]
+            sector = _qs.get("sector", [""])[0]
+            payer = _qs.get("payer", [""])[0]
+            region = _qs.get("region", [""])[0]
+            from .ui.data_public.market_rates_page import render_market_rates
+            return self._send_html(render_market_rates(group_by=group_by, sector_filter=sector, payer_filter=payer, region_filter=region))
+        if path == "/backtest":
+            from .ui.data_public.backtest_page import render_backtest
+            return self._send_html(render_backtest())
+        if path == "/sponsor-league":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sort_by = _qs.get("sort_by", ["median_moic"])[0]
+            min_deals = int(_qs.get("min_deals", ["3"])[0]) if _qs.get("min_deals", ["3"])[0].isdigit() else 3
+            from .ui.data_public.sponsor_league_page import render_sponsor_league
+            return self._send_html(render_sponsor_league(min_deals=min_deals, sort_by=sort_by))
+        if path == "/aco-economics":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.aco_economics_page import render_aco_economics
+            return self._send_html(render_aco_economics(_qp))
+        if path == "/phys-comp-plan":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.phys_comp_plan_page import render_phys_comp_plan
+            return self._send_html(render_phys_comp_plan(_qp))
+        if path == "/locum-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.locum_tracker_page import render_locum_tracker
+            return self._send_html(render_locum_tracker(_qp))
+        if path == "/ma-contracts":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.ma_contracts_page import render_ma_contracts
+            return self._send_html(render_ma_contracts(_qp))
+        if path == "/drug-pricing-340b":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.drug_pricing_340b_page import render_drug_pricing_340b
+            return self._send_html(render_drug_pricing_340b(_qp))
+        if path == "/sponsor-heatmap":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.sponsor_heatmap_page import render_sponsor_heatmap
+            return self._send_html(render_sponsor_heatmap(_qp))
+        if path == "/payer-concentration":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.payer_concentration_page import render_payer_concentration
+            return self._send_html(render_payer_concentration(_qp))
+        if path == "/rollup-economics":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.rollup_economics_page import render_rollup_economics
+            return self._send_html(render_rollup_economics(_qp))
+        if path == "/cin-analyzer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.cin_analyzer_page import render_cin_analyzer
+            return self._send_html(render_cin_analyzer(_qp))
+        if path == "/base-rates":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.base_rates_page import render_base_rates
+            return self._send_html(render_base_rates(_qp))
+        if path == "/reit-analyzer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.reit_analyzer_page import render_reit_analyzer
+            return self._send_html(render_reit_analyzer(_qp))
+        if path == "/capital-pacing":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.capital_pacing_page import render_capital_pacing
+            return self._send_html(render_capital_pacing(_qp))
+        if path == "/covenant-headroom":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.covenant_headroom_page import render_covenant_headroom
+            return self._send_html(render_covenant_headroom(_qp))
+        if path == "/redflag-scanner":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.redflag_scanner_page import render_redflag_scanner
+            return self._send_html(render_redflag_scanner(_qp))
+        if path == "/backtester":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.value_backtester_page import render_value_backtester
+            return self._send_html(render_value_backtester(_qp))
+        if path == "/direct-employer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.direct_employer_page import render_direct_employer
+            return self._send_html(render_direct_employer(_qp))
+        if path == "/deal-origination":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.deal_origination_page import render_deal_origination
+            return self._send_html(render_deal_origination(_qp))
+        if path == "/trial-site-econ":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.trial_site_econ_page import render_trial_site_econ
+            return self._send_html(render_trial_site_econ(_qp))
+        if path == "/hcit-platform":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.hcit_platform_page import render_hcit_platform
+            return self._send_html(render_hcit_platform(_qp))
+        if path == "/biosimilars":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.biosimilars_opp_page import render_biosimilars
+            return self._send_html(render_biosimilars(_qp))
+        if path == "/telehealth-econ":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.telehealth_econ_page import render_telehealth_econ
+            return self._send_html(render_telehealth_econ(_qp))
+        if path == "/denovo-expansion":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.denovo_expansion_page import render_denovo_expansion
+            return self._send_html(render_denovo_expansion(_qp))
+        if path == "/health-equity":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.health_equity_page import render_health_equity
+            return self._send_html(render_health_equity(_qp))
+        if path == "/physician-labor":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.physician_labor_page import render_physician_labor
+            return self._send_html(render_physician_labor(_qp))
+        if path == "/platform-maturity":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.platform_maturity_page import render_platform_maturity
+            return self._send_html(render_platform_maturity(_qp))
+        if path == "/direct-lending":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.direct_lending_page import render_direct_lending
+            return self._send_html(render_direct_lending(_qp))
+        if path == "/pmi-playbook":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.pmi_playbook_page import render_pmi_playbook
+            return self._send_html(render_pmi_playbook(_qp))
+        if path == "/fraud-detection":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.fraud_detection_page import render_fraud_detection
+            return self._send_html(render_fraud_detection(_qp))
+        if path == "/drug-shortage":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.drug_shortage_page import render_drug_shortage
+            return self._send_html(render_drug_shortage(_qp))
+        if path == "/antitrust-screener":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.antitrust_screener_page import render_antitrust_screener
+            return self._send_html(render_antitrust_screener(_qp))
+        if path == "/ai-operating-model":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.ai_operating_model_page import render_ai_operating_model
+            return self._send_html(render_ai_operating_model(_qp))
+        if path == "/cyber-risk":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.cyber_risk_page import render_cyber_risk
+            return self._send_html(render_cyber_risk(_qp))
+        if path == "/zbb-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.zbb_tracker_page import render_zbb_tracker
+            return self._send_html(render_zbb_tracker(_qp))
+        if path == "/cms-data-browser":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.cms_data_browser_page import render_cms_data_browser
+            return self._send_html(render_cms_data_browser(_qp))
+        if path == "/msa-concentration":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.msa_concentration_page import render_msa_concentration
+            return self._send_html(render_msa_concentration(_qp))
+        if path == "/ic-memo-gen":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.ic_memo_generator_page import render_ic_memo_generator
+            return self._send_html(render_ic_memo_generator(_qp))
+        if path == "/module-index":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.module_index_page import render_module_index
+            return self._send_html(render_module_index(_qp))
+        if path == "/deal-postmortem":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.deal_postmortem_page import render_deal_postmortem
+            return self._send_html(render_deal_postmortem(_qp))
+        if path == "/secondaries-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.secondaries_tracker_page import render_secondaries_tracker
+            return self._send_html(render_secondaries_tracker(_qp))
+        if path == "/tax-structure-analyzer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.tax_structure_analyzer_page import render_tax_structure_analyzer
+            return self._send_html(render_tax_structure_analyzer(_qp))
+        if path == "/diligence-vendors":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.diligence_vendors_page import render_diligence_vendors
+            return self._send_html(render_diligence_vendors(_qp))
+        if path == "/refi-optimizer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.refi_optimizer_page import render_refi_optimizer
+            return self._send_html(render_refi_optimizer(_qp))
+        if path == "/lp-reporting":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.lp_reporting_page import render_lp_reporting
+            return self._send_html(render_lp_reporting(_qp))
+        if path == "/lbo-stress":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.lbo_stress_page import render_lbo_stress
+            return self._send_html(render_lbo_stress(_qp))
+        if path == "/board-governance":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.board_governance_page import render_board_governance
+            return self._send_html(render_board_governance(_qp))
+        if path == "/vdr-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.vdr_tracker_page import render_vdr_tracker
+            return self._send_html(render_vdr_tracker(_qp))
+        if path == "/escrow-earnout":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.escrow_earnout_page import render_escrow_earnout
+            return self._send_html(render_escrow_earnout(_qp))
+        if path == "/debt-financing":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.debt_financing_page import render_debt_financing
+            return self._send_html(render_debt_financing(_qp))
+        if path == "/vcp-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.vcp_tracker_page import render_vcp_tracker
+            return self._send_html(render_vcp_tracker(_qp))
+        if path == "/coinvest-pipeline":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.coinvest_pipeline_page import render_coinvest_pipeline
+            return self._send_html(render_coinvest_pipeline(_qp))
+        if path == "/dpi-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.dpi_tracker_page import render_dpi_tracker
+            return self._send_html(render_dpi_tracker(_qp))
+        if path == "/nav-loan-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.nav_loan_tracker_page import render_nav_loan_tracker
+            return self._send_html(render_nav_loan_tracker(_qp))
+        if path == "/medical-realestate":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.medical_realestate_page import render_medical_realestate
+            return self._send_html(render_medical_realestate(_qp))
+        if path == "/cms-apm":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.cms_apm_tracker_page import render_cms_apm_tracker
+            return self._send_html(render_cms_apm_tracker(_qp))
+        if path == "/ma-star":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.ma_star_tracker_page import render_ma_star_tracker
+            return self._send_html(render_ma_star_tracker(_qp))
+        if path == "/gpo-supply":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.gpo_supply_tracker_page import render_gpo_supply_tracker
+            return self._send_html(render_gpo_supply_tracker(_qp))
+        if path == "/capital-call":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.capital_call_tracker_page import render_capital_call_tracker
+            return self._send_html(render_capital_call_tracker(_qp))
+        if path == "/litigation":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.litigation_tracker_page import render_litigation_tracker
+            return self._send_html(render_litigation_tracker(_qp))
+        if path == "/fundraising":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.fundraising_tracker_page import render_fundraising_tracker
+            return self._send_html(render_fundraising_tracker(_qp))
+        if path == "/operating-partners":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.operating_partners_page import render_operating_partners
+            return self._send_html(render_operating_partners(_qp))
+        if path == "/compliance-attestation":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.compliance_attestation_page import render_compliance_attestation
+            return self._send_html(render_compliance_attestation(_qp))
+        if path == "/esg-impact":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.esg_impact_page import render_esg_impact
+            return self._send_html(render_esg_impact(_qp))
+        if path == "/tracker-340b":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.tracker_340b_page import render_tracker_340b
+            return self._send_html(render_tracker_340b(_qp))
+        if path == "/risk-adjustment":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.risk_adjustment_page import render_risk_adjustment
+            return self._send_html(render_risk_adjustment(_qp))
+        if path == "/clinical-ai":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.clinical_ai_tracker_page import render_clinical_ai_tracker
+            return self._send_html(render_clinical_ai_tracker(_qp))
+        if path == "/specialty-benchmarks":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.specialty_benchmarks_page import render_specialty_benchmarks
+            return self._send_html(render_specialty_benchmarks(_qp))
+        if path == "/peer-transactions":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.peer_transactions_page import render_peer_transactions
+            return self._send_html(render_peer_transactions(_qp))
+        if path == "/nsa-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.nsa_tracker_page import render_nsa_tracker
+            return self._send_html(render_nsa_tracker(_qp))
+        if path == "/medicaid-unwinding":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.medicaid_unwinding_page import render_medicaid_unwinding
+            return self._send_html(render_medicaid_unwinding(_qp))
+        if path == "/workforce-retention":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.workforce_retention_page import render_workforce_retention
+            return self._send_html(render_workforce_retention(_qp))
+        if path == "/digital-front-door":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.digital_front_door_page import render_digital_front_door
+            return self._send_html(render_digital_front_door(_qp))
+        if path == "/hospital-anchor":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.hospital_anchor_page import render_hospital_anchor
+            return self._send_html(render_hospital_anchor(_qp))
+        if path == "/payer-contracts":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.payer_contracts_page import render_payer_contracts
+            return self._send_html(render_payer_contracts(_qp))
+        if path == "/capex-budget":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.capex_budget_page import render_capex_budget
+            return self._send_html(render_capex_budget(_qp))
+        if path == "/pmi-integration":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.pmi_integration_page import render_pmi_integration
+            return self._send_html(render_pmi_integration(_qp))
+        if path == "/tax-credits":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.tax_credits_page import render_tax_credits
+            return self._send_html(render_tax_credits(_qp))
+        if path == "/deal-sourcing":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.deal_sourcing_page import render_deal_sourcing
+            return self._send_html(render_deal_sourcing(_qp))
+        if path == "/treasury":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.treasury_tracker_page import render_treasury_tracker
+            return self._send_html(render_treasury_tracker(_qp))
+        if path == "/sellside-process":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.sellside_process_page import render_sellside_process
+            return self._send_html(render_sellside_process(_qp))
+        if path == "/rw-insurance":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.rw_insurance_page import render_rw_insurance
+            return self._send_html(render_rw_insurance(_qp))
+        if path == "/vintage-cohorts":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.vintage_cohorts_page import render_vintage_cohorts
+            return self._send_html(render_vintage_cohorts(_qp))
+        if path == "/insurance-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.insurance_tracker_page import render_insurance
+            return self._send_html(render_insurance(_qp))
+        if path == "/partner-economics":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.partner_economics_page import render_partner_economics
+            return self._send_html(render_partner_economics(_qp))
+        if path == "/reinvestment":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.reinvestment_page import render_reinvestment
+            return self._send_html(render_reinvestment(_qp))
+        if path == "/demand-forecast":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.demand_forecast_page import render_demand_forecast
+            return self._send_html(render_demand_forecast(_qp))
+        if path == "/provider-retention":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.provider_retention_page import render_provider_retention
+            return self._send_html(render_provider_retention(_qp))
+        if path == "/supply-chain":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.supply_chain_page import render_supply_chain
+            return self._send_html(render_supply_chain(_qp))
+        if path == "/patient-experience":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.patient_experience_page import render_patient_experience
+            return self._send_html(render_patient_experience(_qp))
+        if path == "/competitive-intel":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.competitive_intel_page import render_competitive_intel
+            return self._send_html(render_competitive_intel(_qp))
+        if path == "/clinical-outcomes":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.clinical_outcomes_page import render_clinical_outcomes
+            return self._send_html(render_clinical_outcomes(_qp))
+        if path == "/earnout":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.earnout_page import render_earnout
+            return self._send_html(render_earnout(_qp))
+        if path == "/continuation-vehicle":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.continuation_vehicle_page import render_continuation_vehicle
+            return self._send_html(render_continuation_vehicle(_qp))
+        if path == "/dividend-recap":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.dividend_recap_page import render_dividend_recap
+            return self._send_html(render_dividend_recap(_qp))
+        if path == "/growth-runway":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.growth_runway_page import render_growth_runway
+            return self._send_html(render_growth_runway(_qp))
+        if path == "/tech-stack":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.tech_stack_page import render_tech_stack
+            return self._send_html(render_tech_stack(_qp))
+        if path == "/workforce-planning":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.workforce_planning_page import render_workforce_planning
+            return self._send_html(render_workforce_planning(_qp))
+        if path == "/real-estate":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.real_estate_page import render_real_estate
+            return self._send_html(render_real_estate(_qp))
+        if path == "/cap-structure":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.cap_structure_page import render_cap_structure
+            return self._send_html(render_cap_structure(_qp))
+        if path == "/value-creation-plan":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.value_creation_plan_page import render_value_creation_plan
+            return self._send_html(render_value_creation_plan(_qp))
+        if path == "/peer-valuation":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.peer_valuation_page import render_peer_valuation
+            return self._send_html(render_peer_valuation(_qp))
+        if path == "/capital-schedule":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.capital_schedule_page import render_capital_schedule
+            return self._send_html(render_capital_schedule(_qp))
+        if path == "/geo-market":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.geo_market_page import render_geo_market
+            return self._send_html(render_geo_market(_qp))
+        if path == "/ref-pricing":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.ref_pricing_page import render_ref_pricing
+            return self._send_html(render_ref_pricing(_qp))
+        if path == "/revenue-leakage":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.revenue_leakage_page import render_revenue_leakage
+            return self._send_html(render_revenue_leakage(_qp))
+        if path == "/transition-services":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.transition_services_page import render_transition_services
+            return self._send_html(render_transition_services(_qp))
+        if path == "/scenario-mc":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.scenario_mc_page import render_scenario_mc
+            return self._send_html(render_scenario_mc(_qp))
+        if path == "/key-person":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.key_person_page import render_key_person
+            return self._send_html(render_key_person(_qp))
+        if path == "/payer-shift":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.payer_shift_page import render_payer_shift
+            return self._send_html(render_payer_shift(_qp))
+        if path == "/deal-pipeline":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.deal_pipeline_page import render_deal_pipeline
+            return self._send_html(render_deal_pipeline(_qp))
+        if path == "/unit-economics":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.unit_economics_page import render_unit_economics
+            return self._send_html(render_unit_economics(_qp))
+        if path == "/fund-attribution":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.fund_attribution_page import render_fund_attribution
+            return self._send_html(render_fund_attribution(_qp))
+        if path == "/tax-structure":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.tax_structure_page import render_tax_structure
+            return self._send_html(render_tax_structure(_qp))
+        if path == "/exit-readiness":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.exit_readiness_page import render_exit_readiness
+            return self._send_html(render_exit_readiness(_qp))
+        if path == "/esg-dashboard":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.esg_dashboard_page import render_esg_dashboard
+            return self._send_html(render_esg_dashboard(_qp))
+        if path == "/quality-scorecard":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.quality_scorecard_page import render_quality_scorecard
+            return self._send_html(render_quality_scorecard(_qp))
+        if path == "/cost-structure":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.cost_structure_page import render_cost_structure
+            return self._send_html(render_cost_structure(_qp))
+        if path == "/regulatory-risk":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.regulatory_risk_page import render_regulatory_risk
+            return self._send_html(render_regulatory_risk(_qp))
+        if path == "/physician-productivity":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.physician_productivity_page import render_physician_productivity
+            return self._send_html(render_physician_productivity(_qp))
+        if path == "/mgmt-comp":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.mgmt_comp_page import render_mgmt_comp
+            return self._send_html(render_mgmt_comp(_qp))
+        if path == "/debt-service":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.debt_service_page import render_debt_service
+            return self._send_html(render_debt_service(_qp))
+        if path == "/working-capital":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.working_capital_page import render_working_capital
+            return self._send_html(render_working_capital(_qp))
+        if path == "/bolton-analyzer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.bolton_analyzer_page import render_bolton_analyzer
+            return self._send_html(render_bolton_analyzer(_qp))
+        if path == "/admin/data-sources":
+            from .ui.data_public.data_sources_admin_page import render_data_sources_admin
+            return self._send_html(render_data_sources_admin())
+        if path == "/lp-dashboard":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.lp_dashboard_page import render_lp_dashboard
+            return self._send_html(render_lp_dashboard(_qp))
+        if path == "/exit-timing":
+            from .ui.data_public.exit_timing_page import render_exit_timing
+            return self._send_html(render_exit_timing())
+        if path == "/risk-matrix":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sector = _qs.get("sector", [""])[0]
+            from .ui.data_public.risk_matrix_page import render_risk_matrix
+            return self._send_html(render_risk_matrix(sector_filter=sector))
+        if path == "/api/corpus":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qs1c(k, d=""): return (_qs.get(k, [d]) or [d])[0]
+            def _qsfc(k):
+                try: return float(_qs.get(k, [None])[0])
+                except (TypeError, ValueError): return None
+            def _qsic(k):
+                try: return int(_qs.get(k, [None])[0])
+                except (TypeError, ValueError): return None
+            import importlib as _il
+            from .data_public.deals_corpus import _SEED_DEALS
+            from .data_public.extended_seed import EXTENDED_SEED_DEALS
+            _corp = list(_SEED_DEALS) + list(EXTENDED_SEED_DEALS)
+            for _i in range(2, 33):
+                try:
+                    _m = _il.import_module(f"rcm_mc.data_public.extended_seed_{_i}")
+                    _corp += list(getattr(_m, f"EXTENDED_SEED_DEALS_{_i}"))
+                except (ImportError, AttributeError): pass
+            sector_f = _qs1c("sector"); yr_lo = _qsic("yr_lo"); yr_hi = _qsic("yr_hi")
+            ev_lo = _qsfc("ev_lo"); ev_hi = _qsfc("ev_hi")
+            moic_lo = _qsfc("moic_lo"); moic_hi = _qsfc("moic_hi")
+            limit = min(200, int(_qs.get("limit", ["50"])[0]) if _qs.get("limit") else 50)
+            q = _qs1c("q").lower()
+            results = []
+            for _d in _corp:
+                if sector_f and _d.get("sector", "") != sector_f: continue
+                if yr_lo or yr_hi:
+                    _yr = _d.get("year") or _d.get("entry_year")
+                    try:
+                        _yr_i = int(_yr)
+                        if yr_lo and _yr_i < yr_lo: continue
+                        if yr_hi and _yr_i > yr_hi: continue
+                    except (TypeError, ValueError): pass
+                if ev_lo or ev_hi:
+                    try:
+                        _ev = float(_d.get("ev_mm") or 0)
+                        if ev_lo and _ev < ev_lo: continue
+                        if ev_hi and _ev > ev_hi: continue
+                    except (TypeError, ValueError): pass
+                if moic_lo or moic_hi:
+                    try:
+                        _m2 = float(_d.get("realized_moic") or 0)
+                        if moic_lo and _m2 < moic_lo: continue
+                        if moic_hi and _m2 > moic_hi: continue
+                    except (TypeError, ValueError): pass
+                if q:
+                    _hay = " ".join(str(_d.get(f, "") or "") for f in ("deal_name", "buyer", "seller", "sector")).lower()
+                    if q not in _hay: continue
+                results.append(_d)
+            results.sort(key=lambda d: -(float(d.get("realized_moic") or 0)))
+            return self._send_json({"count": len(results), "limit": limit, "deals": results[:limit]})
+        if path == "/deal-search":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qs1(k, d=""): return (_qs.get(k, [d]) or [d])[0]
+            def _qsf(k):
+                try: return float(_qs.get(k, [None])[0])
+                except (TypeError, ValueError): return None
+            def _qsi(k, d=None):
+                try: return int(_qs.get(k, [d])[0])
+                except (TypeError, ValueError): return d
+            from .ui.data_public.deal_search_page import render_deal_search
+            return self._send_html(render_deal_search(
+                query=_qs1("q"),
+                sector=_qs1("sector"),
+                yr_lo=_qsi("yr_lo"),
+                yr_hi=_qsi("yr_hi"),
+                ev_lo=_qsf("ev_lo"),
+                ev_hi=_qsf("ev_hi"),
+                moic_lo=_qsf("moic_lo"),
+                moic_hi=_qsf("moic_hi"),
+                deal_type=_qs1("deal_type"),
+                sort_by=_qs1("sort_by", "realized_moic"),
+                page=_qsi("page", 1),
+            ))
+        if path == "/corpus-dashboard":
+            from .ui.data_public.corpus_dashboard_page import render_corpus_dashboard
+            return self._send_html(render_corpus_dashboard())
+        if path == "/corpus-ic-memo":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.ic_memo_page import render_ic_memo_gen
+            return self._send_html(render_ic_memo_gen(_qp))
+        if path == "/return-attribution":
+            from .ui.data_public.return_attribution_page import render_return_attribution
+            return self._send_html(render_return_attribution())
+        if path == "/deal-flow-heatmap":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            try: _min_sd = int((_qs.get("min_deals") or ["3"])[0])
+            except (TypeError, ValueError): _min_sd = 3
+            from .ui.data_public.deal_flow_heatmap_page import render_deal_flow_heatmap
+            return self._send_html(render_deal_flow_heatmap(min_sector_deals=_min_sd))
+        if path == "/concentration-risk":
+            from .ui.data_public.concentration_risk_page import render_concentration_risk
+            return self._send_html(render_concentration_risk())
+        if path == "/hold-analysis":
+            from .ui.data_public.hold_analysis_page import render_hold_analysis
+            return self._send_html(render_hold_analysis())
+        if path == "/irr-dispersion":
+            from .ui.data_public.irr_dispersion_page import render_irr_dispersion
+            return self._send_html(render_irr_dispersion())
+        if path == "/payer-rate-trends":
+            from .ui.data_public.payer_rate_trends_page import render_payer_rate_trends
+            return self._send_html(render_payer_rate_trends())
+        if path == "/entry-multiple":
+            from .ui.data_public.entry_multiple_page import render_entry_multiple
+            return self._send_html(render_entry_multiple())
+        if path == "/corpus-coverage":
+            from .ui.data_public.corpus_coverage_page import render_corpus_coverage
+            return self._send_html(render_corpus_coverage())
+        if path == "/find-comps":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.find_comps_page import render_find_comps
+            return self._send_html(render_find_comps(_qp))
+        if path == "/sector-momentum":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            try: _years = int((_qs.get("years") or ["5"])[0])
+            except (TypeError, ValueError): _years = 5
+            from .ui.data_public.sector_momentum_page import render_sector_momentum
+            return self._send_html(render_sector_momentum(recent_years=_years))
+        if path == "/gp-benchmarking":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.gp_benchmarking_page import render_gp_benchmarking
+            return self._send_html(render_gp_benchmarking(_qp))
+        if path == "/rcm-red-flags":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.rcm_red_flags_page import render_rcm_red_flags
+            return self._send_html(render_rcm_red_flags(_qp))
+        if path == "/hold-optimizer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.hold_optimizer_page import render_hold_optimizer
+            return self._send_html(render_hold_optimizer(_qp))
+        if path == "/payer-stress":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.payer_stress_page import render_payer_stress
+            return self._send_html(render_payer_stress(_qp))
+        if path == "/multiple-decomp":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.multiple_decomp_page import render_multiple_decomp
+            return self._send_html(render_multiple_decomp(_qp))
+        if path == "/capital-efficiency":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.capital_efficiency_page import render_capital_efficiency
+            return self._send_html(render_capital_efficiency(_qp))
+        if path == "/deal-risk-scores":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.deal_risk_scores_page import render_deal_risk_scores
+            return self._send_html(render_deal_risk_scores(_qp))
+        if path == "/sector-correlation":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.sector_correlation_page import render_sector_correlation
+            return self._send_html(render_sector_correlation(_qp))
+        if path == "/acq-timing":
+            from .ui.data_public.acq_timing_page import render_acq_timing
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            return self._send_html(render_acq_timing(_qp))
+        if path == "/portfolio-sim":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.portfolio_sim_page import render_portfolio_sim
+            return self._send_html(render_portfolio_sim(_qp))
+        if path == "/qoe-analyzer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.qoe_analyzer_page import render_qoe_analyzer
+            return self._send_html(render_qoe_analyzer(_qp))
+        if path == "/covenant-monitor":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.covenant_monitor_page import render_covenant_monitor
+            return self._send_html(render_covenant_monitor(_qp))
+        if path == "/provider-network":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.provider_network_page import render_provider_network
+            return self._send_html(render_provider_network(_qp))
+        if path == "/exit-multiple":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.exit_multiple_page import render_exit_multiple
+            return self._send_html(render_exit_multiple(_qp))
+        if path == "/diligence-checklist":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.diligence_checklist_page import render_diligence_checklist
+            return self._send_html(render_diligence_checklist(_qp))
+        if path == "/value-creation":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.value_creation_page import render_value_creation
+            return self._send_html(render_value_creation(_qp))
+        if path == "/underwriting-model":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.underwriting_model_page import render_underwriting_model
+            return self._send_html(render_underwriting_model(_qp))
+        if path == "/mgmt-fee-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.mgmt_fee_tracker_page import render_mgmt_fee_tracker
+            return self._send_html(render_mgmt_fee_tracker(_qp))
+        if path == "/size-intel":
+            from .ui.data_public.size_intel_page import render_size_intel
+            return self._send_html(render_size_intel())
+        if path == "/leverage-intel":
+            from .ui.data_public.leverage_intel_page import render_leverage_intel
+            return self._send_html(render_leverage_intel())
+        if path == "/payer-intel":
+            from .ui.data_public.payer_intel_page import render_payer_intel
+            return self._send_html(render_payer_intel())
+        if path == "/vintage-perf":
+            from .ui.data_public.vintage_perf_page import render_vintage_perf
+            return self._send_html(render_vintage_perf())
+        if path == "/sector-intel":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qsi(k, d):
+                try: return int(_qs.get(k, [d])[0])
+                except (TypeError, ValueError): return d
+            from .ui.data_public.sector_intel_page import render_sector_intel
+            return self._send_html(render_sector_intel(
+                min_deals=_qsi("min_deals", 3),
+                sort_by=(_qs.get("sort_by", ["moic_p50"]) or ["moic_p50"])[0],
+            ))
+        if path == "/deal-quality":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qs1(k, default=""):
+                return (_qs.get(k, [default]) or [default])[0]
+            def _qsint(k, default=1):
+                try: return int(_qs.get(k, [default])[0])
+                except (TypeError, ValueError): return default
+            from .ui.data_public.deal_quality_page import render_deal_quality
+            return self._send_html(render_deal_quality(
+                tier_filter=_qs1("tier"),
+                sort_by=_qs1("sort_by", "quality_score"),
+                page=_qsint("page", 1),
+            ))
+        if path == "/portfolio-optimizer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sectors = _qs.get("sector") or None
+            from .ui.data_public.portfolio_optimizer_page import render_portfolio_optimizer
+            return self._send_html(render_portfolio_optimizer(sectors=sectors))
+        if path == "/underwriting":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qfloat(k):
+                try:
+                    return float(_qs.get(k, [None])[0])
+                except (TypeError, ValueError):
+                    return None
+            from .ui.data_public.underwriting_page import render_underwriting
+            return self._send_html(render_underwriting(
+                entry_ev=_qfloat("entry_ev"),
+                entry_ebitda=_qfloat("entry_ebitda"),
+                equity_pct=_qfloat("equity_pct"),
+                ebitda_cagr=_qfloat("ebitda_cagr"),
+                hold_years=_qfloat("hold_years"),
+                exit_multiple=_qfloat("exit_multiple"),
+            ))
+        if path == "/comparables":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            def _qf(k, default=None):
+                v = _qs.get(k, [None])[0]
+                if v is None:
+                    return default
+                try:
+                    return float(v)
+                except (ValueError, TypeError):
+                    return default
+            sector = _qs.get("sector", [""])[0]
+            search = _qs.get("search", [""])[0]
+            from .ui.data_public.comparables_page import render_comparables
+            return self._send_html(render_comparables(
+                sector=sector,
+                ev_mm=_qf("ev_mm"),
+                ebitda_mm=_qf("ebitda_mm"),
+                hold_years=_qf("hold_years"),
+                commercial=_qf("commercial"),
+                search=search,
+            ))
         if path == "/query":
             return self._route_deal_query()
         if path == "/benchmarks":
@@ -5915,7 +6856,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             packet = get_or_build_packet(
                 store, deal_id, skip_simulation=True,
             )
-            return self._send_html(render_workbench(packet))
+            wb_html = render_workbench(packet)
+            try:
+                from .ui.data_public.corpus_flags_panel import inject_into_workbench
+                wb_html = inject_into_workbench(wb_html, profile)
+            except Exception:
+                pass
+            return self._send_html(wb_html)
         except Exception as exc:  # noqa: BLE001
             from .ui.deal_quick_view import render_deal_quick_view
             return self._send_html(render_deal_quick_view(
