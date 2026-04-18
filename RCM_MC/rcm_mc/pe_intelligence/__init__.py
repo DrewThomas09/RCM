@@ -1746,6 +1746,14 @@ from .service_line_growth_margin_quadrant import (
     classify_service_line_portfolio,
     render_service_line_quadrant_markdown,
 )
+from .con_state_exposure_assessor import (
+    CONAssessorInputs,
+    CONAssessorReport,
+    CONStateExposure,
+    CONStateHit,
+    assess_con_state_exposure,
+    render_con_exposure_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3473,4 +3481,10 @@ __all__ = [
     "QuadrantServiceLine",
     "classify_service_line_portfolio",
     "render_service_line_quadrant_markdown",
+    "CONAssessorInputs",
+    "CONAssessorReport",
+    "CONStateExposure",
+    "CONStateHit",
+    "assess_con_state_exposure",
+    "render_con_exposure_markdown",
 ]

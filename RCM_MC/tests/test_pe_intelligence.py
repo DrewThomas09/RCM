@@ -35947,5 +35947,235 @@ class TestServiceLineGrowthMarginQuadrant(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestCONStateExposureAssessor(unittest.TestCase):
+    """Partner voice: 'CON protects incumbents, blocks entrants.'"""
+
+    def test_empty_footprint_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            assess_con_state_exposure,
+        )
+        r = assess_con_state_exposure(
+            CONAssessorInputs())
+        self.assertIn(
+            "no state footprint",
+            r.partner_note.lower(),
+        )
+
+    def test_nc_incumbent_protection(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+        )
+        r = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[CONStateExposure(
+                    state="NC",
+                    share_of_npr_pct=0.80,
+                    is_incumbent=True,
+                    primary_line="hospital",
+                )],
+            )
+        )
+        self.assertEqual(
+            r.verdict, "incumbent_moat"
+        )
+        self.assertIn(
+            "moat against entrants",
+            r.partner_note.lower(),
+        )
+
+    def test_nc_entrant_barrier(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+        )
+        r = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[CONStateExposure(
+                    state="NC",
+                    share_of_npr_pct=0.60,
+                    is_incumbent=False,
+                    primary_line="hospital",
+                )],
+            )
+        )
+        self.assertEqual(
+            r.verdict, "expansion_blocked"
+        )
+        self.assertIn(
+            "con hearings",
+            r.partner_note.lower(),
+        )
+
+    def test_tx_non_con_neutral(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+        )
+        r = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[CONStateExposure(
+                    state="TX",
+                    share_of_npr_pct=1.0,
+                    is_incumbent=True,
+                    primary_line="hospital",
+                )],
+            )
+        )
+        self.assertEqual(r.verdict, "neutral")
+
+    def test_mixed_exposure_both(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+        )
+        r = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[
+                    CONStateExposure(
+                        state="NC", share_of_npr_pct=0.30,
+                        is_incumbent=True,
+                        primary_line="hospital"),
+                    CONStateExposure(
+                        state="NY", share_of_npr_pct=0.20,
+                        is_incumbent=False,
+                        primary_line="hospital"),
+                    CONStateExposure(
+                        state="TX", share_of_npr_pct=0.50,
+                        primary_line="hospital"),
+                ],
+            )
+        )
+        # protection 30% < 50%; barrier 20% < 30% → mixed
+        self.assertEqual(r.verdict, "mixed")
+
+    def test_line_specific_con_lookup(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+        )
+        # FL: hospital moderate, ASC none, home health strict
+        asc = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[CONStateExposure(
+                    state="FL", share_of_npr_pct=1.0,
+                    primary_line="asc",
+                    is_incumbent=True)],
+            )
+        )
+        hh = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[CONStateExposure(
+                    state="FL", share_of_npr_pct=1.0,
+                    primary_line="home_health",
+                    is_incumbent=True)],
+            )
+        )
+        self.assertEqual(
+            asc.hits[0].con_status, "none"
+        )
+        self.assertEqual(
+            hh.hits[0].con_status, "strict"
+        )
+
+    def test_unknown_state_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+        )
+        r = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[CONStateExposure(
+                    state="ZZ", share_of_npr_pct=1.0,
+                    primary_line="hospital")],
+            )
+        )
+        self.assertFalse(r.hits[0].in_catalog)
+
+    def test_ohio_mixed_con(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+        )
+        # OH: hospital moderate, ASC none, home health none, hospice none
+        r = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[CONStateExposure(
+                    state="OH", share_of_npr_pct=1.0,
+                    primary_line="hospital",
+                    is_incumbent=True)],
+            )
+        )
+        self.assertEqual(
+            r.hits[0].con_status, "moderate"
+        )
+
+    def test_barrier_states_summed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+        )
+        r = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[
+                    CONStateExposure(
+                        state="NC", share_of_npr_pct=0.20,
+                        is_incumbent=False,
+                        primary_line="hospital"),
+                    CONStateExposure(
+                        state="NY", share_of_npr_pct=0.20,
+                        is_incumbent=False,
+                        primary_line="hospital"),
+                ],
+            )
+        )
+        self.assertAlmostEqual(
+            r.barrier_share_pct, 0.40
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+            render_con_exposure_markdown,
+        )
+        md = render_con_exposure_markdown(
+            assess_con_state_exposure(
+                CONAssessorInputs(
+                    footprint=[CONStateExposure(
+                        state="NC",
+                        share_of_npr_pct=0.50,
+                        is_incumbent=True)])
+            )
+        )
+        self.assertIn("# CON state exposure", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            CONAssessorInputs,
+            CONStateExposure,
+            assess_con_state_exposure,
+        )
+        r = assess_con_state_exposure(
+            CONAssessorInputs(
+                footprint=[CONStateExposure(
+                    state="NC",
+                    share_of_npr_pct=0.50,
+                    is_incumbent=True)])
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
