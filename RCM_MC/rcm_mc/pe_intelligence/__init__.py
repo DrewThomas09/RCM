@@ -1722,6 +1722,14 @@ from .ma_star_rating_revenue_impact import (
     impact_ma_star_rating,
     render_ma_star_markdown,
 )
+from .sponsor_vs_strategic_exit_comparator import (
+    ExitPathInputs,
+    PathResult,
+    SponsorVsStrategicInputs,
+    SponsorVsStrategicReport,
+    compare_sponsor_vs_strategic,
+    render_sponsor_vs_strategic_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3431,4 +3439,10 @@ __all__ = [
     "MAStarReport",
     "impact_ma_star_rating",
     "render_ma_star_markdown",
+    "ExitPathInputs",
+    "PathResult",
+    "SponsorVsStrategicInputs",
+    "SponsorVsStrategicReport",
+    "compare_sponsor_vs_strategic",
+    "render_sponsor_vs_strategic_markdown",
 ]

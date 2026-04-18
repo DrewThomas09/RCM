@@ -35243,5 +35243,251 @@ class TestMAStarRatingRevenueImpact(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestSponsorVsStrategicExitComparator(unittest.TestCase):
+    """Partner voice: 'Not headline multiple — risk-adjusted per-day hold.'"""
+
+    def test_default_comparison(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        r = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs())
+        self.assertEqual(len(r.paths), 2)
+
+    def test_strategic_high_premium_wins(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitPathInputs,
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        # Strategic at 14x vs sponsor at 10x — big premium
+        r = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                sponsor=ExitPathInputs(
+                    name="Sponsor",
+                    headline_multiple=10.0,
+                    months_to_close=4.0,
+                    probability_of_close_pct=0.90,
+                ),
+                strategic=ExitPathInputs(
+                    name="Strategic",
+                    headline_multiple=14.0,
+                    months_to_close=12.0,
+                    probability_of_close_pct=0.70,
+                ),
+            )
+        )
+        self.assertEqual(r.winner, "Strategic")
+
+    def test_sponsor_wins_thin_premium(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitPathInputs,
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        # Strategic at 10.5x vs sponsor at 10x — thin premium, high strategic risk
+        r = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                sponsor=ExitPathInputs(
+                    name="Sponsor",
+                    headline_multiple=10.0,
+                    months_to_close=4.0,
+                    probability_of_close_pct=0.95,
+                ),
+                strategic=ExitPathInputs(
+                    name="Strategic",
+                    headline_multiple=10.5,
+                    months_to_close=14.0,
+                    probability_of_close_pct=0.50,
+                    earn_out_portion_of_price_pct=0.15,
+                ),
+            )
+        )
+        self.assertEqual(r.winner, "Sponsor")
+
+    def test_earn_out_discounted(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitPathInputs,
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        no_earn = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                strategic=ExitPathInputs(
+                    name="Strategic",
+                    headline_multiple=12.0,
+                    months_to_close=12.0,
+                    probability_of_close_pct=0.70,
+                    earn_out_portion_of_price_pct=0.0,
+                ),
+            )
+        )
+        heavy_earn = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                strategic=ExitPathInputs(
+                    name="Strategic",
+                    headline_multiple=12.0,
+                    months_to_close=12.0,
+                    probability_of_close_pct=0.70,
+                    earn_out_portion_of_price_pct=0.30,
+                ),
+            )
+        )
+        # Heavy earn-out → lower expected net
+        self.assertLess(
+            heavy_earn.paths[1].expected_net_ev_m,
+            no_earn.paths[1].expected_net_ev_m,
+        )
+
+    def test_close_probability_matters(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitPathInputs,
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        high = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                strategic=ExitPathInputs(
+                    name="S",
+                    headline_multiple=12.0,
+                    probability_of_close_pct=0.90,
+                ),
+            )
+        )
+        low = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                strategic=ExitPathInputs(
+                    name="S",
+                    headline_multiple=12.0,
+                    probability_of_close_pct=0.50,
+                ),
+            )
+        )
+        self.assertGreater(
+            high.paths[1].expected_net_ev_m,
+            low.paths[1].expected_net_ev_m,
+        )
+
+    def test_time_discount_applied(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitPathInputs,
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        r = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs())
+        for p in r.paths:
+            # Time-discounted should be less than expected net
+            self.assertLess(
+                p.time_discounted_ev_m, p.expected_net_ev_m
+            )
+
+    def test_tied_paths_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitPathInputs,
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        # Tune paths to be close
+        r = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                sponsor=ExitPathInputs(
+                    name="Sponsor",
+                    headline_multiple=10.0,
+                    months_to_close=4.0,
+                    probability_of_close_pct=0.90,
+                ),
+                strategic=ExitPathInputs(
+                    name="Strategic",
+                    headline_multiple=10.5,
+                    months_to_close=6.0,
+                    probability_of_close_pct=0.85,
+                ),
+            )
+        )
+        # Might be tied; if so, expect pick-certainty guidance
+        if abs(r.delta_m) / 500 < 0.02:
+            self.assertIn(
+                "certainty", r.partner_note.lower()
+            )
+
+    def test_strategic_winner_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitPathInputs,
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        r = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                strategic=ExitPathInputs(
+                    name="Strategic",
+                    headline_multiple=15.0,
+                    months_to_close=12.0,
+                    probability_of_close_pct=0.75,
+                ),
+            )
+        )
+        if r.winner == "Strategic":
+            self.assertIn(
+                "backup", r.partner_note.lower()
+            )
+
+    def test_custom_ebitda_scales_ev(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitPathInputs,
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        small = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                sponsor=ExitPathInputs(
+                    name="Sponsor", ebitda_m=20.0,
+                    headline_multiple=10.0),
+                strategic=ExitPathInputs(
+                    name="Strategic", ebitda_m=20.0,
+                    headline_multiple=12.0),
+            )
+        )
+        big = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs(
+                sponsor=ExitPathInputs(
+                    name="Sponsor", ebitda_m=100.0,
+                    headline_multiple=10.0),
+                strategic=ExitPathInputs(
+                    name="Strategic", ebitda_m=100.0,
+                    headline_multiple=12.0),
+            )
+        )
+        self.assertGreater(
+            big.paths[0].headline_ev_m,
+            small.paths[0].headline_ev_m,
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+            render_sponsor_vs_strategic_markdown,
+        )
+        md = render_sponsor_vs_strategic_markdown(
+            compare_sponsor_vs_strategic(
+                SponsorVsStrategicInputs())
+        )
+        self.assertIn(
+            "# Sponsor-vs-strategic exit", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            SponsorVsStrategicInputs,
+            compare_sponsor_vs_strategic,
+        )
+        r = compare_sponsor_vs_strategic(
+            SponsorVsStrategicInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
