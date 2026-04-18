@@ -131,6 +131,7 @@ NAV_ITEMS = [
     {"label": "QoE Analyzer", "href": "/qoe-analyzer", "icon": "chart"},
     {"label": "Covenant Monitor", "href": "/covenant-monitor", "icon": "chart"},
     {"label": "Provider Network", "href": "/provider-network", "icon": "chart"},
+    {"label": "Exit Multiple Analysis", "href": "/exit-multiple", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
