@@ -139,6 +139,7 @@ NAV_ITEMS = [
     {"label": "LP Dashboard", "href": "/lp-dashboard", "icon": "chart"},
     {"label": "Bolt-on M&A", "href": "/bolton-analyzer", "icon": "chart"},
     {"label": "Working Capital", "href": "/working-capital", "icon": "chart"},
+    {"label": "Debt Service", "href": "/debt-service", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

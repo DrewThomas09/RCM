@@ -103,6 +103,7 @@ _CORPUS_NAV = [
     {"label": "LP Dashboard", "href": "/lp-dashboard",      "icon": "▦"},
     {"label": "Bolt-on M&A",  "href": "/bolton-analyzer",   "icon": "▣"},
     {"label": "Working Cap.", "href": "/working-capital",   "icon": "▦"},
+    {"label": "Debt Service", "href": "/debt-service",      "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
