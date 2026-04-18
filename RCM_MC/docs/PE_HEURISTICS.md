@@ -9554,7 +9554,88 @@ Reliability `medium` haircuts: 10/15/20/25/30%.
 
 ---
 
-## 249. Change log
+## 249. VBC risk-share contract underwriter (`vbc_risk_share_underwriter.py`)
+
+**Partner statement.** "Value-based care contracts look like growth
+on the deck. The math is harder. We're taking medical-loss risk on
+a population we don't fully control. Move the corridor by 1pp and
+EBITDA moves a lot — sometimes from positive to negative. Before I
+underwrite a VBC contract, I want the MLR breakeven, the corridor
+sensitivity, and the stop-loss attachment in dollars."
+
+### Why it matters
+
+VBC / capitation / shared-risk contracts increasingly drive
+healthcare-PE EBITDA but are not modeled in the same way as
+fee-for-service. This module sizes a **single contract's EBITDA
+exposure** with corridor and stop-loss explicit.
+
+### Math
+
+- Revenue = `lives × PMPM × 12`
+- Medical expense = `revenue × actual_MLR`
+- Raw corridor gain = `revenue × (target_MLR − actual_MLR)`
+- If gain ≥ 0: capped at `revenue × upside_cap × upside_share`
+- If gain < 0: floored at `−revenue × downside_floor × downside_share`
+- EBITDA = corridor share − admin − stop-loss premium
+
+### Per-scenario output
+
+- **expected** — at expected_actual_MLR
+- **bear** — at expected + 5pp
+- **bull** — at expected − 5pp
+- **volatility band** = bull EBITDA − bear EBITDA
+
+### Breakeven MLR
+
+Closed-form within upside zone:
+`breakeven = target_MLR − (admin + stop_loss) / (revenue × upside_share)`
+
+### Verdict tiers
+
+- expected EBITDA > 2% of revenue → **profitable** — "verify
+  population risk adjustment and prior MLR trend."
+- 0 < EBITDA ≤ 2% revenue → **thin_margin** — "single bad cohort
+  wipes the year; negotiate higher PMPM or wider corridor."
+- EBITDA in band of half the volatility → **breakeven_zone**
+- Below → **loss_zone** — "renegotiate or do not assume EBITDA
+  contribution."
+
+### Worked example
+
+25,000 lives at $950 PMPM = $285M revenue. Target MLR 85%, expected
+78% (7pp upside). Corridor: 5pp upside cap × 50% upside share =
+$7.1M. Admin 5% = $14.25M. Stop-loss premium 25k × $20 × 12 = $6M.
+
+EBITDA = $7.1 − $14.25 − $6 = −$13M → **loss_zone**. Capped corridor
++ heavy admin make this contract not workable as structured —
+either reduce admin or widen the corridor.
+
+Same contract with 100% upside share + light admin (1%) + light
+stop-loss → EBITDA $13M → **profitable**.
+
+### Packet fields
+
+`contract_name`, `attributed_lives`, `contracted_pmpm`,
+`target_mlr_pct`, `expected_actual_mlr_pct`,
+`admin_load_pct_of_pmpm`, `upside_cap_mlr_delta_pct`,
+`downside_floor_mlr_delta_pct`, `upside_share_pct`,
+`downside_share_pct`, `individual_stop_loss_attachment_usd`,
+`individual_stop_loss_premium_pmpm`,
+`population_stop_loss_attachment_pct`,
+`population_stop_loss_premium_pmpm`.
+
+### Distinct from existing modules
+
+- `medicare_advantage_bridge_trap` — narrow on MA growth-vs-FFS
+  narrative.
+- `payer_mix_risk` — payer concentration, not contract economics.
+- This module — single-contract VBC underwrite with corridor,
+  stop-loss, and ±5pp MLR scenario math.
+
+---
+
+## 250. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
