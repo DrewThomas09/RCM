@@ -1531,6 +1531,13 @@ from .recurring_npr_line_scrubber import (
     render_recurring_npr_markdown,
     scrub_recurring_npr,
 )
+from .physician_specialty_economic_profiler import (
+    SpecialtyDivergence,
+    SpecialtyProfileInputs,
+    SpecialtyProfileReport,
+    profile_specialty,
+    render_specialty_profile_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3103,4 +3110,9 @@ __all__ = [
     "ScrubbedNPRLine",
     "render_recurring_npr_markdown",
     "scrub_recurring_npr",
+    "SpecialtyDivergence",
+    "SpecialtyProfileInputs",
+    "SpecialtyProfileReport",
+    "profile_specialty",
+    "render_specialty_profile_markdown",
 ]

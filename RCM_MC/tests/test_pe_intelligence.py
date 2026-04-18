@@ -29989,5 +29989,207 @@ class TestRecurringNPRLineScrubber(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPhysicianSpecialtyEconomicProfiler(unittest.TestCase):
+    """Partner voice: 'Every specialty has a different economic shape.'"""
+
+    def test_orthopedic_profile_returned(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="orthopedic_surgery",
+        ))
+        self.assertEqual(
+            r.specialty, "orthopedic_surgery"
+        )
+        self.assertGreater(
+            r.profile["typical_revenue_per_physician_m"],
+            0,
+        )
+
+    def test_unknown_specialty_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="not_a_real_specialty",
+        ))
+        self.assertEqual(r.profile, {})
+        self.assertIn(
+            "not in catalog", r.partner_note.lower()
+        )
+
+    def test_dermatology_high_commercial(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="dermatology",
+        ))
+        self.assertGreaterEqual(
+            r.profile["typical_commercial_mix_pct"],
+            0.65,
+        )
+
+    def test_oncology_drug_margin_risk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="medical_oncology",
+        ))
+        self.assertIn(
+            "drug",
+            r.profile["named_risk_pattern"].lower(),
+        )
+
+    def test_above_typical_revenue_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        # ortho typical 2.4M; pass 3.5M (>20% above)
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="orthopedic_surgery",
+            seller_revenue_per_physician_m=3.5,
+        ))
+        rev = next(
+            d for d in r.divergences
+            if d.metric == "revenue_per_physician_m"
+        )
+        self.assertEqual(rev.flag, "above_typical")
+
+    def test_below_typical_margin_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        # ortho typical 0.45 margin; 0.30 is way below
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="orthopedic_surgery",
+            seller_contribution_margin_pct=0.30,
+        ))
+        m = next(
+            d for d in r.divergences
+            if d.metric == "contribution_margin_pct"
+        )
+        self.assertEqual(m.flag, "below_typical")
+
+    def test_in_band_metric_no_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="orthopedic_surgery",
+            seller_revenue_per_physician_m=2.5,
+        ))
+        rev = next(
+            d for d in r.divergences
+            if d.metric == "revenue_per_physician_m"
+        )
+        self.assertEqual(rev.flag, "in_band")
+
+    def test_partner_note_named_risk_always_present(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        for sp in [
+            "behavioral", "dental", "cardiology",
+            "ophthalmology", "radiology",
+        ]:
+            r = profile_specialty(SpecialtyProfileInputs(
+                specialty=sp,
+            ))
+            self.assertGreater(
+                len(r.profile["named_risk_pattern"]), 20
+            )
+
+    def test_dental_dso_attractiveness_high(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="dental",
+        ))
+        self.assertEqual(
+            r.profile["roll_up_attractiveness"], "high"
+        )
+
+    def test_behavioral_attractiveness_low(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="behavioral",
+        ))
+        self.assertEqual(
+            r.profile["roll_up_attractiveness"], "low"
+        )
+
+    def test_oncology_revenue_highest(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        onc = profile_specialty(SpecialtyProfileInputs(
+            specialty="medical_oncology",
+        ))
+        ortho = profile_specialty(SpecialtyProfileInputs(
+            specialty="orthopedic_surgery",
+        ))
+        # oncology drug-heavy revenue is higher per physician
+        self.assertGreater(
+            onc.profile["typical_revenue_per_physician_m"],
+            ortho.profile["typical_revenue_per_physician_m"],
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+            render_specialty_profile_markdown,
+        )
+        md = render_specialty_profile_markdown(
+            profile_specialty(SpecialtyProfileInputs(
+                specialty="orthopedic_surgery",
+                seller_revenue_per_physician_m=3.0,
+            ))
+        )
+        self.assertIn("# Physician specialty profile", md)
+        self.assertIn("orthopedic_surgery", md)
+
+    def test_unknown_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+            render_specialty_profile_markdown,
+        )
+        md = render_specialty_profile_markdown(
+            profile_specialty(SpecialtyProfileInputs(
+                specialty="alien",
+            ))
+        )
+        self.assertIn("not in catalog", md.lower())
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            SpecialtyProfileInputs,
+            profile_specialty,
+        )
+        r = profile_specialty(SpecialtyProfileInputs(
+            specialty="dermatology",
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
