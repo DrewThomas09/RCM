@@ -2891,6 +2891,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_sponsor_track_record(
                 store=store, current_user=self._chartis_username(),
             ))
+        if path == "/payer-intelligence":
+            from .ui.chartis.payer_intelligence_page import render_payer_intelligence
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_payer_intelligence(
+                store=store, current_user=self._chartis_username(),
+            ))
         if path == "/library":
             # /library now surfaces the 655-deal corpus (previously at
             # /deals-library). The methodology hub moved to /methodology.
