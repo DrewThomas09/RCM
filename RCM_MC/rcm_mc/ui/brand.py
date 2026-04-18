@@ -198,6 +198,7 @@ NAV_ITEMS = [
     {"label": "Trial Site Econ", "href": "/trial-site-econ", "icon": "chart"},
     {"label": "HCIT Platform", "href": "/hcit-platform", "icon": "chart"},
     {"label": "Biosimilars", "href": "/biosimilars", "icon": "chart"},
+    {"label": "Telehealth Econ", "href": "/telehealth-econ", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
