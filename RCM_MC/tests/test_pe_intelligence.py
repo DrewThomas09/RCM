@@ -15245,7 +15245,7 @@ from rcm_mc.pe_intelligence import (
     ConcentrationFinding,
     ConcentrationInputs,
     ConcentrationReport,
-    render_concentration_markdown,
+    render_concentration_multidim_markdown,
     scan_concentration,
 )
 
@@ -15314,7 +15314,7 @@ class TestConcentrationRiskMultiDim(unittest.TestCase):
         self.assertEqual(med, 3)
 
     def test_markdown_renders(self) -> None:
-        md = render_concentration_markdown(scan_concentration(
+        md = render_concentration_multidim_markdown(scan_concentration(
             ConcentrationInputs(top_payer_share=0.40)))
         self.assertIn("# Concentration risk", md)
         self.assertIn("payer_top_1", md)

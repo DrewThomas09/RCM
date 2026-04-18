@@ -871,7 +871,7 @@ from .concentration_risk_multidim import (
     ConcentrationFinding,
     ConcentrationInputs,
     ConcentrationReport,
-    render_concentration_markdown,
+    render_concentration_markdown as render_concentration_multidim_markdown,
     scan_concentration,
 )
 from .memo_formats import (
@@ -1965,6 +1965,6 @@ __all__ = [
     "ConcentrationFinding",
     "ConcentrationInputs",
     "ConcentrationReport",
-    "render_concentration_markdown",
+    "render_concentration_multidim_markdown",
     "scan_concentration",
 ]
