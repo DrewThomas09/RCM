@@ -139,6 +139,7 @@ _CORPUS_NAV = [
     {"label": "Supply Chain",   "href": "/supply-chain",     "icon": "▦"},
     {"label": "Provider Retention","href": "/provider-retention","icon": "▣"},
     {"label": "Demand Forecast","href": "/demand-forecast",  "icon": "▦"},
+    {"label": "Reinvestment",   "href": "/reinvestment",     "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
