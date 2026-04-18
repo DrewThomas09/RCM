@@ -10474,7 +10474,81 @@ find a buyer" flag.
 
 ---
 
-## 262. Change log
+## 262. De novo site ramp economics (`de_novo_site_ramp_economics.py`)
+
+**Partner statement.** "De novo healthcare sites look great on a
+3-year pro-forma. Month by month, they bleed. Year 1: rent + labor
++ credentialing with 10-30% of revenue. Year 2: 50-70%. Year 3-4:
+at run-rate. If the model says breakeven at month 12, ask how. The
+credentialing cycle alone is 6-9 months with commercial payers."
+
+### Why it matters
+
+`capex_intensity_stress` captures capex drag. `capacity_expansion`
+archetype handles the narrative. This module projects
+**month-by-month economics** for a single de novo site so the
+partner can see the actual carrying-cost bleed to breakeven.
+
+### Default ramp curve (specialty practice)
+
+| Months | % of run-rate revenue |
+|---|---|
+| 0-3 | 15% (credentialing) |
+| 4-6 | 30% |
+| 7-12 | 50% |
+| 13-18 | 70% |
+| 19-24 | 85% |
+| 25+ | 100% |
+
+### Math per month
+
+- Revenue = `run_rate × ramp_pct`
+- Variable cost = `revenue × variable_pct`
+- Fixed cost = `monthly_fixed` (constant)
+- Contribution = Revenue − Variable − Fixed
+- Cumulative EBITDA starts at `−startup_capex`
+
+### Partner-note triggers
+
+- Breakeven ≤ month 12 → "aggressive; credentialing cycle alone is
+  6-9 months; verify plan includes payer credentialing pre-open"
+- Breakeven 13-24 → "typical 18-24mo range; carrying cost $N.NM"
+- Breakeven > 24 → "long ramp; re-verify assumed run-rate revenue
+  vs MSA peer sites"
+- Model assumption > 6mo earlier than empirical → "optimistic"
+- Model assumption > 3mo later → "conservative; verify why"
+
+### Worked example
+
+$0.40M/mo run-rate + $0.08M fixed + 45% variable + $0.30M startup
+capex:
+- Month 1 contribution: $0.060 − $0.027 − $0.08 = −$0.05M
+- Month 12 contribution: $0.200 − $0.090 − $0.08 = $0.03M
+- Month 18 contribution: $0.280 − $0.126 − $0.08 = $0.07M
+- Breakeven: around month 15-18 (cumulative turns positive)
+- Partner: "typical range; carrying cost ~$0.8M"
+
+$0.30M/mo with $0.12M fixed + 55% variable (thin-margin site):
+- Steady state contribution: $0.045M
+- Even at month 30+: cumulative still negative → "does not break
+  even in 36-month window; extend or rerun with higher run-rate"
+
+### Packet fields
+
+`run_rate_monthly_revenue_m`, `monthly_fixed_cost_m`,
+`variable_cost_pct_of_revenue`, `startup_capex_m`,
+`analysis_months`, `assumed_breakeven_month_in_model`.
+
+### Distinct from existing modules
+
+- `capex_intensity_stress` — capex drag.
+- `capacity_expansion` archetype — narrative.
+- This module — month-by-month P&L from open → breakeven →
+  run-rate with credentialing-cycle flag.
+
+---
+
+## 263. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
