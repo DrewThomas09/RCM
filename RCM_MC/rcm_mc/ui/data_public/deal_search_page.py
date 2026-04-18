@@ -122,6 +122,7 @@ def render_deal_search(
     page: int = 1,
 ) -> str:
     from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui.chartis._helpers import render_page_explainer
 
     corpus = _load_corpus()
 
@@ -349,7 +350,16 @@ def render_deal_search(
             link_parts.append(f'<span style="color:#475569;font-size:10px;">… {total_pages}</span>')
         page_links = f'<div style="padding:8px 16px;text-align:center;">{"".join(link_parts)}</div>'
 
-    body = kpis + form_html + table + page_links
+    explainer = render_page_explainer(
+        what=(
+            "Full-text search across the 655-deal corpus with filters "
+            "on sector, vintage year range, EV range, MOIC range, "
+            "payer regime, and deal type, sortable by any column."
+        ),
+        source="data_public/deal_search.py (corpus query engine).",
+        page_key="deal-search",
+    )
+    body = explainer + kpis + form_html + table + page_links
 
     return chartis_shell(
         body,

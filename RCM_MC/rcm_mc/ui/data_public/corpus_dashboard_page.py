@@ -102,6 +102,7 @@ def _nav_tile(title: str, href: str, subtitle: str, value: str, value_color: str
 
 def render_corpus_dashboard() -> str:
     from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui.chartis._helpers import render_page_explainer
     from rcm_mc.data_public.sector_intelligence import compute_sector_stats
     from rcm_mc.data_public.vintage_analytics import compute_vintage_stats
     from rcm_mc.data_public.size_analytics import compute_size_analytics
@@ -322,8 +323,18 @@ def render_corpus_dashboard() -> str:
         + f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">{sector_table}{vintage_table}</div>'
     )
 
+    explainer = render_page_explainer(
+        what=(
+            "Executive summary of the corpus: deal-count and MOIC/IRR "
+            "percentiles, sector and vintage sparkline SVGs, "
+            "navigation tiles to detailed corpus-intelligence pages, "
+            "and a rolling data-quality summary."
+        ),
+        source="data_public/corpus_dashboard.py; data_public/deal_quality_score.py.",
+        page_key="corpus-dashboard",
+    )
     return chartis_shell(
-        body,
+        explainer + body,
         title="Corpus Dashboard",
         active_nav="/corpus-dashboard",
         subtitle=(

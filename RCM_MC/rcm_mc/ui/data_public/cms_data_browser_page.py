@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 def _datasets_table(items) -> str:
@@ -197,4 +198,15 @@ def render_cms_data_browser(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "CMS Data Browser", active_nav="/cms-data-browser")
+    explainer = render_page_explainer(
+        what=(
+            "Inventory of CMS public datasets available to the "
+            "platform: dataset name, update frequency, last refresh, "
+            "record count, primary use case, and ingestion status "
+            "across PFS, OPPS, MS-DRG, HCRIS, and quality-measure "
+            "feeds."
+        ),
+        source="data_public/cms_data_browser.py; CMS.gov public-data APIs.",
+        page_key="cms-data-browser",
+    )
+    return chartis_shell(explainer + body, "CMS Data Browser", active_nav="/cms-data-browser")

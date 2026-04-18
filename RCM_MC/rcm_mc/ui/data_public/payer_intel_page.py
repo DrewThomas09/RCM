@@ -168,6 +168,7 @@ def _regime_moic_bar(p25: float, p50: float, p75: float, width: int = 100) -> st
 
 def render_payer_intel() -> str:
     from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui.chartis._helpers import render_page_explainer
     from rcm_mc.data_public.payer_intelligence import compute_payer_intelligence
 
     corpus = _load_corpus()
@@ -284,8 +285,20 @@ def render_payer_intel() -> str:
         f'/payer-intelligence</a>.</div></div>'
     )
 
+    explainer = render_page_explainer(
+        what=(
+            "Summary payer-mix view: corpus-average commercial / "
+            "Medicare / Medicaid / self-pay composition, a commercial% "
+            "vs MOIC scatter, and a P25/P50/P75 MOIC table across "
+            "commercial-share regime buckets. The comprehensive view "
+            "lives at /payer-intelligence."
+        ),
+        source="data_public/payer_intelligence.py::compute_payer_intelligence.",
+        page_key="payer-intel",
+    )
     body = (
-        deeper_link
+        explainer
+        + deeper_link
         + kpis
         + ck_section_header("PAYER MIX", "corpus-average composition and return correlation")
         + f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">{mix_panel}{scatter_panel}</div>'

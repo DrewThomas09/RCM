@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 def _fmt(v, kind):
@@ -280,4 +281,15 @@ def render_base_rates(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Base Rates", active_nav="/base-rates")
+    explainer = render_page_explainer(
+        what=(
+            "Multi-dimensional P25/P50/P75/P90 cuts across EV/EBITDA, "
+            "EBITDA margin, MOIC, IRR, and hold years over the 655-deal "
+            "corpus. Filterable by sector, size, and region, with "
+            "roll-ups by sector, size bucket, vintage, and commercial-"
+            "payer-share bucket."
+        ),
+        source="data_public/base_rates.py (corpus percentile engine).",
+        page_key="base-rates",
+    )
+    return chartis_shell(explainer + body, "Base Rates", active_nav="/base-rates")

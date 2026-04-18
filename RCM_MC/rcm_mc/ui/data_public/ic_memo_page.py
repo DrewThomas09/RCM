@@ -14,6 +14,7 @@ from rcm_mc.ui._chartis_kit import (
     chartis_shell, ck_fmt_moic, ck_fmt_pct, ck_fmt_num,
     ck_section_header, ck_kpi_block,
 )
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 # ---------------------------------------------------------------------------
@@ -403,5 +404,16 @@ def render_ic_memo_gen(params: Dict[str, str]) -> str:
   {result_html}
 </div>
 """
+    explainer = render_page_explainer(
+        what=(
+            "Corpus-benchmarked IC memo section: takes deal inputs, "
+            "scores them against the 700+ deal corpus for percentile "
+            "ranks, pulls a peer-comp table, summarizes flags, and "
+            "renders benchmark charts suitable for inclusion in an IC "
+            "packet."
+        ),
+        source="data_public/ic_memo.py (corpus-benchmarked memo section).",
+        page_key="corpus-ic-memo",
+    )
     subtitle = f"Target: {html.escape(deal_name)}" if has_inputs else "Corpus benchmarking"
-    return chartis_shell(body, "IC Memo Generator", active_nav="/corpus-ic-memo", subtitle=subtitle)
+    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/corpus-ic-memo", subtitle=subtitle)

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 def _tier_color(tier: str) -> str:
@@ -265,4 +266,14 @@ def render_sponsor_heatmap(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Sponsor Heatmap", active_nav="/sponsor-heatmap")
+    explainer = render_page_explainer(
+        what=(
+            "Sponsor × sector MOIC heatmap over the 655-deal corpus. "
+            "Cells show average MOIC, median MOIC, IRR, total EV, and "
+            "realized count for every sponsor-sector pair with at "
+            "least two deals, colored by performance tier."
+        ),
+        source="data_public/sponsor_heatmap.py (sponsor × sector roll-up).",
+        page_key="sponsor-heatmap",
+    )
+    return chartis_shell(explainer + body, "Sponsor Heatmap", active_nav="/sponsor-heatmap")
