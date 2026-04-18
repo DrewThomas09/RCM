@@ -1807,6 +1807,27 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.partner_review_page import render_partner_review
             return self._send_html(render_partner_review(_qp))
+        # Partner Brain category pages — Phase 1
+        if path == "/partner-brain/failures":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.partner_brain_failures_page import render_partner_brain_failures
+            return self._send_html(render_partner_brain_failures(_qp))
+        if path == "/partner-brain/ic-decision":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.partner_brain_ic_decision_page import render_partner_brain_ic_decision
+            return self._send_html(render_partner_brain_ic_decision(_qp))
+        if path == "/partner-brain/sniff":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.partner_brain_sniff_page import render_partner_brain_sniff
+            return self._send_html(render_partner_brain_sniff(_qp))
+        if path == "/partner-brain/100-day":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.partner_brain_100_day_page import render_partner_brain_100_day
+            return self._send_html(render_partner_brain_100_day(_qp))
         if path.startswith("/partner-brain/"):
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

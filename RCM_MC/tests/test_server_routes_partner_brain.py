@@ -148,16 +148,18 @@ class TestPartnerBrainLiveRoutes(unittest.TestCase):
                 server.server_close()
 
     def test_category_stub_route_returns_200(self):
+        # Use a category still in PHASE 1 stub state (not wired yet in
+        # later phases). "regulatory" remains a stub until Phase 2.
         with tempfile.TemporaryDirectory() as tmp:
             PortfolioStore(os.path.join(tmp, "p.db"))
             server, port = _start_server(os.path.join(tmp, "p.db"))
             try:
                 with urllib.request.urlopen(
-                    f"http://127.0.0.1:{port}/partner-brain/ic-decision"
+                    f"http://127.0.0.1:{port}/partner-brain/regulatory"
                 ) as r:
                     self.assertEqual(r.status, 200)
                     body = r.read().decode()
-                    self.assertIn("IC Decision", body)
+                    self.assertIn("Regulatory Stress", body)
                     self.assertIn("Coming in Phase 1", body)
             finally:
                 server.shutdown()

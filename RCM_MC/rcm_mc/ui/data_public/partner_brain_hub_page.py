@@ -37,7 +37,7 @@ _CATEGORIES: List[Dict[str, object]] = [
         "slug": "failures",
         "label": "Named Failures & Smell Tests",
         "count": 9,
-        "phase": "PHASE 1",
+        "phase": "LIVE",
         "note": "Fingerprint-matches against dated historical failures (MA unwind 2023, NSA 2022, PDGM 2020).",
         "examples": "denial_fix_pace_detector · medicare_advantage_bridge_trap · payer_renegotiation_timing_model · deal_smell_detectors",
     },
@@ -45,7 +45,7 @@ _CATEGORIES: List[Dict[str, object]] = [
         "slug": "ic-decision",
         "label": "IC Decision & Thesis Validation",
         "count": 11,
-        "phase": "PHASE 1",
+        "phase": "LIVE",
         "note": "One-page IC read: recommend / pass / price X, plus the three numbers behind the call.",
         "examples": "ic_decision_synthesizer · thesis_validator · red_team_review · ic_dialog_simulator · bear_book",
     },
@@ -53,7 +53,7 @@ _CATEGORIES: List[Dict[str, object]] = [
         "slug": "sniff",
         "label": "Sniff Test & Archetype",
         "count": 9,
-        "phase": "PHASE 1",
+        "phase": "LIVE",
         "note": "On-face scorecard run before the math — IRR, EV/revenue, MA bridges without a named contract.",
         "examples": "unrealistic_on_face_check · healthcare_thesis_archetype_recognizer · archetype_heuristic_router",
     },
@@ -61,7 +61,7 @@ _CATEGORIES: List[Dict[str, object]] = [
         "slug": "100-day",
         "label": "100-Day & Operational Readiness",
         "count": 11,
-        "phase": "PHASE 1",
+        "phase": "LIVE",
         "note": "Day-one action plan, post-close 90-day reality check, EHR transition risk, integration readiness.",
         "examples": "day_one_action_plan · post_close_90_day_reality_check · ehr_transition_risk_assessor",
     },
@@ -281,8 +281,8 @@ def render_partner_brain_hub(qp: Dict[str, str] | None = None) -> str:
         f'<p style="font-size:12px;color:{text_dim};margin-top:4px">'
         f"Senior-PE-healthcare-partner judgment layer over the deal packet. "
         f"Seven reflexes, 18 task categories, 275 modules. "
-        f"Phase 0 lights up the core Partner Review path; remaining "
-        f"categories surface in Phase 1.</p>"
+        f"LIVE cards wire the key modules to a partner-usable view; "
+        f"remaining categories surface in upcoming phases.</p>"
         f'</div>'
         f'<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">'
         f'{kpi_strip}</div>'
