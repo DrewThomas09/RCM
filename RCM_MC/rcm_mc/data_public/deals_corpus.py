@@ -7,6 +7,17 @@ Schema columns mirror the canonical normalized form:
     deal_name, year, buyer, seller, EV, EBITDA_at_entry,
     hold_years, realized_MOIC, realized_IRR, payer_mix, notes
 
+Provenance (added Phase B of the Demo_Real sprint):
+    Every deal loaded via ``load_corpus_deals`` (see
+    ``rcm_mc.data_public.corpus_loader``) carries an injected
+    ``provenance`` field — either "real" or "synthetic" — derived
+    from the group-level registry at
+    ``rcm_mc.data_public.corpus_provenance``. The registry is the
+    single source of truth; rows here do not carry a per-row
+    provenance value. See ``corpus_provenance.py`` for the
+    classification standard and the spot-check that placed each
+    group in the registry.
+
 Why a separate SQLite file (not the main PortfolioStore)?
     The corpus is read-mostly, append-occasionally, and may be shared across
     multiple platform instances as a static reference dataset.  Keeping it
