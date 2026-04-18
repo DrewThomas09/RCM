@@ -4393,7 +4393,72 @@ Partner note:
 
 ---
 
-## 174. Change log
+## 174. Closing conditions list (`closing_conditions_list.py`)
+
+**Partner statement:** "Signing is a commitment. Close is a
+ceremony. The conditions list is where we earn our break
+rights — or lose them."
+
+Partners don't read closing-conditions lists line-by-line —
+they read for three things:
+
+1. Which conditions are *truly* in our control vs. a third
+   party (regulator, lender, landlord, payer)?
+2. Which conditions give us a *real* walk right vs. soft
+   bring-downs the seller can cure?
+3. Which conditions are time-bombs — items that could go
+   wrong specifically *because* of the sign-to-close delay?
+
+### Conditions enumerated
+
+For healthcare-services defaults, the module emits:
+
+- **hsr_antitrust_clearance** (regulatory, close, third-
+  party, high on > $400M, walk right)
+- **state_healthcare_regulatory** (CON + licensure transfers,
+  close, third-party, high, walk right)
+- **medicare_provider_number_transfer** (CHOW, close, third-
+  party, medium, no walk — bridge via tie-in agreement)
+- **payer_contract_consents** (close, third-party, medium,
+  no walk — chase top 5 60 days out)
+- **landlord_consents** (close, third-party, low, no walk)
+- **debt_financing_funded** (close, third-party, high, no
+  walk if commitment clean)
+- **rw_insurance_bound** (signing, buyer, low — bind at
+  sign, not close)
+- **key_employee_retention_signed** (both, seller, medium,
+  walk right if Key-15 drop)
+- **no_material_adverse_change** (close, seller, medium,
+  walk right — narrow MAC only)
+- **reps_true_at_closing** (close, seller, medium, walk
+  right configurable — MAE vs. material-accuracy standard)
+- **clean_title_no_liens** (close, seller, low, walk right)
+- **it_cyber_attestation** (close, seller, medium, no walk
+  — but disclosed breach reopens price)
+- **material_contracts_disclosed** (signing, seller, low)
+- **officers_secretary_certificates** (close, seller, low)
+
+### Partner-note escalation
+
+- ≥ 3 high-risk conditions → "set outside date with 60-day
+  cushion + reverse termination fee protection."
+- 1-2 high-risk → "standard closing calendar with weekly
+  condition tracker."
+- 0 high-risk, no third-party → "clean close; associates
+  can run close memo, partner reviews final."
+
+### Packet fields that trigger
+
+- `deal_size_m` → HSR risk tier
+- `sector` → toggles healthcare-specific items
+- `payer_consents_material`, `state_regulatory_required` →
+  adds third-party dependent conditions
+- `seller_breach_brings_walk` → controls bring-down walk
+  right (reflects MAE vs. material-accuracy clause)
+
+---
+
+## 175. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
