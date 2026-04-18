@@ -225,6 +225,7 @@ NAV_ITEMS = [
     {"label": "Board Governance", "href": "/board-governance", "icon": "chart"},
     {"label": "VDR Tracker", "href": "/vdr-tracker", "icon": "chart"},
     {"label": "Escrow & Earnout", "href": "/escrow-earnout", "icon": "chart"},
+    {"label": "Debt Financing", "href": "/debt-financing", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

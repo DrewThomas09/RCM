@@ -189,6 +189,7 @@ _CORPUS_NAV = [
     {"label": "Board Governance","href": "/board-governance",      "icon": "▦"},
     {"label": "VDR Tracker",     "href": "/vdr-tracker",           "icon": "▦"},
     {"label": "Escrow & Earnout","href": "/escrow-earnout",        "icon": "▣"},
+    {"label": "Debt Financing",  "href": "/debt-financing",        "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
