@@ -31234,5 +31234,184 @@ class TestContractRenewalCliffCalendar(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestLBODebtPaydownTrajectory(unittest.TestCase):
+    """Partner voice: 'Show me the year-by-year FCF and the cash sweep applied.'"""
+
+    def test_default_inputs_compute(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        r = project_lbo_debt_paydown(
+            LBODebtPaydownInputs())
+        self.assertEqual(len(r.years), 5)
+        self.assertGreater(r.entry_leverage, 0)
+
+    def test_exit_leverage_below_entry(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        r = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                annual_ebitda_growth_pct=0.06,
+            )
+        )
+        # FCF should de-lever
+        self.assertLess(
+            r.exit_leverage, r.entry_leverage
+        )
+
+    def test_zero_growth_paydown_balanced(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        # No EBITDA growth — paydown roughly even per year
+        r = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                annual_ebitda_growth_pct=0.0,
+            )
+        )
+        # back-loaded share around 50%
+        self.assertLess(r.back_loaded_pct, 0.65)
+
+    def test_high_growth_back_loaded(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        # Aggressive growth → year 4-5 paydown dominates
+        r = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                annual_ebitda_growth_pct=0.20,
+                entry_ebitda_m=40.0,
+            )
+        )
+        # Likely back-loaded
+        self.assertIn(
+            r.verdict, {"back_loaded",
+                        "concerning_back_loaded",
+                        "balanced"},
+        )
+
+    def test_concerning_back_loaded_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        # Construct concerning back-loaded: EBITDA tiny year 1, big year 5
+        r = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                entry_ebitda_m=20.0,
+                annual_ebitda_growth_pct=0.30,
+                entry_debt_m=200.0,
+            )
+        )
+        if r.verdict == "concerning_back_loaded":
+            self.assertIn(
+                "refi risk", r.partner_note.lower()
+            )
+
+    def test_each_year_debt_decreases(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        r = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                annual_ebitda_growth_pct=0.06,
+            )
+        )
+        debts = [y.ending_debt_m for y in r.years]
+        # Debt should be monotonically decreasing
+        self.assertEqual(debts, sorted(debts, reverse=True))
+
+    def test_total_paydown_matches_entry_minus_exit(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        r = project_lbo_debt_paydown(
+            LBODebtPaydownInputs())
+        diff = (
+            200.0 - r.years[-1].ending_debt_m
+        )
+        self.assertAlmostEqual(
+            r.total_paydown_m, diff, places=1
+        )
+
+    def test_high_interest_drags_paydown(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        low = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                interest_rate_pct=0.05))
+        high = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                interest_rate_pct=0.12))
+        self.assertGreater(
+            low.total_paydown_m, high.total_paydown_m
+        )
+
+    def test_entry_leverage_computed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        r = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                entry_debt_m=200.0,
+                entry_ebitda_m=50.0,
+            )
+        )
+        self.assertAlmostEqual(r.entry_leverage, 4.0)
+
+    def test_capex_drag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        low = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                capex_as_pct_of_ebitda=0.05))
+        high = project_lbo_debt_paydown(
+            LBODebtPaydownInputs(
+                capex_as_pct_of_ebitda=0.30))
+        # Higher capex → less FCF → less paydown
+        self.assertGreater(
+            low.total_paydown_m, high.total_paydown_m
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+            render_lbo_debt_paydown_markdown,
+        )
+        md = render_lbo_debt_paydown_markdown(
+            project_lbo_debt_paydown(
+                LBODebtPaydownInputs())
+        )
+        self.assertIn(
+            "# LBO debt paydown trajectory", md
+        )
+        self.assertIn("Entry leverage", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            LBODebtPaydownInputs,
+            project_lbo_debt_paydown,
+        )
+        r = project_lbo_debt_paydown(
+            LBODebtPaydownInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1573,6 +1573,13 @@ from .contract_renewal_cliff_calendar import (
     build_renewal_calendar,
     render_renewal_calendar_markdown,
 )
+from .lbo_debt_paydown_trajectory import (
+    LBODebtPaydownInputs,
+    LBODebtPaydownReport,
+    LBOYear,
+    project_lbo_debt_paydown,
+    render_lbo_debt_paydown_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3175,4 +3182,9 @@ __all__ = [
     "RenewalCalendarReport",
     "build_renewal_calendar",
     "render_renewal_calendar_markdown",
+    "LBODebtPaydownInputs",
+    "LBODebtPaydownReport",
+    "LBOYear",
+    "project_lbo_debt_paydown",
+    "render_lbo_debt_paydown_markdown",
 ]
