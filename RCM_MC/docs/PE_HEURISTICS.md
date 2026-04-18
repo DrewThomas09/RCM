@@ -3932,7 +3932,39 @@ structural, not incidental.
 
 ---
 
-## 160. Change log
+## 160. RAC audit exposure estimator (`rac_audit_exposure_estimator.py`)
+
+**Partner statement:** "Partners in healthcare PE are terrified of
+RAC and OIG audits because the dollars are disproportionate and
+the audits are retroactive. Give me a number."
+
+Base RAC hit rate 1.5% of 3-year Medicare FFS revenue. Adjusted
+by signals:
+
+- Historical denial rate ≥ 12% → +1.0pp; 8-12% → +0.3pp.
+- Claimed CMI uplift ≥ 10% → +1.5pp; 5-10% → +0.8pp.
+- No CDI program → +0.5pp.
+- Aggressive coding flags (from prior audits) → +0.5pp each, up to 5.
+- Open FCA exposure → +2.5pp.
+- Rate capped at 15%.
+
+Exposed revenue = Medicare FFS revenue × 3 (typical look-back).
+Expected loss: mid = exposed × rate; low = 50% of mid; high =
+200% of mid.
+
+Partner note:
+
+- Mid vs base EBITDA ≥ 30% → "IC-blocking; forensic billing
+  diligence non-negotiable; partner should not approve without
+  purchase-price adjustment."
+- 10-30% → "material; structure earn-out or indemnity for audit
+  window."
+- 3-10% → "modest; standard R&W with insurance."
+- < 3% → "immaterial."
+
+---
+
+## 161. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4308,3 +4340,7 @@ structural, not incidental.
   (§159) — 5-tier regional premium + inflation overlay; flags
   model single-rate assumption vs weighted actual. Full
   inventory: 157 modules, 1,596 pe_intelligence unit tests.
+- **2026-04-17** — Added `rac_audit_exposure_estimator.py`
+  (§160) — Medicare FFS audit exposure $ with signal-adjusted
+  hit rate; IC-blocking threshold. Full inventory: 158 modules,
+  1,606 pe_intelligence unit tests.
