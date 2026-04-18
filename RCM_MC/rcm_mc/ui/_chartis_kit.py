@@ -150,6 +150,7 @@ _CORPUS_NAV = [
     {"label": "Sponsor Heatmap", "href": "/sponsor-heatmap",   "icon": "▤"},
     {"label": "Payer Concentr.", "href": "/payer-concentration","icon": "▦"},
     {"label": "Roll-Up Economics","href": "/rollup-economics",  "icon": "▣"},
+    {"label": "CIN Analyzer",    "href": "/cin-analyzer",      "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
