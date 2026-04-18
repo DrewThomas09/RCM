@@ -1451,6 +1451,13 @@ from .denial_fix_pace_detector import (
     analyze_denial_fix_pace,
     render_denial_fix_markdown,
 )
+from .unrealistic_on_face_check import (
+    SniffHit,
+    SniffTestInputs,
+    SniffTestReport,
+    render_sniff_markdown,
+    run_sniff_test,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2965,4 +2972,9 @@ __all__ = [
     "DenialFixReport",
     "analyze_denial_fix_pace",
     "render_denial_fix_markdown",
+    "SniffHit",
+    "SniffTestInputs",
+    "SniffTestReport",
+    "render_sniff_markdown",
+    "run_sniff_test",
 ]

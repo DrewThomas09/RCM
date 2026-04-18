@@ -27599,5 +27599,254 @@ class TestDenialFixPaceDetector(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestUnrealisticOnFaceCheck(unittest.TestCase):
+    """Partner voice: 'Red flag on the teaser; don't spend 3 weeks modeling.'"""
+
+    def test_clean_teaser_proceeds(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            subsector="outpatient_specialty",
+            commercial_mix_pct=0.55,
+            medicare_mix_pct=0.25,
+            ev_to_ebitda_multiple=10.0,
+            projected_sponsor_irr=0.18,
+            margin_expansion_1yr_bps=150.0,
+            ma_narrative_present=False,
+        ))
+        self.assertEqual(
+            r.recommendation, "proceed_with_diligence"
+        )
+        self.assertEqual(len(r.fired), 0)
+
+    def test_rural_cah_high_irr_fires_kill(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            is_rural_critical_access=True,
+            is_critical_access_hospital=True,
+            npr_m=400.0,
+            projected_sponsor_irr=0.28,
+        ))
+        names = [h.name for h in r.fired]
+        self.assertIn(
+            "rural_critical_access_high_irr", names
+        )
+        self.assertEqual(r.recommendation, "stop_work")
+
+    def test_snf_heavy_medicare_high_mult(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            is_standalone_snf=True,
+            medicare_mix_pct=0.80,
+            ev_to_ebitda_multiple=9.0,
+        ))
+        names = [h.name for h in r.fired]
+        self.assertIn(
+            "snf_high_medicare_high_multiple", names
+        )
+
+    def test_dental_revenue_multiple_fires(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            is_dental_dso=True,
+            ev_to_revenue_multiple=3.5,
+        ))
+        self.assertIn(
+            "dental_dso_revenue_multiple",
+            [h.name for h in r.fired],
+        )
+
+    def test_single_asset_leverage(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            single_site_single_specialty=True,
+            leverage_turns=6.0,
+        ))
+        self.assertIn(
+            "single_asset_high_leverage",
+            [h.name for h in r.fired],
+        )
+
+    def test_margin_expansion_400bps(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            margin_expansion_1yr_bps=500.0,
+        ))
+        self.assertIn(
+            "400_bps_margin_expansion_1yr",
+            [h.name for h in r.fired],
+        )
+
+    def test_ma_narrative_without_named_contract(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            ma_narrative_present=True,
+            ma_contract_named=False,
+        ))
+        self.assertIn(
+            "medicare_advantage_to_offset_ffs_cuts",
+            [h.name for h in r.fired],
+        )
+
+    def test_high_exit_mult_low_commercial(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            exit_multiple_assumption=14.0,
+            commercial_mix_pct=0.25,
+        ))
+        self.assertIn(
+            "payer_mix_below_35pct_commercial_exit_14x",
+            [h.name for h in r.fired],
+        )
+
+    def test_home_health_tiny_high_margin(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            is_home_health=True,
+            revenue_m=25.0,
+            ebitda_margin_pct=0.22,
+        ))
+        self.assertIn(
+            "non_scaled_home_health_high_margin",
+            [h.name for h in r.fired],
+        )
+
+    def test_rollup_without_cio(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            is_rollup_platform=True,
+            has_named_cio=False,
+        ))
+        self.assertIn(
+            "rollup_platform_0_cio",
+            [h.name for h in r.fired],
+        )
+
+    def test_cpom_state_unverified_model(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            is_cpom_strict_state=True,
+            mso_pc_model_verified=False,
+        ))
+        self.assertIn(
+            "cpom_physician_group_unverified",
+            [h.name for h in r.fired],
+        )
+
+    def test_nonprofit_flip_doubles_margin(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            recently_converted_nonprofit=True,
+            pre_conversion_ebitda_margin_pct=0.04,
+            ebitda_margin_pct=0.12,
+        ))
+        self.assertIn(
+            "non_profit_to_forprofit_flip_high_margin",
+            [h.name for h in r.fired],
+        )
+
+    def test_cah_margin_improv_fires(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            is_critical_access_hospital=True,
+            margin_expansion_1yr_bps=350.0,
+        ))
+        self.assertIn(
+            "critical_access_24x7_unit_margin_improv",
+            [h.name for h in r.fired],
+        )
+
+    def test_3_plus_patterns_trigger_stop_work(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            is_home_health=True,
+            revenue_m=30.0,
+            ebitda_margin_pct=0.22,
+            is_rollup_platform=True,
+            has_named_cio=False,
+            margin_expansion_1yr_bps=500.0,
+        ))
+        self.assertEqual(r.recommendation, "stop_work")
+
+    def test_1_or_2_patterns_escalate_to_senior(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs(
+            ma_narrative_present=True,
+            ma_contract_named=False,
+        ))
+        self.assertEqual(
+            r.recommendation, "senior_partner_review"
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            render_sniff_markdown,
+            run_sniff_test,
+        )
+        md = render_sniff_markdown(run_sniff_test(
+            SniffTestInputs(
+                is_rural_critical_access=True,
+                projected_sponsor_irr=0.28,
+            )
+        ))
+        self.assertIn(
+            "# Unrealistic-on-face sniff test", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            SniffTestInputs,
+            run_sniff_test,
+        )
+        r = run_sniff_test(SniffTestInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
