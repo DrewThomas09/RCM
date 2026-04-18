@@ -332,7 +332,7 @@ EXTENDED_SEED_DEALS_7 = [
         "ebitda_at_entry_mm": -250.0,
         "hold_years": 2.0,
         "realized_moic": 0.02,
-        "realized_irr": -0.55,
+        "realized_irr": -0.86,
         "payer_mix": {
             "medicare": 0.70, "medicaid": 0.10, "commercial": 0.20, "selfpay": 0.00
         },
