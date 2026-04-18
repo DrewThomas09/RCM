@@ -3565,7 +3565,44 @@ they're being brushed off.
 
 ---
 
-## 149. Change log
+## 149. Synergy credibility scorer (`synergy_credibility_scorer.py`)
+
+**Partner statement:** "Are these real synergies or aspirational?
+Signed actions are real; management estimates are not."
+
+Base realization % by category (partner-approximated):
+
+- **procurement_gpo** 0.85 — real; GPO rebates are contractual.
+- **shared_services** 0.70 — if owned.
+- **back_office_consolidation** 0.60 — slow but real.
+- **contract_renegotiation** 0.55 — depends on leverage.
+- **rcm_denial_reduction** 0.50 — needs a CDI program.
+- **labor_productivity** 0.45.
+- **cross_sell_revenue** 0.30 — hardest to hit.
+- **revenue_mix_shift** 0.25.
+- **network_effects** 0.15 — this phrase is a red flag on its own.
+- **cultural_alignment** 0.10 — not a synergy, a platitude.
+
+Credibility modifiers: +20 signed contract; +15 action already
+executed; +10 benchmark reference; +5 named owner. Year-3+
+timing: -10 to -20. Source: +10 signed, +5 third-party,
+-5 management estimate.
+
+Realization = base × (credibility / 75), clamped to [0.40×,
+1.25×] of base and capped at 95%. Partner-prudent credit =
+claimed × realization.
+
+Partner note:
+
+- Total synergies ≥ 30% of entry EBITDA → "huge thesis share;
+  diligence the top 3 by owner, not the list."
+- Overall realization < 40% → "aspirational, not operational;
+  underwrite heavily haircut."
+- ≥ 70% → "strong; signed/executed actions backing claims."
+
+---
+
+## 150. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3897,3 +3934,7 @@ they're being brushed off.
 - **2026-04-17** — Added `letter_to_seller.py` (§148) —
   banker-reply composer (pass/invest/diligence-more variants).
   Full inventory: 146 modules, 1,480 pe_intelligence unit tests.
+- **2026-04-17** — Added `synergy_credibility_scorer.py` (§149)
+  — category × timing × evidence credibility scoring with
+  partner-prudent realization %. Full inventory: 147 modules,
+  1,491 pe_intelligence unit tests.
