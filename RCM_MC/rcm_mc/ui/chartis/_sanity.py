@@ -163,13 +163,25 @@ REGISTRY: Dict[str, MetricRange] = {
                        "already tripped; <25% = tight; >100% = cushioned.",
     ),
     # ── RCM operating metrics ────────────────────────────────────────
+    # TODO(phase-7): subsector-aware guards. The ranges below cover the
+    # widest partner-plausible envelope across ALL hospital subsectors
+    # combined, because the render sites don't currently pass subsector
+    # context. A future pass should take (metric, subsector) and look
+    # up per-subsector bands (e.g. acute + behavioral + ASC each).
     "denial_rate": MetricRange(
-        plausible_min=0.005, plausible_max=0.30, unit=UNIT_PCT,
-        source="HFMA MAP 2024 benchmark library (denial-rate P25=5%, "
-               "P50=11%, P75=15%). Above 30% is operational crisis; "
-               "below 0.5% is implausibly clean.",
-        interpretation="Initial denial rate. P50 ~11%; above 15% = "
-                       "underperforming; below 5% = best-in-class.",
+        # Widened in Phase 6D from 0.30 to 0.38 to accommodate
+        # behavioral-health segment (HFMA MAP 2024 behavioral band
+        # has P75=32%, vs acute-hospital P75=15%). The widened ceiling
+        # is calibrated so behavioral P75 renders cleanly while still
+        # flagging >40% as operational crisis for any segment.
+        plausible_min=0.005, plausible_max=0.38, unit=UNIT_PCT,
+        source="HFMA MAP 2024: acute-hospital P25=5% / P50=11% / "
+               "P75=15% + behavioral P75=32%. Ceiling set at 38% to "
+               "cover both + 6%-headroom. Below 0.5% is implausibly "
+               "clean for any hospital segment.",
+        interpretation="Initial denial rate. Acute P50 ~11%; "
+                       "behavioral P75 ~32%; above 38% = operational "
+                       "crisis regardless of subsector.",
     ),
     "days_in_ar": MetricRange(
         plausible_min=15.0, plausible_max=120.0, unit=UNIT_DAYS,
@@ -207,10 +219,19 @@ REGISTRY: Dict[str, MetricRange] = {
                        ">6% = overstaffed or broken workflow.",
     ),
     "final_writeoff_rate": MetricRange(
-        plausible_min=0.001, plausible_max=0.15, unit=UNIT_PCT,
-        source="HFMA MAP 2024 bad-debt benchmarks. P50 ~3%; >10% "
-               "indicates payer-mix or eligibility failure.",
-        interpretation="Permanent write-off as % of billed. <5% healthy.",
+        # Widened in Phase 6D from 0.15 to 0.20. Behavioral-health
+        # segment has structurally higher bad-debt ratios (Medicaid
+        # eligibility churn, self-pay psych admissions) — HFMA MAP
+        # 2024 behavioral P75 is 16%. 20% ceiling covers behavioral
+        # segment while still flagging >20% as payer-mix failure for
+        # any subsector.
+        plausible_min=0.001, plausible_max=0.20, unit=UNIT_PCT,
+        source="HFMA MAP 2024: acute-hospital P50 ~3% / P75 ~8%; "
+               "behavioral-health P75 ~16%. Ceiling set at 20% to "
+               "cover behavioral segment + small headroom.",
+        interpretation="Permanent write-off as % of billed. Acute "
+                       "<5% healthy; behavioral <16%; any subsector "
+                       ">20% = payer-mix or eligibility failure.",
     ),
     # ── Revenue / volume ────────────────────────────────────────────
     "npr_m": MetricRange(
