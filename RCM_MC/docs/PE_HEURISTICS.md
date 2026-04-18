@@ -9299,7 +9299,89 @@ Same deal but 2 top-5 physicians left and 2 c-suite seats open →
 
 ---
 
-## 246. Change log
+## 246. Recurring NPR line-item scrubber (`recurring_npr_line_scrubber.py`)
+
+**Partner statement.** "Sellers stretch EBITDA with one-time
+add-backs, but they ALSO stretch revenue. Provider relief grants
+flow through NPR. DSH and UPL settlements show up as line items.
+The growth rate the seller pitches is on TOTAL NPR. The growth
+rate the partner cares about is on RECURRING NPR. Scrub the top
+line first, then talk about growth."
+
+### Why it matters
+
+`recurring_ebitda_line_scrubber` operates at EBITDA. This is the
+**top-line analog** — same religious recurring-vs-one-time
+discipline applied to NPR. The headline number that distorts is
+the **growth rate**, since seller's stated growth is on
+TTM-including-one-time but recurring growth is on the recurring
+base.
+
+### 15-pattern catalog
+
+**One-time NPR (8):**
+- DSH / UPL supplemental Medicaid payment
+- Provider relief grant (CARES / ARPA / state pandemic)
+- Medicare cost-report settlement (prior-period true-up)
+- RAC / audit recovery
+- State directed-payment program (episodic)
+- MU / MIPS legacy EHR incentive
+- 340B retroactive true-up
+- Behavioral / psychiatric state supplemental grant
+
+**Questionable NPR (4):**
+- Pro-forma annualized acquired revenue
+- VBC shared savings (program-dependent)
+- Quality / P4P bonus (program-dependent)
+- Risk pool distribution (timing-lumpy)
+
+**Recurring NPR (3):**
+- Core patient service revenue
+- Capitation / PMPM revenue
+- Recurring contracted payer payment
+
+Unknown patterns default to **questionable** — partner review.
+
+### Output
+
+- `recurring_npr_m`, `one_time_npr_m`, `questionable_npr_m`
+- `seller_growth_rate_pct` — on TTM (seller pitch)
+- `partner_growth_rate_pct` — on recurring (partner read)
+- `growth_rate_distortion_pct` — gap between the two
+
+### Partner-note triggers
+
+- Distortion > 5% → "anchor growth conversation on recurring base."
+- Distortion 1-5% → "modest distortion; surface in bridge."
+- Distortion < 1% → "top line scrub clean."
+
+### Worked example
+
+Stated TTM NPR $300M; prior year $280M. Line items include $20M
+DSH supplemental payment.
+
+- Seller growth: $300M / $280M = +7.1%
+- Recurring NPR: $300 − $20 = $280M
+- Partner growth: $280 / $280 = 0%
+- Distortion: 7.1% — material; "anchor growth conversation on
+  recurring base."
+
+### Packet fields
+
+`stated_ttm_npr_m`, `prior_year_npr_m`, `line_items` (list of
+`NPRLineItem(description, amount_m, explicit_category)`).
+
+### Distinct from existing modules
+
+- `recurring_ebitda_line_scrubber` — EBITDA level analog.
+- `ebitda_normalization` / `ebitda_quality` — broader.
+- This module — NPR / top-line level with healthcare-specific
+  one-time line catalog (DSH/UPL/provider-relief/MU/340B/etc.) and
+  growth-rate distortion math.
+
+---
+
+## 247. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
