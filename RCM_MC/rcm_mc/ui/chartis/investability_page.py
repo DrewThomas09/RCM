@@ -40,6 +40,7 @@ from ._helpers import (
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _GRADE_COLORS = {
@@ -71,12 +72,16 @@ _FINDING_STATUS_COLORS = {
 def _score_arc(score: int, grade: str) -> str:
     """Render a big score tile with grade + color band."""
     col = _GRADE_COLORS.get(grade.upper(), P["text_dim"])
+    # Route through the sanity guard so out-of-0-100-range scores
+    # surface as a warning pill rather than silently showing a
+    # suspicious integer.
+    score_html = render_number(score, "investability_score")
     return (
         f'<div style="display:flex;align-items:baseline;gap:18px;'
         f'padding:14px 18px;background:{P["panel"]};border:1px solid {col};'
         f'border-left-width:4px;border-radius:3px;margin-bottom:14px;">'
         f'<div style="font-family:var(--ck-mono);font-size:42px;font-weight:700;'
-        f'color:{col};line-height:1;">{score}</div>'
+        f'color:{col};line-height:1;">{score_html}</div>'
         f'<div style="display:flex;flex-direction:column;">'
         f'<span style="font-family:var(--ck-mono);font-size:9px;'
         f'letter-spacing:0.15em;color:{P["text_faint"]};">COMPOSITE SCORE · 0-100</span>'

@@ -35,6 +35,7 @@ from ._helpers import (
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _VERDICT_META = {
@@ -71,7 +72,7 @@ def _hhi_bar(hhi: float) -> str:
         f'</div>'
         f'<div style="text-align:center;font-family:var(--ck-mono);font-size:11px;'
         f'color:{P["text"]};margin-top:4px;font-variant-numeric:tabular-nums;">'
-        f'HHI {hhi:,.0f}</div>'
+        f'HHI {render_number(hhi, "hhi")}</div>'
         f'</div>'
     )
 
@@ -98,7 +99,7 @@ def _shares_table(shares: Dict[str, float], *, target_name: Optional[str]) -> st
             f'{_html.escape(str(name))}{tag}</td>'
             f'<td style="font-family:var(--ck-mono);font-size:11px;'
             f'color:{col};font-variant-numeric:tabular-nums;text-align:right;'
-            f'width:80px;">{float(share)*100:.1f}%</td>'
+            f'width:80px;">{render_number(share, "market_share")}</td>'
             f'<td style="width:180px;">'
             f'<span style="display:block;height:6px;background:{P["border_dim"]};'
             f'border-radius:1px;overflow:hidden;">'
@@ -202,10 +203,12 @@ def render_market_structure(
     col, verdict_desc = _VERDICT_META.get(verdict, (P["text_dim"], ""))
 
     kpis = (
-        ck_kpi_block("HHI", f"{hhi:,.0f}", "0–10,000 (monopoly)")
-        + ck_kpi_block("CR3", fmt_pct(cr3), "top-3 combined share")
-        + ck_kpi_block("CR5", fmt_pct(cr5), "top-5 combined share")
-        + ck_kpi_block("Top Share", fmt_pct(top_share), f"out of {n_players} players")
+        ck_kpi_block("HHI", render_number(hhi, "hhi"), "0–10,000 (monopoly)")
+        + ck_kpi_block("CR3", render_number(cr3, "cr3"), "top-3 combined share")
+        + ck_kpi_block("CR5", render_number(cr5, "cr5"), "top-5 combined share")
+        + ck_kpi_block("Top Share",
+                        render_number(top_share, "market_share"),
+                        f"out of {n_players} players")
         + ck_kpi_block("Consolidation", fmt_pct(cons_score), "play-score 0-1")
     )
     kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'

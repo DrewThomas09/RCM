@@ -39,6 +39,7 @@ from ._helpers import (
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _REGIME_COLORS = {
@@ -339,8 +340,8 @@ def render_archetype(
             ("hospital_type", str(ctx.hospital_type or "—")),
             ("platform_or_addon", str(ctx.platform_or_addon or "—")),
             ("addons_planned", str(ctx.number_of_addons_planned or "—")),
-            ("current_margin", fmt_pct(ctx.current_ebitda_margin)),
-            ("debt_to_ebitda", f"{ctx.debt_to_ebitda:.2f}x" if ctx.debt_to_ebitda else "—"),
+            ("current_margin", render_number(ctx.current_ebitda_margin, "ebitda_margin")),
+            ("debt_to_ebitda", render_number(ctx.debt_to_ebitda, "leverage_multiple")),
             ("revenue_growth", fmt_pct(ctx.revenue_growth_pct)),
             ("ebitda_growth", fmt_pct(ctx.ebitda_growth_pct)),
             ("has_rollup_thesis", str(ctx.has_rollup_thesis)),
