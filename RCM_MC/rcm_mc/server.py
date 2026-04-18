@@ -1904,6 +1904,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.direct_employer_page import render_direct_employer
             return self._send_html(render_direct_employer(_qp))
+        if path == "/deal-origination":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.deal_origination_page import render_deal_origination
+            return self._send_html(render_deal_origination(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
