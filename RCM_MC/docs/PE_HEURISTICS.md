@@ -3824,7 +3824,41 @@ is supporting.
 
 ---
 
-## 157. Change log
+## 157. Concentration risk multi-dim (`concentration_risk_multidim.py`)
+
+**Partner statement:** "Show me the six concentration numbers
+side by side, and flag which ones are a problem."
+
+Six dimensions (ten metrics), same threshold logic:
+
+- **Customer** — top-1 + top-5.
+- **Site / location** — top-1 + top-5.
+- **Payer** — top-1.
+- **Provider** (physician / clinician) — top-1 + top-5.
+- **Service line / product** — top-1 EBITDA share.
+- **Geography** — top state + top MSA.
+
+Severity thresholds:
+
+- ≥ 50% → **high** ("underwriting constraint — re-underwrite
+  assuming 20% of that revenue walks").
+- 30-49% → **medium** (diligence flag; get contract terms,
+  escalator, renewal date).
+- 15-29% → **low** (noted but manageable).
+- < 15% → not flagged.
+
+Partner note:
+
+- ≥ 2 high → "structural issue; re-underwrite with each
+  concentrated dim stressed."
+- 1 high → "single-dim concentration; specific mitigation
+  required before IC."
+- Medium only → "standard diligence questions apply."
+- All low → "diversified across all six dimensions."
+
+---
+
+## 158. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4189,3 +4223,7 @@ is supporting.
   specific bolt-on fit (strategic/financial/integration/
   execution) + proceed/re-evaluate/pass rec. Full inventory:
   154 modules, 1,567 pe_intelligence unit tests.
+- **2026-04-17** — Added `concentration_risk_multidim.py`
+  (§157) — 6-dim concentration scan (customer / site / payer /
+  provider / service line / geography); 30/50% thresholds. Full
+  inventory: 155 modules, 1,577 pe_intelligence unit tests.
