@@ -2154,6 +2154,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.specialty_benchmarks_page import render_specialty_benchmarks
             return self._send_html(render_specialty_benchmarks(_qp))
+        if path == "/peer-transactions":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.peer_transactions_page import render_peer_transactions
+            return self._send_html(render_peer_transactions(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
