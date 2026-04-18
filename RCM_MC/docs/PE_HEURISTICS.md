@@ -7157,7 +7157,57 @@ Hospital platform, 15% rollover:
 
 ---
 
-## 218. Change log
+## 218. Reps & warranties scope negotiator (`reps_warranties_scope_negotiator.py`)
+
+**Partner statement:** "The cap and deductible get the
+attention, but the scope decides what's covered in the
+first place."
+
+Distinct from `loi_term_sheet_review` (LOI-level R&W
+mechanics — cap, deductible, carveouts). This module
+recommends the **specific reps** to demand on a
+healthcare deal.
+
+### 14 reps across 3 categories
+
+**Fundamental** (4) — always must-have, uncapped seller
+indemnity, longer survival: organization, authority,
+capitalization, tax-basic.
+
+**Standard** (6) — R&W-insured above basket: financial
+statements, no conflicts, litigation, employee
+classification + wage-hour, IP ownership, IT systems +
+cyber.
+
+**Healthcare-specific** (6, when provider-asset) —
+seller indemnity; often carved from R&W: HIPAA, Stark/AKS
+safe-harbor compliance, facility + clinician licensure,
+OIG exclusion clean, CIA compliance, clinical quality +
+CMS survey.
+
+### Conditional elevations
+
+- `prior_cyber_incident_disclosed` → IT/cyber rep →
+  must-have + carve-out.
+- `key_employee_litigation_pending` → employee rep
+  must-have.
+- `material_regulatory_audit_history` → Stark/AKS, OIG,
+  CIA reps enhanced (longer survival + specific
+  indemnity cap).
+- No R&W insurance → standard reps shift to seller
+  indemnity, partner note escalates.
+
+### Packet fields
+
+`subsector`, `rw_insurance_in_place`,
+`asset_type_is_provider`,
+`material_regulatory_audit_history`,
+`key_employee_litigation_pending`,
+`prior_cyber_incident_disclosed`.
+
+---
+
+## 219. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
