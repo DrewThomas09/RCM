@@ -34,6 +34,7 @@ from ._helpers import (
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _DECISION_COLORS = {
@@ -138,7 +139,7 @@ def _result_row(r: Any) -> str:
         f'<td>{signal}</td>'
         f'<td style="text-align:right;font-family:var(--ck-mono);'
         f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
-        f'data-val="{r.data_completeness or 0}">{fmt_pct(r.data_completeness, digits=0)}</td>'
+        f'data-val="{r.data_completeness or 0}">{render_number(r.data_completeness, "data_completeness_pct")}</td>'
         f'<td style="color:{P["text_dim"]};font-size:11px;line-height:1.4;'
         f'white-space:normal;">{reason}</td>'
         f'</tr>'

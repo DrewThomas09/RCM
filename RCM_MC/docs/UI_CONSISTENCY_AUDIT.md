@@ -568,4 +568,95 @@ Format per bug:
 - **Severity**: P0 = partner would see on demo; P1 = edge case.
 - **Observed during**: which migration commit surfaced it.
 
-_(bugs will be populated as migration progresses)_
+### Bugs
+
+1. **/sponsor-track-record · Cvs Health · median_irr 60%** — IRR tooltip
+   says "expected range -30.0%–55.0% for irr." Value is 60%. 6 deals
+   in the underlying set, so not a rogue single-deal. Likely source:
+   `data_public/sponsor_track_record.py:sponsor_league_table()`
+   computes per-sponsor median IRR by aggregating `realized_irr` from
+   corpus deals — some corpus CVS Health deals may have inflated IRR
+   values. Needs spot-check of the seed-deal IRR field per row.
+   **Severity: P0** — CVS is a headline sponsor that partners look
+   at on demo. Observed during: Phase 4B Phase 2C sponsor-track-record
+   guard commit.
+
+2. **/sponsor-track-record · Walgreens · median_irr 78%** — same
+   category. 78% IRR on a 2-deal sponsor is implausible. Almost
+   certainly a single corpus deal with an absurd realized_irr in the
+   seed data (not a rollup; 2 deals only). Likely the `realized_irr`
+   field was recorded as percentage (78) instead of fraction (0.78)
+   on one deal — classic unit mixup. **Severity: P0**. Observed during:
+   same commit as #1.
+
+3. **/sponsor-track-record · Various Pe (Series D) · median_irr 65%**
+   — 2 deals. Same shape as Walgreens — likely unit-mixup on one
+   corpus entry. **Severity: P1** (obscure sponsor name, less visible
+   on demos). Same commit.
+
+4. **/sponsor-track-record · Advent International · median_irr -38%**
+   — 7 deals, median is -38%. One of the largest PE firms. The
+   realized_irr lower bound in reasonableness.py is 0.0 per band;
+   our registry widened to -30% to tolerate genuine losses. A
+   sustained -38% median on 7 deals is either real (Advent had a
+   string of catastrophes in the seed data) or a data-entry bug with
+   sign flips. **Severity: P0** — Advent is a headline name.
+   Investigate the 7 corpus rows.
+
+5. **/sponsor-track-record · Cerberus · median_moic 0.2x, hold
+   14 years** — 2 deals. 0.2x MOIC over 14y is a recovery-scenario
+   distressed workout, OR it's a corpus data bug. Severity: P1 —
+   Cerberus has a real reputation for distressed-workout tails, so
+   the number might be accurate; the 14-year hold is the bigger
+   tell (real PE holds rarely exceed 10 years). Likely source:
+   single corpus deal with a bad entry_year or an unexited deal
+   mislabelled "realized." Observed during: same commit.
+
+### Registry fix (not a bug — a definition error in _sanity.py)
+
+While migrating sponsor-track-record, the `consistency_score` guard
+fired on 88 of ~101 sponsors — too broad to be real. Root cause was
+a **registry mismatch**: I had set `consistency_score` to range
+[0.0, 1.0] with unit=pct, but the backend function
+`sponsor_track_record.sponsor_consistency_score_raw()` returns a
+0-100 integer. Fixed the registry entry to `plausible_min=0.0,
+plausible_max=100.0, unit=UNIT_NUM`. Not a bug — a correctness fix
+to _sanity.py itself.
+
+### False positives — benchmarks that legitimately exceed the band
+
+Not every red pill is a backend bug. When the benchmark itself is
+wider than the acute-hospital band we calibrated on, the guard
+fires on valid data. These are worth noting so the fix path is
+"widen the range with a second citation" rather than "investigate
+the data":
+
+6. **/rcm-benchmarks · behavioral segment · denial_rate P75 = 32%**
+   — my registry max is 30% (HFMA MAP 2024 acute-hospital band).
+   Behavioral-health denial rates legitimately run 25-35% because
+   of prior-auth friction on inpatient-psych + Medicaid-eligibility
+   lapses. The guard fires but the value is real. **Severity: N/A
+   (false positive)**. Follow-up: add a behavioral-health-specific
+   band to the registry or widen denial_rate to 35%.
+
+7. **/rcm-benchmarks · behavioral · write_off_pct P75 = 16%** —
+   my registry max is 15%. Same story — behavioral segment has
+   structurally higher bad-debt ratios (Medicaid eligibility churn).
+   False positive; same fix as #6.
+
+### Corpus-realized MOIC outliers — real data, surfaced correctly
+
+8. **/corpus-backtest · 10 MOIC pills across vintages + sectors**
+   — the 655-deal corpus has legitimate outliers: 12.5x on a 2011
+   dental rollup, 9.0x on a 2021 health-IT exit, multiple 0.0-0.2x
+   catastrophic losses. My registry band is 0.3–6.0x (Preqin HC-PE
+   exit distribution). These aren't bugs — they're the tails. The
+   partner seeing these red pills and going "is this real?" is
+   exactly the intended behaviour: they can then verify against the
+   corpus row. **Severity: N/A (working as designed)**.
+
+   However: 2018 vintage has a MOIC of 0.05 (5% of invested capital)
+   on what the corpus labels "realized" — that's either a total
+   write-off or a sign-flip / unit bug. Worth a spot-check of the
+   specific corpus row. **Severity: P1** — obscure vintage, but
+   could indicate a data-entry error rather than a real tail event.

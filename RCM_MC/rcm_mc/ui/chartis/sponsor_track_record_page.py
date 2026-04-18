@@ -34,6 +34,7 @@ from ._helpers import (
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _CONSISTENCY_BANDS = [
@@ -102,30 +103,22 @@ def _sponsor_row(rec: Any) -> str:
         f'<td style="text-align:right;font-family:var(--ck-mono);'
         f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{rec.realized_count}">'
         f'{rec.realized_count}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{median_col};font-weight:600;" '
-        f'data-val="{rec.median_moic or 0}">{fmt_multiple(rec.median_moic)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
-        f'data-val="{rec.moic_p25 or 0}">{fmt_multiple(rec.moic_p25)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
-        f'data-val="{rec.moic_p75 or 0}">{fmt_multiple(rec.moic_p75)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text"]};" '
-        f'data-val="{rec.median_irr or 0}">{fmt_pct(rec.median_irr)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
-        f'data-val="{rec.median_hold_years or 0}">{_fmt_years(rec.median_hold_years)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{loss_col};" data-val="{rec.loss_rate}">'
-        f'{fmt_pct(rec.loss_rate)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{hr_col};" data-val="{rec.home_run_rate}">'
-        f'{fmt_pct(rec.home_run_rate)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{cons_col};" data-val="{consistency}">'
-        f'{consistency:.2f}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rec.median_moic or 0}">{render_number(rec.median_moic, "moic")}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rec.moic_p25 or 0}">{render_number(rec.moic_p25, "moic")}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rec.moic_p75 or 0}">{render_number(rec.moic_p75, "moic")}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rec.median_irr or 0}">{render_number(rec.median_irr, "irr")}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rec.median_hold_years or 0}">{render_number(rec.median_hold_years, "hold_years")}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rec.loss_rate}">{render_number(rec.loss_rate, "loss_rate")}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rec.home_run_rate}">{render_number(rec.home_run_rate, "home_run_rate")}</td>'
+        f'<td style="text-align:right;" data-val="{consistency}">'
+        f'{render_number(consistency, "consistency_score")}</td>'
         f'<td style="text-align:right;font-family:var(--ck-mono);'
         f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
         f'data-val="{rec.avg_ev_mm or 0}">{_fmt_ev(rec.avg_ev_mm)}</td>'
@@ -195,7 +188,7 @@ def render_sponsor_track_record(
         + ck_kpi_block("Realized", str(realized),
                         f"{realized/total_deals*100:.0f}% of tracked" if total_deals else "—")
         + ck_kpi_block("Overall Median MOIC",
-                        fmt_multiple(overall_median), "sponsor-weighted")
+                        render_number(overall_median, "moic"), "sponsor-weighted")
         + ck_kpi_block("High Consistency",
                         str(len(consistent)), "sponsors ≥ 0.70 score")
     )
@@ -234,9 +227,8 @@ def render_sponsor_track_record(
             f'<div style="font-family:var(--ck-mono);font-size:13px;font-weight:600;'
             f'color:{P["text"]};">{_html.escape(str(rec.sponsor))}</div>'
             f'<div style="font-family:var(--ck-mono);font-size:20px;'
-            f'font-weight:700;color:{col};margin-top:4px;'
-            f'font-variant-numeric:tabular-nums;">'
-            f'{fmt_multiple(rec.median_moic)}</div>'
+            f'font-weight:700;margin-top:4px;">'
+            f'{render_number(rec.median_moic, "moic")}</div>'
             f'<div style="color:{P["text_faint"]};font-family:var(--ck-mono);'
             f'font-size:9.5px;letter-spacing:0.10em;margin-top:2px;">'
             f'median MOIC · {rec.deal_count} deals · {cons_label.lower()} consistency</div>'

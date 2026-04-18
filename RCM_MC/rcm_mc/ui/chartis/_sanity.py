@@ -265,9 +265,13 @@ REGISTRY: Dict[str, MetricRange] = {
                        "fence; <50 = pass-level.",
     ),
     "consistency_score": MetricRange(
-        plausible_min=0.0, plausible_max=1.0, unit=UNIT_PCT,
-        source="data_public/sponsor_track_record.py — normalized 0-1.",
-        interpretation="Sponsor consistency. >0.70 = high; <0.45 = low.",
+        # data_public/sponsor_track_record.sponsor_consistency_score_raw
+        # returns a 0-100 integer (not a 0-1 fraction), so this range
+        # matches the backend's actual shape rather than the docstring.
+        plausible_min=0.0, plausible_max=100.0, unit=UNIT_NUM,
+        source="data_public/sponsor_track_record.py:sponsor_consistency_score_raw "
+               "returns 0-100.",
+        interpretation="Sponsor consistency. >70 = high; <45 = low.",
     ),
     "data_completeness_pct": MetricRange(
         plausible_min=0.0, plausible_max=1.0, unit=UNIT_PCT,

@@ -35,6 +35,7 @@ from ._helpers import (
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _REGIME_COLORS = {
@@ -124,21 +125,16 @@ def _regime_row(rs: Any) -> str:
         f'<td style="text-align:right;font-family:var(--ck-mono);'
         f'font-variant-numeric:tabular-nums;color:{P["text"]};" data-val="{rs.n_deals}">'
         f'{rs.n_deals}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
-        f'data-val="{rs.moic_p25 or 0}">{fmt_multiple(rs.moic_p25)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{p50_col};font-weight:600;" '
-        f'data-val="{p50}">{fmt_multiple(p50)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
-        f'data-val="{rs.moic_p75 or 0}">{fmt_multiple(rs.moic_p75)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text"]};" '
-        f'data-val="{rs.irr_p50 or 0}">{fmt_pct(rs.irr_p50)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{loss_col};" '
-        f'data-val="{rs.loss_rate or 0}">{fmt_pct(rs.loss_rate)}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rs.moic_p25 or 0}">{render_number(rs.moic_p25, "moic")}</td>'
+        f'<td style="text-align:right;font-weight:600;" '
+        f'data-val="{p50}">{render_number(p50, "moic")}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rs.moic_p75 or 0}">{render_number(rs.moic_p75, "moic")}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rs.irr_p50 or 0}">{render_number(rs.irr_p50, "irr")}</td>'
+        f'<td style="text-align:right;" '
+        f'data-val="{rs.loss_rate or 0}">{render_number(rs.loss_rate, "loss_rate")}</td>'
         f'<td style="text-align:center;">'
         + _mini_mix_bar(
             rs.avg_commercial_pct or 0, rs.avg_medicare_pct or 0,

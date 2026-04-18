@@ -33,6 +33,34 @@ from ._helpers import (
     empty_note,
     small_panel,
 )
+from ._sanity import REGISTRY as _METRIC_REGISTRY, render_number
+
+
+# Map the backend's field-prefix names to the sanity REGISTRY metric
+# names. Most line up; the exceptions (write_off_pct / collection_rate)
+# use a different name in the registry than the module exposes.
+_FIELD_TO_METRIC = {
+    "initial_denial_rate":  "denial_rate",
+    "clean_claim_rate":     "clean_claim_rate",
+    "days_in_ar":           "days_in_ar",
+    "collection_rate":      "net_collection_rate",
+    "write_off_pct":        "final_writeoff_rate",
+    "cost_to_collect":      "cost_to_collect",
+    "denial_overturn_rate": "first_pass_resolution",
+}
+
+
+def _render_band_cell(value: Any, field_prefix: str) -> str:
+    """Dispatch a rcm_benchmarks cell through the sanity guard when we
+    have a registry mapping; otherwise fall back to raw formatting."""
+    metric = _FIELD_TO_METRIC.get(field_prefix)
+    if metric and metric in _METRIC_REGISTRY:
+        return render_number(value, metric)
+    # Fallback — shouldn't be reached given the static _METRICS list
+    try:
+        return f"{float(value):.2f}"
+    except (TypeError, ValueError):
+        return "—"
 
 
 _METRICS: List[Tuple[str, str, str, str, bool]] = [
@@ -100,15 +128,12 @@ def _segment_card(seg_key: str, b: Any) -> str:
                 f'margin-left:4px;">↑ better</span>'
             )
             + f'</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{p25 or 0}">'
-            f'{_fmt_band(p25, is_pct=is_pct)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{p50_col};font-weight:600;" '
-            f'data-val="{p50 or 0}">{_fmt_band(p50, is_pct=is_pct)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{p75 or 0}">'
-            f'{_fmt_band(p75, is_pct=is_pct)}</td>'
+            f'<td style="text-align:right;" data-val="{p25 or 0}">'
+            f'{_render_band_cell(p25, field)}</td>'
+            f'<td style="text-align:right;font-weight:600;" '
+            f'data-val="{p50 or 0}">{_render_band_cell(p50, field)}</td>'
+            f'<td style="text-align:right;" data-val="{p75 or 0}">'
+            f'{_render_band_cell(p75, field)}</td>'
             f'</tr>'
         )
     table = (
@@ -157,9 +182,8 @@ def _cross_segment_table(benchmarks: Dict[str, Any]) -> str:
         for field, _, _, _, is_pct in _METRICS:
             p50 = getattr(b, f"{field}_p50", None)
             cells.append(
-                f'<td style="text-align:right;font-family:var(--ck-mono);'
-                f'font-variant-numeric:tabular-nums;color:{P["text"]};" data-val="{p50 or 0}">'
-                f'{_fmt_band(p50, is_pct=is_pct)}</td>'
+                f'<td style="text-align:right;" data-val="{p50 or 0}">'
+                f'{_render_band_cell(p50, field)}</td>'
             )
         rows.append(
             f'<tr>'

@@ -37,6 +37,7 @@ from ._helpers import (
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 def _disambig_banner() -> str:
@@ -78,21 +79,18 @@ def _vintage_row(year: int, moics: List[float]) -> str:
         f'<td style="text-align:right;font-family:var(--ck-mono);'
         f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{n}">'
         f'{n}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{median_col};font-weight:600;" '
-        f'data-val="{median}">{fmt_multiple(median)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{mean}">'
-        f'{fmt_multiple(mean)}</td>'
+        f'<td style="text-align:right;font-weight:600;" '
+        f'data-val="{median}">{render_number(median, "moic")}</td>'
+        f'<td style="text-align:right;" data-val="{mean}">'
+        f'{render_number(mean, "moic")}</td>'
+        # stdev is a dispersion, not a MOIC value — leave unguarded.
         f'<td style="text-align:right;font-family:var(--ck-mono);'
         f'font-variant-numeric:tabular-nums;color:{stdev_col};" data-val="{stdev}">'
         f'{fmt_multiple(stdev)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_faint"]};" data-val="{mn}">'
-        f'{fmt_multiple(mn)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_faint"]};" data-val="{mx}">'
-        f'{fmt_multiple(mx)}</td>'
+        f'<td style="text-align:right;" data-val="{mn}">'
+        f'{render_number(mn, "moic")}</td>'
+        f'<td style="text-align:right;" data-val="{mx}">'
+        f'{render_number(mx, "moic")}</td>'
         f'</tr>'
     )
 
@@ -166,12 +164,11 @@ def _corpus_self_analysis(corpus: List[Dict[str, Any]]) -> Tuple[str, Dict[str, 
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
             f'data-val="{len(moics)}">{len(moics)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{col};font-weight:600;" '
-            f'data-val="{median}">{fmt_multiple(median)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
-            f'data-val="{mean}">{fmt_multiple(mean)}</td>'
+            f'<td style="text-align:right;font-weight:600;" '
+            f'data-val="{median}">{render_number(median, "moic")}</td>'
+            f'<td style="text-align:right;" data-val="{mean}">'
+            f'{render_number(mean, "moic")}</td>'
+            # stdev stays unguarded — it's a dispersion, not a MOIC.
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["text_faint"]};" '
             f'data-val="{stdev}">{fmt_multiple(stdev)}</td>'
@@ -240,10 +237,10 @@ def _match_results_panel(results: List[Any]) -> str:
             f'<td style="color:{P["text"]};font-size:11px;">{corpus_name}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};">{corpus_year}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text"]};">{fmt_multiple(real_moic)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};">{fmt_multiple(pred_moic)}</td>'
+            f'<td style="text-align:right;">{render_number(real_moic, "moic")}</td>'
+            f'<td style="text-align:right;">{render_number(pred_moic, "moic")}</td>'
+            # err is a MOIC-delta (predicted - realized), not an absolute
+            # MOIC — can legitimately be very large.
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{err_col};">{fmt_multiple(err)}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
