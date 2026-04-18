@@ -1387,6 +1387,13 @@ from .insurance_tail_coverage_designer import (
     design_insurance_tail_package,
     render_insurance_tail_markdown,
 )
+from .data_room_gap_signal_reader import (
+    DataRoomGapInputs,
+    DataRoomGapReport,
+    GapSignal,
+    render_data_room_gap_markdown,
+    scan_data_room_gaps,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2855,4 +2862,9 @@ __all__ = [
     "TailCoverage",
     "design_insurance_tail_package",
     "render_insurance_tail_markdown",
+    "DataRoomGapInputs",
+    "DataRoomGapReport",
+    "GapSignal",
+    "render_data_room_gap_markdown",
+    "scan_data_room_gaps",
 ]

@@ -25587,5 +25587,161 @@ class TestInsuranceTailCoverageDesigner(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestDataRoomGapSignalReader(unittest.TestCase):
+    """Partner scenario: gaps tell you what seller hides."""
+
+    def test_no_gaps_clean_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs())
+        self.assertEqual(r.triggered_count, 0)
+        self.assertIn("data room appears complete",
+                       r.partner_note.lower())
+
+    def test_missing_gaap_flagged(self) -> None:
+        """Partner: 'no 3-year GAAP = never audited.'"""
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs(
+            three_year_gaap_missing=True,
+        ))
+        gaap = next(s for s in r.signals
+                     if s.name == "three_year_gaap_missing")
+        self.assertTrue(gaap.triggered)
+        self.assertIn("never been through an audit",
+                       gaap.what_it_signals.lower())
+
+    def test_missing_top5_payer_contracts_flagged(self) -> None:
+        """Partner: 'top-5 payer contracts hidden → payer on notice.'"""
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs(
+            top_5_payer_contracts_missing=True,
+        ))
+        payer = next(s for s in r.signals
+                      if s.name ==
+                      "top_5_payer_contracts_missing")
+        self.assertIn("payer on notice",
+                       payer.what_it_signals.lower())
+
+    def test_process_delay_accumulates(self) -> None:
+        """Partner: 'each gap adds days to close.'"""
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs(
+            three_year_gaap_missing=True,   # 45 days
+            qofe_not_yet_engaged=True,      # 60 days
+        ))
+        self.assertEqual(r.total_process_delay_days,
+                          45 + 60)
+
+    def test_five_plus_gaps_triggers_not_ready_note(self) -> None:
+        """Partner: '≥ 5 gaps → seller not acting in good faith.'"""
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs(
+            three_year_gaap_missing=True,
+            qofe_not_yet_engaged=True,
+            top_5_payer_contracts_missing=True,
+            cms_survey_deficiencies_missing=True,
+            physician_comp_schedule_missing=True,
+        ))
+        self.assertEqual(r.triggered_count, 5)
+        self.assertIn("not acting in good faith",
+                       r.partner_note.lower())
+
+    def test_three_to_four_gaps_trigger_slow_process(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs(
+            three_year_gaap_missing=True,
+            qofe_not_yet_engaged=True,
+            top_5_payer_contracts_missing=True,
+        ))
+        self.assertEqual(r.triggered_count, 3)
+        self.assertIn("slow the process",
+                       r.partner_note.lower())
+
+    def test_physician_comp_schedule_flags_haircut(self) -> None:
+        """Partner: 'no comp schedule → haircut 40% of claimed norm.'"""
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs(
+            physician_comp_schedule_missing=True,
+        ))
+        comp = next(s for s in r.signals
+                     if s.name ==
+                     "physician_comp_schedule_missing")
+        self.assertIn("haircut claimed comp normalization",
+                       comp.partner_counter.lower())
+
+    def test_cyber_incident_log_missing(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs(
+            it_cyber_incident_log_missing=True,
+        ))
+        cyber = next(s for s in r.signals
+                      if s.name ==
+                      "it_cyber_incident_log_missing")
+        self.assertTrue(cyber.triggered)
+        self.assertIn("ocr breach portal",
+                       cyber.partner_counter.lower())
+
+    def test_related_party_transactions_signal(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs(
+            related_party_transaction_schedule_missing=True,
+        ))
+        rpt = next(s for s in r.signals
+                    if s.name ==
+                    "related_party_transaction_schedule_missing")
+        self.assertIn("structural adjustment opacity",
+                       rpt.what_it_signals.lower())
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            render_data_room_gap_markdown,
+            scan_data_room_gaps,
+        )
+        md = render_data_room_gap_markdown(
+            scan_data_room_gaps(DataRoomGapInputs(
+                three_year_gaap_missing=True,
+            ))
+        )
+        self.assertIn("# Data-room gap signal", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            DataRoomGapInputs,
+            scan_data_room_gaps,
+        )
+        r = scan_data_room_gaps(DataRoomGapInputs(
+            three_year_gaap_missing=True,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
