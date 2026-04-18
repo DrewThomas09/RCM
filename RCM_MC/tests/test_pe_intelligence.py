@@ -30755,5 +30755,212 @@ class TestArchetypeCanonicalBearWriter(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestVBCPortfolioAggregator(unittest.TestCase):
+    """Partner voice: 'A portfolio of VBC contracts isn't one bet — unless it is.'"""
+
+    def _profitable(
+        self, name: str, lives: int = 25_000,
+    ):
+        from rcm_mc.pe_intelligence import VBCContractInputs
+        return VBCContractInputs(
+            contract_name=name,
+            attributed_lives=lives,
+            contracted_pmpm=950.0,
+            target_mlr_pct=0.85,
+            expected_actual_mlr_pct=0.78,
+            upside_share_pct=1.00,
+            upside_cap_mlr_delta_pct=0.10,
+            admin_load_pct_of_pmpm=0.01,
+            individual_stop_loss_premium_pmpm=4.0,
+            population_stop_loss_premium_pmpm=2.0,
+        )
+
+    def test_empty_portfolio_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        r = aggregate_vbc_portfolio(
+            VBCPortfolioInputs())
+        self.assertEqual(len(r.contracts), 0)
+        self.assertIn(
+            "no vbc contracts", r.partner_note.lower()
+        )
+
+    def test_diversified_portfolio(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        r = aggregate_vbc_portfolio(VBCPortfolioInputs(
+            contracts=[
+                self._profitable("A", lives=20_000),
+                self._profitable("B", lives=22_000),
+                self._profitable("C", lives=24_000),
+                self._profitable("D", lives=26_000),
+                self._profitable("E", lives=28_000),
+            ],
+        ))
+        self.assertEqual(
+            r.portfolio_verdict, "diversified"
+        )
+
+    def test_single_bet_when_one_contract_dominates(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        r = aggregate_vbc_portfolio(VBCPortfolioInputs(
+            contracts=[
+                self._profitable("Big", lives=200_000),
+                self._profitable("Small1", lives=10_000),
+                self._profitable("Small2", lives=8_000),
+            ],
+        ))
+        self.assertEqual(
+            r.portfolio_verdict, "single_bet"
+        )
+        self.assertGreater(
+            r.top1_concentration_pct, 0.50
+        )
+
+    def test_concentrated_when_top3_dominates(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        # 3 large + 5 small contracts
+        contracts = [
+            self._profitable(f"Big{i}", lives=80_000)
+            for i in range(3)
+        ] + [
+            self._profitable(f"Small{i}", lives=5_000)
+            for i in range(5)
+        ]
+        r = aggregate_vbc_portfolio(VBCPortfolioInputs(
+            contracts=contracts,
+        ))
+        self.assertIn(
+            r.portfolio_verdict,
+            {"concentrated", "single_bet"},
+        )
+
+    def test_contracts_sorted_descending(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        r = aggregate_vbc_portfolio(VBCPortfolioInputs(
+            contracts=[
+                self._profitable("A", lives=20_000),
+                self._profitable("B", lives=50_000),
+                self._profitable("C", lives=30_000),
+            ],
+        ))
+        ebitda_seq = [
+            c.expected_ebitda_m for c in r.contracts
+        ]
+        self.assertEqual(
+            ebitda_seq, sorted(ebitda_seq, reverse=True)
+        )
+
+    def test_total_revenue_aggregates(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        r = aggregate_vbc_portfolio(VBCPortfolioInputs(
+            contracts=[
+                self._profitable("A", lives=10_000),
+                self._profitable("B", lives=20_000),
+            ],
+        ))
+        # 10k * 950 * 12 + 20k * 950 * 12 = 342M
+        self.assertAlmostEqual(
+            r.total_revenue_m, 342.0, places=1
+        )
+
+    def test_bear_below_expected(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        r = aggregate_vbc_portfolio(VBCPortfolioInputs(
+            contracts=[
+                self._profitable("A"),
+                self._profitable("B"),
+            ],
+        ))
+        self.assertLess(
+            r.total_bear_ebitda_m,
+            r.total_expected_ebitda_m,
+        )
+
+    def test_correlated_bear_negative_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        # Use thin-margin contracts — correlated bear goes negative
+        thin = VBCContractInputs(
+            contract_name="thin",
+            attributed_lives=25_000,
+            contracted_pmpm=950.0,
+            target_mlr_pct=0.85,
+            expected_actual_mlr_pct=0.84,
+        )
+        r = aggregate_vbc_portfolio(VBCPortfolioInputs(
+            contracts=[thin, thin],
+        ))
+        self.assertLess(r.total_bear_ebitda_m, 0)
+        self.assertIn(
+            "drag in bear", r.partner_note.lower()
+        )
+
+    def test_top1_share_sums_with_others(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        r = aggregate_vbc_portfolio(VBCPortfolioInputs(
+            contracts=[
+                self._profitable("A"),
+                self._profitable("B"),
+                self._profitable("C"),
+            ],
+        ))
+        sum_shares = sum(
+            c.contribution_share for c in r.contracts
+        )
+        self.assertAlmostEqual(sum_shares, 1.0, places=2)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+            render_vbc_portfolio_markdown,
+        )
+        md = render_vbc_portfolio_markdown(
+            aggregate_vbc_portfolio(VBCPortfolioInputs(
+                contracts=[self._profitable("A")],
+            ))
+        )
+        self.assertIn("# VBC portfolio", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            VBCPortfolioInputs,
+            aggregate_vbc_portfolio,
+        )
+        r = aggregate_vbc_portfolio(VBCPortfolioInputs(
+            contracts=[self._profitable("A")],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

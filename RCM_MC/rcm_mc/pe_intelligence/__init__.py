@@ -1558,6 +1558,13 @@ from .archetype_canonical_bear_writer import (
     render_canonical_bear_markdown,
     write_canonical_bear,
 )
+from .vbc_portfolio_aggregator import (
+    ContractContribution,
+    VBCPortfolioInputs,
+    VBCPortfolioReport,
+    aggregate_vbc_portfolio,
+    render_vbc_portfolio_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3149,4 +3156,9 @@ __all__ = [
     "CanonicalBearReport",
     "render_canonical_bear_markdown",
     "write_canonical_bear",
+    "ContractContribution",
+    "VBCPortfolioInputs",
+    "VBCPortfolioReport",
+    "aggregate_vbc_portfolio",
+    "render_vbc_portfolio_markdown",
 ]
