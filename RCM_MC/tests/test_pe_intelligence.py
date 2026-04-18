@@ -18793,5 +18793,163 @@ class TestSellerMotivationDecoder(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestCovenantPackageDesigner(unittest.TestCase):
+    """Partner scenario: what covenant trips on noise vs on thesis break?"""
+
+    def test_accept_when_seller_offers_above_recommended(self) -> None:
+        """Partner: 'seller at 9x, we need 7.0x → accept.'"""
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+        )
+        p = design_covenant_package(CovenantDesignInputs(
+            base_ebitda_m=75.0,
+            base_leverage=5.5,
+            worst_year_ebitda_m=65.0,
+            worst_year_leverage=6.3,
+            seller_proposed_max_leverage=9.0,
+        ))
+        self.assertEqual(p.partner_verdict, "accept")
+
+    def test_walk_when_seller_is_tight(self) -> None:
+        """Seller covenant trips on volatility alone → walk."""
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+        )
+        p = design_covenant_package(CovenantDesignInputs(
+            base_ebitda_m=75.0,
+            base_leverage=5.5,
+            worst_year_ebitda_m=60.0,
+            worst_year_leverage=6.9,
+            seller_proposed_max_leverage=6.0,
+        ))
+        self.assertEqual(p.partner_verdict, "walk")
+
+    def test_negotiate_when_close_but_tight(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+        )
+        p = design_covenant_package(CovenantDesignInputs(
+            base_ebitda_m=75.0,
+            base_leverage=5.5,
+            worst_year_ebitda_m=65.0,
+            worst_year_leverage=6.3,
+            seller_proposed_max_leverage=6.55,
+        ))
+        self.assertEqual(p.partner_verdict, "negotiate")
+
+    def test_step_downs_tighten_over_hold(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+        )
+        p = design_covenant_package(CovenantDesignInputs(
+            base_ebitda_m=75.0,
+            base_leverage=5.5,
+            worst_year_ebitda_m=65.0,
+            worst_year_leverage=6.3,
+            hold_years=5.0,
+        ))
+        max_leverages = [s.max_leverage for s in p.step_downs]
+        self.assertEqual(max_leverages,
+                          sorted(max_leverages, reverse=True))
+        # 20 quarters for 5-year hold.
+        self.assertEqual(len(p.step_downs), 20)
+
+    def test_cure_rights_floor_at_4(self) -> None:
+        """Partner standard: 4 of 8 cure quarters minimum."""
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+        )
+        p = design_covenant_package(CovenantDesignInputs(
+            base_ebitda_m=75.0,
+            base_leverage=5.5,
+            worst_year_ebitda_m=65.0,
+            worst_year_leverage=6.3,
+            seller_proposed_cure_quarters=2,
+        ))
+        self.assertEqual(p.recommended_cure_quarters, 4)
+
+    def test_int_coverage_floor_reasonable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+        )
+        p = design_covenant_package(CovenantDesignInputs(
+            base_ebitda_m=75.0,
+            base_leverage=5.5,
+            worst_year_ebitda_m=65.0,
+            worst_year_leverage=6.3,
+            base_interest_coverage=3.0,
+        ))
+        self.assertGreaterEqual(p.recommended_int_coverage_floor,
+                                 1.25)
+        self.assertLessEqual(p.recommended_int_coverage_floor, 1.75)
+
+    def test_worst_year_framing_mentioned_on_stress(self) -> None:
+        """Partner: 'worst-year is 0.75x+ above base → framing.'"""
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+        )
+        p = design_covenant_package(CovenantDesignInputs(
+            base_ebitda_m=75.0,
+            base_leverage=5.5,
+            worst_year_ebitda_m=55.0,
+            worst_year_leverage=7.5,
+            seller_proposed_max_leverage=8.5,
+        ))
+        self.assertIn("worst-year", p.partner_note.lower())
+
+    def test_recommendation_respects_worst_year(self) -> None:
+        """Recommended max should be ≥ worst-year + 0.5x."""
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+        )
+        p = design_covenant_package(CovenantDesignInputs(
+            base_ebitda_m=75.0,
+            base_leverage=5.5,
+            worst_year_ebitda_m=55.0,
+            worst_year_leverage=7.5,
+        ))
+        self.assertGreaterEqual(p.recommended_max_leverage,
+                                 7.5 + 0.5)
+
+    def test_markdown_renders_glide_path(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+            render_covenant_package_markdown,
+        )
+        md = render_covenant_package_markdown(
+            design_covenant_package(CovenantDesignInputs(
+                base_ebitda_m=75.0,
+                base_leverage=5.5,
+                worst_year_ebitda_m=65.0,
+                worst_year_leverage=6.3,
+            ))
+        )
+        self.assertIn("# Covenant package", md)
+        self.assertIn("Step-down glide path", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            CovenantDesignInputs,
+            design_covenant_package,
+        )
+        p = design_covenant_package(CovenantDesignInputs(
+            base_ebitda_m=75.0,
+            base_leverage=5.5,
+            worst_year_ebitda_m=65.0,
+            worst_year_leverage=6.3,
+        ))
+        json.dumps(p.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

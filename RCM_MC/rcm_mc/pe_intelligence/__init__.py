@@ -1066,6 +1066,13 @@ from .seller_motivation_decoder import (
     list_all_motivations,
     render_seller_motivation_markdown,
 )
+from .covenant_package_designer import (
+    CovenantDesignInputs,
+    CovenantPackage,
+    StepDown,
+    design_covenant_package,
+    render_covenant_package_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2299,4 +2306,9 @@ __all__ = [
     "decode_seller_motivation",
     "list_all_motivations",
     "render_seller_motivation_markdown",
+    "CovenantDesignInputs",
+    "CovenantPackage",
+    "StepDown",
+    "design_covenant_package",
+    "render_covenant_package_markdown",
 ]
