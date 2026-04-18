@@ -6478,7 +6478,53 @@ Total: ~-1,780 bps on Medicare FFS share. Partner note:
 
 ---
 
-## 206. Change log
+## 206. Platform vs. add-on classifier (`platform_vs_addon_classifier.py`)
+
+**Partner statement:** "Every seller pitches their
+company as a platform. Most are add-ons. Platforms
+trade at 12-15x; add-ons at 8-9x. If we misclassify at
+underwrite, we lose 2-4 turns of entry."
+
+Distinct from `add_on_fit_scorer` (scores a specific
+add-on for a platform). This module classifies the
+target itself.
+
+### 8 platform dimensions
+
+1. EBITDA ≥ $25M (scale threshold).
+2. Standalone back-office (EHR/PMS/RCM/HR/finance).
+3. ≥ 3 P&L lines under management.
+4. Geographic or specialty scale to absorb add-ons.
+5. Bankable standalone — syndicate would lend.
+6. Subsector brand / recognition.
+7. Integration capability proven.
+8. Board / governance ready for sponsor oversight.
+
+### Tier → multiple range
+
+- **7-8/8** = `platform` → 11-14x supported.
+- **4-6/8** = `hybrid` → 9-11x, platform-discount.
+- **≤ 3/8** = `add_on` → 7-9x; fold into existing
+  platform.
+
+### Why this matters
+
+The #1 healthcare-PE overpayment pattern is paying
+platform multiples for add-on-scale assets. This module
+is the pre-LOI classification gate: if the target
+scores < 7/8, partner walks from platform pricing.
+
+### Packet fields
+
+`ebitda_m`, `standalone_back_office`,
+`pnl_lines_under_mgmt`, `geographic_or_specialty_scale`,
+`bankable_standalone`, `subsector_brand_recognition`,
+`integration_capability_proven`,
+`board_governance_ready`.
+
+---
+
+## 207. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
