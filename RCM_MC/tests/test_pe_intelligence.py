@@ -15325,5 +15325,151 @@ class TestConcentrationRiskMultiDim(unittest.TestCase):
             ConcentrationInputs(top_payer_share=0.40)).to_dict())
 
 
+# ── Post-close surprises log ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CategoryStats,
+    MissRateReport,
+    Surprise,
+    compute_miss_rate,
+    render_miss_rate_markdown,
+)
+
+
+class TestPostCloseSurprisesLog(unittest.TestCase):
+
+    def test_empty_log_handled(self) -> None:
+        r = compute_miss_rate([])
+        self.assertEqual(r.total_items, 0)
+        self.assertIn("no surprise log", r.partner_note.lower())
+
+    def test_low_miss_rate_within_tolerance(self) -> None:
+        entries = [
+            Surprise(deal_name=f"Deal{i}",
+                      category="operational",
+                      description="x",
+                      impact_ebitda_m=-0.5,
+                      was_known_at_close=True)
+            for i in range(10)
+        ]
+        r = compute_miss_rate(entries)
+        self.assertEqual(r.overall_miss_rate, 0.0)
+        self.assertIn("within partner tolerance",
+                       r.partner_note.lower())
+
+    def test_high_miss_rate_systematic_gap(self) -> None:
+        entries = [
+            Surprise(deal_name="A", category="clinical",
+                      description="quality dip",
+                      impact_ebitda_m=-3.0,
+                      was_known_at_close=False),
+            Surprise(deal_name="B", category="clinical",
+                      description="nurse turnover",
+                      impact_ebitda_m=-2.5,
+                      was_known_at_close=False),
+            Surprise(deal_name="C", category="clinical",
+                      description="coding audit",
+                      impact_ebitda_m=-1.5,
+                      was_known_at_close=False),
+        ]
+        r = compute_miss_rate(entries)
+        self.assertEqual(r.overall_miss_rate, 1.0)
+        self.assertEqual(r.worst_category, "clinical")
+        self.assertIn("systematically weak",
+                       r.partner_note.lower())
+
+    def test_category_stats_sorted_by_miss_rate(self) -> None:
+        entries = [
+            Surprise(deal_name="A", category="legal",
+                      description="fca", impact_ebitda_m=-5.0,
+                      was_known_at_close=False),
+            Surprise(deal_name="B", category="operational",
+                      description="x",
+                      impact_ebitda_m=-0.5,
+                      was_known_at_close=True),
+            Surprise(deal_name="C", category="operational",
+                      description="y",
+                      impact_ebitda_m=-0.5,
+                      was_known_at_close=True),
+        ]
+        r = compute_miss_rate(entries)
+        # Legal has higher miss rate than operational.
+        first = r.category_stats[0]
+        self.assertEqual(first.category, "legal")
+
+    def test_worst_category_tracked(self) -> None:
+        entries = [
+            Surprise(deal_name="A", category="regulatory",
+                      description="x",
+                      impact_ebitda_m=-4.0,
+                      was_known_at_close=False),
+            Surprise(deal_name="B", category="financial",
+                      description="y",
+                      impact_ebitda_m=-1.0,
+                      was_known_at_close=True),
+        ]
+        r = compute_miss_rate(entries)
+        self.assertEqual(r.worst_category, "regulatory")
+
+    def test_heavy_dollar_commentary(self) -> None:
+        entries = [
+            Surprise(deal_name="A", category="clinical",
+                      description="quality event",
+                      impact_ebitda_m=-10.0,
+                      was_known_at_close=False),
+        ]
+        r = compute_miss_rate(entries)
+        clin = r.category_stats[0]
+        self.assertIn("bleed", clin.partner_commentary.lower())
+
+    def test_moderate_miss_rate_above_tolerance(self) -> None:
+        entries = [
+            Surprise(deal_name="A", category="financial",
+                      description="x",
+                      impact_ebitda_m=-1.0,
+                      was_known_at_close=False),
+            Surprise(deal_name="B", category="financial",
+                      description="y",
+                      impact_ebitda_m=-1.0,
+                      was_known_at_close=True),
+            Surprise(deal_name="C", category="financial",
+                      description="z",
+                      impact_ebitda_m=-1.0,
+                      was_known_at_close=True),
+            Surprise(deal_name="D", category="financial",
+                      description="q",
+                      impact_ebitda_m=-1.0,
+                      was_known_at_close=True),
+            Surprise(deal_name="E", category="financial",
+                      description="r",
+                      impact_ebitda_m=-1.0,
+                      was_known_at_close=False),
+        ]
+        r = compute_miss_rate(entries)
+        # 2 of 5 missed → 40% → systematic issue note
+        self.assertGreaterEqual(r.overall_miss_rate, 0.2)
+
+    def test_markdown_renders(self) -> None:
+        entries = [
+            Surprise(deal_name="A", category="operational",
+                      description="x",
+                      impact_ebitda_m=-1.0,
+                      was_known_at_close=False),
+        ]
+        md = render_miss_rate_markdown(compute_miss_rate(entries))
+        self.assertIn("# Post-close surprises log", md)
+        self.assertIn("operational", md)
+
+    def test_json(self) -> None:
+        import json
+        entries = [
+            Surprise(deal_name="A", category="operational",
+                      description="x",
+                      impact_ebitda_m=-1.0,
+                      was_known_at_close=False),
+        ]
+        json.dumps(compute_miss_rate(entries).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -874,6 +874,13 @@ from .concentration_risk_multidim import (
     render_concentration_markdown as render_concentration_multidim_markdown,
     scan_concentration,
 )
+from .post_close_surprises_log import (
+    CategoryStats,
+    MissRateReport,
+    Surprise,
+    compute_miss_rate,
+    render_miss_rate_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1967,4 +1974,9 @@ __all__ = [
     "ConcentrationReport",
     "render_concentration_multidim_markdown",
     "scan_concentration",
+    "CategoryStats",
+    "MissRateReport",
+    "Surprise",
+    "compute_miss_rate",
+    "render_miss_rate_markdown",
 ]
