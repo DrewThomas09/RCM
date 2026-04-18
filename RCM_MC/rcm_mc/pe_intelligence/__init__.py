@@ -1401,6 +1401,12 @@ from .fund_level_vintage_impact_scorer import (
     render_fund_vintage_markdown,
     score_fund_vintage_impact,
 )
+from .lp_quarterly_update_composer import (
+    LPUpdateInputs,
+    LPUpdateReport,
+    compose_lp_quarterly_update,
+    render_lp_quarterly_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2879,4 +2885,8 @@ __all__ = [
     "FundVintageReport",
     "render_fund_vintage_markdown",
     "score_fund_vintage_impact",
+    "LPUpdateInputs",
+    "LPUpdateReport",
+    "compose_lp_quarterly_update",
+    "render_lp_quarterly_markdown",
 ]

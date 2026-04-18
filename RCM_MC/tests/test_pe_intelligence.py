@@ -25958,5 +25958,277 @@ class TestFundLevelVintageImpactScorer(unittest.TestCase):
         json.dumps(payload)
 
 
+class TestLPQuarterlyUpdateComposer(unittest.TestCase):
+    """Partner voice: 'LPs can smell spin. Write plainly.'"""
+
+    def test_flat_quarter_tone(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(mark_change_pct=0.0)
+        )
+        self.assertEqual(r.tone_tag, "flat")
+        self.assertIn(
+            "block-and-tackle", r.quarter_in_review.lower()
+        )
+
+    def test_mark_up_is_measured_not_victory_lap(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(mark_change_pct=0.12)
+        )
+        self.assertEqual(r.tone_tag, "measured_up")
+        # not victory-lap language
+        self.assertNotIn(
+            "tremendous", r.quarter_in_review.lower()
+        )
+        self.assertIn(
+            "not revising the exit case",
+            r.quarter_in_review.lower(),
+        )
+
+    def test_owned_miss_mid_writedown(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                mark_change_pct=-0.10,
+                reg_shock_this_quarter_m=-3.0,
+                reg_shock_description=(
+                    "OBBBA outpatient rate cut"),
+            )
+        )
+        self.assertEqual(r.tone_tag, "owned_miss")
+        self.assertIn(
+            "obbba", r.quarter_in_review.lower()
+        )
+        self.assertIn(
+            "we own", r.quarter_in_review.lower()
+        )
+
+    def test_thesis_stress_on_material_writedown(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                mark_change_pct=-0.20,
+                reg_shock_this_quarter_m=-8.0,
+                reg_shock_description=(
+                    "Medicare sequestration full return"),
+            )
+        )
+        self.assertEqual(r.tone_tag, "thesis_stress")
+        self.assertIn(
+            "material mark",
+            r.quarter_in_review.lower(),
+        )
+
+    def test_kpi_paragraph_names_thesis_one_liner(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                original_thesis_one_liner=(
+                    "back-office consolidation of "
+                    "multi-state ASC platform"
+                ),
+            )
+        )
+        self.assertIn(
+            "back-office consolidation",
+            r.kpi_vs_thesis,
+        )
+        self.assertIn("actual vs.", r.kpi_vs_thesis)
+        self.assertIn("plan", r.kpi_vs_thesis)
+
+    def test_kpi_beat_vs_miss_labelled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                thesis_kpi_1_actual=0.12,
+                thesis_kpi_1_underwritten=0.08,
+                thesis_kpi_2_actual=0.005,
+                thesis_kpi_2_underwritten=0.015,
+            )
+        )
+        self.assertIn("beat plan", r.kpi_vs_thesis)
+        self.assertIn("missed plan", r.kpi_vs_thesis)
+
+    def test_denial_rate_direction_flipped(self) -> None:
+        """KPI3 plan is negative (denial rate drops
+        are good) — actual more negative should read
+        as beat-plan, not miss.
+        """
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                thesis_kpi_3_actual=-0.030,
+                thesis_kpi_3_underwritten=-0.025,
+            )
+        )
+        # -3% denial rate (deeper) beats -2.5% plan
+        self.assertIn(
+            "denial rate: -3.0% actual vs. -2.5% plan — beat plan",
+            r.kpi_vs_thesis,
+        )
+
+    def test_actions_appear_in_letter(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                quarter_actions=[
+                    "opened 2 de-novo locations",
+                    "hired CFO",
+                ],
+            )
+        )
+        self.assertIn("de-novo", r.what_we_did)
+        self.assertIn("hired CFO", r.what_we_did)
+
+    def test_empty_actions_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(quarter_actions=[])
+        )
+        self.assertIn(
+            "administrative", r.what_we_did.lower()
+        )
+
+    def test_next_quarter_commits_itemized(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                next_quarter_commits=[
+                    "close $40M bolt-on",
+                    "hit 22% EBITDA margin",
+                ],
+            )
+        )
+        self.assertIn("close $40M bolt-on", r.next_quarter)
+        self.assertIn(
+            "report actuals", r.next_quarter.lower()
+        )
+
+    def test_named_risks_numbered(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                named_risks=[
+                    "BCBS renewal 2026-Q4",
+                    "PAMA phase-4 lab cuts 2027",
+                    "Texas Medicaid DSH reset",
+                ],
+            )
+        )
+        self.assertIn("(1)", r.risks_paragraph)
+        self.assertIn("(2)", r.risks_paragraph)
+        self.assertIn("(3)", r.risks_paragraph)
+        self.assertIn("BCBS", r.risks_paragraph)
+
+    def test_one_time_item_excluded_from_recurring(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                mark_change_pct=0.08,
+                one_time_item_m=5.0,
+                one_time_item_description=(
+                    "favorable RAC settlement"),
+            )
+        )
+        self.assertIn(
+            "recurring ebitda excludes",
+            r.quarter_in_review.lower(),
+        )
+        self.assertIn(
+            "rac settlement",
+            r.quarter_in_review.lower(),
+        )
+
+    def test_partner_note_flags_repeat_miss(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(
+            LPUpdateInputs(
+                mark_change_pct=-0.12,
+                thesis_kpi_1_actual=0.04,
+                thesis_kpi_1_underwritten=0.08,
+                thesis_kpi_2_actual=0.005,
+                thesis_kpi_2_underwritten=0.015,
+                thesis_kpi_3_actual=-0.010,
+                thesis_kpi_3_underwritten=-0.025,
+            )
+        )
+        self.assertIn(
+            "two letters in a row",
+            r.partner_note.lower(),
+        )
+
+    def test_full_letter_has_all_five_paragraphs(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(LPUpdateInputs())
+        self.assertIn(r.quarter_in_review, r.full_letter)
+        self.assertIn(r.kpi_vs_thesis, r.full_letter)
+        self.assertIn(r.what_we_did, r.full_letter)
+        self.assertIn(r.next_quarter, r.full_letter)
+        self.assertIn(r.risks_paragraph, r.full_letter)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+            render_lp_quarterly_markdown,
+        )
+        md = render_lp_quarterly_markdown(
+            compose_lp_quarterly_update(LPUpdateInputs())
+        )
+        self.assertIn("# LP quarterly update", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            LPUpdateInputs,
+            compose_lp_quarterly_update,
+        )
+        r = compose_lp_quarterly_update(LPUpdateInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
