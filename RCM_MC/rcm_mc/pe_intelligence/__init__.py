@@ -1110,6 +1110,13 @@ from .pricing_concession_ladder import (
     list_concession_catalog,
     render_concession_ladder_markdown,
 )
+from .partner_briefing_composer import (
+    BriefingInputs,
+    BriefingSection,
+    PartnerBriefing,
+    compose_partner_briefing,
+    render_partner_briefing_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2375,4 +2382,9 @@ __all__ = [
     "build_concession_ladder",
     "list_concession_catalog",
     "render_concession_ladder_markdown",
+    "BriefingInputs",
+    "BriefingSection",
+    "PartnerBriefing",
+    "compose_partner_briefing",
+    "render_partner_briefing_markdown",
 ]

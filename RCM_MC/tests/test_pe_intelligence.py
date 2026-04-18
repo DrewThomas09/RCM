@@ -19693,5 +19693,180 @@ class TestPricingConcessionLadder(unittest.TestCase):
         json.dumps(l.to_dict())
 
 
+class TestPartnerBriefingComposer(unittest.TestCase):
+    """Partner scenario: one synthesized briefing across all layers."""
+
+    def test_minimal_inputs_produce_briefing(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="ProjectZephyr",
+        ))
+        self.assertEqual(b.deal_name, "ProjectZephyr")
+        self.assertGreater(len(b.sections), 0)
+
+    def test_broken_thesis_dominates_partner_note(self) -> None:
+        """Partner: 'chain broken → that's the fact that matters.'"""
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            thesis="denial_reduction",
+            thesis_contradicted=1,
+            thesis_confirmed=2,
+        ))
+        self.assertIn("thesis chain is broken",
+                       b.partner_note.lower())
+
+    def test_strong_pre_mortem_triggers_mitigation_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            pre_mortem_strength="strong",
+            pre_mortem_exit_outcome="Secondary at 1.6x MOIC.",
+        ))
+        self.assertIn("mitigation", b.partner_note.lower())
+
+    def test_two_compound_risks_trigger_reprice_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            compound_risks=["payer", "leverage"],
+            total_pattern_severity=1.8,
+        ))
+        self.assertIn("re-price", b.partner_note.lower())
+
+    def test_invest_recommendation_has_clear_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            recommendation="invest",
+            thesis="denial_reduction",
+            thesis_confirmed=5,
+        ))
+        self.assertIn("INVEST", b.headline_verdict)
+
+    def test_pass_verdict_matches_pass_recommendation(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            recommendation="pass",
+        ))
+        self.assertIn("PASS", b.headline_verdict)
+
+    def test_negotiation_section_honors_walk_away(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+        ))
+        neg = next(s for s in b.sections
+                    if "Negotiation" in s.heading)
+        self.assertIn("walk-away", neg.content.lower())
+
+    def test_thesis_health_numbers_in_section(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            thesis="denial_reduction",
+            thesis_confirmed=3,
+            thesis_not_addressed=2,
+            thesis_contradicted=1,
+        ))
+        thesis_section = next(
+            s for s in b.sections
+            if "Thesis" in s.heading
+        )
+        self.assertIn("3 confirmed", thesis_section.content)
+        self.assertIn("1 contradicted", thesis_section.content)
+
+    def test_seller_motivation_section_added_when_provided(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            seller_motivation="founder_liquidity",
+        ))
+        mot = next((s for s in b.sections
+                     if "Seller motivation" in s.heading), None)
+        self.assertIsNotNone(mot)
+        self.assertIn("founder_liquidity", mot.content)
+
+    def test_subsector_section_optional(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        # Without subsector.
+        b1 = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+        ))
+        self.assertFalse(any("Subsector lens" in s.heading
+                             for s in b1.sections))
+        # With subsector.
+        b2 = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            subsector="behavioral_health",
+            subsector_summary="Capacity-constrained.",
+        ))
+        self.assertTrue(any("Subsector lens" in s.heading
+                            for s in b2.sections))
+
+    def test_markdown_renders_verdict_at_top(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+            render_partner_briefing_markdown,
+        )
+        md = render_partner_briefing_markdown(
+            compose_partner_briefing(BriefingInputs(
+                deal_name="X",
+                recommendation="invest",
+                one_liner=(
+                    "Invest — thesis tight, chain closed."
+                ),
+            ))
+        )
+        self.assertIn("# X — Partner briefing", md)
+        self.assertIn("INVEST", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            BriefingInputs,
+            compose_partner_briefing,
+        )
+        b = compose_partner_briefing(BriefingInputs(
+            deal_name="X",
+            recommendation="invest",
+        ))
+        json.dumps(b.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
