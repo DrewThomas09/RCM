@@ -34272,5 +34272,186 @@ class TestLPWaterfallDistributionModeler(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestExitBuyerShortListBuilder(unittest.TestCase):
+    """Partner voice: 'Name them or the exit is hypothetical.'"""
+
+    def test_unknown_subsector_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        r = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="unknown"))
+        self.assertFalse(r.in_catalog)
+
+    def test_dental_dso_buyers(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        r = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="dental_dso",
+                expected_exit_ev_m=500.0,
+            )
+        )
+        names = [b.name for b in r.buyers]
+        self.assertIn("Heartland Dental", names)
+        self.assertIn("Aspen Dental", names)
+
+    def test_asc_buyers(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        r = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="asc",
+                expected_exit_ev_m=400.0,
+            )
+        )
+        names = [b.name for b in r.buyers]
+        self.assertIn("USPI (Tenet)", names)
+        self.assertIn("Surgery Partners", names)
+
+    def test_small_deal_filters_out_large_buyers(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        # Small $30M exit won't fit any buyers with $75M+ minimums
+        r = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="dental_dso",
+                expected_exit_ev_m=30.0,
+            )
+        )
+        fits = [b for b in r.buyers if b.fits_size]
+        self.assertEqual(len(fits), 0)
+
+    def test_large_deal_fits_more(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        small = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="physician_practice_multi_specialty",
+                expected_exit_ev_m=100.0,
+            )
+        )
+        big = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="physician_practice_multi_specialty",
+                expected_exit_ev_m=1000.0,
+            )
+        )
+        self.assertGreater(
+            sum(1 for b in big.buyers if b.fits_size),
+            sum(1 for b in small.buyers if b.fits_size),
+        )
+
+    def test_behavioral_acadia_in_catalog(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        r = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="behavioral",
+                expected_exit_ev_m=200.0,
+            )
+        )
+        names = [b.name for b in r.buyers]
+        self.assertIn("Acadia Healthcare", names)
+
+    def test_credible_list_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        r = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="physician_practice_multi_specialty",
+                expected_exit_ev_m=500.0,
+            )
+        )
+        # 5 buyers in catalog all fit at $500M
+        self.assertIn(
+            "credible", r.partner_note.lower()
+        )
+
+    def test_thin_list_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        # small deal in ASC catalog — only Surgery Partners fits at $50M+
+        r = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="asc",
+                expected_exit_ev_m=60.0,
+            )
+        )
+        # Only 1 buyer fits → thin
+        self.assertIn(
+            "thin", r.partner_note.lower()
+        )
+
+    def test_bucket_counts(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        r = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="ophthalmology",
+                expected_exit_ev_m=500.0,
+            )
+        )
+        # all ophtho buyers are sponsor_platform
+        self.assertGreater(r.sponsor_count, 0)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+            render_exit_buyer_short_list_markdown,
+        )
+        md = render_exit_buyer_short_list_markdown(
+            build_exit_buyer_short_list(
+                ExitBuyerShortListInputs(
+                    subsector="dental_dso"))
+        )
+        self.assertIn("# Exit buyer short list", md)
+
+    def test_unknown_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+            render_exit_buyer_short_list_markdown,
+        )
+        md = render_exit_buyer_short_list_markdown(
+            build_exit_buyer_short_list(
+                ExitBuyerShortListInputs(
+                    subsector="unknown"))
+        )
+        self.assertIn(
+            "not in buyer catalog", md.lower()
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerShortListInputs,
+            build_exit_buyer_short_list,
+        )
+        r = build_exit_buyer_short_list(
+            ExitBuyerShortListInputs(
+                subsector="dental_dso"))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
