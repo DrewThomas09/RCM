@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 from .provenance import source_tag, Source
 
@@ -403,7 +403,7 @@ def render_command_center(
 
     body = "\n".join(sections)
 
-    return shell_v2(
+    return chartis_shell(
         body, "SeekingChartis",
         active_nav="/home",
         subtitle=(
