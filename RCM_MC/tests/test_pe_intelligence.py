@@ -23034,5 +23034,96 @@ class TestCashConversionDriftDetector(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestArchetypeHeuristicRouter(unittest.TestCase):
+    """Partner scenario: which lens do I pick up first?"""
+
+    def test_unknown_archetype_graceful(self) -> None:
+        from rcm_mc.pe_intelligence import route_archetype
+        r = route_archetype("not_a_real_archetype")
+        self.assertIsNone(r.routing)
+        self.assertIn("not modeled", r.partner_note.lower())
+
+    def test_payer_mix_shift_routes_to_correct_chain(self) -> None:
+        from rcm_mc.pe_intelligence import route_archetype
+        r = route_archetype("payer_mix_shift")
+        self.assertEqual(
+            r.routing.primary_thesis_chain, "payer_mix_shift"
+        )
+        self.assertIn("ma_startup_unwind_2023",
+                       r.routing.priority_failure_patterns)
+        self.assertIn("payer_renegotiation_is_coming",
+                       r.routing.priority_traps)
+
+    def test_rollup_routes_to_correct_traps(self) -> None:
+        """Partner: 'rollup thesis → robust_pipeline trap.'"""
+        from rcm_mc.pe_intelligence import route_archetype
+        r = route_archetype("rollup_consolidation")
+        self.assertIn("robust_pipeline_of_add_ons",
+                       r.routing.priority_traps)
+        self.assertIn("serial_add_on_overhire",
+                       r.routing.priority_shape_archetypes)
+
+    def test_cmi_uplift_routes_to_cdi_heuristic(self) -> None:
+        from rcm_mc.pe_intelligence import route_archetype
+        r = route_archetype("cmi_uplift")
+        self.assertTrue(any("CDI" in h
+                             for h in
+                             r.routing.specific_heuristics))
+
+    def test_outpatient_routes_to_site_neutral(self) -> None:
+        from rcm_mc.pe_intelligence import route_archetype
+        r = route_archetype("outpatient_migration")
+        self.assertIn("site_neutral_hostage",
+                       r.routing.priority_shape_archetypes)
+
+    def test_cost_basis_routes_to_union_heuristic(self) -> None:
+        from rcm_mc.pe_intelligence import route_archetype
+        r = route_archetype("cost_basis_compression")
+        self.assertTrue(any("union" in h.lower()
+                             for h in
+                             r.routing.specific_heuristics))
+
+    def test_back_office_routes_to_ehr_count(self) -> None:
+        from rcm_mc.pe_intelligence import route_archetype
+        r = route_archetype("back_office_consolidation")
+        self.assertTrue(any("EHR" in h
+                             for h in
+                             r.routing.specific_heuristics))
+
+    def test_partner_first_question_is_non_trivial(self) -> None:
+        """Partner: 'every archetype has one question.'"""
+        from rcm_mc.pe_intelligence import (
+            list_routed_archetypes,
+            route_archetype,
+        )
+        for a in list_routed_archetypes():
+            r = route_archetype(a)
+            self.assertGreater(
+                len(r.routing.partner_first_question), 30,
+                f"{a} missing partner first question"
+            )
+
+    def test_list_has_8_archetypes(self) -> None:
+        from rcm_mc.pe_intelligence import list_routed_archetypes
+        self.assertEqual(len(list_routed_archetypes()), 8)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            render_archetype_routing_markdown,
+            route_archetype,
+        )
+        md = render_archetype_routing_markdown(
+            route_archetype("rollup_consolidation")
+        )
+        self.assertIn("# Archetype routing", md)
+        self.assertIn("First question", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import route_archetype
+        r = route_archetype("payer_mix_shift")
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

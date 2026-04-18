@@ -1270,6 +1270,13 @@ from .cash_conversion_drift_detector import (
     detect_cash_conversion_drift,
     render_drift_markdown,
 )
+from .archetype_heuristic_router import (
+    ArchetypeRouting,
+    ArchetypeRoutingReport,
+    list_routed_archetypes,
+    render_archetype_routing_markdown,
+    route_archetype,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2653,4 +2660,9 @@ __all__ = [
     "DriftSignal",
     "detect_cash_conversion_drift",
     "render_drift_markdown",
+    "ArchetypeRouting",
+    "ArchetypeRoutingReport",
+    "list_routed_archetypes",
+    "render_archetype_routing_markdown",
+    "route_archetype",
 ]
