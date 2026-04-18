@@ -1247,6 +1247,13 @@ from .capex_intensity_stress import (
     render_capex_stress_markdown,
     stress_capex_intensity,
 )
+from .referral_flow_dependency_scorer import (
+    ReferralFlag,
+    ReferralFlowInputs,
+    ReferralFlowReport,
+    render_referral_flow_markdown,
+    score_referral_flow_dependency,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2613,4 +2620,9 @@ __all__ = [
     "CapexStressReport",
     "render_capex_stress_markdown",
     "stress_capex_intensity",
+    "ReferralFlag",
+    "ReferralFlowInputs",
+    "ReferralFlowReport",
+    "render_referral_flow_markdown",
+    "score_referral_flow_dependency",
 ]

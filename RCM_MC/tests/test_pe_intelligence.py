@@ -22571,5 +22571,176 @@ class TestCapexIntensityStress(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestReferralFlowDependencyScorer(unittest.TestCase):
+    """Partner scenario: who sends the volume?"""
+
+    def test_diversified_clean_tier(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        r = score_referral_flow_dependency(ReferralFlowInputs(
+            top_1_referrer_pct=0.05,
+            top_5_referrer_pct=0.25,
+            diversification_across_specialties=True,
+            ebitda_m=20.0,
+        ))
+        self.assertEqual(r.tier, "highly_diversified")
+
+    def test_single_point_of_failure(self) -> None:
+        """Partner: 'top-1 25% + no contract → walk or contract.'"""
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        r = score_referral_flow_dependency(ReferralFlowInputs(
+            top_1_referrer_pct=0.25,
+            top_5_referrer_pct=0.60,
+            top_referrer_age_60_plus=True,
+            no_referring_network_contract=True,
+            diversification_across_specialties=False,
+            ebitda_m=20.0,
+        ))
+        self.assertEqual(r.tier, "single_point_of_failure")
+        self.assertIn("closing condition",
+                       r.partner_note.lower())
+
+    def test_top_referrer_age_flag(self) -> None:
+        """Partner: 'age 60+ top referrer → retirement risk.'"""
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        r = score_referral_flow_dependency(ReferralFlowInputs(
+            top_1_referrer_pct=0.18,
+            top_referrer_age_60_plus=True,
+            diversification_across_specialties=True,
+            ebitda_m=20.0,
+        ))
+        # Top-1 > 15% + age 60+ → 0.60 base with diversified specialties.
+        self.assertEqual(r.departure_probability_pct, 60.0)
+
+    def test_no_contract_moderate_prob(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        r = score_referral_flow_dependency(ReferralFlowInputs(
+            top_1_referrer_pct=0.18,
+            no_referring_network_contract=True,
+            diversification_across_specialties=True,
+            ebitda_m=20.0,
+        ))
+        # Top-1 > 15% + no contract = 0.40 base.
+        self.assertGreaterEqual(r.departure_probability_pct,
+                                  40.0)
+
+    def test_expected_ebitda_loss_scales_with_top1(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        small = score_referral_flow_dependency(ReferralFlowInputs(
+            top_1_referrer_pct=0.08,
+            diversification_across_specialties=True,
+            ebitda_m=20.0,
+        ))
+        large = score_referral_flow_dependency(ReferralFlowInputs(
+            top_1_referrer_pct=0.25,
+            top_referrer_age_60_plus=True,
+            ebitda_m=20.0,
+        ))
+        self.assertGreater(large.expected_ebitda_loss_m,
+                            small.expected_ebitda_loss_m)
+
+    def test_heavily_concentrated_triggers_haircut_note(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        r = score_referral_flow_dependency(ReferralFlowInputs(
+            top_1_referrer_pct=0.18,
+            top_5_referrer_pct=0.55,
+            top_referrer_age_60_plus=True,
+            no_referring_network_contract=False,
+            diversification_across_specialties=False,
+            ebitda_m=20.0,
+        ))
+        self.assertEqual(r.tier, "heavily_concentrated")
+        self.assertIn("haircut", r.partner_note.lower())
+
+    def test_top_5_concentration_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        r = score_referral_flow_dependency(ReferralFlowInputs(
+            top_5_referrer_pct=0.55,
+            diversification_across_specialties=True,
+        ))
+        top5 = next(f for f in r.flags
+                     if f.name == "top_5_concentration_gt_50pct")
+        self.assertTrue(top5.triggered)
+
+    def test_specialty_diversification_positive_signal(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        r = score_referral_flow_dependency(ReferralFlowInputs(
+            diversification_across_specialties=True,
+        ))
+        div_flag = next(f for f in r.flags
+                         if f.name ==
+                         "no_specialty_diversification")
+        self.assertFalse(div_flag.triggered)
+
+    def test_moderately_concentrated_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        r = score_referral_flow_dependency(ReferralFlowInputs(
+            top_1_referrer_pct=0.10,
+            top_5_referrer_pct=0.30,
+            top_referrer_age_60_plus=True,
+            diversification_across_specialties=True,
+        ))
+        self.assertEqual(r.tier, "moderately_concentrated")
+        self.assertIn("retention", r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            render_referral_flow_markdown,
+            score_referral_flow_dependency,
+        )
+        md = render_referral_flow_markdown(
+            score_referral_flow_dependency(ReferralFlowInputs(
+                top_1_referrer_pct=0.18,
+                top_referrer_age_60_plus=True,
+                ebitda_m=20.0,
+            ))
+        )
+        self.assertIn("# Referral flow dependency", md)
+        self.assertIn("Partner comment", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ReferralFlowInputs,
+            score_referral_flow_dependency,
+        )
+        r = score_referral_flow_dependency(ReferralFlowInputs(
+            top_1_referrer_pct=0.18,
+            ebitda_m=20.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
