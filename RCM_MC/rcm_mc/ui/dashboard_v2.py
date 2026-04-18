@@ -208,13 +208,14 @@ def render_dashboard_v2(store: Any) -> str:
             '</div>'
         )
 
-    return (
-        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<title>RCM-MC Dashboard</title>'
-        f'<style>{_DASHBOARD_CSS}</style></head>'
-        '<body class="dashboard-v2"><div class="dash-wrap">'
-        '<h1 style="font-size:20px;font-weight:600;margin:0 0 16px;">Portfolio Dashboard</h1>'
+    from ._chartis_kit import chartis_shell
+    body = (
+        '<div class="dash-wrap">'
         + actions + strip + attention_html + grid
-        + '</div></body></html>'
+        + '</div>'
+    )
+    return chartis_shell(
+        body,
+        "Portfolio Dashboard",
+        extra_css=_DASHBOARD_CSS,
     )
