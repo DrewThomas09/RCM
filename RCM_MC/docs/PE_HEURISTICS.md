@@ -6524,7 +6524,72 @@ scores < 7/8, partner walks from platform pricing.
 
 ---
 
-## 207. Change log
+## 207. Capex intensity stress (`capex_intensity_stress.py`)
+
+**Partner statement:** "Seller tells me EBITDA is $75M.
+Then QofE shows capex has been below peer for three
+years — they kicked the can. Now the $15M in deferred
+maintenance is mine. That's EBITDA on paper that never
+converts to cash."
+
+Distinct from `ebitda_quality` and `cash_conversion`.
+This module stresses the **capex** leg of the FCF
+bridge.
+
+### 6 capex components
+
+1. **baseline_peer_equivalent** — peer ratio × revenue
+   × horizon.
+2. **deferred_maintenance_catchup** — (peer ratio −
+   actual ratio) × revenue × years_below_peer + named
+   backlog.
+3. **new_sites_build** — pipeline capex beyond
+   maintenance.
+4. **it_ehr_modernization** — non-deferrable.
+5. **clinical_equipment_replacement** — 7-10 yr cycle.
+6. **compliance_cyber_capex** — regulatory-driven.
+
+### FCF-vs-EBITDA haircut
+
+= (cumulative capex / cumulative EBITDA) − peer-implied
+ratio. Above 15% = material stress.
+
+### Partner-note ladder
+
+- Haircut ≥ 15% → "price in; capex diligence workstream
+  required."
+- 8-15% → "model explicit."
+- Any deferred catchup → "closing-adjustment or retention
+  item."
+- Otherwise → "in-line with peer median."
+
+### Worked example
+
+Revenue $500M, EBITDA $75M, historical capex 2.5% vs
+peer 4%, 4 years below peer, $15M disclosed backlog.
+
+- Baseline (peer × 3 yr): $60M.
+- Deferred catchup: $500 × 1.5% × 4 = $30M + $15M
+  backlog = $45M.
+- Total 3-yr: $105M.
+- Haircut: $105M / $225M cumulative EBITDA = 46.7% vs
+  peer ~27% = 20% haircut.
+
+→ Partner: "price in; capex diligence workstream."
+
+### Packet fields
+
+`revenue_m`, `ebitda_m`, `historical_capex_pct_revenue`,
+`peer_median_capex_pct_revenue`, `years_below_peer`,
+`deferred_maintenance_backlog_m`,
+`new_sites_build_pipeline_m`,
+`it_ehr_modernization_needed_m`,
+`clinical_equipment_replacement_due_m`,
+`compliance_cyber_capex_m`, `forecast_horizon_years`.
+
+---
+
+## 208. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
