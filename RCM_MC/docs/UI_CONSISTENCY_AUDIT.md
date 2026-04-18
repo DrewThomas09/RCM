@@ -553,6 +553,17 @@ migration commits (per the "don't fix bugs in migration commits" rule).
 
 ## Appendix: numerical bugs surfaced by sanity guards
 
+> **Phase 6 status (2026-04-18):** All 3 P0 bugs (#1, #2, #4) fixed in
+> the `chore/ui-polish-and-sanity-guards` branch. Proactive integrity
+> scan added in Phase 6C caught 7 additional IRR/MOIC math-
+> consistency bugs in hand-crafted loss rows; all 7 fixed in a single
+> systematic recompute commit. False-positive benchmarks (#6, #7)
+> addressed by widening the registry bands + adding TODO for
+> subsector-aware guards. P1 bugs (#3, #5, #8) deferred — see status
+> notes on each entry below.
+
+
+
 Phase 4B migration log. As every chartis page is wrapped with
 `render_number()`, implausible values that were being silently
 rendered by the old unguarded formatters now show up as red warning
@@ -570,7 +581,7 @@ Format per bug:
 
 ### Bugs
 
-1. **/sponsor-track-record · Cvs Health · median_irr 60%** — IRR tooltip
+1. **[FIXED in commit e02eadf] /sponsor-track-record · Cvs Health · median_irr 60%** — IRR tooltip
    says "expected range -30.0%–55.0% for irr." Value is 60%. 6 deals
    in the underlying set, so not a rogue single-deal. Likely source:
    `data_public/sponsor_track_record.py:sponsor_league_table()`
@@ -581,7 +592,7 @@ Format per bug:
    at on demo. Observed during: Phase 4B Phase 2C sponsor-track-record
    guard commit.
 
-2. **/sponsor-track-record · Walgreens · median_irr 78%** — same
+2. **[FIXED in commit 59614c2] /sponsor-track-record · Walgreens · median_irr 78%** — same
    category. 78% IRR on a 2-deal sponsor is implausible. Almost
    certainly a single corpus deal with an absurd realized_irr in the
    seed data (not a rollup; 2 deals only). Likely the `realized_irr`
@@ -589,12 +600,12 @@ Format per bug:
    on one deal — classic unit mixup. **Severity: P0**. Observed during:
    same commit as #1.
 
-3. **/sponsor-track-record · Various Pe (Series D) · median_irr 65%**
+3. **[DEFERRED P1] /sponsor-track-record · Various Pe (Series D) · median_irr 65%**
    — 2 deals. Same shape as Walgreens — likely unit-mixup on one
    corpus entry. **Severity: P1** (obscure sponsor name, less visible
    on demos). Same commit.
 
-4. **/sponsor-track-record · Advent International · median_irr -38%**
+4. **[FIXED in commit 0b1e97d] /sponsor-track-record · Advent International · median_irr -38%**
    — 7 deals, median is -38%. One of the largest PE firms. The
    realized_irr lower bound in reasonableness.py is 0.0 per band;
    our registry widened to -30% to tolerate genuine losses. A
@@ -603,14 +614,16 @@ Format per bug:
    sign flips. **Severity: P0** — Advent is a headline name.
    Investigate the 7 corpus rows.
 
-5. **/sponsor-track-record · Cerberus · median_moic 0.2x, hold
-   14 years** — 2 deals. 0.2x MOIC over 14y is a recovery-scenario
-   distressed workout, OR it's a corpus data bug. Severity: P1 —
-   Cerberus has a real reputation for distressed-workout tails, so
-   the number might be accurate; the 14-year hold is the bigger
-   tell (real PE holds rarely exceed 10 years). Likely source:
-   single corpus deal with a bad entry_year or an unexited deal
-   mislabelled "realized." Observed during: same commit.
+5. **[DEFERRED P1 — verified as real] /sponsor-track-record · Cerberus ·
+   median_moic 0.2x, hold 14 years** — 2 deals. Phase 6 investigation
+   confirmed this is real data, not a bug: seed_356 is the Steward
+   Health Care / Cerberus LBO (2010 entry → 2024 Ch.11 filing →
+   14y hold, ~0.4x realized). Steward's collapse is a documented
+   healthcare-PE case study; the 14y "hold" reflects the actual
+   2010-2024 stewardship before bankruptcy. The IRR was
+   recomputed to -6% in the Phase 6C integrity sweep (commit
+   315afef). The MOIC/hold warnings remain because the values ARE
+   at the edge of plausibility — the guard working as designed.
 
 ### Registry fix (not a bug — a definition error in _sanity.py)
 
@@ -631,7 +644,7 @@ fires on valid data. These are worth noting so the fix path is
 "widen the range with a second citation" rather than "investigate
 the data":
 
-6. **/rcm-benchmarks · behavioral segment · denial_rate P75 = 32%**
+6. **[FIXED via widening in commit da989cb] /rcm-benchmarks · behavioral segment · denial_rate P75 = 32%**
    — my registry max is 30% (HFMA MAP 2024 acute-hospital band).
    Behavioral-health denial rates legitimately run 25-35% because
    of prior-auth friction on inpatient-psych + Medicaid-eligibility
@@ -639,7 +652,7 @@ the data":
    (false positive)**. Follow-up: add a behavioral-health-specific
    band to the registry or widen denial_rate to 35%.
 
-7. **/rcm-benchmarks · behavioral · write_off_pct P75 = 16%** —
+7. **[FIXED via widening in commit da989cb] /rcm-benchmarks · behavioral · write_off_pct P75 = 16%** —
    my registry max is 15%. Same story — behavioral segment has
    structurally higher bad-debt ratios (Medicaid eligibility churn).
    False positive; same fix as #6.
@@ -660,3 +673,32 @@ the data":
    write-off or a sign-flip / unit bug. Worth a spot-check of the
    specific corpus row. **Severity: P1** — obscure vintage, but
    could indicate a data-entry error rather than a real tail event.
+
+   **[VERIFIED as real in Phase 6C — not a bug]** The 2018-vintage
+   0.05x MOIC row is `seed_007` (KKR / Envision Healthcare $9.9B
+   take-private, destroyed by No Surprises Act + COVID, Ch.11 filed
+   May 2023). This is a documented healthcare-PE disaster; 0.05x
+   reflects the genuine equity-wipe outcome. The guard is working
+   as designed. Phase 6C also recomputed IRR on similar loss rows
+   to keep the IRR/MOIC/hold math self-consistent.
+
+---
+
+### Phase 6C — IRR/MOIC math-consistency sweep
+
+The proactive integrity scan ([tests/test_corpus_data_integrity.py])
+caught 7 hand-crafted loss rows where `realized_irr` and
+`realized_moic` were entered independently and didn't compound
+properly over the stated hold. All fixed in commit `315afef` by
+recomputing IRR as `MOIC^(1/hold) − 1` (MOIC is the hard fact —
+dollars returned per dollar in — so IRR harmonizes to it):
+
+| Row      | Deal                                      | MOIC | Hold | IRR before | IRR after |
+|----------|-------------------------------------------|------|------|------------|-----------|
+| seed_123 | Cano Health SPAC                          | 0.05 | 2.5y | -0.45      | -0.70     |
+| seed_131 | Prospect Medical CA distressed            | 0.10 | 8.0y | -0.32      | -0.25     |
+| seed_171 | Bright Health IPO / NEA exit              | 0.02 | 2.0y | -0.55      | -0.86     |
+| seed_356 | Steward Health Care / Cerberus LBO        | 0.40 | 14y  | -0.12      | -0.06     |
+| seed_369 | Smile Direct Club / CD&R                  | 0.05 | 5.0y | -0.60      | -0.45     |
+| seed_380 | Bright Health / NEA growth                | 0.10 | 6.0y | -0.40      | -0.32     |
+| seed_395 | Vitas Healthcare / Chemed                 | 5.80 | 12y  | +0.25      | +0.16     |
