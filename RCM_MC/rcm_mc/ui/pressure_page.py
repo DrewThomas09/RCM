@@ -1,4 +1,4 @@
-"""Pressure Test page renderer — shell_v2 version."""
+"""Pressure Test page renderer — chartis_shell version."""
 from __future__ import annotations
 
 import html
