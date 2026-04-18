@@ -6357,7 +6357,70 @@ lenders.
 
 ---
 
-## 204. Change log
+## 204. Value creation attribution (`value_creation_attribution.py`)
+
+**Partner statement:** "I don't just want a 2.5x MOIC.
+I want to know what's driving it. Forty percent multiple
+expansion means I'm betting on the cycle, not the plan.
+I'll take 40% from EBITDA growth over 40% from multiple
+any day."
+
+Decomposes projected MOIC into 6 lever-source
+contributions; flags cycle-dependent and M&A-dependent
+returns.
+
+### 6 attribution sources
+
+1. **organic_ebitda_growth** — (Δ EBITDA less M&A + margin
+   contributions) × entry multiple.
+2. **margin_expansion** — margin-contributed EBITDA ×
+   entry multiple.
+3. **m_and_a_inorganic** — M&A-contributed EBITDA × entry
+   multiple.
+4. **multiple_expansion** — exit EBITDA × (exit mult −
+   entry mult).
+5. **deleveraging** — entry debt − exit debt.
+6. **tax_efficiency_other** — structural proceeds.
+
+### Partner flags
+
+- `multiple_expansion_share > 30%` → "cycle-dependent."
+- `m_and_a_share > 40%` → "roll-up thesis; price it."
+- `organic + margin < 20%` → "plan doesn't live in
+  execution."
+
+### Partner-note ladder
+
+- Multiple > 40% → "bet on the cycle, not the plan."
+- Operating (organic + margin) ≥ 50% → "operating
+  thesis — we control the outcome."
+- M&A > 40% → "roll-up — price accordingly."
+- Otherwise → "balanced attribution."
+
+### Worked example
+
+Entry: $75M × 11x = $825 EV; $420M debt; $405M equity.
+Exit: $110M × 11x = $1,210 EV; $420M debt; $790M equity.
+MOIC 1.95x.
+
+- Organic growth: $35M × 11 = $385M (~100% of gain).
+- Multiple expansion: 0.
+- Deleveraging: 0.
+
+→ Partner note: "operating thesis — we control the
+outcome."
+
+### Packet fields
+
+`entry_ebitda_m`, `entry_multiple`, `entry_debt_m`,
+`exit_ebitda_m`, `exit_multiple`, `exit_debt_m`,
+`m_and_a_contributed_ebitda_m`,
+`margin_expansion_contributed_ebitda_m`,
+`tax_efficiency_other_proceeds_m`.
+
+---
+
+## 205. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
