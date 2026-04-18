@@ -175,6 +175,7 @@ _CORPUS_NAV = [
     {"label": "AI Operating Mdl","href": "/ai-operating-model", "icon": "▣"},
     {"label": "Cyber Risk",      "href": "/cyber-risk",          "icon": "▦"},
     {"label": "ZBB Tracker",     "href": "/zbb-tracker",         "icon": "▣"},
+    {"label": "CMS Data Browser","href": "/cms-data-browser",    "icon": "▥"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

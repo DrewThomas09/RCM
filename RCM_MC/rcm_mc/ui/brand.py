@@ -211,6 +211,7 @@ NAV_ITEMS = [
     {"label": "AI Operating Model", "href": "/ai-operating-model", "icon": "chart"},
     {"label": "Cyber Risk", "href": "/cyber-risk", "icon": "chart"},
     {"label": "ZBB Tracker", "href": "/zbb-tracker", "icon": "chart"},
+    {"label": "CMS Data Browser", "href": "/cms-data-browser", "icon": "bookmark"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
