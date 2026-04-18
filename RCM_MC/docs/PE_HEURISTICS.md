@@ -7357,7 +7357,62 @@ CA + NY + TX:
 
 ---
 
-## 222. Change log
+## 222. EBITDA quality bridge (`ebitda_quality_bridge_reconstructor.py`)
+
+**Partner statement:** "Seller says $75M EBITDA. By
+the time QofE is done, physician comp is normalized,
+COVID tailwind is stripped, and pro-forma acquisitions
+are haircut, the number I underwrite against is $58M.
+The difference isn't a spreadsheet error — it's the
+entire deal math."
+
+Connective tissue pulling from:
+- `qofe_prescreen` → add-back haircut.
+- `physician_comp_normalization_check` → comp
+  adjustments.
+- `recurring_vs_onetime_ebitda` → cash-release share.
+- `capex_intensity_stress` (referenced, separate FCF
+  leg).
+
+### Bridge sequence
+
+1. Stated EBITDA.
+2. **QofE add-back haircut** — non-surviving add-backs.
+3. **Physician comp normalization haircut** — walk-
+   through delta.
+4. **COVID / one-time strip** — structural one-time not
+   in QofE.
+5. **Cash-release strip** — when Y1 cash-release > 30%
+   of claimed gain, strip half.
+6. **Pro-forma acquisition haircut** — TTM-actualize.
+7. **Partner run-rate EBITDA** — the underwrite number.
+
+### EV impact
+
+Haircut × entry multiple = EV that wouldn't exist in
+partner's math but does in seller's.
+
+### Partner-note ladder
+
+- ≥ 20% haircut → "do not underwrite off stated EBITDA."
+- 10-20% → "material haircut; price at run-rate ×
+  exit mult."
+- < 10% with adjustments → "modest haircut; document."
+- 0% → "no adjustments; run-rate = stated."
+
+### Packet fields
+
+`stated_ebitda_m`, `qofe_haircut_m`,
+`physician_comp_normalization_haircut_m`,
+`covid_tailwind_strip_m`,
+`cash_release_share_in_y1_gain`,
+`y1_claimed_ebitda_gain_m`,
+`pro_forma_acquisition_haircut_m`,
+`entry_multiple`.
+
+---
+
+## 223. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
