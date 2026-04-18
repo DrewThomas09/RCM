@@ -1073,6 +1073,14 @@ from .covenant_package_designer import (
     design_covenant_package,
     render_covenant_package_markdown,
 )
+from .failure_archetype_library import (
+    ArchetypeMatch as FailureArchetypeMatch,
+    FailureArchetype,
+    FailureArchetypeReport,
+    list_all_archetypes as list_all_failure_archetypes,
+    match_failure_archetypes,
+    render_failure_archetypes_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2311,4 +2319,10 @@ __all__ = [
     "StepDown",
     "design_covenant_package",
     "render_covenant_package_markdown",
+    "FailureArchetype",
+    "FailureArchetypeMatch",
+    "FailureArchetypeReport",
+    "list_all_failure_archetypes",
+    "match_failure_archetypes",
+    "render_failure_archetypes_markdown",
 ]

@@ -18951,5 +18951,134 @@ class TestCovenantPackageDesigner(unittest.TestCase):
         json.dumps(p.to_dict())
 
 
+class TestFailureArchetypeLibrary(unittest.TestCase):
+    """Partner scenario: which shape of failure is this?"""
+
+    def test_empty_signals_yields_no_matches(self) -> None:
+        from rcm_mc.pe_intelligence import match_failure_archetypes
+        r = match_failure_archetypes({})
+        self.assertEqual(len(r.matches), 0)
+        self.assertIn("unremarkable", r.partner_note.lower())
+
+    def test_rollup_overhire_detected(self) -> None:
+        """Partner: 'sub-scale platform with heavy central hires.'"""
+        from rcm_mc.pe_intelligence import match_failure_archetypes
+        r = match_failure_archetypes({
+            "platform_ebitda_m < 60": True,
+            "central_services_hires_per_yr >= 10": True,
+            "integrated_acquisitions_pct < 0.70": True,
+        })
+        self.assertEqual(r.dominant_archetype,
+                          "serial_add_on_overhire")
+
+    def test_site_neutral_hostage_triggers(self) -> None:
+        from rcm_mc.pe_intelligence import match_failure_archetypes
+        r = match_failure_archetypes({
+            "hopd_revenue_pct >= 0.20": True,
+            "hold_includes_site_neutral_final_year": True,
+        })
+        self.assertEqual(r.dominant_archetype, "site_neutral_hostage")
+        self.assertAlmostEqual(r.matches[0].match_score, 1.0,
+                                places=2)
+
+    def test_specialty_practice_succession_flag(self) -> None:
+        """Partner: 'founder is the asset — no successor.'"""
+        from rcm_mc.pe_intelligence import match_failure_archetypes
+        r = match_failure_archetypes({
+            "founder_rvu_pct > 0.30": True,
+            "successor_identified == False": True,
+            "founder_age_60_plus": True,
+        })
+        self.assertEqual(r.dominant_archetype,
+                          "specialty_practice_succession_gap")
+
+    def test_ma_over_reliance_triggers(self) -> None:
+        from rcm_mc.pe_intelligence import match_failure_archetypes
+        r = match_failure_archetypes({
+            "medicare_advantage_pct > 0.20": True,
+            "risk_contracts_pct < 0.05": True,
+            "no_mssp_or_aco_track_record": True,
+        })
+        self.assertEqual(r.dominant_archetype,
+                          "ma_pass_through_over_reliance")
+
+    def test_multiple_archetypes_trigger_compound_note(self) -> None:
+        from rcm_mc.pe_intelligence import match_failure_archetypes
+        r = match_failure_archetypes({
+            # Overhire
+            "platform_ebitda_m < 60": True,
+            "central_services_hires_per_yr >= 10": True,
+            # Site-neutral
+            "hopd_revenue_pct >= 0.20": True,
+            "hold_includes_site_neutral_final_year": True,
+            # Covid base
+            "base_year_is_2020_through_2022": True,
+            "volume_declined_post_2022": True,
+        })
+        self.assertGreaterEqual(len(r.matches), 3)
+        self.assertIn("compound risk", r.partner_note.lower())
+
+    def test_rankings_by_match_score(self) -> None:
+        from rcm_mc.pe_intelligence import match_failure_archetypes
+        r = match_failure_archetypes({
+            # Succession: 3/3
+            "founder_rvu_pct > 0.30": True,
+            "successor_identified == False": True,
+            "founder_age_60_plus": True,
+            # Payer-shift: 1/2 → score 0.5
+            "claimed_mix_shift_pct > 0.08": True,
+        })
+        scores = [m.match_score for m in r.matches]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_all_archetypes_have_partner_counter(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            list_all_failure_archetypes,
+            match_failure_archetypes,
+        )
+        # Fire every archetype by lighting all signals.
+        fire_all = {}
+        from rcm_mc.pe_intelligence.failure_archetype_library import (
+            ARCHETYPES,
+        )
+        for a in ARCHETYPES:
+            for sig in a.signals:
+                fire_all[sig] = True
+        r = match_failure_archetypes(fire_all)
+        self.assertGreaterEqual(len(r.matches), 10)
+        for m in r.matches:
+            self.assertTrue(len(m.archetype.partner_counter) > 10)
+
+    def test_list_all_archetypes(self) -> None:
+        from rcm_mc.pe_intelligence import list_all_failure_archetypes
+        names = list_all_failure_archetypes()
+        self.assertIn("serial_add_on_overhire", names)
+        self.assertIn("covid_inflated_base", names)
+        self.assertIn("340b_dependent_tail", names)
+        self.assertEqual(len(names), 10)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            match_failure_archetypes,
+            render_failure_archetypes_markdown,
+        )
+        md = render_failure_archetypes_markdown(
+            match_failure_archetypes({
+                "platform_ebitda_m < 60": True,
+                "central_services_hires_per_yr >= 10": True,
+            })
+        )
+        self.assertIn("# Failure archetype matches", md)
+        self.assertIn("Partner counter", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import match_failure_archetypes
+        r = match_failure_archetypes({
+            "platform_ebitda_m < 60": True,
+        })
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
