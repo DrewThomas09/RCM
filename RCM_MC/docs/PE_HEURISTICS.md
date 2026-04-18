@@ -3666,7 +3666,40 @@ scary the word in the finding is.
 
 ---
 
-## 152. Change log
+## 152. Quarterly operating review (`quarterly_operating_review.py`)
+
+**Partner statement:** "Generic 'how are things going' is a
+waste of the 60 minutes. A disciplined QoR is four blocks of
+15 minutes with a specific partner-focus per block."
+
+Four blocks:
+
+1. **Numbers (15 min)** — EBITDA vs plan, revenue vs plan,
+   denial-rate trend, DAR, cash runway, covenant headroom.
+   Partner-focus shifts: EBITDA miss → pushes hard on named
+   driver; denial rising → RCM deep-dive; covenant tight →
+   13-week cash walk.
+2. **Thesis progress (15 min)** — levers on-track vs behind;
+   bolt-on integration status. Focus escalates: 2+ behind =
+   demand named recovery plan with owner + date.
+3. **People + operating rhythm (15 min)** — CEO search status
+   (if open), departures, retention tracker, MIP vesting.
+4. **Forward-look + asks (15 min)** — next-90-day priorities,
+   CEO's asks of the board, next-quarter KPI targets. In hold
+   year 3+: exit readiness + banker-prep items.
+
+Partner note escalates:
+
+- EBITDA < -10% → "intervention, not review; extend numbers
+  block."
+- 2+ levers behind OR open CEO search → "multiple items need
+  partner attention."
+- Outperforming ≥ 5% → "pull forward levers or assess early
+  exit readiness."
+
+---
+
+## 153. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4010,3 +4043,7 @@ scary the word in the finding is.
   — partner-immediate vs partner-this-week vs associate vs info
   triage by category + severity. Full inventory: 149 modules,
   1,513 pe_intelligence unit tests.
+- **2026-04-17** — Added `quarterly_operating_review.py` (§152)
+  — post-close QoR 4-block agenda (numbers/thesis/people/
+  forward) with partner-focus per block. Full inventory: 150
+  modules, 1,524 pe_intelligence unit tests.
