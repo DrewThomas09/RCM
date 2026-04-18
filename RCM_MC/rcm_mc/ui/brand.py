@@ -249,6 +249,7 @@ NAV_ITEMS = [
     {"label": "Medicaid Unwinding", "href": "/medicaid-unwinding", "icon": "bookmark"},
     {"label": "Workforce Retention", "href": "/workforce-retention", "icon": "grid"},
     {"label": "Digital Front Door", "href": "/digital-front-door", "icon": "grid"},
+    {"label": "Hospital Anchor", "href": "/hospital-anchor", "icon": "bookmark"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
