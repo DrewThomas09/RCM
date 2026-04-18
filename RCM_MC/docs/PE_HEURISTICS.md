@@ -11243,7 +11243,75 @@ surface it."
 
 ---
 
-## 273. Change log
+## 273. MA Star Rating revenue impact (`ma_star_rating_revenue_impact.py`)
+
+**Partner statement.** "A 4-star MA plan gets 5% QBP bonus plus
+rebates. Drop to 3.5 stars and you lose most of it. For MA-heavy
+deals the rating trajectory is the entire thesis. If HEDIS/CAHPS
+scores trended down in the prior year, we're underwriting a rating
+cliff, not growth."
+
+### Why it matters
+
+`medicare_advantage_bridge_trap` covers the "MA will make it up"
+narrative. `vbc_risk_share_underwriter` covers single contract
+economics. This module is specifically **MA Star Rating → QBP
+bonus + rebate** math with bear/bull half-star scenarios.
+
+### Star → economics table
+
+| Star | Bonus | Rebate capture | Note |
+|---|---|---|---|
+| 5.0 | 5% | 70% | top tier |
+| 4.5 | 5% | 70% | top tier |
+| 4.0 | 5% | 65% | bonus eligible |
+| 3.5 | 0% | 65% | bonus lost |
+| 3.0 | 0% | 50% | reduced rebate |
+| ≤ 2.5 | 0% | 50% | enrollment restricted |
+
+### Math
+
+- bonus_dollars = revenue × bonus_pct
+- rebate_pool = revenue × 15%
+- rebate_dollars = rebate_pool × rebate_pct
+- bear/bull delta = ebitda_contrib(bear/bull) −
+  ebitda_contrib(current)
+
+### Cliff risk
+
+- 4.0 boundary + HEDIS/CAHPS declining → **high** — "rating is
+  thesis; verify quality program"
+- 4.0 boundary, no decline → **medium** — "investments needed to
+  hold"
+- ≥ 4.5 → **low**
+- ≤ 3.0 → **high** — "restricted-enrollment zone; improvement
+  is capital-intensive multi-year"
+
+### Worked example
+
+$100M MA plan at 4.0 stars, HEDIS declining:
+- Bonus: 5% × $100M = $5M
+- Rebate pool: $100M × 15% = $15M; rebate: $15M × 65% = $9.75M
+- Half-star drop to 3.5: bonus → $0, rebate stays → EBITDA loses
+  ~$5M
+- Risk: **high** — "half-star drop wipes out $5M; star rating is
+  the thesis."
+
+### Packet fields
+
+`current_star_rating`, `ma_plan_revenue_m`,
+`ma_plan_ebitda_margin_pct`, `hedis_trend`, `cahps_trend`.
+
+### Distinct from existing modules
+
+- `medicare_advantage_bridge_trap` — narrative test.
+- `vbc_risk_share_underwriter` — single contract.
+- This module — MA Star Rating → QBP/rebate math with boundary
+  cliff risk.
+
+---
+
+## 274. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
