@@ -944,6 +944,14 @@ from .debt_capacity_sizer import (
     render_debt_sizing_markdown,
     size_debt_capacity,
 )
+from .operating_partner_fit_matrix import (
+    OPS_PARTNER_ARCHETYPES,
+    OpsPartnerFitContext,
+    OpsPartnerFitReport,
+    OpsPartnerMatch,
+    match_ops_partners,
+    render_ops_partner_match_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2089,4 +2097,10 @@ __all__ = [
     "NEUTRAL_LEVERAGE",
     "render_debt_sizing_markdown",
     "size_debt_capacity",
+    "OPS_PARTNER_ARCHETYPES",
+    "OpsPartnerFitContext",
+    "OpsPartnerFitReport",
+    "OpsPartnerMatch",
+    "match_ops_partners",
+    "render_ops_partner_match_markdown",
 ]

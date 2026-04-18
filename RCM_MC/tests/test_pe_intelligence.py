@@ -16387,5 +16387,97 @@ class TestDebtCapacitySizer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Operating partner fit matrix ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    OPS_PARTNER_ARCHETYPES,
+    OpsPartnerFitContext,
+    OpsPartnerFitReport,
+    OpsPartnerMatch,
+    match_ops_partners,
+    render_ops_partner_match_markdown,
+)
+
+
+class TestOperatingPartnerFitMatrix(unittest.TestCase):
+
+    def test_founder_ceo_picks_scaler_or_coach(self) -> None:
+        r = match_ops_partners(OpsPartnerFitContext(
+            ceo_is_founder=True,
+            ceo_first_pe_experience=True,
+            ebitda_trend="up",
+            hold_quarter=2,
+        ))
+        self.assertIn(r.top_pick, {"scaler", "founder_coach"})
+
+    def test_declining_ebitda_picks_turnaround(self) -> None:
+        r = match_ops_partners(OpsPartnerFitContext(
+            ebitda_trend="down",
+            has_open_turnaround_issues=True,
+            management_score_0_100=50,
+        ))
+        self.assertEqual(r.top_pick, "turnaround")
+
+    def test_rollup_picks_mna_integrator(self) -> None:
+        r = match_ops_partners(OpsPartnerFitContext(
+            deal_archetype="roll_up",
+            has_mna_pipeline=True,
+            hold_quarter=3,
+        ))
+        self.assertEqual(r.top_pick, "mna_integrator")
+
+    def test_late_hold_picks_exit_specialist(self) -> None:
+        r = match_ops_partners(OpsPartnerFitContext(
+            hold_quarter=12,
+            ebitda_trend="stable",
+            management_score_0_100=75,
+        ))
+        self.assertEqual(r.top_pick, "exit_specialist")
+
+    def test_cmi_archetype_picks_healthcare_specialist(self) -> None:
+        r = match_ops_partners(OpsPartnerFitContext(
+            deal_archetype="cmi_uplift",
+            clinical_complexity_high=True,
+        ))
+        self.assertEqual(r.top_pick, "healthcare_specialist")
+
+    def test_archetypes_list(self) -> None:
+        self.assertEqual(set(OPS_PARTNER_ARCHETYPES), {
+            "turnaround", "scaler", "healthcare_specialist",
+            "mna_integrator", "exit_specialist", "founder_coach",
+        })
+
+    def test_weak_fit_flags_external(self) -> None:
+        # Nothing distinctive about the deal.
+        r = match_ops_partners(OpsPartnerFitContext(
+            deal_archetype="",
+            ceo_is_founder=False,
+            ebitda_trend="stable",
+            has_mna_pipeline=False,
+            clinical_complexity_high=False,
+            management_score_0_100=65,
+            hold_quarter=5,
+        ))
+        if r.ranked_matches[0].score_0_100 < 50:
+            self.assertIn("external recruitment",
+                           r.partner_note.lower())
+
+    def test_ranking_sorted(self) -> None:
+        r = match_ops_partners(OpsPartnerFitContext())
+        scores = [m.score_0_100 for m in r.ranked_matches]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_markdown_renders(self) -> None:
+        md = render_ops_partner_match_markdown(match_ops_partners(
+            OpsPartnerFitContext(
+                ceo_is_founder=True, ebitda_trend="up")))
+        self.assertIn("# Operating partner fit matrix", md)
+
+    def test_json(self) -> None:
+        import json
+        r = match_ops_partners(OpsPartnerFitContext())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
