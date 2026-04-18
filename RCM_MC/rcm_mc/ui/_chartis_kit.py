@@ -186,6 +186,7 @@ _CORPUS_NAV = [
     {"label": "Refi Optimizer",  "href": "/refi-optimizer",        "icon": "▣"},
     {"label": "LP Reporting",    "href": "/lp-reporting",          "icon": "▦"},
     {"label": "LBO Stress Test", "href": "/lbo-stress",            "icon": "▣"},
+    {"label": "Board Governance","href": "/board-governance",      "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

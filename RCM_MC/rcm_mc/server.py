@@ -2044,6 +2044,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.lbo_stress_page import render_lbo_stress
             return self._send_html(render_lbo_stress(_qp))
+        if path == "/board-governance":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.board_governance_page import render_board_governance
+            return self._send_html(render_board_governance(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
