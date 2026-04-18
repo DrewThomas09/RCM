@@ -881,6 +881,15 @@ from .post_close_surprises_log import (
     compute_miss_rate,
     render_miss_rate_markdown,
 )
+from .regional_wage_inflation_overlay import (
+    REGION_BASE_PREMIUM,
+    REGION_WAGE_INFLATION,
+    RegionalOverlayInputs,
+    RegionalOverlayReport,
+    SiteFootprint as WageSiteFootprint,
+    overlay_wage_inflation,
+    render_overlay_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1979,4 +1988,11 @@ __all__ = [
     "Surprise",
     "compute_miss_rate",
     "render_miss_rate_markdown",
+    "REGION_BASE_PREMIUM",
+    "REGION_WAGE_INFLATION",
+    "RegionalOverlayInputs",
+    "RegionalOverlayReport",
+    "WageSiteFootprint",
+    "overlay_wage_inflation",
+    "render_overlay_markdown",
 ]

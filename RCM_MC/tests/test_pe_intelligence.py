@@ -15471,5 +15471,147 @@ class TestPostCloseSurprisesLog(unittest.TestCase):
         json.dumps(compute_miss_rate(entries).to_dict())
 
 
+# ── Regional wage inflation overlay ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    REGION_BASE_PREMIUM,
+    REGION_WAGE_INFLATION,
+    RegionalOverlayInputs,
+    RegionalOverlayReport,
+    WageSiteFootprint,
+    overlay_wage_inflation,
+    render_overlay_markdown,
+)
+
+
+class TestRegionalWageInflationOverlay(unittest.TestCase):
+
+    def test_coastal_heavy_flags_model_error(self) -> None:
+        # Small EBITDA with large coastal wage base → drag > 10% of EBITDA.
+        r = overlay_wage_inflation(RegionalOverlayInputs(
+            base_ebitda_m=20.0,
+            modeled_wage_inflation_pct=0.03,
+            sites=[
+                WageSiteFootprint(site_name="NYC", region_tier="coastal_tier1",
+                                    clinical_fte=500),
+                WageSiteFootprint(site_name="SF", region_tier="coastal_tier1",
+                                    clinical_fte=400),
+            ],
+        ))
+        self.assertGreater(r.delta_inflation_pct, 0.015)
+        self.assertIn("structural underwrite error",
+                       r.partner_note.lower())
+
+    def test_rural_heavy_no_adjustment(self) -> None:
+        r = overlay_wage_inflation(RegionalOverlayInputs(
+            base_ebitda_m=30.0,
+            modeled_wage_inflation_pct=0.03,
+            sites=[
+                WageSiteFootprint(site_name="rural 1",
+                                    region_tier="rural_tier3",
+                                    clinical_fte=200),
+                WageSiteFootprint(site_name="rural 2",
+                                    region_tier="rural_tier3",
+                                    clinical_fte=150),
+            ],
+        ))
+        self.assertLess(abs(r.delta_inflation_pct), 0.005)
+
+    def test_conservative_model_flagged(self) -> None:
+        r = overlay_wage_inflation(RegionalOverlayInputs(
+            base_ebitda_m=30.0,
+            modeled_wage_inflation_pct=0.06,   # over-modeled
+            sites=[
+                WageSiteFootprint(site_name="rural",
+                                    region_tier="rural_tier3",
+                                    clinical_fte=200),
+            ],
+        ))
+        self.assertLess(r.delta_inflation_pct, 0)
+        self.assertIn("conservative", r.partner_note.lower())
+
+    def test_mixed_footprint_weighted(self) -> None:
+        r = overlay_wage_inflation(RegionalOverlayInputs(
+            base_ebitda_m=50.0,
+            modeled_wage_inflation_pct=0.03,
+            sites=[
+                WageSiteFootprint(site_name="NYC",
+                                    region_tier="coastal_tier1",
+                                    clinical_fte=300),
+                WageSiteFootprint(site_name="Dallas",
+                                    region_tier="major_inland",
+                                    clinical_fte=400),
+                WageSiteFootprint(site_name="Rural TN",
+                                    region_tier="rural_tier3",
+                                    clinical_fte=300),
+            ],
+        ))
+        # Weighted rate should land between 2.8% and 5.5%.
+        self.assertGreater(r.weighted_wage_inflation_pct, 0.028)
+        self.assertLess(r.weighted_wage_inflation_pct, 0.055)
+
+    def test_three_year_drag_positive_when_under_modeled(self) -> None:
+        r = overlay_wage_inflation(RegionalOverlayInputs(
+            base_ebitda_m=50.0,
+            modeled_wage_inflation_pct=0.02,
+            sites=[
+                WageSiteFootprint(site_name="NYC",
+                                    region_tier="coastal_tier1",
+                                    clinical_fte=500),
+            ],
+        ))
+        self.assertGreater(r.three_year_ebitda_drag_m, 0)
+
+    def test_by_region_breakdown(self) -> None:
+        r = overlay_wage_inflation(RegionalOverlayInputs(
+            base_ebitda_m=30.0,
+            sites=[
+                WageSiteFootprint(site_name="A",
+                                    region_tier="coastal_tier1",
+                                    clinical_fte=100),
+                WageSiteFootprint(site_name="B",
+                                    region_tier="rural_tier3",
+                                    clinical_fte=200),
+            ],
+        ))
+        self.assertIn("coastal_tier1", r.by_region_breakdown)
+        self.assertIn("rural_tier3", r.by_region_breakdown)
+
+    def test_library_has_tiers(self) -> None:
+        self.assertIn("coastal_tier1", REGION_WAGE_INFLATION)
+        self.assertIn("rural_tier3", REGION_WAGE_INFLATION)
+        self.assertGreater(REGION_WAGE_INFLATION["coastal_tier1"],
+                            REGION_WAGE_INFLATION["rural_tier3"])
+
+    def test_premium_sensible(self) -> None:
+        self.assertGreater(REGION_BASE_PREMIUM["coastal_tier1"],
+                            REGION_BASE_PREMIUM["rural_tier3"])
+
+    def test_markdown_renders(self) -> None:
+        r = overlay_wage_inflation(RegionalOverlayInputs(
+            base_ebitda_m=30.0,
+            sites=[
+                WageSiteFootprint(site_name="A",
+                                    region_tier="major_inland",
+                                    clinical_fte=100),
+            ],
+        ))
+        md = render_overlay_markdown(r)
+        self.assertIn("# Regional wage inflation overlay", md)
+        self.assertIn("major_inland", md)
+
+    def test_json(self) -> None:
+        import json
+        r = overlay_wage_inflation(RegionalOverlayInputs(
+            base_ebitda_m=30.0,
+            sites=[
+                WageSiteFootprint(site_name="A",
+                                    region_tier="mid_market",
+                                    clinical_fte=100),
+            ],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
