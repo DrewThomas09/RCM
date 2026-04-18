@@ -2880,8 +2880,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/pe-intelligence":
             from .ui.chartis.pe_intelligence_hub_page import render_pe_intelligence_hub
             store = PortfolioStore(self.config.db_path)
-            user = getattr(self, "_current_user", None)
-            return self._send_html(render_pe_intelligence_hub(store=store, current_user=user))
+            cu = self._current_user() or {}
+            username = cu.get("username") if isinstance(cu, dict) else None
+            return self._send_html(
+                render_pe_intelligence_hub(store=store, current_user=username)
+            )
         if path == "/library":
             # /library now surfaces the 655-deal corpus (previously at
             # /deals-library). The methodology hub moved to /methodology.
@@ -3690,6 +3693,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/initiative/"):
             init_id = urllib.parse.unquote(path[len("/initiative/"):]).strip("/")
             return self._route_initiative_detail(init_id)
+        # Per-deal PE intelligence surfaces must match before the generic
+        # /deal/<id> route below, otherwise "/deal/x/partner-review" is
+        # caught as a deal_id and 404s.
+        if path.startswith("/deal/") and path.endswith("/partner-review"):
+            mid = path[len("/deal/"):-len("/partner-review")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_partner_review(deal_id)
+        if path.startswith("/deal/") and path.endswith("/red-flags"):
+            mid = path[len("/deal/"):-len("/red-flags")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_red_flags(deal_id)
         if path.startswith("/deal/"):
             deal_id = urllib.parse.unquote(path[len("/deal/"):]).strip("/")
             if not deal_id:
@@ -3721,17 +3735,6 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/analysis/"):
             deal_id = urllib.parse.unquote(path[len("/analysis/"):]).strip("/")
             return self._route_analysis_workbench(deal_id)
-        # Per-deal PE intelligence surfaces. Handled via a shared packet load
-        # so /deal/<id>/partner-review and /deal/<id>/red-flags exercise the
-        # same brain invocation.
-        if path.startswith("/deal/") and path.endswith("/partner-review"):
-            mid = path[len("/deal/"):-len("/partner-review")]
-            deal_id = urllib.parse.unquote(mid).strip("/")
-            return self._route_partner_review(deal_id)
-        if path.startswith("/deal/") and path.endswith("/red-flags"):
-            mid = path[len("/deal/"):-len("/red-flags")]
-            deal_id = urllib.parse.unquote(mid).strip("/")
-            return self._route_red_flags(deal_id)
         if path == "/exports/lp-update":
             return self._route_exports_lp_update()
         if path.startswith("/outputs/"):
@@ -3860,9 +3863,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         # set fails — avoids ever 500ing the landing route.
         try:
             from .ui.chartis.home_page import render_home as render_chartis_home
-            user = getattr(self, "_current_user", None)
+            cu = self._current_user() or {}
+            username = cu.get("username") if isinstance(cu, dict) else None
             return self._send_html(
-                render_chartis_home(store, self.config.db_path, current_user=user)
+                render_chartis_home(store, self.config.db_path, current_user=username)
             )
         except Exception:
             try:
@@ -6946,13 +6950,20 @@ class RCMHandler(BaseHTTPRequestHandler):
         """Fetch a PortfolioStore handle for this request."""
         return PortfolioStore(self.config.db_path)
 
+    def _chartis_username(self) -> Optional[str]:
+        """Pull the display username (or None) for chartis page headers."""
+        cu = self._current_user() or {}
+        if isinstance(cu, dict):
+            return cu.get("username") or cu.get("display_name")
+        return None
+
     def _route_partner_review(self, deal_id: str) -> None:
         """GET /deal/<deal_id>/partner-review — full PE brain verdict."""
         if not deal_id:
             self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
             return
         from .ui.chartis.partner_review_page import render_partner_review
-        user = getattr(self, "_current_user", None)
+        username = self._chartis_username()
         review, err, meta = self._build_partner_review_context(deal_id)
         if err:
             return self._send_html(render_partner_review(
@@ -6960,12 +6971,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 deal_name=meta.get("deal_name", ""),
                 error=err,
                 missing_fields=meta.get("missing_fields"),
-                current_user=user,
+                current_user=username,
             ))
         return self._send_html(render_partner_review(
             review, deal_id,
             deal_name=meta.get("deal_name", ""),
-            current_user=user,
+            current_user=username,
         ))
 
     def _route_red_flags(self, deal_id: str) -> None:
@@ -6974,7 +6985,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
             return
         from .ui.chartis.red_flags_page import render_red_flags
-        user = getattr(self, "_current_user", None)
+        username = self._chartis_username()
         review, err, meta = self._build_partner_review_context(deal_id)
         if err:
             return self._send_html(render_red_flags(
@@ -6982,12 +6993,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 deal_name=meta.get("deal_name", ""),
                 error=err,
                 missing_fields=meta.get("missing_fields"),
-                current_user=user,
+                current_user=username,
             ))
         return self._send_html(render_red_flags(
             review, deal_id,
             deal_name=meta.get("deal_name", ""),
-            current_user=user,
+            current_user=username,
         ))
 
     def _build_mc_context(self, deal_id: str, payload: Dict[str, Any]) -> Any:
