@@ -6589,7 +6589,81 @@ peer 4%, 4 years below peer, $15M disclosed backlog.
 
 ---
 
-## 208. Change log
+## 208. Referral flow dependency scorer (`referral_flow_dependency_scorer.py`)
+
+**Partner statement:** "A physician practice isn't
+really selling patients — it's selling the referral
+network. If one referring doctor generates 12% of
+visits, that's a single-point-of-failure. Buy the
+practice, lose the doctor, lose the patients."
+
+Distinct from `customer_concentration_drilldown` (direct
+customers / payers) and `concentration_risk_multidim`
+(multi-dim summary). This module focuses on **upstream
+referral sources** — most relevant in specialty
+practices, ASCs, labs, hospice, home health.
+
+### 5 referral flags
+
+1. **top_1_concentration_gt_15pct** — single doc / source
+   sending ≥ 15%.
+2. **top_5_concentration_gt_50pct** — top-5 send majority.
+3. **top_referrer_age_60_plus** — retirement flight risk.
+4. **no_referring_network_contract** — can walk any day.
+5. **no_specialty_diversification** — correlated
+   departure risk.
+
+### Tier ladder
+
+- **0 flags** → `highly_diversified` — no gating.
+- **1-2 flags** → `moderately_concentrated` — retention +
+  relationship mgmt in 100-day plan.
+- **3+ flags** → `heavily_concentrated` — haircut
+  underwrite by expected EBITDA loss.
+- **top-1 ≥ 20% AND flight-risk** → `single_point_of_
+  failure` — partner walks or signed referring-physician
+  contract at close.
+
+### Departure probability heuristic
+
+- Top-1 ≥ 15% + age 60+ → 60% probability over 3-yr hold.
+- Top-1 ≥ 15% + no contract → 40%.
+- Top-1 ≥ 15% alone → 30%.
+- No contract alone → 25%.
+- No specialty diversification adds +5%.
+- Baseline 15%.
+
+### Expected EBITDA loss
+
+= `ebitda_m × top_1_pct × departure_probability ×
+margin_elasticity`.
+
+### Worked example — GI practice
+
+Top-1 doc 18% of volume, age 62, no signed contract,
+single-specialty, $20M EBITDA.
+
+Flags: top-1 15%+ ✓, top-5 50%+ (if concentrated), age
+60+ ✓, no contract ✓, no diversification ✓ = 4-5 flags.
+
+Prob: top-1 + age 60+ = 0.60, + no diversification +5% =
+0.65. Expected loss: $20M × 18% × 0.65 × 0.9 ≈ $2.1M
+EBITDA.
+
+→ Partner: "single_point_of_failure tier; walk or require
+signed contract + retention at close."
+
+### Packet fields
+
+`top_1_referrer_pct`, `top_5_referrer_pct`,
+`top_referrer_age_60_plus`,
+`no_referring_network_contract`,
+`diversification_across_specialties`, `ebitda_m`,
+`margin_elasticity`.
+
+---
+
+## 209. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
