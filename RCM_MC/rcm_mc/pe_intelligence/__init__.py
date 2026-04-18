@@ -1473,6 +1473,14 @@ from .healthcare_thesis_archetype_recognizer import (
     recognize_healthcare_thesis_archetypes,
     render_healthcare_archetype_markdown,
 )
+from .recurring_ebitda_line_scrubber import (
+    EBITDALineItem,
+    RecurringEBITDAInputs,
+    RecurringEBITDAReport,
+    ScrubbedLine,
+    render_recurring_ebitda_markdown,
+    scrub_recurring_ebitda,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3003,4 +3011,10 @@ __all__ = [
     "HealthcareArchetypeSignals",
     "recognize_healthcare_thesis_archetypes",
     "render_healthcare_archetype_markdown",
+    "EBITDALineItem",
+    "RecurringEBITDAInputs",
+    "RecurringEBITDAReport",
+    "ScrubbedLine",
+    "render_recurring_ebitda_markdown",
+    "scrub_recurring_ebitda",
 ]

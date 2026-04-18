@@ -28281,5 +28281,233 @@ class TestHealthcareThesisArchetypeRecognizer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestRecurringEBITDALineScrubber(unittest.TestCase):
+    """Partner voice: 'Exit multiple only applies to recurring.'"""
+
+    def test_no_line_items_returns_stated_as_recurring(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            stated_ebitda_m=40.0,
+        ))
+        self.assertEqual(r.recurring_ebitda_m, 40.0)
+        self.assertEqual(r.one_time_cash_m, 0.0)
+
+    def test_cares_act_classified_one_time(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            stated_ebitda_m=50.0,
+            line_items=[
+                EBITDALineItem(
+                    description="CARES Act provider relief grant",
+                    amount_m=2.0,
+                ),
+            ],
+        ))
+        line = r.lines[0]
+        self.assertEqual(line.category, "one_time_cash")
+        self.assertIn("cares act", line.reason.lower())
+
+    def test_owner_comp_is_questionable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            stated_ebitda_m=50.0,
+            line_items=[
+                EBITDALineItem(
+                    description="Physician owner comp normalization",
+                    amount_m=3.0,
+                ),
+            ],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "questionable"
+        )
+        self.assertIn(
+            "qofe", r.lines[0].reason.lower()
+        )
+
+    def test_stock_comp_is_recurring(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            line_items=[
+                EBITDALineItem(
+                    description="Stock comp add-back",
+                    amount_m=1.5,
+                ),
+            ],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "recurring"
+        )
+
+    def test_explicit_category_overrides(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            line_items=[
+                EBITDALineItem(
+                    description="Something partner already knows about",
+                    amount_m=1.0,
+                    explicit_category="one_time_cash",
+                ),
+            ],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "one_time_cash"
+        )
+
+    def test_unknown_description_is_questionable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            line_items=[
+                EBITDALineItem(
+                    description="mysterious EBITDA adjustment",
+                    amount_m=2.0,
+                ),
+            ],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "questionable"
+        )
+
+    def test_exit_multiple_bleed_detected(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        # Big one-time items inflate stated EBITDA; buyer should only get 1× on those
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            stated_ebitda_m=50.0,
+            exit_multiple=12.0,
+            line_items=[
+                EBITDALineItem(
+                    "ERC employee retention credit", 5.0),
+                EBITDALineItem(
+                    "legal settlement receivable", 3.0),
+                EBITDALineItem(
+                    "CARES Act provider relief", 2.0),
+            ],
+        ))
+        # seller pitches 50 × 12 = 600; partner trims
+        # out ~10M one-time and applies 12 to 40M
+        self.assertGreater(r.exit_multiple_bleed_m, 50.0)
+        self.assertIn(
+            "bleed", r.partner_note.lower()
+        )
+
+    def test_synergy_addback_is_questionable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            line_items=[
+                EBITDALineItem(
+                    "Synergy run-rate addback", 4.0),
+            ],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "questionable"
+        )
+        self.assertIn(
+            "synergy", r.lines[0].reason.lower()
+        )
+
+    def test_questionable_partial_credit(self) -> None:
+        """Questionable items get 50% credit to recurring."""
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            stated_ebitda_m=50.0,
+            line_items=[
+                EBITDALineItem(
+                    "Owner comp normalization", 4.0),
+            ],
+        ))
+        # stated 50 minus 4 adjustment = 46 base
+        # + 0 recurring + 0.5 * 4 = 2 questionable credit
+        # = 48 recurring
+        self.assertAlmostEqual(
+            r.recurring_ebitda_m, 48.0, places=1
+        )
+
+    def test_implied_equity_partner_less_than_seller(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            stated_ebitda_m=40.0,
+            exit_multiple=12.0,
+            line_items=[
+                EBITDALineItem(
+                    "insurance proceeds", 5.0),
+            ],
+        ))
+        self.assertLess(
+            r.implied_equity_partner_view_m,
+            r.implied_equity_seller_view_m,
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            render_recurring_ebitda_markdown,
+            scrub_recurring_ebitda,
+        )
+        md = render_recurring_ebitda_markdown(
+            scrub_recurring_ebitda(RecurringEBITDAInputs(
+                stated_ebitda_m=40.0,
+                line_items=[EBITDALineItem(
+                    "CARES Act provider relief", 2.0,
+                )],
+            ))
+        )
+        self.assertIn(
+            "# Recurring-vs-one-time EBITDA scrub", md
+        )
+        self.assertIn("Exit-multiple-applicable", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            EBITDALineItem,
+            RecurringEBITDAInputs,
+            scrub_recurring_ebitda,
+        )
+        r = scrub_recurring_ebitda(RecurringEBITDAInputs(
+            line_items=[EBITDALineItem("ERC", 2.0)],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
