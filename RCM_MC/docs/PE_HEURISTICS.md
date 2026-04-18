@@ -4600,7 +4600,66 @@ analogous — see module for full list.
 
 ---
 
-## 177. Change log
+## 177. Deal one-liner (`deal_one_liner.py`)
+
+**Partner statement:** "If I can't write the verdict in one
+sentence, I don't understand the deal yet."
+
+IC decks run 60 pages. Partners write a single sentence in
+the margin when they pick up the deck. That sentence is the
+synthesis: recommendation + the one reason that matters.
+
+### Synthesis precedence
+
+The brain already has three judgment layers. The one-liner
+picks the *dominant* signal using strict precedence:
+
+1. **Face implausibility** (high severity) — "math doesn't
+   work on face; pass before modeling."
+2. **Broken thesis chain** — "chain breaks at <specific link>."
+3. **All-three pattern compound** — "theme fires across all
+   libraries; rebuild or walk."
+4. **Unresolved thesis high-risk links** — "diligence these
+   before IC."
+5. **Compound pattern risk (≥2 libraries)** — "reprice or
+   mitigate."
+6. **Medium face findings** — "reprice pending specifics."
+7. **Tight chain** — "invest; downstream loops closed."
+8. **Single-library pattern hit** — "diligence_more."
+
+Face beats chain beats pattern. A pass-before-modeling
+finding dominates everything because the math gate dominates
+all other signal.
+
+### Worked example
+
+Inputs:
+- `face`: hospital with 22.5% EBITDA margin (implausible).
+- `thesis="denial_reduction"` with `year1_cash_release_share=0.55`.
+
+Without face: chain breaks → `pass — thesis 'denial_reduction' chain breaks at: EBITDA uplift is recurring, not cash release`.
+
+With face: face wins → `pass — hospital_margin_impossible: 22% EBITDA margin on a hospital`.
+
+### Packet fields that trigger
+
+- `OneLinerInputs.face` → any `FaceInputs` (subsector,
+  revenue, EBITDA, claimed IRR, etc.).
+- `OneLinerInputs.pattern_ctx` → any `PatternContext` fields
+  (same set that feeds cross_pattern_digest).
+- `OneLinerInputs.thesis` + `thesis_packet` → same fields
+  that feed walk_thesis_chain.
+
+### Why single-sentence discipline matters
+
+A partner who can't name the deciding issue in one sentence
+has not done the diligence. The one-liner enforces this:
+either you know the deal well enough to pick the dominant
+signal, or the verdict should be `diligence_more`.
+
+---
+
+## 178. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
