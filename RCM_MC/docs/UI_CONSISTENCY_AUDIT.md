@@ -414,3 +414,73 @@ Total ............................................... 272 routes
 No pages render the legacy light palette today — `_ui_kit.shell()` at
 `_ui_kit.py:386` delegates to `shell_v2()` so the light BASE_CSS is dead
 code. Zero routes to migrate from light.
+
+---
+
+## Appendix: shell_v2 features inventory
+
+Phase-2 pre-work. Every behaviour/feature `shell_v2` renders that
+`chartis_shell` does not. Each row is classified as **KEEP** (must
+port), **REPLACE** (similar idea, different implementation), or
+**DROP** (cosmetic / fake / not load-bearing).
+
+### Feature-by-feature
+
+| # | Feature | Location (file:line) | What it actually does | Classification |
+|---|---|---|---|---|
+| 1 | **Ticker bar** | [shell_v2.py:752-769](../rcm_mc/ui/shell_v2.py#L752) | Hardcoded strip of fake market data — HCA +0.34%, THC -0.89%, UHS +1.12%, CYH -0.21%, 10Y TSY 4.23%, HOSP MULT 11.2x, S&P HC +0.18%, SENT 0.62. The docstring says "Static placeholder ticker — replaced by live data when available" but **no backend / polling / data source exists**. The numbers never update. | **DROP** — cosmetic fake data. Worse than neutral: partners trusting "live" ticker values would be misled. |
+| 2 | **F-key nav row** | [shell_v2.py:772-787](../rcm_mc/ui/shell_v2.py#L772) | Five styled hyperlinks in the topbar: H=Home, A=Analysis, P=Portfolio, S=Screen, M=Market. Each is a plain `<a>`; the `title="g+<k>"` tooltip is purely informational. | **DROP** — the visual chrome is duplicative of the sidebar. The *keyboard shortcut* behind them (vim-style `g+<key>`) is a separate feature — see row 5. |
+| 3 | **Live indicator** | [shell_v2.py:1022-1023](../rcm_mc/ui/shell_v2.py#L1022), CSS [179-187](../rcm_mc/ui/shell_v2.py#L179) | Pulsing green dot + "LIVE" label next to the topbar. Title attr says "Live market data feed". **Never changes state**. No backend check, no WebSocket, no poll. Always on. | **DROP** — cosmetic lie. Worse than neutral for the same reason as the ticker. |
+| 4 | **Cmd+K command palette** | [shell_v2.py:839-884](../rcm_mc/ui/shell_v2.py#L839) (HTML), [1154-1201](../rcm_mc/ui/shell_v2.py#L1154) (JS) | Working modal palette — 20 curated shortcuts grouped NAV / ANL / REF. Cmd+K (or Ctrl+K) toggles; Esc closes. Fuzzy match as you type. ↑↓ navigate, Enter opens. | **KEEP** — genuinely useful power-user feature. ~80 lines of JS + HTML + 60 lines of CSS. |
+| 5 | **Vim-style kb shortcuts** | [shell_v2.py:1115-1152](../rcm_mc/ui/shell_v2.py#L1115) | `?` opens a help modal; `/` focuses search; `g h` = /home, `g a` = /analysis, `g m` = /market-data/map, `g n` = /news, `g p` = /portfolio, `g r` = /portfolio/regression, `g s` = /screen, `g l` = /library, `g i` = /import, `g d` = /api/docs. | **KEEP** — useful, small (~35 lines of JS), partners who use them will miss them otherwise. |
+| 6 | **Alert badge polling** | [shell_v2.py:989-996](../rcm_mc/ui/shell_v2.py#L989) | On page load, GETs `/api/alerts/active-count`, and if `{count > 0}` shows a red pill with the count on the alerts icon in the topbar. | **KEEP (critical)** — actual backend integration; partners lose alert visibility on chartis without it. ~8 lines. |
+| 7 | **CSRF token patcher** | [shell_v2.py:968-987](../rcm_mc/ui/shell_v2.py#L968) | Reads the `rcm_csrf` cookie on every page load and (a) injects a hidden `csrf_token` input into every POST form before submit, (b) sets the `X-CSRF-Token` header on every non-GET `fetch()` call. | **KEEP (critical)** — security. Any chartis page that hosts a POST form (screener, deal wizard, settings) will have CSRF-blocked submissions without this. ~20 lines. |
+| 8 | **Status bar (bottom)** | [shell_v2.py:887-919](../rcm_mc/ui/shell_v2.py#L887), JS clock [1062-1072](../rcm_mc/ui/shell_v2.py#L1062) | Fixed footer showing: SESSION=ACTIVE, DATA=HCRIS FY2022, HOSPITALS=6,123, MODELS=17, LATENCY (from `performance.timing`), UTC clock (live, setInterval 1s), BUILD=v1.0. All values except LATENCY and UTC are **hardcoded constants**. | **DROP** — four of the six fields are hardcoded-and-misleading (e.g., MODELS=17 is a 2024 figure). UTC clock and latency are nice-to-have; ship without them. |
+| 9 | **Search input w/ dropdown** | [shell_v2.py:1018-1020](../rcm_mc/ui/shell_v2.py#L1018), JS ~1073+ | Topbar search `<input>` with a live dropdown that fetches `/api/search?q=` as you type, shows top matches grouped by deal/hospital/ticker. Submits to `/search` on Enter. | **REPLACE** — backend `/api/search` already exists. Chartis can host a simpler search link (or a simpler input without dropdown) without material user cost. Nice-to-have. |
+| 10 | **216px vs 200px nav width** | [brand.py:40](../rcm_mc/ui/brand.py) vs [_chartis_kit.py:257](../rcm_mc/ui/_chartis_kit.py#L257) | shell_v2 has NAV_ITEMS (~25 curated entries) rendered at 216px. chartis has _CORPUS_NAV (~150 entries) rendered at 200px. Width isn't the useful difference; the *curation* is. | **DROP (or Phase 5)** — width is cosmetic. The 150-item sidebar is the real friction; Phase 5's nav consolidation fixes that independently. |
+
+### Summary counts
+
+- **KEEP** (4): Cmd+K palette (4), vim-style shortcuts (5), alert-badge poll (6), CSRF patcher (7). Total ≈ **145 lines of JS + CSS** to port.
+- **REPLACE** (1): search-with-dropdown (9) — optional polish.
+- **DROP** (5): ticker bar (1), F-key visual row (2), live indicator (3), status bar (8), nav-width (10).
+
+### Port plan for KEEP items
+
+The four KEEP items should be added to `_chartis_kit.chartis_shell()` as a
+single patch before Wave 1 migrations begin. Scope per item:
+
+- **CSRF patcher** — 20 lines of JS. Straight copy-paste from
+  `shell_v2.py:968-987` into a helper that `chartis_shell` appends to
+  its `<script>` tag. No HTML changes.
+- **Alert badge poll** — 8 lines of JS + an icon slot in the topbar.
+  Topbar is already built in `chartis_shell`; add a single bell icon
+  with `id="ck-alert-count"`. Copy the poll JS.
+- **Vim-style shortcuts** — 35 lines of JS + the `?` help modal HTML.
+  No changes to page body. Ship the help modal as an always-loaded
+  hidden `<div>`.
+- **Cmd+K palette** — 80 lines JS + 60 lines CSS + the 20-entry catalog.
+  The catalog should live in `_chartis_kit.py` alongside `_CORPUS_NAV`
+  so updates flow through both. Biggest single piece; still < 2 hours.
+
+Total port cost ≈ **4 hours** of focused work. After the port,
+`chartis_shell` is a strict superset of `shell_v2`'s actual behaviour
+(minus the three DROP-classified cosmetic lies).
+
+### Recommendation
+
+**Port all four KEEP items into `chartis_shell` first** as a single
+"feat: port shell_v2 KEEP features into chartis_shell" commit. Then run
+Waves 1-3 against a chartis that's feature-parity with shell_v2 on
+everything load-bearing. No partner loses functionality in the migration.
+
+If the decision is "skip the port, accept the loss":
+- CSRF patcher loss is a **bug** — any chartis page with a form will break.
+  Must port regardless.
+- Alert badge loss is a **UX regression** — partners lose at-a-glance
+  alert count across all 56 migrated pages. Should port.
+- Cmd+K + vim shortcuts are power-user features — *could* be dropped if
+  no one uses them, but we haven't measured.
+
+The CSRF and alert-badge ports are non-negotiable. The palette and
+shortcuts are a judgment call but cheap.
