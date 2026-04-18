@@ -21548,5 +21548,193 @@ class TestPhysicianGroupFrictionScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestDiligenceSpendBudget(unittest.TestCase):
+    """Partner scenario: how much to spend to decide?"""
+
+    def test_clean_deal_lean_budget(self) -> None:
+        """Partner: 'clean $500M deal → ~50 bps baseline.'"""
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        r = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            subsector="urgent_care",
+            source="limited_auction_invited",
+        ))
+        self.assertGreater(r.total_m, 1.5)
+        self.assertLess(r.total_m, 5.0)
+
+    def test_large_deal_lower_pct_of_ev(self) -> None:
+        """Partner: 'on $1B+ deals, bps compress.'"""
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        small = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=150.0,
+            source="limited_auction_invited",
+        ))
+        large = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=1200.0,
+            source="limited_auction_invited",
+        ))
+        self.assertGreater(small.total_pct_of_ev,
+                            large.total_pct_of_ev)
+
+    def test_material_cyber_doubles_it_line(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        clean = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            cyber_exposure_material=False,
+        ))
+        risky = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            cyber_exposure_material=True,
+        ))
+        clean_it = next(w for w in clean.workstreams
+                         if w.name == "it_cyber")
+        risky_it = next(w for w in risky.workstreams
+                         if w.name == "it_cyber")
+        self.assertAlmostEqual(
+            risky_it.final_m / clean_it.final_m, 2.0, places=1
+        )
+
+    def test_turnaround_thesis_boosts_consultants(self) -> None:
+        """Partner: 'turnaround thesis → 2.5x consultants line.'"""
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        clean = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            turnaround_thesis=False,
+        ))
+        turn = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            turnaround_thesis=True,
+        ))
+        clean_c = next(w for w in clean.workstreams
+                        if w.name == "consultants_operators")
+        turn_c = next(w for w in turn.workstreams
+                       if w.name == "consultants_operators")
+        self.assertGreater(turn_c.final_m, clean_c.final_m * 2.0)
+
+    def test_hospital_subsector_scales_qofe(self) -> None:
+        """Partner: 'hospital QofE is heavier.'"""
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        dental = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0, subsector="dental_office",
+        ))
+        hospital = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0, subsector="hospital_general",
+        ))
+        dental_q = next(w for w in dental.workstreams
+                         if w.name == "qofe")
+        hospital_q = next(w for w in hospital.workstreams
+                           if w.name == "qofe")
+        self.assertGreater(hospital_q.final_m, dental_q.final_m)
+
+    def test_regulatory_overhangs_add_counsel(self) -> None:
+        """Partner: 'each overhang adds 30% regulatory line.'"""
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        none = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            regulatory_overhang_count=0,
+        ))
+        three = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            regulatory_overhang_count=3,
+        ))
+        n_reg = next(w for w in none.workstreams
+                      if w.name ==
+                      "regulatory_healthcare_compliance")
+        t_reg = next(w for w in three.workstreams
+                      if w.name ==
+                      "regulatory_healthcare_compliance")
+        self.assertGreater(t_reg.final_m, n_reg.final_m)
+
+    def test_broad_auction_compresses_legal(self) -> None:
+        """Partner: 'broad auction = compressed diligence timeline.'"""
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        broad = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            source="broad_auction",
+        ))
+        prop = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            source="proprietary_from_relationship",
+        ))
+        broad_legal = next(w for w in broad.workstreams
+                            if w.name == "legal_corporate_tax")
+        prop_legal = next(w for w in prop.workstreams
+                           if w.name == "legal_corporate_tax")
+        self.assertLess(broad_legal.final_m, prop_legal.final_m)
+
+    def test_biggest_line_named_in_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        r = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+            turnaround_thesis=True,  # consultants becomes biggest
+        ))
+        self.assertIn(r.biggest_line, [
+            w.name for w in r.workstreams
+        ])
+
+    def test_all_workstreams_accounted_for(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        r = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+        ))
+        names = {w.name for w in r.workstreams}
+        self.assertEqual(len(names), 8)
+        self.assertIn("qofe", names)
+        self.assertIn("legal_corporate_tax", names)
+        self.assertIn("insurance_rw", names)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            render_diligence_budget_markdown,
+            size_diligence_budget,
+        )
+        md = render_diligence_budget_markdown(
+            size_diligence_budget(DiligenceBudgetInputs(
+                ev_m=500.0,
+            ))
+        )
+        self.assertIn("# Diligence spend budget", md)
+        self.assertIn("Workstream", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            DiligenceBudgetInputs,
+            size_diligence_budget,
+        )
+        r = size_diligence_budget(DiligenceBudgetInputs(
+            ev_m=500.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
