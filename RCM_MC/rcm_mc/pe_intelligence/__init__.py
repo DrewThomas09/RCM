@@ -1043,6 +1043,13 @@ from .pre_ic_chair_brief import (
     render_chair_brief_markdown,
     render_chair_brief_text,
 )
+from .seller_math_reverse import (
+    ImpliedAssumption,
+    SellerMathInputs,
+    SellerMathReport,
+    render_seller_math_markdown,
+    reverse_engineer_seller_math,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2259,4 +2266,9 @@ __all__ = [
     "compose_chair_brief",
     "render_chair_brief_markdown",
     "render_chair_brief_text",
+    "ImpliedAssumption",
+    "SellerMathInputs",
+    "SellerMathReport",
+    "render_seller_math_markdown",
+    "reverse_engineer_seller_math",
 ]

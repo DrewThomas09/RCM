@@ -18295,5 +18295,221 @@ class TestPreICChairBrief(unittest.TestCase):
         json.dumps(b.to_dict())
 
 
+class TestSellerMathReverse(unittest.TestCase):
+    """Partner scenario: what must seller believe to justify ask?"""
+
+    def test_symmetric_inputs_yields_no_premium(self) -> None:
+        """Partner: 'seller ask matches our math — done.'"""
+        from rcm_mc.pe_intelligence import (
+            SellerMathInputs,
+            reverse_engineer_seller_math,
+        )
+        inputs = SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=0.0,   # placeholder, overridden below
+            target_moic=2.5,
+        )
+        # Set ask = buyer's implied price.
+        base = reverse_engineer_seller_math(inputs)
+        aligned = SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=base.buyer_implied_price_m,
+            target_moic=2.5,
+        )
+        r = reverse_engineer_seller_math(aligned)
+        self.assertAlmostEqual(r.ask_premium_pct, 0.0, places=2)
+
+    def test_ask_premium_implies_multiple_lift(self) -> None:
+        """If seller asks 20% over, implied multiple must lift."""
+        from rcm_mc.pe_intelligence import (
+            SellerMathInputs,
+            reverse_engineer_seller_math,
+        )
+        inputs = SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=0.0,
+            target_moic=2.5,
+        )
+        base = reverse_engineer_seller_math(inputs)
+        stretched = SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=base.buyer_implied_price_m * 1.20,
+            target_moic=2.5,
+        )
+        r = reverse_engineer_seller_math(stretched)
+        mult = next(a for a in r.assumptions
+                    if a.variable == "implied_exit_multiple")
+        self.assertGreater(mult.implied_seller,
+                            mult.buyer_base)
+
+    def test_ask_premium_implies_higher_growth(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SellerMathInputs,
+            reverse_engineer_seller_math,
+        )
+        inputs = SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=0.0,
+            target_moic=2.5,
+        )
+        base = reverse_engineer_seller_math(inputs)
+        r = reverse_engineer_seller_math(SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=base.buyer_implied_price_m * 1.20,
+            target_moic=2.5,
+        ))
+        growth = next(a for a in r.assumptions
+                       if a.variable == "implied_annual_ebitda_growth")
+        self.assertGreater(growth.implied_seller, growth.buyer_base)
+
+    def test_high_premium_triggers_escalation(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SellerMathInputs,
+            reverse_engineer_seller_math,
+        )
+        r = reverse_engineer_seller_math(SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=1500.0,  # aggressive
+            target_moic=2.5,
+        ))
+        self.assertGreater(r.ask_premium_pct, 0.15)
+        self.assertIn("defend", r.partner_note.lower())
+
+    def test_cycle_peak_interpretation(self) -> None:
+        """Implied exit > 16x → 'cycle peak' interpretation."""
+        from rcm_mc.pe_intelligence import (
+            SellerMathInputs,
+            reverse_engineer_seller_math,
+        )
+        r = reverse_engineer_seller_math(SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=1500.0,
+            target_moic=2.5,
+        ))
+        mult = next(a for a in r.assumptions
+                    if a.variable == "implied_exit_multiple")
+        if mult.implied_seller > 16:
+            self.assertIn("cycle-peak",
+                           mult.partner_interpretation.lower())
+
+    def test_below_ask_triggers_diligence_note(self) -> None:
+        """Seller below base → 'something we're missing.'"""
+        from rcm_mc.pe_intelligence import (
+            SellerMathInputs,
+            reverse_engineer_seller_math,
+        )
+        inputs = SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=0.0,
+            target_moic=2.5,
+        )
+        base = reverse_engineer_seller_math(inputs)
+        r = reverse_engineer_seller_math(SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=base.buyer_implied_price_m * 0.80,
+            target_moic=2.5,
+        ))
+        self.assertLess(r.ask_premium_pct, 0.0)
+        self.assertIn("diligence", r.partner_note.lower())
+
+    def test_all_three_variables_present(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SellerMathInputs,
+            reverse_engineer_seller_math,
+        )
+        r = reverse_engineer_seller_math(SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=1000.0,
+            target_moic=2.5,
+        ))
+        variables = {a.variable for a in r.assumptions}
+        self.assertEqual(variables, {
+            "implied_exit_multiple",
+            "implied_annual_ebitda_growth",
+            "implied_margin_expansion_bps",
+        })
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SellerMathInputs,
+            render_seller_math_markdown,
+            reverse_engineer_seller_math,
+        )
+        md = render_seller_math_markdown(
+            reverse_engineer_seller_math(SellerMathInputs(
+                buyer_base_ebitda_m=75.0,
+                buyer_base_exit_multiple=11.0,
+                buyer_base_ebitda_growth_pct=0.05,
+                buyer_base_margin_expansion_bps=100,
+                hold_years=5.0,
+                seller_ask_price_m=1000.0,
+                target_moic=2.5,
+            ))
+        )
+        self.assertIn("# Seller math reverse-engineer", md)
+        self.assertIn("Buyer's implied", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            SellerMathInputs,
+            reverse_engineer_seller_math,
+        )
+        r = reverse_engineer_seller_math(SellerMathInputs(
+            buyer_base_ebitda_m=75.0,
+            buyer_base_exit_multiple=11.0,
+            buyer_base_ebitda_growth_pct=0.05,
+            buyer_base_margin_expansion_bps=100,
+            hold_years=5.0,
+            seller_ask_price_m=900.0,
+            target_moic=2.5,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
