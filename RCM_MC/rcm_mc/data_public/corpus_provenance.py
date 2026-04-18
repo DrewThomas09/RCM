@@ -40,7 +40,12 @@ from typing import Dict
 # Entries are added by discrete commits so each tagging decision is
 # reviewable in isolation.
 PROVENANCE_REGISTRY: Dict[str, str] = {
-    # Populated group-by-group in subsequent commits.
+    # --- Real ---
+    # Batch 0: 35 foundational seed deals in deals_corpus.py.
+    # Spot-checked 5/5 confirmed real (HCA/KKR-Bain 2006, Vanguard/
+    # Blackstone 2004, LifePoint/KKR 2018, Tenet/Vanguard 2013, CHS/
+    # HMA 2014). All blue-chip historical LBOs or strategic deals.
+    "_SEED_DEALS": "real",
 }
 
 
