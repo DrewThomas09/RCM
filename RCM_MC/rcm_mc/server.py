@@ -1796,6 +1796,23 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/methodology":
             from .ui.methodology_page import render_methodology
             return self._send_html(render_methodology())
+        # Partner Brain (PE Intelligence judgment layer) — Phase 0
+        if path == "/partner-brain":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.partner_brain_hub_page import render_partner_brain_hub
+            return self._send_html(render_partner_brain_hub(_qp))
+        if path == "/partner-brain/review":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.partner_review_page import render_partner_review
+            return self._send_html(render_partner_review(_qp))
+        if path.startswith("/partner-brain/"):
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _qp["slug"] = path[len("/partner-brain/"):].strip("/").lower()
+            from .ui.data_public.partner_brain_hub_page import render_partner_brain_category_stub
+            return self._send_html(render_partner_brain_category_stub(_qp))
         # Corpus Intelligence pages
         if path == "/deals-library":
             _qs = urllib.parse.parse_qs(parsed.query)
