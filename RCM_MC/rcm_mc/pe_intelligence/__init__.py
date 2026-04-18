@@ -1142,6 +1142,14 @@ from .signing_to_close_risk_register import (
     render_sign_to_close_markdown,
     scan_sign_to_close_risks,
 )
+from .physician_comp_normalization_check import (
+    AdjustmentAssessment as PhysicianCompAdjustmentAssessment,
+    CompAdjustment,
+    PhysicianCompNormInputs,
+    PhysicianCompNormReport,
+    check_physician_comp_normalization,
+    render_physician_comp_norm_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2431,4 +2439,10 @@ __all__ = [
     "list_sign_to_close_risks",
     "render_sign_to_close_markdown",
     "scan_sign_to_close_risks",
+    "CompAdjustment",
+    "PhysicianCompAdjustmentAssessment",
+    "PhysicianCompNormInputs",
+    "PhysicianCompNormReport",
+    "check_physician_comp_normalization",
+    "render_physician_comp_norm_markdown",
 ]

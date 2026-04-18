@@ -20253,5 +20253,188 @@ class TestSigningToCloseRiskRegister(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPhysicianCompNormalizationCheck(unittest.TestCase):
+    """Partner scenario: how much of the comp-normalization uplift survives?"""
+
+    def test_no_adjustments_yields_accept(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+        )
+        r = check_physician_comp_normalization(PhysicianCompNormInputs(
+            stated_ebitda_m=15.0,
+            current_avg_comp_usd=500_000,
+            proposed_avg_comp_usd=500_000,   # no cut
+        ))
+        self.assertEqual(r.verdict, "accept")
+        self.assertFalse(r.churn_risk_flag)
+
+    def test_base_comp_partial_survival(self) -> None:
+        """Partner: 'base-comp norm survives 60%; 40% haircut.'"""
+        from rcm_mc.pe_intelligence import (
+            CompAdjustment,
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+        )
+        r = check_physician_comp_normalization(PhysicianCompNormInputs(
+            stated_ebitda_m=20.0,
+            proposed_adjustments=[CompAdjustment(
+                "base_comp_normalization", 5.0
+            )],
+            current_avg_comp_usd=600_000,
+            proposed_avg_comp_usd=550_000,  # 8% cut, no churn
+        ))
+        comp = next(a for a in r.adjustments
+                     if a.category == "base_comp_normalization")
+        self.assertAlmostEqual(comp.expected_surviving_m, 3.0,
+                                places=2)
+        self.assertAlmostEqual(comp.expected_haircut_m, 2.0,
+                                places=2)
+
+    def test_churn_flag_fires_on_big_cut(self) -> None:
+        """Partner: 'cut > 20% triggers physician churn assumption.'"""
+        from rcm_mc.pe_intelligence import (
+            CompAdjustment,
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+        )
+        r = check_physician_comp_normalization(PhysicianCompNormInputs(
+            stated_ebitda_m=20.0,
+            proposed_adjustments=[CompAdjustment(
+                "base_comp_normalization", 6.0
+            )],
+            current_avg_comp_usd=600_000,
+            proposed_avg_comp_usd=420_000,   # 30% cut — churn
+            physician_count=20,
+        ))
+        self.assertTrue(r.churn_risk_flag)
+        self.assertGreater(r.churn_ebitda_hit_m, 0)
+
+    def test_below_market_rent_cut_rejected(self) -> None:
+        """Partner: 'cutting below-market rent to lower = rejected.'"""
+        from rcm_mc.pe_intelligence import (
+            CompAdjustment,
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+        )
+        r = check_physician_comp_normalization(PhysicianCompNormInputs(
+            stated_ebitda_m=15.0,
+            proposed_adjustments=[CompAdjustment(
+                "related_party_rent", 2.0
+            )],
+            rent_cut_is_below_market=True,
+        ))
+        rent = next(a for a in r.adjustments
+                     if "rent" in a.category)
+        # 30% survival when below market.
+        self.assertAlmostEqual(rent.expected_survival_pct, 0.30,
+                                places=2)
+
+    def test_management_fee_survives_90pct(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CompAdjustment,
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+        )
+        r = check_physician_comp_normalization(PhysicianCompNormInputs(
+            stated_ebitda_m=20.0,
+            proposed_adjustments=[CompAdjustment(
+                "management_fee_elim", 2.0
+            )],
+        ))
+        mgmt = next(a for a in r.adjustments
+                     if a.category == "management_fee_elim")
+        self.assertAlmostEqual(mgmt.expected_surviving_m, 1.80,
+                                places=2)
+
+    def test_large_aggregate_haircut_triggers_walk(self) -> None:
+        """Partner: '20%+ haircut → walk or seller recut.'"""
+        from rcm_mc.pe_intelligence import (
+            CompAdjustment,
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+        )
+        r = check_physician_comp_normalization(PhysicianCompNormInputs(
+            stated_ebitda_m=15.0,
+            proposed_adjustments=[
+                CompAdjustment("base_comp_normalization", 8.0),
+                CompAdjustment("retention_bonuses", 3.0),
+            ],
+            current_avg_comp_usd=700_000,
+            proposed_avg_comp_usd=450_000,   # 36% cut
+        ))
+        self.assertEqual(r.verdict, "walk")
+
+    def test_adjusted_ebitda_is_stated_minus_haircut(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CompAdjustment,
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+        )
+        r = check_physician_comp_normalization(PhysicianCompNormInputs(
+            stated_ebitda_m=20.0,
+            proposed_adjustments=[CompAdjustment(
+                "base_comp_normalization", 5.0
+            )],
+            current_avg_comp_usd=600_000,
+            proposed_avg_comp_usd=550_000,  # no churn
+        ))
+        # Haircut = 2.0, no churn hit → 20 - 2 = 18.
+        self.assertAlmostEqual(r.adjusted_ebitda_m, 18.0,
+                                places=2)
+
+    def test_unknown_category_defaults_to_other(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CompAdjustment,
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+        )
+        r = check_physician_comp_normalization(PhysicianCompNormInputs(
+            stated_ebitda_m=15.0,
+            proposed_adjustments=[CompAdjustment(
+                "some_weird_category", 2.0
+            )],
+        ))
+        weird = r.adjustments[0]
+        self.assertEqual(weird.category, "some_weird_category")
+        self.assertAlmostEqual(weird.expected_survival_pct, 0.50,
+                                places=2)
+
+    def test_markdown_renders_verdict_and_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CompAdjustment,
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+            render_physician_comp_norm_markdown,
+        )
+        md = render_physician_comp_norm_markdown(
+            check_physician_comp_normalization(PhysicianCompNormInputs(
+                stated_ebitda_m=15.0,
+                proposed_adjustments=[CompAdjustment(
+                    "base_comp_normalization", 4.0
+                )],
+                current_avg_comp_usd=600_000,
+                proposed_avg_comp_usd=400_000,  # 33% cut
+            ))
+        )
+        self.assertIn("# Physician comp normalization check", md)
+        self.assertIn("Verdict", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            CompAdjustment,
+            PhysicianCompNormInputs,
+            check_physician_comp_normalization,
+        )
+        r = check_physician_comp_normalization(PhysicianCompNormInputs(
+            stated_ebitda_m=15.0,
+            proposed_adjustments=[CompAdjustment(
+                "base_comp_normalization", 4.0
+            )],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
