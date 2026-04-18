@@ -2129,6 +2129,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.compliance_attestation_page import render_compliance_attestation
             return self._send_html(render_compliance_attestation(_qp))
+        if path == "/esg-impact":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.esg_impact_page import render_esg_impact
+            return self._send_html(render_esg_impact(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

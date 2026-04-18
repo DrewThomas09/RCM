@@ -239,6 +239,7 @@ NAV_ITEMS = [
     {"label": "Fundraising", "href": "/fundraising", "icon": "chart"},
     {"label": "Operating Partners", "href": "/operating-partners", "icon": "grid"},
     {"label": "Compliance / SOC 2", "href": "/compliance-attestation", "icon": "bookmark"},
+    {"label": "ESG / Impact", "href": "/esg-impact", "icon": "grid"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
