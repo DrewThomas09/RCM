@@ -158,6 +158,7 @@ NAV_ITEMS = [
     {"label": "Revenue Leakage", "href": "/revenue-leakage", "icon": "chart"},
     {"label": "Reference Pricing", "href": "/ref-pricing", "icon": "chart"},
     {"label": "Geo Market", "href": "/geo-market", "icon": "chart"},
+    {"label": "Capital Schedule", "href": "/capital-schedule", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
