@@ -1596,6 +1596,14 @@ from .c_suite_team_grader import (
     grade_c_suite_team,
     render_c_suite_team_markdown,
 )
+from .site_of_service_revenue_mix import (
+    SiteOfServiceMixInputs,
+    SiteOfServiceMixReport,
+    SiteRevenueLine,
+    SiteShare,
+    analyze_site_of_service_mix,
+    render_site_of_service_mix_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3215,4 +3223,10 @@ __all__ = [
     "SeatGrade",
     "grade_c_suite_team",
     "render_c_suite_team_markdown",
+    "SiteOfServiceMixInputs",
+    "SiteOfServiceMixReport",
+    "SiteRevenueLine",
+    "SiteShare",
+    "analyze_site_of_service_mix",
+    "render_site_of_service_mix_markdown",
 ]

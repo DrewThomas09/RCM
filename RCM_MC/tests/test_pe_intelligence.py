@@ -31907,5 +31907,252 @@ class TestCSuiteTeamGrader(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestSiteOfServiceRevenueMix(unittest.TestCase):
+    """Partner voice: 'The site mix tells you reg exposure, margin, and migration opportunity.'"""
+
+    def test_no_lines_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs())
+        self.assertIn(
+            "no site-of-service",
+            r.partner_note.lower(),
+        )
+
+    def test_total_npr_aggregated(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[
+                    SiteRevenueLine("inpatient", 100.0),
+                    SiteRevenueLine("hopd", 50.0),
+                    SiteRevenueLine("asc", 30.0),
+                ],
+            )
+        )
+        self.assertAlmostEqual(r.total_npr_m, 180.0)
+
+    def test_high_hopd_share_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[
+                    SiteRevenueLine("hopd", 70.0),
+                    SiteRevenueLine("asc", 20.0),
+                    SiteRevenueLine("physician_office", 10.0),
+                ],
+            )
+        )
+        self.assertEqual(
+            r.reg_exposure_verdict, "high_reg_exposure"
+        )
+        self.assertIn(
+            "site-neutral", r.partner_note.lower()
+        )
+
+    def test_moderate_hopd_share(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[
+                    SiteRevenueLine("hopd", 40.0),
+                    SiteRevenueLine("asc", 30.0),
+                    SiteRevenueLine("physician_office", 30.0),
+                ],
+            )
+        )
+        self.assertEqual(
+            r.reg_exposure_verdict,
+            "moderate_reg_exposure",
+        )
+
+    def test_low_hopd_balanced(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[
+                    SiteRevenueLine("hopd", 10.0),
+                    SiteRevenueLine("asc", 50.0),
+                    SiteRevenueLine("physician_office", 40.0),
+                ],
+            )
+        )
+        self.assertEqual(
+            r.reg_exposure_verdict, "balanced"
+        )
+
+    def test_op_migration_opportunity(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[
+                    SiteRevenueLine(
+                        "inpatient", 30.0,
+                        eligible_for_op_migration=True),
+                    SiteRevenueLine("inpatient", 70.0),
+                    SiteRevenueLine("asc", 50.0),
+                ],
+            )
+        )
+        self.assertAlmostEqual(
+            r.op_migration_opportunity_m, 30.0
+        )
+        self.assertIn(
+            "migration opportunity",
+            r.partner_note.lower(),
+        )
+
+    def test_asc_share_flagged_in_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[
+                    SiteRevenueLine("asc", 50.0),
+                    SiteRevenueLine("physician_office", 50.0),
+                ],
+            )
+        )
+        self.assertGreaterEqual(r.asc_share_pct, 0.30)
+        self.assertIn(
+            "asc share", r.partner_note.lower()
+        )
+
+    def test_weighted_margin_computed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        # 100M ASC at 30% + 100M IP at 10% → weighted 20%
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[
+                    SiteRevenueLine("asc", 100.0),
+                    SiteRevenueLine("inpatient", 100.0),
+                ],
+            )
+        )
+        self.assertAlmostEqual(
+            r.weighted_contribution_margin_pct,
+            0.20,
+            places=2,
+        )
+
+    def test_aggregation_across_multiple_lines(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        # Multiple lines of same type aggregate
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[
+                    SiteRevenueLine("hopd", 20.0),
+                    SiteRevenueLine("hopd", 30.0),
+                    SiteRevenueLine("asc", 50.0),
+                ],
+            )
+        )
+        hopd = next(
+            s for s in r.shares if s.site_type == "hopd"
+        )
+        self.assertAlmostEqual(hopd.npr_m, 50.0)
+
+    def test_shares_sorted_descending(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[
+                    SiteRevenueLine("inpatient", 30.0),
+                    SiteRevenueLine("hopd", 100.0),
+                    SiteRevenueLine("asc", 50.0),
+                ],
+            )
+        )
+        npr_seq = [s.npr_m for s in r.shares]
+        self.assertEqual(
+            npr_seq, sorted(npr_seq, reverse=True)
+        )
+
+    def test_zero_total_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[SiteRevenueLine("hopd", 0.0)],
+            )
+        )
+        self.assertIn(
+            "zero", r.partner_note.lower()
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+            render_site_of_service_mix_markdown,
+        )
+        md = render_site_of_service_mix_markdown(
+            analyze_site_of_service_mix(
+                SiteOfServiceMixInputs(
+                    lines=[SiteRevenueLine("hopd", 50.0)],
+                )
+            )
+        )
+        self.assertIn(
+            "# Site-of-service revenue mix", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            SiteOfServiceMixInputs,
+            SiteRevenueLine,
+            analyze_site_of_service_mix,
+        )
+        r = analyze_site_of_service_mix(
+            SiteOfServiceMixInputs(
+                lines=[SiteRevenueLine("hopd", 30.0)],
+            )
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
