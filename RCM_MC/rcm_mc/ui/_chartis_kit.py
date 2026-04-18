@@ -201,6 +201,7 @@ _CORPUS_NAV = [
     {"label": "Capital Call",    "href": "/capital-call",          "icon": "▣"},
     {"label": "Litigation",      "href": "/litigation",            "icon": "▥"},
     {"label": "Fundraising",     "href": "/fundraising",           "icon": "▣"},
+    {"label": "Operating Partners","href": "/operating-partners",  "icon": "▤"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
