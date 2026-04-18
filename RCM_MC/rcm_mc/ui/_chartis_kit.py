@@ -145,6 +145,7 @@ _CORPUS_NAV = [
     {"label": "ACO Economics",   "href": "/aco-economics",    "icon": "▦"},
     {"label": "Phys Comp Plan",  "href": "/phys-comp-plan",   "icon": "▦"},
     {"label": "Locum Workforce", "href": "/locum-tracker",    "icon": "▣"},
+    {"label": "MA Contracts",    "href": "/ma-contracts",     "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
