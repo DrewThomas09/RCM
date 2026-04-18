@@ -7095,7 +7095,69 @@ at scale-back."
 
 ---
 
-## 217. Change log
+## 217. Governance package designer (`governance_package_designer.py`)
+
+**Partner statement:** "The board seats are the first
+question. The reserved matters are the second. The
+rollover protections are the third. Get the first two
+right and I can live with the third. Get the third
+wrong and the rollover is a litigation seed."
+
+Distinct from `board_composition_analyzer` (scores a
+filled board) and `board_memo` (meeting format). This
+module **designs** the close-date governance package
+across 4 dimensions.
+
+### Board sizing by platform tier
+
+- Platform → 7 seats (3 sponsor / 3 independent / 1
+  management).
+- Hybrid → 6 (3 / 2 / 1).
+- Add-on → 5 (3 / 1 / 1).
+- Rollover ≥ 20% → add 1 management seat.
+
+### Committees
+
+Always: **audit**, **compensation**, **nominating**
+(all sponsor-chaired).
+Healthcare: **compliance** (independent-chaired —
+governance-best-practice + regulatory signal).
+
+### Reserved matters (7, sponsor consent required)
+
+- strategic_m_and_a (> $10M EV).
+- leverage_change (any).
+- ceo_or_cfo_hire (any).
+- annual_operating_plan (annual).
+- capital_raise (any).
+- related_party_transactions (> $250K).
+- regulatory_settlement (> $500K or reputational).
+
+### Rollover protections
+
+- **Any rollover** → tag-along + drag-along + preemption
+  + information rights.
+- **Rollover ≥ 20%** → + Y5 liquidity put at FMV.
+
+### Worked example
+
+Hospital platform, 15% rollover:
+- Board: 7 seats (3 sponsor, 3 indep, 1 mgmt).
+- Committees: audit + comp + compliance (indep-chaired) +
+  nominating.
+- 7 reserved matters.
+- Tag + drag + preemption + info rights.
+
+### Packet fields
+
+`platform_tier`, `sponsor_equity_pct`,
+`rollover_equity_pct`, `subsector`,
+`management_has_preexisting_equity`,
+`lp_pressure_level`.
+
+---
+
+## 218. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
