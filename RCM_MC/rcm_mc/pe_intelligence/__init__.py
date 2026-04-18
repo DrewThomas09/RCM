@@ -1618,6 +1618,14 @@ from .banker_partner_pricing_tension import (
     read_banker_pricing_tension,
     render_banker_pricing_tension_markdown,
 )
+from .state_scope_of_practice_exposure import (
+    ScopeOfPracticeInputs,
+    ScopeOfPracticeReport,
+    StateExposure,
+    StateFootprint,
+    analyze_scope_of_practice,
+    render_scope_of_practice_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3253,4 +3261,10 @@ __all__ = [
     "BankerPricingTensionReport",
     "read_banker_pricing_tension",
     "render_banker_pricing_tension_markdown",
+    "ScopeOfPracticeInputs",
+    "ScopeOfPracticeReport",
+    "StateExposure",
+    "StateFootprint",
+    "analyze_scope_of_practice",
+    "render_scope_of_practice_markdown",
 ]

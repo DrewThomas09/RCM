@@ -32474,5 +32474,209 @@ class TestBankerPartnerPricingTension(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestStateScopeOfPracticeExposure(unittest.TestCase):
+    """Partner voice: 'State footprint tells you most of the regulatory burden.'"""
+
+    def test_empty_footprint_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            analyze_scope_of_practice,
+        )
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs())
+        self.assertIn(
+            "no state footprint",
+            r.partner_note.lower(),
+        )
+
+    def test_ca_cpom_noncompete_ban(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[StateFootprint("CA", 1.0)],
+            )
+        )
+        ca = r.state_exposures[0]
+        self.assertEqual(ca.cpom, "strict")
+        self.assertEqual(ca.noncompete, "ban")
+        self.assertTrue(ca.needs_mso_pc_structure)
+
+    def test_fl_lenient_cpom(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[StateFootprint("FL", 1.0)],
+            )
+        )
+        fl = r.state_exposures[0]
+        self.assertEqual(fl.cpom, "lenient")
+        self.assertFalse(fl.needs_mso_pc_structure)
+
+    def test_restrictive_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        # CA + NY (strict CPOM) + ND (non-compete ban)
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[
+                    StateFootprint("CA", 0.40),
+                    StateFootprint("NY", 0.30),
+                    StateFootprint("ND", 0.30),
+                ],
+            )
+        )
+        self.assertEqual(r.verdict, "restrictive")
+
+    def test_friendly_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        # FL + OH + GA — lenient CPOM, enforceable non-compete
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[
+                    StateFootprint("FL", 0.50),
+                    StateFootprint("OH", 0.25),
+                    StateFootprint("GA", 0.25),
+                ],
+            )
+        )
+        self.assertEqual(r.verdict, "friendly")
+
+    def test_mso_pc_required_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[
+                    StateFootprint("TX", 0.40),
+                    StateFootprint("NJ", 0.20),
+                    StateFootprint("OH", 0.40),
+                ],
+            )
+        )
+        # CPOM strict share: TX + NJ = 60%; no ban state
+        self.assertIn(
+            r.verdict, {"mso_pc_required", "restrictive"}
+        )
+
+    def test_retention_critical_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        # Heavy non-compete ban but lenient CPOM — retention_critical
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[
+                    StateFootprint("ND", 0.40),
+                    StateFootprint("FL", 0.60),
+                ],
+            )
+        )
+        self.assertEqual(
+            r.verdict, "retention_critical"
+        )
+
+    def test_unknown_state_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[StateFootprint("XX", 1.0)],
+            )
+        )
+        exp = r.state_exposures[0]
+        self.assertFalse(exp.in_catalog)
+        self.assertEqual(r.verdict, "heterogeneous")
+
+    def test_full_practice_share_accumulates(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[
+                    StateFootprint("AZ", 0.50),
+                    StateFootprint("CO", 0.50),
+                ],
+            )
+        )
+        self.assertAlmostEqual(
+            r.weighted_full_practice_np_pa_pct, 1.0
+        )
+
+    def test_flags_include_cpom_strict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[StateFootprint("CA", 1.0)],
+                is_physician_owned=True,
+            )
+        )
+        flags = r.state_exposures[0].flags
+        self.assertTrue(
+            any("CPOM-strict" in f for f in flags)
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+            render_scope_of_practice_markdown,
+        )
+        md = render_scope_of_practice_markdown(
+            analyze_scope_of_practice(
+                ScopeOfPracticeInputs(
+                    footprint=[StateFootprint("CA", 1.0)],
+                )
+            )
+        )
+        self.assertIn(
+            "# State scope-of-practice exposure", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ScopeOfPracticeInputs,
+            StateFootprint,
+            analyze_scope_of_practice,
+        )
+        r = analyze_scope_of_practice(
+            ScopeOfPracticeInputs(
+                footprint=[StateFootprint("CA", 1.0)],
+            )
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
