@@ -163,6 +163,7 @@ NAV_ITEMS = [
     {"label": "VCP 100-Day", "href": "/value-creation-plan", "icon": "chart"},
     {"label": "Cap Structure", "href": "/cap-structure", "icon": "chart"},
     {"label": "Real Estate", "href": "/real-estate", "icon": "chart"},
+    {"label": "Workforce Plan", "href": "/workforce-planning", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
