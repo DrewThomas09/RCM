@@ -219,6 +219,7 @@ NAV_ITEMS = [
     {"label": "Secondaries", "href": "/secondaries-tracker", "icon": "chart"},
     {"label": "Tax Structure Analyzer", "href": "/tax-structure-analyzer", "icon": "chart"},
     {"label": "Diligence Vendors", "href": "/diligence-vendors", "icon": "chart"},
+    {"label": "Refi Optimizer", "href": "/refi-optimizer", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

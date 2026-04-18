@@ -183,6 +183,7 @@ _CORPUS_NAV = [
     {"label": "Secondaries",     "href": "/secondaries-tracker",   "icon": "▦"},
     {"label": "Tax Structure An.","href": "/tax-structure-analyzer","icon": "▣"},
     {"label": "Diligence Vendors","href": "/diligence-vendors",    "icon": "▦"},
+    {"label": "Refi Optimizer",  "href": "/refi-optimizer",        "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
