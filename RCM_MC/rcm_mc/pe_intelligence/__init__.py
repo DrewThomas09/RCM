@@ -919,6 +919,15 @@ from .medicaid_state_exposure_map import (
     map_medicaid_exposure,
     render_medicaid_map_markdown,
 )
+from .earnout_design_advisor import (
+    BAD_DRIVERS as EARNOUT_BAD_DRIVERS,
+    EarnoutInputs,
+    EarnoutReport,
+    EarnoutStructure,
+    GOOD_DRIVERS as EARNOUT_GOOD_DRIVERS,
+    advise_earnout,
+    render_earnout_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2045,4 +2054,11 @@ __all__ = [
     "StateMedicaidSite",
     "map_medicaid_exposure",
     "render_medicaid_map_markdown",
+    "EARNOUT_BAD_DRIVERS",
+    "EARNOUT_GOOD_DRIVERS",
+    "EarnoutInputs",
+    "EarnoutReport",
+    "EarnoutStructure",
+    "advise_earnout",
+    "render_earnout_markdown",
 ]

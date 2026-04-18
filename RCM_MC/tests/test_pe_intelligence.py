@@ -16082,5 +16082,114 @@ class TestMedicaidStateExposureMap(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Earn-out design advisor ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    EARNOUT_BAD_DRIVERS,
+    EARNOUT_GOOD_DRIVERS,
+    EarnoutInputs,
+    EarnoutReport,
+    EarnoutStructure,
+    advise_earnout,
+    render_earnout_markdown,
+)
+
+
+class TestEarnoutDesignAdvisor(unittest.TestCase):
+
+    def test_good_driver_proposes_earnout(self) -> None:
+        r = advise_earnout(EarnoutInputs(
+            price_gap_m=20.0,
+            total_transaction_value_m=200.0,
+            disputed_driver="signed_commercial_contract",
+            driver_description="3 signed commercial contracts",
+            driver_resolution_months=18,
+        ))
+        self.assertTrue(r.structure.should_propose)
+        self.assertEqual(r.driver_quality, "good")
+
+    def test_bad_driver_rejects(self) -> None:
+        r = advise_earnout(EarnoutInputs(
+            price_gap_m=20.0,
+            total_transaction_value_m=200.0,
+            disputed_driver="quality_metric",
+        ))
+        self.assertFalse(r.structure.should_propose)
+        self.assertEqual(r.driver_quality, "bad")
+        self.assertIn("cut headline price",
+                       r.partner_note.lower())
+
+    def test_unknown_driver_half_of_gap(self) -> None:
+        r = advise_earnout(EarnoutInputs(
+            price_gap_m=20.0,
+            total_transaction_value_m=200.0,
+            disputed_driver="custom_driver",
+        ))
+        self.assertEqual(r.driver_quality, "unknown")
+        self.assertAlmostEqual(r.structure.earnout_size_m, 10.0,
+                                places=1)
+
+    def test_seller_flinching_deep_earnout(self) -> None:
+        r = advise_earnout(EarnoutInputs(
+            price_gap_m=20.0,
+            total_transaction_value_m=200.0,
+            disputed_driver="signed_commercial_contract",
+            driver_description="3 contracts",
+            buyer_skepticism_high=True,
+            seller_conviction_high=False,
+        ))
+        self.assertGreaterEqual(r.structure.earnout_pct_of_gap, 0.85)
+
+    def test_licensure_is_cliff(self) -> None:
+        r = advise_earnout(EarnoutInputs(
+            price_gap_m=15.0,
+            total_transaction_value_m=150.0,
+            disputed_driver="regulatory_licensure",
+        ))
+        self.assertFalse(r.structure.pro_rata_achievability)
+
+    def test_physician_owner_adds_retention_bullet(self) -> None:
+        r = advise_earnout(EarnoutInputs(
+            price_gap_m=20.0,
+            total_transaction_value_m=200.0,
+            disputed_driver="signed_commercial_contract",
+            is_physician_owned=True,
+        ))
+        self.assertIn("retention bonus",
+                       r.structure.partner_rationale.lower())
+
+    def test_meaningful_gap_note(self) -> None:
+        r = advise_earnout(EarnoutInputs(
+            price_gap_m=30.0,
+            total_transaction_value_m=100.0,
+            disputed_driver="signed_commercial_contract",
+        ))
+        self.assertIn("earn-out is the bridge",
+                       r.partner_note.lower())
+
+    def test_library_has_drivers(self) -> None:
+        self.assertIn("signed_commercial_contract",
+                       EARNOUT_GOOD_DRIVERS)
+        self.assertIn("quality_metric", EARNOUT_BAD_DRIVERS)
+
+    def test_markdown_renders(self) -> None:
+        md = render_earnout_markdown(advise_earnout(EarnoutInputs(
+            price_gap_m=20.0,
+            total_transaction_value_m=200.0,
+            disputed_driver="signed_commercial_contract",
+            driver_description="3 signed commercial contracts",
+        )))
+        self.assertIn("# Earn-out design advisor", md)
+        self.assertIn("signed commercial", md.lower())
+
+    def test_json(self) -> None:
+        import json
+        r = advise_earnout(EarnoutInputs(
+            price_gap_m=20.0,
+            disputed_driver="signed_commercial_contract",
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
