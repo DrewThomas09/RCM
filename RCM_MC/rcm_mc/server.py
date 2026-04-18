@@ -1994,6 +1994,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.cms_data_browser_page import render_cms_data_browser
             return self._send_html(render_cms_data_browser(_qp))
+        if path == "/msa-concentration":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.msa_concentration_page import render_msa_concentration
+            return self._send_html(render_msa_concentration(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
