@@ -1879,6 +1879,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.reit_analyzer_page import render_reit_analyzer
             return self._send_html(render_reit_analyzer(_qp))
+        if path == "/capital-pacing":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.capital_pacing_page import render_capital_pacing
+            return self._send_html(render_capital_pacing(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
