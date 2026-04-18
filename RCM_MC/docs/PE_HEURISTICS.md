@@ -5051,7 +5051,78 @@ Each motivation carries its own signal list. See
 
 ---
 
-## 184. Change log
+## 184. Covenant package designer (`covenant_package_designer.py`)
+
+**Partner statement:** "The covenant package is where the
+equity gets wiped out. A bad covenant trips on noise; a
+good one trips only when the thesis is actually broken."
+
+`covenant_monitor` tracks compliance post-close. This
+module is the *pre*-close partner advisory: given deal
+stress profile, what package do we negotiate for?
+
+### Four dimensions
+
+1. **Max leverage ratio** — headroom above base EBITDA.
+2. **Step-downs** — quarterly glide path.
+3. **Cure rights** — equity cures (4 of 8 quarters
+   standard).
+4. **Interest coverage floor** — often 1.25-1.75x.
+
+### Partner rule-of-thumb for max leverage
+
+Recommended = max of:
+- **(a)** base leverage + 1.0x cushion
+- **(b)** worst-year bear leverage + 0.5x cushion
+- **(c)** base leverage × (1 + 2 × EBITDA volatility)
+
+The binding constraint tells the partner what's driving
+tightness: if (a) binds, base leverage is the issue; if
+(b) binds, bear case is; if (c) binds, volatility is.
+
+### Step-down glide path
+
+Quarterly glide from recommended-max down to
+`max(base + 0.5, worst_year + 0.25)` at end of hold.
+
+### Partner verdict ladder
+
+- Seller ≥ recommended + 0.5x → `accept` (extra cushion).
+- Seller ∈ [recommended, recommended + 0.5x] → `accept`
+  (focus on cures + step-downs).
+- Seller ∈ [recommended − 0.3, recommended] → `negotiate`.
+- Seller < recommended − 0.3 → `walk` — covenant trips on
+  volatility alone.
+
+### Worked example
+
+Base EBITDA $75M, base leverage 5.5x, worst-year EBITDA
+$65M @ 6.3x, volatility 8%.
+
+- (a) 5.5 + 1.0 = 6.5x
+- (b) 6.3 + 0.5 = 6.8x  (binding)
+- (c) 5.5 × 1.16 = 6.38x
+
+Recommended: **6.8x** with 1.3x cushion.
+
+- Seller at 8.5x → accept.
+- Seller at 6.9x → accept with step-down focus.
+- Seller at 6.55x → negotiate up to 6.8x.
+- Seller at 6.0x → walk.
+
+### Packet fields that trigger
+
+- `base_ebitda_m`, `base_leverage`
+- `worst_year_ebitda_m`, `worst_year_leverage` (from
+  hold_period_shock_schedule)
+- `ebitda_volatility_pct`, `hold_years`
+- `seller_proposed_max_leverage`,
+  `seller_proposed_cure_quarters`
+- `base_interest_coverage`
+
+---
+
+## 185. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
