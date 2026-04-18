@@ -1489,6 +1489,14 @@ from .site_neutral_specific_impact_calculator import (
     compute_site_neutral_exposure,
     render_site_neutral_markdown,
 )
+from .deal_to_historical_failure_matcher import (
+    HistoricalDealSignals,
+    HistoricalFailure,
+    HistoricalMatch,
+    HistoricalMatchReport,
+    match_to_historical_failures,
+    render_historical_match_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3031,4 +3039,10 @@ __all__ = [
     "SiteNeutralReport",
     "compute_site_neutral_exposure",
     "render_site_neutral_markdown",
+    "HistoricalDealSignals",
+    "HistoricalFailure",
+    "HistoricalMatch",
+    "HistoricalMatchReport",
+    "match_to_historical_failures",
+    "render_historical_match_markdown",
 ]

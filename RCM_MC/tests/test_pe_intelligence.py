@@ -28759,5 +28759,231 @@ class TestSiteNeutralSpecificImpactCalculator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestDealToHistoricalFailureMatcher(unittest.TestCase):
+    """Partner voice: 'What blow-up does this look like?'"""
+
+    def test_no_signals_no_matches(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals()
+        )
+        self.assertEqual(len(r.matches), 0)
+        self.assertIn("no historical-failure", r.partner_note.lower())
+
+    def test_ma_risk_matches_2023(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                ma_risk_contract_assumed=True,
+                ma_enrollment_ramp_assumed_rapid=True,
+                ffs_to_ma_cover_narrative=True,
+            )
+        )
+        names = [m.failure_name for m in r.top_matches]
+        self.assertIn("ma_startup_unwind_2023", names)
+
+    def test_primary_care_risk_matches_platform_2023(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                primary_care_risk_platform=True,
+                ma_risk_contract_assumed=True,
+            )
+        )
+        names = [m.failure_name for m in r.matches]
+        self.assertIn(
+            "ma_provider_risk_contract_2023", names
+        )
+
+    def test_rural_cah_pattern_matches(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                rural_hospital=True,
+                rural_cah_high_irr_claim=True,
+            )
+        )
+        names = [m.failure_name for m in r.top_matches]
+        self.assertIn("rural_cah_high_irr_pattern", names)
+
+    def test_rollup_matches_dental_2021(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                dental_dso=True,
+                bolt_on_pace_aggressive=True,
+                valuation_peak_era=True,
+            )
+        )
+        names = [m.failure_name for m in r.top_matches]
+        self.assertIn(
+            "dental_dso_over_rollup_2021", names
+        )
+
+    def test_top3_sorted_by_specificity(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        # Multiple concurrent patterns
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                behavioral_health=True,
+                clinician_supply_stretched=True,
+                ma_risk_contract_assumed=True,
+                ma_enrollment_ramp_assumed_rapid=True,
+                owner_comp_addback_large=True,
+            )
+        )
+        scores = [m.specificity_score for m in r.top_matches]
+        self.assertEqual(
+            scores, sorted(scores, reverse=True)
+        )
+
+    def test_strong_match_note_fires(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        # All 2 conditions of behavioral hit
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                behavioral_health=True,
+                clinician_supply_stretched=True,
+            )
+        )
+        self.assertIn(
+            "strong match", r.partner_note.lower()
+        )
+
+    def test_denial_overpromise_matches(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                denial_rate_aggressive_fix_assumed=True,
+            )
+        )
+        names = [m.failure_name for m in r.matches]
+        self.assertIn(
+            "denial_fix_overpromise_2020", names
+        )
+
+    def test_nsa_out_of_network_matches(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                out_of_network_billing_heavy=True,
+                nsa_exposure=True,
+            )
+        )
+        names = [m.failure_name for m in r.top_matches]
+        self.assertIn(
+            "nsa_platform_rate_shock_2022", names
+        )
+
+    def test_rcm_concentration_matches(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                rcm_as_service=True,
+                top_customer_concentration_pct=0.40,
+            )
+        )
+        names = [m.failure_name for m in r.matches]
+        self.assertIn(
+            "rcm_vendor_concentration_loss_2022", names
+        )
+
+    def test_high_leverage_matches_2022(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                leverage_turns=6.5,
+                covenant_tight=True,
+            )
+        )
+        names = [m.failure_name for m in r.matches]
+        self.assertIn(
+            "over_leveraged_healthcare_2022", names
+        )
+
+    def test_matched_conditions_returned(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                ma_risk_contract_assumed=True,
+            )
+        )
+        for m in r.matches:
+            if m.failure_name == "ma_startup_unwind_2023":
+                self.assertIn(
+                    "ma_risk_contract_assumed",
+                    m.matched_conditions,
+                )
+                break
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+            render_historical_match_markdown,
+        )
+        md = render_historical_match_markdown(
+            match_to_historical_failures(
+                HistoricalDealSignals(
+                    rural_hospital=True,
+                    rural_cah_high_irr_claim=True,
+                )
+            )
+        )
+        self.assertIn(
+            "# Deal-to-historical-failure match", md
+        )
+        self.assertIn("rural_cah", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            HistoricalDealSignals,
+            match_to_historical_failures,
+        )
+        r = match_to_historical_failures(
+            HistoricalDealSignals(
+                ma_risk_contract_assumed=True,
+            )
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
