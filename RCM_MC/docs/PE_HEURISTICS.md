@@ -4458,7 +4458,79 @@ For healthcare-services defaults, the module emits:
 
 ---
 
-## 175. Change log
+## 175. Cross-pattern digest (`cross_pattern_digest.py`)
+
+**Partner statement:** "One trap is a negotiation. Two
+traps on the same axis is a pass."
+
+The brain already has three pattern libraries:
+
+- **historical_failure_library** — named, dated PE
+  disasters (Envision 2023, Steward REIT, U.S. Renal MA
+  cap, iVcare home-health).
+- **bear_book** — abstract templates (rollup integration
+  failure, carveout TSA sprawl, COVID tailwind fade).
+- **partner_traps_library** — seller-pitch traps
+  (fix denials in 12 months, MA will make it up).
+
+Each asks a different question. A partner doesn't read
+them in isolation — they *stack*. If all three fire on the
+same theme, the deal is structurally broken on that axis.
+
+### How cross-pattern-digest reasons
+
+1. **Unified context** — `PatternContext` carries both
+   `HeuristicContext` fields (for bear_book) and packet-
+   dict fields (for failures + traps). A single scan feeds
+   all three libraries.
+2. **Theme tagging** — each pattern is tagged with themes
+   (payer, denials, medicare, leverage, operator,
+   integration, regulatory, covid_tailwind, real_estate).
+3. **Compound-risk detection** — when ≥ 2 libraries fire
+   on the same theme, the theme is promoted to a
+   `CompoundRisk` with severity = sum of contributing
+   matches.
+4. **Library severity weights** — failures weight 1.0
+   (named historical blowup), bear 0.7, trap 0.5. Failure
+   severity also scales by the pattern's
+   `ebitda_destruction_pct`.
+
+### Recommendation ladder
+
+- **pass** — any theme lit across all 3 libraries.
+- **reprice** — 2+ compound risks OR total severity ≥ 1.5.
+- **diligence_more** — 1 compound risk OR severity ≥ 0.8.
+- **proceed_with_mitigants** — isolated hits, no compound.
+- **proceed** — no library hits.
+
+### Worked example
+
+A 2026 roll-up with $40M EBITDA, 6.5x leverage, 3.5-yr
+hold, 400 bps/yr margin expansion, and a seller promising
+12 → 5% denial reduction in 12 months:
+
+- Bear fires `rollup_integration_failure` + `high_leverage_thin_coverage`.
+- Trap fires `fix_denials_in_12_months` + `back_office_year_1_synergies`.
+- Themes stack: **integration** (bear + trap), **operator**
+  (bear + trap), **leverage** (bear), **denials** (trap).
+- Recommendation: `reprice` or `diligence_more` depending
+  on additional context.
+
+### Packet fields that trigger
+
+- `ebitda_m`, `leverage_multiple`, `hold_years`,
+  `margin_expansion_bps_per_yr`, `covenant_headroom_pct`
+- `payer_mix` (normalized; both fractions and percentages
+  accepted)
+- `packet_fields` dict for trap-specific inputs:
+  `current_denial_rate`, `target_denial_rate`,
+  `months_to_target`, `payer_contracts_renewing_next_12mo`,
+  `claimed_rate_growth_pct`, `medicare_advantage_pct`,
+  `regulatory_risk_material`
+
+---
+
+## 176. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
