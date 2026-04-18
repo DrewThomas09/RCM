@@ -329,6 +329,11 @@ def render_deal_dashboard(
             "Composite 0-100 + exit readiness + three things to fix",
             accent=PALETTE["brand_accent"],
         ),
+        _model_tile(
+            "MKT", f"/deal/{did}/market-structure", "Market Structure",
+            "HHI / CR3 / CR5 + fragmentation verdict + thesis hint",
+            accent=PALETTE["brand_accent"],
+        ),
     ]
 
     model_grid = (

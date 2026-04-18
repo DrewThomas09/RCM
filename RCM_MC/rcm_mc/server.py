@@ -3712,6 +3712,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             mid = path[len("/deal/"):-len("/investability")]
             deal_id = urllib.parse.unquote(mid).strip("/")
             return self._route_investability(deal_id)
+        if path.startswith("/deal/") and path.endswith("/market-structure"):
+            mid = path[len("/deal/"):-len("/market-structure")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_market_structure(deal_id)
         if path.startswith("/deal/"):
             deal_id = urllib.parse.unquote(path[len("/deal/"):]).strip("/")
             if not deal_id:
@@ -7089,6 +7093,39 @@ class RCMHandler(BaseHTTPRequestHandler):
             review, deal_id,
             deal_name=meta.get("deal_name", ""),
             exit_report=exit_report,
+            current_user=username,
+        ))
+
+    def _route_market_structure(self, deal_id: str) -> None:
+        """GET /deal/<id>/market-structure — HHI / CR3 / CR5 + thesis hint."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.market_structure_page import render_market_structure
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_market_structure(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        profile = self._load_deal_profile(deal_id) or {}
+        packet = None
+        try:
+            from .analysis.analysis_store import get_or_build_packet
+            packet = get_or_build_packet(
+                self._require_store(), deal_id, skip_simulation=True,
+            )
+        except Exception:
+            packet = None
+        return self._send_html(render_market_structure(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            packet=packet,
+            profile=profile,
             current_user=username,
         ))
 
