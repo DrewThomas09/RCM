@@ -5248,7 +5248,64 @@ urgent_care, durable_medical_equipment.
 
 ---
 
-## 187. Change log
+## 187. Exit-multiple compression scenarios (`exit_multiple_compression_scenarios.py`)
+
+**Partner statement:** "Entry multiples are at cycle-high.
+If exit reverts one turn, I lose the thesis. Two turns
+and I'm pitching a deal that never works. I want that
+math on my desk before I sign the LOI."
+
+`exit_math` computes EV / MOIC / IRR at point assumptions.
+This module stress-tests the **exit multiple** assumption
+specifically — the input partners chronically mis-estimate.
+
+### Compression ladder
+
+Default: **0, -1, -2, -3 turns** on exit multiple. Each
+scenario: exit EV, equity proceeds, MOIC, IRR.
+
+### The "can we still invest?" line
+
+`moic_comfort_threshold` (default 2.0x) is the partner's
+underwrite floor. Module identifies the compression turn
+at which MOIC first falls below that line. Margin of
+safety = most negative compression that still clears the
+line.
+
+### Partner-note ladder
+
+- **Base MOIC already < threshold** → "walk or cut entry
+  1-1.5x to restore."
+- **No break in compression ladder** → "thesis robust
+  to multiple-cycle mean reversion; strong MoS."
+- **Break at -1 turn** → "thesis assumes cycle holds;
+  do not sign unless we believe it."
+- **Break at -2 turn** → "thesis survives one turn —
+  typical partner comfort zone."
+- **Break at -3 turn** → "thesis survives two turns —
+  strong margin of safety."
+
+### Worked example
+
+Entry $75M × 11x = $825M EV; equity $400M; 6%/yr growth;
+5-yr hold; base exit 11x.
+
+- Base: exit EBITDA $100.4M × 11 = $1,104M → equity
+  $679M → MOIC 1.70x, IRR 11%.
+
+Base MOIC below 2.0x → partner: "walk or cut entry 1-1.5x."
+
+### Packet fields that trigger
+
+- `entry_ebitda_m`, `entry_multiple`, `equity_check_m`
+- `ebitda_growth_pct_per_yr`, `hold_years`
+- `base_exit_multiple`, `compression_turns` list
+- `debt_paydown_pct_per_yr` (optional)
+- `moic_comfort_threshold` (default 2.0x)
+
+---
+
+## 188. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
