@@ -2024,6 +2024,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.tax_structure_analyzer_page import render_tax_structure_analyzer
             return self._send_html(render_tax_structure_analyzer(_qp))
+        if path == "/diligence-vendors":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.diligence_vendors_page import render_diligence_vendors
+            return self._send_html(render_diligence_vendors(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
