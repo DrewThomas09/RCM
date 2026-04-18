@@ -46,6 +46,15 @@ PROVENANCE_REGISTRY: Dict[str, str] = {
     # Blackstone 2004, LifePoint/KKR 2018, Tenet/Vanguard 2013, CHS/
     # HMA 2014). All blue-chip historical LBOs or strategic deals.
     "_SEED_DEALS": "real",
+
+    # Batch 1: 20 deals in extended_seed.py. Spot-checked 3 confirmed
+    # real (National Surgical / H.I.G. 2013, DaVita / HCP 2012,
+    # SaVida / Revelstoke 2022), 2 ambiguous-but-plausible (Rural
+    # Health Group / Cressey 2016, Acuity / HHS 2020). Zero factually
+    # impossible dates. Admitted as real under the loose-corpus
+    # standard — the module docstring claims SEC / press-release
+    # sourcing and the confirmed sample supports it.
+    "extended_seed": "real",
 }
 
 
