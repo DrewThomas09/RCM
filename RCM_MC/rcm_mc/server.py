@@ -1969,6 +1969,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.drug_shortage_page import render_drug_shortage
             return self._send_html(render_drug_shortage(_qp))
+        if path == "/antitrust-screener":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.antitrust_screener_page import render_antitrust_screener
+            return self._send_html(render_antitrust_screener(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

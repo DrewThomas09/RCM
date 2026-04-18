@@ -207,6 +207,7 @@ NAV_ITEMS = [
     {"label": "PMI Playbook", "href": "/pmi-playbook", "icon": "chart"},
     {"label": "FWA Detection", "href": "/fraud-detection", "icon": "chart"},
     {"label": "Drug Shortage", "href": "/drug-shortage", "icon": "chart"},
+    {"label": "Anti-Trust Screener", "href": "/antitrust-screener", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
