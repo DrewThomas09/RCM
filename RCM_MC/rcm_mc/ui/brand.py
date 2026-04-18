@@ -234,6 +234,7 @@ NAV_ITEMS = [
     {"label": "CMS APM Tracker", "href": "/cms-apm", "icon": "bookmark"},
     {"label": "MA / Stars Tracker", "href": "/ma-star", "icon": "bookmark"},
     {"label": "GPO / Supply", "href": "/gpo-supply", "icon": "grid"},
+    {"label": "Capital Call", "href": "/capital-call", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

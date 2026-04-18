@@ -198,6 +198,7 @@ _CORPUS_NAV = [
     {"label": "CMS APM Tracker", "href": "/cms-apm",               "icon": "▥"},
     {"label": "MA / Stars Tracker","href": "/ma-star",             "icon": "▥"},
     {"label": "GPO / Supply",    "href": "/gpo-supply",            "icon": "▤"},
+    {"label": "Capital Call",    "href": "/capital-call",          "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
