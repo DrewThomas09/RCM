@@ -2174,6 +2174,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.workforce_retention_page import render_workforce_retention
             return self._send_html(render_workforce_retention(_qp))
+        if path == "/digital-front-door":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.digital_front_door_page import render_digital_front_door
+            return self._send_html(render_digital_front_door(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

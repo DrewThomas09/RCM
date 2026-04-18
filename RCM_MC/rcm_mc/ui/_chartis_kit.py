@@ -212,6 +212,7 @@ _CORPUS_NAV = [
     {"label": "NSA / IDR",       "href": "/nsa-tracker",           "icon": "▥"},
     {"label": "Medicaid Unwinding","href": "/medicaid-unwinding",  "icon": "▥"},
     {"label": "Workforce Retention","href": "/workforce-retention","icon": "▤"},
+    {"label": "Digital Front Door","href": "/digital-front-door", "icon": "▤"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
