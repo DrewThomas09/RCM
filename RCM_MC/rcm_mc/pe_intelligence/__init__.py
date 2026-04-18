@@ -1545,6 +1545,13 @@ from .management_forecast_haircut_applier import (
     apply_management_haircut,
     render_management_haircut_markdown,
 )
+from .vbc_risk_share_underwriter import (
+    VBCContractInputs,
+    VBCResult,
+    VBCRiskShareReport,
+    render_vbc_underwrite_markdown,
+    underwrite_vbc_contract,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3127,4 +3134,9 @@ __all__ = [
     "HaircutYear",
     "apply_management_haircut",
     "render_management_haircut_markdown",
+    "VBCContractInputs",
+    "VBCResult",
+    "VBCRiskShareReport",
+    "render_vbc_underwrite_markdown",
+    "underwrite_vbc_contract",
 ]

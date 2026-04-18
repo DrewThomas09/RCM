@@ -30369,5 +30369,185 @@ class TestManagementForecastHaircutApplier(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestVBCRiskShareUnderwriter(unittest.TestCase):
+    """Partner voice: 'Move the corridor by 1pp and EBITDA moves a lot.'"""
+
+    def test_default_inputs_compute(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        r = underwrite_vbc_contract(VBCContractInputs())
+        self.assertEqual(r.attributed_lives, 25_000)
+        self.assertGreater(r.revenue_m, 0)
+        self.assertIsNotNone(r.expected_result)
+        self.assertIsNotNone(r.bear_result)
+        self.assertIsNotNone(r.bull_result)
+
+    def test_low_mlr_is_profitable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        # Expected MLR way below target + favorable corridor
+        # (100% upside share, light admin) — generates clear EBITDA
+        r = underwrite_vbc_contract(VBCContractInputs(
+            target_mlr_pct=0.85,
+            expected_actual_mlr_pct=0.78,
+            upside_share_pct=1.00,
+            upside_cap_mlr_delta_pct=0.10,
+            admin_load_pct_of_pmpm=0.01,
+            individual_stop_loss_premium_pmpm=4.0,
+            population_stop_loss_premium_pmpm=2.0,
+        ))
+        self.assertEqual(r.verdict, "profitable")
+        self.assertGreater(r.expected_result.ebitda_m, 0)
+
+    def test_high_mlr_is_loss_zone(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        # Way above target → downside, capped by floor; admin + stop loss eats result
+        r = underwrite_vbc_contract(VBCContractInputs(
+            target_mlr_pct=0.85,
+            expected_actual_mlr_pct=0.95,
+        ))
+        self.assertIn(
+            r.verdict, {"loss_zone", "breakeven_zone"}
+        )
+
+    def test_volatility_band_positive(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        r = underwrite_vbc_contract(VBCContractInputs())
+        # Bull EBITDA > bear EBITDA → band positive
+        self.assertGreater(r.volatility_band_m, 0)
+
+    def test_breakeven_mlr_below_target(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        r = underwrite_vbc_contract(VBCContractInputs(
+            target_mlr_pct=0.85,
+        ))
+        # Breakeven MLR must be below target to allow positive EBITDA
+        self.assertLess(
+            r.breakeven_mlr_pct, 0.85
+        )
+
+    def test_corridor_caps_upside(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        # Far below target — upside should be capped at 5pp
+        r = underwrite_vbc_contract(VBCContractInputs(
+            target_mlr_pct=0.85,
+            expected_actual_mlr_pct=0.70,
+            upside_cap_mlr_delta_pct=0.05,
+        ))
+        # Raw gain at 15pp delta ≈ 0.15 × revenue = 42.75M
+        # Capped at 0.05 × revenue × upside_share (0.5) = 7.125M
+        self.assertLess(
+            r.expected_result.raw_corridor_share_m,
+            r.revenue_m * 0.05,
+        )
+
+    def test_corridor_floors_downside(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        r = underwrite_vbc_contract(VBCContractInputs(
+            target_mlr_pct=0.85,
+            expected_actual_mlr_pct=1.10,
+            downside_floor_mlr_delta_pct=0.05,
+        ))
+        # Loss capped at -0.05 × revenue × downside_share
+        self.assertGreater(
+            r.expected_result.raw_corridor_share_m,
+            -r.revenue_m * 0.05,
+        )
+
+    def test_bear_below_expected(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        r = underwrite_vbc_contract(VBCContractInputs())
+        self.assertLess(
+            r.bear_result.ebitda_m,
+            r.expected_result.ebitda_m,
+        )
+
+    def test_bull_above_expected(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        r = underwrite_vbc_contract(VBCContractInputs())
+        self.assertGreater(
+            r.bull_result.ebitda_m,
+            r.expected_result.ebitda_m,
+        )
+
+    def test_thin_margin_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        # Slight margin only
+        r = underwrite_vbc_contract(VBCContractInputs(
+            target_mlr_pct=0.85,
+            expected_actual_mlr_pct=0.846,
+        ))
+        # Likely thin or breakeven
+        self.assertIn(
+            r.verdict,
+            {"thin_margin", "breakeven_zone",
+             "loss_zone"},
+        )
+
+    def test_revenue_scales_with_lives(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        small = underwrite_vbc_contract(
+            VBCContractInputs(attributed_lives=10_000))
+        large = underwrite_vbc_contract(
+            VBCContractInputs(attributed_lives=50_000))
+        self.assertAlmostEqual(
+            large.revenue_m / small.revenue_m,
+            5.0,
+            places=2,
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            render_vbc_underwrite_markdown,
+            underwrite_vbc_contract,
+        )
+        md = render_vbc_underwrite_markdown(
+            underwrite_vbc_contract(VBCContractInputs())
+        )
+        self.assertIn("# VBC risk-share underwrite", md)
+        self.assertIn("Breakeven MLR", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            VBCContractInputs,
+            underwrite_vbc_contract,
+        )
+        r = underwrite_vbc_contract(VBCContractInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
