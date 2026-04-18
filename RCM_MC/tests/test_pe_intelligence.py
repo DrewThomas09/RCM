@@ -24093,5 +24093,162 @@ class TestGovernancePackageDesigner(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestRepsWarrantiesScopeNegotiator(unittest.TestCase):
+    """Partner scenario: which R&W reps do we demand?"""
+
+    def test_default_has_fundamentals_and_standards(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs())
+        reps = {rec.rep for rec in r.recommendations}
+        self.assertIn("organization_and_good_standing", reps)
+        self.assertIn("financial_statements", reps)
+
+    def test_provider_deal_includes_healthcare_reps(self) -> None:
+        """Partner: 'provider deal → HIPAA / Stark / AKS demanded.'"""
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs(
+            asset_type_is_provider=True,
+        ))
+        reps = {rec.rep for rec in r.recommendations}
+        self.assertIn("hipaa_compliance", reps)
+        self.assertIn("stark_aks_compliance", reps)
+        self.assertIn("oig_exclusion_clean", reps)
+
+    def test_non_provider_skips_healthcare_reps(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs(
+            asset_type_is_provider=False,
+        ))
+        reps = {rec.rep for rec in r.recommendations}
+        self.assertNotIn("hipaa_compliance", reps)
+
+    def test_fundamentals_always_seller_indemnity(self) -> None:
+        """Partner: 'fundamental reps always seller-paid.'"""
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs())
+        fundamentals = [
+            rec for rec in r.recommendations
+            if rec.category == "fundamental"
+        ]
+        for f in fundamentals:
+            self.assertEqual(f.who_pays, "seller_indemnity")
+
+    def test_rw_insurance_in_place_covers_standard(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs(
+            rw_insurance_in_place=True,
+        ))
+        fin = next(rec for rec in r.recommendations
+                    if rec.rep == "financial_statements")
+        self.assertEqual(fin.who_pays, "rw_insurance")
+
+    def test_no_rw_insurance_shifts_to_seller_indemnity(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs(
+            rw_insurance_in_place=False,
+        ))
+        fin = next(rec for rec in r.recommendations
+                    if rec.rep == "financial_statements")
+        self.assertEqual(fin.who_pays, "seller_indemnity")
+
+    def test_cyber_incident_escalates_cyber_rep(self) -> None:
+        """Partner: 'prior breach → carve out from R&W.'"""
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs(
+            prior_cyber_incident_disclosed=True,
+        ))
+        cyber = next(rec for rec in r.recommendations
+                      if rec.rep == "it_systems_and_cybersecurity")
+        self.assertEqual(cyber.priority, "must_have")
+        self.assertEqual(cyber.who_pays, "carve_out")
+
+    def test_pending_employment_litigation_elevates_rep(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs(
+            key_employee_litigation_pending=True,
+        ))
+        emp = next(rec for rec in r.recommendations
+                    if rec.rep ==
+                    "employee_classification_and_wage_hour")
+        self.assertEqual(emp.priority, "must_have")
+
+    def test_regulatory_history_enhances_healthcare_reps(
+        self,
+    ) -> None:
+        """Partner: 'audit history → enhance Stark/AKS/CIA reps.'"""
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs(
+            material_regulatory_audit_history=True,
+        ))
+        stark = next(rec for rec in r.recommendations
+                      if rec.rep == "stark_aks_compliance")
+        self.assertIn("enhance", stark.partner_commentary.lower())
+
+    def test_partner_note_flags_no_rw_insurance(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs(
+            rw_insurance_in_place=False,
+        ))
+        self.assertIn("seller indemnity cap",
+                       r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+            render_reps_markdown,
+        )
+        md = render_reps_markdown(
+            design_reps_warranties_scope(RepPackageInputs())
+        )
+        self.assertIn(
+            "# Reps & warranties scope recommendation", md
+        )
+        self.assertIn("Who pays", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            RepPackageInputs,
+            design_reps_warranties_scope,
+        )
+        r = design_reps_warranties_scope(RepPackageInputs(
+            subsector="hospital_general",
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

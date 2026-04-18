@@ -1324,6 +1324,13 @@ from .governance_package_designer import (
     design_governance_package,
     render_governance_markdown,
 )
+from .reps_warranties_scope_negotiator import (
+    RepPackageInputs,
+    RepPackageReport,
+    RepRecommendation,
+    design_reps_warranties_scope,
+    render_reps_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2747,4 +2754,9 @@ __all__ = [
     "RolloverProtection",
     "design_governance_package",
     "render_governance_markdown",
+    "RepPackageInputs",
+    "RepPackageReport",
+    "RepRecommendation",
+    "design_reps_warranties_scope",
+    "render_reps_markdown",
 ]
