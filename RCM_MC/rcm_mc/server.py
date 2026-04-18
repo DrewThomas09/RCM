@@ -2903,6 +2903,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_rcm_benchmarks(
                 store=store, current_user=self._chartis_username(),
             ))
+        if path == "/corpus-backtest":
+            from .ui.chartis.corpus_backtest_page import render_corpus_backtest
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_corpus_backtest(
+                store=store, store_db_path=self.config.db_path,
+                current_user=self._chartis_username(),
+            ))
         if path == "/library":
             # /library now surfaces the 655-deal corpus (previously at
             # /deals-library). The methodology hub moved to /methodology.
