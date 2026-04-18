@@ -22742,5 +22742,136 @@ class TestReferralFlowDependencyScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestDayOneActionPlan(unittest.TestCase):
+    """Partner scenario: first 7 days lock in the value."""
+
+    def test_empty_plan_is_all_unowned(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+        )
+        r = assess_day_one_readiness(DayOneInputs())
+        self.assertEqual(r.unowned_count, r.total_actions)
+        self.assertIn("unowned", r.partner_note.lower())
+
+    def test_all_done_triggers_proceed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+            list_day_one_actions,
+        )
+        all_actions = list_day_one_actions()
+        r = assess_day_one_readiness(DayOneInputs(
+            actions_done=all_actions,
+        ))
+        self.assertEqual(r.done_count, r.total_actions)
+        self.assertIn("100-day plan",
+                       r.partner_note.lower())
+
+    def test_ceo_all_hands_in_library(self) -> None:
+        """Partner: 'ceo all-hands day 1; rumor fills vacuum.'"""
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+        )
+        r = assess_day_one_readiness(DayOneInputs())
+        ceo = next(s for s in r.statuses
+                    if s.action.name == "ceo_all_hands")
+        self.assertEqual(ceo.action.owner, "ceo")
+        self.assertEqual(ceo.action.timing, "day_1")
+        self.assertIn("rumor",
+                       ceo.action.risk_if_delayed.lower())
+
+    def test_retention_activation_is_legal(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+        )
+        r = assess_day_one_readiness(DayOneInputs())
+        ret = next(s for s in r.statuses
+                    if s.action.name == "retention_activation")
+        self.assertEqual(ret.action.owner, "legal")
+        self.assertEqual(ret.action.timing, "day_1")
+
+    def test_partially_owned_reports_correctly(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+        )
+        r = assess_day_one_readiness(DayOneInputs(
+            actions_owned=[
+                "ceo_all_hands", "banking_transition",
+                "board_reconstitution",
+            ],
+        ))
+        self.assertEqual(r.unowned_count,
+                          r.total_actions - 3)
+
+    def test_escalation_list_populated_for_unowned(
+        self,
+    ) -> None:
+        """Partner: 'unowned + not done = escalate.'"""
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+        )
+        r = assess_day_one_readiness(DayOneInputs())
+        self.assertEqual(len(r.escalations), r.total_actions)
+        self.assertTrue(any("ceo_all_hands" in e
+                             for e in r.escalations))
+
+    def test_done_action_not_escalated(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+        )
+        r = assess_day_one_readiness(DayOneInputs(
+            actions_done=["ceo_all_hands"],
+        ))
+        ceo = next(s for s in r.statuses
+                    if s.action.name == "ceo_all_hands")
+        self.assertFalse(ceo.escalation_needed)
+        self.assertTrue(ceo.is_done)
+
+    def test_regulatory_filings_in_library(self) -> None:
+        """Partner: 'CHOW / licensure = Medicare billing risk.'"""
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+        )
+        r = assess_day_one_readiness(DayOneInputs())
+        reg = next(s for s in r.statuses
+                    if s.action.name ==
+                    "regulatory_notice_filings")
+        self.assertIn("chow", reg.action.risk_if_delayed.lower())
+
+    def test_list_has_12_actions(self) -> None:
+        from rcm_mc.pe_intelligence import list_day_one_actions
+        self.assertEqual(len(list_day_one_actions()), 12)
+
+    def test_markdown_renders_escalations(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+            render_day_one_plan_markdown,
+        )
+        md = render_day_one_plan_markdown(
+            assess_day_one_readiness(DayOneInputs())
+        )
+        self.assertIn("# Day 1 action plan", md)
+        self.assertIn("Escalations", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            DayOneInputs,
+            assess_day_one_readiness,
+        )
+        r = assess_day_one_readiness(DayOneInputs(
+            actions_done=["ceo_all_hands"],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

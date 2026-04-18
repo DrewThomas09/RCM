@@ -1254,6 +1254,15 @@ from .referral_flow_dependency_scorer import (
     render_referral_flow_markdown,
     score_referral_flow_dependency,
 )
+from .day_one_action_plan import (
+    ActionStatus,
+    DayOneAction,
+    DayOneInputs,
+    DayOneReport,
+    assess_day_one_readiness,
+    list_day_one_actions,
+    render_day_one_plan_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2625,4 +2634,11 @@ __all__ = [
     "ReferralFlowReport",
     "render_referral_flow_markdown",
     "score_referral_flow_dependency",
+    "ActionStatus",
+    "DayOneAction",
+    "DayOneInputs",
+    "DayOneReport",
+    "assess_day_one_readiness",
+    "list_day_one_actions",
+    "render_day_one_plan_markdown",
 ]
