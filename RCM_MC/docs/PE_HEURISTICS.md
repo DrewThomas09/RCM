@@ -11379,7 +11379,69 @@ Two `ExitPathInputs` — each with `ebitda_m`, `headline_multiple`,
 
 ---
 
-## 275. Change log
+## 275. Add-on integration sequencing planner (`add_on_integration_sequencing_planner.py`)
+
+**Partner statement.** "Every roll-up pitches 8-12 bolt-ons but
+the integration team can actually swallow 2-3 per year. Sequence
+them or the 4th one slips, the 5th slips more, and by bolt-on 7
+the team is underwater."
+
+### Why it matters
+
+`add_on_fit_scorer` scores individual fit. `rollup_arbitrage_math`
+does MOIC decomposition. This module **sequences** the pipeline:
+priority ranking + quarter assignment + capacity-saturation flag.
+
+### Priority score
+
+`score = (signed_bonus: +8 if pre-signed) + integration_ease_0_4 +
+strategic_priority_0_4`
+
+### Quarter assignment
+
+Fill quarters in priority order at
+`integration_capacity_per_quarter`. Bolt-ons beyond
+`hold_quarters` become `unplaced`.
+
+### Saturation flag
+
+Bolt-ons assigned to quarters > 2/3 of hold → saturation warning
+("back-loaded integrations risk the exit window").
+
+### Verdict
+
+- unplaced > 0 → "accelerate integration team or drop lowest-
+  priority tail"
+- saturation in back third → "back-loaded integrations risk exit
+  window"
+- all fit cleanly → "execute on priority order"
+
+### Worked example
+
+10 bolt-ons, capacity 1/quarter, 4-quarter hold:
+- 4 sequence → 6 unplaced → "won't fit; accelerate or drop tail"
+
+3 bolt-ons, 1 signed at low scores + 2 unsigned high scores:
+- Signed fires first (+8 bonus) regardless of scores
+- Partner: execute signed, then top-priority unsigned
+
+### Packet fields
+
+`bolt_ons` — list of `BoltOn(name, ebitda_m, integration_ease_0_4,
+strategic_priority_0_4, already_signed)`;
+`integration_capacity_per_quarter`; `hold_quarters`.
+
+### Distinct from existing modules
+
+- `add_on_fit_scorer` — per-deal fit score.
+- `rollup_arbitrage_math` — MOIC decomposition.
+- `ma_integration_scoreboard` — integration scoring.
+- This module — sequences across a pipeline by priority score with
+  quarter capacity constraint + saturation.
+
+---
+
+## 276. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
