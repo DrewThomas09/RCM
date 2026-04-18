@@ -1648,6 +1648,13 @@ from .de_novo_site_ramp_economics import (
     project_de_novo_ramp,
     render_de_novo_ramp_markdown,
 )
+from .rcm_vendor_switching_cost_assessor import (
+    MonthlyConversion,
+    RCMSwitchingInputs,
+    RCMSwitchingReport,
+    assess_rcm_switching,
+    render_rcm_switching_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3305,4 +3312,9 @@ __all__ = [
     "MonthlyDeNovo",
     "project_de_novo_ramp",
     "render_de_novo_ramp_markdown",
+    "MonthlyConversion",
+    "RCMSwitchingInputs",
+    "RCMSwitchingReport",
+    "assess_rcm_switching",
+    "render_rcm_switching_markdown",
 ]

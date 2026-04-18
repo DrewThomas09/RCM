@@ -33189,5 +33189,156 @@ class TestDeNovoSiteRampEconomics(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestRCMVendorSwitchingCostAssessor(unittest.TestCase):
+    """Partner voice: 'Conversion hurts for 6-9 months even when it goes well.'"""
+
+    def test_best_case_low_peak(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        r = assess_rcm_switching(RCMSwitchingInputs(
+            scenario="best_case",
+        ))
+        # best_case peak delta is 13 days
+        self.assertLess(r.peak_dso_days, 60)
+
+    def test_bad_case_high_peak(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        r = assess_rcm_switching(RCMSwitchingInputs(
+            scenario="bad_case",
+        ))
+        # bad_case peak delta is 26 days
+        self.assertGreater(r.peak_dso_days, 65)
+        self.assertIn(
+            "bad-case", r.partner_note.lower()
+        )
+
+    def test_realistic_scenario_mid(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        r = assess_rcm_switching(RCMSwitchingInputs(
+            scenario="realistic",
+        ))
+        self.assertIn(
+            "realistic", r.partner_note.lower()
+        )
+
+    def test_wc_drag_larger_in_bad(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        best = assess_rcm_switching(RCMSwitchingInputs(
+            scenario="best_case"))
+        bad = assess_rcm_switching(RCMSwitchingInputs(
+            scenario="bad_case"))
+        self.assertGreater(
+            bad.max_cumulative_wc_drag_m,
+            best.max_cumulative_wc_drag_m,
+        )
+
+    def test_payback_computed_when_savings(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        r = assess_rcm_switching(RCMSwitchingInputs(
+            annual_cash_cost_pre_m=20.0,
+            annual_cash_cost_post_m=10.0,
+            implementation_cost_m=5.0,
+        ))
+        self.assertIsNotNone(r.payback_months)
+        self.assertGreater(r.payback_months, 0)
+
+    def test_no_savings_no_payback(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        r = assess_rcm_switching(RCMSwitchingInputs(
+            annual_cash_cost_pre_m=10.0,
+            annual_cash_cost_post_m=10.0,
+        ))
+        self.assertIsNone(r.payback_months)
+
+    def test_monthly_count_12(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        r = assess_rcm_switching(RCMSwitchingInputs())
+        self.assertEqual(len(r.months), 12)
+
+    def test_dso_returns_close_to_pre_in_best(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        # best_case: month 12 delta is -5
+        r = assess_rcm_switching(RCMSwitchingInputs(
+            pre_conversion_dso_days=45.0,
+            scenario="best_case",
+        ))
+        month12 = r.months[-1]
+        self.assertAlmostEqual(
+            month12.dso_days, 40.0, places=1
+        )
+
+    def test_peak_month_in_first_half(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        r = assess_rcm_switching(RCMSwitchingInputs(
+            scenario="realistic",
+        ))
+        self.assertLessEqual(r.peak_dso_month, 6)
+
+    def test_long_payback_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        # Tiny annual savings → long payback
+        r = assess_rcm_switching(RCMSwitchingInputs(
+            annual_cash_cost_pre_m=11.0,
+            annual_cash_cost_post_m=10.0,
+            implementation_cost_m=10.0,
+            scenario="realistic",
+        ))
+        if r.payback_months and r.payback_months > 24:
+            self.assertIn(
+                "two years", r.partner_note.lower()
+            )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+            render_rcm_switching_markdown,
+        )
+        md = render_rcm_switching_markdown(
+            assess_rcm_switching(RCMSwitchingInputs())
+        )
+        self.assertIn(
+            "# RCM vendor switching cost", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            RCMSwitchingInputs,
+            assess_rcm_switching,
+        )
+        r = assess_rcm_switching(RCMSwitchingInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
