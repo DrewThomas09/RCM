@@ -6816,7 +6816,61 @@ noise swamps signal.
 
 ---
 
-## 212. Change log
+## 212. Thesis-break price (`thesis_break_price_calculator.py`)
+
+**Partner statement:** "Every deal has a walk number.
+Below it the math works; above it doesn't. I want that
+number on the page before the first bid goes out."
+
+Distinct from `seller_math_reverse`,
+`exit_multiple_compression_scenarios`,
+`pricing_concession_ladder`. This module computes the
+partner's **walk-away price** given thesis risk signals.
+
+### 7 haircut layers
+
+- **pre_mortem_strong** → 10% haircut (`moderate` = 5%).
+- **thesis_chain_contradictions** → 4% per contradicted
+  link.
+- **compound_pattern_risks** → 3% per compound theme.
+- **failure_archetype_matches** → 2% per match.
+- **cycle_multiple_dependence** (> 30% from multiple) →
+  5%.
+- **referral_single_point_of_failure** → 4%.
+- **turnaround_without_operator** → 6%.
+
+### Cap
+
+Total haircut capped at 40% — beyond that partner walks
+entirely rather than re-pricing.
+
+### Partner-note ladder
+
+- ≥ 25% haircut → "if seller won't accept walk-away,
+  pass."
+- 10-25% → "LOI target, not ask-match."
+- < 10% → "modest negotiation room."
+
+### Worked example
+
+Base $800M + pre-mortem strong (10%) + 2 contradicted
+links (8%) + 2 compound risks (6%) + turnaround without
+operator (6%) = 30% haircut → walk-away $560M. Partner:
+"if seller won't accept $560M, pass."
+
+### Packet fields
+
+`base_price_m`, `pre_mortem_strength`,
+`thesis_contradicted_links_count`,
+`compound_pattern_risks_count`,
+`failure_archetype_matches_count`,
+`multiple_expansion_share_pct`,
+`referral_single_point_of_failure`,
+`turnaround_without_operator`.
+
+---
+
+## 213. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
