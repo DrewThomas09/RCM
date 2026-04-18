@@ -9850,7 +9850,77 @@ notes)`), `hold_start_date`, `hold_years`.
 
 ---
 
-## 253. Change log
+## 253. LBO debt paydown trajectory (`lbo_debt_paydown_trajectory.py`)
+
+**Partner statement.** "Sponsors love to talk about de-leveraging
+through cash flow. The model shows 3.5× turning into 1.5× by exit.
+The model also shows year 1 FCF that doesn't cover the mandatory
+amort, year 2 FCF that barely does, and years 3-5 doing all the
+work. That's a back-loaded paydown thesis. If year 3 EBITDA misses,
+the de-leveraging story breaks and you're refinancing into a worse
+market."
+
+### Why it matters
+
+`debt_sizing` and `debt_capacity_sizer` set debt at entry.
+`covenant_monitor` watches current headroom. This module projects
+the **year-by-year paydown trajectory** through hold and flags
+back-loading.
+
+### Math per year
+
+- EBITDA = prior EBITDA × (1 + growth)
+- Interest = current debt × rate
+- D&A proxy = capex × 50% (rough, just for tax shield)
+- Cash tax = max(0, EBITDA − interest − D&A) × tax rate
+- Capex = EBITDA × capex %
+- ΔWC = ΔEBITDA × WC %
+- FCF = EBITDA − interest − cash tax − capex − ΔWC
+- Mandatory amort = entry debt × amort %/yr (1% default)
+- Discretionary paydown = max(0, FCF − amort) × cash sweep %
+- Year-end debt = max(0, debt − amort − discretionary)
+- Leverage = debt / EBITDA
+
+### Verdict
+
+- back-loaded share > 70% → **concerning_back_loaded** — "year 1-2
+  FCF doesn't move debt; refi risk if growth slips"
+- 60-70% → **back_loaded** — "acceptable if growth has high
+  confidence; price refi risk into IRR"
+- < 60% → **balanced**
+
+### Worked example
+
+$200M entry debt, $50M EBITDA, 6% growth, 8.5% interest rate, 5-yr
+hold:
+- Year 1: EBITDA $53M, interest $17M, capex $7.95M, FCF ~$23M; amort
+  $2M + discretionary ~$15.75M = $17.75M paydown; debt $182M, lev 3.4x
+- Year 5: EBITDA ~$67M, debt ~$110M, lev 1.6x
+- Back-loaded share ~50% → **balanced**
+
+Same with 30% growth and $20M entry EBITDA, $200M entry debt:
+- Year 1 FCF barely covers interest; paydown nearly zero
+- Year 5 EBITDA explodes — paydown back-loaded → **concerning**
+
+### Packet fields
+
+`entry_debt_m`, `entry_ebitda_m`, `annual_ebitda_growth_pct`,
+`interest_rate_pct`, `cash_tax_rate_pct`,
+`capex_as_pct_of_ebitda`, `delta_wc_as_pct_of_ebitda_growth`,
+`mandatory_amort_pct_per_year`, `cash_sweep_pct_of_excess_fcf`,
+`hold_years`.
+
+### Distinct from existing modules
+
+- `debt_sizing` / `debt_capacity_sizer` — sizing at entry.
+- `covenant_monitor` — current headroom only.
+- `dividend_recap_analyzer` — recap math.
+- This module — year-by-year FCF→paydown trajectory with
+  back-loaded flag.
+
+---
+
+## 254. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
