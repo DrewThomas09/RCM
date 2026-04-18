@@ -143,6 +143,7 @@ NAV_ITEMS = [
     {"label": "Mgmt Comp", "href": "/mgmt-comp", "icon": "chart"},
     {"label": "Physician Productivity", "href": "/physician-productivity", "icon": "chart"},
     {"label": "Regulatory Risk", "href": "/regulatory-risk", "icon": "chart"},
+    {"label": "Cost Structure", "href": "/cost-structure", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
