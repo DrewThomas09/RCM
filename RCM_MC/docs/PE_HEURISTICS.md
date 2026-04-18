@@ -4315,7 +4315,49 @@ alignment gap.
 
 ---
 
-## 172. Change log
+## 172. Reference check framework (`reference_check_framework.py`)
+
+**Partner statement:** "Generic reference calls miss the signal.
+Who you call depends on what you're trying to verify, and what
+you ask them depends on the relationship."
+
+Role-specific relationship groups (must-call vs should-call):
+
+**CEO:**
+
+- **Board member (must)** — "describe a time the company was
+  off plan; how did the CEO respond?" "Would you back this CEO
+  in a new company?" Anything short of clear yes is a flag.
+- **Ex-direct report (must)** — "who are the top 3 people this
+  CEO has hired; where are they now?" "What would you change?"
+  Silence = scripted; specific critique = authentic.
+- **Peer CEO (should)** — "have you co-invested or would you?"
+  Highest-trust industry signal.
+- **Customer / payer (should)** — "when they made a commitment,
+  did they follow through?"
+
+**CFO:**
+
+- **Auditor (must)** — "describe a policy choice; escalations
+  above this CFO?" Auditors see the seam.
+- **Bank syndicate lead (must)** — "did CFO meet forecast in
+  covenant periods? Was the monthly package on time and
+  accurate?" Banks see the real trend before the board does.
+- **Ex-direct report (should)** — "did the CFO change their
+  mind based on analyst work?"
+- **CEO/CFO peer (should)** — "when you presented together, who
+  led?"
+
+**Other roles (COO / CMO / etc.):** ex-boss + ex-direct report
+with core questions ("would you rehire?", "how did they handle
+disagreement?").
+
+Each question ships with a **listen_for** note — what signal
+the partner is actually trying to pick up.
+
+---
+
+## 173. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4739,3 +4781,7 @@ alignment gap.
   (§171) — target rollover % by CEO profile; alignment
   grade; strong/adequate/thin. Full inventory: 169 modules,
   1,717 pe_intelligence unit tests.
+- **2026-04-17** — Added `reference_check_framework.py` (§172)
+  — structured CEO/CFO reference-call plan by relationship type
+  with listen-for notes per question. Full inventory: 170
+  modules, 1,727 pe_intelligence unit tests.
