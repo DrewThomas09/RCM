@@ -33705,5 +33705,198 @@ class TestPatientAcquisitionCostBenchmark(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestEHRTransitionRiskAssessor(unittest.TestCase):
+    """Partner voice: 'EHR migrations are a different animal.'"""
+
+    def test_cerner_to_epic_heavy(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        r = assess_ehr_transition(EHRTransitionInputs(
+            transition_type="cerner_to_epic",
+            beds_or_providers=200,
+            annual_revenue_m=300.0,
+        ))
+        self.assertEqual(r.migration_months, 24)
+        self.assertGreater(r.capex_m, 10)
+        self.assertIn(
+            "heavy migration", r.partner_note.lower()
+        )
+
+    def test_epic_upgrade_light(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        r = assess_ehr_transition(EHRTransitionInputs(
+            transition_type="epic_version_upgrade",
+            beds_or_providers=100,
+            annual_revenue_m=100.0,
+        ))
+        self.assertEqual(r.migration_months, 6)
+        self.assertIn(
+            "light migration", r.partner_note.lower()
+        )
+
+    def test_nextgen_moderate(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        r = assess_ehr_transition(EHRTransitionInputs(
+            transition_type="legacy_to_nextgen",
+            beds_or_providers=80,
+            annual_revenue_m=100.0,
+        ))
+        self.assertIn(
+            "moderate migration",
+            r.partner_note.lower(),
+        )
+
+    def test_unknown_transition_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        r = assess_ehr_transition(EHRTransitionInputs(
+            transition_type="unknown",
+        ))
+        self.assertFalse(r.in_catalog)
+
+    def test_capex_scales_with_size(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        small = assess_ehr_transition(
+            EHRTransitionInputs(
+                transition_type="cerner_to_epic",
+                beds_or_providers=100,
+            )
+        )
+        big = assess_ehr_transition(
+            EHRTransitionInputs(
+                transition_type="cerner_to_epic",
+                beds_or_providers=400,
+            )
+        )
+        self.assertAlmostEqual(
+            big.capex_m / small.capex_m, 4.0
+        )
+
+    def test_revenue_dip_scales_with_revenue(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        small = assess_ehr_transition(
+            EHRTransitionInputs(
+                transition_type="cerner_to_epic",
+                annual_revenue_m=100.0,
+            )
+        )
+        big = assess_ehr_transition(
+            EHRTransitionInputs(
+                transition_type="cerner_to_epic",
+                annual_revenue_m=500.0,
+            )
+        )
+        self.assertAlmostEqual(
+            big.revenue_dip_during_transition_m /
+            small.revenue_dip_during_transition_m,
+            5.0,
+            places=1,
+        )
+
+    def test_payback_years_computed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        r = assess_ehr_transition(EHRTransitionInputs(
+            transition_type="epic_version_upgrade",
+            post_transition_annual_savings_m=2.0,
+        ))
+        self.assertIsNotNone(r.payback_years)
+        self.assertGreater(r.payback_years, 0)
+
+    def test_long_payback_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        r = assess_ehr_transition(EHRTransitionInputs(
+            transition_type="cerner_to_epic",
+            beds_or_providers=200,
+            annual_revenue_m=300.0,
+            post_transition_annual_savings_m=1.0,
+        ))
+        self.assertGreater(r.payback_years, 5.0)
+        self.assertIn(
+            "rarely pay back",
+            r.partner_note.lower(),
+        )
+
+    def test_no_savings_no_payback(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        r = assess_ehr_transition(EHRTransitionInputs(
+            transition_type="cerner_to_epic",
+            post_transition_annual_savings_m=0.0,
+        ))
+        self.assertIsNone(r.payback_years)
+
+    def test_epic_upgrade_smaller_dip(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        upgrade = assess_ehr_transition(
+            EHRTransitionInputs(
+                transition_type="epic_version_upgrade"))
+        cerner = assess_ehr_transition(
+            EHRTransitionInputs(
+                transition_type="cerner_to_epic"))
+        self.assertLess(
+            upgrade.productivity_dip_pct,
+            cerner.productivity_dip_pct,
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+            render_ehr_transition_markdown,
+        )
+        md = render_ehr_transition_markdown(
+            assess_ehr_transition(EHRTransitionInputs())
+        )
+        self.assertIn("# EHR transition risk", md)
+
+    def test_unknown_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+            render_ehr_transition_markdown,
+        )
+        md = render_ehr_transition_markdown(
+            assess_ehr_transition(EHRTransitionInputs(
+                transition_type="mystery"))
+        )
+        self.assertIn("not in catalog", md.lower())
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            EHRTransitionInputs,
+            assess_ehr_transition,
+        )
+        r = assess_ehr_transition(EHRTransitionInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

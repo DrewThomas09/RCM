@@ -1668,6 +1668,12 @@ from .patient_acquisition_cost_benchmark import (
     benchmark_patient_cac,
     render_patient_cac_markdown,
 )
+from .ehr_transition_risk_assessor import (
+    EHRTransitionInputs,
+    EHRTransitionReport,
+    assess_ehr_transition,
+    render_ehr_transition_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3339,4 +3345,8 @@ __all__ = [
     "PatientCACReport",
     "benchmark_patient_cac",
     "render_patient_cac_markdown",
+    "EHRTransitionInputs",
+    "EHRTransitionReport",
+    "assess_ehr_transition",
+    "render_ehr_transition_markdown",
 ]
