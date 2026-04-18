@@ -30,7 +30,7 @@ from .._chartis_kit import (
     ck_kpi_block,
     ck_section_header,
 )
-from ._helpers import related_views_panel
+from ._helpers import related_views_panel, render_page_explainer
 from ._sanity import REGISTRY as _METRIC_REGISTRY, render_number
 
 
@@ -540,8 +540,36 @@ def render_partner_review(
     )
     related = related_views_panel(deal_id, exclude="partner-review")
 
+    explainer = render_page_explainer(
+        what=(
+            "PE-partner review for this deal — composite of seven "
+            "reflex modules reading the deal's analysis packet: "
+            "reasonableness bands, heuristic hits, archetype, regime, "
+            "market structure, stress grid, and secondary analytics."
+        ),
+        scale=(
+            "Recommendation levels: PASS / PROCEED_WITH_CAVEATS / "
+            "PROCEED / STRONG_PROCEED. Heuristic severity: CRITICAL / "
+            "HIGH / MEDIUM / LOW. Band verdicts: IN_BAND / STRETCH / "
+            "OUT_OF_BAND / IMPLAUSIBLE."
+        ),
+        use=(
+            "Read the recommendation + narrative first; use the "
+            "reasonableness bands and critical-flag list to decide "
+            "what to probe in diligence. Drill into a linked view "
+            "(archetype, stress, investability) for the supporting math."
+        ),
+        source=(
+            "pe_intelligence/partner_review.py::partner_review; "
+            "heuristics.py (SEV_* constants); reasonableness.py "
+            "(VERDICT_* constants); narrative.py (REC_* constants)."
+        ),
+        page_key="deal-partner-review",
+    )
+
     body = (
-        header_links
+        explainer
+        + header_links
         + banner
         + kpi_strip
         + narrative_section
