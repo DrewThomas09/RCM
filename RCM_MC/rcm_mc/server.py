@@ -2019,6 +2019,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.secondaries_tracker_page import render_secondaries_tracker
             return self._send_html(render_secondaries_tracker(_qp))
+        if path == "/tax-structure-analyzer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.tax_structure_analyzer_page import render_tax_structure_analyzer
+            return self._send_html(render_tax_structure_analyzer(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
