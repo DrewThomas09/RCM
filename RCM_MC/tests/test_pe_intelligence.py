@@ -16579,5 +16579,99 @@ class TestReverseDiligenceChecklist(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Management forecast reliability ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ReliabilityReport,
+    YearVariance,
+    analyze_forecasts,
+    render_reliability_markdown,
+)
+
+
+class TestManagementForecastReliability(unittest.TestCase):
+
+    def test_consistent_misser_forces_haircut(self) -> None:
+        r = analyze_forecasts([
+            (2022, 50.0, 40.0),
+            (2023, 55.0, 44.0),
+            (2024, 60.0, 48.0),
+            (2025, 65.0, 52.0),
+        ])
+        self.assertGreater(r.miss_rate_pct, 50)
+        self.assertGreater(r.recommended_haircut_pct, 0)
+        self.assertIn("do not underwrite", r.partner_note.lower())
+
+    def test_consistent_beater_flags_sandbag(self) -> None:
+        r = analyze_forecasts([
+            (2022, 40.0, 46.0),
+            (2023, 45.0, 52.0),
+            (2024, 50.0, 57.0),
+            (2025, 55.0, 63.0),
+        ])
+        self.assertGreaterEqual(r.beat_rate_pct, 75)
+        self.assertIn("sandbagging", r.partner_note.lower())
+
+    def test_reliable_forecaster(self) -> None:
+        r = analyze_forecasts([
+            (2022, 50.0, 50.5),
+            (2023, 55.0, 54.0),
+            (2024, 60.0, 61.0),
+            (2025, 65.0, 64.0),
+        ])
+        self.assertGreaterEqual(r.hit_rate_pct, 75)
+        self.assertIn("reliable forecaster", r.partner_note.lower())
+
+    def test_variance_range_penalty(self) -> None:
+        wildvar = analyze_forecasts([
+            (2022, 50.0, 30.0),   # -40%
+            (2023, 50.0, 80.0),   # +60%
+            (2024, 50.0, 50.0),   # flat
+            (2025, 50.0, 40.0),   # -20%
+        ])
+        # Volatile track record → reliability should not be high.
+        self.assertLess(wildvar.reliability_score_0_100, 60)
+
+    def test_consecutive_miss_streak_penalty(self) -> None:
+        r = analyze_forecasts([
+            (2022, 50.0, 40.0),
+            (2023, 55.0, 45.0),
+            (2024, 60.0, 50.0),
+            (2025, 65.0, 55.0),
+        ])
+        # 4 in a row = max_streak 4. Score drops hard.
+        self.assertLess(r.reliability_score_0_100, 30)
+
+    def test_status_classification(self) -> None:
+        r = analyze_forecasts([
+            (2022, 50.0, 48.0),   # -4% = at_plan
+            (2023, 50.0, 55.0),   # +10% = beat
+            (2024, 50.0, 40.0),   # -20% = miss
+        ])
+        statuses = [y.status for y in r.years]
+        self.assertEqual(statuses, ["at_plan", "beat", "miss"])
+
+    def test_empty_history(self) -> None:
+        r = analyze_forecasts([])
+        self.assertEqual(r.years, [])
+        self.assertIn("no forecast history",
+                       r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_reliability_markdown(analyze_forecasts([
+            (2022, 50.0, 48.0),
+            (2023, 55.0, 55.0),
+        ]))
+        self.assertIn("# Management forecast reliability", md)
+
+    def test_json(self) -> None:
+        import json
+        r = analyze_forecasts([
+            (2022, 50.0, 48.0),
+            (2023, 55.0, 55.0),
+        ])
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

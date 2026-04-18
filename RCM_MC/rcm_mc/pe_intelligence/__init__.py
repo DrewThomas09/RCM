@@ -959,6 +959,12 @@ from .reverse_diligence_checklist import (
     build_reverse_diligence,
     render_reverse_diligence_markdown,
 )
+from .management_forecast_reliability import (
+    ReliabilityReport,
+    YearVariance,
+    analyze_forecasts,
+    render_reliability_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2115,4 +2121,8 @@ __all__ = [
     "ReverseDiligenceReport",
     "build_reverse_diligence",
     "render_reverse_diligence_markdown",
+    "ReliabilityReport",
+    "YearVariance",
+    "analyze_forecasts",
+    "render_reliability_markdown",
 ]
