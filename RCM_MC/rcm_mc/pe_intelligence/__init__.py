@@ -806,6 +806,14 @@ from .letter_to_seller import (
     compose_letter,
     render_letter_markdown,
 )
+from .synergy_credibility_scorer import (
+    CATEGORY_BASE_REALIZATION,
+    SynergyAssessment,
+    SynergyClaim,
+    SynergyReport,
+    render_synergy_report_markdown,
+    score_synergies,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1849,4 +1857,10 @@ __all__ = [
     "LetterContext",
     "compose_letter",
     "render_letter_markdown",
+    "CATEGORY_BASE_REALIZATION",
+    "SynergyAssessment",
+    "SynergyClaim",
+    "SynergyReport",
+    "render_synergy_report_markdown",
+    "score_synergies",
 ]

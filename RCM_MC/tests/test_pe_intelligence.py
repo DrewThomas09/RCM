@@ -14356,5 +14356,150 @@ class TestLetterToSeller(unittest.TestCase):
             deal_name="X")).to_dict())
 
 
+# ── Synergy credibility scorer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CATEGORY_BASE_REALIZATION,
+    SynergyAssessment,
+    SynergyClaim,
+    SynergyReport,
+    render_synergy_report_markdown,
+    score_synergies,
+)
+
+
+class TestSynergyCredibilityScorer(unittest.TestCase):
+
+    def test_signed_gpo_high_credit(self) -> None:
+        r = score_synergies([
+            SynergyClaim(
+                name="GPO rebate",
+                category="procurement_gpo",
+                amount_m=5.0, year_realized=1,
+                has_signed_contract=True,
+                has_named_owner=True,
+                source="signed",
+            ),
+        ])
+        a = r.assessments[0]
+        self.assertGreaterEqual(a.credibility_0_100, 80)
+        self.assertGreaterEqual(a.realization_pct, 0.80)
+
+    def test_cross_sell_no_contracts_heavy_haircut(self) -> None:
+        r = score_synergies([
+            SynergyClaim(
+                name="Cross-sell",
+                category="cross_sell_revenue",
+                amount_m=10.0, year_realized=3,
+                has_signed_contract=False,
+                has_named_owner=False,
+                source="management_estimate",
+            ),
+        ])
+        a = r.assessments[0]
+        self.assertLess(a.realization_pct, 0.30)
+
+    def test_year_3_timing_hurts(self) -> None:
+        early = score_synergies([
+            SynergyClaim(
+                name="x", category="procurement_gpo",
+                amount_m=5.0, year_realized=1,
+            ),
+        ]).assessments[0]
+        late = score_synergies([
+            SynergyClaim(
+                name="x", category="procurement_gpo",
+                amount_m=5.0, year_realized=4,
+            ),
+        ]).assessments[0]
+        self.assertGreater(early.credibility_0_100,
+                            late.credibility_0_100)
+
+    def test_large_synergies_vs_ebitda_triggers_note(self) -> None:
+        r = score_synergies([
+            SynergyClaim(
+                name="Mega synergy",
+                category="shared_services",
+                amount_m=40.0, year_realized=2,
+            ),
+        ], entry_ebitda_m=100.0)
+        self.assertGreater(r.vs_entry_ebitda_pct, 0.30)
+        self.assertIn("huge share", r.partner_note.lower())
+
+    def test_thin_realization_flagged(self) -> None:
+        r = score_synergies([
+            SynergyClaim(
+                name="x", category="cross_sell_revenue",
+                amount_m=10.0, year_realized=4,
+                source="management_estimate",
+            ),
+            SynergyClaim(
+                name="y", category="network_effects",
+                amount_m=5.0, year_realized=3,
+                source="management_estimate",
+            ),
+        ])
+        self.assertLess(r.overall_realization_pct, 0.40)
+        self.assertIn("aspirational", r.partner_note.lower())
+
+    def test_strong_book_high_note(self) -> None:
+        r = score_synergies([
+            SynergyClaim(
+                name="GPO", category="procurement_gpo",
+                amount_m=5.0, year_realized=1,
+                has_signed_contract=True,
+                has_action_already_executed=True,
+                has_named_owner=True, source="signed",
+            ),
+            SynergyClaim(
+                name="shared svc", category="shared_services",
+                amount_m=3.0, year_realized=2,
+                has_benchmark_reference=True,
+                has_named_owner=True,
+                has_action_already_executed=True,
+            ),
+        ])
+        self.assertGreaterEqual(r.overall_realization_pct, 0.70)
+        self.assertIn("strong", r.partner_note.lower())
+
+    def test_categories_library(self) -> None:
+        self.assertIn("procurement_gpo", CATEGORY_BASE_REALIZATION)
+        self.assertIn("cross_sell_revenue", CATEGORY_BASE_REALIZATION)
+        self.assertGreater(
+            CATEGORY_BASE_REALIZATION["procurement_gpo"],
+            CATEGORY_BASE_REALIZATION["cross_sell_revenue"],
+        )
+
+    def test_empty_claims(self) -> None:
+        r = score_synergies([])
+        self.assertEqual(r.total_claimed_m, 0.0)
+        self.assertIn("no synergies claimed", r.partner_note.lower())
+
+    def test_unknown_category_defaults_conservative(self) -> None:
+        r = score_synergies([
+            SynergyClaim(
+                name="mystery", category="??", amount_m=5.0,
+                year_realized=2,
+            ),
+        ])
+        self.assertLessEqual(r.assessments[0].realization_pct, 0.40)
+
+    def test_markdown_renders(self) -> None:
+        md = render_synergy_report_markdown(score_synergies([
+            SynergyClaim(name="x", category="procurement_gpo",
+                          amount_m=5.0, year_realized=1,
+                          has_signed_contract=True),
+        ]))
+        self.assertIn("Synergy credibility scorecard", md)
+        self.assertIn("procurement_gpo", md)
+
+    def test_json(self) -> None:
+        import json
+        r = score_synergies([SynergyClaim(
+            name="x", category="procurement_gpo",
+            amount_m=5.0, year_realized=1)])
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
