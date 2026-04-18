@@ -3895,7 +3895,44 @@ diligence always burns you.
 
 ---
 
-## 159. Change log
+## 159. Regional wage inflation overlay (`regional_wage_inflation_overlay.py`)
+
+**Partner statement:** "A single wage-inflation rate is a fiction.
+NYC, SF, LA clinicians face different structural inflation than
+Tennessee or the Carolinas."
+
+Five-tier regional framework (partner-approximated 2026-2028):
+
+- **coastal_tier1** (NYC, SF, LA, Boston, Seattle, DC) — base
+  premium 1.30x, inflation 5.5%/yr.
+- **coastal_tier2** (Miami, San Diego, Philadelphia) — 1.15x,
+  4.5%.
+- **major_inland** (Chicago, Denver, Atlanta, Dallas) — 1.05x,
+  4.0%.
+- **mid_market** (Raleigh, Nashville, Minneapolis) — 0.95x, 3.5%.
+- **rural_tier3** (non-metro) — 0.85x, 2.8%.
+
+Takes site-level footprint, computes revenue-weighted inflation,
+and expresses the gap vs the model's single-rate assumption as
+a 3-year EBITDA drag.
+
+Partner note:
+
+- Drag ≥ 10% of EBITDA → "structural underwrite error; fix model
+  before IC."
+- 3-10% → "material but manageable; rebuild labor line with
+  regional split."
+- < 3% gap → "immaterial; note in underwrite."
+- Negative delta → "model is conservative; no adjustment."
+
+**Worked example:** a $20M EBITDA asset with 900 clinicians
+concentrated in NYC + SF under-models wage inflation by ~2.5pp.
+The resulting 3-year labor-cost drag is ~30% of entry EBITDA —
+structural, not incidental.
+
+---
+
+## 160. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4267,3 +4304,7 @@ diligence always burns you.
 - **2026-04-17** — Added `post_close_surprises_log.py` (§158) —
   diligence miss-rate tracker; portfolio-level feedback loop.
   Full inventory: 156 modules, 1,586 pe_intelligence unit tests.
+- **2026-04-17** — Added `regional_wage_inflation_overlay.py`
+  (§159) — 5-tier regional premium + inflation overlay; flags
+  model single-rate assumption vs weighted actual. Full
+  inventory: 157 modules, 1,596 pe_intelligence unit tests.
