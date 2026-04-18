@@ -65,6 +65,45 @@ class TestDCF(unittest.TestCase):
         result = build_dcf_from_deal({"net_revenue": 400e6, "current_ebitda": 50e6})
         self.assertGreater(result.enterprise_value, 0)
 
+    def test_dcf_projection_exposes_fcf_under_ui_key(self):
+        """Regression: the DCF UI renders projections with p.get('free_cash_flow').
+
+        The model's internal field name is ``fcf``; callers in
+        ``ui/models_page.py`` read ``free_cash_flow`` and ``pv_fcf``.
+        The serialized projection dict must expose both keys so the
+        table renders real numbers rather than em-dashes.
+        """
+        result = build_dcf(revenue_base=400e6, ebitda_margin_base=0.12)
+        result_dict = result.to_dict()
+        proj_dicts = result_dict["projections"]
+        self.assertEqual(len(proj_dicts), 5)
+        for p in proj_dicts:
+            self.assertIn("free_cash_flow", p,
+                          "UI projection dict must expose 'free_cash_flow'")
+            self.assertIsInstance(p["free_cash_flow"], (int, float))
+            # Legacy 'fcf' key is preserved for any downstream consumers
+            # that use the short name.
+            self.assertIn("fcf", p)
+            self.assertEqual(p["free_cash_flow"], p["fcf"])
+
+    def test_dcf_projection_exposes_pv_fcf_per_year(self):
+        """Regression: the DCF UI renders a PV(FCF) column per year.
+
+        The aggregate ``pv_cash_flows`` was computed once in
+        ``build_dcf`` and the per-year discounted cash flow was never
+        persisted on the projection row. Sum of per-year ``pv_fcf``
+        must equal the aggregate ``pv_cash_flows`` to within rounding.
+        """
+        result = build_dcf(revenue_base=400e6, ebitda_margin_base=0.12,
+                           wacc=0.10)
+        proj_dicts = result.to_dict()["projections"]
+        for p in proj_dicts:
+            self.assertIn("pv_fcf", p,
+                          "UI projection dict must expose 'pv_fcf'")
+            self.assertIsInstance(p["pv_fcf"], (int, float))
+        total_pv = sum(p["pv_fcf"] for p in proj_dicts)
+        self.assertAlmostEqual(total_pv, result.pv_cash_flows, places=0)
+
     def test_dcf_api(self):
         tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         tf.close()
