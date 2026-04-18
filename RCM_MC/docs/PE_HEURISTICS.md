@@ -5382,7 +5382,65 @@ Y3 shocks, Y4 CEO transition — **strong**, partner:
 
 ---
 
-## 189. Change log
+## 189. Pricing concession ladder (`pricing_concession_ladder.py`)
+
+**Partner statement:** "I never give price first. I give
+structure, reps, indemnity, earn-out, peg — and price
+last. Every concession costs something different; the
+cheapest move first."
+
+### Concession cost hierarchy (cheapest → most expensive)
+
+1. **earnout_structure** — low cost if we trust execution.
+2. **working_capital_peg** — trivial dollar cost.
+3. **interim_covenants** — free pre-close.
+4. **rw_insurance_mechanics** — carrier-priced.
+5. **reps_and_warranties_scope** — free if asset clean.
+6. **indemnity_cap_basket** — basis points + escrow.
+7. **rollover_equity_increase** — aligns incentives.
+8. **installment_structure** — high capital cost.
+9. **price_bump** — nuclear; give last, small,
+   reciprocated.
+
+### Motivation-aware sequencing
+
+- **family_liquidity** — earn-out resisted; price bump
+  pushed forward.
+- **sponsor_vintage_end** — R&W accepted R1; price held
+  hard.
+- **covenant_trip_imminent** — ladder collapses.
+- **high seller urgency** — every round compressed by 1.
+
+### Walk-away line
+
+Ladder terminates at buyer walk-away price. If current
+ask > walk-away after all concessions exhausted, partner
+walks.
+
+### Worked example
+
+Buyer base $800M, walk-away $850M, seller ask $900M:
+- Round 1: earnout + working-capital peg (low cost, low
+  pain).
+- Round 2: interim covenants + R&W mechanics.
+- Round 3: reps scope + indemnity basket + rollover.
+- Round 4: installment or small price bump, only
+  reciprocal.
+
+Partner note: "Ask $900M is $50M above walk-away $850M.
+Ladder delays walk; every concession must close that gap
+or save equivalent structure."
+
+### Packet fields that trigger
+
+- `buyer_walk_away_price_m`, `current_seller_ask_m`,
+  `buyer_base_offer_m`
+- `seller_motivation`, `seller_urgency`
+- `pattern_matches`, `already_conceded`
+
+---
+
+## 190. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
