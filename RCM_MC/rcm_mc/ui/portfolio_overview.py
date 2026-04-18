@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -156,7 +156,7 @@ def render_portfolio_overview(
             f'<a href="/market-data/map" class="cad-btn" style="text-decoration:none;">'
             f'Market Data</a></div></div>'
         )
-        return shell_v2(empty, "Portfolio", active_nav="/portfolio",
+        return chartis_shell(empty, "Portfolio", active_nav="/portfolio",
                         subtitle="No deals yet")
 
     # KPI summary
@@ -368,7 +368,7 @@ def render_portfolio_overview(
         for code, href, title, desc in nav_tiles
     )
     nav_links = (
-        f'<style>.cad-ptile{{display:block;padding:10px 14px;background:{PALETTE["bg_secondary"]};'
+        f'<style>.cad-ptile{{display:block;padding:10px 14px;background:var(--ck-panel);'
         f'border-right:1px solid {PALETTE["border"]};border-bottom:1px solid {PALETTE["border"]};'
         f'text-decoration:none;color:inherit;transition:background 0.1s;}}'
         f'.cad-ptile:hover{{background:{PALETTE["bg_tertiary"]};}}'
@@ -391,7 +391,7 @@ def render_portfolio_overview(
 
     body = f'{kpis}{health_bar}{opportunity}{synergy_section}{table}{regression}{nav_links}'
 
-    return shell_v2(
+    return chartis_shell(
         body, "Portfolio",
         active_nav="/portfolio",
         subtitle=f"{n} active deals — portfolio analytics & intelligence",
