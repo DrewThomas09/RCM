@@ -19338,5 +19338,176 @@ class TestExitMultipleCompression(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPreMortemSimulator(unittest.TestCase):
+    """Partner scenario: write the post-mortem before you invest."""
+
+    def test_empty_inputs_yields_thin(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs())
+        self.assertEqual(r.strength, "thin")
+        self.assertIn("proceed", r.partner_note.lower())
+
+    def test_cash_release_contradiction_triggers_y1(self) -> None:
+        """Partner: 'Y1 is A/R release, not run-rate.'"""
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs(
+            thesis="denial_reduction",
+            thesis_contradicted_links=[
+                "year1_cash_release_share exceeds 40%",
+            ],
+            hold_start_year=2026,
+        ))
+        y1 = next((y for y in r.years
+                    if y.year == 2027), None)
+        self.assertIsNotNone(y1)
+        self.assertIn("A/R", y1.event)
+
+    def test_fix_denials_trap_triggers_y1(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs(
+            thesis="denial_reduction",
+            pattern_matches=["fix_denials_in_12_months"],
+        ))
+        self.assertGreater(len(r.years), 0)
+        y1 = r.years[0]
+        self.assertIn("denial", y1.event.lower())
+
+    def test_covenant_trip_triggers_y2(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs(
+            thesis="denial_reduction",
+            pattern_matches=["fix_denials_in_12_months"],
+            worst_year_leverage=7.3,
+            covenant_max_leverage=7.0,
+        ))
+        # Y2 should mention the leverage trip.
+        y2 = next((y for y in r.years
+                   if "cure" in y.event.lower()
+                   or "leverage" in y.event.lower()), None)
+        self.assertIsNotNone(y2)
+
+    def test_regulatory_shock_triggers_middle_year(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs(
+            thesis="denial_reduction",
+            worst_shock_year=2029,
+            worst_shock_cumulative_m=12.0,
+            base_ebitda_m=75.0,
+        ))
+        shock_y = next((y for y in r.years
+                         if y.year == 2029), None)
+        self.assertIsNotNone(shock_y)
+
+    def test_turnaround_without_operator_triggers_y4(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs(
+            failure_archetype_matches=[
+                "turnaround_without_operator",
+            ],
+        ))
+        y4 = next((y for y in r.years
+                   if "CEO" in y.event
+                   or "transition" in y.event.lower()), None)
+        self.assertIsNotNone(y4)
+
+    def test_multiple_failures_produce_strong(self) -> None:
+        """Partner: 'three stacked → pre-mortem strong; walk or mitigate.'"""
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs(
+            thesis="denial_reduction",
+            thesis_contradicted_links=[
+                "year1_cash_release_share exceeds 40%",
+            ],
+            pattern_matches=["fix_denials_in_12_months"],
+            worst_year_leverage=7.3,
+            covenant_max_leverage=7.0,
+            failure_archetype_matches=[
+                "turnaround_without_operator",
+            ],
+        ))
+        self.assertEqual(r.strength, "strong")
+        self.assertIn("mitigation", r.partner_note.lower())
+
+    def test_exit_event_narrative_reflects_severity(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs(
+            thesis="denial_reduction",
+            thesis_contradicted_links=[
+                "year1_cash_release_share exceeds 40%",
+            ],
+            pattern_matches=["fix_denials_in_12_months"],
+            failure_archetype_matches=[
+                "back_office_integration_optimism",
+                "turnaround_without_operator",
+            ],
+        ))
+        self.assertTrue(len(r.exit_outcome) > 10)
+
+    def test_no_rollover_triggers_y4(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs(
+            management_rolled_equity=False,
+        ))
+        # Y4 event about incentive alignment.
+        y4 = next((y for y in r.years
+                   if "rollover" in y.event.lower()
+                   or "incentive" in y.event.lower()), None)
+        self.assertIsNotNone(y4)
+
+    def test_markdown_renders_years_with_fix_missed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            render_pre_mortem_markdown,
+            simulate_pre_mortem,
+        )
+        md = render_pre_mortem_markdown(simulate_pre_mortem(
+            PreMortemInputs(
+                thesis="rollup_consolidation",
+                pattern_matches=["fix_denials_in_12_months"],
+            )
+        ))
+        self.assertIn("# Pre-mortem", md)
+        self.assertIn("Fix we missed", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            PreMortemInputs,
+            simulate_pre_mortem,
+        )
+        r = simulate_pre_mortem(PreMortemInputs(
+            thesis="denial_reduction",
+            pattern_matches=["fix_denials_in_12_months"],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

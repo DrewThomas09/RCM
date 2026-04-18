@@ -1095,6 +1095,13 @@ from .exit_multiple_compression_scenarios import (
     render_compression_markdown,
     stress_exit_multiple_compression,
 )
+from .pre_mortem_simulator import (
+    PreMortemInputs,
+    PreMortemReport,
+    PreMortemYear,
+    render_pre_mortem_markdown,
+    simulate_pre_mortem,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2349,4 +2356,9 @@ __all__ = [
     "CompressionScenario",
     "render_compression_markdown",
     "stress_exit_multiple_compression",
+    "PreMortemInputs",
+    "PreMortemReport",
+    "PreMortemYear",
+    "render_pre_mortem_markdown",
+    "simulate_pre_mortem",
 ]
