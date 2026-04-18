@@ -23434,5 +23434,170 @@ class TestICMemoHeaderSynthesizer(unittest.TestCase):
         json.dumps(h.to_dict())
 
 
+class TestTaxStructureTrapScanner(unittest.TestCase):
+    """Partner scenario: which tax traps cost us IRR?"""
+
+    def test_empty_inputs_no_traps(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        r = scan_tax_traps(TaxTrapInputs())
+        self.assertEqual(r.triggered_count, 0)
+        self.assertIn("no tax-structure",
+                       r.partner_note.lower())
+
+    def test_golden_parachute_triggered(self) -> None:
+        """Partner: 'exec acceleration + no safe harbor = 280G.'"""
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        r = scan_tax_traps(TaxTrapInputs(
+            executives_with_acceleration_gt_3x_base=3,
+            golden_parachute_safe_harbor_in_place=False,
+        ))
+        gp = next(f for f in r.flags
+                   if f.name == "golden_parachute_280g_exposure")
+        self.assertTrue(gp.triggered)
+
+    def test_golden_parachute_not_triggered_with_safe_harbor(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        r = scan_tax_traps(TaxTrapInputs(
+            executives_with_acceleration_gt_3x_base=3,
+            golden_parachute_safe_harbor_in_place=True,
+        ))
+        gp = next(f for f in r.flags
+                   if f.name == "golden_parachute_280g_exposure")
+        self.assertFalse(gp.triggered)
+
+    def test_nol_382_triggered(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        r = scan_tax_traps(TaxTrapInputs(
+            target_has_material_nols=True,
+            target_ownership_change=True,
+        ))
+        nol = next(f for f in r.flags
+                    if f.name == "nol_382_limitation")
+        self.assertTrue(nol.triggered)
+
+    def test_provider_tax_california(self) -> None:
+        """Partner: 'CA provider tax → 2-4% revenue exposure.'"""
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        r = scan_tax_traps(TaxTrapInputs(
+            operating_states=["CA", "NV"],
+        ))
+        pt = next(f for f in r.flags
+                   if f.name == "state_provider_tax")
+        self.assertTrue(pt.triggered)
+        self.assertIn("CA", pt.partner_commentary)
+
+    def test_provider_tax_not_triggered_on_no_tax_states(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        r = scan_tax_traps(TaxTrapInputs(
+            operating_states=["FL", "NV", "TN"],
+        ))
+        pt = next(f for f in r.flags
+                   if f.name == "state_provider_tax")
+        self.assertFalse(pt.triggered)
+
+    def test_ubti_requires_tax_exempt_lps(self) -> None:
+        """Partner: 'UBTI only matters with tax-exempt LPs.'"""
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        # UBTI structure alone — no tax-exempt LPs
+        r1 = scan_tax_traps(TaxTrapInputs(
+            structure_generates_ubti=True,
+            tax_exempt_lps_in_fund=False,
+        ))
+        ub1 = next(f for f in r1.flags
+                    if f.name == "ubti_exposure_tax_exempt_lps")
+        self.assertFalse(ub1.triggered)
+        # Both flags
+        r2 = scan_tax_traps(TaxTrapInputs(
+            structure_generates_ubti=True,
+            tax_exempt_lps_in_fund=True,
+        ))
+        ub2 = next(f for f in r2.flags
+                    if f.name == "ubti_exposure_tax_exempt_lps")
+        self.assertTrue(ub2.triggered)
+
+    def test_cod_requires_note_and_modification(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        r = scan_tax_traps(TaxTrapInputs(
+            seller_note_at_close=True,
+            seller_note_modification_planned=True,
+        ))
+        cod = next(f for f in r.flags
+                    if f.name == "cod_income_seller_note")
+        self.assertTrue(cod.triggered)
+
+    def test_multiple_traps_trigger_tax_counsel_note(self) -> None:
+        """Partner: '400 bps+ = retain tax counsel pre-LOI.'"""
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        r = scan_tax_traps(TaxTrapInputs(
+            executives_with_acceleration_gt_3x_base=2,
+            golden_parachute_safe_harbor_in_place=False,
+            target_has_material_nols=True,
+            target_ownership_change=True,
+            telehealth_or_multi_state_services=True,
+            nexus_states_with_gross_receipts_tax_exposed=True,
+        ))
+        self.assertGreaterEqual(
+            r.total_estimated_irr_drag_bps, 400
+        )
+        self.assertIn("tax counsel pre-loi",
+                       r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            render_tax_trap_markdown,
+            scan_tax_traps,
+        )
+        md = render_tax_trap_markdown(
+            scan_tax_traps(TaxTrapInputs(
+                target_has_material_nols=True,
+                target_ownership_change=True,
+            ))
+        )
+        self.assertIn("# Tax structure trap scan", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            TaxTrapInputs,
+            scan_tax_traps,
+        )
+        r = scan_tax_traps(TaxTrapInputs(
+            operating_states=["CA"],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

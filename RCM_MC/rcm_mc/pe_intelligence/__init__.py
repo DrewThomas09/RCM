@@ -1291,6 +1291,13 @@ from .ic_memo_header_synthesizer import (
     render_ic_memo_header_text,
     synthesize_ic_memo_header,
 )
+from .tax_structure_trap_scanner import (
+    TaxTrapFlag,
+    TaxTrapInputs,
+    TaxTrapReport,
+    render_tax_trap_markdown,
+    scan_tax_traps,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2689,4 +2696,9 @@ __all__ = [
     "render_ic_memo_header_markdown",
     "render_ic_memo_header_text",
     "synthesize_ic_memo_header",
+    "TaxTrapFlag",
+    "TaxTrapInputs",
+    "TaxTrapReport",
+    "render_tax_trap_markdown",
+    "scan_tax_traps",
 ]
