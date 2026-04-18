@@ -168,6 +168,7 @@ NAV_ITEMS = [
     {"label": "Growth Runway", "href": "/growth-runway", "icon": "chart"},
     {"label": "Dividend Recap", "href": "/dividend-recap", "icon": "chart"},
     {"label": "Continuation Vehicle", "href": "/continuation-vehicle", "icon": "chart"},
+    {"label": "Earnout", "href": "/earnout", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
