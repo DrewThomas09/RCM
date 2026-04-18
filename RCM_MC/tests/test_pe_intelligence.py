@@ -35489,5 +35489,227 @@ class TestSponsorVsStrategicExitComparator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestAddOnIntegrationSequencingPlanner(unittest.TestCase):
+    """Partner voice: 'Sequence them or the 4th slips.'"""
+
+    def test_no_bolt_ons_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        r = plan_add_on_sequencing(
+            IntegrationSequencingInputs())
+        self.assertIn(
+            "no bolt-ons", r.partner_note.lower()
+        )
+
+    def test_sequence_assigned_to_quarters(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        r = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[
+                    BoltOn("A", 5.0),
+                    BoltOn("B", 5.0),
+                    BoltOn("C", 5.0),
+                ],
+                integration_capacity_per_quarter=1,
+            )
+        )
+        self.assertEqual(len(r.sequence), 3)
+        # Each quarter unique
+        quarters = [s.assigned_quarter for s in r.sequence]
+        self.assertEqual(quarters, [1, 2, 3])
+
+    def test_signed_bolt_ons_ranked_first(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        r = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[
+                    BoltOn("Not signed",
+                           integration_ease_0_4=4,
+                           strategic_priority_0_4=4,
+                           already_signed=False,
+                           ebitda_m=10.0),
+                    BoltOn("Signed",
+                           integration_ease_0_4=1,
+                           strategic_priority_0_4=1,
+                           already_signed=True,
+                           ebitda_m=5.0),
+                ],
+            )
+        )
+        # Signed should be first despite low scores
+        self.assertEqual(r.sequence[0].name, "Signed")
+
+    def test_high_priority_first(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        r = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[
+                    BoltOn("Low",
+                           integration_ease_0_4=1,
+                           strategic_priority_0_4=1,
+                           ebitda_m=5.0),
+                    BoltOn("High",
+                           integration_ease_0_4=4,
+                           strategic_priority_0_4=4,
+                           ebitda_m=5.0),
+                ],
+            )
+        )
+        self.assertEqual(r.sequence[0].name, "High")
+
+    def test_saturation_flag_back_third(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        # 20 quarters; saturation kicks in at Q14+
+        r = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[BoltOn(f"B{i}", 5.0)
+                          for i in range(16)],
+                integration_capacity_per_quarter=1,
+                hold_quarters=20,
+            )
+        )
+        # Some bolt-ons should be in saturation zone
+        saturations = [
+            s for s in r.sequence if s.saturation_flag
+        ]
+        self.assertGreater(len(saturations), 0)
+
+    def test_unplaced_when_over_capacity(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        # 10 bolt-ons, capacity 1/q, hold 4q → 6 unplaced
+        r = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[BoltOn(f"B{i}", 5.0)
+                          for i in range(10)],
+                integration_capacity_per_quarter=1,
+                hold_quarters=4,
+            )
+        )
+        self.assertEqual(r.unplaced_count, 6)
+        self.assertIn(
+            "won't fit",
+            r.partner_note.lower(),
+        )
+
+    def test_total_ebitda_added(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        r = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[
+                    BoltOn("A", 10.0),
+                    BoltOn("B", 8.0),
+                    BoltOn("C", 5.0),
+                ],
+            )
+        )
+        self.assertAlmostEqual(
+            r.total_ebitda_added_m, 23.0
+        )
+
+    def test_clean_sequence_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        r = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[
+                    BoltOn("A", 5.0),
+                    BoltOn("B", 5.0),
+                ],
+                integration_capacity_per_quarter=2,
+                hold_quarters=10,
+            )
+        )
+        # Both fit in quarter 1 — no saturation
+        self.assertIn(
+            "execute on priority",
+            r.partner_note.lower(),
+        )
+
+    def test_higher_capacity_fits_more(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        lo = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[BoltOn(f"B{i}", 5.0)
+                          for i in range(8)],
+                integration_capacity_per_quarter=1,
+                hold_quarters=4,
+            )
+        )
+        hi = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[BoltOn(f"B{i}", 5.0)
+                          for i in range(8)],
+                integration_capacity_per_quarter=2,
+                hold_quarters=4,
+            )
+        )
+        self.assertGreater(
+            len(hi.sequence), len(lo.sequence)
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+            render_add_on_sequencing_markdown,
+        )
+        md = render_add_on_sequencing_markdown(
+            plan_add_on_sequencing(
+                IntegrationSequencingInputs(
+                    bolt_ons=[BoltOn("A", 5.0)])
+            )
+        )
+        self.assertIn(
+            "# Add-on integration sequencing", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            BoltOn,
+            IntegrationSequencingInputs,
+            plan_add_on_sequencing,
+        )
+        r = plan_add_on_sequencing(
+            IntegrationSequencingInputs(
+                bolt_ons=[BoltOn("A", 5.0)])
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1730,6 +1730,14 @@ from .sponsor_vs_strategic_exit_comparator import (
     compare_sponsor_vs_strategic,
     render_sponsor_vs_strategic_markdown,
 )
+from .add_on_integration_sequencing_planner import (
+    BoltOn,
+    IntegrationSequencingInputs,
+    IntegrationSequencingReport,
+    SequencedBoltOn,
+    plan_add_on_sequencing,
+    render_add_on_sequencing_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3445,4 +3453,10 @@ __all__ = [
     "SponsorVsStrategicReport",
     "compare_sponsor_vs_strategic",
     "render_sponsor_vs_strategic_markdown",
+    "BoltOn",
+    "IntegrationSequencingInputs",
+    "IntegrationSequencingReport",
+    "SequencedBoltOn",
+    "plan_add_on_sequencing",
+    "render_add_on_sequencing_markdown",
 ]
