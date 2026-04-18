@@ -3708,6 +3708,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             mid = path[len("/deal/"):-len("/archetype")]
             deal_id = urllib.parse.unquote(mid).strip("/")
             return self._route_archetype(deal_id)
+        if path.startswith("/deal/") and path.endswith("/investability"):
+            mid = path[len("/deal/"):-len("/investability")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_investability(deal_id)
         if path.startswith("/deal/"):
             deal_id = urllib.parse.unquote(path[len("/deal/"):]).strip("/")
             if not deal_id:
@@ -7033,6 +7037,58 @@ class RCMHandler(BaseHTTPRequestHandler):
             archetype_hits=hits,
             primary=primary,
             archetype_context=ctx,
+            current_user=username,
+        ))
+
+    def _route_investability(self, deal_id: str) -> None:
+        """GET /deal/<id>/investability — composite score + exit readiness."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.investability_page import render_investability
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_investability(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        exit_report = None
+        try:
+            from .pe_intelligence.partner_review import _extract_context
+            from .pe_intelligence.exit_readiness import (
+                ExitReadinessInputs, score_exit_readiness,
+            )
+            from .analysis.analysis_store import get_or_build_packet
+            packet = get_or_build_packet(
+                self._require_store(), deal_id, skip_simulation=True,
+            )
+            ctx = _extract_context(packet)
+            profile = self._load_deal_profile(deal_id) or {}
+            readiness_inputs = ExitReadinessInputs(
+                has_audited_financials_3yr=profile.get("has_audited_financials_3yr"),
+                has_trailing_12mo_kpis=profile.get("has_trailing_12mo_kpis"),
+                data_room_organized=profile.get("data_room_organized"),
+                quality_of_earnings_prepared=profile.get("quality_of_earnings_prepared"),
+                ebitda_trending_up_last_2q=profile.get("ebitda_trending_up_last_2q"),
+                margin_trending_up_last_2q=profile.get("margin_trending_up_last_2q"),
+                buyer_universe_mapped=profile.get("buyer_universe_mapped"),
+                management_retained_through_close=profile.get("management_retained_through_close"),
+                legal_litigation_clean=profile.get("legal_litigation_clean"),
+                ebitda_adj_recon_documented=profile.get("ebitda_adj_recon_documented"),
+                ebitda_vs_plan=profile.get("ebitda_vs_plan"),
+                revenue_vs_plan=profile.get("revenue_vs_plan"),
+            )
+            exit_report = score_exit_readiness(ctx, readiness_inputs)
+        except Exception:  # noqa: BLE001
+            exit_report = None  # fall through — investability can still render
+        return self._send_html(render_investability(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            exit_report=exit_report,
             current_user=username,
         ))
 

@@ -324,6 +324,11 @@ def render_deal_dashboard(
             "Sponsor-structure archetype match + time-series regime",
             accent=PALETTE["brand_accent"],
         ),
+        _model_tile(
+            "INV", f"/deal/{did}/investability", "Investability",
+            "Composite 0-100 + exit readiness + three things to fix",
+            accent=PALETTE["brand_accent"],
+        ),
     ]
 
     model_grid = (
