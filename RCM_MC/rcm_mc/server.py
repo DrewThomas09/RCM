@@ -2034,6 +2034,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.refi_optimizer_page import render_refi_optimizer
             return self._send_html(render_refi_optimizer(_qp))
+        if path == "/lp-reporting":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.lp_reporting_page import render_lp_reporting
+            return self._send_html(render_lp_reporting(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
