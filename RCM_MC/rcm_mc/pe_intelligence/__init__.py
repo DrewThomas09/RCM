@@ -1036,6 +1036,13 @@ from .qofe_prescreen import (
     prescreen_qofe,
     render_qofe_prescreen_markdown,
 )
+from .pre_ic_chair_brief import (
+    PreICChairBrief,
+    PreICInputs,
+    compose_chair_brief,
+    render_chair_brief_markdown,
+    render_chair_brief_text,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2247,4 +2254,9 @@ __all__ = [
     "SellerAddBack",
     "prescreen_qofe",
     "render_qofe_prescreen_markdown",
+    "PreICChairBrief",
+    "PreICInputs",
+    "compose_chair_brief",
+    "render_chair_brief_markdown",
+    "render_chair_brief_text",
 ]

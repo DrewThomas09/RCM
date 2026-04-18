@@ -18150,5 +18150,150 @@ class TestQofEPrescreen(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPreICChairBrief(unittest.TestCase):
+    """Partner scenario: 4 bullets for the IC chair, 30 min before IC."""
+
+    def test_default_yields_all_four_bullets(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+        )
+        b = compose_chair_brief(PreICInputs(
+            deal_name="ProjectZephyr",
+            recurring_ebitda_m=75.0,
+            entry_multiple=11.0,
+            target_moic=2.5,
+            target_irr=0.20,
+        ))
+        self.assertTrue(len(b.thesis_bullet) > 10)
+        self.assertTrue(len(b.math_works_bullet) > 10)
+        self.assertTrue(len(b.math_breaks_bullet) > 10)
+        self.assertTrue(len(b.change_my_mind_bullet) > 10)
+
+    def test_contradicted_chain_triggers_pass(self) -> None:
+        """Partner: 'thesis broke on the packet → pass.'"""
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+        )
+        b = compose_chair_brief(PreICInputs(
+            deal_name="ProjectZephyr",
+            contradicted_thesis_links=["year-1 cash release is 55%"],
+        ))
+        self.assertEqual(b.recommendation, "pass")
+        self.assertIn("contradicted",
+                       b.math_breaks_bullet.lower())
+
+    def test_compound_risks_trigger_reprice(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+        )
+        b = compose_chair_brief(PreICInputs(
+            deal_name="ProjectZephyr",
+            compound_risks=["payer", "leverage"],
+        ))
+        self.assertEqual(b.recommendation, "reprice")
+
+    def test_clean_deal_triggers_invest(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+        )
+        b = compose_chair_brief(PreICInputs(
+            deal_name="ProjectZephyr",
+            in_band_count=5,
+            out_of_band_count=0,
+            high_risk_unresolved_links=[],
+        ))
+        self.assertEqual(b.recommendation, "invest")
+
+    def test_explicit_rec_honored(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+        )
+        b = compose_chair_brief(PreICInputs(
+            deal_name="ProjectZephyr",
+            recommendation="diligence_more",
+            compound_risks=["payer", "leverage"],   # would else reprice
+        ))
+        self.assertEqual(b.recommendation, "diligence_more")
+
+    def test_thesis_bullet_uses_explicit_when_given(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+        )
+        b = compose_chair_brief(PreICInputs(
+            deal_name="ProjectZephyr",
+            thesis_sentence=("Acquire 5-physician GI "
+                              "platform for roll-up."),
+        ))
+        self.assertIn("GI platform", b.thesis_bullet)
+
+    def test_change_my_mind_pulls_from_high_risk_unresolved(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+        )
+        b = compose_chair_brief(PreICInputs(
+            deal_name="ProjectZephyr",
+            high_risk_unresolved_links=[
+                "Coder retention plan with bonuses",
+                "Payer audit exposure diligenced",
+                "Cash vs recurring EBITDA split reconciled",
+            ],
+        ))
+        self.assertIn("Coder retention",
+                       b.change_my_mind_bullet)
+
+    def test_markdown_has_four_sections(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+            render_chair_brief_markdown,
+        )
+        md = render_chair_brief_markdown(
+            compose_chair_brief(PreICInputs(
+                deal_name="ProjectZephyr",
+                recurring_ebitda_m=75.0,
+                entry_multiple=11.0,
+                target_moic=2.5,
+                target_irr=0.20,
+            ))
+        )
+        for section in ("## 1. Thesis",
+                        "## 2. Where the math works",
+                        "## 3. Where the math doesn't work",
+                        "## 4. What would change my mind"):
+            self.assertIn(section, md)
+
+    def test_text_renderer_has_one_line_per_bullet(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+            render_chair_brief_text,
+        )
+        t = render_chair_brief_text(
+            compose_chair_brief(PreICInputs(deal_name="X"))
+        )
+        self.assertIn("Thesis:", t)
+        self.assertIn("Math works:", t)
+        self.assertIn("Math breaks:", t)
+        self.assertIn("Change my mind:", t)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            PreICInputs,
+            compose_chair_brief,
+        )
+        b = compose_chair_brief(PreICInputs(deal_name="X"))
+        json.dumps(b.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
