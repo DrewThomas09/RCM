@@ -228,6 +228,7 @@ NAV_ITEMS = [
     {"label": "Debt Financing", "href": "/debt-financing", "icon": "chart"},
     {"label": "VCP Tracker", "href": "/vcp-tracker", "icon": "chart"},
     {"label": "Co-Invest Pipeline", "href": "/coinvest-pipeline", "icon": "grid"},
+    {"label": "DPI Tracker", "href": "/dpi-tracker", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
