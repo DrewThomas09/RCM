@@ -24250,5 +24250,174 @@ class TestRepsWarrantiesScopeNegotiator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestSpecialtyMixStressScorer(unittest.TestCase):
+    """Partner scenario: is it a practice or a single-service line?"""
+
+    def test_diversified_practice(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        r = score_specialty_mix_stress(SpecialtyMixInputs(
+            top_specialty_revenue_pct=0.35,
+            top_procedure_revenue_pct=0.20,
+            n_physicians_generating_top_specialty_revenue=8,
+            top_specialty_commercial_pct=0.60,
+            ancillary_integration_tied_to_top_specialty=False,
+            ebitda_m=20.0,
+        ))
+        self.assertEqual(r.tier, "well_diversified")
+
+    def test_single_service_line_detection(self) -> None:
+        """Partner: 'top specialty 80%, 3 surgeons → single-service line.'"""
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        r = score_specialty_mix_stress(SpecialtyMixInputs(
+            top_specialty_revenue_pct=0.80,
+            top_procedure_revenue_pct=0.45,
+            n_physicians_generating_top_specialty_revenue=3,
+            top_specialty_commercial_pct=0.25,
+            ancillary_integration_tied_to_top_specialty=True,
+            ebitda_m=20.0,
+        ))
+        self.assertEqual(r.tier, "single_service_line")
+        self.assertIn("add-on, not a platform",
+                       r.partner_note.lower())
+
+    def test_thin_physician_bench_flag(self) -> None:
+        """Partner: 'top specialty with 3 docs = thin bench.'"""
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        r = score_specialty_mix_stress(SpecialtyMixInputs(
+            n_physicians_generating_top_specialty_revenue=2,
+        ))
+        thin = next(f for f in r.flags
+                     if f.name ==
+                     "thin_physician_bench_in_top_specialty")
+        self.assertTrue(thin.triggered)
+
+    def test_medicare_heavy_top_specialty_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        r = score_specialty_mix_stress(SpecialtyMixInputs(
+            top_specialty_commercial_pct=0.20,  # ≤ 30% → Medicare-heavy
+        ))
+        mcr = next(f for f in r.flags
+                    if f.name == "top_specialty_medicare_heavy")
+        self.assertTrue(mcr.triggered)
+
+    def test_commercial_heavy_specialty_clean(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        r = score_specialty_mix_stress(SpecialtyMixInputs(
+            top_specialty_commercial_pct=0.70,
+        ))
+        mcr = next(f for f in r.flags
+                    if f.name == "top_specialty_medicare_heavy")
+        self.assertFalse(mcr.triggered)
+
+    def test_heavily_concentrated_triggers_closing_condition(
+        self,
+    ) -> None:
+        """Partner: '3 flags → specialty-leader retention closing condition.'"""
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        r = score_specialty_mix_stress(SpecialtyMixInputs(
+            top_specialty_revenue_pct=0.65,
+            top_procedure_revenue_pct=0.40,
+            n_physicians_generating_top_specialty_revenue=3,
+            top_specialty_commercial_pct=0.50,
+            ebitda_m=20.0,
+        ))
+        self.assertEqual(r.tier, "heavily_concentrated")
+        self.assertIn("closing condition",
+                       r.partner_note.lower())
+
+    def test_ancillary_tie_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        r = score_specialty_mix_stress(SpecialtyMixInputs(
+            ancillary_integration_tied_to_top_specialty=True,
+        ))
+        anc = next(f for f in r.flags
+                    if f.name == "ancillary_tied_to_top_specialty")
+        self.assertTrue(anc.triggered)
+
+    def test_concentration_risk_scales_with_ebitda(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        small = score_specialty_mix_stress(SpecialtyMixInputs(
+            top_specialty_revenue_pct=0.80,
+            top_procedure_revenue_pct=0.40,
+            n_physicians_generating_top_specialty_revenue=3,
+            top_specialty_commercial_pct=0.25,
+            ancillary_integration_tied_to_top_specialty=True,
+            ebitda_m=10.0,
+        ))
+        large = score_specialty_mix_stress(SpecialtyMixInputs(
+            top_specialty_revenue_pct=0.80,
+            top_procedure_revenue_pct=0.40,
+            n_physicians_generating_top_specialty_revenue=3,
+            top_specialty_commercial_pct=0.25,
+            ancillary_integration_tied_to_top_specialty=True,
+            ebitda_m=40.0,
+        ))
+        self.assertGreater(large.concentration_risk_m,
+                            small.concentration_risk_m)
+
+    def test_moderately_concentrated(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        r = score_specialty_mix_stress(SpecialtyMixInputs(
+            top_specialty_revenue_pct=0.65,          # flag
+            top_procedure_revenue_pct=0.40,          # flag
+            n_physicians_generating_top_specialty_revenue=6,
+            top_specialty_commercial_pct=0.50,
+        ))
+        self.assertEqual(r.tier, "moderately_concentrated")
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            render_specialty_mix_markdown,
+            score_specialty_mix_stress,
+        )
+        md = render_specialty_mix_markdown(
+            score_specialty_mix_stress(SpecialtyMixInputs(
+                top_specialty_revenue_pct=0.70,
+                ebitda_m=20.0,
+            ))
+        )
+        self.assertIn("# Specialty mix stress", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            SpecialtyMixInputs,
+            score_specialty_mix_stress,
+        )
+        r = score_specialty_mix_stress(SpecialtyMixInputs(
+            top_specialty_revenue_pct=0.65,
+            ebitda_m=20.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

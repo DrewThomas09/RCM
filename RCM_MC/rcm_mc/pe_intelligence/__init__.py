@@ -1331,6 +1331,13 @@ from .reps_warranties_scope_negotiator import (
     design_reps_warranties_scope,
     render_reps_markdown,
 )
+from .specialty_mix_stress_scorer import (
+    SpecialtyMixFlag,
+    SpecialtyMixInputs,
+    SpecialtyMixReport,
+    render_specialty_mix_markdown,
+    score_specialty_mix_stress,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2759,4 +2766,9 @@ __all__ = [
     "RepRecommendation",
     "design_reps_warranties_scope",
     "render_reps_markdown",
+    "SpecialtyMixFlag",
+    "SpecialtyMixInputs",
+    "SpecialtyMixReport",
+    "render_specialty_mix_markdown",
+    "score_specialty_mix_stress",
 ]
