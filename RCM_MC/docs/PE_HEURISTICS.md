@@ -6870,7 +6870,60 @@ operator (6%) = 30% haircut → walk-away $560M. Partner:
 
 ---
 
-## 213. Change log
+## 213. IC memo header synthesizer (`ic_memo_header_synthesizer.py`)
+
+**Partner statement:** "Every IC memo has the same
+first page. Recommendation up top, thesis in one
+sentence, three things that work, three things that
+don't, three things that would change my mind. I should
+be able to pick up that page and know the deal in 60
+seconds."
+
+Distinct from `ic_memo`, `ic_decision_synthesizer`,
+`deal_one_liner`, `pre_ic_chair_brief`. This module
+produces the **standardized IC memo first page**.
+
+### Fixed-format 5 blocks
+
+1. **Recommendation** — invest / pass / diligence_more /
+   reprice / proceed_with_mitigants.
+2. **One-sentence thesis**.
+3. **What works** — 3 items max.
+4. **What doesn't** — 3 items max.
+5. **What would change my mind** — 3 items max.
+
+### The 3-item cap
+
+Partners complain when lists go past 3. "More than three
+is fuzzy thinking." The module hard-caps each block at
+3.
+
+### Recommendation rationale templates
+
+- `invest` → "deal we want."
+- `pass` → "walk."
+- `diligence_more` → "advance only with open items
+  closed."
+- `reprice` → "counter at walk-away."
+- `proceed_with_mitigants` → "named mitigation required."
+
+### Why this matters
+
+The first page of the IC memo is where the partner
+decides whether to read the next 60 pages. A clean
+header + 3 named things in each direction is the
+difference between "partner reads" and "partner flips
+past."
+
+### Packet fields
+
+`deal_name`, `recommendation`, `thesis_one_sentence`,
+`what_works_candidates`, `what_breaks_candidates`,
+`would_change_my_mind_candidates`.
+
+---
+
+## 214. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
