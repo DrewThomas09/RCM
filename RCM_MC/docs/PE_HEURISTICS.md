@@ -11104,7 +11104,77 @@ share_of_npr_pct)`; `current_month`.
 
 ---
 
-## 271. Change log
+## 271. Reprice calculator (`reprice_calculator.py`)
+
+**Partner statement.** "Diligence surfaces a $5M EBITDA haircut
+from QofE, a $2M lease concession, and a $3M one-time item sitting
+in stated EBITDA. How do we reprice the bid? The answer is math,
+not negotiation. If the multiple is 11x and run-rate drops $10M,
+that's $110M off the bid, possibly with a margin-of-safety
+haircut."
+
+### Why it matters
+
+`pricing_concession_ladder` covers negotiation moves.
+`thesis_break_price_calculator` computes walk-away. This module is
+the **post-diligence reprice math** — given specific findings,
+compute the new bid and the seller conversation.
+
+### Math
+
+- EBITDA findings × original_multiple = EV impact
+- Dollar findings (WC, indemnity, capex, regulatory) = 1:1 EV impact
+- Optional safety haircut % on original bid
+- New bid = original − raw reprice − safety haircut
+
+### Verdict thresholds
+
+- < 3% delta → **small_reprice** — "standard diligence adjustment"
+- 3-8% → **meaningful_reprice** — "seller will push back; lead
+  with biggest finding + QofE evidence"
+- 8-15% → **material_reprice** — "process may break; prepare for
+  walk scenario"
+- > 15% → **kill** — "seller won't take it; deal is effectively
+  dead"
+
+### Seller talking points (auto-generated)
+
+- Run-rate EBITDA change + EV impact
+- Dollar items + direct off-EV
+- Safety haircut justification
+- Revised bid with % delta
+
+### Worked example
+
+Original bid $500M at 11×. Findings: QofE haircut $5M (EBITDA),
+WC peg $2M, one-time removal $3M (EBITDA), indemnity $1M.
+
+- EBITDA hit: $5 + $3 = $8M × 11 = $88M
+- Dollar hit: $2 + $1 = $3M
+- Raw reprice: $91M
+- New bid: $409M
+- Delta: 18% → **kill**
+
+Partner: "At 18% reprice, seller walks before they take it — talk
+through whether we revise findings or walk."
+
+### Packet fields
+
+`original_bid_ev_m`, `original_multiple`, `findings` (list of
+`DiligenceFinding(category, name, dollar_impact_m, hit_ebitda)`),
+`safety_haircut_pct`.
+
+### Distinct from existing modules
+
+- `pricing_concession_ladder` — concession moves (buyer-side).
+- `thesis_break_price_calculator` — walk-away.
+- `banker_partner_pricing_tension` — banker gap.
+- This module — post-diligence reprice with explicit findings-to-EV
+  math and reprice-tier verdict.
+
+---
+
+## 272. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
