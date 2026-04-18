@@ -3794,7 +3794,37 @@ round 2 for depth.
 
 ---
 
-## 156. Change log
+## 156. Add-on fit scorer (`add_on_fit_scorer.py`)
+
+**Partner statement:** "Banker just walked in a bolt-on. Does
+this specific target fit THIS platform?"
+
+Four scored dimensions (weighted):
+
+- **Strategic (30%)** — extends geography / service line /
+  scale. Low growth target flagged as platform CAGR dilution.
+- **Financial (30%)** — multiple arbitrage (platform mark −
+  target multiple); synergy % of target EBITDA; size (<$2M
+  EBITDA = team-bandwidth-cost > return).
+- **Integration (25%)** — ERP compatibility, physician
+  alignment, expected months, and whether the platform already
+  has ≥ 3 open integrations.
+- **Execution (15%)** — platform management bandwidth, capex
+  headroom, close timeline.
+
+Recommendation:
+
+- **proceed** — overall ≥ 70 AND no dimension < 40.
+- **re_evaluate** — overall 55-69; specific named concerns.
+- **pass** — overall < 55.
+
+Top 3 concerns named explicitly from across dimensions. Partner
+reads "proceed / re-evaluate / pass" + 3 bullets; everything else
+is supporting.
+
+---
+
+## 157. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4155,3 +4185,7 @@ round 2 for depth.
   consolidator / larger sponsor / peer / IPO / continuation /
   REIT) scored + named targets. Full inventory: 153 modules,
   1,556 pe_intelligence unit tests.
+- **2026-04-17** — Added `add_on_fit_scorer.py` (§156) —
+  specific bolt-on fit (strategic/financial/integration/
+  execution) + proceed/re-evaluate/pass rec. Full inventory:
+  154 modules, 1,567 pe_intelligence unit tests.
