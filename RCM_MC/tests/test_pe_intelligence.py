@@ -26457,5 +26457,202 @@ class TestChangeMyMindDiligencePlan(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestRollupArbitrageMath(unittest.TestCase):
+    """Partner voice: 'Roll-ups are multiple arbitrage in a dress.'"""
+
+    def test_blended_multiple_weighted_correctly(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            TuckInDeal,
+            compute_rollup_arbitrage,
+        )
+        # Platform 30M @ 11x = 330; tuck 10M @ 6x = 60 → 40M EBITDA / 390M EV
+        r = compute_rollup_arbitrage(RollupArbitrageInputs(
+            platform_entry_ebitda_m=30.0,
+            platform_entry_multiple=11.0,
+            tuck_ins=[TuckInDeal(
+                name="bolt-1",
+                entry_ebitda_m=10.0,
+                entry_multiple=6.0,
+            )],
+        ))
+        self.assertAlmostEqual(
+            r.blended_entry_multiple, 390.0 / 40.0, places=2
+        )
+        self.assertAlmostEqual(
+            r.blended_entry_ebitda_m, 40.0
+        )
+
+    def test_same_multiple_stress_test(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            compute_rollup_arbitrage,
+        )
+        # No tuck-ins. Entry 11x, exit 12x, EBITDA flat → same-multiple MOIC < base MOIC
+        r = compute_rollup_arbitrage(RollupArbitrageInputs(
+            platform_entry_ebitda_m=30.0,
+            platform_entry_multiple=11.0,
+            platform_entry_equity_m=120.0,
+            platform_entry_debt_m=210.0,
+            tuck_ins=[],
+            exit_ebitda_m=30.0,
+            exit_multiple=12.0,
+            exit_debt_m=210.0,
+        ))
+        self.assertLess(
+            r.same_multiple_moic, r.base_moic
+        )
+
+    def test_multiple_bet_flag_fires_when_arbitrage_dominates(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            TuckInDeal,
+            compute_rollup_arbitrage,
+        )
+        # Lots of cheap tuck-ins + big multiple expansion
+        r = compute_rollup_arbitrage(RollupArbitrageInputs(
+            platform_entry_ebitda_m=20.0,
+            platform_entry_multiple=10.0,
+            platform_entry_equity_m=100.0,
+            platform_entry_debt_m=100.0,
+            tuck_ins=[
+                TuckInDeal("t1", 10.0, 5.0),
+                TuckInDeal("t2", 10.0, 5.0),
+                TuckInDeal("t3", 10.0, 5.0),
+            ],
+            exit_ebitda_m=55.0,
+            exit_multiple=13.0,
+            exit_debt_m=50.0,
+        ))
+        self.assertTrue(r.multiple_bet_flag)
+        self.assertIn(
+            "multiple bet", r.partner_note.lower()
+        )
+
+    def test_real_ebitda_growth_no_multiple_bet_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            TuckInDeal,
+            compute_rollup_arbitrage,
+        )
+        # Modest tuck-ins at close-to-platform multiple,
+        # huge EBITDA growth from organic execution
+        r = compute_rollup_arbitrage(RollupArbitrageInputs(
+            platform_entry_ebitda_m=30.0,
+            platform_entry_multiple=10.0,
+            platform_entry_equity_m=120.0,
+            platform_entry_debt_m=180.0,
+            tuck_ins=[
+                TuckInDeal("t1", 5.0, 9.0),
+            ],
+            exit_ebitda_m=80.0,
+            exit_multiple=10.0,
+            exit_debt_m=100.0,
+        ))
+        self.assertFalse(r.multiple_bet_flag)
+        self.assertIn(
+            "real ebitda growth",
+            r.partner_note.lower(),
+        )
+
+    def test_financial_engineering_dominant_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            compute_rollup_arbitrage,
+        )
+        # Leverage paydown most of return, small ebitda growth, no multiple expansion
+        r = compute_rollup_arbitrage(RollupArbitrageInputs(
+            platform_entry_ebitda_m=30.0,
+            platform_entry_multiple=10.0,
+            platform_entry_equity_m=50.0,
+            platform_entry_debt_m=250.0,
+            tuck_ins=[],
+            exit_ebitda_m=33.0,
+            exit_multiple=10.0,
+            exit_debt_m=50.0,
+        ))
+        self.assertIn(
+            "financial engineering",
+            r.partner_note.lower(),
+        )
+
+    def test_tuck_in_arbitrage_dollars_positive(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            TuckInDeal,
+            compute_rollup_arbitrage,
+        )
+        r = compute_rollup_arbitrage(RollupArbitrageInputs(
+            platform_entry_ebitda_m=30.0,
+            platform_entry_multiple=11.0,
+            platform_entry_equity_m=120.0,
+            platform_entry_debt_m=200.0,
+            tuck_ins=[
+                TuckInDeal("t1", 10.0, 6.0),
+                TuckInDeal("t2", 10.0, 6.0),
+            ],
+            exit_ebitda_m=65.0,
+            exit_multiple=12.0,
+            exit_debt_m=80.0,
+        ))
+        self.assertGreater(r.tuck_in_arbitrage_m, 0)
+
+    def test_mocic_pcts_sum_close_to_one(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            TuckInDeal,
+            compute_rollup_arbitrage,
+        )
+        r = compute_rollup_arbitrage(RollupArbitrageInputs(
+            tuck_ins=[
+                TuckInDeal("t1", 8.0, 6.0),
+            ],
+        ))
+        total_pct = (
+            r.moic_pct_from_arbitrage +
+            r.moic_pct_from_multiple_expansion +
+            r.moic_pct_from_ebitda_growth +
+            r.moic_pct_from_financial_engineering
+        )
+        self.assertAlmostEqual(total_pct, 1.0, places=2)
+
+    def test_no_tuck_ins_has_zero_arbitrage(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            compute_rollup_arbitrage,
+        )
+        r = compute_rollup_arbitrage(RollupArbitrageInputs(
+            tuck_ins=[],
+        ))
+        self.assertEqual(r.tuck_in_arbitrage_m, 0.0)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            TuckInDeal,
+            compute_rollup_arbitrage,
+            render_rollup_arbitrage_markdown,
+        )
+        md = render_rollup_arbitrage_markdown(
+            compute_rollup_arbitrage(RollupArbitrageInputs(
+                tuck_ins=[TuckInDeal("t1", 8.0, 6.0)],
+            ))
+        )
+        self.assertIn("# Roll-up arbitrage math", md)
+        self.assertIn("Blended entry multiple", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            RollupArbitrageInputs,
+            compute_rollup_arbitrage,
+        )
+        r = compute_rollup_arbitrage(
+            RollupArbitrageInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

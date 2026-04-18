@@ -1414,6 +1414,13 @@ from .change_my_mind_diligence_plan import (
     plan_change_my_mind,
     render_change_my_mind_markdown,
 )
+from .rollup_arbitrage_math import (
+    RollupArbitrageInputs,
+    RollupArbitrageReport,
+    TuckInDeal,
+    compute_rollup_arbitrage,
+    render_rollup_arbitrage_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2901,4 +2908,9 @@ __all__ = [
     "ChangeMyMindPlan",
     "plan_change_my_mind",
     "render_change_my_mind_markdown",
+    "RollupArbitrageInputs",
+    "RollupArbitrageReport",
+    "TuckInDeal",
+    "compute_rollup_arbitrage",
+    "render_rollup_arbitrage_markdown",
 ]
