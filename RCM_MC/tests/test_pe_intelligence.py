@@ -17428,5 +17428,164 @@ class TestCrossPatternDigest(unittest.TestCase):
         self.assertAlmostEqual(d2["medicare_advantage_pct"], 0.30, places=3)
 
 
+class TestThesisImplicationsChain(unittest.TestCase):
+    """Partner scenario: tell me the chain. What else has to be true?"""
+
+    def test_known_chains_listed(self) -> None:
+        from rcm_mc.pe_intelligence import list_thesis_chains
+        chains = list_thesis_chains()
+        self.assertIn("denial_reduction", chains)
+        self.assertIn("payer_mix_shift", chains)
+        self.assertIn("rollup_consolidation", chains)
+        self.assertIn("cmi_uplift", chains)
+
+    def test_unknown_chain_graceful(self) -> None:
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("this_is_not_a_real_thesis", {})
+        self.assertEqual(len(r.entries), 0)
+        self.assertIn("unknown thesis", r.partner_note.lower())
+
+    def test_denial_chain_empty_packet_all_unaddressed(self) -> None:
+        """Partner: 'seller handed us a claim, nothing downstream addressed.'"""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("denial_reduction", {})
+        self.assertGreater(len(r.entries), 0)
+        self.assertEqual(r.contradicted_count, 0)
+        self.assertGreaterEqual(r.not_addressed_count, 4)
+
+    def test_denial_chain_cash_release_contradicts(self) -> None:
+        """If Year 1 is 60% cash release, EBITDA quality link breaks."""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("denial_reduction", {
+            "year1_cash_release_share": 0.60,
+        })
+        self.assertGreaterEqual(r.contradicted_count, 1)
+        self.assertIn("breaks", r.partner_note.lower())
+
+    def test_denial_chain_high_turnover_contradicts(self) -> None:
+        """Coder turnover > 25% contradicts retention assumption."""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("denial_reduction", {
+            "coder_turnover_annual_pct": 0.35,
+        })
+        statuses = [e.status for e in r.entries]
+        self.assertIn("contradicted", statuses)
+
+    def test_denial_chain_low_turnover_confirms(self) -> None:
+        """Coder turnover < 15% confirms retention."""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("denial_reduction", {
+            "coder_turnover_annual_pct": 0.10,
+        })
+        self.assertGreaterEqual(r.confirmed_count, 1)
+
+    def test_payer_mix_shift_fast_ramp_contradicts(self) -> None:
+        """Claim of 12-month full mix shift triggers contradiction."""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("payer_mix_shift", {
+            "months_to_target_commercial_mix": 12,
+        })
+        self.assertGreaterEqual(r.contradicted_count, 1)
+
+    def test_payer_mix_shift_dsh_risk_contradicts(self) -> None:
+        """DSH > 10% of revenue → state Medicaid retaliation risk."""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("payer_mix_shift", {
+            "dsh_revenue_share": 0.15,
+        })
+        self.assertGreaterEqual(r.contradicted_count, 1)
+        self.assertGreater(r.high_risk_unresolved, 0)
+
+    def test_rollup_chain_thin_pipeline_not_confirmed(self) -> None:
+        """Partner: 'only 1 LOI signed — pipeline claim doesn't confirm.'"""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("rollup_consolidation", {
+            "signed_lois_count": 1,
+        })
+        # Pipeline implication is high-risk and should still be
+        # unconfirmed or neutral.
+        pipeline = next(e for e in r.entries
+                        if "pipeline" in e.claim.lower()
+                        or "lois" in e.claim.lower())
+        self.assertIn(pipeline.status, {"not_addressed", "confirmed"})
+        # But it shouldn't be contradicted.
+        self.assertNotEqual(pipeline.status, "contradicted")
+
+    def test_rollup_chain_signed_lois_confirms(self) -> None:
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("rollup_consolidation", {
+            "signed_lois_count": 5,
+        })
+        self.assertGreaterEqual(r.confirmed_count, 1)
+
+    def test_rollup_chain_low_ceo_retention_contradicts(self) -> None:
+        """Partner: 'half of acquired CEOs walked — thesis broke.'"""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("rollup_consolidation", {
+            "acquired_ceo_retention_pct": 0.30,
+        })
+        self.assertGreaterEqual(r.contradicted_count, 1)
+
+    def test_cmi_uplift_audit_risk_breaks_chain(self) -> None:
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("cmi_uplift", {
+            "cdi_audit_risk_material": True,
+        })
+        self.assertGreaterEqual(r.contradicted_count, 1)
+
+    def test_cost_basis_union_constraint_breaks(self) -> None:
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("cost_basis_compression", {
+            "union_contract_constraint": True,
+        })
+        self.assertGreaterEqual(r.contradicted_count, 1)
+
+    def test_high_risk_unresolved_when_empty_packet(self) -> None:
+        """Partner: 'empty packet → high-risk links unaddressed.'"""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("denial_reduction", {})
+        self.assertGreaterEqual(r.high_risk_unresolved, 2)
+
+    def test_partner_note_escalates_on_contradiction(self) -> None:
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("denial_reduction", {
+            "year1_cash_release_share": 0.55,
+        })
+        self.assertIn("breaks", r.partner_note.lower())
+
+    def test_partner_note_clean_when_all_confirmed(self) -> None:
+        """Seller has closed every loop → chain is tight."""
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("denial_reduction", {
+            "coder_turnover_annual_pct": 0.10,
+            "open_payer_coding_disputes": False,
+            "dar_reduction_days_per_yr": 3.0,
+            "year1_cash_release_share": 0.20,
+            "y1_leverage_on_y1_ebitda": 5.5,
+            "exit_ebitda_basis": "trailing",
+        })
+        self.assertEqual(r.contradicted_count, 0)
+        self.assertGreaterEqual(r.confirmed_count, 3)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            render_thesis_chain_markdown,
+            walk_thesis_chain,
+        )
+        md = render_thesis_chain_markdown(
+            walk_thesis_chain("denial_reduction", {})
+        )
+        self.assertIn("# Thesis implications chain", md)
+        self.assertIn("Partner check", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import walk_thesis_chain
+        r = walk_thesis_chain("denial_reduction", {
+            "coder_turnover_annual_pct": 0.10,
+        })
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

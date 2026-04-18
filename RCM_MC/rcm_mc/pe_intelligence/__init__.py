@@ -1007,6 +1007,14 @@ from .cross_pattern_digest import (
     cross_pattern_scan,
     render_cross_pattern_markdown,
 )
+from .thesis_implications_chain import (
+    ThesisChainEntry,
+    ThesisChainReport,
+    ThesisImplication,
+    list_thesis_chains,
+    render_thesis_chain_markdown,
+    walk_thesis_chain,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2197,4 +2205,10 @@ __all__ = [
     "PatternMatch",
     "cross_pattern_scan",
     "render_cross_pattern_markdown",
+    "ThesisChainEntry",
+    "ThesisChainReport",
+    "ThesisImplication",
+    "list_thesis_chains",
+    "render_thesis_chain_markdown",
+    "walk_thesis_chain",
 ]
