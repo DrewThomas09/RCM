@@ -7033,7 +7033,69 @@ ramp."
 
 ---
 
-## 216. Change log
+## 216. HSR antitrust scanner (`hsr_antitrust_healthcare_scanner.py`)
+
+**Partner statement:** "FTC's healthcare focus has
+teeth now. A full second request costs 6-9 months +
+$15M legal. A divestiture order costs the thesis. I
+want antitrust risk flagged before I sign."
+
+### Recent enforcement patterns modeled
+
+- Physician rollup "serial acquisition" theory (US
+  Anesthesia Partners case).
+- Hospital merger local-market challenges (federal +
+  state AG).
+- Payer-provider vertical integration.
+- FTC non-compete rule + physician retention.
+
+### 8 antitrust flags
+
+1. **local_market_hhi_gt_2500** — Section 7 trigger.
+2. **top_competitor_share_post_gt_30pct** — guidelines
+   presumptive concern.
+3. **sponsor_serial_acquisition_same_specialty** — USAP
+   theory.
+4. **payer_provider_vertical_integration** — heightened
+   scrutiny.
+5. **physician_noncompete_material** — non-compete rule
+   risk.
+6. **state_ag_active_review_jurisdiction** — CA/NY/WA/MA.
+7. **prior_ftc_action_in_sector** — agency already
+   informed.
+8. **deal_size_above_hsr_threshold** — $119.5M (2026).
+
+### Risk tier → close delay → divestiture probability
+
+- **very_high** (3+ structural flags) → +270 days / 70%
+  divestiture probability → "walk unless scale-back
+  works."
+- **high** (2 structural flags) → +150 days / 40%.
+- **medium** (1 structural or ≥ 3 any) → +60 days / 15%.
+- **low** → +30 days / 2%.
+
+### Worked example
+
+Physician rollup + sponsor with 5 same-specialty platforms
++ post-HHI 3000 + 45% share + payer-provider vertical
+components.
+
+→ 4 structural flags → `very_high` → +270 days delay,
+70% divestiture probability → "walk unless deal survives
+at scale-back."
+
+### Packet fields
+
+`local_market_hhi_post`, `top_competitor_share_post_pct`,
+`sponsor_platforms_in_same_specialty`,
+`payer_provider_vertical`,
+`physician_noncompete_material`,
+`operating_states`, `prior_ftc_action_in_sector`,
+`deal_size_m`.
+
+---
+
+## 217. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
