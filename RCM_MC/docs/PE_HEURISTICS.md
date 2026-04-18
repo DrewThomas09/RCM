@@ -7728,7 +7728,89 @@ quartile-band mapping; not a model output.
 
 ---
 
-## 229. Change log
+## 229. LP quarterly update composer (`lp_quarterly_update_composer.py`)
+
+**Partner statement.** "The LP letter is the only document about a
+deal that every LP reads every quarter. It's not a pitch — they
+already committed. It's a credibility document. Write defensively and
+the LP reads between the lines; write plainly about what worked and
+what didn't and they trust you on the next fund."
+
+### Why it matters
+
+Raise-era narrative (`lp_pitch`) is not the quarterly letter. LPs
+hear from 20+ sponsors a quarter and calibrate on tone as much as
+numbers. The classic mistake: defensive prose ("continue to execute
+against our thesis," "market headwinds," "softness in volumes") when
+a mark has moved. LPs smell it, and LP memory is long. This module
+produces partner-voice prose with tone explicitly calibrated to
+mark movement.
+
+### Five-paragraph structure
+
+1. **Quarter-in-review** — one direct sentence on whether the mark
+   moved and why; no hedging. Includes one-time item disclosure
+   separately from recurring.
+2. **KPI-vs-thesis** — three thesis-aligned KPIs as
+   "actual vs. plan" with beat/miss labels, named against the
+   original one-liner thesis (not generic "growth").
+3. **What we did this quarter** — concrete operator actions (closed
+   2 bolt-ons, renegotiated top-3 payer) not "focused on execution."
+4. **Next quarter** — two specific deliverables the partner is
+   publicly underwriting ("report actuals against these in the Q+1
+   letter").
+5. **Risks** — named specifically (payer X, reg event Y, state
+   Medicaid shift Z) not generic.
+
+### Tone calibration by mark movement
+
+| Mark change | Tone tag | Opening frame |
+|---|---|---|
+| ≥ +10% | `measured_up` | "supported by TTM EBITDA, not multiple expansion; not revising exit case yet" |
+| −5% to +10% | `flat` | "block-and-tackle quarter; no re-rating events" |
+| −5% to −15% | `owned_miss` | "we own this call — exposure was in our model but we underweighted timing" |
+| < −15% | `thesis_stress` | "material mark; walking through whether original thesis still holds" |
+
+### Denial-rate direction handling
+
+KPI 3 is modeled as an improvement-direction metric (plan = −2.5%
+denial-rate reduction). Actual = −3.0% reads as *beat plan*, not miss.
+Sign-flipped interpretation is applied when plan is negative.
+
+### One-time vs recurring discipline
+
+Any `one_time_item_m` is called out in the opening paragraph with
+"recurring EBITDA excludes" — the partner never lets a one-time cash
+release quietly inflate trailing twelve. (Same religion the exit
+multiple applies.)
+
+### Partner-note meta-read
+
+- Material mark-down + 2 KPI misses → "next letter needs revised
+  thesis or explicit exit-timing shift; LPs notice two letters in a
+  row of 'focused on execution.'"
+- Mark-up quarter → "LP memory is long. Don't let next quarter's
+  letter be the soft one; pacing matters."
+
+### Packet fields
+
+`company_name`, `quarter_label`, `mark_change_pct`, `prior_mark_m`,
+`current_mark_m`, `original_thesis_one_liner`,
+`thesis_kpi_{1,2,3}_label/actual/underwritten`,
+`quarter_actions`, `next_quarter_commits`, `named_risks`,
+`reg_shock_this_quarter_m`/`description`,
+`one_time_item_m`/`description`.
+
+### Distinct from existing modules
+
+- `lp_pitch` — raise-era "we want your $250M" narrative.
+- `lp_side_letter_flags` — MFN / regulatory side-letter compliance.
+- `board_memo` — internal / board-level commentary.
+- This module — plain-spoken quarterly credibility document.
+
+---
+
+## 230. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
