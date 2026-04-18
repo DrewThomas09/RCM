@@ -4530,7 +4530,77 @@ hold, 400 bps/yr margin expansion, and a seller promising
 
 ---
 
-## 176. Change log
+## 176. Thesis implications chain (`thesis_implications_chain.py`)
+
+**Partner statement:** "Tell me the chain. If denials come
+down, what else has to be true?"
+
+A seller's thesis is always a single headline claim. A
+partner's rebuttal is the *chain* of downstream implications
+that have to hold for the headline to be real. The seller
+owns the headline; the partner owns the chain.
+
+### Chains implemented
+
+1. **denial_reduction** — coder retention, no open coding
+   disputes, DAR compresses, EBITDA gain is recurring (not
+   cash release), covenant package clears the curve, exit
+   multiple applies to recurring Y5 EBITDA.
+2. **payer_mix_shift** — commercial payer capacity exists,
+   state doesn't retaliate via DSH pullback, CMI rises
+   with shift, bad-debt trend holds, phase-in modeled
+   (not day-1).
+3. **rollup_consolidation** — M&A pipeline signed (not
+   "universe"), integration playbook tested, debt
+   capacity scales, synergies net of integration cost,
+   exit multiple holds despite complexity, acquired-CEO
+   retention.
+4. **cost_basis_compression** — no union/licensure
+   triggers, contract labor target sustained, quality
+   metrics hold, local wage inflation doesn't reverse.
+5. **cmi_uplift** — CDI team FTE-sized, no audit
+   recoupment risk, phased uplift in bridge, sustainable
+   (not COVID surge).
+
+### Status model
+
+Each implication tagged **confirmed**, **not_addressed**,
+or **contradicted** against the packet.
+
+- Any **contradicted** link → "chain breaks here; headline
+  doesn't survive."
+- ≥ 2 high-risk **not_addressed** → "diligence these before
+  IC; this is where the thesis lives or dies."
+- All confirmed → "chain is tight; proceed."
+
+### Worked example — denial reduction
+
+Seller's claim: "Cut denials 700 bps in 12 months."
+
+Partner walks the chain:
+
+- Coder turnover 35%? → **contradicted** (high risk).
+- Open payer coding disputes? → **contradicted** if flagged.
+- DAR reduction trajectory? → **not_addressed** (medium).
+- Year 1 cash release share 55%? → **contradicted** (high):
+  the EBITDA gain isn't recurring.
+- Exit EBITDA basis? → **not_addressed** (medium).
+
+Partner note: "Chain breaks at link 4 — Year 1 is 55% cash
+release. The exit multiple only applies to recurring
+EBITDA; the headline is overstated by 2 turns."
+
+### Packet fields that trigger
+
+Each chain has its own `packet_field` hooks. Denial chain
+uses: `coder_turnover_annual_pct`, `open_payer_coding_disputes`,
+`dar_reduction_days_per_yr`, `year1_cash_release_share`,
+`y1_leverage_on_y1_ebitda`, `exit_ebitda_basis`. Others
+analogous — see module for full list.
+
+---
+
+## 177. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
