@@ -15109,5 +15109,135 @@ class TestBuyerTypeFitAnalyzer(unittest.TestCase):
         json.dumps(analyze_buyer_fit(BuyerFitContext()).to_dict())
 
 
+# ── Add-on fit scorer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    AddOnContext,
+    AddOnFitReport,
+    FitDimension,
+    render_add_on_fit_markdown,
+    score_add_on,
+)
+
+
+class TestAddOnFitScorer(unittest.TestCase):
+
+    def test_strong_fit_proceed(self) -> None:
+        r = score_add_on(AddOnContext(
+            target_name="AlphaClinic",
+            target_ebitda_m=8.0, target_revenue_m=40.0,
+            target_growth_pct=0.12,
+            target_multiple_paid=7.0,
+            platform_ebitda_m=50.0,
+            platform_multiple_last_marked=11.0,
+            platform_open_integrations=1,
+            platform_mgmt_bandwidth_0_100=80,
+            platform_capex_headroom_m=8.0,
+            extends_geography=True,
+            extends_scale_in_existing_line=True,
+            physician_alignment=True,
+            erp_compatible=True,
+            expected_synergies_pct_target_ebitda=0.18,
+            months_to_close_expected=4,
+            expected_integration_months=12,
+        ))
+        self.assertEqual(r.recommendation, "proceed")
+
+    def test_weak_fit_passes(self) -> None:
+        r = score_add_on(AddOnContext(
+            target_name="WeakCo",
+            target_ebitda_m=1.5,
+            target_growth_pct=0.01,
+            target_multiple_paid=12.0,
+            platform_multiple_last_marked=10.0,
+            platform_open_integrations=5,
+            platform_mgmt_bandwidth_0_100=45,
+            platform_capex_headroom_m=0.5,
+            extends_geography=False,
+            extends_service_line=False,
+            extends_scale_in_existing_line=False,
+            physician_alignment=False,
+            erp_compatible=False,
+            expected_synergies_pct_target_ebitda=0.02,
+            expected_integration_months=22,
+        ))
+        self.assertEqual(r.recommendation, "pass")
+        self.assertGreater(len(r.top_concerns), 0)
+
+    def test_no_multiple_arbitrage_flagged(self) -> None:
+        r = score_add_on(AddOnContext(
+            target_multiple_paid=11.0,
+            platform_multiple_last_marked=10.5,
+        ))
+        concerns = " ".join(r.financial.concerns).lower()
+        self.assertIn("multiple arbitrage", concerns)
+
+    def test_small_target_flagged(self) -> None:
+        r = score_add_on(AddOnContext(
+            target_ebitda_m=1.0,
+        ))
+        concerns = " ".join(r.financial.concerns).lower()
+        self.assertIn("too small", concerns)
+
+    def test_thin_mgmt_bandwidth_flagged(self) -> None:
+        r = score_add_on(AddOnContext(
+            platform_mgmt_bandwidth_0_100=40,
+        ))
+        concerns = " ".join(r.execution.concerns).lower()
+        self.assertIn("stretched", concerns)
+
+    def test_open_integrations_drag_score(self) -> None:
+        clean = score_add_on(AddOnContext(
+            platform_open_integrations=1,
+        ))
+        busy = score_add_on(AddOnContext(
+            platform_open_integrations=5,
+        ))
+        self.assertGreater(clean.integration.score_0_100,
+                            busy.integration.score_0_100)
+
+    def test_no_strategic_extension_flagged(self) -> None:
+        r = score_add_on(AddOnContext(
+            extends_geography=False,
+            extends_service_line=False,
+            extends_scale_in_existing_line=False,
+        ))
+        concerns = " ".join(r.strategic.concerns).lower()
+        self.assertIn("strategic rationale", concerns)
+
+    def test_erp_incompatible_flagged(self) -> None:
+        r = score_add_on(AddOnContext(
+            erp_compatible=False,
+        ))
+        concerns = " ".join(r.integration.concerns).lower()
+        self.assertIn("erp", concerns)
+
+    def test_re_evaluate_band(self) -> None:
+        r = score_add_on(AddOnContext(
+            target_ebitda_m=5.0,
+            target_multiple_paid=9.0,
+            platform_multiple_last_marked=10.0,
+            extends_scale_in_existing_line=True,
+            physician_alignment=True,
+            erp_compatible=True,
+            platform_open_integrations=2,
+            platform_mgmt_bandwidth_0_100=60,
+            expected_synergies_pct_target_ebitda=0.05,
+            expected_integration_months=20,   # flags a concern
+        ))
+        self.assertEqual(r.recommendation, "re_evaluate")
+
+    def test_markdown_renders(self) -> None:
+        md = render_add_on_fit_markdown(score_add_on(AddOnContext(
+            target_name="MemoCo")))
+        self.assertIn("# MemoCo — Add-on fit", md)
+        self.assertIn("Dimension", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(score_add_on(AddOnContext(
+            target_name="X")).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

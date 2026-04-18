@@ -860,6 +860,13 @@ from .buyer_type_fit_analyzer import (
     analyze_buyer_fit,
     render_buyer_fit_markdown,
 )
+from .add_on_fit_scorer import (
+    AddOnContext,
+    AddOnFitReport,
+    FitDimension,
+    render_add_on_fit_markdown,
+    score_add_on,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1943,4 +1950,9 @@ __all__ = [
     "BuyerTypeFit",
     "analyze_buyer_fit",
     "render_buyer_fit_markdown",
+    "AddOnContext",
+    "AddOnFitReport",
+    "FitDimension",
+    "render_add_on_fit_markdown",
+    "score_add_on",
 ]
