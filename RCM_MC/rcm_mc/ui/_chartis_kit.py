@@ -163,6 +163,7 @@ _CORPUS_NAV = [
     {"label": "HCIT Platform",   "href": "/hcit-platform",      "icon": "▣"},
     {"label": "Biosimilars",     "href": "/biosimilars",        "icon": "▦"},
     {"label": "Telehealth Econ", "href": "/telehealth-econ",    "icon": "▣"},
+    {"label": "De Novo Expansion","href": "/denovo-expansion",  "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
