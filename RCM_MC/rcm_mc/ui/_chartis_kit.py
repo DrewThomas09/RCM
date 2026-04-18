@@ -172,6 +172,7 @@ _CORPUS_NAV = [
     {"label": "FWA Detection",   "href": "/fraud-detection",    "icon": "▦"},
     {"label": "Drug Shortage",   "href": "/drug-shortage",      "icon": "▣"},
     {"label": "Anti-Trust Scr.", "href": "/antitrust-screener", "icon": "▦"},
+    {"label": "AI Operating Mdl","href": "/ai-operating-model", "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

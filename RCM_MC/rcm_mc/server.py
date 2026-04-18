@@ -1974,6 +1974,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.antitrust_screener_page import render_antitrust_screener
             return self._send_html(render_antitrust_screener(_qp))
+        if path == "/ai-operating-model":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.ai_operating_model_page import render_ai_operating_model
+            return self._send_html(render_ai_operating_model(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
