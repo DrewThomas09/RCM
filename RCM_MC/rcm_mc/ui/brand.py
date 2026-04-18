@@ -230,6 +230,7 @@ NAV_ITEMS = [
     {"label": "Co-Invest Pipeline", "href": "/coinvest-pipeline", "icon": "grid"},
     {"label": "DPI Tracker", "href": "/dpi-tracker", "icon": "chart"},
     {"label": "NAV Loan Tracker", "href": "/nav-loan-tracker", "icon": "chart"},
+    {"label": "Medical RE Tracker", "href": "/medical-realestate", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
