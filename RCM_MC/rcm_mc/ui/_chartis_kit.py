@@ -133,6 +133,7 @@ _CORPUS_NAV = [
     {"label": "Dividend Recap", "href": "/dividend-recap",   "icon": "▦"},
     {"label": "Continuation Veh","href": "/continuation-vehicle","icon": "▣"},
     {"label": "Earnout",        "href": "/earnout",          "icon": "▦"},
+    {"label": "Clinical Outcomes","href": "/clinical-outcomes","icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
