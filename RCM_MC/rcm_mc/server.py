@@ -2910,6 +2910,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                 store=store, store_db_path=self.config.db_path,
                 current_user=self._chartis_username(),
             ))
+        if path == "/deal-screening":
+            from .ui.chartis.deal_screening_page import render_deal_screening
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_deal_screening(
+                store=store, query=parsed.query,
+                current_user=self._chartis_username(),
+            ))
         if path == "/library":
             # /library now surfaces the 655-deal corpus (previously at
             # /deals-library). The methodology hub moved to /methodology.
