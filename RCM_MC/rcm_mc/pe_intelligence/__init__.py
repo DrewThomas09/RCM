@@ -1394,6 +1394,13 @@ from .data_room_gap_signal_reader import (
     render_data_room_gap_markdown,
     scan_data_room_gaps,
 )
+from .fund_level_vintage_impact_scorer import (
+    FundDimensionScore,
+    FundVintageInputs,
+    FundVintageReport,
+    render_fund_vintage_markdown,
+    score_fund_vintage_impact,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2867,4 +2874,9 @@ __all__ = [
     "GapSignal",
     "render_data_room_gap_markdown",
     "scan_data_room_gaps",
+    "FundDimensionScore",
+    "FundVintageInputs",
+    "FundVintageReport",
+    "render_fund_vintage_markdown",
+    "score_fund_vintage_impact",
 ]

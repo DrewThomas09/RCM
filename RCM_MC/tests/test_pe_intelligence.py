@@ -25743,5 +25743,220 @@ class TestDataRoomGapSignalReader(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestFundLevelVintageImpactScorer(unittest.TestCase):
+    """Partner voice: 'Size the deal against the fund, not itself.'"""
+
+    def test_default_inputs_produce_dimensions(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        r = score_fund_vintage_impact(FundVintageInputs())
+        # six dimensions wired
+        self.assertEqual(len(r.dimensions), 6)
+        names = [d.name for d in r.dimensions]
+        self.assertIn("capital_concentration", names)
+        self.assertIn("dpi_timing_drag", names)
+        self.assertIn("tvpi_contribution", names)
+        self.assertIn("vintage_peer_rank", names)
+        self.assertIn("pme_delta", names)
+        self.assertIn("reserve_consumption", names)
+
+    def test_oversized_check_flags_concentration(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # 200M check on an 800M fund → 25% of fund
+        r = score_fund_vintage_impact(FundVintageInputs(
+            fund_committed_capital_m=800.0,
+            deal_equity_check_m=200.0,
+        ))
+        cap_dim = next(
+            d for d in r.dimensions
+            if d.name == "capital_concentration"
+        )
+        self.assertIn(
+            "concentration", cap_dim.threshold_band
+        )
+        self.assertIn("size down", cap_dim.partner_read.lower())
+
+    def test_coinvest_reduces_fund_exposure(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # 150M check, 100M of it from coinvest → only 50M on fund
+        r = score_fund_vintage_impact(FundVintageInputs(
+            fund_committed_capital_m=800.0,
+            deal_equity_check_m=150.0,
+            coinvest_committed_m=100.0,
+        ))
+        self.assertLess(r.capital_weight_pct, 0.10)
+
+    def test_slow_dpi_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        r = score_fund_vintage_impact(FundVintageInputs(
+            years_to_first_distribution=7.0,
+        ))
+        dpi_dim = next(
+            d for d in r.dimensions
+            if d.name == "dpi_timing_drag"
+        )
+        self.assertEqual(dpi_dim.threshold_band, "DPI drag")
+        self.assertIn(
+            "median", dpi_dim.partner_read.lower()
+        )
+
+    def test_top_quartile_irr_beats_vintage(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # 26% gross → 24% net vs. 22% vintage top-quartile
+        r = score_fund_vintage_impact(FundVintageInputs(
+            expected_deal_gross_irr=0.26,
+        ))
+        self.assertEqual(r.implied_vintage_quartile, 1)
+
+    def test_below_median_irr_is_third_quartile_at_best(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # 15% gross → 13% net, below median 17%
+        r = score_fund_vintage_impact(FundVintageInputs(
+            expected_deal_gross_irr=0.15,
+        ))
+        self.assertGreaterEqual(
+            r.implied_vintage_quartile, 3
+        )
+
+    def test_pme_delta_calculated(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # 25% gross → 23% net vs. 14% benchmark → ~900 bps
+        r = score_fund_vintage_impact(FundVintageInputs(
+            expected_deal_gross_irr=0.25,
+        ))
+        self.assertGreaterEqual(r.pme_delta_bps, 800)
+
+    def test_sub_pme_flags_illiquidity_failure(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # 13% gross → 11% net vs. 14% benchmark → -300 bps
+        r = score_fund_vintage_impact(FundVintageInputs(
+            expected_deal_gross_irr=0.13,
+        ))
+        self.assertLess(r.pme_delta_bps, 0)
+        pme_dim = next(
+            d for d in r.dimensions if d.name == "pme_delta"
+        )
+        self.assertEqual(pme_dim.threshold_band, "sub-PME")
+
+    def test_heavy_reserve_is_platform_bet(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # 150M reserve on 400M dry powder = 37.5%
+        r = score_fund_vintage_impact(FundVintageInputs(
+            follow_on_reserved_m=150.0,
+        ))
+        rsv_dim = next(
+            d for d in r.dimensions
+            if d.name == "reserve_consumption"
+        )
+        self.assertEqual(
+            rsv_dim.threshold_band, "platform-bet"
+        )
+
+    def test_accretive_verdict_on_strong_deal(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # strong fund fit: 9% weight, top-quartile IRR, fast DPI
+        r = score_fund_vintage_impact(FundVintageInputs(
+            fund_committed_capital_m=800.0,
+            deal_equity_check_m=70.0,
+            expected_deal_gross_moic=3.0,
+            expected_deal_gross_irr=0.26,
+            years_to_first_distribution=4.0,
+            follow_on_reserved_m=40.0,
+        ))
+        self.assertEqual(r.verdict, "fund_accretive")
+        self.assertIn(
+            "good for the fund", r.partner_note.lower()
+        )
+
+    def test_dilutive_verdict_when_big_check_low_irr(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # oversized check + sub-median IRR + slow DPI
+        r = score_fund_vintage_impact(FundVintageInputs(
+            fund_committed_capital_m=800.0,
+            deal_equity_check_m=160.0,
+            expected_deal_gross_moic=1.8,
+            expected_deal_gross_irr=0.13,
+            years_to_first_distribution=6.5,
+            follow_on_reserved_m=150.0,
+        ))
+        self.assertEqual(r.verdict, "fund_dilutive")
+        self.assertIn(
+            "wrong fund", r.partner_note.lower()
+        )
+
+    def test_tvpi_lift_computation(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        # 10% weight × (3.0 - 1.0) = 0.20 lift
+        r = score_fund_vintage_impact(FundVintageInputs(
+            fund_committed_capital_m=1000.0,
+            deal_equity_check_m=100.0,
+            expected_deal_gross_moic=3.0,
+        ))
+        self.assertAlmostEqual(
+            r.implied_fund_tvpi_lift, 0.20, places=2
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            render_fund_vintage_markdown,
+            score_fund_vintage_impact,
+        )
+        md = render_fund_vintage_markdown(
+            score_fund_vintage_impact(FundVintageInputs())
+        )
+        self.assertIn("# Fund-level vintage impact", md)
+        self.assertIn("Capital weight", md)
+        self.assertIn("Vintage quartile", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            FundVintageInputs,
+            score_fund_vintage_impact,
+        )
+        r = score_fund_vintage_impact(FundVintageInputs())
+        payload = r.to_dict()
+        self.assertEqual(
+            payload["verdict"], r.verdict
+        )
+        json.dumps(payload)
+
+
 if __name__ == "__main__":
     unittest.main()
