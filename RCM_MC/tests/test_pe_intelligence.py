@@ -17760,5 +17760,213 @@ class TestDealOneLiner(unittest.TestCase):
         json.dumps(v.to_dict())
 
 
+class TestHoldPeriodShockSchedule(unittest.TestCase):
+    """Partner scenario: year-by-year shock; worst year = covenant risk."""
+
+    def _stress(self, **kwargs):
+        from rcm_mc.pe_intelligence.obbba_sequestration_stress import (
+            RegulatoryStressInputs,
+        )
+        defaults = dict(
+            subsector="hospital", revenue_m=500.0, ebitda_m=75.0,
+            medicare_ffs_pct=0.35, medicare_advantage_pct=0.15,
+            hopd_revenue_pct=0.10, contribution_margin=0.50,
+        )
+        defaults.update(kwargs)
+        return RegulatoryStressInputs(**defaults)
+
+    def test_default_produces_hold_length_years(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(),
+            hold_start_year=2026,
+            hold_years=5,
+        ))
+        self.assertEqual(len(s.years), 5)
+        years = [y.year for y in s.years]
+        self.assertEqual(years, [2026, 2027, 2028, 2029, 2030])
+
+    def test_cumulative_monotonically_grows(self) -> None:
+        """Partner: permanent shocks accumulate — never reverse."""
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(),
+        ))
+        cumulative = [y.cumulative_impact_m for y in s.years]
+        self.assertEqual(cumulative, sorted(cumulative))
+
+    def test_ebitda_floor_falls_over_time(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(),
+        ))
+        floors = [y.ebitda_floor_m for y in s.years]
+        self.assertEqual(floors, sorted(floors, reverse=True))
+
+    def test_worst_year_after_final_shock_lands(self) -> None:
+        """With permanent shocks landing across years 0-3,
+        the worst year is whichever ties lowest after the
+        last shock."""
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(),
+            hold_start_year=2026,
+            hold_years=5,
+        ))
+        self.assertGreaterEqual(s.worst_year, 2029)
+
+    def test_covenant_trip_on_high_leverage_deal(self) -> None:
+        """Partner: 'leverage 7.5x going in, shocks → trip.'"""
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(
+                medicare_ffs_pct=0.55,
+                hopd_revenue_pct=0.30,
+                ebitda_m=50.0,
+            ),
+            hold_start_year=2026,
+            hold_years=5,
+            leverage_multiple=7.8,
+            covenant_max_leverage=8.0,
+        ))
+        self.assertIsNotNone(s.covenant_trip_year)
+        self.assertIn("covenant trip", s.partner_note.lower())
+
+    def test_no_covenant_trip_on_low_exposure_deal(self) -> None:
+        """Partner: 'small Medicare, no HOPD — shocks don't bite.'"""
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(
+                medicare_ffs_pct=0.05,
+                medicare_advantage_pct=0.03,
+                hopd_revenue_pct=0.00,
+                ebitda_m=75.0,
+            ),
+            hold_start_year=2026,
+            hold_years=5,
+            leverage_multiple=5.0,
+            covenant_max_leverage=7.0,
+        ))
+        self.assertIsNone(s.covenant_trip_year)
+
+    def test_obbba_lands_year_zero(self) -> None:
+        """OBBBA hits at close year under default schedule."""
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(),
+            hold_start_year=2026,
+        ))
+        y0 = s.years[0]
+        self.assertIn("obbba_medicare_cut_3pct", y0.shocks_landing)
+
+    def test_site_neutral_only_for_hopd_exposed(self) -> None:
+        """If HOPD exposure is zero, site-neutral impact is zero."""
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        no_hopd = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(hopd_revenue_pct=0.0),
+        ))
+        hopd = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(hopd_revenue_pct=0.30),
+        ))
+        # Year where site-neutral lands is hold_start_year + 2.
+        y_no = next(y for y in no_hopd.years
+                    if y.year == no_hopd.years[0].year + 2)
+        y_yes = next(y for y in hopd.years
+                     if y.year == hopd.years[0].year + 2)
+        self.assertGreater(y_yes.annual_new_impact_m,
+                            y_no.annual_new_impact_m)
+
+    def test_custom_schedule_single_shock(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(),
+            hold_start_year=2026,
+            hold_years=3,
+            schedule=[("obbba_medicare_cut_3pct", 0, True, 1.0)],
+        ))
+        # Year 2026 should have OBBBA only; subsequent years have
+        # nothing landing but cumulative stays.
+        self.assertEqual(len(s.years[0].shocks_landing), 1)
+        self.assertEqual(len(s.years[1].shocks_landing), 0)
+        # Cumulative stays non-zero.
+        self.assertGreater(s.years[2].cumulative_impact_m, 0.0)
+
+    def test_partner_note_varies_by_severity(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        gentle = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(
+                medicare_ffs_pct=0.05,
+                medicare_advantage_pct=0.03,
+                hopd_revenue_pct=0.0,
+            ),
+        ))
+        brutal = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(
+                medicare_ffs_pct=0.60,
+                medicare_advantage_pct=0.20,
+                hopd_revenue_pct=0.30,
+                ebitda_m=40.0,
+            ),
+            leverage_multiple=7.5,
+            covenant_max_leverage=8.0,
+        ))
+        self.assertNotEqual(gentle.partner_note,
+                             brutal.partner_note)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+            render_hold_shock_schedule_markdown,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(),
+        ))
+        md = render_hold_shock_schedule_markdown(s)
+        self.assertIn("# Hold-period regulatory shock schedule", md)
+        self.assertIn("| Year |", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            HoldShockInputs,
+            build_hold_shock_schedule,
+        )
+        s = build_hold_shock_schedule(HoldShockInputs(
+            stress=self._stress(),
+        ))
+        json.dumps(s.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

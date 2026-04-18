@@ -1021,6 +1021,13 @@ from .deal_one_liner import (
     render_one_liner_markdown,
     synthesize_one_liner,
 )
+from .hold_period_shock_schedule import (
+    HoldShockInputs,
+    HoldShockSchedule,
+    ShockYear,
+    build_hold_shock_schedule,
+    render_hold_shock_schedule_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2221,4 +2228,9 @@ __all__ = [
     "OneLinerVerdict",
     "render_one_liner_markdown",
     "synthesize_one_liner",
+    "HoldShockInputs",
+    "HoldShockSchedule",
+    "ShockYear",
+    "build_hold_shock_schedule",
+    "render_hold_shock_schedule_markdown",
 ]
