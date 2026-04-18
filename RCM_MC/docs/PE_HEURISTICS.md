@@ -5122,7 +5122,68 @@ Recommended: **6.8x** with 1.3x cushion.
 
 ---
 
-## 185. Change log
+## 185. Failure archetype library (`failure_archetype_library.py`)
+
+**Partner statement:** "This deal doesn't match any single
+blowup we've seen — but it matches the *shape* of three
+different ones. That's worse, not better."
+
+Sits between three existing layers:
+- `historical_failure_library` — named, dated incidents
+  (Envision 2023, Steward 2024, etc.).
+- `bear_book` — heuristic pattern templates.
+- `partner_traps_library` — seller-pitch traps.
+
+This module captures **shape-level failure archetypes** —
+structural profiles a senior partner recognizes in 30
+seconds from the one-pager.
+
+### 10 archetypes modeled
+
+1. **serial_add_on_overhire** — rollup hiring SG&A faster
+   than acquired EBITDA scales.
+2. **payer_shift_without_contract_renewal** — mix-shift
+   thesis with no top-5 payer contract opening.
+3. **site_neutral_hostage** — HOPD-heavy with site-neutral
+   finalization in hold.
+4. **specialty_practice_succession_gap** — founder-
+   dependent, no successor.
+5. **340b_dependent_tail** — material EBITDA from 340B
+   arbitrage.
+6. **ma_pass_through_over_reliance** — MA assumed to
+   offset FFS cuts without risk-contract capability.
+7. **rent_belowmarket_related_party** — seller real estate
+   at sub-market rent.
+8. **back_office_integration_optimism** — multi-EHR/ERP
+   with Y1 synergy in base case.
+9. **turnaround_without_operator** — turnaround thesis
+   with creator-team still in place.
+10. **covid_inflated_base** — pandemic-tailwind base year.
+
+Each archetype carries:
+- Shape description + structural failure reason.
+- Signal list (packet fields that flag it).
+- Historical examples (for pattern reinforcement).
+- Partner counter (named mitigation).
+
+### Partner-note escalation
+
+- 3+ archetypes fire → "compound risk beats additive risk."
+- 2 archetypes → "document mitigation per archetype in IC."
+- 1 archetype → "apply named counter or don't proceed."
+- 0 archetypes → "structural profile unremarkable; proceed
+  on merits."
+
+### Why this layer adds signal
+
+Archetype matching is how partners reach a **first
+impression** at intake. By the time a team has modeled,
+they're committed. Archetype library forces naming the
+shape before committing resources.
+
+---
+
+## 186. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
