@@ -1158,6 +1158,13 @@ from .deal_source_quality_reader import (
     read_deal_source,
     render_deal_source_markdown,
 )
+from .thesis_sharpness_scorer import (
+    SharpnessDimension,
+    ThesisSharpnessInputs,
+    ThesisSharpnessReport,
+    render_thesis_sharpness_markdown,
+    score_thesis_sharpness,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2459,4 +2466,9 @@ __all__ = [
     "list_deal_sources",
     "read_deal_source",
     "render_deal_source_markdown",
+    "SharpnessDimension",
+    "ThesisSharpnessInputs",
+    "ThesisSharpnessReport",
+    "render_thesis_sharpness_markdown",
+    "score_thesis_sharpness",
 ]

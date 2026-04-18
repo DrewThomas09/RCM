@@ -20575,5 +20575,200 @@ class TestDealSourceQualityReader(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestThesisSharpnessScorer(unittest.TestCase):
+    """Partner scenario: is the thesis focused or diffuse?"""
+
+    def test_empty_thesis_is_incoherent(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            score_thesis_sharpness,
+        )
+        r = score_thesis_sharpness(ThesisSharpnessInputs())
+        self.assertEqual(r.ladder_tier, "incoherent")
+        # Empty inputs pass the "≤2 pillars" dimension
+        # trivially, so expect score ≤ 2 (incoherent tier).
+        self.assertLessEqual(r.score, 2)
+
+    def test_razor_thesis(self) -> None:
+        """Partner: 'one sentence, named lever, number, geography, timeline, focused pillars, anti-thesis.'"""
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            score_thesis_sharpness,
+        )
+        r = score_thesis_sharpness(ThesisSharpnessInputs(
+            thesis_statement=(
+                "Consolidate fragmented GI practices in Texas "
+                "via platform-level commercial pricing lift."
+            ),
+            primary_lever="commercial_pricing_lift_via_scale",
+            quantified_uplift_bps=400,
+            geography_scope="Texas",
+            hold_years=5.0,
+            milestone_cadence="quarterly KPI review",
+            secondary_pillars=["ancillary service line"],
+            anti_thesis_pass_signal=(
+                "If top-3 payers don't reopen contracts in "
+                "year 1, walk."
+            ),
+        ))
+        self.assertEqual(r.ladder_tier, "razor")
+        self.assertEqual(r.score, 7)
+
+    def test_diffuse_thesis(self) -> None:
+        """Partner: '5 pillars, no geography, no anti-thesis — diffuse.'"""
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            score_thesis_sharpness,
+        )
+        r = score_thesis_sharpness(ThesisSharpnessInputs(
+            thesis_statement=(
+                "Opportunistic platform with multiple avenues "
+                "of value creation."
+            ),
+            primary_lever="",
+            quantified_uplift_bps=None,
+            geography_scope="",
+            secondary_pillars=[
+                "margin expansion",
+                "pricing power",
+                "roll-up",
+                "new geographies",
+                "technology",
+            ],
+            anti_thesis_pass_signal="",
+        ))
+        self.assertEqual(r.ladder_tier, "incoherent")
+
+    def test_sharp_but_missing_anti_thesis(self) -> None:
+        """Partner: '6/7 — sharpen the missing dimension.'"""
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            score_thesis_sharpness,
+        )
+        r = score_thesis_sharpness(ThesisSharpnessInputs(
+            thesis_statement=(
+                "Consolidate GI practices in Texas via "
+                "scale-led pricing lift."
+            ),
+            primary_lever="commercial_pricing_lift_via_scale",
+            quantified_uplift_bps=400,
+            geography_scope="Texas",
+            hold_years=5.0,
+            milestone_cadence="quarterly KPI review",
+            secondary_pillars=["ancillary service line"],
+            anti_thesis_pass_signal="",
+        ))
+        self.assertEqual(r.ladder_tier, "sharp")
+        self.assertEqual(r.score, 6)
+        missing = [d.name for d in r.dimensions if not d.passed]
+        self.assertIn("anti_thesis_named", missing)
+
+    def test_multi_sentence_thesis_fails_one_sentence(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            score_thesis_sharpness,
+        )
+        r = score_thesis_sharpness(ThesisSharpnessInputs(
+            thesis_statement=(
+                "Consolidate Texas GI. Also expand into "
+                "ambulatory. Also launch telehealth."
+            ),
+            primary_lever="consolidate",
+            quantified_uplift_bps=300,
+            geography_scope="Texas",
+            hold_years=5.0,
+            milestone_cadence="quarterly",
+            anti_thesis_pass_signal="If payers don't re-open",
+        ))
+        one_sent = next(d for d in r.dimensions
+                         if d.name == "one_sentence_statable")
+        self.assertFalse(one_sent.passed)
+
+    def test_many_secondary_pillars_dilute_thesis(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            score_thesis_sharpness,
+        )
+        r = score_thesis_sharpness(ThesisSharpnessInputs(
+            thesis_statement="Consolidate Texas GI.",
+            primary_lever="scale_pricing",
+            quantified_uplift_bps=400,
+            geography_scope="Texas",
+            hold_years=5.0,
+            milestone_cadence="quarterly",
+            secondary_pillars=["a", "b", "c", "d"],  # 4 pillars
+            anti_thesis_pass_signal="payer walk",
+        ))
+        pillars = next(d for d in r.dimensions
+                        if d.name == "secondary_pillars_lte_2")
+        self.assertFalse(pillars.passed)
+
+    def test_quantified_uplift_accepts_pct(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            score_thesis_sharpness,
+        )
+        r = score_thesis_sharpness(ThesisSharpnessInputs(
+            thesis_statement="Consolidate Texas GI.",
+            primary_lever="scale_pricing",
+            quantified_uplift_pct=0.08,   # pct instead of bps
+            geography_scope="Texas",
+            hold_years=5.0,
+            milestone_cadence="quarterly",
+            anti_thesis_pass_signal="payer walk",
+        ))
+        q = next(d for d in r.dimensions
+                  if d.name == "quantified_uplift")
+        self.assertTrue(q.passed)
+
+    def test_partner_note_reflects_tier(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            score_thesis_sharpness,
+        )
+        razor = score_thesis_sharpness(ThesisSharpnessInputs(
+            thesis_statement="Consolidate Texas GI.",
+            primary_lever="scale_pricing",
+            quantified_uplift_bps=400,
+            geography_scope="Texas",
+            hold_years=5.0,
+            milestone_cadence="quarterly",
+            secondary_pillars=["ancillary"],
+            anti_thesis_pass_signal="payer walk",
+        ))
+        self.assertIn("ic-ready", razor.partner_note.lower())
+
+    def test_markdown_renders_all_dimensions(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            render_thesis_sharpness_markdown,
+            score_thesis_sharpness,
+        )
+        md = render_thesis_sharpness_markdown(
+            score_thesis_sharpness(ThesisSharpnessInputs(
+                thesis_statement="Consolidate Texas GI.",
+                primary_lever="scale_pricing",
+            ))
+        )
+        self.assertIn("# Thesis sharpness", md)
+        for dim in ("one_sentence_statable",
+                    "named_primary_lever",
+                    "quantified_uplift",
+                    "anti_thesis_named"):
+            self.assertIn(dim, md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ThesisSharpnessInputs,
+            score_thesis_sharpness,
+        )
+        r = score_thesis_sharpness(ThesisSharpnessInputs(
+            thesis_statement="Consolidate Texas GI.",
+            primary_lever="scale_pricing",
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
