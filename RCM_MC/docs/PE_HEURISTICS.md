@@ -7207,7 +7207,64 @@ CMS survey.
 
 ---
 
-## 219. Change log
+## 219. Specialty mix stress (`specialty_mix_stress_scorer.py`)
+
+**Partner statement:** "A practice doing 80% spine
+surgery with 4 surgeons is not a specialty practice —
+it's a single-service line. Lose 2 surgeons and the
+revenue is gone."
+
+The third concentration axis (alongside
+`referral_flow_dependency_scorer` upstream and
+`customer_concentration_drilldown` downstream) — **revenue
+mix within specialties / procedures**.
+
+### 5 flags
+
+1. **top_specialty_revenue_gt_60pct**
+2. **top_procedure_revenue_gt_35pct**
+3. **thin_physician_bench_in_top_specialty** — ≤ 3
+   physicians generate top-specialty revenue.
+4. **top_specialty_medicare_heavy** — commercial share
+   ≤ 30%.
+5. **ancillary_tied_to_top_specialty** — DI / lab /
+   surgery revenue depends on the specialty.
+
+### Tier ladder
+
+- **0-1 flags** → `well_diversified` — no gating.
+- **2 flags** → `moderately_concentrated` — 100-day
+  plan prioritizes specialty-leader retention.
+- **3 flags** → `heavily_concentrated` — haircut
+  underwrite + specialty-leader retention as closing
+  condition.
+- **4+ flags** → `single_service_line` — price as
+  add-on, not platform.
+
+### Concentration-risk EBITDA formula
+
+`ebitda × top_specialty_revenue_pct × risk_factor`
+where risk_factor = 0.45 (single-service), 0.30
+(heavy), 0.15 (moderate), 0 (diversified).
+
+### Worked example — spine-heavy orthopedics group
+
+Top specialty 80% / top procedure 45% / 3 surgeons /
+25% commercial / ancillary tied = 5/5 flags →
+`single_service_line` → "price as add-on."
+
+### Packet fields
+
+`top_specialty_revenue_pct`,
+`top_procedure_revenue_pct`,
+`n_physicians_generating_top_specialty_revenue`,
+`top_specialty_commercial_pct`,
+`ancillary_integration_tied_to_top_specialty`,
+`ebitda_m`.
+
+---
+
+## 220. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
