@@ -1,1 +1,58 @@
+# OS
 .DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Virtual envs
+.venv/
+venv/
+env/
+.python-version
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Claude Code / agent runtime state
+.claude/
+scheduled_tasks.lock
+.claude-skills/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Platform runtime output
+output/
+output*/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Local env
+.env
+.env.local
+*.pem
+*.key
