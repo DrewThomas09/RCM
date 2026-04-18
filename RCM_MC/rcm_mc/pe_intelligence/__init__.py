@@ -1538,6 +1538,13 @@ from .physician_specialty_economic_profiler import (
     profile_specialty,
     render_specialty_profile_markdown,
 )
+from .management_forecast_haircut_applier import (
+    ForecastHaircutInputs,
+    ForecastHaircutReport,
+    HaircutYear,
+    apply_management_haircut,
+    render_management_haircut_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3115,4 +3122,9 @@ __all__ = [
     "SpecialtyProfileReport",
     "profile_specialty",
     "render_specialty_profile_markdown",
+    "ForecastHaircutInputs",
+    "ForecastHaircutReport",
+    "HaircutYear",
+    "apply_management_haircut",
+    "render_management_haircut_markdown",
 ]

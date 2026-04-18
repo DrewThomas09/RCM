@@ -30191,5 +30191,183 @@ class TestPhysicianSpecialtyEconomicProfiler(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestManagementForecastHaircutApplier(unittest.TestCase):
+    """Partner voice: 'Apply the haircut, then run the IRR.'"""
+
+    def test_default_inputs_compute(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        r = apply_management_haircut(
+            ForecastHaircutInputs())
+        self.assertEqual(len(r.years), 5)
+        self.assertGreater(r.mgmt_moic, 0)
+        self.assertGreater(r.partner_moic, 0)
+
+    def test_partner_moic_below_mgmt(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        r = apply_management_haircut(
+            ForecastHaircutInputs())
+        self.assertLess(r.partner_moic, r.mgmt_moic)
+        self.assertGreater(r.delta_moic, 0)
+
+    def test_high_reliability_smaller_haircut(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        high = apply_management_haircut(
+            ForecastHaircutInputs(reliability_tier="high"))
+        low = apply_management_haircut(
+            ForecastHaircutInputs(reliability_tier="low"))
+        self.assertLess(
+            high.delta_moic, low.delta_moic
+        )
+
+    def test_very_low_reliability_largest_gap(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        vl = apply_management_haircut(
+            ForecastHaircutInputs(
+                reliability_tier="very_low"))
+        m = apply_management_haircut(
+            ForecastHaircutInputs(
+                reliability_tier="medium"))
+        self.assertGreater(
+            vl.delta_moic, m.delta_moic
+        )
+
+    def test_haircut_increasing_by_year(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        r = apply_management_haircut(
+            ForecastHaircutInputs(reliability_tier="medium"))
+        haircuts = [y.haircut_pct for y in r.years]
+        # Each year's haircut should be >= prior
+        self.assertEqual(
+            haircuts, sorted(haircuts)
+        )
+
+    def test_year0_growth_zero_no_haircut(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        # If forecast = year 0 (no growth), haircut applied to 0 = 0
+        r = apply_management_haircut(
+            ForecastHaircutInputs(
+                mgmt_ebitda_y0_m=50.0,
+                mgmt_ebitda_forecast_m=[50.0] * 5,
+                reliability_tier="low",
+            )
+        )
+        for y in r.years:
+            self.assertEqual(y.partner_ebitda_m, 50.0)
+
+    def test_absorbable_note_when_high_reliability(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        r = apply_management_haircut(
+            ForecastHaircutInputs(
+                reliability_tier="high",
+                mgmt_ebitda_forecast_m=[52.0, 54.0, 56.0, 58.0, 60.0],
+            )
+        )
+        # Modest growth + high reliability → absorbable
+        self.assertIn(
+            "absorbable", r.partner_note.lower()
+        )
+
+    def test_breaks_underwrite_note_low_reliability(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        r = apply_management_haircut(
+            ForecastHaircutInputs(
+                reliability_tier="very_low",
+                mgmt_ebitda_forecast_m=[60.0, 75.0, 95.0, 120.0, 150.0],
+            )
+        )
+        # Aggressive forecast + very_low reliability → breaks underwrite
+        self.assertIn(
+            "breaks the underwrite",
+            r.partner_note.lower(),
+        )
+
+    def test_irr_lower_than_mgmt_when_haircut(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        r = apply_management_haircut(
+            ForecastHaircutInputs())
+        self.assertLessEqual(r.partner_irr, r.mgmt_irr)
+
+    def test_unknown_tier_falls_to_medium(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        r_unknown = apply_management_haircut(
+            ForecastHaircutInputs(
+                reliability_tier="zzz_invalid"))
+        r_med = apply_management_haircut(
+            ForecastHaircutInputs(
+                reliability_tier="medium"))
+        self.assertAlmostEqual(
+            r_unknown.delta_moic,
+            r_med.delta_moic,
+            places=2,
+        )
+
+    def test_extrapolates_beyond_5_years(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        r = apply_management_haircut(
+            ForecastHaircutInputs(
+                mgmt_ebitda_forecast_m=[55, 62, 70, 78, 87, 95, 100],
+                reliability_tier="medium",
+            )
+        )
+        self.assertEqual(len(r.years), 7)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+            render_management_haircut_markdown,
+        )
+        md = render_management_haircut_markdown(
+            apply_management_haircut(
+                ForecastHaircutInputs())
+        )
+        self.assertIn(
+            "# Management forecast haircut", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ForecastHaircutInputs,
+            apply_management_haircut,
+        )
+        r = apply_management_haircut(
+            ForecastHaircutInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
