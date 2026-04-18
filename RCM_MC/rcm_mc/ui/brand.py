@@ -241,6 +241,7 @@ NAV_ITEMS = [
     {"label": "Compliance / SOC 2", "href": "/compliance-attestation", "icon": "bookmark"},
     {"label": "ESG / Impact", "href": "/esg-impact", "icon": "grid"},
     {"label": "340B Program", "href": "/tracker-340b", "icon": "bookmark"},
+    {"label": "Risk Adj / HCC", "href": "/risk-adjustment", "icon": "bookmark"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

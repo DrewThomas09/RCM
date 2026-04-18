@@ -2139,6 +2139,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.tracker_340b_page import render_tracker_340b
             return self._send_html(render_tracker_340b(_qp))
+        if path == "/risk-adjustment":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.risk_adjustment_page import render_risk_adjustment
+            return self._send_html(render_risk_adjustment(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
