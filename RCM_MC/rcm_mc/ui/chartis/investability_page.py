@@ -36,6 +36,7 @@ from ._helpers import (
     empty_note,
     fmt_pct,
     insufficient_data_banner,
+    render_page_explainer,
     safe_dict,
     small_panel,
     verdict_badge,
@@ -311,8 +312,39 @@ def render_investability(
     )
     kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'
 
+    explainer = render_page_explainer(
+        what=(
+            "Two composites side by side: investability (should we be "
+            "in this deal at all) and exit readiness (is the deal "
+            "ready to sell)."
+        ),
+        scale=(
+            "Investability composite 0–100 blending three axes: "
+            "opportunity (30%), value (40%), stability (30%); mapped "
+            "to letter grades A (≥85) / B (72–84) / C (58–71) / "
+            "D (42–57) / F (<42). Exit readiness composite 0–100 "
+            "with verdicts: not_ready / needs_work / mostly_ready / "
+            "exit_ready."
+        ),
+        use=(
+            "Use the composite grade as the quick 'invest / pass' "
+            "screen; read the three subscores to see which axis is "
+            "driving the grade. Compare exit readiness against hold "
+            "plan — a high investability + low exit readiness means "
+            "defer the exit conversation."
+        ),
+        source=(
+            "pe_intelligence/investability_scorer.py module docstring "
+            "(axis weights + grade thresholds); "
+            "exit_readiness.py::score_exit_readiness (12-dimension "
+            "composite)."
+        ),
+        page_key="deal-investability",
+    )
+
     body = (
-        header
+        explainer
+        + header
         + kpi_strip
         + small_panel(
             "Investability Composite",

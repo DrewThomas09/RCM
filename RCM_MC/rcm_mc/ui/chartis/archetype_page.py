@@ -35,6 +35,7 @@ from ._helpers import (
     fmt_pct,
     insufficient_data_banner,
     kv_list,
+    render_page_explainer,
     safe_dict,
     small_panel,
     verdict_badge,
@@ -364,8 +365,38 @@ def render_archetype(
     )
     regime_body = small_panel("Regime verdict", _regime_panel(review), code="REG")
 
+    explainer = render_page_explainer(
+        what=(
+            "Two orthogonal classifications for this deal: the "
+            "sponsor-structure archetype(s) it matches, and the "
+            "performance regime it sits in based on historical "
+            "trends."
+        ),
+        scale=(
+            "10 archetypes: platform_rollup, take_private, carve_out, "
+            "turnaround, buy_and_build, continuation, gp_led_secondary, "
+            "pipe, operating_lift, growth_equity. 5 regimes: "
+            "durable_growth, emerging_volatile, steady, stagnant, "
+            "declining_risk. Confidence score on both: HIGH ≥ 0.75, "
+            "MEDIUM ≥ 0.50, LOW below."
+        ),
+        use=(
+            "Each matched archetype carries its own playbook, named "
+            "risks, and IC-question list — use those as the diligence "
+            "scaffold. The regime classifier tells you which playbook "
+            "tone fits (e.g. steady → operating levers carry the "
+            "return, not multiple expansion)."
+        ),
+        source=(
+            "pe_intelligence/deal_archetype.py::classify_archetypes; "
+            "regime_classifier.py (five regime definitions + playbook)."
+        ),
+        page_key="deal-archetype",
+    )
+
     body = (
-        header
+        explainer
+        + header
         + kpi_strip
         + archetype_header
         + archetype_cards

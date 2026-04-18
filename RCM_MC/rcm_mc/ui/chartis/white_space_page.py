@@ -33,6 +33,7 @@ from ._helpers import (
     deal_header_nav,
     empty_note,
     insufficient_data_banner,
+    render_page_explainer,
     safe_dict,
     small_panel,
     verdict_badge,
@@ -260,8 +261,37 @@ def render_white_space(
         )
     )
 
+    explainer = render_page_explainer(
+        what=(
+            "Adjacency opportunities for this target across three "
+            "dimensions: geographic (states or regions the target "
+            "does not cover), segment (service lines adjacent to the "
+            "target's core), and channel (commercial direct, Medicare "
+            "Advantage, ACO risk contracts, etc.)."
+        ),
+        scale=(
+            "Each opportunity is scored 0–1 by blending addressable "
+            "size, competitive intensity, and proximity-to-core. "
+            "Scores above 0.75 are strong fit; 0.50–0.75 are fair; "
+            "below 0.50 are low-conviction."
+        ),
+        use=(
+            "Use this to size the post-close value-creation plan "
+            "beyond the entry thesis. A 0.8 segment score is a case "
+            "for bolt-on planning; a 0.3 score says the adjacency is "
+            "in the brochure but not worth capital."
+        ),
+        source=(
+            "pe_intelligence/white_space.py::detect_white_space "
+            "(three-dimension scoring blending addressable size × "
+            "competitive intensity × proximity-to-core)."
+        ),
+        page_key="deal-white-space",
+    )
+
     body = (
-        header
+        explainer
+        + header
         + kpi_strip
         + ck_section_header(
             "TOP 3 OPPORTUNITIES",

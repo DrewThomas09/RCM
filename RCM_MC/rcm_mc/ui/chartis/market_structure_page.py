@@ -31,6 +31,7 @@ from ._helpers import (
     empty_note,
     fmt_pct,
     insufficient_data_banner,
+    render_page_explainer,
     safe_dict,
     small_panel,
     verdict_badge,
@@ -237,8 +238,36 @@ def render_market_structure(
     target_name = _target_name_from_packet(packet, profile or {})
     shares_panel = _shares_table(shares, target_name=target_name)
 
+    explainer = render_page_explainer(
+        what=(
+            "Standard market-concentration metrics for the target's "
+            "local market: HHI (Herfindahl–Hirschman Index — sum of "
+            "squared shares), CR3 and CR5 (combined share of top-3 "
+            "and top-5 players), plus a consolidation-play score."
+        ),
+        scale=(
+            "HHI under 1,500 = unconcentrated; 1,500–2,500 = "
+            "moderately concentrated; over 2,500 = highly "
+            "concentrated. Thresholds are from the DOJ/FTC Horizontal "
+            "Merger Guidelines."
+        ),
+        use=(
+            "Use HHI + CR5 to judge pricing power and consolidation "
+            "opportunity. Deals in unconcentrated markets have more "
+            "buy-and-build runway; concentrated markets command "
+            "higher multiples but carry antitrust scrutiny."
+        ),
+        source=(
+            "pe_intelligence/market_structure.py HHI_UNCONCENTRATED "
+            "and HHI_HIGHLY_CONCENTRATED constants (DOJ/FTC Horizontal "
+            "Merger Guidelines)."
+        ),
+        page_key="deal-market-structure",
+    )
+
     body = (
-        header
+        explainer
+        + header
         + kpi_strip
         + ck_section_header(
             "COMPETITIVE STRUCTURE",

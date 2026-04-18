@@ -25,6 +25,7 @@ from ._helpers import (
     empty_note,
     fmt_pct,
     insufficient_data_banner,
+    render_page_explainer,
     safe_dict,
     small_panel,
     verdict_badge,
@@ -203,8 +204,33 @@ def render_stress(
         )
         return small_panel(f"{title} ({len(rows)})", body, code=sev_key.upper()[:3])
 
+    explainer = render_page_explainer(
+        what=(
+            "Runs a grid of rate, volume, multiple-compression, "
+            "lever-slip, and labor-shock scenarios against this deal "
+            "and scores the deal's robustness across the grid."
+        ),
+        scale=(
+            "Robustness grade: A = ≥ 90% downside pass rate and zero "
+            "covenant breaches; B = ≥ 80% pass rate and ≤ 1 breach; "
+            "C = ≥ 60% pass rate; D = ≥ 40%; F = below 40%."
+        ),
+        use=(
+            "Use downside pass rate + breach count to size covenant "
+            "headroom and stress reserves. A grade-D deal needs more "
+            "cushion in the capital structure or should not proceed "
+            "at this leverage."
+        ),
+        source=(
+            "pe_intelligence/stress_test.py::_robustness_grade "
+            "(grade thresholds); run_stress_grid (scenario set)."
+        ),
+        page_key="deal-stress",
+    )
+
     body = (
-        header
+        explainer
+        + header
         + _grade_banner(grade, pass_rate, n_breaches, partner_summary)
         + kpi_strip
         + ck_section_header(
