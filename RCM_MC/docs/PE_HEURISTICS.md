@@ -7641,7 +7641,94 @@ see module.
 
 ---
 
-## 228. Change log
+## 228. Fund-level vintage impact scorer (`fund_level_vintage_impact_scorer.py`)
+
+**Partner statement.** "Every deal is evaluated on its own IRR, but
+that's not how LPs grade us. They grade us on fund TVPI, DPI by year
+five, and where we rank in the vintage. A 22% IRR deal that soaks up
+15% of committed capital and doesn't return cash for seven years can
+still drag the fund below its vintage peer median. Size the deal
+against the fund, not itself."
+
+### Why it matters
+
+Deal-level IRR/MOIC is one lens. The partner-at-IC lens is also: "how
+does adding this deal change the *fund's* LP-facing story?" A
+capital-hungry deal with merely-median IRR can be fund-dilutive
+through concentration risk alone. This module translates deal
+assumptions into fund-level impact across 6 dimensions.
+
+### 6 dimensions
+
+1. **capital_concentration** — deal equity (net of coinvest) as % of
+   fund committed capital. > 15% = single-deal risk; 10-15% = platform
+   territory; 5-10% = balanced; < 5% = small.
+2. **dpi_timing_drag** — years to first distribution. > 6 yr =
+   drags DPI-by-year-5 below vintage median; 5-6 yr = slow; 3-5 yr =
+   on-pace; < 3 yr = fast-DPI LP-friendly.
+3. **tvpi_contribution** — capital weight × (MOIC − 1). > 0.15 =
+   accretive; 0.05-0.15 = modest; 0-0.05 = marginal; < 0 = dilutive.
+4. **vintage_peer_rank** — implied quartile of net IRR vs. vintage
+   peer median / top-quartile / top-decile thresholds (Cambridge /
+   Burgiss benchmarks).
+5. **pme_delta** — net IRR vs. healthcare public benchmark, in bps.
+   ≥ 500 = strong-PME; 200-500 = modest; 0-200 = at-PME (LP pushback
+   likely); < 0 = fails illiquidity-premium test.
+6. **reserve_consumption** — follow-on reserve as % of remaining dry
+   powder. > 30% = platform-bet (starves other platforms); 15-30% =
+   heavy; 5-15% = standard; < 5% = thin.
+
+### Verdict tiers
+
+- **fund_accretive** — ≥ 4 accretive signals and 0 dilutive. Deal
+  lifts fund TVPI and DPI timing is on-par. "Good for the fund, not
+  just good on its own."
+- **fund_neutral** — mixed signals. Deal hits vintage median but
+  doesn't move fund metrics materially. Size down or pass unless IC
+  loves thesis.
+- **fund_dilutive** — ≥ 3 dilutive signals. Deal drags fund metrics
+  even if deal IRR is respectable. "Right deal, wrong fund — pass or
+  restructure with heavy coinvest."
+
+### Worked example
+
+$800M fund, $70M check (8.75% weight), 3.0x MOIC, 26% gross IRR, 4.0yr
+DPI, $40M reserve → capital-balanced, on-pace DPI, +0.18 TVPI
+contribution, top-quartile vintage rank, +1000 bps PME, standard
+reserve → **fund_accretive**.
+
+Same fund, $160M check (20% weight), 1.8x MOIC, 13% gross IRR, 6.5yr
+DPI, $150M reserve (37.5%) → single-deal risk, DPI drag, dilutive
+TVPI, bottom-quartile, sub-PME, platform-bet reserve →
+**fund_dilutive** ("right deal, wrong fund").
+
+### Why net IRR proxies gross IRR minus 200 bps
+
+Coarse fees + carry drag standard the partner applies when glancing
+at vintage peer tables: gross IRR − 200 bps approximates post-fee LP
+IRR the LP sees on the quarterly statement. Good enough for
+quartile-band mapping; not a model output.
+
+### Packet fields
+
+`fund_committed_capital_m`, `fund_dry_powder_remaining_m`,
+`deal_equity_check_m`, `coinvest_committed_m`,
+`follow_on_reserved_m`, `expected_deal_gross_moic`,
+`expected_deal_gross_irr`, `years_to_first_distribution`,
+`hold_years`, `vintage_peer_median_net_irr`,
+`vintage_peer_top_quartile_net_irr`, `vintage_peer_top_decile_net_irr`,
+`healthcare_sector_benchmark_irr`.
+
+### Distinct from existing modules
+
+- `fund_model` — fund-level LBO math (how the fund lives).
+- `vintage_return_curve` — pacing curve (when capital returns).
+- This module — how *this specific deal* affects the fund's
+  LP-facing metrics vs. vintage peers; partner's fund-sizing lens.
+
+---
+
+## 229. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
