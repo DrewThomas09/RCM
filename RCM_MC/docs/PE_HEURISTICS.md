@@ -6975,7 +6975,65 @@ input surface.
 
 ---
 
-## 215. Change log
+## 215. Synergy sequencing scorer (`synergy_sequencing_scorer.py`)
+
+**Partner statement:** "Y1 is stabilization, not
+synergy. The seller's slides show $12M synergy in Y1 —
+I know that's not real. Back-office is Y2. Payer
+renegotiation is Y3. If their timing is wrong, their
+math is wrong."
+
+Distinct from `synergy_credibility_scorer` (is the
+synergy real?) and `synergy_modeler` (how big?). This
+module scores **timing**.
+
+### 10 synergy categories + typical landing windows
+
+- `purchasing_gpo_rebates` — Y1.
+- `ancillary_rationalization` — Y1-Y2.
+- `capex_rationalization` — Y1-Y2.
+- `shared_services_back_office` — Y2-Y3.
+- `real_estate_consolidation` — Y2-Y3.
+- `revenue_cycle_standardization` — Y2-Y3.
+- `physician_comp_normalization` — Y2-Y3.
+- `payer_contract_renegotiation` — Y3-Y4.
+- `it_ehr_consolidation` — Y3-Y4.
+- `cross_sell_upsell` — Y3-Y4.
+
+### Haircut math
+
+Each year earlier than the typical landing min-year →
+30% haircut. Later-than-typical is accepted (seller is
+being honest). Haircut capped at 90%.
+
+### Partner-note ladder
+
+- ≥ 30% aggregate haircut → "rebuild the synergy ramp
+  with realistic per-category landing."
+- 15-30% → "re-phase plan."
+- < 15% → "accept with adjustment."
+- 0% → "timing honest; proceed on face."
+
+### Worked example
+
+Seller claim: $10M payer renegotiation Y1 + $2M GPO
+rebates Y1 + $5M back-office Y1.
+
+- Payer reneg Y1 vs. typical Y3 → 60% haircut → $6M cut.
+- GPO rebates Y1 vs. typical Y1 → 0% cut.
+- Back-office Y1 vs. typical Y2 → 30% cut → $1.5M cut.
+
+Total haircut $7.5M / $17M claimed = 44% → "rebuild the
+ramp."
+
+### Packet fields
+
+- `claimed_synergies` — list of `ClaimedSynergy`
+  (category + $M + claimed year).
+
+---
+
+## 216. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
