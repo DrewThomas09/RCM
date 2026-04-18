@@ -1703,6 +1703,13 @@ from .cms_rule_cycle_tracker import (
     render_cms_rule_cycle_markdown,
     track_cms_rule_cycle,
 )
+from .reprice_calculator import (
+    DiligenceFinding,
+    RepriceInputs,
+    RepriceReport,
+    compute_reprice,
+    render_reprice_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3399,4 +3406,9 @@ __all__ = [
     "ServiceLineProfile",
     "render_cms_rule_cycle_markdown",
     "track_cms_rule_cycle",
+    "DiligenceFinding",
+    "RepriceInputs",
+    "RepriceReport",
+    "compute_reprice",
+    "render_reprice_markdown",
 ]

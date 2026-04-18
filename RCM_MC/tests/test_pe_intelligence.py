@@ -34664,5 +34664,233 @@ class TestCMSRuleCycleTracker(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestRepriceCalculator(unittest.TestCase):
+    """Partner voice: 'Reprice is math, not negotiation.'"""
+
+    def test_no_findings_no_reprice(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            original_bid_ev_m=500.0,
+        ))
+        self.assertEqual(r.new_bid_ev_m, 500.0)
+        self.assertEqual(r.verdict, "small_reprice")
+
+    def test_ebitda_hit_multiplied(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            original_bid_ev_m=500.0,
+            original_multiple=11.0,
+            findings=[
+                DiligenceFinding(
+                    category="ebitda_hit",
+                    name="QofE haircut",
+                    dollar_impact_m=5.0,
+                    hit_ebitda=True,
+                ),
+            ],
+        ))
+        # 5 * 11 = 55 off
+        self.assertAlmostEqual(r.new_bid_ev_m, 445.0)
+        self.assertAlmostEqual(r.raw_reprice_m, 55.0)
+
+    def test_dollar_hit_not_multiplied(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            original_bid_ev_m=500.0,
+            original_multiple=11.0,
+            findings=[
+                DiligenceFinding(
+                    category="working_capital_hit",
+                    name="WC peg adjustment",
+                    dollar_impact_m=5.0,
+                    hit_ebitda=False,
+                ),
+            ],
+        ))
+        # Dollar hit: 5 off
+        self.assertAlmostEqual(r.new_bid_ev_m, 495.0)
+
+    def test_meaningful_reprice_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            original_bid_ev_m=500.0,
+            original_multiple=11.0,
+            findings=[
+                DiligenceFinding(
+                    "ebitda_hit", "QofE", 3.0,
+                    hit_ebitda=True),
+            ],
+        ))
+        # 33M / 500M = 6.6% → meaningful
+        self.assertEqual(
+            r.verdict, "meaningful_reprice"
+        )
+
+    def test_material_reprice_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            original_bid_ev_m=500.0,
+            original_multiple=11.0,
+            findings=[
+                DiligenceFinding(
+                    "ebitda_hit", "QofE", 5.0,
+                    hit_ebitda=True),
+            ],
+        ))
+        # 55M / 500M = 11% → material
+        self.assertEqual(
+            r.verdict, "material_reprice"
+        )
+
+    def test_kill_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            original_bid_ev_m=500.0,
+            original_multiple=11.0,
+            findings=[
+                DiligenceFinding(
+                    "ebitda_hit", "QofE blow-up", 10.0,
+                    hit_ebitda=True),
+            ],
+        ))
+        # 110M / 500M = 22% → kill
+        self.assertEqual(r.verdict, "kill")
+        self.assertIn(
+            "effectively dead", r.partner_note.lower()
+        )
+
+    def test_safety_haircut_adds(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        without = compute_reprice(RepriceInputs(
+            original_bid_ev_m=500.0,
+            findings=[DiligenceFinding(
+                "working_capital_hit", "WC", 5.0,
+                hit_ebitda=False)],
+        ))
+        with_safety = compute_reprice(RepriceInputs(
+            original_bid_ev_m=500.0,
+            findings=[DiligenceFinding(
+                "working_capital_hit", "WC", 5.0,
+                hit_ebitda=False)],
+            safety_haircut_pct=0.02,
+        ))
+        self.assertLess(
+            with_safety.new_bid_ev_m,
+            without.new_bid_ev_m,
+        )
+
+    def test_talking_points_generated(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            original_bid_ev_m=500.0,
+            findings=[
+                DiligenceFinding(
+                    "ebitda_hit", "QofE", 4.0,
+                    hit_ebitda=True),
+                DiligenceFinding(
+                    "working_capital_hit", "WC", 3.0,
+                    hit_ebitda=False),
+            ],
+        ))
+        self.assertGreater(
+            len(r.seller_talking_points), 0
+        )
+        joined = " ".join(r.seller_talking_points).lower()
+        self.assertIn("run-rate", joined)
+
+    def test_finding_summaries_contain_ev_impact(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            original_multiple=12.0,
+            findings=[DiligenceFinding(
+                "ebitda_hit", "QofE", 2.0,
+                hit_ebitda=True)],
+        ))
+        summary = r.finding_summaries[0]
+        self.assertAlmostEqual(
+            summary["ev_impact_m"], 24.0
+        )
+
+    def test_bid_never_negative(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            original_bid_ev_m=100.0,
+            original_multiple=11.0,
+            findings=[DiligenceFinding(
+                "ebitda_hit", "huge hit", 50.0,
+                hit_ebitda=True)],
+        ))
+        self.assertGreaterEqual(r.new_bid_ev_m, 0.0)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+            render_reprice_markdown,
+        )
+        md = render_reprice_markdown(
+            compute_reprice(RepriceInputs(
+                findings=[DiligenceFinding(
+                    "ebitda_hit", "QofE", 2.0,
+                    hit_ebitda=True)],
+            ))
+        )
+        self.assertIn("# Reprice calculation", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            DiligenceFinding,
+            RepriceInputs,
+            compute_reprice,
+        )
+        r = compute_reprice(RepriceInputs(
+            findings=[DiligenceFinding(
+                "ebitda_hit", "QofE", 2.0,
+                hit_ebitda=True)],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
