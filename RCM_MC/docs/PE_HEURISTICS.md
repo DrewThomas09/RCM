@@ -5440,7 +5440,78 @@ or save equivalent structure."
 
 ---
 
-## 190. Change log
+## 190. Partner briefing composer (`partner_briefing_composer.py`)
+
+**Partner statement:** "I don't read ten separate reports.
+I read one page that pulls from all of them. If the brain
+is smart, it can synthesize across what it already knows."
+
+Connective tissue: composes a **one-page partner
+briefing** from multiple judgment layers:
+
+- Subsector lens summary
+- Thesis chain health (confirmed / open / contradicted)
+- Pattern stack (compound risks named)
+- Failure archetype matches
+- Pre-mortem strength + exit outcome
+- Seller motivation
+- Negotiation posture (walk-away gap)
+
+### Opinionated synthesis
+
+The composer is **not** a concatenation — it picks the
+dominant signal and surfaces it first as the partner note:
+
+- Any `thesis_contradicted ≥ 1` → "chain is broken at a
+  named link; that dominates."
+- `pre_mortem_strength == "strong"` → "plausible Y1-Y5
+  failure; do not close without mitigation on each root-
+  cause signal."
+- ≥ 2 `compound_risks` → "re-price or structural
+  protection; do not proceed on merits."
+- `recommendation == "invest"` → "all judgment layers
+  green; this is the best deal in the pipeline."
+- Otherwise → "mixed signals; use concession ladder +
+  chair brief for next round."
+
+### Headline verdict translator
+
+- `pass` → "PASS — the math doesn't work or the thesis
+  chain is broken. Walk."
+- `reprice` → "REPRICE — deal survives only with price
+  or structural relief."
+- `diligence_more` → "DILIGENCE MORE — named open items
+  that flip the verdict."
+- `invest` → "INVEST — thesis tight, patterns contained.
+  This is the deal we want."
+- `proceed_with_mitigants` → "PROCEED WITH MITIGANTS —
+  named mitigation required; shape acceptable."
+
+### Why this sits above the other briefs
+
+- `deal_one_liner` is **one sentence** (margin note).
+- `pre_ic_chair_brief` is **4 bullets** (chair briefing).
+- `ic_memo` is **60 pages** (full IC deck).
+
+Partner briefing composer is **the one-page synthesis**
+between the one-liner and the IC deck — when the partner
+wants more than a sentence but less than the deck.
+
+### Packet fields that trigger
+
+- `deal_name`, `subsector`, `subsector_summary`
+- `recommendation`, `one_liner`
+- `thesis`, `thesis_confirmed`,
+  `thesis_not_addressed`, `thesis_contradicted`
+- `compound_risks`, `total_pattern_severity`
+- `pre_mortem_strength`, `pre_mortem_exit_outcome`
+- `seller_motivation`
+- `walk_away_price_m`, `current_seller_ask_m`
+- `failure_archetype_matches`
+
+---
+
+## 191. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
