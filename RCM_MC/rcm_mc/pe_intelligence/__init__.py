@@ -814,6 +814,13 @@ from .synergy_credibility_scorer import (
     render_synergy_report_markdown,
     score_synergies,
 )
+from .process_stopwatch import (
+    ProcessReadout,
+    ProcessReport,
+    ProcessTiming,
+    read_process,
+    render_process_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1863,4 +1870,9 @@ __all__ = [
     "SynergyReport",
     "render_synergy_report_markdown",
     "score_synergies",
+    "ProcessReadout",
+    "ProcessReport",
+    "ProcessTiming",
+    "read_process",
+    "render_process_markdown",
 ]

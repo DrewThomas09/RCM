@@ -14501,5 +14501,103 @@ class TestSynergyCredibilityScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Process stopwatch ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ProcessReadout,
+    ProcessReport,
+    ProcessTiming,
+    read_process,
+    render_process_markdown,
+)
+
+
+class TestProcessStopwatch(unittest.TestCase):
+
+    def test_tight_close_flagged(self) -> None:
+        r = read_process(ProcessTiming(
+            weeks_from_loi_to_expected_close=3,
+        ))
+        self.assertTrue(any(ro.name == "tight_close_clock"
+                             for ro in r.readouts))
+
+    def test_bidder_collapse_flagged(self) -> None:
+        r = read_process(ProcessTiming(
+            round_1_bidders=15, round_2_bidders=2,
+        ))
+        self.assertTrue(any(ro.name == "bidder_collapse"
+                             for ro in r.readouts))
+
+    def test_process_relaunch_flagged(self) -> None:
+        r = read_process(ProcessTiming(
+            round_count=2, seller_reengaged_prior_passers=True,
+        ))
+        self.assertTrue(any(ro.name == "process_relaunched"
+                             for ro in r.readouts))
+
+    def test_multiple_walks_flagged(self) -> None:
+        r = read_process(ProcessTiming(
+            bidders_walked_in_round_1=2,
+            bidders_walked_in_round_2=2,
+        ))
+        self.assertTrue(any(ro.name == "multiple_walks"
+                             for ro in r.readouts))
+
+    def test_repriced_downward_flagged(self) -> None:
+        r = read_process(ProcessTiming(
+            repriced_downward_already=True,
+        ))
+        self.assertTrue(any(ro.name == "repriced_during_process"
+                             for ro in r.readouts))
+
+    def test_banker_rigidity_flagged(self) -> None:
+        r = read_process(ProcessTiming(
+            banker_rigidity_on_price=True,
+        ))
+        self.assertTrue(any(ro.name == "banker_rigid_on_price"
+                             for ro in r.readouts))
+
+    def test_silence_flagged(self) -> None:
+        r = read_process(ProcessTiming(
+            silence_during_diligence=True,
+        ))
+        self.assertTrue(any(ro.name == "diligence_silence"
+                             for ro in r.readouts))
+
+    def test_two_high_severity_partner_note(self) -> None:
+        r = read_process(ProcessTiming(
+            weeks_from_loi_to_expected_close=3,
+            round_1_bidders=12, round_2_bidders=2,
+        ))
+        self.assertGreaterEqual(r.high_count, 2)
+        self.assertIn("clock", r.partner_note.lower())
+
+    def test_clean_process_no_flags(self) -> None:
+        r = read_process(ProcessTiming(
+            weeks_from_loi_to_expected_close=12,
+            round_count=2,
+            round_1_bidders=10, round_2_bidders=5,
+            bidders_walked_in_round_1=0,
+            bidders_walked_in_round_2=1,
+            banker_rigidity_on_price=False,
+            seller_reengaged_prior_passers=False,
+            silence_during_diligence=False,
+            repriced_downward_already=False,
+        ))
+        self.assertEqual(r.readouts, [])
+        self.assertIn("normal", r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_process_markdown(read_process(ProcessTiming(
+            weeks_from_loi_to_expected_close=3,
+        )))
+        self.assertIn("# Process stopwatch", md)
+        self.assertIn("tight_close_clock", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(read_process(ProcessTiming()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
