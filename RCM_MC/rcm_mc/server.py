@@ -2054,6 +2054,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.vdr_tracker_page import render_vdr_tracker
             return self._send_html(render_vdr_tracker(_qp))
+        if path == "/escrow-earnout":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.escrow_earnout_page import render_escrow_earnout
+            return self._send_html(render_escrow_earnout(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
