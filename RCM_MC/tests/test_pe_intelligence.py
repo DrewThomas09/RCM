@@ -32840,5 +32840,201 @@ class TestStateAGPEScrutinyTracker(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestContinuationVehicleReadinessScorer(unittest.TestCase):
+    """Partner voice: 'Not every asset is a CV candidate.'"""
+
+    def test_strong_cv_fit(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        r = score_cv_readiness(CVReadinessInputs(
+            remaining_runway_years=4.5,
+            management_rollover_intent_pct=0.60,
+            gp_reinvest_commitment_m=30.0,
+            strip_sale_price_validated=True,
+            lp_ac_recent_similar_cv_approved=True,
+            third_party_lead_identified=True,
+            existing_moic=2.5,
+        ))
+        self.assertEqual(r.verdict, "pursue_cv")
+        self.assertGreaterEqual(
+            r.composite_score_0_24, 18
+        )
+
+    def test_weak_fit_pursue_sale(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        r = score_cv_readiness(CVReadinessInputs(
+            remaining_runway_years=1.5,
+            management_rollover_intent_pct=0.10,
+            gp_reinvest_commitment_m=3.0,
+            strip_sale_price_validated=False,
+            lp_ac_recent_similar_cv_approved=False,
+            third_party_lead_identified=False,
+        ))
+        self.assertEqual(r.verdict, "pursue_sale")
+        self.assertIn(
+            "couldn't find a buyer",
+            r.partner_note.lower(),
+        )
+
+    def test_conditional_middle_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        # Strong on most but missing a few items → conditional
+        r = score_cv_readiness(CVReadinessInputs(
+            remaining_runway_years=3.5,
+            management_rollover_intent_pct=0.35,
+            gp_reinvest_commitment_m=10.0,
+            strip_sale_price_validated=True,
+            lp_ac_recent_similar_cv_approved=True,
+            third_party_lead_identified=False,
+        ))
+        self.assertEqual(r.verdict, "conditional")
+
+    def test_runway_score(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        long = score_cv_readiness(CVReadinessInputs(
+            remaining_runway_years=5.0))
+        short = score_cv_readiness(CVReadinessInputs(
+            remaining_runway_years=1.5))
+        long_score = next(
+            d.score_0_4 for d in long.dimensions
+            if d.dimension == "remaining_runway_years"
+        )
+        short_score = next(
+            d.score_0_4 for d in short.dimensions
+            if d.dimension == "remaining_runway_years"
+        )
+        self.assertGreater(long_score, short_score)
+
+    def test_management_rollover_scaling(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        strong = score_cv_readiness(CVReadinessInputs(
+            management_rollover_intent_pct=0.60))
+        weak = score_cv_readiness(CVReadinessInputs(
+            management_rollover_intent_pct=0.10))
+        strong_score = next(
+            d.score_0_4 for d in strong.dimensions
+            if d.dimension == "management_rollover_intent"
+        )
+        weak_score = next(
+            d.score_0_4 for d in weak.dimensions
+            if d.dimension == "management_rollover_intent"
+        )
+        self.assertEqual(strong_score, 4)
+        self.assertEqual(weak_score, 0)
+
+    def test_no_lead_zero_score(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        r = score_cv_readiness(CVReadinessInputs(
+            third_party_lead_identified=False))
+        lead = next(
+            d.score_0_4 for d in r.dimensions
+            if d.dimension == "third_party_lead_identified"
+        )
+        self.assertEqual(lead, 0)
+
+    def test_strip_sale_validated_scores_higher(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        validated = score_cv_readiness(CVReadinessInputs(
+            strip_sale_price_validated=True))
+        unvalidated = score_cv_readiness(
+            CVReadinessInputs(
+                strip_sale_price_validated=False))
+        v_score = next(
+            d.score_0_4 for d in validated.dimensions
+            if d.dimension == "strip_sale_possible"
+        )
+        u_score = next(
+            d.score_0_4 for d in unvalidated.dimensions
+            if d.dimension == "strip_sale_possible"
+        )
+        self.assertGreater(v_score, u_score)
+
+    def test_gp_commitment_scaling(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        big = score_cv_readiness(CVReadinessInputs(
+            gp_reinvest_commitment_m=30.0))
+        small = score_cv_readiness(CVReadinessInputs(
+            gp_reinvest_commitment_m=2.0))
+        big_score = next(
+            d.score_0_4 for d in big.dimensions
+            if d.dimension == "gp_reinvest_commitment_m"
+        )
+        small_score = next(
+            d.score_0_4 for d in small.dimensions
+            if d.dimension == "gp_reinvest_commitment_m"
+        )
+        self.assertEqual(big_score, 4)
+        self.assertEqual(small_score, 0)
+
+    def test_six_dimensions(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        r = score_cv_readiness(CVReadinessInputs())
+        self.assertEqual(len(r.dimensions), 6)
+
+    def test_composite_caps(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        r = score_cv_readiness(CVReadinessInputs(
+            remaining_runway_years=5.0,
+            management_rollover_intent_pct=0.70,
+            gp_reinvest_commitment_m=50.0,
+            strip_sale_price_validated=True,
+            lp_ac_recent_similar_cv_approved=True,
+            third_party_lead_identified=True,
+        ))
+        # 4 + 4 + 4 + 4 + 3 + 4 = 23
+        self.assertLessEqual(r.composite_score_0_24, 24)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            render_cv_readiness_markdown,
+            score_cv_readiness,
+        )
+        md = render_cv_readiness_markdown(
+            score_cv_readiness(CVReadinessInputs())
+        )
+        self.assertIn(
+            "# Continuation vehicle readiness", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            CVReadinessInputs,
+            score_cv_readiness,
+        )
+        r = score_cv_readiness(CVReadinessInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1634,6 +1634,13 @@ from .state_ag_pe_scrutiny_tracker import (
     render_state_ag_markdown,
     track_state_ag_scrutiny,
 )
+from .continuation_vehicle_readiness_scorer import (
+    CVDimensionScore,
+    CVReadinessInputs,
+    CVReadinessReport,
+    render_cv_readiness_markdown,
+    score_cv_readiness,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3281,4 +3288,9 @@ __all__ = [
     "StateAGReport",
     "render_state_ag_markdown",
     "track_state_ag_scrutiny",
+    "CVDimensionScore",
+    "CVReadinessInputs",
+    "CVReadinessReport",
+    "render_cv_readiness_markdown",
+    "score_cv_readiness",
 ]
