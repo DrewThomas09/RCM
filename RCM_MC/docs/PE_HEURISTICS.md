@@ -4851,7 +4851,75 @@ back on bullet-by-bullet.
 
 ---
 
-## 181. Change log
+## 181. Seller math reverse-engineer (`seller_math_reverse.py`)
+
+**Partner statement:** "The seller isn't stupid. If they
+ask 16x, they believe something specific about margin,
+growth, and exit. I want to know what that is before I
+counter."
+
+Given our base case and seller's ask, solve for what the
+seller must be assuming on each of three variables
+(**holding the other two constant**):
+
+1. **Implied exit multiple** — seller's view of the exit
+   market.
+2. **Implied EBITDA growth** — seller's view of compound
+   growth.
+3. **Implied margin expansion** — seller's view of
+   operator leverage.
+
+Partner reads each implied assumption against peer
+benchmarks and picks the weakest to force seller to
+defend.
+
+### Interpretation thresholds
+
+- Implied exit > 16x → "cycle peak; counter off cycle-
+  average."
+- Implied growth > 10% → "double-digit is rare in
+  healthcare services; seller betting on market we don't
+  see."
+- Implied margin > 400 bps → "partner-reject; requires
+  operator heroics we'd own."
+
+### Partner note escalation
+
+- Ask premium > 15% → "Seller must assume ONE of (X multiple,
+  Y growth, Z margin). Pick the weakest and force seller to
+  defend it."
+- 5-15% → "Standard negotiation; pick one variable."
+- Below buyer's implied price → "Seller sees downside we
+  don't — diligence the gap."
+
+### Worked example
+
+Buyer base: $75M EBITDA, 11x exit, 5% growth, 100 bps
+margin, 5-yr hold, 2.5x MOIC target.
+
+- Buyer's implied price: $75 × (1.05)^5 × 1.01 × 11 / 2.5
+  ≈ $425M.
+- Seller asks $510M (20% premium).
+- Implied exit multiple (holding growth+margin): ~13.2x.
+- Implied growth (holding multiple+margin): ~8.5%/yr.
+- Implied margin (holding multiple+growth): ~2,100 bps.
+
+Partner note: "Seller must assume ONE of: 13.2x exit, 8.5%
+growth, or 2,100 bps margin expansion. Pick the weakest
+(the margin story is most indefensible) and force seller
+to specify which initiatives deliver it."
+
+### Packet fields that trigger
+
+- `buyer_base_ebitda_m`, `buyer_base_exit_multiple`,
+  `buyer_base_ebitda_growth_pct`,
+  `buyer_base_margin_expansion_bps`
+- `hold_years`, `target_moic`
+- `seller_ask_price_m`
+
+---
+
+## 182. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
