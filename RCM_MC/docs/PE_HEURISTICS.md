@@ -10700,7 +10700,77 @@ necessity + prior_auth dominate → **structural / hard** — "fund CDI
 
 ---
 
-## 265. Change log
+## 265. Patient acquisition cost benchmark (`patient_acquisition_cost_benchmark.py`)
+
+**Partner statement.** "Healthcare growth stories often don't price
+the CAC. The deck says '+12% new patients per year' but doesn't
+show marketing / referral-management / admin cost per new patient.
+Per specialty there's a typical CAC and a typical LTV. If CAC is 2×
+the specialty norm, either marketing is inefficient or the market
+is saturated."
+
+### Why it matters
+
+`physician_specialty_economic_profiler` gives revenue per
+physician. This module is **per-specialty CAC and LTV** — so the
+partner can test whether the growth story's patient acquisition
+economics actually pencil out.
+
+### 8 specialty CAC / LTV norms
+
+| Specialty | CAC | Annual $/pt | Margin | Tenure (yr) |
+|---|---|---|---|---|
+| orthopedic_surgery | $350 | $8,000 | 45% | 2.5 |
+| gastroenterology | $250 | $4,500 | 42% | 4.0 |
+| dermatology | $400 | $1,800 | 50% | 3.0 |
+| cardiology | $200 | $6,500 | 40% | 5.0 |
+| ophthalmology | $300 | $3,500 | 45% | 4.0 |
+| dental | $350 | $1,200 | 30% | 5.0 |
+| behavioral | $500 | $2,400 | 25% | 1.5 |
+| primary_care | $180 | $1,500 | 25% | 6.0 |
+
+### Math
+
+- LTV = annual_revenue × contribution_margin × tenure_years
+- LTV / CAC ratio
+- Payback months = `CAC / (annual_revenue × margin / 12)`
+
+### Verdict
+
+- CAC ≤ 0.8× norm → **efficient** — "protect the channel; CAC goes
+  up when volume chases"
+- 0.8-1.2× → **acceptable** — "in-band"
+- 1.2-2.0× → **expensive** — "marketing inefficient or market
+  saturated"
+- > 2.0× → **unsustainable** — "negative unit economics"
+
+LTV/CAC < 3× adds flag: "below healthcare payback threshold;
+scrutinize tenure and margin assumptions."
+
+### Worked example
+
+Derm DSO at $600 observed CAC vs $400 norm → 1.5× → **expensive**.
+LTV: $1,800 × 50% × 3 = $2,700. LTV/CAC: 4.5× (acceptable). Partner:
+"expensive CAC but payback holds — probe whether CAC trend is
+rising further before pricing growth."
+
+### Packet fields
+
+`specialty` (one of 8), optional overrides for `observed_cac_usd`,
+`observed_annual_revenue_per_patient_usd`,
+`observed_contribution_margin_pct`, `observed_tenure_years`.
+
+### Distinct from existing modules
+
+- `physician_specialty_economic_profiler` — revenue / margin
+  per physician.
+- `growth_algorithm_diagnostic` — growth source composition.
+- `pricing_power_diagnostic` — pricing-side power.
+- This module — per-specialty CAC/LTV unit-economics benchmark.
+
+---
+
+## 266. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
