@@ -4095,7 +4095,44 @@ Structure notes:
 
 ---
 
-## 165. Change log
+## 165. Sponsor reputation tracker (`sponsor_reputation_tracker.py`)
+
+**Partner statement:** "Partners keep a mental file on other
+sponsors. When I see them bidding, I want to know if they
+over-pay, if they strip-mine, or if they're a clean
+counterparty."
+
+Five dimensions scored 0-100 per sponsor:
+
+- **pricing_discipline** — do they pay rational multiples?
+- **operating_value_add** — do they improve companies?
+- **exit_track_record** — do they generate clean LP returns?
+- **reputational_profile** — external regard.
+- **cultural_fit_with_management** — do CEOs enjoy working with
+  them?
+
+Assessment is context-specific:
+
+- **competing_bidder** — if pricing discipline < 65 → "expect
+  aggressive bidding, don't anchor"; if ≥ 80 → "if they pass,
+  listen."
+- **co_investor** — value-add ≥ 80 + mgmt fit ≥ 75 → "strong
+  partner"; value-add < 60 → "passive-capital; doesn't add to
+  the operating agenda."
+- **exit_buyer** — reputation ≥ 80 + overall ≥ 75 → "natural
+  exit-buyer candidate; quality counterparty."
+
+Inaugural 11-sponsor book (illustrative, partner-refreshed):
+
+- Mega-funds: KKR, Blackstone, Bain Capital, Carlyle, TPG.
+- Healthcare specialists: New Mountain, Welsh Carson,
+  Silversmith.
+- Mixed: Leonard Green (Prospect Medical cautionary tale),
+  Cerberus (Steward legacy), Apollo.
+
+---
+
+## 166. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4490,3 +4527,8 @@ Structure notes:
   when/how to structure earn-out by driver quality + seller-
   conviction × buyer-skepticism. Full inventory: 162 modules,
   1,646 pe_intelligence unit tests.
+- **2026-04-17** — Added `sponsor_reputation_tracker.py` (§165)
+  — 11-sponsor reputation book with 5 dimensions + context-
+  specific commentary (competing_bidder / co_investor /
+  exit_buyer). Full inventory: 163 modules, 1,657
+  pe_intelligence unit tests.
