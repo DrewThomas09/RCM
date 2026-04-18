@@ -20436,5 +20436,144 @@ class TestPhysicianCompNormalizationCheck(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestDealSourceQualityReader(unittest.TestCase):
+    """Partner scenario: how the deal arrived shapes price and posture."""
+
+    def test_unknown_source_returns_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+        )
+        r = read_deal_source(DealSourceInputs(source="mystery"))
+        self.assertIsNone(r.profile)
+        self.assertIn("not modeled", r.partner_note.lower())
+
+    def test_proprietary_is_priced_below_market(self) -> None:
+        """Partner: 'proprietary off relationship = slight discount.'"""
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+        )
+        r = read_deal_source(DealSourceInputs(
+            source="proprietary_from_relationship",
+            base_market_price_m=800.0,
+        ))
+        self.assertLess(r.profile.typical_price_premium_pct, 0)
+        self.assertLess(r.expected_price_m, 800.0)
+
+    def test_broad_auction_clears_near_top(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+        )
+        r = read_deal_source(DealSourceInputs(
+            source="broad_auction",
+            base_market_price_m=800.0,
+        ))
+        self.assertGreater(r.profile.typical_price_premium_pct, 0)
+        self.assertIn("win on structure",
+                       r.partner_note.lower())
+
+    def test_distressed_triggers_significant_discount(self) -> None:
+        """Partner: 'distressed = 15% discount; R&W essential.'"""
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+        )
+        r = read_deal_source(DealSourceInputs(
+            source="distressed_forced_sale",
+            base_market_price_m=800.0,
+        ))
+        self.assertLess(r.profile.typical_price_premium_pct, -0.10)
+        self.assertIn("r&w", r.partner_note.lower())
+
+    def test_second_look_triggers_prior_buyer_question(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+        )
+        r = read_deal_source(DealSourceInputs(
+            source="second_look_after_broken_process",
+            base_market_price_m=800.0,
+        ))
+        self.assertIn("prior buyers",
+                       r.partner_note.lower())
+
+    def test_continuation_vehicle_fairness_opinion(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+        )
+        r = read_deal_source(DealSourceInputs(
+            source="continuation_vehicle_inside",
+            base_market_price_m=800.0,
+        ))
+        self.assertIn("fairness",
+                       r.profile.diligence_scope_note.lower())
+
+    def test_process_duration_varies_by_source(self) -> None:
+        """Broad auction fast, proprietary long."""
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+        )
+        broad = read_deal_source(DealSourceInputs(
+            source="broad_auction",
+            base_market_price_m=800.0,
+        ))
+        prop = read_deal_source(DealSourceInputs(
+            source="proprietary_from_relationship",
+            base_market_price_m=800.0,
+        ))
+        self.assertLess(broad.profile.process_duration_weeks,
+                         prop.profile.process_duration_weeks)
+
+    def test_list_deal_sources_complete(self) -> None:
+        from rcm_mc.pe_intelligence import list_deal_sources
+        names = list_deal_sources()
+        self.assertIn("proprietary_from_relationship", names)
+        self.assertIn("broad_auction", names)
+        self.assertIn("distressed_forced_sale", names)
+        self.assertEqual(len(names), 8)
+
+    def test_no_base_price_yields_no_expected_price(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+        )
+        r = read_deal_source(DealSourceInputs(
+            source="broad_auction",
+            base_market_price_m=0.0,
+        ))
+        self.assertIsNone(r.expected_price_m)
+
+    def test_markdown_renders_partner_counter(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+            render_deal_source_markdown,
+        )
+        md = render_deal_source_markdown(
+            read_deal_source(DealSourceInputs(
+                source="proprietary_from_relationship",
+                base_market_price_m=800.0,
+            ))
+        )
+        self.assertIn("# Deal source read", md)
+        self.assertIn("Partner counter", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            DealSourceInputs,
+            read_deal_source,
+        )
+        r = read_deal_source(DealSourceInputs(
+            source="broad_auction",
+            base_market_price_m=800.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

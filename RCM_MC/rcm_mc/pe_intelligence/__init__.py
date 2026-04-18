@@ -1150,6 +1150,14 @@ from .physician_comp_normalization_check import (
     check_physician_comp_normalization,
     render_physician_comp_norm_markdown,
 )
+from .deal_source_quality_reader import (
+    DealSourceInputs,
+    DealSourceProfile,
+    DealSourceReport,
+    list_deal_sources,
+    read_deal_source,
+    render_deal_source_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2445,4 +2453,10 @@ __all__ = [
     "PhysicianCompNormReport",
     "check_physician_comp_normalization",
     "render_physician_comp_norm_markdown",
+    "DealSourceInputs",
+    "DealSourceProfile",
+    "DealSourceReport",
+    "list_deal_sources",
+    "read_deal_source",
+    "render_deal_source_markdown",
 ]
