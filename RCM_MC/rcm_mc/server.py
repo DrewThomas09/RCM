@@ -1954,6 +1954,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.direct_lending_page import render_direct_lending
             return self._send_html(render_direct_lending(_qp))
+        if path == "/pmi-playbook":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.pmi_playbook_page import render_pmi_playbook
+            return self._send_html(render_pmi_playbook(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
