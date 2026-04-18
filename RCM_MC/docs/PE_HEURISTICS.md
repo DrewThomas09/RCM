@@ -5573,7 +5573,63 @@ strings). See module for full signal list.
 
 ---
 
-## 192. Change log
+## 192. Bidder landscape reader (`bidder_landscape_reader.py`)
+
+**Partner statement:** "I don't just need to know the
+asset — I need to know who else wants it. A payer-backed
+strategic sets a different clearing price than four
+generalist sponsors."
+
+The process is half-decided by **who else is bidding**.
+Different profiles bring different cost of capital,
+different synergy scope, and different discipline.
+
+### 10 bidder profiles
+
+- **strategic_payer_adjacent** — +15% premium; drop.
+- **strategic_same_sector** — +10% premium; drop unless
+  scarce.
+- **strategic_crossover** — +5% premium; stay (often
+  walks in diligence).
+- **sponsor_healthcare_specialist** — flat; hold.
+- **sponsor_generalist** — +8% premium; stay (backup bid
+  when they re-price).
+- **sponsor_vintage_end** — +10% premium; drop.
+- **sponsor_first_fund** — +7% premium; stay.
+- **family_office** — +7% premium; hold (stable assets).
+- **continuation_vehicle** — 0%; stay (don't chase
+  inside price).
+- **foreign_buyer** — +12% premium; stay (CFIUS tail).
+
+### Clearing price math
+
+Expected clearing = `base_price × (1 + max_premium)` —
+the highest-premium bidder sets the market.
+
+### Partner posture ladder
+
+- Any high-premium (≥ 10%) price-posture bidder → `drop`.
+- Else if any stays → `stay` (be the backup bid).
+- Else → `hold` (win on structure).
+
+### Worked example
+
+Bidders: `strategic_payer_adjacent` (+15%) +
+`sponsor_healthcare_specialist` (0%). Our base $800M.
+
+- Expected clearing: $920M.
+- Posture: drop (payer-adjacent sets market).
+- Partner note: "drop unless we have a structural
+  answer."
+
+### Packet fields that trigger
+
+- `bidders_present` — list of bidder profile names.
+- `our_base_price_m` — our indicative value.
+
+---
+
+## 193. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
