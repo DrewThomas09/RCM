@@ -10903,7 +10903,78 @@ Same deal with 30% labor + 5% supply (both below bands) →
 
 ---
 
-## 268. Change log
+## 268. LP waterfall distribution modeler (`lp_waterfall_distribution_modeler.py`)
+
+**Partner statement.** "Every IC pitches a gross MOIC. LPs see
+net. Between the two sits the 8% preferred, the GP catch-up, and
+the 20% carry split. A 2.5x gross at 18% IRR often lands at 2.05x
+net; that's a big gap when you're pitching LPs on next fund."
+
+### Why it matters
+
+`fund_level_vintage_impact_scorer` covers fund-TVPI impact. This
+module does the **LP waterfall** arithmetic so partners can pitch
+net instead of gross.
+
+### Standard European waterfall (4 steps)
+
+1. **Return of capital** to LPs (all to LP)
+2. **LP preferred return** (8% annual compounded, all to LP)
+3. **GP catch-up** (100% to GP until catch-up = `carry% × (pref +
+   catchup)`)
+4. **80/20 split** on remaining
+
+Plus: **management fees** (1.5% × hold years by default) deducted
+from LP's net.
+
+### Output
+
+- `gross_moic` / `net_lp_moic` / `gross_irr` / `net_lp_irr`
+- `gp_carry_m` — total GP carry dollars
+- `gp_mgmt_fees_m` — total management fees collected
+- Per-step breakdown: amount, to-LP, to-GP
+
+### Partner-note triggers
+
+- Gap > 0.50× MOIC → "meaningful carry + fee drag; LP pitch must
+  lead with net"
+- 0.25-0.50× → "standard carry/fee structure"
+- < 0.25× → "thin gap — short hold or low gross return compresses
+  carry"
+
+### Worked example
+
+$100M committed, $250M proceeds, 5-yr hold, 8% pref, 20% carry,
+1.5% mgmt fee:
+
+- Step 1: $100M to LP (return of capital)
+- Step 2: Pref target = $100M × (1.08^5 − 1) = $47M to LP
+- Step 3: Catch-up = $47M × 0.20/0.80 = $11.75M to GP
+- Step 4: Remaining $91.25M → $73M LP + $18.25M GP
+- Mgmt fees: $100M × 1.5% × 5 = $7.5M
+- LP net: $220M − $7.5M = $212.5M → net MOIC 2.13×
+- Gross MOIC 2.50× → gap 0.37×
+
+Partner: "0.37× gap between gross and net — standard for 80/20
+carry + 1.5% mgmt; pitch on $212.5M net to LP."
+
+### Packet fields
+
+`committed_capital_m`, `total_proceeds_m`, `hold_years`,
+`preferred_return_pct`, `carry_pct`, `gp_catchup_pct`,
+`management_fee_pct_per_year`.
+
+### Distinct from existing modules
+
+- `fund_level_vintage_impact_scorer` — fund-TVPI impact.
+- `lp_pitch` — narrative.
+- `lp_quarterly_update_composer` — quarterly update.
+- This module — standard European waterfall with pref/catchup/carry/
+  mgmt-fee math and LP-net vs. gross gap partner note.
+
+---
+
+## 269. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
