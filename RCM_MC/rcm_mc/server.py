@@ -1794,16 +1794,25 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.quick_import import render_quick_import
             return self._send_html(render_quick_import())
         if path == "/methodology":
+            # Methodology hub — renders the reference-catalogue (formerly /library).
+            # The detailed calculation explainer moved to /methodology/calculations.
+            from .ui.library_page import render_library
+            return self._send_html(render_library())
+        if path == "/methodology/calculations":
             from .ui.methodology_page import render_methodology
             return self._send_html(render_methodology())
         # Corpus Intelligence pages
         if path == "/deals-library":
-            _qs = urllib.parse.parse_qs(parsed.query)
-            sector = _qs.get("sector", [""])[0]
-            regime = _qs.get("regime", [""])[0]
-            q = _qs.get("q", [""])[0]
-            from .ui.data_public.deals_library_page import render_deals_library
-            return self._send_html(render_deals_library(sector_filter=sector, regime_filter=regime, search=q))
+            # Renamed → /library. 301 redirect preserves query string so
+            # ?sector=... still lands on the corpus after the move.
+            target = "/library"
+            if parsed.query:
+                target = f"/library?{parsed.query}"
+            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+            self.send_header("Location", target)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if path == "/cms-sources":
             from .ui.data_public.cms_sources_page import render_cms_sources
             return self._send_html(render_cms_sources())
@@ -2869,7 +2878,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             st = urllib.parse.unquote(path[len("/market-data/state/"):]).strip("/")
             return self._route_market_data_state(st)
         if path == "/library":
-            return self._route_library_page()
+            # /library now surfaces the 655-deal corpus (previously at
+            # /deals-library). The methodology hub moved to /methodology.
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sector = _qs.get("sector", [""])[0]
+            regime = _qs.get("regime", [""])[0]
+            q = _qs.get("q", [""])[0]
+            from .ui.data_public.deals_library_page import render_deals_library
+            return self._send_html(
+                render_deals_library(sector_filter=sector, regime_filter=regime, search=q)
+            )
         # Screener API
         if path == "/api/screener/run":
             return self._send_json({"error": "use POST"}, status=HTTPStatus.METHOD_NOT_ALLOWED)

@@ -325,7 +325,7 @@ def render_methodology() -> str:
         f'<span class="cad-section-code">REF</span></div>'
         f'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
         f'<a href="/verticals" class="cad-btn" style="text-decoration:none;">Healthcare Verticals</a>'
-        f'<a href="/library" class="cad-btn" style="text-decoration:none;">Reference Library</a>'
+        f'<a href="/methodology" class="cad-btn" style="text-decoration:none;">Reference Library</a>'
         f'<a href="/conferences" class="cad-btn" style="text-decoration:none;">Conference Roadmap</a>'
         f'<a href="/data-intelligence" class="cad-btn" style="text-decoration:none;">Data Intelligence</a>'
         f'<a href="/model-validation" class="cad-btn" style="text-decoration:none;">Model Validation</a>'

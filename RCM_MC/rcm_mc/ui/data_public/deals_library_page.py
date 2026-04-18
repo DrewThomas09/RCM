@@ -92,7 +92,7 @@ def _build_rows(deals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             "buyer":      buyer[:30],
             "region":     region[:18],
             "grade":      _data_grade(deal),
-            "detail_href": f"/deals-library/{_html.escape(str(deal.get('source_id', '')))}",
+            "detail_href": f"/library/{_html.escape(str(deal.get('source_id', '')))}",
         })
     return rows
 
@@ -183,7 +183,7 @@ def render_deals_library(
     )
 
     filter_bar = f"""
-<form method="get" action="/deals-library" class="ck-filters" style="margin-bottom:10px;">
+<form method="get" action="/library" class="ck-filters" style="margin-bottom:10px;">
   <span class="ck-filter-label">Sector</span>
   <select name="sector" class="ck-sel" onchange="this.form.submit()">{sec_opts}</select>
   <span class="ck-filter-label">Regime</span>
@@ -201,6 +201,6 @@ def render_deals_library(
     return chartis_shell(
         body,
         title="Deals Library",
-        active_nav="/deals-library",
+        active_nav="/library",
         subtitle=f"{len(rows):,} deals · {len({r['sector'] for r in rows})} sectors · sorted by {sort_by} {sort_dir}",
     )

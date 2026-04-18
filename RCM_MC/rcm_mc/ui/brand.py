@@ -92,7 +92,7 @@ NAV_ITEMS = [
     {"label": "Data Sources", "href": "/data", "icon": "bookmark"},
     {"label": "Settings", "href": "/settings", "icon": "gear"},
     {"separator": True, "label": "CORPUS"},
-    {"label": "Deals Library", "href": "/deals-library", "icon": "grid"},
+    {"label": "Deals Library", "href": "/library", "icon": "grid"},
     {"label": "Comparables", "href": "/comparables", "icon": "grid"},
     {"label": "Risk Matrix", "href": "/risk-matrix", "icon": "chart"},
     {"label": "Underwriting", "href": "/underwriting", "icon": "chart"},

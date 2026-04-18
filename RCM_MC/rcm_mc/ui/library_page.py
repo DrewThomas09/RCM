@@ -1,7 +1,8 @@
-"""SeekingChartis Library — research library and reference materials.
+"""SeekingChartis Methodology Hub — research library and reference materials.
 
 Central hub for PE diligence frameworks, benchmark data, model
-documentation, and methodology references.
+documentation, and methodology references. Served at /methodology.
+The legacy /library route now surfaces the 655-deal corpus.
 """
 from __future__ import annotations
 
@@ -301,7 +302,7 @@ def render_library() -> str:
     body = f'{sections}{api_link}'
 
     return shell_v2(
-        body, "Library",
-        active_nav="/library",
+        body, "Methodology",
+        active_nav="/methodology",
         subtitle="Research library, model documentation & methodology references",
     )

@@ -204,7 +204,7 @@ def _comps_table(comps: List[Dict[str, Any]], show_similarity: bool = True) -> s
         # Detail link
         sid = _html.escape(str(c.get("source_id", "")))
         deal_html = (
-            f'<a href="/deals-library/{sid}" style="color:var(--ck-accent);text-decoration:none;font-size:11px;">'
+            f'<a href="/library/{sid}" style="color:var(--ck-accent);text-decoration:none;font-size:11px;">'
             f'{_html.escape(c.get("deal_name") or "—")[:38]}</a>'
         )
 

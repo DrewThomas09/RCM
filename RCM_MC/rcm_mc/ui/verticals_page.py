@@ -46,7 +46,7 @@ def render_verticals() -> str:
             "metrics": "Case volume, revenue per case, OR utilization, supply cost ratio, "
                        "anesthesia hours, same-day discharge rate, infection rate",
             "models": ["ASC Value Bridge", "Case Mix Optimization", "Payer Renegotiation"],
-            "link": "/library",
+            "link": "/methodology",
         },
         {
             "name": "Behavioral Health",
@@ -61,7 +61,7 @@ def render_verticals() -> str:
             "metrics": "Avg length of stay, readmission rate, bed occupancy, staff-to-patient ratio, "
                        "Medicaid mix, prior auth denial rate, seclusion/restraint incidents",
             "models": ["BH Value Bridge", "LOS Optimization", "Workforce Planning"],
-            "link": "/library",
+            "link": "/methodology",
         },
         {
             "name": "Management Service Organizations (MSO)",
@@ -76,7 +76,7 @@ def render_verticals() -> str:
             "metrics": "Revenue per provider, collections rate, practice count, referral volume, "
                        "coding accuracy, payer contract leverage, centralization savings",
             "models": ["MSO Value Bridge", "Practice Consolidation", "Revenue Cycle Centralization"],
-            "link": "/library",
+            "link": "/methodology",
         },
     ]
 
