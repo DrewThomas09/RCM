@@ -10123,7 +10123,69 @@ eligible_for_op_migration)`.
 
 ---
 
-## 257. Change log
+## 257. Payer watchlist by name (`payer_watchlist_by_name.py`)
+
+**Partner statement.** "Every major commercial payer has a posture
+— some are rate-aggressive, some still negotiate in good faith,
+some are geographically dominant and run providers. Knowing the
+named payer tells you what to expect at the renewal table."
+
+### Why it matters
+
+`payer_renegotiation_timing_model` uses generic posture bands.
+This module names **12 specific payers** the partner has a book on:
+per-payer posture + recent stance + partner read for deal
+exposure.
+
+### 12-payer book
+
+| Payer | Posture | MA exposure | Partner read lens |
+|---|---|---|---|
+| United Healthcare | aggressive | very_high | −3 to −6% at renewal; UNH is market tell |
+| Anthem / Elevance | firm | high | quality-led providers win rate upside |
+| Aetna / CVS | firm | high | watch vertical-integration site-routing |
+| Cigna | firm | medium | generally favorable; Evernorth lens |
+| Humana | firm | very_high | MA-first; risk-contract corridor focus |
+| BCBS (state plan) | firm | medium | state concentration is critical |
+| Centene | aggressive | medium | state Medicaid cycle risk |
+| Molina | aggressive | low | strict prior-auth / denial discipline |
+| Kaiser Permanente | closed | high | >20% non-CA is unusual, investigate |
+| HCSC | firm | medium | TX/IL concentration material |
+| Highmark | firm | medium | PA AHN routing pressure |
+| Independence Blue Cross | neutral | medium | Philly metro cooperative |
+
+### Aggressive-share aggregate
+
+- > 30% of mix in aggressive-posture payers → "expect material
+  rate pressure; bake −2 to −4% rate drift into exit case"
+- 15-30% → "modest but non-zero rate exposure; flag for renewal
+  calendar"
+- < 15% → "rate-cut risk is not the binding constraint"
+
+### Worked example
+
+Deal mix: 30% United + 10% Centene + 20% Cigna + 40% BCBS-TX.
+
+- Aggressive share: 40% (United + Centene) → "material rate
+  pressure; bake −2 to −4% into exit case"
+- Cigna note: "generally favorable"
+- BCBS-TX: verify HCSC concentration risk
+- United partner read: "UNH's posture is the market tell"
+
+### Packet fields
+
+`deal_mix` — list of `PayerInDealMix(payer_name, mix_share_pct)`.
+
+### Distinct from existing modules
+
+- `payer_renegotiation_timing_model` — posture bands (generic).
+- `payer_mix_risk` — concentration only.
+- `medicare_advantage_bridge_trap` — MA narrative.
+- This module — **named payer book** with per-payer partner read.
+
+---
+
+## 258. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
