@@ -9079,7 +9079,81 @@ strategic bid at our number, or re-underwrite exit case to 9-10×."
 
 ---
 
-## 243. Change log
+## 243. Archetype outcome distribution predictor (`archetype_outcome_distribution_predictor.py`)
+
+**Partner statement.** "Before I look at the model's projected MOIC,
+I want to know what archetype this is and what the empirical
+distribution looks like for that shape. Back-office consolidation
+plays median 2.0x with a top quartile of 2.6x. If the deal team's
+model says 3.5x for a back-office play, that's not impossible — but
+it's the top decile, and the burden of proof is on us."
+
+### Why it matters
+
+Place the deal team's projected MOIC in the **empirical
+distribution for the archetype**, not in the abstract. Tells the
+partner whether the underwrite is "median sponsor return," "needs
+top-quartile execution," or "implausible without specific edge."
+
+### Per-archetype distribution
+
+| Archetype | Top dec | Top q | Median | Bot q | Bot dec | Hold | Fail % |
+|---|---|---|---|---|---|---|---|
+| payer_mix_shift | 3.4 | 2.7 | 1.9 | 1.3 | 0.7 | 5.5 | 20% |
+| back_office_consolidation | 3.2 | 2.6 | 2.0 | 1.4 | 0.8 | 5.0 | 15% |
+| outpatient_migration | 3.0 | 2.5 | 1.8 | 1.2 | 0.6 | 5.0 | 25% |
+| cmi_uplift | 3.5 | 2.8 | 1.9 | 1.1 | 0.5 | 5.0 | 30% |
+| rollup_platform | 4.0 | 3.0 | 2.2 | 1.4 | 0.8 | 6.0 | 20% |
+| cost_basis_compression | 2.8 | 2.4 | 1.9 | 1.4 | 1.0 | 4.5 | 10% |
+| capacity_expansion | 2.6 | 2.2 | 1.8 | 1.3 | 0.9 | 6.0 | 10% |
+
+Per-archetype `shape_note` carries the partner's reflexive read
+("narrow median, fat right tail" for payer_mix_shift; "wide
+distribution, RAC risk drags bottom tail" for cmi_uplift).
+
+### Verdict by percentile band
+
+- **top_decile** — "burden of proof is on us; what's the specific
+  edge?"
+- **top_quartile** — "plausible if execution edges align — name them."
+- **above_median** — "standard sponsor underwrite."
+- **below_median** — "deal team's own underwrite is sub-par; either
+  re-price or pass."
+- **bottom_quartile / bottom_decile** — "the archetype itself
+  doesn't justify the equity check. Pass."
+
+Plus IRR-out-of-range and hold-vs-median delta flags layered on.
+
+### Worked example
+
+Back-office consolidation play; deal team projects 3.5x MOIC, 18%
+IRR, 5-year hold.
+
+- Top decile = 3.2x → 3.5x is **top decile**.
+- IRR 18% is in 12-20% typical range → in_range.
+- Hold 5.0 = median → no flag.
+- Partner: "3.5x is top decile for back_office_consolidation —
+  burden of proof is on us. What's the specific execution edge that
+  puts this in the top 10% of this shape?"
+
+### Packet fields
+
+`archetype` (one of the 7 healthcare thesis archetype names),
+`deal_team_projected_moic`, `deal_team_projected_irr`,
+`deal_team_projected_hold_years`.
+
+### Distinct from existing modules
+
+- `vintage_return_curve` — pacing curve, not archetype-conditional.
+- `healthcare_thesis_archetype_recognizer` — names the archetype.
+- `competing_deals_ranker` — ranks deals against each other.
+- This module — empirical MOIC/IRR distribution conditional on the
+  archetype shape; tells partner where the underwrite sits in
+  realistic outcomes.
+
+---
+
+## 244. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
