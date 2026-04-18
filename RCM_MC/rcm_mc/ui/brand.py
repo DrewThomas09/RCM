@@ -182,6 +182,7 @@ NAV_ITEMS = [
     {"label": "Phys Comp Plan", "href": "/phys-comp-plan", "icon": "chart"},
     {"label": "Locum Workforce", "href": "/locum-tracker", "icon": "chart"},
     {"label": "MA Contracts", "href": "/ma-contracts", "icon": "chart"},
+    {"label": "340B Drug Pricing", "href": "/drug-pricing-340b", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

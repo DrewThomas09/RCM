@@ -146,6 +146,7 @@ _CORPUS_NAV = [
     {"label": "Phys Comp Plan",  "href": "/phys-comp-plan",   "icon": "▦"},
     {"label": "Locum Workforce", "href": "/locum-tracker",    "icon": "▣"},
     {"label": "MA Contracts",    "href": "/ma-contracts",     "icon": "▦"},
+    {"label": "340B Drug Pricing","href": "/drug-pricing-340b","icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

@@ -1844,6 +1844,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.ma_contracts_page import render_ma_contracts
             return self._send_html(render_ma_contracts(_qp))
+        if path == "/drug-pricing-340b":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.drug_pricing_340b_page import render_drug_pricing_340b
+            return self._send_html(render_drug_pricing_340b(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
