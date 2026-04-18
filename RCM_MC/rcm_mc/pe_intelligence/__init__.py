@@ -1028,6 +1028,14 @@ from .hold_period_shock_schedule import (
     build_hold_shock_schedule,
     render_hold_shock_schedule_markdown,
 )
+from .qofe_prescreen import (
+    AddBackAssessment,
+    QofEPrescreenInputs,
+    QofEPrescreenReport,
+    SellerAddBack,
+    prescreen_qofe,
+    render_qofe_prescreen_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2233,4 +2241,10 @@ __all__ = [
     "ShockYear",
     "build_hold_shock_schedule",
     "render_hold_shock_schedule_markdown",
+    "AddBackAssessment",
+    "QofEPrescreenInputs",
+    "QofEPrescreenReport",
+    "SellerAddBack",
+    "prescreen_qofe",
+    "render_qofe_prescreen_markdown",
 ]

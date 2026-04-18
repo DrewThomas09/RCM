@@ -17968,5 +17968,187 @@ class TestHoldPeriodShockSchedule(unittest.TestCase):
         json.dumps(s.to_dict())
 
 
+class TestQofEPrescreen(unittest.TestCase):
+    """Partner scenario: which add-backs will survive QofE?"""
+
+    def test_empty_addbacks_leaves_ebitda_untouched(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=75.0,
+            seller_add_backs=[],
+        ))
+        self.assertEqual(r.qofe_adjusted_ebitda_m, 75.0)
+        self.assertEqual(r.total_expected_haircut_m, 0.0)
+
+    def test_owner_comp_mostly_survives(self) -> None:
+        """Partner: 'normalize owner comp — standard, survives.'"""
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=75.0,
+            seller_add_backs=[SellerAddBack(
+                "owner_comp_excess", 5.0
+            )],
+        ))
+        self.assertAlmostEqual(r.total_expected_surviving_m, 4.25,
+                                places=2)
+        self.assertAlmostEqual(r.total_expected_haircut_m, 0.75,
+                                places=2)
+
+    def test_deferred_maintenance_is_walk_signal(self) -> None:
+        """Partner: 'deferred maintenance as opex — walk signal.'"""
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=75.0,
+            seller_add_backs=[SellerAddBack(
+                "deferred_maintenance_capex_as_opex", 3.0
+            )],
+        ))
+        self.assertIn("walk", r.partner_note.lower())
+
+    def test_covid_windfall_mostly_rejected(self) -> None:
+        """Partner: 'covid wins don't survive QofE.'"""
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=75.0,
+            seller_add_backs=[SellerAddBack(
+                "covid_windfall", 10.0
+            )],
+        ))
+        # 20% survival → $2M surviving, $8M haircut.
+        self.assertAlmostEqual(r.total_expected_surviving_m, 2.0,
+                                places=2)
+        self.assertAlmostEqual(r.total_expected_haircut_m, 8.0,
+                                places=2)
+
+    def test_large_haircut_triggers_repricing_note(self) -> None:
+        """Partner: '20%+ haircut → re-price or pass.'"""
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=75.0,
+            seller_add_backs=[
+                SellerAddBack("covid_windfall", 20.0),
+                SellerAddBack("pro_forma_acquisition", 10.0),
+            ],
+        ))
+        self.assertGreater(r.total_expected_haircut_m, 15.0)
+        self.assertIn("re-price", r.partner_note.lower())
+
+    def test_unknown_category_defaults_to_other(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=75.0,
+            seller_add_backs=[SellerAddBack(
+                "something_weird", 4.0
+            )],
+        ))
+        self.assertEqual(r.adjustments[0].category, "other")
+        # 50% survival default.
+        self.assertAlmostEqual(r.adjustments[0].expected_surviving_m,
+                                2.0, places=2)
+
+    def test_qofe_adjusted_ebitda_reflects_haircut(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=100.0,
+            seller_add_backs=[
+                SellerAddBack("covid_windfall", 10.0),
+            ],
+        ))
+        self.assertAlmostEqual(r.qofe_adjusted_ebitda_m, 92.0,
+                                places=2)
+
+    def test_management_fee_elim_survives(self) -> None:
+        """Partner: 'sponsor mgmt fee elim — 90% survives.'"""
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=50.0,
+            seller_add_backs=[SellerAddBack(
+                "management_fee_elim", 2.0
+            )],
+        ))
+        self.assertAlmostEqual(r.total_expected_surviving_m, 1.80,
+                                places=2)
+
+    def test_partner_commentary_present_per_category(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=75.0,
+            seller_add_backs=[
+                SellerAddBack("owner_comp_excess", 3.0),
+                SellerAddBack("covid_windfall", 5.0),
+            ],
+        ))
+        self.assertEqual(len(r.adjustments), 2)
+        for adj in r.adjustments:
+            self.assertTrue(len(adj.partner_commentary) > 10)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+            render_qofe_prescreen_markdown,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=75.0,
+            seller_add_backs=[SellerAddBack(
+                "covid_windfall", 10.0
+            )],
+        ))
+        md = render_qofe_prescreen_markdown(r)
+        self.assertIn("# QofE pre-screen", md)
+        self.assertIn("QofE-adjusted", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            QofEPrescreenInputs,
+            SellerAddBack,
+            prescreen_qofe,
+        )
+        r = prescreen_qofe(QofEPrescreenInputs(
+            stated_ebitda_m=75.0,
+            seller_add_backs=[SellerAddBack(
+                "covid_windfall", 10.0
+            )],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
