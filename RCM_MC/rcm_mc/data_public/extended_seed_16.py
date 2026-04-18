@@ -87,6 +87,16 @@ EXTENDED_SEED_DEALS_16: List[Dict[str, Any]] = [
         "source": "seed",
         "notes": "KKR $9.9B take-private destroyed by surprise billing legislation (NSA) and COVID; filed Ch.11 May 2023",
     },
+    # Phase 6 Bug #4 fix: this row describes the same event as
+    # seed_162 (ATI Physical Therapy / Advent SPAC 2021). Two rows
+    # for one realization double-counted Advent's loss in the
+    # sponsor-track-record aggregator (median IRR fell to -38%).
+    # Kept as an alternate-angle entry of the same transaction but
+    # cleared realized_moic / realized_irr / hold_years so the
+    # numbers don't aggregate. seed_162 is the canonical ATI-SPAC
+    # realization row. Other metadata (ev_mm / sector / payer_mix)
+    # preserved because it still informs deal-search and market-
+    # mix queries.
     {
         "source_id": "seed_340",
         "deal_name": "ATI Physical Therapy / Advent SPAC",
@@ -99,14 +109,18 @@ EXTENDED_SEED_DEALS_16: List[Dict[str, Any]] = [
         "ev_ebitda": 22.0,
         "ebitda_mm": 100.0,
         "revenue_mm": 730.0,
-        "realized_moic": 0.2,
-        "realized_irr": -0.45,
-        "hold_years": 3.0,
+        "realized_moic": None,
+        "realized_irr": None,
+        "hold_years": None,
         "payer_mix": {"medicare": 0.25, "medicaid": 0.10, "commercial": 0.58, "self_pay": 0.07},
         "geography": "National",
         "hospital_beds": None,
         "source": "seed",
-        "notes": "PT SPAC disaster; labor inflation + coding changes crushed margins; stock fell 95% post-merger",
+        "notes": "Alt-view of seed_162 (ATI SPAC 2021). Realized "
+                 "MOIC/IRR cleared to prevent double-counting in the "
+                 "sponsor league table. PT SPAC disaster; labor "
+                 "inflation + coding changes crushed margins; stock "
+                 "fell 95% post-merger.",
     },
     {
         "source_id": "seed_341",
