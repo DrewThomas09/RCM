@@ -8985,7 +8985,101 @@ size, single physician producer concentration, etc.).
 
 ---
 
-## 242. Change log
+## 242. Exit-buyer view mirror (`exit_buyer_view_mirror.py`)
+
+**Partner statement.** "Best discipline I learned: when we're
+underwriting at entry, write the exit buyer's IC memo. Year 5,
+deal-team-of-the-buyer is reading our sale process. What's their
+thesis on us? What concerns do they raise? What's their counter? If
+I can't write the buyer's bull case in two sentences and bear case
+in two sentences, I don't actually have a clear exit. The exit isn't
+a multiple — it's another IC voting."
+
+### Why it matters
+
+`buyer_type_fit_analyzer` scores 8 buyer profiles for fit.
+`exit_planning` is a readiness checklist. `exit_alternative_comparator`
+compares 5 paths. This module is the **first-person mirror**: imagine
+you ARE the exit buyer's deal team and write THEIR IC memo on this
+asset.
+
+### Output
+
+- **buyer_bull_case_lines** — 1-4 partner-voice bullets
+- **buyer_bear_case_lines** — 1-6 partner-voice bullets
+- **buyer_likely_entry_multiple** — coarse multiple model
+- **buyer_diligence_focus_list** — what they'll dig into hardest
+- **multiple_gap** — our exit multiple − buyer's likely entry
+- **multiple_gap_dollar_m** — × asset_ebitda_at_exit
+
+### Buyer profile base multiples
+
+| Profile | Base | Notes |
+|---|---|---|
+| `sponsor` | 11.0 | Default median |
+| `strategic` | 13.0 | Synergy premium |
+| `continuation` | 11.5 | Same-sponsor recap |
+| `ipo` | 14.0 | Public-comp premium |
+
+Adjustments (each ±0.5 to ±1.0×):
+- EBITDA quality (QofE survival): high (≥85%) → +0.5; low (<65%) → −1.0
+- Total growth (organic + inorganic): ≥12% → +1.0; <5% → −0.5
+- Commercial mix: <35% → −1.0; ≥55% → +0.5
+- Top-5 concentration > 45% → −1.0
+- Leverage at exit > 5.5× → −0.5
+
+### Bull / bear synthesis
+
+**Bull triggers:** total growth ≥10%, commercial ≥50%, CMI ≥1.05×
+peer, EBITDA quality ≥85%.
+
+**Bear triggers:** top-5 concentration > 40%, Medicare > 40%,
+leverage > 5.0×, OBBBA not in run-rate, site-neutral arb > $10M
+remaining, EBITDA quality < 70%, growth < 6%.
+
+### Partner-note tiers
+
+- Multiple gap ≥ 1.5× → "either named bid at our number, or
+  re-underwrite exit case down."
+- 0.5× to 1.5× → "modest gap; defensible if platform attributes
+  strong; price sensitivity at exit."
+- ±0.5× → "exit aligned; clean."
+- Buyer mult > our exit → "under-monetizing; platform is stronger
+  than our exit case."
+
+### Worked example
+
+$60M EBITDA at exit, our assumption 14× = $840M EV. Inputs:
+EBITDA quality 0.50 (low), top-5 concentration 50%, commercial
+mix 30%.
+
+Buyer multiple: 11.0 base − 1.0 (low quality) − 1.0 (concentration)
+− 1.0 (low commercial) = 8.0×. Buyer EV = $480M.
+
+Multiple gap: 14 − 8 = 6×; gap = $360M. Partner: "either named
+strategic bid at our number, or re-underwrite exit case to 9-10×."
+
+### Packet fields
+
+`asset_npr_at_exit_m`, `asset_ebitda_at_exit_m`, `growth_rate_organic_pct`,
+`growth_rate_inorganic_pct`, `payer_mix_commercial_pct_at_exit`,
+`payer_mix_medicare_pct_at_exit`, `cmi_vs_peer`,
+`ebitda_quality_score`, `customer_concentration_top_5_pct`,
+`leverage_at_exit`, `obbba_already_in_run_rate`,
+`site_neutral_remaining_arbitrage_m`, `our_assumed_exit_multiple`,
+`our_assumed_irr`, `buyer_profile`.
+
+### Distinct from existing modules
+
+- `buyer_type_fit_analyzer` — scores 8 buyer profiles for fit.
+- `exit_planning` — readiness checklist.
+- `exit_alternative_comparator` — 5-path comparison.
+- This module — first-person buyer mirror with bull/bear/multiple
+  gap, drawn at the asset profile level.
+
+---
+
+## 243. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
