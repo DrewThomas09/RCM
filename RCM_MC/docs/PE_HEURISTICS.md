@@ -11174,7 +11174,76 @@ through whether we revise findings or walk."
 
 ---
 
-## 272. Change log
+## 272. Subsector EBITDA margin benchmark (`subsector_ebitda_margin_benchmark.py`)
+
+**Partner statement.** "Every subsector has a margin band.
+Hospital at 15% is fine; ASC at 15% is soft; dermatology at 15% is
+weak. When the deal's margin is outside the band, either the
+business is structurally different or the expense discipline is
+broken. Tell me which one, before I price it."
+
+### Why it matters
+
+`cost_line_decomposer_healthcare` covers 7-line cost decomposition.
+This module benchmarks the **headline EBITDA margin** against
+15 healthcare subsectors with partner-voice interpretation of
+above/below/in-band.
+
+### 15 subsector margin bands
+
+| Subsector | Low | High |
+|---|---|---|
+| hospital_acute | 8% | 14% |
+| ambulatory_surgery_center | 28% | 38% |
+| physician_practice_primary_care | 8% | 14% |
+| physician_practice_specialty | 15% | 25% |
+| dental_dso | 18% | 26% |
+| behavioral_outpatient | 12% | 20% |
+| behavioral_residential | 15% | 25% |
+| home_health | 10% | 16% |
+| hospice | 14% | 22% |
+| skilled_nursing_facility | 8% | 14% |
+| dialysis | 16% | 22% |
+| post_acute_ltach_irf | 10% | 17% |
+| dermatology_dso | 22% | 32% |
+| ophthalmology_platform | 25% | 35% |
+| urgent_care | 12% | 20% |
+
+### Verdict
+
+- above_band → "genuine operating edge OR one-time items / unusual
+  mix; QofE will surface it"
+- below_band → "business structurally different (payer mix, site
+  profile) OR expense discipline broken; latter = operating-lift
+  thesis"
+- in_band → "standard shape; growth and exit multiple are the levers"
+
+### Worked example
+
+ASC at 20% margin vs. 28-38% band → **below_band**: "either payer
+mix is Medicare-heavy (structural) or SG&A bloated (opportunity).
+Diligence the cost lines to find out which."
+
+Dermatology DSO at 38% vs. 22-32% band → **above_band**: "too
+high; probably one-time items or pathology attached, and QofE will
+surface it."
+
+### Packet fields
+
+`subsector` (one of 15), `observed_ebitda_margin_pct`.
+
+### Distinct from existing modules
+
+- `cost_line_decomposer_healthcare` — 7-line cost breakdown.
+- `margin_of_safety` — stress buffer.
+- `physician_specialty_economic_profiler` — per-specialty economic
+  shape including margin at physician level.
+- This module — headline EBITDA margin vs. subsector peer band with
+  above/below/in-band partner-voice verdict.
+
+---
+
+## 273. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
