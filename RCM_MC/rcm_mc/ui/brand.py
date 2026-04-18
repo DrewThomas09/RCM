@@ -171,6 +171,7 @@ NAV_ITEMS = [
     {"label": "Earnout", "href": "/earnout", "icon": "chart"},
     {"label": "Clinical Outcomes", "href": "/clinical-outcomes", "icon": "chart"},
     {"label": "Competitive Intel", "href": "/competitive-intel", "icon": "chart"},
+    {"label": "Patient Experience", "href": "/patient-experience", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
