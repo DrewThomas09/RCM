@@ -10833,7 +10833,77 @@ hold — verify savings assumption."
 
 ---
 
-## 267. Change log
+## 267. Healthcare cost-line decomposer (`cost_line_decomposer_healthcare.py`)
+
+**Partner statement.** "Show me costs broken into 7 lines — labor,
+supply, professional fees, rent, malpractice, utilities, admin.
+Each line has a peer band by subsector. If labor is 52% of NPR on
+a hospital, that's normal; on an ASC that's a problem. The
+decomposition tells me where the lever is before I underwrite the
+thesis."
+
+### Why it matters
+
+`labor_cost_analytics` is labor-only. This module is the **full
+7-line decomposition** with subsector-specific peer bands so the
+partner can see where the cost structure deviates and what lever
+is implied.
+
+### 7 cost lines × 4 subsectors
+
+| Line | Hospital | ASC | Physician practice | Post-acute |
+|---|---|---|---|---|
+| labor | 45-55% | 30-40% | 45-55% | 55-70% |
+| supply | 10-18% | 18-26% | 5-10% | 5-10% |
+| professional_fees | 3-7% | 2-5% | 2-4% | 2-4% |
+| rent_occupancy | 2-5% | 4-8% | 5-10% | 5-10% |
+| malpractice | 2-4% | 1-3% | 2-5% | 1.5-3% |
+| utilities | 1.5-2.5% | 1-2% | 1-2% | 2-3.5% |
+| admin_overhead | 5-9% | 4-7% | 6-10% | 5-8% |
+
+### Lever hints per line
+
+- **labor** — staffing model, productivity, contract labor mix
+- **supply** — GPO affiliation, SKU rationalization, physician pref cards
+- **professional_fees** — outsourced services renegotiation
+- **rent_occupancy** — lease renegotiation, related-party audit
+- **malpractice** — broker shop (claims history drives underwriting)
+- **utilities** — energy efficiency (small $ generally)
+- **admin_overhead** — shared services, role redundancy, consultant spend
+
+### Verdict
+
+- Above-band sum > 2% of NPR → material lever opportunity; build
+  100-day plan around top-2 lines
+- Below-band sum > 2% → under-investment concern; cost returning
+  in year 2-3 as mandatory spend
+- Otherwise → "no material lever"
+
+### Worked example
+
+$300M NPR hospital with 62% labor (vs. 45-55% band):
+- Above-band: $300M × (62%−55%) = $21M opportunity on labor
+- Partner: "biggest lever: labor $21M; build 100-day plan around
+  staffing model + contract labor mix."
+
+Same deal with 30% labor + 5% supply (both below bands) →
+"under-investment; cost coming back in year 2-3."
+
+### Packet fields
+
+`subsector` (hospital / asc / physician_practice / post_acute),
+`npr_m`, `observed_pct_by_line` (dict).
+
+### Distinct from existing modules
+
+- `labor_cost_analytics` — labor deep dive only.
+- `labor_shortage_cascade` — labor supply risk.
+- This module — 7-line full cost decomposition with subsector-
+  specific peer bands and above/below opportunity aggregation.
+
+---
+
+## 268. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
