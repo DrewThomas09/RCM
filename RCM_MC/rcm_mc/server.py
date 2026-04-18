@@ -3721,6 +3721,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/analysis/"):
             deal_id = urllib.parse.unquote(path[len("/analysis/"):]).strip("/")
             return self._route_analysis_workbench(deal_id)
+        # Per-deal PE intelligence surfaces. Handled via a shared packet load
+        # so /deal/<id>/partner-review and /deal/<id>/red-flags exercise the
+        # same brain invocation.
+        if path.startswith("/deal/") and path.endswith("/partner-review"):
+            mid = path[len("/deal/"):-len("/partner-review")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_partner_review(deal_id)
+        if path.startswith("/deal/") and path.endswith("/red-flags"):
+            mid = path[len("/deal/"):-len("/red-flags")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_red_flags(deal_id)
         if path == "/exports/lp-update":
             return self._route_exports_lp_update()
         if path.startswith("/outputs/"):
@@ -6899,6 +6910,85 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.deal_quick_view import render_deal_quick_view
             return self._send_html(render_deal_quick_view(
                 deal_id, profile, error_msg=str(exc)))
+
+    def _build_partner_review_context(self, deal_id: str) -> Tuple[Any, Optional[str], Dict[str, Any]]:
+        """Shared packet-load + partner_review() wrapper.
+
+        Returns ``(review_or_None, error_or_None, meta)`` where ``meta`` carries
+        ``deal_name`` and ``missing_fields`` for the error path. Used by both
+        ``/deal/<id>/partner-review`` and ``/deal/<id>/red-flags`` so the brain
+        runs once per packet, not twice. partner_review() is defensive — it
+        only raises on structural bugs, not missing fields — but we still
+        wrap it so a bad import doesn't crash the route.
+        """
+        meta: Dict[str, Any] = {"deal_name": "", "missing_fields": []}
+        profile = self._load_deal_profile(deal_id)
+        if not profile:
+            return None, "Deal not found.", meta
+        meta["deal_name"] = str(profile.get("name", "") or "")
+        try:
+            from .analysis.analysis_store import get_or_build_packet
+            from .pe_intelligence import partner_review
+        except Exception as exc:  # noqa: BLE001
+            return None, f"pe_intelligence import failed: {exc!r}", meta
+        try:
+            packet = get_or_build_packet(self._require_store(), deal_id, skip_simulation=True)
+        except Exception as exc:  # noqa: BLE001
+            meta["missing_fields"] = ["analysis packet (run a simulation first)"]
+            return None, f"packet build failed: {exc!r}", meta
+        try:
+            review = partner_review(packet)
+        except Exception as exc:  # noqa: BLE001
+            return None, f"partner_review raised: {exc!r}", meta
+        return review, None, meta
+
+    def _require_store(self) -> Any:
+        """Fetch a PortfolioStore handle for this request."""
+        return PortfolioStore(self.config.db_path)
+
+    def _route_partner_review(self, deal_id: str) -> None:
+        """GET /deal/<deal_id>/partner-review — full PE brain verdict."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.partner_review_page import render_partner_review
+        user = getattr(self, "_current_user", None)
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_partner_review(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=user,
+            ))
+        return self._send_html(render_partner_review(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            current_user=user,
+        ))
+
+    def _route_red_flags(self, deal_id: str) -> None:
+        """GET /deal/<deal_id>/red-flags — focused red-flag surface."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.red_flags_page import render_red_flags
+        user = getattr(self, "_current_user", None)
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_red_flags(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=user,
+            ))
+        return self._send_html(render_red_flags(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            current_user=user,
+        ))
 
     def _build_mc_context(self, deal_id: str, payload: Dict[str, Any]) -> Any:
         """Assemble the bridge + simulator for a MC endpoint.

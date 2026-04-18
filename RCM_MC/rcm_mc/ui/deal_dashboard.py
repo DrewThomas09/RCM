@@ -309,6 +309,16 @@ def render_deal_dashboard(
             "Per-metric trend detection & short-horizon forecast",
             accent=PALETTE["positive"],
         ),
+        _model_tile(
+            "PRV", f"/deal/{did}/partner-review", "Partner Review",
+            "PE brain verdict: recommendation, bull/bear, investability",
+            accent=PALETTE["brand_accent"],
+        ),
+        _model_tile(
+            "RED", f"/deal/{did}/red-flags", "Red Flags",
+            "Critical/high heuristic hits + reasonableness violations",
+            accent=PALETTE["negative"],
+        ),
     ]
 
     model_grid = (
