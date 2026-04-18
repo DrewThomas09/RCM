@@ -1641,6 +1641,13 @@ from .continuation_vehicle_readiness_scorer import (
     render_cv_readiness_markdown,
     score_cv_readiness,
 )
+from .de_novo_site_ramp_economics import (
+    DeNovoRampInputs,
+    DeNovoRampReport,
+    MonthlyDeNovo,
+    project_de_novo_ramp,
+    render_de_novo_ramp_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3293,4 +3300,9 @@ __all__ = [
     "CVReadinessReport",
     "render_cv_readiness_markdown",
     "score_cv_readiness",
+    "DeNovoRampInputs",
+    "DeNovoRampReport",
+    "MonthlyDeNovo",
+    "project_de_novo_ramp",
+    "render_de_novo_ramp_markdown",
 ]

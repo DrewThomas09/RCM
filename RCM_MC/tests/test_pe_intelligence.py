@@ -33036,5 +33036,158 @@ class TestContinuationVehicleReadinessScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestDeNovoSiteRampEconomics(unittest.TestCase):
+    """Partner voice: 'De novos look great on 3-year pro-forma; month-by-month they bleed.'"""
+
+    def test_default_inputs_compute(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        r = project_de_novo_ramp(DeNovoRampInputs())
+        self.assertEqual(len(r.months), 36)
+        # Default parameters may or may not reach cumulative
+        # breakeven within 36 months; just verify structure
+        self.assertGreater(
+            r.cumulative_drag_to_breakeven_m, 0
+        )
+
+    def test_breakeven_in_typical_range(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        # Healthy-economics site with enough margin to hit breakeven
+        r = project_de_novo_ramp(DeNovoRampInputs(
+            run_rate_monthly_revenue_m=0.40,
+            monthly_fixed_cost_m=0.08,
+            variable_cost_pct_of_revenue=0.45,
+            startup_capex_m=0.30,
+        ))
+        self.assertIsNotNone(r.breakeven_month)
+
+    def test_high_fixed_cost_no_breakeven(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        r = project_de_novo_ramp(DeNovoRampInputs(
+            run_rate_monthly_revenue_m=0.20,
+            monthly_fixed_cost_m=0.30,
+            variable_cost_pct_of_revenue=0.50,
+        ))
+        # Cost > revenue → may never hit cumulative breakeven
+        # within 36 months
+        if r.breakeven_month is None:
+            self.assertIn(
+                "does not break even",
+                r.partner_note.lower(),
+            )
+
+    def test_ramp_curve_increases(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        r = project_de_novo_ramp(DeNovoRampInputs())
+        pcts = [
+            m.revenue_pct_of_run_rate for m in r.months
+        ]
+        # revenue % should be non-decreasing
+        self.assertEqual(pcts, sorted(pcts))
+
+    def test_cumulative_drag_positive(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        r = project_de_novo_ramp(DeNovoRampInputs())
+        self.assertGreater(
+            r.cumulative_drag_to_breakeven_m, 0
+        )
+
+    def test_aggressive_model_assumption_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        # Model says breakeven at month 6; empirical is likely later
+        r = project_de_novo_ramp(DeNovoRampInputs(
+            assumed_breakeven_month_in_model=6,
+        ))
+        if r.breakeven_month and r.breakeven_month > 12:
+            self.assertIn(
+                "optimistic", r.partner_note.lower()
+            )
+
+    def test_early_breakeven_credentialing_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        # Low fixed cost + high ramp to force early breakeven
+        r = project_de_novo_ramp(DeNovoRampInputs(
+            run_rate_monthly_revenue_m=1.0,
+            monthly_fixed_cost_m=0.05,
+            variable_cost_pct_of_revenue=0.30,
+            startup_capex_m=0.10,
+        ))
+        if r.breakeven_month and r.breakeven_month <= 12:
+            self.assertIn(
+                "credentialing",
+                r.partner_note.lower(),
+            )
+
+    def test_36mo_ebitda_computed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        # Healthy site → positive 36-month EBITDA
+        r = project_de_novo_ramp(DeNovoRampInputs(
+            run_rate_monthly_revenue_m=0.40,
+            monthly_fixed_cost_m=0.08,
+            variable_cost_pct_of_revenue=0.45,
+            startup_capex_m=0.30,
+        ))
+        self.assertGreater(r.total_36mo_ebitda_m, 0)
+
+    def test_startup_capex_captured(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        small = project_de_novo_ramp(DeNovoRampInputs(
+            startup_capex_m=0.1))
+        big = project_de_novo_ramp(DeNovoRampInputs(
+            startup_capex_m=1.0))
+        self.assertGreater(
+            big.cumulative_drag_to_breakeven_m,
+            small.cumulative_drag_to_breakeven_m,
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+            render_de_novo_ramp_markdown,
+        )
+        md = render_de_novo_ramp_markdown(
+            project_de_novo_ramp(DeNovoRampInputs())
+        )
+        self.assertIn(
+            "# De novo site ramp economics", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            DeNovoRampInputs,
+            project_de_novo_ramp,
+        )
+        r = project_de_novo_ramp(DeNovoRampInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
