@@ -128,6 +128,7 @@ _CORPUS_NAV = [
     {"label": "Cap Structure",  "href": "/cap-structure",    "icon": "▣"},
     {"label": "Real Estate",    "href": "/real-estate",      "icon": "▦"},
     {"label": "Workforce Plan", "href": "/workforce-planning","icon": "▣"},
+    {"label": "Tech Stack",     "href": "/tech-stack",       "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
