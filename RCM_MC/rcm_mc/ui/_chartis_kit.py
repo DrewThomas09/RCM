@@ -161,6 +161,7 @@ _CORPUS_NAV = [
     {"label": "Deal Origination","href": "/deal-origination",   "icon": "▣"},
     {"label": "Trial Site Econ", "href": "/trial-site-econ",    "icon": "▦"},
     {"label": "HCIT Platform",   "href": "/hcit-platform",      "icon": "▣"},
+    {"label": "Biosimilars",     "href": "/biosimilars",        "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

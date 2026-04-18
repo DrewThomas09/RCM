@@ -1919,6 +1919,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.hcit_platform_page import render_hcit_platform
             return self._send_html(render_hcit_platform(_qp))
+        if path == "/biosimilars":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.biosimilars_opp_page import render_biosimilars
+            return self._send_html(render_biosimilars(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
