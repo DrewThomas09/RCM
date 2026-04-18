@@ -965,6 +965,13 @@ from .management_forecast_reliability import (
     analyze_forecasts,
     render_reliability_markdown,
 )
+from .working_capital_peg_negotiator import (
+    NWCObservation,
+    WCPegContext,
+    WCPegReport,
+    negotiate_wc_peg,
+    render_wc_peg_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2125,4 +2132,9 @@ __all__ = [
     "YearVariance",
     "analyze_forecasts",
     "render_reliability_markdown",
+    "NWCObservation",
+    "WCPegContext",
+    "WCPegReport",
+    "negotiate_wc_peg",
+    "render_wc_peg_markdown",
 ]

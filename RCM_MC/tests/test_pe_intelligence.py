@@ -16673,5 +16673,106 @@ class TestManagementForecastReliability(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Working capital peg negotiator ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    NWCObservation,
+    WCPegContext,
+    WCPegReport,
+    negotiate_wc_peg,
+    render_wc_peg_markdown,
+)
+
+
+class TestWorkingCapitalPegNegotiator(unittest.TestCase):
+
+    def _history(self, values: List[float]) -> List[NWCObservation]:
+        return [
+            NWCObservation(month=f"2025-{i+1:02d}", nwc_m=v)
+            for i, v in enumerate(values)
+        ]
+
+    def test_default_methodology_is_trailing_12m(self) -> None:
+        r = negotiate_wc_peg(WCPegContext(
+            history=self._history([20.0] * 12),
+            seller_proposed_peg_m=19.0,
+        ))
+        self.assertEqual(r.methodology, "trailing_12m_avg")
+
+    def test_seasonal_uses_quarter_median(self) -> None:
+        r = negotiate_wc_peg(WCPegContext(
+            history=self._history([10, 12, 14, 20, 22, 25,
+                                     15, 17, 19, 11, 13, 15]),
+            seller_proposed_peg_m=15.0,
+            is_seasonal_business=True,
+        ))
+        self.assertEqual(r.methodology, "median_of_quarterly")
+
+    def test_one_time_items_use_normalized(self) -> None:
+        r = negotiate_wc_peg(WCPegContext(
+            history=self._history([20.0] * 12),
+            seller_proposed_peg_m=19.0,
+            has_material_one_time=True,
+            one_time_items_m=12.0,
+        ))
+        self.assertEqual(r.methodology, "normalized_trailing_12m")
+        # Normalized pulls peg below raw average.
+        self.assertLess(r.normalized_trailing_12m,
+                         r.trailing_12m_avg)
+
+    def test_seller_underweight_flag(self) -> None:
+        r = negotiate_wc_peg(WCPegContext(
+            history=self._history([25.0] * 12),
+            seller_proposed_peg_m=20.0,
+        ))
+        # Seller's 20 vs partner's ~25.5 → big gap.
+        self.assertIn("price-paid money",
+                       r.partner_note.lower())
+
+    def test_seller_cushion_flagged(self) -> None:
+        r = negotiate_wc_peg(WCPegContext(
+            history=self._history([20.0] * 12),
+            seller_proposed_peg_m=24.0,
+        ))
+        self.assertIn("unusual", r.partner_note.lower())
+
+    def test_empty_history(self) -> None:
+        r = negotiate_wc_peg(WCPegContext(
+            seller_proposed_peg_m=10.0,
+        ))
+        self.assertIn("no nwc history", r.partner_note.lower())
+
+    def test_negotiation_lever_magnitude(self) -> None:
+        r = negotiate_wc_peg(WCPegContext(
+            history=self._history([30.0] * 12),
+            seller_proposed_peg_m=20.0,
+        ))
+        self.assertGreater(r.negotiation_lever_m, 5.0)
+
+    def test_partner_peg_includes_closing_buffer(self) -> None:
+        r = negotiate_wc_peg(WCPegContext(
+            history=self._history([20.0] * 12),
+            seller_proposed_peg_m=20.0,
+        ))
+        # Partner peg should be ~2% above raw average.
+        self.assertGreater(r.partner_peg_m, 20.0)
+        self.assertLess(r.partner_peg_m, 20.8)
+
+    def test_markdown_renders(self) -> None:
+        md = render_wc_peg_markdown(negotiate_wc_peg(WCPegContext(
+            history=self._history([20.0] * 12),
+            seller_proposed_peg_m=19.0,
+        )))
+        self.assertIn("# Working capital peg negotiator", md)
+
+    def test_json(self) -> None:
+        import json
+        r = negotiate_wc_peg(WCPegContext(
+            history=self._history([20.0] * 12),
+            seller_proposed_peg_m=19.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
