@@ -102,10 +102,17 @@ EXTENDED_SEED_DEALS_29: List[Dict[str, Any]] = [
         "source_url": "https://www.concentra.com",
     },
     # 600 — Shields Health Solutions / Summit Partners (2019 → 2021 Walgreens JV)
+    # Phase 6 Bug #2 fix: buyer was "Walgreens / strategic partial
+    # acquisition" which caused the sponsor-track-record aggregator
+    # to credit Summit Partners' 5.0x / 124% IRR exit to Walgreens.
+    # For sponsor-ledger purposes the realizing sponsor is Summit
+    # Partners (the seller); Walgreens is a strategic counterparty
+    # and does not realize a PE return on this row. Preserving the
+    # Walgreens context in the notes field.
     {
         "source_id": "seed_600",
         "deal_name": "Shields Health Solutions / Summit Partners exit",
-        "buyer": "Walgreens / strategic partial acquisition",
+        "buyer": "Summit Partners",
         "seller": "Summit Partners",
         "sector": "Specialty Pharmacy",
         "entry_year": 2019,
@@ -121,7 +128,7 @@ EXTENDED_SEED_DEALS_29: List[Dict[str, Any]] = [
         "region": "National",
         "hospital_size": "mid",
         "leverage_pct": 0.45,
-        "notes": "Hospital-based specialty pharmacy integrator; Walgreens paid significant premium for integrated model; strong 2-year hold",
+        "notes": "Hospital-based specialty pharmacy integrator; Walgreens Boots Alliance was the strategic acquirer; realized MOIC/IRR on this row belongs to Summit Partners (the exiting PE sponsor), not Walgreens.",
         "source_url": "https://www.shieldshealthsolutions.com",
     },
     # 601 — US Oncology / McKesson Oncology (2021 expansion)
