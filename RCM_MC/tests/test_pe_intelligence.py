@@ -20770,5 +20770,167 @@ class TestThesisSharpnessScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestManagementBenchDepthCheck(unittest.TestCase):
+    """Partner scenario: who else runs the plan if CEO/CFO/COO walks?"""
+
+    def test_empty_inputs_yield_critical_tier(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+        )
+        r = check_bench_depth(BenchDepthInputs())
+        self.assertEqual(r.tier, "critical")
+        self.assertGreater(len(r.key_person_risks), 0)
+
+    def test_deep_bench_on_full_signals(self) -> None:
+        """Partner: 'all 7 dimensions green = deep bench.'"""
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+        )
+        r = check_bench_depth(BenchDepthInputs(
+            ceo_name="Jane",
+            ceo_rollover_pct=0.20,
+            cfo_successor_identified=True,
+            coo_name="Mark",
+            coo_months_in_role=24,
+            pnl_owning_direct_reports_count=4,
+            total_direct_reports=8,
+            key_person_dependencies=["Jane", "Mark"],
+            board_operating_director_count=2,
+            exec_retention_signed_at_close=True,
+        ))
+        self.assertEqual(r.tier, "deep")
+        self.assertEqual(r.score, 7)
+
+    def test_ceo_rollover_threshold(self) -> None:
+        """Partner: 'rollover < 15% flags alignment risk.'"""
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+        )
+        r = check_bench_depth(BenchDepthInputs(
+            ceo_rollover_pct=0.08,
+            cfo_successor_identified=True,
+            coo_months_in_role=24,
+            pnl_owning_direct_reports_count=4,
+            board_operating_director_count=2,
+            exec_retention_signed_at_close=True,
+        ))
+        ceo_dim = next(d for d in r.dimensions
+                        if d.name == "ceo_rollover_pct")
+        self.assertFalse(ceo_dim.passed)
+        # Key-person risk named.
+        self.assertTrue(any(k.seat == "ceo"
+                             for k in r.key_person_risks))
+
+    def test_no_pnl_owners_plan_lives_in_ceo_head(self) -> None:
+        """Partner: '< 3 P&L owners → plan lives in CEO's head.'"""
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+        )
+        r = check_bench_depth(BenchDepthInputs(
+            ceo_rollover_pct=0.20,
+            pnl_owning_direct_reports_count=1,
+        ))
+        pnl_dim = next(d for d in r.dimensions
+                        if d.name ==
+                        "pnl_owning_direct_reports_count")
+        self.assertFalse(pnl_dim.passed)
+        self.assertIn("ceo's head",
+                       pnl_dim.partner_comment.lower())
+
+    def test_handshake_retention_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+        )
+        r = check_bench_depth(BenchDepthInputs(
+            ceo_rollover_pct=0.20,
+            cfo_successor_identified=True,
+            coo_months_in_role=24,
+            pnl_owning_direct_reports_count=4,
+            board_operating_director_count=2,
+            exec_retention_signed_at_close=False,
+        ))
+        self.assertTrue(any(
+            k.seat == "retention_contracts"
+            for k in r.key_person_risks
+        ))
+
+    def test_new_coo_flagged(self) -> None:
+        """Partner: 'COO < 12 months → not yet proven.'"""
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+        )
+        r = check_bench_depth(BenchDepthInputs(
+            ceo_rollover_pct=0.20,
+            coo_name="Mark",
+            coo_months_in_role=6,
+        ))
+        coo_dim = next(d for d in r.dimensions
+                        if d.name == "coo_in_role_gt_12mo")
+        self.assertFalse(coo_dim.passed)
+
+    def test_too_many_key_person_deps_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+        )
+        r = check_bench_depth(BenchDepthInputs(
+            ceo_rollover_pct=0.20,
+            key_person_dependencies=[
+                "Jane", "Mark", "Alice", "Bob",
+            ],
+        ))
+        deps_dim = next(d for d in r.dimensions
+                         if d.name ==
+                         "key_person_dependency_count")
+        self.assertFalse(deps_dim.passed)
+
+    def test_thin_tier_triggers_search_plan_note(self) -> None:
+        """Partner: 'thin bench → ship with operator-placement plan.'"""
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+        )
+        r = check_bench_depth(BenchDepthInputs(
+            ceo_rollover_pct=0.08,
+            cfo_successor_identified=False,
+            coo_months_in_role=3,
+            pnl_owning_direct_reports_count=1,
+        ))
+        self.assertIn(r.tier, {"thin", "critical"})
+
+    def test_markdown_renders_key_person_risks(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+            render_bench_depth_markdown,
+        )
+        md = render_bench_depth_markdown(
+            check_bench_depth(BenchDepthInputs(
+                ceo_rollover_pct=0.05,
+                cfo_successor_identified=False,
+            ))
+        )
+        self.assertIn("# Management bench depth check", md)
+        self.assertIn("Key-person risks", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            BenchDepthInputs,
+            check_bench_depth,
+        )
+        r = check_bench_depth(BenchDepthInputs(
+            ceo_rollover_pct=0.20,
+            cfo_successor_identified=True,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

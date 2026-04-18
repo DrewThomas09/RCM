@@ -1165,6 +1165,14 @@ from .thesis_sharpness_scorer import (
     render_thesis_sharpness_markdown,
     score_thesis_sharpness,
 )
+from .management_bench_depth_check import (
+    BenchDepthInputs,
+    BenchDepthReport,
+    BenchDimension,
+    KeyPersonRisk,
+    check_bench_depth,
+    render_bench_depth_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2471,4 +2479,10 @@ __all__ = [
     "ThesisSharpnessReport",
     "render_thesis_sharpness_markdown",
     "score_thesis_sharpness",
+    "BenchDepthInputs",
+    "BenchDepthReport",
+    "BenchDimension",
+    "KeyPersonRisk",
+    "check_bench_depth",
+    "render_bench_depth_markdown",
 ]
