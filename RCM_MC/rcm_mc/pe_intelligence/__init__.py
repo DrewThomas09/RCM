@@ -1466,6 +1466,13 @@ from .connect_the_dots_packet_reader import (
     connect_the_dots,
     render_dot_connect_markdown,
 )
+from .healthcare_thesis_archetype_recognizer import (
+    ArchetypeMatch as HealthcareThesisArchetypeMatch,
+    HealthcareArchetypeReport,
+    HealthcareArchetypeSignals,
+    recognize_healthcare_thesis_archetypes,
+    render_healthcare_archetype_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2991,4 +2998,9 @@ __all__ = [
     "PacketSignals",
     "connect_the_dots",
     "render_dot_connect_markdown",
+    "HealthcareThesisArchetypeMatch",
+    "HealthcareArchetypeReport",
+    "HealthcareArchetypeSignals",
+    "recognize_healthcare_thesis_archetypes",
+    "render_healthcare_archetype_markdown",
 ]

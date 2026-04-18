@@ -28068,5 +28068,218 @@ class TestConnectTheDotsPacketReader(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestHealthcareThesisArchetypeRecognizer(unittest.TestCase):
+    """Partner voice: '7 healthcare deal shapes; name it before modeling.'"""
+
+    def test_no_signals_no_archetype(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals()
+        )
+        self.assertEqual(len(r.matches), 0)
+        self.assertEqual(r.dominant_archetype, "")
+
+    def test_payer_mix_shift_recognized(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                commercial_mix_change_planned_pct=0.08,
+                network_expansion_planned=True,
+            )
+        )
+        names = [m.archetype for m in r.matches]
+        self.assertIn("payer_mix_shift", names)
+
+    def test_back_office_needs_multi_site(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        # single-site → no back-office archetype
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                multi_site_count=1,
+                centralized_rcm_investment_m=5.0,
+            )
+        )
+        names = [m.archetype for m in r.matches]
+        self.assertNotIn(
+            "back_office_consolidation", names
+        )
+
+    def test_back_office_recognized(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                multi_site_count=8,
+                centralized_rcm_investment_m=3.0,
+                it_platform_investment_planned_m=2.0,
+            )
+        )
+        names = [m.archetype for m in r.matches]
+        self.assertIn("back_office_consolidation", names)
+
+    def test_outpatient_with_named_asc(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                inpatient_to_outpatient_shift_planned=True,
+                owns_asc_or_hopd=True,
+            )
+        )
+        op = next(
+            m for m in r.matches
+            if m.archetype == "outpatient_migration"
+        )
+        self.assertGreaterEqual(op.confidence, 0.7)
+        self.assertIn(
+            "site-neutral",
+            " ".join(op.named_risks).lower(),
+        )
+
+    def test_cmi_uplift_recognized(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                cdi_program_planned=True,
+                coding_gap_vs_peers_bps=120.0,
+            )
+        )
+        names = [m.archetype for m in r.matches]
+        self.assertIn("cmi_uplift", names)
+        cmi = next(
+            m for m in r.matches
+            if m.archetype == "cmi_uplift"
+        )
+        self.assertIn(
+            "rac",
+            " ".join(cmi.named_risks).lower(),
+        )
+
+    def test_rollup_needs_pipeline(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                bolt_on_pipeline_count=5,
+                platform_services_named=True,
+            )
+        )
+        names = [m.archetype for m in r.matches]
+        self.assertIn("rollup_platform", names)
+
+    def test_cost_basis_recognized(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                labor_cost_reduction_planned_bps=150.0,
+                supply_cost_reduction_planned_bps=100.0,
+            )
+        )
+        names = [m.archetype for m in r.matches]
+        self.assertIn("cost_basis_compression", names)
+
+    def test_capacity_recognized(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                de_novo_count_planned=3,
+                service_line_addition_count=1,
+            )
+        )
+        names = [m.archetype for m in r.matches]
+        self.assertIn("capacity_expansion", names)
+
+    def test_dominant_archetype_is_highest_confidence(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                commercial_mix_change_planned_pct=0.15,
+                network_expansion_planned=True,
+                # weaker cost-basis signal
+                labor_cost_reduction_planned_bps=100.0,
+            )
+        )
+        self.assertEqual(
+            r.dominant_archetype, "payer_mix_shift"
+        )
+
+    def test_every_match_has_lever_stack_and_risks(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                commercial_mix_change_planned_pct=0.08,
+                cdi_program_planned=True,
+                bolt_on_pipeline_count=4,
+                de_novo_count_planned=2,
+            )
+        )
+        for m in r.matches:
+            self.assertGreater(len(m.lever_stack), 0)
+            self.assertGreater(len(m.named_risks), 0)
+            self.assertTrue(m.partner_zoom)
+            self.assertTrue(m.archetype_specific_sniff)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+            render_healthcare_archetype_markdown,
+        )
+        md = render_healthcare_archetype_markdown(
+            recognize_healthcare_thesis_archetypes(
+                HealthcareArchetypeSignals(
+                    commercial_mix_change_planned_pct=0.10,
+                )
+            )
+        )
+        self.assertIn(
+            "# Healthcare thesis archetype", md
+        )
+        self.assertIn("payer_mix_shift", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            HealthcareArchetypeSignals,
+            recognize_healthcare_thesis_archetypes,
+        )
+        r = recognize_healthcare_thesis_archetypes(
+            HealthcareArchetypeSignals(
+                bolt_on_pipeline_count=3,
+            )
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
