@@ -28985,5 +28985,183 @@ class TestDealToHistoricalFailureMatcher(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestExitBuyerViewMirror(unittest.TestCase):
+    """Partner voice: 'Write the exit buyer's IC memo at entry.'"""
+
+    def test_default_buyer_profile_sponsor(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        r = write_exit_buyer_mirror(ExitBuyerInputs())
+        self.assertEqual(r.buyer_profile, "sponsor")
+        self.assertGreater(
+            r.buyer_likely_entry_multiple, 0
+        )
+
+    def test_strategic_buyer_pays_more(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        sp = write_exit_buyer_mirror(ExitBuyerInputs(
+            buyer_profile="sponsor",
+        ))
+        st = write_exit_buyer_mirror(ExitBuyerInputs(
+            buyer_profile="strategic",
+        ))
+        self.assertGreater(
+            st.buyer_likely_entry_multiple,
+            sp.buyer_likely_entry_multiple,
+        )
+
+    def test_high_concentration_in_bear(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        r = write_exit_buyer_mirror(ExitBuyerInputs(
+            customer_concentration_top_5_pct=0.55,
+        ))
+        bear_text = " ".join(r.buyer_bear_case_lines).lower()
+        self.assertIn("concentration", bear_text)
+
+    def test_strong_growth_in_bull(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        r = write_exit_buyer_mirror(ExitBuyerInputs(
+            growth_rate_organic_pct=0.08,
+            growth_rate_inorganic_pct=0.06,
+        ))
+        bull_text = " ".join(r.buyer_bull_case_lines).lower()
+        self.assertIn("growth", bull_text)
+
+    def test_high_medicare_in_bear(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        r = write_exit_buyer_mirror(ExitBuyerInputs(
+            payer_mix_medicare_pct_at_exit=0.50,
+        ))
+        bear_text = " ".join(r.buyer_bear_case_lines).lower()
+        self.assertIn("medicare", bear_text)
+
+    def test_low_growth_drops_multiple(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        slow = write_exit_buyer_mirror(ExitBuyerInputs(
+            growth_rate_organic_pct=0.02,
+            growth_rate_inorganic_pct=0.0,
+        ))
+        fast = write_exit_buyer_mirror(ExitBuyerInputs(
+            growth_rate_organic_pct=0.10,
+            growth_rate_inorganic_pct=0.05,
+        ))
+        self.assertLess(
+            slow.buyer_likely_entry_multiple,
+            fast.buyer_likely_entry_multiple,
+        )
+
+    def test_multiple_gap_dollar_computed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        r = write_exit_buyer_mirror(ExitBuyerInputs(
+            asset_ebitda_at_exit_m=50.0,
+            our_assumed_exit_multiple=14.0,
+            buyer_profile="sponsor",
+        ))
+        # If buyer multiple is 11 and ours is 14, gap is 3 × 50 = 150
+        self.assertGreater(
+            abs(r.multiple_gap_dollar_m), 50
+        )
+
+    def test_high_gap_triggers_re_underwrite_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        r = write_exit_buyer_mirror(ExitBuyerInputs(
+            our_assumed_exit_multiple=14.0,
+            ebitda_quality_score=0.50,
+            customer_concentration_top_5_pct=0.50,
+            payer_mix_commercial_pct_at_exit=0.30,
+            buyer_profile="sponsor",
+        ))
+        self.assertGreater(r.multiple_gap, 1.5)
+        self.assertIn(
+            "re-underwrite",
+            r.partner_note.lower(),
+        )
+
+    def test_diligence_focus_includes_qofe_when_quality_low(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        r = write_exit_buyer_mirror(ExitBuyerInputs(
+            ebitda_quality_score=0.65,
+        ))
+        focus_text = " ".join(
+            r.buyer_diligence_focus_list
+        ).lower()
+        self.assertIn("qofe", focus_text)
+
+    def test_diligence_includes_management_retention_default(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        r = write_exit_buyer_mirror(ExitBuyerInputs())
+        focus_text = " ".join(
+            r.buyer_diligence_focus_list
+        ).lower()
+        self.assertIn("management retention", focus_text)
+
+    def test_high_leverage_drops_buyer_multiple(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        low = write_exit_buyer_mirror(ExitBuyerInputs(
+            leverage_at_exit=3.5,
+        ))
+        high = write_exit_buyer_mirror(ExitBuyerInputs(
+            leverage_at_exit=6.0,
+        ))
+        self.assertGreater(
+            low.buyer_likely_entry_multiple,
+            high.buyer_likely_entry_multiple,
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            render_exit_buyer_mirror_markdown,
+            write_exit_buyer_mirror,
+        )
+        md = render_exit_buyer_mirror_markdown(
+            write_exit_buyer_mirror(ExitBuyerInputs())
+        )
+        self.assertIn("# Exit-buyer view mirror", md)
+        self.assertIn("Buyer's bull case", md)
+        self.assertIn("Buyer's bear case", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ExitBuyerInputs,
+            write_exit_buyer_mirror,
+        )
+        r = write_exit_buyer_mirror(ExitBuyerInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

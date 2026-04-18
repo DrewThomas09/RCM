@@ -1497,6 +1497,12 @@ from .deal_to_historical_failure_matcher import (
     match_to_historical_failures,
     render_historical_match_markdown,
 )
+from .exit_buyer_view_mirror import (
+    BuyerMirrorReport,
+    ExitBuyerInputs,
+    render_exit_buyer_mirror_markdown,
+    write_exit_buyer_mirror,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3045,4 +3051,8 @@ __all__ = [
     "HistoricalMatchReport",
     "match_to_historical_failures",
     "render_historical_match_markdown",
+    "BuyerMirrorReport",
+    "ExitBuyerInputs",
+    "render_exit_buyer_mirror_markdown",
+    "write_exit_buyer_mirror",
 ]
