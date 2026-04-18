@@ -21239,5 +21239,185 @@ class TestTurnaroundFeasibilityScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPacketDataProvenanceCheck(unittest.TestCase):
+    """Partner scenario: what have we actually verified?"""
+
+    def test_empty_packet_triggers_baseline_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        r = check_packet_provenance(PacketProvenanceInputs())
+        self.assertIn("no packet fields",
+                       r.partner_note.lower())
+
+    def test_all_partner_team_is_high_confidence(self) -> None:
+        """Partner: 'our own rebuild = 100% confidence.'"""
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        r = check_packet_provenance(PacketProvenanceInputs(
+            fields=[
+                PacketField("reported_ebitda",
+                            "partner_team_modeled"),
+                PacketField("working_capital_peg",
+                            "partner_team_modeled"),
+            ],
+        ))
+        self.assertAlmostEqual(r.overall_confidence_score,
+                                100.0, places=1)
+
+    def test_seller_unverified_below_threshold(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        r = check_packet_provenance(PacketProvenanceInputs(
+            fields=[
+                PacketField("reported_ebitda",
+                            "seller_mgmt_unverified"),
+            ],
+        ))
+        ebitda = next(a for a in r.field_assessments
+                       if a.name == "reported_ebitda")
+        self.assertTrue(ebitda.is_below_threshold)
+        self.assertTrue(ebitda.is_high_stakes)
+
+    def test_high_stakes_unverified_triggers_note(self) -> None:
+        """Partner: 'EBITDA on seller mgmt data → QofE before IC.'"""
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        r = check_packet_provenance(PacketProvenanceInputs(
+            fields=[
+                PacketField("reported_ebitda",
+                            "seller_mgmt_unverified"),
+                PacketField("payer_mix",
+                            "seller_banker_book"),
+            ],
+        ))
+        self.assertIn("qofe-verified",
+                       r.partner_note.lower())
+        self.assertGreater(len(r.high_stakes_unverified), 0)
+
+    def test_qofe_complete_passes_threshold(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        r = check_packet_provenance(PacketProvenanceInputs(
+            fields=[PacketField("reported_ebitda",
+                                   "qofe_complete")],
+        ))
+        ebitda = r.field_assessments[0]
+        self.assertFalse(ebitda.is_below_threshold)
+
+    def test_qofe_preliminary_is_below_default_threshold(self) -> None:
+        """Partner: 'preliminary QofE = 0.65, below 0.70 default.'"""
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        r = check_packet_provenance(PacketProvenanceInputs(
+            fields=[PacketField("reported_ebitda",
+                                   "qofe_preliminary")],
+        ))
+        ebitda = r.field_assessments[0]
+        self.assertTrue(ebitda.is_below_threshold)
+
+    def test_threshold_is_configurable(self) -> None:
+        """Partner: 'we can tighten threshold for high-volatility deals.'"""
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        # qofe_complete is 0.85 — below a 0.90 threshold.
+        r = check_packet_provenance(PacketProvenanceInputs(
+            fields=[PacketField("reported_ebitda",
+                                   "qofe_complete")],
+            confidence_threshold=0.90,
+        ))
+        self.assertTrue(r.field_assessments[0].is_below_threshold)
+
+    def test_weighted_score_mixed_sources(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        r = check_packet_provenance(PacketProvenanceInputs(
+            fields=[
+                PacketField("reported_ebitda",
+                            "qofe_complete",
+                            weight_in_thesis=2.0),
+                PacketField("payer_mix",
+                            "seller_mgmt_unverified",
+                            weight_in_thesis=1.0),
+            ],
+        ))
+        # Weighted: (0.85*2 + 0.40*1) / 3 = 2.10/3 = 0.70 → 70.0
+        self.assertAlmostEqual(r.overall_confidence_score,
+                                70.0, places=1)
+
+    def test_list_provenance_tiers_complete(self) -> None:
+        from rcm_mc.pe_intelligence import list_provenance_tiers
+        tiers = list_provenance_tiers()
+        self.assertIn("seller_mgmt_unverified", tiers)
+        self.assertIn("qofe_complete", tiers)
+        self.assertIn("partner_team_modeled", tiers)
+
+    def test_non_high_stakes_field_not_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        r = check_packet_provenance(PacketProvenanceInputs(
+            fields=[PacketField("some_random_field",
+                                   "seller_mgmt_unverified")],
+        ))
+        field = r.field_assessments[0]
+        self.assertFalse(field.is_high_stakes)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+            render_packet_provenance_markdown,
+        )
+        md = render_packet_provenance_markdown(
+            check_packet_provenance(PacketProvenanceInputs(
+                fields=[
+                    PacketField("reported_ebitda",
+                                "seller_mgmt_unverified"),
+                ],
+            ))
+        )
+        self.assertIn("# Packet data provenance", md)
+        self.assertIn("confidence", md.lower())
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            PacketField,
+            PacketProvenanceInputs,
+            check_packet_provenance,
+        )
+        r = check_packet_provenance(PacketProvenanceInputs(
+            fields=[PacketField("reported_ebitda",
+                                   "qofe_complete")],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

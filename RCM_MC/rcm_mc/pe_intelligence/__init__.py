@@ -1187,6 +1187,15 @@ from .turnaround_feasibility_scorer import (
     render_turnaround_feasibility_markdown,
     score_turnaround_feasibility,
 )
+from .packet_data_provenance_check import (
+    FieldAssessment as ProvenanceFieldAssessment,
+    PacketField,
+    PacketProvenanceInputs,
+    PacketProvenanceReport,
+    check_packet_provenance,
+    list_provenance_tiers,
+    render_packet_provenance_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2509,4 +2518,11 @@ __all__ = [
     "TurnaroundInputs",
     "render_turnaround_feasibility_markdown",
     "score_turnaround_feasibility",
+    "PacketField",
+    "PacketProvenanceInputs",
+    "PacketProvenanceReport",
+    "ProvenanceFieldAssessment",
+    "check_packet_provenance",
+    "list_provenance_tiers",
+    "render_packet_provenance_markdown",
 ]
