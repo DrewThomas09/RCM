@@ -1807,6 +1807,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.partner_review_page import render_partner_review
             return self._send_html(render_partner_review(_qp))
+        # Partner Brain module directory + detail — Phase 2 (broad-coverage)
+        if path == "/partner-brain/modules":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.partner_brain_modules_page import render_partner_brain_modules_directory
+            return self._send_html(render_partner_brain_modules_directory(_qp))
+        if path == "/partner-brain/module":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.partner_brain_modules_page import render_partner_brain_module_detail
+            return self._send_html(render_partner_brain_module_detail(_qp))
         # Partner Brain category pages — Phase 1
         if path == "/partner-brain/failures":
             _qs = urllib.parse.parse_qs(parsed.query)

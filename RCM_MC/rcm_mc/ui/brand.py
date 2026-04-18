@@ -89,6 +89,7 @@ NAV_ITEMS = [
     {"label": "Model Validation", "href": "/model-validation", "icon": "chart"},
     {"separator": True, "label": "PARTNER BRAIN"},
     {"label": "Hub", "href": "/partner-brain", "icon": "chart"},
+    {"label": "Module Directory", "href": "/partner-brain/modules", "icon": "grid"},
     {"label": "Partner Review", "href": "/partner-brain/review", "icon": "doc"},
     {"label": "Sniff Test", "href": "/partner-brain/sniff", "icon": "filter"},
     {"label": "Named Failures", "href": "/partner-brain/failures", "icon": "chart"},
