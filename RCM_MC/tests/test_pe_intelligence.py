@@ -19868,5 +19868,125 @@ class TestPartnerBriefingComposer(unittest.TestCase):
         json.dumps(b.to_dict())
 
 
+class TestBankerNarrativeDecoder(unittest.TestCase):
+    """Partner scenario: name the banker's play, take the agenda."""
+
+    def test_empty_signals_yields_no_matches(self) -> None:
+        from rcm_mc.pe_intelligence import decode_banker_narrative
+        r = decode_banker_narrative({})
+        self.assertEqual(len(r.matches), 0)
+
+    def test_the_hook_detected(self) -> None:
+        """Partner: 'top-of-deck 30% CAGR + recurring? That's the hook.'"""
+        from rcm_mc.pe_intelligence import decode_banker_narrative
+        r = decode_banker_narrative({
+            "top_of_deck_cagr_30": True,
+            "recurring_revenue_framing_prominent": True,
+        })
+        names = {m.narrative.name for m in r.matches}
+        self.assertIn("the_hook", names)
+
+    def test_comp_deck_tactic_detected(self) -> None:
+        from rcm_mc.pe_intelligence import decode_banker_narrative
+        r = decode_banker_narrative({
+            "comps_selected_to_support_premium": True,
+            "no_broken_process_comps_included": True,
+        })
+        names = {m.narrative.name for m in r.matches}
+        self.assertIn("the_comp_deck", names)
+
+    def test_momentum_story_detected(self) -> None:
+        """Partner: '4 parties, best-and-final Friday — momentum play.'"""
+        from rcm_mc.pe_intelligence import decode_banker_narrative
+        r = decode_banker_narrative({
+            "urgency_without_specifics": True,
+            "multiple_buyers_cited_unnamed": True,
+            "short_decision_window_imposed": True,
+        })
+        match = next(m for m in r.matches
+                      if m.narrative.name == "the_momentum_story")
+        self.assertEqual(len(match.tells_hit), 3)
+
+    def test_once_in_a_generation_is_flag(self) -> None:
+        """Partner: 'if banker calls it generational, numbers are weak.'"""
+        from rcm_mc.pe_intelligence import decode_banker_narrative
+        r = decode_banker_narrative({
+            "generational_language_used": True,
+            "bench_comps_weak_or_cherry_picked": True,
+        })
+        match = next(m for m in r.matches
+                      if m.narrative.name == "the_once_in_a_generation")
+        self.assertIn("generational",
+                       match.narrative.partner_counter.lower())
+
+    def test_three_plus_matches_trigger_name_each_play(self) -> None:
+        from rcm_mc.pe_intelligence import decode_banker_narrative
+        r = decode_banker_narrative({
+            "top_of_deck_cagr_30": True,
+            "comps_selected_to_support_premium": True,
+            "urgency_without_specifics": True,
+            "generational_language_used": True,
+        })
+        self.assertGreaterEqual(len(r.matches), 3)
+        self.assertIn("name each play", r.partner_note.lower())
+
+    def test_teaser_without_financials_triggers_nda_counter(
+        self,
+    ) -> None:
+        """Partner: 'decline NDA if no top-line in teaser.'"""
+        from rcm_mc.pe_intelligence import decode_banker_narrative
+        r = decode_banker_narrative({
+            "teaser_omits_key_metrics": True,
+            "nda_gate_before_any_math": True,
+        })
+        match = next(m for m in r.matches
+                      if m.narrative.name ==
+                      "the_teaser_without_financials")
+        self.assertIn("decline",
+                       match.narrative.partner_counter.lower())
+
+    def test_matches_ranked_by_tells_hit(self) -> None:
+        from rcm_mc.pe_intelligence import decode_banker_narrative
+        r = decode_banker_narrative({
+            # All 3 tells of the_momentum_story
+            "urgency_without_specifics": True,
+            "multiple_buyers_cited_unnamed": True,
+            "short_decision_window_imposed": True,
+            # Only 1 tell of the_comp_deck
+            "comps_selected_to_support_premium": True,
+        })
+        tells = [len(m.tells_hit) for m in r.matches]
+        self.assertEqual(tells, sorted(tells, reverse=True))
+
+    def test_list_banker_narratives_complete(self) -> None:
+        from rcm_mc.pe_intelligence import list_banker_narratives
+        names = list_banker_narratives()
+        self.assertIn("the_hook", names)
+        self.assertIn("the_momentum_story", names)
+        self.assertIn("the_once_in_a_generation", names)
+        self.assertEqual(len(names), 10)
+
+    def test_markdown_renders_counter(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            decode_banker_narrative,
+            render_narrative_decode_markdown,
+        )
+        md = render_narrative_decode_markdown(
+            decode_banker_narrative({
+                "top_of_deck_cagr_30": True,
+            })
+        )
+        self.assertIn("# Banker narrative decode", md)
+        self.assertIn("Partner counter", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import decode_banker_narrative
+        r = decode_banker_narrative({
+            "top_of_deck_cagr_30": True,
+        })
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

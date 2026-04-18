@@ -1117,6 +1117,14 @@ from .partner_briefing_composer import (
     compose_partner_briefing,
     render_partner_briefing_markdown,
 )
+from .banker_narrative_decoder import (
+    BankerNarrative,
+    NarrativeDecodeReport,
+    NarrativeMatch as BankerNarrativeMatch,
+    decode_banker_narrative,
+    list_banker_narratives,
+    render_narrative_decode_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2387,4 +2395,10 @@ __all__ = [
     "PartnerBriefing",
     "compose_partner_briefing",
     "render_partner_briefing_markdown",
+    "BankerNarrative",
+    "BankerNarrativeMatch",
+    "NarrativeDecodeReport",
+    "decode_banker_narrative",
+    "list_banker_narratives",
+    "render_narrative_decode_markdown",
 ]
