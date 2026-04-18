@@ -5629,7 +5629,81 @@ Bidders: `strategic_payer_adjacent` (+15%) +
 
 ---
 
-## 193. Change log
+## 193. Signing-to-close risk register (`signing_to_close_risk_register.py`)
+
+**Partner statement:** "Signing is not closing. Between
+LOI and close, the asset can change materially — and
+every change costs me either price, structure, or the
+deal itself."
+
+Distinct from `closing_conditions_list.py` (what must be
+*satisfied* at close). This module is the **living
+watchlist** of events that can happen in the 60-120 day
+interim window.
+
+### 12 risk categories
+
+- **material_customer_loss** (medium freq, reprice trigger)
+- **key_employee_departure** (medium freq, walk right)
+- **quality_incident** (low freq, walk right)
+- **regulatory_rule_final** (medium freq, reprice trigger)
+- **financing_market_shift** (medium freq, hold)
+- **qofe_material_adjustment** (medium freq, reprice)
+- **it_cyber_disclosure** (low freq, walk right)
+- **interim_financial_miss** (high freq, reprice trigger)
+- **mac_triggered** (low freq, walk right)
+- **competitor_action** (medium freq, hold)
+- **litigation_surprise** (low freq, reprice trigger)
+- **environmental_physical** (low freq, reprice trigger)
+
+### Partner-note escalation
+
+- ≥ 2 walk-right risks → "demand bring-down
+  certifications + explicit walk-right triggers in PA."
+- 1 walk-right → "this is where the deal can die; ensure
+  PA walk-right explicit."
+- ≥ 3 reprice triggers → "build price-adjustment
+  mechanism into PA."
+- Any matches → "monitor during interim; document early
+  warning signals."
+- No matches → "standard interim-period discipline."
+
+### Typical EBITDA cost if realized
+
+- mac_triggered: 20%
+- quality_incident: 15%
+- key_employee_departure: 10%
+- it_cyber_disclosure: 10%
+- material_customer_loss: 8%
+- qofe_material_adjustment: 8%
+- interim_financial_miss: 6%
+- regulatory_rule_final: 5%
+- environmental_physical: 5%
+- litigation_surprise: 4%
+- financing_market_shift: 3%
+- competitor_action: 3%
+
+### Worked example
+
+Signals: `key_employee_retention_not_signed` +
+`qofe_not_complete_at_signing` +
+`aggressive_add_back_schedule`.
+
+→ Matches: key_employee_departure (walk_right),
+qofe_material_adjustment (reprice_trigger).
+
+→ Partner note: "1 walk-right risk flagged — ensure
+PA walk-right explicit on key-15 departure."
+
+### Packet signals
+
+Each risk carries its own `early_warning_signals` list
+(packet-signal strings the deal team monitors during
+interim).
+
+---
+
+## 194. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
