@@ -9979,7 +9979,84 @@ dso_days)`; `baseline_dso_days`.
 
 ---
 
-## 255. Change log
+## 255. C-suite team grader (`c_suite_team_grader.py`)
+
+**Partner statement.** "The deal is the team. CEO with PE
+experience, CFO who's seen a sale process, COO who runs the
+operating cadence, CMO if it's clinical-driven. Each seat gets
+graded against the work that has to happen in this hold."
+
+### Why it matters
+
+Generic management assessment doesn't tell the partner *which seat
+to coach vs. replace*. This module grades each C-suite seat
+individually and produces a per-seat verdict.
+
+### Grading rubric (per seat, 0-16 total)
+
+| Criterion | Score |
+|---|---|
+| Healthcare industry years (15+/10+/5+/2+/<2) | 4/3/2/1/0 |
+| PE-backed before (yes/no) | 4 / 0 |
+| Transaction experience (yes/no) | 4 / 0 |
+| Seat-specific competency (0-4) | as provided |
+
+Seat-specific competency:
+- CEO: vision/strategy clarity
+- CFO: capital markets / debt experience
+- COO: multi-site / integration experience
+- CMO: clinical quality outcomes
+
+### Letter grade & recommendation
+
+- 13-16 → **A** → accept
+- 10-12 → **B** → accept_with_coaching
+- 7-9 → **C** → coach_or_replace
+- < 7 → **D** → replace_at_close
+
+### Diagnostic lines (auto-generated per seat)
+
+- Healthcare years < 5 → "domain learning curve in year 1"
+- Not PE-backed before → "adjusting to board cadence + lender
+  covenants takes 6-12 months"
+- No transaction experience → "expect support need at refi, recap,
+  or exit"
+- Seat-specific ≤ 1 → "primary gap on this role"
+
+### Worked example
+
+Strong CEO: 20yrs healthcare (4) + PE-backed (4) + tx (4) + vision
+4 = 16 → **A** → accept.
+
+Weak CFO: 1yr healthcare (0) + no PE (0) + no tx (0) + spec 1 = 1 →
+**D** → replace_at_close.
+
+### Partner note
+
+- Any D → "plan to replace at close; bring named candidates to
+  closing-conditions list"
+- Any C → "operating-partner cadence + 6-month review window"
+- Composite A → "diligence focus shifts to bench depth and
+  succession"
+
+### Packet fields
+
+`seats` — list of `SeatExecutive(seat, name, years_in_healthcare,
+pe_backed_before, transaction_experience,
+seat_specific_score_0_4)`; `deal_archetype` (informs criticality).
+
+### Distinct from existing modules
+
+- `management_assessment` — generic team read.
+- `management_bench_depth_check` — bench breadth.
+- `management_first_sitdown` — IC-meeting framing.
+- `management_forecast_reliability` — forecast scoring.
+- This module — per-seat grading + per-seat verdict; identifies
+  WHICH seat to coach or replace.
+
+---
+
+## 256. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
