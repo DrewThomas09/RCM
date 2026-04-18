@@ -846,6 +846,13 @@ from .value_creation_plan_generator import (
     build_vcp,
     render_vcp_markdown,
 )
+from .exit_timing_signal_tracker import (
+    ExitSignal,
+    ExitTimingContext,
+    ExitTimingReport,
+    render_exit_timing_markdown,
+    track_exit_timing,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1919,4 +1926,9 @@ __all__ = [
     "VCPRoadmap",
     "build_vcp",
     "render_vcp_markdown",
+    "ExitSignal",
+    "ExitTimingContext",
+    "ExitTimingReport",
+    "render_exit_timing_markdown",
+    "track_exit_timing",
 ]

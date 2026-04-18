@@ -14898,5 +14898,107 @@ class TestValueCreationPlanGenerator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Exit timing signal tracker ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ExitSignal,
+    ExitTimingContext,
+    ExitTimingReport,
+    render_exit_timing_markdown,
+    track_exit_timing,
+)
+
+
+class TestExitTimingSignalTracker(unittest.TestCase):
+
+    def test_strong_alignment_start_rfp(self) -> None:
+        r = track_exit_timing(ExitTimingContext(
+            hold_quarter=14,
+            ebitda_6mo_trend="up",
+            thesis_lever_completion_pct=0.80,
+            credit_markets="easing",
+            peer_multiples_vs_entry=0.10,
+            management_team_stable=True,
+            qofe_clean_quarters=10,
+            ceo_willing_to_stay=True,
+            current_nav_above_cost=True,
+        ))
+        self.assertEqual(r.recommended_action, "start_banker_rfp")
+        self.assertGreaterEqual(r.green_count, 5)
+
+    def test_declining_ebitda_forces_wait(self) -> None:
+        r = track_exit_timing(ExitTimingContext(
+            ebitda_6mo_trend="down",
+            thesis_lever_completion_pct=0.50,
+            credit_markets="tightening",
+        ))
+        self.assertEqual(r.recommended_action, "wait")
+
+    def test_one_red_with_green_still_wait(self) -> None:
+        r = track_exit_timing(ExitTimingContext(
+            ebitda_6mo_trend="up",
+            thesis_lever_completion_pct=0.80,
+            credit_markets="easing",
+            peer_multiples_vs_entry=0.10,
+            management_team_stable=True,
+            qofe_clean_quarters=10,
+            ceo_willing_to_stay=True,
+            current_nav_above_cost=False,   # red
+        ))
+        self.assertEqual(r.recommended_action, "wait")
+
+    def test_three_greens_dry_run(self) -> None:
+        r = track_exit_timing(ExitTimingContext(
+            ebitda_6mo_trend="up",
+            thesis_lever_completion_pct=0.80,
+            credit_markets="stable",
+            peer_multiples_vs_entry=0.0,
+            management_team_stable=True,
+            qofe_clean_quarters=6,
+            ceo_willing_to_stay=True,
+            current_nav_above_cost=True,
+        ))
+        self.assertEqual(r.recommended_action, "dry_run_sale")
+
+    def test_blockers_populated(self) -> None:
+        r = track_exit_timing(ExitTimingContext(
+            ebitda_6mo_trend="down",
+            qofe_clean_quarters=2,
+        ))
+        self.assertGreater(len(r.blockers), 0)
+
+    def test_qofe_history_long_green(self) -> None:
+        r = track_exit_timing(ExitTimingContext(
+            qofe_clean_quarters=10,
+        ))
+        qofe = next(s for s in r.signals if s.name == "qofe_history")
+        self.assertEqual(qofe.status, "green")
+
+    def test_nav_below_cost_flags(self) -> None:
+        r = track_exit_timing(ExitTimingContext(
+            current_nav_above_cost=False,
+        ))
+        nav = next(s for s in r.signals if s.name == "nav_posture")
+        self.assertEqual(nav.status, "red")
+
+    def test_management_yellow_if_partial(self) -> None:
+        r = track_exit_timing(ExitTimingContext(
+            management_team_stable=True,
+            ceo_willing_to_stay=False,
+        ))
+        mgmt = next(s for s in r.signals if s.name == "management")
+        self.assertEqual(mgmt.status, "yellow")
+
+    def test_markdown_renders(self) -> None:
+        md = render_exit_timing_markdown(track_exit_timing(
+            ExitTimingContext()))
+        self.assertIn("# Exit timing signal tracker", md)
+        self.assertIn("Recommended action", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(track_exit_timing(ExitTimingContext()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
