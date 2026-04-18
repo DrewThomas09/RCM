@@ -8211,7 +8211,97 @@ name collision with `contract_diligence.PayerContract`.
 
 ---
 
-## 234. Change log
+## 234. Medicare Advantage bridge trap (`medicare_advantage_bridge_trap.py`)
+
+**Partner statement.** "The 'Medicare Advantage will make it up' line
+is reflex narrative. Sellers use it to paper over FFS rate cuts,
+sponsors use it to justify growth assumptions in the exit case.
+Force the math: how many MA lives do you need at the PMPM you're
+actually contracted at to replace a 2% FFS rate cut? Usually a lot
+more than the CIM claims. Run the bridge."
+
+### Why it matters
+
+This is one of the three named healthcare-PE failure traps (alongside
+"the denial fix in 12 months" and "the payer renegotiation is
+coming"). The IC reflex is to point at MA growth as a buffer against
+FFS reimbursement pressure. The partner's check: does the contract
+math clear at a realistic net PMPM, net of cannibalization, and is
+the growth named in a contract or extrapolated in a deck?
+
+### Bridge math
+
+- **FFS annual loss** = `ffs_revenue × annual_rate_cut_pct`
+- **Net PMPM** = `claimed_pmpm × net_realization_pct` (if gross
+  reported); otherwise `claimed_pmpm`
+- **MA annual gain** = `(lives_added × (1 − cannibalization%)) ×
+  net_pmpm × 12`
+- **Cannibalization drag** = FFS revenue walked from the
+  cannibalized portion = `cannibalized_lives × ffs_pmpm_net × 12`
+- **Net MA gain** = MA gain − cannibalization drag
+- **Coverage ratio** = `net_ma_gain / ffs_loss`
+- **Required MA lives to close** = `ffs_loss_dollars / (net_pmpm × 12)`
+
+### Four sub-traps
+
+1. **`ma_growth_too_aggressive`** — `growth_rate > 20%` without a
+   named contract. "Not diligence-defensible."
+2. **`pmpm_gross_not_net`** — PMPM is reported gross. Typical net
+   realization is 55-75% of gross after cap-at-risk, MLR rebates,
+   STAR bonuses with withhold.
+3. **`ffs_cannibalization_ignored`** — `cannibalization_pct ≥ 30%`
+   but model doesn't net it out. MA lives that came from the existing
+   FFS panel aren't new margin — they're a mix shift, and the
+   gross-vs-net spread usually goes against you.
+4. **`ma_pmpm_below_ffs_net`** — net MA PMPM < FFS per-patient net.
+   Growing MA actually reduces per-patient economics. Partner's
+   immediate question: "then why is this a growth story?"
+
+### Verdict thresholds
+
+- Coverage ≥ 1.20 → **bridge_clears** — "verify the named MA contract
+  exists; cannibalization assumption is conservative."
+- 0.75 ≤ Coverage < 1.20 → **bridge_tight** — "any haircut to
+  growth, PMPM, or cannibalization makes it underwater."
+- Coverage < 0.75 → **bridge_underwater** — "this is the 'MA will
+  make it up' trap. Re-underwrite or walk."
+
+### Worked example
+
+Seller claims $200M FFS revenue facing 4% rate cut ($8M annual loss)
+covered by MA pipeline: 2,000 current lives growing 5% annually
+with $900 claimed PMPM, 50% cannibalization.
+
+- Annual new lives gross: 2,000 × 5% = 100
+- Annual net new lives: 100 × (1 − 0.50) = 50
+- Net PMPM (gross claimed): $900 × 0.65 = $585
+- MA gain: 50 × $585 × 12 = $0.35M
+- Cannibalization drag: 50 × $500 × 12 = $0.30M
+- Net MA gain: $0.05M vs. $8M FFS loss → coverage < 1%
+
+Verdict: **bridge_underwater**. Partner: "This is the MA trap. The
+math doesn't clear at any realistic cannibalization + net-PMPM
+assumption."
+
+### Packet fields
+
+`ffs_annual_revenue_m`, `ffs_annual_rate_cut_pct`, `ma_lives_current`,
+`ma_lives_growth_rate_annual`, `ma_pmpm_claimed`, `pmpm_is_gross`,
+`net_pmpm_realization_pct`, `ma_contract_is_named`,
+`ma_cannibalization_pct`, `ffs_pmpm_net`, `projection_years`.
+
+### Distinct from existing modules
+
+- `payer_mix_risk` — static concentration.
+- `payer_renegotiation_timing_model` — commercial contract calendar.
+- `reimbursement_cliff_calendar_2026_2029` — CMS / state reg events.
+- This module — forced math on the specific "MA will offset FFS"
+  narrative, with 4 named sub-traps for how the narrative usually
+  fails.
+
+---
+
+## 235. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
