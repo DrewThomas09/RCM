@@ -6420,7 +6420,65 @@ outcome."
 
 ---
 
-## 205. Change log
+## 205. Reimbursement cliff calendar 2026-2029 (`reimbursement_cliff_calendar_2026_2029.py`)
+
+**Partner statement:** "I shouldn't have to type the CMS
+rules into every deal I look at. The calendar is known;
+the question is which ones hit *this* deal's hold
+window."
+
+Complements `reimbursement_cliff` (user-supplied events)
+and `healthcare_regulatory_calendar` (general catalog).
+This module pre-seeds **12 specific events** keyed to
+subsector for 2026-2029.
+
+### 12 pre-seeded events
+
+- **obbba_medicare_cut_phase1** (2026, -300 bps) —
+  hospital, HH, hospice, ASC, lab, DME.
+- **obbba_medicare_cut_phase2** (2027, -200 bps) — same.
+- **sequestration_extension_2027** (2027, -200 bps).
+- **site_neutral_hopd_finalization** (2028, -2200 bps
+  on affected HOPD).
+- **pama_lab_cuts_round_4** (2026, -1500 bps) — lab
+  only.
+- **ma_benchmark_reset_2026** (2026, -150 bps).
+- **pdgm_behavioral_adjust_2027** (home health, -150).
+- **pdpm_snf_recalibration_2027** (-50 bps).
+- **hospice_cap_tightening_2028** (hospice, -80 bps).
+- **dme_competitive_bid_round_2028** (DME, -4000 bps on
+  SKUs).
+- **340b_manufacturer_restrictions_2026** (hospital /
+  lab, -700 bps).
+- **wage_index_rural_floor_2027** (rural hospital,
+  **+100 bps** — rare upside).
+
+### Subsector scan
+
+Given subsector + hold start year + hold years:
+- Returns events that fall inside hold and apply to
+  subsector.
+- Sums total bps in hold.
+- Partner-note escalates at -500 bps: "material
+  headwind; bake into base case, not bear."
+
+### Worked example — hospital, 2026-2030 hold
+
+Hits: OBBBA phase 1, OBBBA phase 2, sequestration 2027,
+site-neutral 2028, 340B restrictions 2026, rural wage
+floor 2027.
+
+Total: ~-1,780 bps on Medicare FFS share. Partner note:
+"material headwind — base case, not bear."
+
+### Packet fields
+
+- `subsector`, `hold_start_year`, `hold_years` — scan
+  inputs.
+
+---
+
+## 206. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
