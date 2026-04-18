@@ -3763,7 +3763,38 @@ from calendar-driven exit prep.
 
 ---
 
-## 155. Change log
+## 155. Buyer-type fit analyzer (`buyer_type_fit_analyzer.py`)
+
+**Partner statement:** "Given THIS asset's profile, which
+SPECIFIC buyer type should the banker target first?"
+
+Eight buyer types scored 0-100 with named targets:
+
+- **strategic_health_system** — HCA, Tenet, CommonSpirit,
+  Ascension, AdventHealth. Best for outpatient / home health /
+  ASC with defensible geography.
+- **strategic_payer_led** — Optum, Carelon, CenterWell, Aetna,
+  Evernorth. Best for VBC-ready books + national footprint.
+- **specialty_consolidator** — USOC, US Dermatology, Heartland
+  Dental. Best for roll-up-ready specialty practices.
+- **larger_sponsor** — KKR, Blackstone, Bain, Carlyle, TPG. Best
+  for platform-ready growth assets ≥ $75M EBITDA.
+- **peer_sponsor** — New Mountain, Silversmith, Nordic, Welsh
+  Carson. Fallback if strategic path thin.
+- **ipo** — minimum $400M revenue AND $80M EBITDA AND ≥ 15%
+  organic growth for credibility.
+- **continuation_vehicle** — ICG, Pantheon, Lexington, Coller.
+  When GP conviction + named runway.
+- **industry_passive** — MPT, Sabra, Omega, Welltower, Ventas.
+  For real-estate-heavy mixes.
+
+Top + runner-up are named in the partner note. The point is not
+a single winner — banker books include multiple buyer types in
+round 2 for depth.
+
+---
+
+## 156. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4119,3 +4150,8 @@ from calendar-driven exit prep.
   — 7-signal exit readiness tracker (start_rfp / dry_run /
   wait). Full inventory: 152 modules, 1,545 pe_intelligence
   unit tests.
+- **2026-04-17** — Added `buyer_type_fit_analyzer.py` (§155) —
+  8 buyer types (health system / payer-led / specialty
+  consolidator / larger sponsor / peer / IPO / continuation /
+  REIT) scored + named targets. Full inventory: 153 modules,
+  1,556 pe_intelligence unit tests.
