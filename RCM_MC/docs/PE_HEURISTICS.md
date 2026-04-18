@@ -8108,7 +8108,110 @@ contributing_margin_pct, revenue_portability_pct)`),
 
 ---
 
-## 233. Change log
+## 233. Payer renegotiation timing model (`payer_renegotiation_timing_model.py`)
+
+**Partner statement.** "Every healthcare deck shows payer mix as a
+pie chart — 45% commercial, 30% Medicare, 20% Medicaid. That's the
+wrong picture. The right picture is a *calendar*: when does the BCBS
+contract expire? When is United's next evergreen cycle? If the top-3
+commercial contract expires in year 2 of the hold and the payer has
+been posting record MLR, the rate reset is coming and the exit buyer
+will model it against us. The 'payer renegotiation is coming' trap is
+the most expensive single pattern in healthcare PE."
+
+### Why it matters
+
+Payer-mix risk is static; payer-contract renewals are a calendar. The
+partner reflex is to re-plot payer mix as a timeline of events and
+then project: which renewal happens mid-hold, what rate change is
+expected, what is the quarterly EBITDA drag, and what does the exit
+buyer normalize to when they model this platform against their own
+comp set?
+
+This is the most specific operationalization of one of the three
+named traps: "the payer renegotiation is coming."
+
+### Four bargaining postures → rate-change bands
+
+| Posture | Rate change at renewal |
+|---|---|
+| `aggressive` — dominant payer, no network alt | −3.5% |
+| `firm` — large payer, MLR above target | −1.5% |
+| `neutral` — balanced market | +0.5% |
+| `soft` — provider is essential/rare specialty | +2.0% |
+
+Per-contract overrides (`override_rate_change_pct`) let partners
+seed their own intel. `already_repriced_locked_in=True` zeros out
+the contract's forward projection.
+
+### Projection
+
+Per quarter over the hold:
+
+1. Apply each contract's rate step on its renewal quarter, weighted
+   by payer-mix share → cumulative `rate_drift_pct`.
+2. NPR impact per quarter = `base_npr × drift × 0.25`.
+3. EBITDA impact per quarter = NPR impact × `contribution_margin_pct`.
+
+Output includes:
+
+- Per-contract `ContractForecast` (name, expiration, in-hold,
+  applied rate change).
+- Per-quarter `QuarterImpact` (year/quarter, rate drift, NPR$,
+  EBITDA$).
+- `total_npr_impact_m`, `total_ebitda_impact_m`,
+  `exit_year_normalized_rate_pct`.
+- `trap_flag` — fires when **all** conditions hold:
+  - top-3 concentration > 50%
+  - at least one contract renews in hold with negative rate change
+  - cumulative exit drift < −1%
+
+### Partner-note decision rules
+
+- Trap flag fired → "exit buyer will model normalized rates net of
+  renewals; bake into exit-case EBITDA or expect multiple
+  contraction."
+- Negative drift without trap → "manageable but price renewals into
+  exit assumption; do not leave the buyer to discover them."
+- Positive / zero drift → "confirm posture assumptions — if 'firm'
+  is actually 'aggressive,' the picture changes."
+
+### Worked example
+
+- $300M NPR, 30% contribution margin.
+- BCBS 40% mix, expires 2027-06-01 in a 5-yr hold from 2026-01-01,
+  `aggressive` posture → −3.5% × 40% = −1.4% drift.
+- United 25% mix, expires 2028-03-01, `firm` posture → −1.5% × 25%
+  = −0.4% additional.
+
+Cumulative exit drift: ~−1.8%; top-3 concentration = 65%. **trap
+flag fires.** Total EBITDA impact over hold: several million dollars
+of cumulative drag. Partner note: bake into exit case or face
+multiple contraction.
+
+### Packet fields
+
+`contracts` (list of `PayerContract(name, payer_mix_pct,
+expiration_date, posture, override_rate_change_pct,
+already_repriced_locked_in)`), `hold_start_date`, `hold_years`,
+`base_npr_m`, `contribution_margin_pct`.
+
+Exported as `PayerRenegotiationContract` from the package to avoid
+name collision with `contract_diligence.PayerContract`.
+
+### Distinct from existing modules
+
+- `payer_mix_risk` — static pie chart.
+- `contract_diligence` — generic contract review checklist.
+- `reimbursement_cliff_calendar_2026_2029` — regulatory (CMS / state)
+  rate events, not commercial payer contracts.
+- `reimbursement_bands` — market rate bands.
+- This module — commercial payer contract calendar with quarterly
+  EBITDA projection and named "payer renegotiation is coming" trap.
+
+---
+
+## 234. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
