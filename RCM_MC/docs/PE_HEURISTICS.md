@@ -10614,7 +10614,93 @@ bad_case).
 
 ---
 
-## 264. Change log
+## 264. Claims denial root-cause classifier (`claims_denial_root_cause_classifier.py`)
+
+**Partner statement.** "12% denial rate means nothing until you
+know the composition. If it's 9% eligibility + 2% prior-auth + 1%
+other, I'll take it — that's fixable with a front-end tool in 6
+months. If it's 6% medical-necessity + 3% non-covered + 1% COB +
+2% other, that's a different deal entirely. The category mix IS
+the thesis."
+
+### Why it matters
+
+`denial_fix_pace_detector` projects forward pace *given* a category
+mix. This module **classifies** the implied mix from observed
+packet signals so the partner can tell what kind of fix job the
+deal actually has.
+
+### 8 categories in 3 fix-difficulty bands
+
+**Easy (front-end):**
+- eligibility_verification
+- invalid_format
+- timely_filing
+- duplicate_claim
+
+**Moderate (mid-cycle):**
+- prior_authorization
+- coordination_of_benefits
+
+**Hard (back-end):**
+- medical_necessity
+- non_covered_service
+
+### Signal tilts
+
+- Walk-in share > 30% → +10 eligibility
+- Registration turnover > 30% → +5 eligibility
+- Commercial mix > 50% → +10 prior_auth
+- Sub-specialty procedure share > 40% → +8 prior_auth
+- No centralized auth team → +8 prior_auth
+- No CDI program → +10 medical_necessity
+- RAC history → +5 medical_necessity
+- Medicare-secondary share > 20% → +5 COB
+- Decentralized billing → +5 timely_filing + 5 dup
+
+Weights normalized to sum 1.0.
+
+### Verdict thresholds
+
+- hard ≥ 35% → **structural** — "18-24 months to move if CDI
+  introduced and physicians commit"
+- hard ≥ 20% → **hard** — "thesis must fund CDI + physician-
+  documentation coaching; not a 12-month fix"
+- easy ≥ 50% → **easy** — "front-end platform + training gets
+  material lift in 6 months"
+- else → **moderate** — "sequence: front-end first, PA next,
+  medical-necessity year 2+"
+
+### Worked example
+
+Walk-in 60%, registration turnover 50%, decentralized billing, CDI
+in place, RAC clean, commercial mix 20%, subspec 10% →
+eligibility + format + timely filing dominate → **easy** — "6-month
+lift with front-end platform."
+
+CDI absent, RAC history, subspec 50%, commercial 60% → medical-
+necessity + prior_auth dominate → **structural / hard** — "fund CDI
++ physician coaching; 18-24mo fix."
+
+### Packet fields
+
+`observed_denial_rate_pct`, `walk_in_volume_share`,
+`registration_staff_turnover_pct`, `commercial_payer_mix_share`,
+`subspecialty_procedure_share`, `centralized_auth_team`,
+`cdi_program_present`, `rac_audit_history`,
+`medicare_secondary_payer_share`, `decentralized_billing`.
+
+### Distinct from existing modules
+
+- `denial_fix_pace_detector` — forward projection given mix.
+- `cash_conversion_drift_detector` — trend.
+- `rcm_vendor_switching_cost_assessor` — transition drag.
+- This module — classifies observed signals into implied denial
+  root-cause mix.
+
+---
+
+## 265. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
