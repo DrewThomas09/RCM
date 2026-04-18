@@ -27217,5 +27217,210 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestMedicareAdvantageBridgeTrap(unittest.TestCase):
+    """Partner voice: 'Force the math on MA-will-make-it-up.'"""
+
+    def test_simple_bridge_clears(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            ffs_annual_revenue_m=60.0,
+            ffs_annual_rate_cut_pct=0.015,
+            ma_lives_current=10000,
+            ma_lives_growth_rate_annual=0.10,
+            ma_pmpm_claimed=600.0,
+            pmpm_is_gross=False,
+            ma_contract_is_named=True,
+            ma_cannibalization_pct=0.10,
+            ffs_pmpm_net=500.0,
+        ))
+        self.assertEqual(r.verdict, "bridge_clears")
+
+    def test_underwater_when_ffs_pressure_exceeds_ma_gain(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            ffs_annual_revenue_m=200.0,
+            ffs_annual_rate_cut_pct=0.04,
+            ma_lives_current=2000,
+            ma_lives_growth_rate_annual=0.05,
+            ma_pmpm_claimed=900.0,
+            pmpm_is_gross=True,
+            ma_cannibalization_pct=0.50,
+        ))
+        self.assertEqual(r.verdict, "bridge_underwater")
+        self.assertIn(
+            "ma will make it up", r.partner_note.lower()
+        )
+
+    def test_tight_bridge_between_coverage_bands(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            ffs_annual_revenue_m=100.0,
+            ffs_annual_rate_cut_pct=0.025,
+            ma_lives_current=5000,
+            ma_lives_growth_rate_annual=0.10,
+            ma_pmpm_claimed=650.0,
+            pmpm_is_gross=False,
+            ma_cannibalization_pct=0.20,
+            ma_contract_is_named=True,
+        ))
+        self.assertEqual(r.verdict, "bridge_tight")
+
+    def test_aggressive_growth_without_named_contract_trap(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            ma_lives_growth_rate_annual=0.25,
+            ma_contract_is_named=False,
+        ))
+        self.assertIn(
+            "ma_growth_too_aggressive", r.traps_triggered
+        )
+
+    def test_growth_with_named_contract_no_trap(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            ma_lives_growth_rate_annual=0.25,
+            ma_contract_is_named=True,
+        ))
+        self.assertNotIn(
+            "ma_growth_too_aggressive", r.traps_triggered
+        )
+
+    def test_pmpm_gross_trap_fires(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            pmpm_is_gross=True,
+        ))
+        self.assertIn(
+            "pmpm_gross_not_net", r.traps_triggered
+        )
+
+    def test_cannibalization_trap_at_30pct(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            ma_cannibalization_pct=0.35,
+        ))
+        self.assertIn(
+            "ffs_cannibalization_ignored",
+            r.traps_triggered,
+        )
+
+    def test_ma_pmpm_below_ffs_net_trap(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            ma_pmpm_claimed=500.0,
+            pmpm_is_gross=True,
+            net_pmpm_realization_pct=0.65,
+            ffs_pmpm_net=700.0,
+        ))
+        self.assertIn(
+            "ma_pmpm_below_ffs_net", r.traps_triggered
+        )
+
+    def test_required_lives_inversely_scales_with_pmpm(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        high_pmpm = analyze_ma_bridge(MABridgeInputs(
+            ma_pmpm_claimed=1200.0,
+            pmpm_is_gross=False,
+        ))
+        low_pmpm = analyze_ma_bridge(MABridgeInputs(
+            ma_pmpm_claimed=400.0,
+            pmpm_is_gross=False,
+        ))
+        self.assertGreater(
+            low_pmpm.required_ma_lives_to_close,
+            high_pmpm.required_ma_lives_to_close,
+        )
+
+    def test_net_pmpm_calculation_applies_realization(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            ma_pmpm_claimed=1000.0,
+            pmpm_is_gross=True,
+            net_pmpm_realization_pct=0.60,
+        ))
+        self.assertAlmostEqual(r.ma_net_pmpm, 600.0)
+
+    def test_net_pmpm_no_realization_if_already_net(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs(
+            ma_pmpm_claimed=800.0,
+            pmpm_is_gross=False,
+            net_pmpm_realization_pct=0.60,
+        ))
+        self.assertAlmostEqual(r.ma_net_pmpm, 800.0)
+
+    def test_cannibalization_hurts_gain(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        low_cann = analyze_ma_bridge(MABridgeInputs(
+            ma_cannibalization_pct=0.05,
+        ))
+        high_cann = analyze_ma_bridge(MABridgeInputs(
+            ma_cannibalization_pct=0.70,
+        ))
+        self.assertGreater(
+            low_cann.ma_annual_gain_m,
+            high_cann.ma_annual_gain_m,
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+            render_ma_bridge_markdown,
+        )
+        md = render_ma_bridge_markdown(
+            analyze_ma_bridge(MABridgeInputs())
+        )
+        self.assertIn(
+            "# Medicare Advantage bridge trap", md
+        )
+        self.assertIn("Required MA lives", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            MABridgeInputs,
+            analyze_ma_bridge,
+        )
+        r = analyze_ma_bridge(MABridgeInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

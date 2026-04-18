@@ -1438,6 +1438,12 @@ from .payer_renegotiation_timing_model import (
     project_payer_renegotiations,
     render_payer_renegotiation_markdown,
 )
+from .medicare_advantage_bridge_trap import (
+    MABridgeInputs,
+    MABridgeReport,
+    analyze_ma_bridge,
+    render_ma_bridge_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2943,4 +2949,8 @@ __all__ = [
     "QuarterImpact",
     "project_payer_renegotiations",
     "render_payer_renegotiation_markdown",
+    "MABridgeInputs",
+    "MABridgeReport",
+    "analyze_ma_bridge",
+    "render_ma_bridge_markdown",
 ]
