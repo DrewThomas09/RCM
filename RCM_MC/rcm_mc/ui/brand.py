@@ -235,6 +235,7 @@ NAV_ITEMS = [
     {"label": "MA / Stars Tracker", "href": "/ma-star", "icon": "bookmark"},
     {"label": "GPO / Supply", "href": "/gpo-supply", "icon": "grid"},
     {"label": "Capital Call", "href": "/capital-call", "icon": "chart"},
+    {"label": "Litigation", "href": "/litigation", "icon": "bookmark"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

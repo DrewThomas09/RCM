@@ -2109,6 +2109,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.capital_call_tracker_page import render_capital_call_tracker
             return self._send_html(render_capital_call_tracker(_qp))
+        if path == "/litigation":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.litigation_tracker_page import render_litigation_tracker
+            return self._send_html(render_litigation_tracker(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
