@@ -9635,7 +9635,93 @@ stop-loss → EBITDA $13M → **profitable**.
 
 ---
 
-## 250. Change log
+## 250. Archetype canonical bear writer (`archetype_canonical_bear_writer.py`)
+
+**Partner statement.** "Each archetype has its own canonical bear
+case. The payer-mix shift bear is 'commercial payer says no.' The
+back-office consolidation bear is 'sites refuse to migrate.' The
+CMI uplift bear is 'RAC audit recovers four years.' The bear case
+for an archetype isn't generic — it's specific to the way THAT
+shape fails. When you hand me a deal of archetype X, I should be
+able to recite its canonical bear in 30 seconds."
+
+### Why it matters
+
+`bear_case_generator` produces a generic bear from packet signals.
+This module is the **archetype-conditioned canonical bear** — for
+each of the 7 healthcare thesis archetypes, the bear that the
+archetype's *shape itself* implies, before any specific signal.
+
+### 7 canonical bears
+
+| Archetype | Canonical bear | Recovery |
+|---|---|---|
+| payer_mix_shift | commercial payer says no | hold-extension |
+| back_office_consolidation | sites refuse to migrate | recoverable |
+| outpatient_migration | site-neutral collapses arb | thesis-broken |
+| cmi_uplift | RAC recovers four years | thesis-broken |
+| rollup_platform | auction fatigue compresses bolt-on multiples | hold-extension |
+| cost_basis_compression | labor cuts hit quality, payer downgrades | recoverable |
+| capacity_expansion | de-novo ramp slips, carrying cost drag | hold-extension |
+
+### Per-archetype output
+
+- `bear_story` — 3-line partner-voice narrative
+- `named_breakage_point` — the specific event that triggers
+  ("payer refuses in year 2," "OIG includes DRG family in audit")
+- `expected_ebitda_hit_pct` — typical bear-case impact (15-30%)
+- `expected_ebitda_hit_m` — × base EBITDA
+- `recovery_posture` — recoverable / hold-extension / thesis-broken
+- `early_warning_indicator` — what to watch first ("payer
+  correspondence frequency drops," "Q1 site adoption < 50%")
+
+### Recovery posture meaning
+
+- **recoverable** — bear scenario can be recovered within hold if
+  operator addresses early
+- **hold-extension** — bear extends hold by 12-18 months; price
+  the time-value drag into entry
+- **thesis-broken** — bear is not recoverable within hold; the
+  archetype's central premise has failed
+
+### Worked example
+
+`rollup_platform`, $50M base EBITDA → bear: "Auction fatigue raises
+bolt-on multiples above 8x. Multiple arbitrage compresses.
+Integration debt accumulates — first 4 bolt-ons land, next 6
+stretch the team." Expected hit: 18% = $9M. Recovery: hold-
+extension. Early warning: "Bolt-on closing pace slips below 1 per
+quarter."
+
+`cmi_uplift`, $50M base → bear: "RAC audit retrospectively reviews
+3-4 years of CMI uplift. Reserve wipes out hold-period cash."
+Expected hit: 30% = $15M. Recovery: thesis-broken. Early warning:
+"Coder appeal-rate climbs without corresponding documentation
+improvements."
+
+### Packet fields
+
+`archetype` (one of 7), `base_ebitda_m`.
+
+### Distinct from existing modules
+
+- `bear_case_generator` — generic bear from signal set.
+- `archetype_subrunners` — archetype-specific heuristic packs.
+- `archetype_outcome_distribution_predictor` — MOIC band per
+  archetype.
+- `healthcare_thesis_archetype_recognizer` — names the archetype.
+- This module — for each archetype, the **canonical bear** with
+  named breakage point + EBITDA hit + recovery posture + early
+  warning indicator. Operationalizes the partner reflex "what does
+  the bear case for THIS shape look like?"
+
+### Milestone
+
+Module §250 of the partner-brain library.
+
+---
+
+## 251. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
