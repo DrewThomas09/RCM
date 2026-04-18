@@ -1173,6 +1173,13 @@ from .management_bench_depth_check import (
     check_bench_depth,
     render_bench_depth_markdown,
 )
+from .named_failure_library_v2 import (
+    FailureMatchV2,
+    FailurePatternV2,
+    list_failure_patterns_v2,
+    match_failures_v2,
+    render_failures_v2_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2485,4 +2492,9 @@ __all__ = [
     "KeyPersonRisk",
     "check_bench_depth",
     "render_bench_depth_markdown",
+    "FailureMatchV2",
+    "FailurePatternV2",
+    "list_failure_patterns_v2",
+    "match_failures_v2",
+    "render_failures_v2_markdown",
 ]

@@ -20932,5 +20932,141 @@ class TestManagementBenchDepthCheck(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestNamedFailureLibraryV2(unittest.TestCase):
+    """Partner scenario: this deal looks like <named pattern>."""
+
+    def test_empty_signals_no_matches(self) -> None:
+        from rcm_mc.pe_intelligence import match_failures_v2
+        self.assertEqual(len(match_failures_v2({})), 0)
+
+    def test_ma_startup_unwind_detected(self) -> None:
+        """Partner: 'MA plan with MLR rising → enrollment-
+        outpacing-margin pattern fires.'"""
+        from rcm_mc.pe_intelligence import match_failures_v2
+        hits = match_failures_v2({
+            "ma_plan_platform": True,
+            "mlr_rising_trend": True,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertIn("ma_startup_unwind_2023", names)
+
+    def test_behavioral_staffing_collapse_detected(self) -> None:
+        from rcm_mc.pe_intelligence import match_failures_v2
+        hits = match_failures_v2({
+            "behavioral_health_platform": True,
+            "clinician_vacancy_gt_15pct": True,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertIn("behavioral_staffing_collapse_2024", names)
+
+    def test_pdgm_fallout_detected(self) -> None:
+        from rcm_mc.pe_intelligence import match_failures_v2
+        hits = match_failures_v2({
+            "home_health_platform": True,
+            "lupa_rate_gt_10pct": True,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertIn("pdgm_transition_fallout_2020", names)
+
+    def test_nsa_platform_detected_on_specialty(self) -> None:
+        from rcm_mc.pe_intelligence import match_failures_v2
+        hits = match_failures_v2({
+            "nsa_affected_specialty": True,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertIn("nsa_platform_rate_shock_2022", names)
+
+    def test_nsa_platform_detected_on_oon_share(self) -> None:
+        from rcm_mc.pe_intelligence import match_failures_v2
+        hits = match_failures_v2({
+            "oon_billing_pct": 0.30,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertIn("nsa_platform_rate_shock_2022", names)
+
+    def test_ma_risk_contract_detected(self) -> None:
+        """Partner: 'global-risk MA + no actuarial = risk-
+        contract failure pattern.'"""
+        from rcm_mc.pe_intelligence import match_failures_v2
+        hits = match_failures_v2({
+            "global_risk_ma_pct": 0.35,
+            "no_actuarial_team": True,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertIn("ma_provider_risk_contract_2023", names)
+
+    def test_telehealth_hype_fade_detected(self) -> None:
+        from rcm_mc.pe_intelligence import match_failures_v2
+        hits = match_failures_v2({
+            "virtual_revenue_pct": 0.60,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertIn("tele_health_hype_fade_2023", names)
+
+    def test_strategic_peak_requires_both_entry_and_goodwill(
+        self,
+    ) -> None:
+        """Partner: 'strategic peak = high multiple AND high
+        goodwill share.'"""
+        from rcm_mc.pe_intelligence import match_failures_v2
+        # Only high multiple, no goodwill share.
+        hits = match_failures_v2({
+            "entry_multiple": 17.0,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertNotIn("strategic_acquisition_peak_2022", names)
+        # Both signals.
+        hits = match_failures_v2({
+            "entry_multiple": 17.0,
+            "goodwill_share_pct": 0.75,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertIn("strategic_acquisition_peak_2022", names)
+
+    def test_rcm_concentration_detected(self) -> None:
+        from rcm_mc.pe_intelligence import match_failures_v2
+        hits = match_failures_v2({
+            "top_customer_pct": 0.35,
+        })
+        names = {h.pattern.name for h in hits}
+        self.assertIn("rcm_vendor_concentration_loss_2022",
+                       names)
+
+    def test_list_v2_has_10_patterns(self) -> None:
+        from rcm_mc.pe_intelligence import list_failure_patterns_v2
+        self.assertEqual(len(list_failure_patterns_v2()), 10)
+
+    def test_all_patterns_carry_partner_lesson(self) -> None:
+        from rcm_mc.pe_intelligence.named_failure_library_v2 import (
+            FAILURE_LIBRARY_V2,
+        )
+        for p in FAILURE_LIBRARY_V2:
+            self.assertTrue(len(p.partner_lesson) > 20,
+                            f"{p.name} missing partner lesson")
+            self.assertGreater(p.ebitda_destruction_pct, 0)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            match_failures_v2,
+            render_failures_v2_markdown,
+        )
+        md = render_failures_v2_markdown(
+            match_failures_v2({
+                "behavioral_health_platform": True,
+                "clinician_vacancy_gt_15pct": True,
+            })
+        )
+        self.assertIn("Historical failure library V2", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import match_failures_v2
+        hits = match_failures_v2({
+            "ma_plan_platform": True,
+            "mlr_rising_trend": True,
+        })
+        json.dumps([h.to_dict() for h in hits])
+
+
 if __name__ == "__main__":
     unittest.main()
