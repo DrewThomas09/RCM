@@ -5511,7 +5511,69 @@ wants more than a sentence but less than the deck.
 
 ---
 
-## 191. Change log
+## 191. Banker narrative decoder (`banker_narrative_decoder.py`)
+
+**Partner statement:** "Every banker runs the same 8
+plays. Once you name the play, the counter writes
+itself."
+
+Sell-side bankers use a finite catalog of narrative
+tactics to shape the buyer's framing. This module
+catalogs 10 of them, each with tells and a partner
+counter.
+
+### 10 banker narratives
+
+1. **the_hook** — top-of-deck tagline overshadows diligence.
+2. **the_comp_deck** — curated transaction comps anchor price.
+3. **the_momentum_story** — artificial urgency ("closing
+   Friday").
+4. **the_scarcity_pitch** — "only 3 quality assets left."
+5. **the_payer_renegotiation_tease** — imminent rate lift.
+6. **the_synergy_promise** — 300 bps Y1 margin claim.
+7. **the_secondary_angle** — prior process price as anchor.
+8. **the_once_in_a_generation** — emotional framing when
+   numbers weak.
+9. **the_teaser_without_financials** — info control pre-NDA.
+10. **the_management_is_rockstar** — preempts operator-risk
+    pushback.
+
+### Partner counter library (samples)
+
+- **the_once_in_a_generation** → "Instant flag. If banker
+  needs to call it generational, numbers don't support
+  price."
+- **the_momentum_story** → "Ignore the timeline. 'We'll
+  work to your process but won't skip diligence.'"
+- **the_teaser_without_financials** → "Ask for top-line +
+  EBITDA pre-NDA. If banker refuses, decline NDA."
+- **the_synergy_promise** → "Model synergy ramp Y2-Y4 net
+  of integration cost."
+
+### Partner-note escalation
+
+- 3+ tactics detected → "name each play in the next call;
+  bankers stop running them once we name them."
+- 1-2 tactics → "apply the counter; re-ground in numbers."
+- 0 tactics → "banker unusually direct, or we haven't
+  read the deck yet."
+
+### Worked example
+
+CIM observations signal: `top_of_deck_cagr_30 + recurring_revenue_framing_prominent + comps_selected_to_support_premium + urgency_without_specifics + generational_language_used`.
+
+→ Matches: `the_hook`, `the_comp_deck`, `the_momentum_story`, `the_once_in_a_generation` (4 tactics).
+
+→ Partner note: "name each play in the next call."
+
+### Packet signals
+
+Each tactic carries its own `tells` list (packet-signal
+strings). See module for full signal list.
+
+---
+
+## 192. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
