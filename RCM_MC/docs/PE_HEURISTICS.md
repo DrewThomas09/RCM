@@ -5823,7 +5823,71 @@ Same asset, three very different starting positions.
 
 ---
 
-## 196. Change log
+## 196. Thesis sharpness scorer (`thesis_sharpness_scorer.py`)
+
+**Partner statement:** "If I can't state the thesis in
+one sentence with a number and a date, I don't understand
+the deal. Diffuse theses don't get done — they get
+excused when the deal fails."
+
+Distinct from `thesis_coherence_check` (internal
+consistency), `thesis_validator` (packet validation),
+`thesis_implications_chain` (downstream links). This
+module scores *focus*.
+
+### 7 dimensions scored
+
+1. **one_sentence_statable** — fits in one sentence.
+2. **named_primary_lever** — the ONE primary lever.
+3. **quantified_uplift** — specific number (bps or pct).
+4. **geography_specific** — state/MSA named.
+5. **timeline_bounded** — hold + milestone cadence.
+6. **secondary_pillars_lte_2** — ≤ 2 secondary pillars.
+7. **anti_thesis_named** — explicit "what would make us
+   walk?"
+
+### Sharpness ladder
+
+- **7/7** = `razor` — IC-ready.
+- **5-6/7** = `sharp` — sharpen remaining dimensions.
+- **3-4/7** = `diffuse` — cannot advance to IC.
+- **0-2/7** = `incoherent` — back to drafting.
+
+### Razor example
+
+> "Consolidate fragmented GI practices in Texas via
+> platform-level commercial pricing lift of 400 bps;
+> hold 5 years with quarterly KPI cadence; walk if top-3
+> payers don't reopen contracts in year 1."
+
+Single sentence ✓, primary lever ✓, 400 bps ✓, Texas ✓,
+5 yr + quarterly ✓, 1 secondary ✓, anti-thesis ✓ = 7/7.
+
+### Diffuse example
+
+> "Opportunistic platform with multiple avenues of value
+> creation across pricing, operations, and geography."
+
+No lever, no number, no geography, 5 pillars, no anti-
+thesis = 0/7 = incoherent.
+
+### Why razor wins
+
+Partners see 100 decks/yr. The ones that close have
+ONE primary lever quantified with geography + timeline +
+anti-thesis. This module is the 60-second sharpness gate
+before team commits diligence dollars.
+
+### Packet fields that trigger
+
+`thesis_statement`, `primary_lever`,
+`quantified_uplift_bps`/`quantified_uplift_pct`,
+`geography_scope`, `hold_years`, `milestone_cadence`,
+`secondary_pillars`, `anti_thesis_pass_signal`.
+
+---
+
+## 197. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
