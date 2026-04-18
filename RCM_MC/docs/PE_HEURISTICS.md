@@ -10770,7 +10770,70 @@ rising further before pricing growth."
 
 ---
 
-## 266. Change log
+## 266. EHR transition risk assessor (`ehr_transition_risk_assessor.py`)
+
+**Partner statement.** "EHR migrations are a different animal from
+RCM switching. Epic from Cerner is 18-24 months, $10-30M in capex,
+and physicians fight it every step. There's a 6-12 month
+productivity dip of 10-25% post-go-live. The model's 'savings'
+don't show up until year 2."
+
+### Why it matters
+
+`rcm_vendor_switching_cost_assessor` covers RCM platform
+transition (denial/DSO-focused). `technology_debt_assessor` covers
+general tech debt. This module is **EHR-migration-specific** with
+per-transition capex band + productivity dip + revenue cliff.
+
+### 5 transition profiles
+
+| Transition | Months | Capex $/bed | Prod dip | Dip months |
+|---|---|---|---|---|
+| cerner_to_epic | 24 | $70k | 18% | 9 |
+| meditech_to_epic | 22 | $80k | 20% | 10 |
+| legacy_to_athena | 9 | $15k | 8% | 4 |
+| legacy_to_nextgen | 10 | $12k | 10% | 5 |
+| epic_version_upgrade | 6 | $5k | 5% | 2 |
+
+### Math
+
+- Capex = beds × $/bed
+- Revenue dip = annual_rev × (dip_months / 12) × dip_pct
+- Total all-in = capex + revenue dip
+- Payback years = total all-in / annual post-savings
+
+### Verdict
+
+- dip ≥ 15% → **heavy** — "price migration into entry multiple"
+- 8-15% → **moderate** — "manageable drag"
+- < 8% → **light** — "standard project cadence"
+
+Payback > 5 years → "EHR migrations rarely pay back within a 5-year
+hold — verify savings assumption."
+
+### Worked example
+
+200-bed hospital, $300M revenue, Cerner → Epic with $5M/yr savings:
+- Capex: 200 × $70k = $14M
+- Revenue dip: $300 × (9/12) × 18% = $40.5M
+- Total all-in: $54.5M
+- Payback: 10.9 years → "rarely pay back within 5-year hold"
+
+### Packet fields
+
+`transition_type`, `beds_or_providers`, `annual_revenue_m`,
+`post_transition_annual_savings_m`.
+
+### Distinct from existing modules
+
+- `rcm_vendor_switching_cost_assessor` — RCM platform DSO/denial.
+- `technology_debt_assessor` — general tech debt.
+- This module — EHR-specific capex + productivity + revenue cliff
+  + payback years with per-transition profiles.
+
+---
+
+## 267. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
