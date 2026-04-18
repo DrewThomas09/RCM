@@ -2877,6 +2877,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/market-data/state/"):
             st = urllib.parse.unquote(path[len("/market-data/state/"):]).strip("/")
             return self._route_market_data_state(st)
+        if path == "/pe-intelligence":
+            from .ui.chartis.pe_intelligence_hub_page import render_pe_intelligence_hub
+            store = PortfolioStore(self.config.db_path)
+            user = getattr(self, "_current_user", None)
+            return self._send_html(render_pe_intelligence_hub(store=store, current_user=user))
         if path == "/library":
             # /library now surfaces the 655-deal corpus (previously at
             # /deals-library). The methodology hub moved to /methodology.
