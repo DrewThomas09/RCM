@@ -137,6 +137,7 @@ NAV_ITEMS = [
     {"label": "Underwriting Model", "href": "/underwriting-model", "icon": "chart"},
     {"label": "Mgmt Fee Tracker", "href": "/mgmt-fee-tracker", "icon": "chart"},
     {"label": "LP Dashboard", "href": "/lp-dashboard", "icon": "chart"},
+    {"label": "Bolt-on M&A", "href": "/bolton-analyzer", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
