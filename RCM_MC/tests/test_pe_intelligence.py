@@ -32678,5 +32678,167 @@ class TestStateScopeOfPracticeExposure(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestStateAGPEScrutinyTracker(unittest.TestCase):
+    """Partner voice: 'State AGs are the new HSR for healthcare PE.'"""
+
+    def test_empty_footprint_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs())
+        self.assertIn(
+            "no state footprint",
+            r.partner_note.lower(),
+        )
+
+    def test_california_ab3129_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs(
+            footprint=[AGStateFootprint("CA", 1.0)],
+        ))
+        ca = r.hits[0]
+        self.assertTrue(ca.notification_required)
+        self.assertEqual(ca.review_window_days, 90)
+        self.assertIn(
+            "ab 3129",
+            ca.material_threshold_desc.lower(),
+        )
+
+    def test_high_exposure_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs(
+            footprint=[
+                AGStateFootprint("CA", 0.50),
+                AGStateFootprint("MA", 0.50),
+            ],
+        ))
+        self.assertEqual(
+            r.verdict, "high_state_ag_exposure"
+        )
+        self.assertEqual(r.max_review_window_days, 90)
+
+    def test_ma_recent_block_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs(
+            footprint=[AGStateFootprint("MA", 0.30)],
+        ))
+        self.assertTrue(r.has_recent_blocks)
+
+    def test_no_exposure_outside_book(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs(
+            footprint=[
+                AGStateFootprint("TX", 0.50),
+                AGStateFootprint("FL", 0.50),
+            ],
+        ))
+        self.assertEqual(
+            r.verdict, "no_state_ag_exposure"
+        )
+
+    def test_moderate_exposure_il_heavy(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs(
+            footprint=[
+                AGStateFootprint("IL", 0.50),
+                AGStateFootprint("OH", 0.50),
+            ],
+        ))
+        self.assertEqual(
+            r.verdict, "moderate_state_ag_exposure"
+        )
+
+    def test_minor_exposure_tiny_share(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs(
+            footprint=[
+                AGStateFootprint("IL", 0.10),
+                AGStateFootprint("TX", 0.90),
+            ],
+        ))
+        self.assertEqual(
+            r.verdict, "minor_state_ag_exposure"
+        )
+
+    def test_unknown_state_no_notice(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs(
+            footprint=[AGStateFootprint("XX", 1.0)],
+        ))
+        self.assertFalse(
+            r.hits[0].notification_required
+        )
+
+    def test_or_sb951_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs(
+            footprint=[AGStateFootprint("OR", 0.20)],
+        ))
+        or_hit = r.hits[0]
+        self.assertIn(
+            "sb 951",
+            or_hit.material_threshold_desc.lower(),
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            render_state_ag_markdown,
+            track_state_ag_scrutiny,
+        )
+        md = render_state_ag_markdown(
+            track_state_ag_scrutiny(StateAGInputs(
+                footprint=[AGStateFootprint("CA", 0.40)],
+            ))
+        )
+        self.assertIn("# State AG scrutiny", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            AGStateFootprint,
+            StateAGInputs,
+            track_state_ag_scrutiny,
+        )
+        r = track_state_ag_scrutiny(StateAGInputs(
+            footprint=[AGStateFootprint("CA", 0.40)],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

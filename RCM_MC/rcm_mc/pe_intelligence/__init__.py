@@ -1626,6 +1626,14 @@ from .state_scope_of_practice_exposure import (
     analyze_scope_of_practice,
     render_scope_of_practice_markdown,
 )
+from .state_ag_pe_scrutiny_tracker import (
+    AGStateFootprint,
+    StateAGHit,
+    StateAGInputs,
+    StateAGReport,
+    render_state_ag_markdown,
+    track_state_ag_scrutiny,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3267,4 +3275,10 @@ __all__ = [
     "ScopeStateFootprint",
     "analyze_scope_of_practice",
     "render_scope_of_practice_markdown",
+    "AGStateFootprint",
+    "StateAGHit",
+    "StateAGInputs",
+    "StateAGReport",
+    "render_state_ag_markdown",
+    "track_state_ag_scrutiny",
 ]
