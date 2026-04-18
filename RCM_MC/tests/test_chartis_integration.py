@@ -599,5 +599,77 @@ class TestJsonApiSanityAnnotation(unittest.TestCase):
         self.assertNotIn("moic_warning", out)
 
 
+class TestExplainerHelper(unittest.TestCase):
+    """Phase 3A: the render_page_explainer helper that every chartis
+    page calls at the top of its body to document what the page
+    shows, what the scale means, and how partners should use it."""
+
+    def test_explainer_with_all_three_parts_renders(self):
+        from rcm_mc.ui.chartis._helpers import render_page_explainer
+        html = render_page_explainer(
+            what="This page shows HHI for the target's local market.",
+            scale="Under 1,500 = fragmented; 2,500+ = concentrated.",
+            use="Use this to assess pricing power.",
+            source="FTC Horizontal Merger Guidelines (2023).",
+            page_key="market-structure",
+        )
+        self.assertIn("About this page", html)
+        self.assertIn("HHI", html)
+        self.assertIn(">Scale<", html)
+        self.assertIn(">How to use<", html)
+        self.assertIn("Source:", html)
+        self.assertIn("FTC Horizontal Merger Guidelines", html)
+        # Toggle + JS wired
+        self.assertIn("ck-explainer-toggle", html)
+        self.assertIn("ckExplainerToggle", html)
+        # Page key wired for localStorage
+        self.assertIn('data-page-key="market-structure"', html)
+
+    def test_explainer_with_only_what_renders(self):
+        from rcm_mc.ui.chartis._helpers import render_page_explainer
+        html = render_page_explainer(
+            what="This page shows a list of deals.",
+            page_key="library",
+        )
+        self.assertIn("This page shows a list of deals.", html)
+        # Scale / Use / Source sections absent
+        self.assertNotIn(">Scale<", html)
+        self.assertNotIn(">How to use<", html)
+        self.assertNotIn("Source:", html)
+        # Toggle still present — every explainer collapses
+        self.assertIn("ck-explainer-toggle", html)
+
+    def test_explainer_omits_source_line_when_source_empty(self):
+        from rcm_mc.ui.chartis._helpers import render_page_explainer
+        html = render_page_explainer(
+            what="No source needed.",
+            scale="Threshold X means Y.",
+            use="Use for Z.",
+            source="",
+            page_key="page",
+        )
+        self.assertIn(">Scale<", html)
+        self.assertIn(">How to use<", html)
+        self.assertNotIn("Source:", html)
+
+    def test_explainer_html_is_safe(self):
+        """XSS vectors in any of the text args must be escaped."""
+        from rcm_mc.ui.chartis._helpers import render_page_explainer
+        xss = "<script>alert('x')</script>"
+        html = render_page_explainer(
+            what=xss,
+            scale=xss,
+            use=xss,
+            source=xss,
+            page_key="p",
+        )
+        # Raw <script> tags from user text must not leak into the DOM
+        # (the helper's own <script> block is fine; that's page
+        # infrastructure). Check that the literal attack string is
+        # escaped.
+        self.assertNotIn("<script>alert('x')</script>", html)
+        self.assertIn("&lt;script&gt;", html)
+
+
 if __name__ == "__main__":
     unittest.main()
