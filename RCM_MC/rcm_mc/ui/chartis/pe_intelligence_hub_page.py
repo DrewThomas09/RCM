@@ -90,6 +90,58 @@ _SEVEN_REFLEXES: List[Dict[str, str]] = [
     },
 ]
 
+_PER_DEAL_ROUTES: List[Dict[str, str]] = [
+    {
+        "suffix": "partner-review",
+        "module": "partner_review.partner_review",
+        "desc": "Full IC verdict: recommendation, partner-voice narrative, "
+                "reasonableness bands, heuristic hits, secondary analytics.",
+    },
+    {
+        "suffix": "red-flags",
+        "module": "red_flags + reasonableness",
+        "desc": "Focused view: critical/high severity heuristic hits plus "
+                "band violations (OUT_OF_BAND + IMPLAUSIBLE).",
+    },
+    {
+        "suffix": "archetype",
+        "module": "deal_archetype + regime_classifier",
+        "desc": "Sponsor-structure archetype match (playbook + risks + IC "
+                "questions) plus time-series regime classification.",
+    },
+    {
+        "suffix": "investability",
+        "module": "investability_scorer + exit_readiness",
+        "desc": "Composite 0-100 score + grade + sub-scores plus 12-dimension "
+                "exit readiness report and top-3 change-my-mind items.",
+    },
+    {
+        "suffix": "market-structure",
+        "module": "market_structure",
+        "desc": "HHI / CR3 / CR5 + fragmentation verdict + consolidation-"
+                "play score + thesis hint (buy_and_build / platform_entry).",
+    },
+    {
+        "suffix": "white-space",
+        "module": "white_space",
+        "desc": "Geographic / segment / channel adjacency opportunities "
+                "with per-opportunity scores, rationales, and barriers.",
+    },
+    {
+        "suffix": "stress",
+        "module": "stress_test.run_stress_grid",
+        "desc": "Scenario grid: rate / volume / multiple / lever / labor "
+                "shocks with pass-rate, covenant breaches, EBITDA delta.",
+    },
+    {
+        "suffix": "ic-packet",
+        "module": "master_bundle.build_master_bundle",
+        "desc": "Composed IC packet: memo + cheatsheet + 100-day plan + "
+                "bear patterns + regulatory items + partner discussion.",
+    },
+]
+
+
 _QUICK_LINKS: List[Dict[str, str]] = [
     {
         "label": "Archetype Library",
@@ -245,24 +297,52 @@ def render_pe_intelligence_hub(
         + f'</div>'
     )
 
-    # Per-deal CTA row
+    # Per-deal module catalog
+    catalog_header = ck_section_header(
+        "PER-DEAL ROUTES",
+        "which brain module drives each page",
+        count=len(_PER_DEAL_ROUTES),
+    )
+    catalog_rows = []
+    for row in _PER_DEAL_ROUTES:
+        catalog_rows.append(
+            f'<div style="display:grid;grid-template-columns:180px 260px 1fr;'
+            f'gap:14px;padding:8px 10px;border-bottom:1px solid {P["border_dim"]};'
+            f'font-size:11.5px;align-items:baseline;">'
+            f'<div style="font-family:var(--ck-mono);color:{P["accent"]};'
+            f'font-size:11px;">/deal/&lt;id&gt;/{_html.escape(row["suffix"])}</div>'
+            f'<div style="font-family:var(--ck-mono);color:{P["text_dim"]};'
+            f'font-size:10.5px;">{_html.escape(row["module"])}</div>'
+            f'<div style="color:{P["text"]};line-height:1.55;">'
+            f'{_html.escape(row["desc"])}</div></div>'
+        )
+    catalog = (
+        f'<div class="ck-panel"><div class="ck-panel-title">Per-deal routes · '
+        f'pick any deal and append one of these suffixes</div>'
+        f'<div style="padding:6px 10px;">{"".join(catalog_rows)}</div></div>'
+    )
+
     cta = (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:3px;padding:14px;margin-bottom:14px;">'
+        f'border-radius:3px;padding:14px;margin-bottom:14px;margin-top:14px;">'
         f'<div style="font-family:var(--ck-mono);font-size:9.5px;'
         f'color:{P["text_faint"]};letter-spacing:0.15em;margin-bottom:6px;">'
-        f'PER-DEAL OUTPUT</div>'
+        f'GET STARTED</div>'
         f'<div style="color:{P["text_dim"]};font-size:11.5px;line-height:1.55;">'
-        f'The brain runs per packet, not stand-alone. Open a deal and follow '
-        f'<span style="color:{P["accent"]};">Partner Review</span> or '
-        f'<span style="color:{P["accent"]};">Red Flags</span> from the deal '
-        f'dashboard. New to the platform? Start at '
+        f'The brain runs per packet. Open a deal and follow '
+        f'<span style="color:{P["accent"]};">Partner Review</span> '
+        f'from the deal dashboard — that page links into every drill-down '
+        f'below. Need historical comps first? Browse '
         f'<a href="/library" style="color:{P["accent"]};">the corpus</a> '
-        f'to browse 655 historical deals for comparables.'
+        f'(655 deals).'
         f'</div></div>'
     )
 
-    body = kpi_strip + intro + reflex_header + reflex_grid + links_header + links_grid + cta
+    body = (
+        kpi_strip + intro + reflex_header + reflex_grid
+        + links_header + links_grid
+        + catalog_header + catalog + cta
+    )
 
     subtitle = (
         f"Signed in as {_html.escape(current_user)} · 278 modules · 7 reflexes"

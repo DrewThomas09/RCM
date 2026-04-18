@@ -30,6 +30,7 @@ from .._chartis_kit import (
     ck_kpi_block,
     ck_section_header,
 )
+from ._helpers import related_views_panel
 
 
 _REC_COLORS = {
@@ -494,6 +495,12 @@ def render_partner_review(
         count=6,
     )
 
+    related_header = ck_section_header(
+        "RELATED VIEWS",
+        "drill into any secondary-analytic section as its own page",
+    )
+    related = related_views_panel(deal_id, exclude="partner-review")
+
     body = (
         header_links
         + banner
@@ -505,6 +512,8 @@ def render_partner_review(
         + other_section
         + secondary_header
         + _secondary_analytics(review)
+        + related_header
+        + related
     )
 
     subtitle = f"{deal_label} · 278-module brain run · {review.generated_at:%Y-%m-%d %H:%M UTC}"
