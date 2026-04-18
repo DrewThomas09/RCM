@@ -3964,7 +3964,37 @@ Partner note:
 
 ---
 
-## 161. Change log
+## 161. IRR decay curve (`irr_decay_curve.py`)
+
+**Partner statement:** "Someone's suggesting we extend the hold.
+Does IRR still clear the hurdle next year?"
+
+Given projected EBITDA by year + exit multiple + entry equity +
+debt + hurdle IRR, returns a per-year exit MOIC / IRR table and
+identifies:
+
+- **IRR peak year** — usually earlier than MOIC peak.
+- **MOIC peak year** — usually later than IRR peak.
+- **Last year above hurdle** — where IRR still clears the
+  partner's minimum.
+
+Partner note:
+
+- Never clears hurdle → "thesis needs multiple expansion or
+  better EBITDA growth, not longer hold."
+- Clears throughout horizon → "trajectory supports extending if
+  needed."
+- Clears partially → "extending past year N destroys IRR even
+  if MOIC keeps growing; exit at year N unless DPI timing
+  dictates earlier."
+
+This is the math partner runs every time someone suggests
+"another year to let the thesis play out." Sometimes the answer
+is yes; often the math says no.
+
+---
+
+## 162. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4344,3 +4374,7 @@ Partner note:
   (§160) — Medicare FFS audit exposure $ with signal-adjusted
   hit rate; IC-blocking threshold. Full inventory: 158 modules,
   1,606 pe_intelligence unit tests.
+- **2026-04-17** — Added `irr_decay_curve.py` (§161) — per-year
+  MOIC/IRR and last-year-above-hurdle; the math partner runs
+  when someone suggests extending the hold. Full inventory: 159
+  modules, 1,614 pe_intelligence unit tests.
