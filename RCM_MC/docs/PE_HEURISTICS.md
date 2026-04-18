@@ -9721,7 +9721,72 @@ Module §250 of the partner-brain library.
 
 ---
 
-## 251. Change log
+## 251. VBC portfolio aggregator (`vbc_portfolio_aggregator.py`)
+
+**Partner statement.** "A single VBC contract is one risk. A
+portfolio of VBC contracts can either be diversified — population
+variability evens out across contracts — or concentrated. If 60%
+of VBC EBITDA comes from one contract, you don't have a VBC
+portfolio, you have one bet."
+
+### Why it matters
+
+`vbc_risk_share_underwriter` sizes one contract. This module
+aggregates many contracts into a portfolio view. The partner cares
+about (a) total VBC EBITDA contribution, (b) concentration of that
+contribution in a few contracts, (c) what happens if all contracts
+move bear simultaneously (correlated-MLR shock).
+
+### Output
+
+- `total_revenue_m`, `total_expected_ebitda_m`,
+  `total_bear_ebitda_m` (all contracts +5pp MLR),
+  `total_bull_ebitda_m`
+- per-contract `ContractContribution` (name, expected_ebitda_m,
+  contribution_share, bear_ebitda_m, single-contract verdict)
+- `top1_concentration_pct`, `top3_concentration_pct`
+- `portfolio_verdict` — `single_bet` / `concentrated` /
+  `diversified`
+
+### Verdict thresholds
+
+- top1 ≥ 50% → **single_bet** — "not a portfolio; renegotiate top
+  contract corridor or expand others."
+- top1 ≥ 30% OR top3 ≥ 75% → **concentrated** — "stress top
+  contracts harder; their bear cases drive the portfolio bear."
+- otherwise → **diversified** — "population variability across
+  contracts mutes single-contract MLR shocks."
+
+### Correlated-bear partner note
+
+When `total_bear_ebitda_m < 0` the note adds: "VBC portfolio
+becomes a drag in bear, not a contributor." This is the partner
+reminder that VBC is risk-bearing — diversification doesn't help
+if every contract bears the same population shock.
+
+### Worked example
+
+5 mid-sized contracts (~25k lives each, profitable parameters) →
+top1 ~22%, top3 ~58% → **diversified**.
+
+1 large (200k lives) + 2 small (10k each) → top1 ~85% → **single
+bet** — "renegotiate top contract corridor before treating VBC as
+diversified."
+
+### Packet fields
+
+`contracts` — list of `VBCContractInputs` (each contract spec).
+
+### Distinct from existing modules
+
+- `vbc_risk_share_underwriter` — single contract economics.
+- `payer_mix_risk` — payer concentration generally.
+- This module — portfolio-level aggregation with correlated-bear
+  scenario and concentration verdict.
+
+---
+
+## 252. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
