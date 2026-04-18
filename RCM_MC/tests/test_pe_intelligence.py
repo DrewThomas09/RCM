@@ -15731,5 +15731,108 @@ class TestRACAuditExposureEstimator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── IRR decay curve ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    IRRDecayInputs,
+    IRRDecayReport,
+    IRRYearPoint,
+    render_decay_markdown,
+    trace_irr_decay,
+)
+
+
+class TestIRRDecayCurve(unittest.TestCase):
+
+    def test_strong_growth_clears_hurdle_throughout(self) -> None:
+        r = trace_irr_decay(IRRDecayInputs(
+            ebitda_by_year_m=[50.0, 58.0, 67.0, 77.0, 88.0, 100.0],
+            exit_multiple=11.0,
+            entry_equity_net_fees_m=225.0,
+            debt_m=275.0,
+            hurdle_irr=0.20,
+        ))
+        self.assertGreaterEqual(r.last_year_above_hurdle, 4)
+
+    def test_stagnant_fails_hurdle(self) -> None:
+        # All-equity entry at current multiple; flat EBITDA → MOIC
+        # stays ~1.0x; IRR can't clear any meaningful hurdle.
+        r = trace_irr_decay(IRRDecayInputs(
+            ebitda_by_year_m=[50.0, 50.0, 50.0, 50.0, 50.0],
+            exit_multiple=11.0,
+            entry_equity_net_fees_m=550.0,   # full EV, no leverage
+            debt_m=0.0,
+            hurdle_irr=0.15,
+        ))
+        self.assertEqual(r.last_year_above_hurdle, 0)
+        self.assertIn("needs multiple expansion",
+                       r.partner_note.lower())
+
+    def test_moic_continues_past_irr_peak(self) -> None:
+        # Front-loaded growth with flat multiple; MOIC peaks later
+        # than IRR.
+        r = trace_irr_decay(IRRDecayInputs(
+            ebitda_by_year_m=[50.0, 75.0, 90.0, 100.0, 105.0, 108.0],
+            exit_multiple=11.0,
+            entry_equity_net_fees_m=225.0,
+            debt_m=275.0,
+            hurdle_irr=0.20,
+        ))
+        self.assertGreaterEqual(r.moic_peak_year, r.irr_peak_year)
+
+    def test_irr_peak_value_present(self) -> None:
+        r = trace_irr_decay(IRRDecayInputs(
+            ebitda_by_year_m=[50.0, 60.0, 70.0],
+            exit_multiple=11.0,
+            entry_equity_net_fees_m=225.0,
+            debt_m=275.0,
+        ))
+        self.assertGreater(r.irr_peak_value, 0)
+
+    def test_clears_hurdle_flag(self) -> None:
+        r = trace_irr_decay(IRRDecayInputs(
+            ebitda_by_year_m=[50.0, 60.0, 70.0, 80.0],
+            exit_multiple=11.0,
+            entry_equity_net_fees_m=225.0,
+            debt_m=275.0,
+            hurdle_irr=0.25,
+        ))
+        # At least one year must clear 25%.
+        self.assertTrue(any(p.clears_hurdle for p in r.points))
+
+    def test_extending_destroys_irr_note(self) -> None:
+        # Clears in years 1-3, fails year 4+.
+        r = trace_irr_decay(IRRDecayInputs(
+            ebitda_by_year_m=[50.0, 60.0, 68.0, 70.0, 71.0, 72.0],
+            exit_multiple=11.0,
+            entry_equity_net_fees_m=225.0,
+            debt_m=275.0,
+            hurdle_irr=0.20,
+        ))
+        if r.last_year_above_hurdle > 0 and r.last_year_above_hurdle \
+                < len(r.points):
+            self.assertIn("destroys irr", r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_decay_markdown(trace_irr_decay(IRRDecayInputs(
+            ebitda_by_year_m=[50.0, 60.0, 70.0],
+            exit_multiple=11.0,
+            entry_equity_net_fees_m=225.0,
+            debt_m=275.0,
+        )))
+        self.assertIn("# IRR decay curve", md)
+        self.assertIn("IRR peak year", md)
+
+    def test_json(self) -> None:
+        import json
+        r = trace_irr_decay(IRRDecayInputs(
+            ebitda_by_year_m=[50.0, 60.0, 70.0],
+            exit_multiple=11.0,
+            entry_equity_net_fees_m=225.0,
+            debt_m=275.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

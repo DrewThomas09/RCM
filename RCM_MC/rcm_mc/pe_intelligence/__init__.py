@@ -896,6 +896,13 @@ from .rac_audit_exposure_estimator import (
     estimate_rac_exposure,
     render_rac_markdown,
 )
+from .irr_decay_curve import (
+    IRRDecayInputs,
+    IRRDecayReport,
+    IRRYearPoint,
+    render_decay_markdown,
+    trace_irr_decay,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2005,4 +2012,9 @@ __all__ = [
     "RACInputs",
     "estimate_rac_exposure",
     "render_rac_markdown",
+    "IRRDecayInputs",
+    "IRRDecayReport",
+    "IRRYearPoint",
+    "render_decay_markdown",
+    "trace_irr_decay",
 ]
