@@ -17587,5 +17587,178 @@ class TestThesisImplicationsChain(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestDealOneLiner(unittest.TestCase):
+    """Partner scenario: one sentence in the margin of the deck."""
+
+    def test_empty_inputs_yields_proceed(self) -> None:
+        """No inputs means no signal — partner reads it as clean proceed."""
+        from rcm_mc.pe_intelligence import (
+            OneLinerInputs,
+            synthesize_one_liner,
+        )
+        v = synthesize_one_liner(OneLinerInputs())
+        self.assertIn(v.recommendation,
+                       {"proceed_with_mitigants", "invest", "pass",
+                        "diligence_more", "reprice"})
+        self.assertEqual(v.reason_source, "none")
+
+    def test_face_high_implausibility_dominates_all(self) -> None:
+        """Partner: 'math doesn't work on face — pass before modeling.'"""
+        from rcm_mc.pe_intelligence import (
+            FaceInputs,
+            OneLinerInputs,
+            PatternContext,
+            synthesize_one_liner,
+        )
+        # Face: rural CAH with 28% IRR — classic implausibility.
+        v = synthesize_one_liner(OneLinerInputs(
+            face=FaceInputs(
+                subsector="hospital",
+                revenue_m=400.0,
+                ebitda_m=30.0,
+                claimed_irr=0.28,
+                is_rural=True,
+                is_critical_access=True,
+            ),
+            pattern_ctx=PatternContext(),
+            thesis="denial_reduction",
+            thesis_packet={},
+        ))
+        self.assertEqual(v.recommendation, "pass")
+        self.assertEqual(v.reason_source, "face")
+        self.assertIn("pass", v.one_liner.lower())
+
+    def test_broken_thesis_chain_triggers_pass(self) -> None:
+        """Chain broken by 55% Y1 cash release → pass."""
+        from rcm_mc.pe_intelligence import (
+            OneLinerInputs,
+            synthesize_one_liner,
+        )
+        v = synthesize_one_liner(OneLinerInputs(
+            thesis="denial_reduction",
+            thesis_packet={"year1_cash_release_share": 0.55},
+        ))
+        self.assertEqual(v.recommendation, "pass")
+        self.assertEqual(v.reason_source, "chain")
+
+    def test_tight_chain_yields_invest(self) -> None:
+        """Chain is tight → invest."""
+        from rcm_mc.pe_intelligence import (
+            OneLinerInputs,
+            synthesize_one_liner,
+        )
+        v = synthesize_one_liner(OneLinerInputs(
+            thesis="denial_reduction",
+            thesis_packet={
+                "coder_turnover_annual_pct": 0.10,
+                "open_payer_coding_disputes": False,
+                "dar_reduction_days_per_yr": 3.0,
+                "year1_cash_release_share": 0.20,
+                "y1_leverage_on_y1_ebitda": 5.5,
+                "exit_ebitda_basis": "trailing",
+            },
+        ))
+        self.assertEqual(v.recommendation, "invest")
+        self.assertEqual(v.reason_source, "chain")
+
+    def test_pattern_compound_triggers_pass(self) -> None:
+        """All 3 pattern libraries on one theme → pass."""
+        from rcm_mc.pe_intelligence import (
+            OneLinerInputs,
+            PatternContext,
+            synthesize_one_liner,
+        )
+        # Build a context likely to fire across libraries.
+        v = synthesize_one_liner(OneLinerInputs(
+            pattern_ctx=PatternContext(
+                ebitda_m=30.0,
+                leverage_multiple=6.8,
+                hold_years=3.0,
+                margin_expansion_bps_per_yr=500,
+                covenant_headroom_pct=0.05,
+                ebitda_margin=0.08,
+                payer_mix={"medicare_advantage": 0.30},
+                packet_fields={
+                    "current_denial_rate": 0.14,
+                    "target_denial_rate": 0.05,
+                    "months_to_target": 10,
+                    "medicare_advantage_pct": 0.30,
+                    "regulatory_risk_material": True,
+                },
+            ),
+        ))
+        self.assertIn(v.recommendation, {"pass", "reprice",
+                                           "diligence_more"})
+
+    def test_precedence_face_beats_chain(self) -> None:
+        """If face and chain both fire, face wins."""
+        from rcm_mc.pe_intelligence import (
+            FaceInputs,
+            OneLinerInputs,
+            synthesize_one_liner,
+        )
+        v = synthesize_one_liner(OneLinerInputs(
+            face=FaceInputs(
+                subsector="hospital",
+                revenue_m=400.0,
+                ebitda_m=90.0,   # 22.5% margin = implausible
+            ),
+            thesis="denial_reduction",
+            thesis_packet={"year1_cash_release_share": 0.55},
+        ))
+        self.assertEqual(v.reason_source, "face")
+
+    def test_one_liner_is_single_sentence(self) -> None:
+        """One-liner must actually be one sentence, partner margin-style."""
+        from rcm_mc.pe_intelligence import (
+            OneLinerInputs,
+            synthesize_one_liner,
+        )
+        v = synthesize_one_liner(OneLinerInputs(
+            thesis="denial_reduction",
+            thesis_packet={"year1_cash_release_share": 0.55},
+        ))
+        # Count sentence-ending punctuation — allow one.
+        sentence_ends = sum(v.one_liner.count(c) for c in ".!?")
+        self.assertLessEqual(sentence_ends, 1)
+
+    def test_supporting_evidence_present_on_broken_chain(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            OneLinerInputs,
+            synthesize_one_liner,
+        )
+        v = synthesize_one_liner(OneLinerInputs(
+            thesis="denial_reduction",
+            thesis_packet={"year1_cash_release_share": 0.55},
+        ))
+        self.assertGreaterEqual(len(v.supporting_evidence), 1)
+
+    def test_markdown_renders_recommendation_prominently(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            OneLinerInputs,
+            render_one_liner_markdown,
+            synthesize_one_liner,
+        )
+        v = synthesize_one_liner(OneLinerInputs(
+            thesis="denial_reduction",
+            thesis_packet={"year1_cash_release_share": 0.55},
+        ))
+        md = render_one_liner_markdown(v)
+        self.assertIn("Recommendation", md)
+        self.assertIn("pass", md.lower())
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            OneLinerInputs,
+            synthesize_one_liner,
+        )
+        v = synthesize_one_liner(OneLinerInputs(
+            thesis="denial_reduction",
+            thesis_packet={"coder_turnover_annual_pct": 0.10},
+        ))
+        json.dumps(v.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

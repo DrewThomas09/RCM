@@ -1015,6 +1015,12 @@ from .thesis_implications_chain import (
     render_thesis_chain_markdown,
     walk_thesis_chain,
 )
+from .deal_one_liner import (
+    OneLinerInputs,
+    OneLinerVerdict,
+    render_one_liner_markdown,
+    synthesize_one_liner,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2211,4 +2217,8 @@ __all__ = [
     "list_thesis_chains",
     "render_thesis_chain_markdown",
     "walk_thesis_chain",
+    "OneLinerInputs",
+    "OneLinerVerdict",
+    "render_one_liner_markdown",
+    "synthesize_one_liner",
 ]
