@@ -25406,5 +25406,186 @@ class TestIntegrationVelocityTracker(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestInsuranceTailCoverageDesigner(unittest.TestCase):
+    """Partner scenario: close-date tail insurance package."""
+
+    def test_default_provider_has_4_tail_policies(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        r = design_insurance_tail_package(
+            InsuranceTailInputs(ev_m=500.0)
+        )
+        policies = {c.policy for c in r.coverages}
+        self.assertIn("directors_and_officers_runoff",
+                       policies)
+        self.assertIn("cyber_tail", policies)
+        self.assertIn("professional_liability_tail", policies)
+        self.assertIn("epl_runoff", policies)
+
+    def test_non_provider_no_prof_liability(self) -> None:
+        """Partner: 'non-provider asset → no med-mal tail.'"""
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        r = design_insurance_tail_package(InsuranceTailInputs(
+            ev_m=500.0,
+            asset_type_is_provider=False,
+        ))
+        policies = {c.policy for c in r.coverages}
+        self.assertNotIn("professional_liability_tail", policies)
+
+    def test_do_tail_6_years(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        r = design_insurance_tail_package(
+            InsuranceTailInputs(ev_m=500.0)
+        )
+        do = next(c for c in r.coverages
+                   if c.policy ==
+                   "directors_and_officers_runoff")
+        self.assertEqual(do.tail_years, 6)
+
+    def test_pro_liability_tail_7_years(self) -> None:
+        """Partner: 'med-mal SoL is 7+ yrs typical.'"""
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        r = design_insurance_tail_package(
+            InsuranceTailInputs(ev_m=500.0)
+        )
+        prof = next(c for c in r.coverages
+                     if c.policy ==
+                     "professional_liability_tail")
+        self.assertEqual(prof.tail_years, 7)
+
+    def test_prior_cyber_incident_raises_limit(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        clean = design_insurance_tail_package(InsuranceTailInputs(
+            ev_m=500.0,
+            prior_cyber_incident=False,
+        ))
+        risky = design_insurance_tail_package(InsuranceTailInputs(
+            ev_m=500.0,
+            prior_cyber_incident=True,
+        ))
+        clean_cyber = next(c for c in clean.coverages
+                            if c.policy == "cyber_tail")
+        risky_cyber = next(c for c in risky.coverages
+                            if c.policy == "cyber_tail")
+        self.assertGreater(risky_cyber.recommended_limit_m,
+                            clean_cyber.recommended_limit_m)
+
+    def test_material_medmal_elevates_limit(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        clean = design_insurance_tail_package(InsuranceTailInputs(
+            ev_m=500.0,
+            material_medmal_exposure=False,
+        ))
+        risky = design_insurance_tail_package(InsuranceTailInputs(
+            ev_m=500.0,
+            material_medmal_exposure=True,
+        ))
+        clean_p = next(c for c in clean.coverages
+                        if c.policy == "professional_liability_tail")
+        risky_p = next(c for c in risky.coverages
+                        if c.policy == "professional_liability_tail")
+        self.assertGreater(risky_p.recommended_limit_m,
+                            clean_p.recommended_limit_m)
+
+    def test_environmental_tail_only_when_relevant(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        no_env = design_insurance_tail_package(InsuranceTailInputs(
+            ev_m=500.0,
+            material_environmental_exposure=False,
+        ))
+        self.assertFalse(any(c.policy == "environmental_tail"
+                              for c in no_env.coverages))
+        with_env = design_insurance_tail_package(
+            InsuranceTailInputs(
+                ev_m=500.0,
+                has_physical_real_estate=True,
+                material_environmental_exposure=True,
+            )
+        )
+        self.assertTrue(any(c.policy == "environmental_tail"
+                             for c in with_env.coverages))
+
+    def test_do_limit_scales_with_ev(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        small = design_insurance_tail_package(
+            InsuranceTailInputs(ev_m=200.0)
+        )
+        large = design_insurance_tail_package(
+            InsuranceTailInputs(ev_m=800.0)
+        )
+        small_do = next(c for c in small.coverages
+                         if c.policy ==
+                         "directors_and_officers_runoff")
+        large_do = next(c for c in large.coverages
+                         if c.policy ==
+                         "directors_and_officers_runoff")
+        self.assertGreater(large_do.recommended_limit_m,
+                            small_do.recommended_limit_m)
+
+    def test_heavy_tail_cost_triggers_cost_share_note(self) -> None:
+        """Partner: '≥ $5M total tail → negotiate cost-sharing with seller.'"""
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        r = design_insurance_tail_package(InsuranceTailInputs(
+            ev_m=2000.0,
+            expiring_annual_premium_total_m=3.0,
+            prior_cyber_incident=True,
+            material_medmal_exposure=True,
+        ))
+        if r.total_estimated_premium_m >= 5.0:
+            self.assertIn("cost-sharing",
+                           r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+            render_insurance_tail_markdown,
+        )
+        md = render_insurance_tail_markdown(
+            design_insurance_tail_package(
+                InsuranceTailInputs(ev_m=500.0)
+            )
+        )
+        self.assertIn("# Insurance tail coverage package", md)
+        self.assertIn("directors_and_officers_runoff", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            InsuranceTailInputs,
+            design_insurance_tail_package,
+        )
+        r = design_insurance_tail_package(
+            InsuranceTailInputs(ev_m=500.0)
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

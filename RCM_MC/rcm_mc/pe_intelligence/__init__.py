@@ -1380,6 +1380,13 @@ from .integration_velocity_tracker import (
     render_velocity_markdown,
     track_integration_velocity,
 )
+from .insurance_tail_coverage_designer import (
+    InsuranceTailInputs,
+    InsuranceTailReport,
+    TailCoverage,
+    design_insurance_tail_package,
+    render_insurance_tail_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2843,4 +2850,9 @@ __all__ = [
     "VelocityReport",
     "render_velocity_markdown",
     "track_integration_velocity",
+    "InsuranceTailInputs",
+    "InsuranceTailReport",
+    "TailCoverage",
+    "design_insurance_tail_package",
+    "render_insurance_tail_markdown",
 ]
