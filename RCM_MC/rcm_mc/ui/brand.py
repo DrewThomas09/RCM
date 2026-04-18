@@ -256,6 +256,7 @@ NAV_ITEMS = [
     {"label": "Tax Credits", "href": "/tax-credits", "icon": "chart"},
     {"label": "Deal Sourcing", "href": "/deal-sourcing", "icon": "grid"},
     {"label": "Treasury", "href": "/treasury", "icon": "chart"},
+    {"label": "Sell-Side Process", "href": "/sellside-process", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

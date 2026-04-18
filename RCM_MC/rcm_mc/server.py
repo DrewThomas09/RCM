@@ -2214,6 +2214,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.treasury_tracker_page import render_treasury_tracker
             return self._send_html(render_treasury_tracker(_qp))
+        if path == "/sellside-process":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.sellside_process_page import render_sellside_process
+            return self._send_html(render_sellside_process(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
