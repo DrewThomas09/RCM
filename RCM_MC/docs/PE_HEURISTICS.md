@@ -4919,7 +4919,68 @@ to specify which initiatives deliver it."
 
 ---
 
-## 182. Change log
+## 182. Management-meeting questions (`management_meeting_questions.py`)
+
+**Partner statement:** "In the Monday management meeting,
+I don't ask 'tell me about the business.' I ask the CEO
+the three questions where their answer reveals whether the
+thesis survives. Different chair for CFO. Different for
+COO."
+
+Distinct from `reference_check_framework` (former-peer
+reference calls) and `diligence_checklist_live` (what's
+packet-vs-MI at framework level). This module generates
+the **actual questions** the partner brings to MM, tied to:
+
+- **Thesis** — which downstream chain links are still open?
+- **Pattern matches** — which traps / failures should we
+  probe?
+- **Packet gaps** — what's missing that mgmt can answer?
+
+### Roles and signature base questions
+
+- **CEO** — "If I asked you to cut a division tomorrow,
+  which one?" (strategic clarity). "Top 3 hires since
+  you took the role — where are they now?" (talent
+  retention).
+- **CFO** — "Last 8 quarters: how many times did you hit
+  forecast?" (track record → forward haircut). "Worst-
+  case covenant headroom if EBITDA falls 10%?"
+- **COO** — "Of your top 10 operators, how many own a
+  P&L line?" (distributed accountability).
+- **CMO** — "CMI trend + drivers." "Any open RAC/OIG
+  audits?"
+- **CCO** — "Churn rate on top 10 over 3 years."
+- **CIO** — "EHR migration timeline if asked tomorrow."
+
+### Conditional question layering
+
+- If `thesis == "denial_reduction"` + role == CFO → add
+  question on run-rate vs. one-time share of Y1 EBITDA.
+- If pattern `fix_denials_in_12_months` fires → COO
+  question on monthly program actuals.
+- If pattern `ceo_will_stay_through_close` fires → CEO
+  question on post-close personal commitment timing.
+- Packet gap `cmi_trend` → CMO question requesting
+  underlying data + 3-yr trend.
+
+### Partner-note escalation
+
+- ≥ 8 must-ask → "block 2 hours; gating session, not
+  meet-and-greet."
+- 4-7 must-ask → "standard MM scope."
+- < 4 must-ask → "consider splitting to follow-up call."
+
+### Packet fields that trigger
+
+- `thesis` — selects thesis-specific questions.
+- `pattern_matches` — list of pattern IDs.
+- `packet_gaps` — list of gap strings.
+- `roles` — which roles are attending MM.
+
+---
+
+## 183. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
