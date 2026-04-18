@@ -119,6 +119,7 @@ _CORPUS_NAV = [
     {"label": "Key Person Risk","href": "/key-person",      "icon": "▦"},
     {"label": "Scenario MC",   "href": "/scenario-mc",      "icon": "▣"},
     {"label": "TSA Tracker",    "href": "/transition-services","icon": "▦"},
+    {"label": "Revenue Leakage","href": "/revenue-leakage",   "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
