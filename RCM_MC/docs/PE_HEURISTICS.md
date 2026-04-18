@@ -8707,7 +8707,100 @@ Per-archetype signal fields on `HealthcareArchetypeSignals`:
 
 ---
 
-## 239. Change log
+## 239. Recurring EBITDA line-item scrubber (`recurring_ebitda_line_scrubber.py`)
+
+**Partner statement.** "The exit multiple only applies to recurring
+EBITDA. I can sell the platform at 12× TTM — on the recurring base.
+One-time items are cash; they get 1×, not 12×. Sellers know this and
+bury one-time items inside trailing twelve because they know the
+buyer will cap-rate the whole thing. Scrub the line items. Anything
+that doesn't happen again next year is 1×."
+
+### Why it matters
+
+The religious distinction between recurring and one-time EBITDA is
+what separates a real partner bid from buyer-seller framing.
+`ebitda_quality` / `ebitda_normalization` / `qofe_prescreen` handle
+quality assessment at the category level. This module operates at
+the **individual line item** level — takes a seller's itemized
+adjustment schedule and classifies each line into one of three
+categories:
+
+- **recurring** — exit multiple applies.
+- **one_time_cash** — 1× multiple; dollar-for-dollar to equity.
+- **questionable** — partner review required; 50% credit to
+  recurring as a working assumption until QofE.
+
+### 20-pattern catalog
+
+**One-time cash** (8 patterns): legal settlement receivable,
+insurance proceeds, gain on sale, CARES Act / provider relief, ERC
+(employee retention credit), one-time RAC settlement, litigation
+recovery, pandemic support / PPP forgiveness.
+
+**Questionable** (6 patterns): restructuring charge, management fee
+add-back, owner comp normalization, synergy / run-rate add-back,
+new-contract-annualized EBITDA, pro-forma bolt-on EBITDA.
+
+**Recurring** (4 patterns): stock comp add-back, operating-lease
+normalization, recurring professional fees, explicitly-recurring
+labels.
+
+Unknown patterns default to `questionable` — partner review.
+
+### Output
+
+Per-line `ScrubbedLine` (description, amount, category, reason) +
+aggregates:
+
+- `recurring_ebitda_m`, `one_time_cash_m`, `questionable_m`
+- `exit_multiple_applicable_ebitda_m` = recurring base
+- `implied_equity_seller_view_m` = stated × multiple (seller's pitch)
+- `implied_equity_partner_view_m` = recurring × multiple + one-time × 1
+- `exit_multiple_bleed_m` = seller view − partner view
+
+### Partner-note triggers
+
+- Bleed > 10% of seller view → "anchor the counter on recurring-only
+  × multiple + one-time × 1."
+- Questionable > 50% of recurring → "prioritize QofE on owner comp,
+  synergies, annualized contract items; re-run with QofE numbers."
+- Otherwise → "clean scrub."
+
+### Worked example
+
+Stated EBITDA $50M, exit multiple 12×. Seller's add-back items:
+$5M ERC + $3M legal settlement + $2M CARES Act provider relief (all
+one-time) + $4M owner comp normalization (questionable).
+
+- Recurring base: $50M − $14M adjustments = $36M + 0 recurring +
+  $2M (50% of questionable) = $38M.
+- Exit-applicable: $38M × 12 = $456M.
+- Seller view: $50M × 12 = $600M.
+- One-time $10M at 1× = $10M.
+- Partner view: $456 + $10 = $466M.
+- Bleed: $600 − $466 = $134M.
+
+Partner: "anchor counter on $466M implied, not $600M."
+
+### Packet fields
+
+`stated_ebitda_m`, `line_items` (list of `EBITDALineItem(description,
+amount_m, explicit_category)`), `exit_multiple`.
+
+### Distinct from existing modules
+
+- `ebitda_quality` / `ebitda_normalization` — quality assessment at
+  category level.
+- `qofe_prescreen` — 12-category add-back survival rates.
+- `ebitda_quality_bridge_reconstructor` — stated-to-run-rate bridge.
+- This module — **line-item level** classification with explicit
+  20-pattern catalog and exit-multiple-bleed math. Operates on a
+  specific adjustment schedule, not a summary.
+
+---
+
+## 240. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
