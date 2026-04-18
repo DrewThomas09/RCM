@@ -1307,6 +1307,13 @@ from .synergy_sequencing_scorer import (
     render_synergy_sequencing_markdown,
     score_synergy_sequencing,
 )
+from .hsr_antitrust_healthcare_scanner import (
+    AntitrustFlag,
+    HSRAntitrustInputs,
+    HSRAntitrustReport,
+    render_hsr_antitrust_markdown,
+    scan_hsr_antitrust,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2717,4 +2724,9 @@ __all__ = [
     "list_synergy_categories",
     "render_synergy_sequencing_markdown",
     "score_synergy_sequencing",
+    "AntitrustFlag",
+    "HSRAntitrustInputs",
+    "HSRAntitrustReport",
+    "render_hsr_antitrust_markdown",
+    "scan_hsr_antitrust",
 ]

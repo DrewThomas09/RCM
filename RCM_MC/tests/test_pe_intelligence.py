@@ -23782,5 +23782,153 @@ class TestSynergySequencingScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestHSRAntitrustHealthcareScanner(unittest.TestCase):
+    """Partner scenario: FTC / DOJ / state-AG risk."""
+
+    def test_empty_low_risk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs())
+        self.assertEqual(r.risk_tier, "low")
+        self.assertEqual(r.expected_days_delay, 0)
+
+    def test_hhi_above_2500_flagged(self) -> None:
+        """Partner: 'post-HHI > 2500 → Section 7 scrutiny.'"""
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs(
+            local_market_hhi_post=2800,
+        ))
+        hhi = next(f for f in r.flags
+                    if f.name == "local_market_hhi_gt_2500")
+        self.assertTrue(hhi.triggered)
+
+    def test_serial_acquisition_flagged(self) -> None:
+        """Partner: '> 3 platforms in same specialty → USAP theory.'"""
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs(
+            sponsor_platforms_in_same_specialty=5,
+        ))
+        serial = next(f for f in r.flags
+                       if f.name ==
+                       "sponsor_serial_acquisition_same_specialty")
+        self.assertTrue(serial.triggered)
+
+    def test_very_high_risk_triggers_walk_note(self) -> None:
+        """Partner: '3+ structural flags → walk unless scale-back works.'"""
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs(
+            local_market_hhi_post=3000,
+            top_competitor_share_post_pct=0.45,
+            sponsor_platforms_in_same_specialty=6,
+            payer_provider_vertical=True,
+        ))
+        self.assertEqual(r.risk_tier, "very_high")
+        self.assertIn("walk", r.partner_note.lower())
+        self.assertGreaterEqual(r.expected_days_delay, 240)
+
+    def test_state_ag_california_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs(
+            operating_states=["CA", "NV"],
+        ))
+        state = next(f for f in r.flags
+                      if f.name ==
+                      "state_ag_active_review_jurisdiction")
+        self.assertTrue(state.triggered)
+
+    def test_deal_above_hsr_threshold(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs(
+            deal_size_m=500.0,
+        ))
+        thr = next(f for f in r.flags
+                    if f.name ==
+                    "deal_size_above_hsr_threshold")
+        self.assertTrue(thr.triggered)
+
+    def test_vertical_integration_flagged(self) -> None:
+        """Partner: 'payer-provider vertical → heightened scrutiny.'"""
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs(
+            payer_provider_vertical=True,
+        ))
+        v = next(f for f in r.flags
+                  if f.name ==
+                  "payer_provider_vertical_integration")
+        self.assertTrue(v.triggered)
+
+    def test_non_compete_rule_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs(
+            physician_noncompete_material=True,
+        ))
+        nc = next(f for f in r.flags
+                   if f.name ==
+                   "physician_noncompete_material")
+        self.assertTrue(nc.triggered)
+        self.assertIn("deferred-comp",
+                       nc.partner_counter.lower())
+
+    def test_high_risk_60day_cushion(self) -> None:
+        """Partner: '2 structural flags → +150 day close window.'"""
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs(
+            local_market_hhi_post=2800,
+            top_competitor_share_post_pct=0.35,
+        ))
+        self.assertEqual(r.risk_tier, "high")
+        self.assertGreaterEqual(r.expected_days_delay, 90)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            render_hsr_antitrust_markdown,
+            scan_hsr_antitrust,
+        )
+        md = render_hsr_antitrust_markdown(
+            scan_hsr_antitrust(HSRAntitrustInputs(
+                local_market_hhi_post=2600,
+            ))
+        )
+        self.assertIn("# HSR antitrust scanner", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            HSRAntitrustInputs,
+            scan_hsr_antitrust,
+        )
+        r = scan_hsr_antitrust(HSRAntitrustInputs(
+            local_market_hhi_post=2600,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
