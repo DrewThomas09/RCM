@@ -159,6 +159,7 @@ _CORPUS_NAV = [
     {"label": "Value Backtester","href": "/backtester",         "icon": "▣"},
     {"label": "Direct Employer", "href": "/direct-employer",    "icon": "▦"},
     {"label": "Deal Origination","href": "/deal-origination",   "icon": "▣"},
+    {"label": "Trial Site Econ", "href": "/trial-site-econ",    "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

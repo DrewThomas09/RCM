@@ -165,8 +165,11 @@ EXTENDED_SEED_DEALS_95 = [
             "(15100 / 15200 series) reconstruction revenue billed same-"
             "day under -59 / XS modifier. Long hold navigated MAC LCD "
             "documentation on AAD / ACMS / ASDS AUC (Appropriate Use "
-            "Criteria 2012) for non-head/neck Mohs indications and "
-            "exited to a strategic derm platform at 2.7x MOIC."
+            "Criteria 2012) for non-head/neck Mohs indications, absorbed "
+            "the CMS 2024-2025 LCD tightening on skin substitutes / CTP "
+            "(cellular and tissue-based products) for post-Mohs "
+            "reconstructive closure on large defects, and exited to a "
+            "strategic derm platform at 2.7x MOIC."
         ),
     },
     {
@@ -184,8 +187,8 @@ EXTENDED_SEED_DEALS_95 = [
         "moic": 3.2,
         "irr": 0.2913,
         "status": "Active",
-        "payer_mix": {"commercial": 0.50, "medicare": 0.18, "medicaid": 0.02, "self_pay": 0.30},
-        "comm_pct": 0.50,
+        "payer_mix": {"commercial": 0.52, "medicare": 0.18, "medicaid": 0.10, "self_pay": 0.20},
+        "comm_pct": 0.52,
         "deal_narrative": (
             "National aesthetic / medi-spa platform with 88 locations "
             "modeled on the Ideal Image / LaserAway / SkinSpirit cash-pay "
@@ -283,8 +286,8 @@ EXTENDED_SEED_DEALS_95 = [
         "moic": 1.8,
         "irr": 0.1795,
         "status": "Active",
-        "payer_mix": {"commercial": 0.52, "medicare": 0.16, "medicaid": 0.02, "self_pay": 0.30},
-        "comm_pct": 0.52,
+        "payer_mix": {"commercial": 0.54, "medicare": 0.18, "medicaid": 0.10, "self_pay": 0.18},
+        "comm_pct": 0.54,
         "deal_narrative": (
             "Northeast aesthetic / medi-spa platform with 32 locations "
             "acquired at peak 2021 aesthetic multiples on the Ever/Body / "
@@ -316,8 +319,8 @@ EXTENDED_SEED_DEALS_95 = [
         "moic": 2.2,
         "irr": 0.1720,
         "status": "Realized",
-        "payer_mix": {"commercial": 0.68, "medicare": 0.04, "medicaid": 0.20, "self_pay": 0.08},
-        "comm_pct": 0.68,
+        "payer_mix": {"commercial": 0.60, "medicare": 0.18, "medicaid": 0.14, "self_pay": 0.08},
+        "comm_pct": 0.60,
         "deal_narrative": (
             "Midwest pediatric dermatology subspecialty platform with 14 "
             "fellowship-trained pediatric dermatologists across 12 "
@@ -350,8 +353,8 @@ EXTENDED_SEED_DEALS_95 = [
         "moic": 2.6,
         "irr": 0.1912,
         "status": "Realized",
-        "payer_mix": {"commercial": 0.58, "medicare": 0.30, "medicaid": 0.06, "self_pay": 0.06},
-        "comm_pct": 0.58,
+        "payer_mix": {"commercial": 0.56, "medicare": 0.30, "medicaid": 0.06, "self_pay": 0.08},
+        "comm_pct": 0.56,
         "deal_narrative": (
             "National dermatopathology lab platform with 28 dermpath-"
             "boarded pathologists delivering histopathology readouts on "
@@ -451,8 +454,8 @@ EXTENDED_SEED_DEALS_95 = [
         "moic": 2.8,
         "irr": 0.2287,
         "status": "Realized",
-        "payer_mix": {"commercial": 0.50, "medicare": 0.20, "medicaid": 0.02, "self_pay": 0.28},
-        "comm_pct": 0.50,
+        "payer_mix": {"commercial": 0.52, "medicare": 0.20, "medicaid": 0.08, "self_pay": 0.20},
+        "comm_pct": 0.52,
         "deal_narrative": (
             "National aesthetic / medi-spa platform with 72 locations "
             "modeled on the LaserAway / Ideal Image national cash-pay "
@@ -518,8 +521,8 @@ EXTENDED_SEED_DEALS_95 = [
         "moic": 1.6,
         "irr": 0.1418,
         "status": "Active",
-        "payer_mix": {"commercial": 0.66, "medicare": 0.04, "medicaid": 0.22, "self_pay": 0.08},
-        "comm_pct": 0.66,
+        "payer_mix": {"commercial": 0.58, "medicare": 0.18, "medicaid": 0.16, "self_pay": 0.08},
+        "comm_pct": 0.58,
         "deal_narrative": (
             "Northeast pediatric dermatology subspecialty network with 8 "
             "fellowship-trained pediatric dermatologists across 6 academic-"
@@ -552,8 +555,8 @@ EXTENDED_SEED_DEALS_95 = [
         "moic": 2.1,
         "irr": 0.1794,
         "status": "Active",
-        "payer_mix": {"commercial": 0.56, "medicare": 0.30, "medicaid": 0.08, "self_pay": 0.06},
-        "comm_pct": 0.56,
+        "payer_mix": {"commercial": 0.54, "medicare": 0.30, "medicaid": 0.08, "self_pay": 0.08},
+        "comm_pct": 0.54,
         "deal_narrative": (
             "Mid-Atlantic dermatopathology lab with 14 dermpath-boarded "
             "pathologists delivering histopathology readouts on shave / "
@@ -586,8 +589,8 @@ EXTENDED_SEED_DEALS_95 = [
         "moic": 1.4,
         "irr": 0.1500,
         "status": "Active",
-        "payer_mix": {"commercial": 0.50, "medicare": 0.18, "medicaid": 0.02, "self_pay": 0.30},
-        "comm_pct": 0.50,
+        "payer_mix": {"commercial": 0.52, "medicare": 0.18, "medicaid": 0.10, "self_pay": 0.20},
+        "comm_pct": 0.52,
         "deal_narrative": (
             "West Coast premium aesthetic / medi-spa collective with 28 "
             "urban-upscale locations acquired at peak 2023 aesthetic "
