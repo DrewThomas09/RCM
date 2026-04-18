@@ -114,6 +114,7 @@ _CORPUS_NAV = [
     {"label": "Tax Structure",   "href": "/tax-structure",   "icon": "▣"},
     {"label": "Fund Attribution","href": "/fund-attribution","icon": "▦"},
     {"label": "Unit Economics", "href": "/unit-economics",  "icon": "▣"},
+    {"label": "Deal Pipeline",  "href": "/deal-pipeline",   "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

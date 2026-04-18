@@ -150,6 +150,7 @@ NAV_ITEMS = [
     {"label": "Tax Structure", "href": "/tax-structure", "icon": "chart"},
     {"label": "Fund Attribution", "href": "/fund-attribution", "icon": "chart"},
     {"label": "Unit Economics", "href": "/unit-economics", "icon": "chart"},
+    {"label": "Deal Pipeline", "href": "/deal-pipeline", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
