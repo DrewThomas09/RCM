@@ -221,6 +221,7 @@ NAV_ITEMS = [
     {"label": "Diligence Vendors", "href": "/diligence-vendors", "icon": "chart"},
     {"label": "Refi Optimizer", "href": "/refi-optimizer", "icon": "chart"},
     {"label": "LP Reporting", "href": "/lp-reporting", "icon": "chart"},
+    {"label": "LBO Stress Test", "href": "/lbo-stress", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
