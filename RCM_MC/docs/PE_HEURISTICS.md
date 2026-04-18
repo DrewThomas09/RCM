@@ -6758,7 +6758,65 @@ observations (minimum 3 for slope).
 
 ---
 
-## 211. Change log
+## 211. Archetype heuristic router (`archetype_heuristic_router.py`)
+
+**Partner statement:** "A payer-mix-shift thesis needs
+different heuristics than a roll-up. Loading every rule
+on every deal is noise. The brain should know which 10
+rules actually decide this archetype's fate."
+
+Distinct from `archetype_subrunners`. This module is the
+**meta-router** that tells the brain *which judgment
+layers* to prioritize per archetype.
+
+### 8 archetypes routed
+
+1. **payer_mix_shift** → payer_mix_shift chain + US Renal
+   MA + MA startup failure patterns + payer renegotiation
+   trap.
+2. **rollup_consolidation** → rollup chain + Envision
+   2023 + dental DSO 2021 + signed-LOI heuristics.
+3. **cmi_uplift** → cmi_uplift chain + PDGM fallout +
+   CDI-FTE heuristic.
+4. **outpatient_migration** → payer_mix_shift chain +
+   site-neutral-hostage archetype + Adeptus 2017.
+5. **cost_basis_compression** → cost chain + Steward
+   REIT + behavioral staffing collapse + union
+   constraints heuristic.
+6. **capacity_expansion** → rollup chain + Adeptus +
+   Prospect cashflow; per-site payback ≤ 36 mo.
+7. **back_office_consolidation** → cost chain + RCM
+   concentration loss + EHR count heuristic.
+8. **payer_renegotiation** → payer chain + Radiology
+   Partners + Team Health + earn-out-on-actual-rates.
+
+### Routing fields per archetype
+
+- `primary_thesis_chain` — which chain to walk.
+- `priority_failure_patterns` — named V1+V2 patterns.
+- `priority_traps` — most common partner traps.
+- `priority_shape_archetypes` — failure-shape matches.
+- `subsector_tags` — most exposed subsectors.
+- `specific_heuristics` — top 3-5 rules that decide the
+  archetype.
+- `partner_first_question` — the single question a
+  partner asks first.
+
+### Why partners care
+
+Archetype-specific routing is how partners reach an
+actionable first impression in 60 seconds. Without
+routing, every judgment layer fires on every deal —
+noise swamps signal.
+
+### Packet fields
+
+- `archetype` — named archetype from
+  `list_routed_archetypes()`.
+
+---
+
+## 212. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
