@@ -1655,6 +1655,13 @@ from .rcm_vendor_switching_cost_assessor import (
     assess_rcm_switching,
     render_rcm_switching_markdown,
 )
+from .claims_denial_root_cause_classifier import (
+    CategoryWeight,
+    DenialClassifierInputs,
+    DenialRootCauseReport,
+    classify_denial_root_causes,
+    render_denial_root_cause_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3317,4 +3324,9 @@ __all__ = [
     "RCMSwitchingReport",
     "assess_rcm_switching",
     "render_rcm_switching_markdown",
+    "CategoryWeight",
+    "DenialClassifierInputs",
+    "DenialRootCauseReport",
+    "classify_denial_root_causes",
+    "render_denial_root_cause_markdown",
 ]

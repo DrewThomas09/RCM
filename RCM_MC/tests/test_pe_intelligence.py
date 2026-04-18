@@ -33340,5 +33340,207 @@ class TestRCMVendorSwitchingCostAssessor(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestClaimsDenialRootCauseClassifier(unittest.TestCase):
+    """Partner voice: 'The category mix IS the thesis.'"""
+
+    def test_default_inputs_compute(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        r = classify_denial_root_causes(
+            DenialClassifierInputs())
+        self.assertEqual(len(r.categories), 8)
+
+    def test_walk_in_tilts_eligibility(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        low = classify_denial_root_causes(
+            DenialClassifierInputs(
+                walk_in_volume_share=0.10))
+        high = classify_denial_root_causes(
+            DenialClassifierInputs(
+                walk_in_volume_share=0.50))
+        low_elig = next(
+            c.estimated_share_of_denials_pct
+            for c in low.categories
+            if c.category == "eligibility_verification"
+        )
+        high_elig = next(
+            c.estimated_share_of_denials_pct
+            for c in high.categories
+            if c.category == "eligibility_verification"
+        )
+        self.assertGreater(high_elig, low_elig)
+
+    def test_commercial_heavy_tilts_prior_auth(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        r = classify_denial_root_causes(
+            DenialClassifierInputs(
+                commercial_payer_mix_share=0.70,
+                subspecialty_procedure_share=0.50,
+                centralized_auth_team=False,
+            )
+        )
+        pa = next(
+            c.estimated_share_of_denials_pct
+            for c in r.categories
+            if c.category == "prior_authorization"
+        )
+        # prior auth base 0.20 + 0.10 + 0.08 + 0.08 = ~0.46 pre-norm
+        self.assertGreater(pa, 0.25)
+
+    def test_structural_verdict_on_hard_dominant(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        r = classify_denial_root_causes(
+            DenialClassifierInputs(
+                cdi_program_present=False,
+                rac_audit_history=True,
+                walk_in_volume_share=0.05,
+                commercial_payer_mix_share=0.20,
+                subspecialty_procedure_share=0.10,
+                centralized_auth_team=True,
+            )
+        )
+        self.assertIn(
+            r.fix_difficulty_verdict,
+            {"structural", "hard"},
+        )
+
+    def test_easy_verdict_on_front_end_dominant(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        # Heavy eligibility + format/dup + low hard-category drivers
+        r = classify_denial_root_causes(
+            DenialClassifierInputs(
+                walk_in_volume_share=0.60,
+                registration_staff_turnover_pct=0.50,
+                decentralized_billing=True,
+                cdi_program_present=True,
+                rac_audit_history=False,
+                commercial_payer_mix_share=0.20,
+                subspecialty_procedure_share=0.10,
+            )
+        )
+        # easy share should dominate over hard; verdict not structural
+        self.assertGreater(r.easy_share_pct, r.hard_share_pct)
+
+    def test_cdi_absent_shifts_medical_necessity(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        with_cdi = classify_denial_root_causes(
+            DenialClassifierInputs(
+                cdi_program_present=True))
+        without_cdi = classify_denial_root_causes(
+            DenialClassifierInputs(
+                cdi_program_present=False))
+        with_mn = next(
+            c.estimated_share_of_denials_pct
+            for c in with_cdi.categories
+            if c.category == "medical_necessity"
+        )
+        without_mn = next(
+            c.estimated_share_of_denials_pct
+            for c in without_cdi.categories
+            if c.category == "medical_necessity"
+        )
+        self.assertGreater(without_mn, with_mn)
+
+    def test_categories_normalized_to_one(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        r = classify_denial_root_causes(
+            DenialClassifierInputs())
+        total = sum(
+            c.estimated_share_of_denials_pct
+            for c in r.categories
+        )
+        self.assertAlmostEqual(total, 1.0, places=2)
+
+    def test_shares_add_up_across_bands(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        r = classify_denial_root_causes(
+            DenialClassifierInputs())
+        self.assertAlmostEqual(
+            r.easy_share_pct + r.moderate_share_pct +
+            r.hard_share_pct,
+            1.0, places=2,
+        )
+
+    def test_dominant_category_present(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        r = classify_denial_root_causes(
+            DenialClassifierInputs(
+                walk_in_volume_share=0.70,
+                registration_staff_turnover_pct=0.50,
+            )
+        )
+        self.assertIn(
+            r.dominant_category,
+            {"eligibility_verification", "prior_authorization",
+             "medical_necessity"},
+        )
+
+    def test_categories_sorted_descending(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        r = classify_denial_root_causes(
+            DenialClassifierInputs())
+        shares = [
+            c.estimated_share_of_denials_pct
+            for c in r.categories
+        ]
+        self.assertEqual(
+            shares, sorted(shares, reverse=True)
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+            render_denial_root_cause_markdown,
+        )
+        md = render_denial_root_cause_markdown(
+            classify_denial_root_causes(
+                DenialClassifierInputs())
+        )
+        self.assertIn(
+            "# Claims denial root-cause classification",
+            md,
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            DenialClassifierInputs,
+            classify_denial_root_causes,
+        )
+        r = classify_denial_root_causes(
+            DenialClassifierInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
