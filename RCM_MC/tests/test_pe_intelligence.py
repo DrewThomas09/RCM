@@ -21736,5 +21736,156 @@ class TestDiligenceSpendBudget(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestBankSyndicateReadinessScorer(unittest.TestCase):
+    """Partner scenario: will the debt actually close?"""
+
+    def test_empty_inputs_unreadied(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            score_syndicate_readiness,
+        )
+        r = score_syndicate_readiness(SyndicateReadinessInputs())
+        self.assertIn(r.tier, {"unreadied", "at_risk"})
+
+    def test_fully_ready_inputs(self) -> None:
+        """Partner: 'all boxes checked → close on timeline.'"""
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            score_syndicate_readiness,
+        )
+        r = score_syndicate_readiness(SyndicateReadinessInputs(
+            commitment_letter_signed=True,
+            lead_lender_has_sector_dry_powder=True,
+            proposed_leverage=5.5,
+            peer_average_leverage=5.6,
+            covenant_package_lender_friendly=True,
+            repeat_lender_relationship=True,
+            rate_lock_or_hedged=True,
+            private_credit_or_bank_match=True,
+            market_rate_volatility_bps_60d=25.0,
+        ))
+        self.assertEqual(r.tier, "ready")
+        self.assertEqual(r.score, 8)
+
+    def test_high_leverage_fails_dim(self) -> None:
+        """Partner: 'proposed 0.5x above peer → pushback.'"""
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            score_syndicate_readiness,
+        )
+        r = score_syndicate_readiness(SyndicateReadinessInputs(
+            proposed_leverage=6.5,
+            peer_average_leverage=5.5,
+        ))
+        lev_dim = next(d for d in r.dimensions
+                        if d.name ==
+                        "leverage_at_or_below_peer_average")
+        self.assertFalse(lev_dim.passed)
+        # Remediation named.
+        self.assertTrue(any("equity" in rem.lower()
+                             for rem in r.named_remediations))
+
+    def test_rate_vol_triggers_spread_note(self) -> None:
+        """Partner: '>50 bps vol in 60 days = widening spread.'"""
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            score_syndicate_readiness,
+        )
+        r = score_syndicate_readiness(SyndicateReadinessInputs(
+            market_rate_volatility_bps_60d=75.0,
+        ))
+        vol_dim = next(d for d in r.dimensions
+                        if d.name ==
+                        "market_rate_stable_at_signing")
+        self.assertFalse(vol_dim.passed)
+
+    def test_no_commitment_letter_in_remediations(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            score_syndicate_readiness,
+        )
+        r = score_syndicate_readiness(SyndicateReadinessInputs(
+            commitment_letter_signed=False,
+        ))
+        self.assertTrue(any("commitment" in rem.lower()
+                             for rem in r.named_remediations))
+
+    def test_covenant_mismatch_triggers_redline_warning(
+        self,
+    ) -> None:
+        """Partner: 'seller-friendly cov → lender redlines.'"""
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            score_syndicate_readiness,
+        )
+        r = score_syndicate_readiness(SyndicateReadinessInputs(
+            covenant_package_lender_friendly=False,
+        ))
+        cov_dim = next(d for d in r.dimensions
+                        if d.name ==
+                        "covenant_package_lender_friendly")
+        self.assertIn("seller-friendly",
+                       cov_dim.partner_comment.lower())
+
+    def test_mid_score_conditional(self) -> None:
+        """Partner: '4-5/8 → conditional; remediation list.'"""
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            score_syndicate_readiness,
+        )
+        r = score_syndicate_readiness(SyndicateReadinessInputs(
+            commitment_letter_signed=True,
+            lead_lender_has_sector_dry_powder=True,
+            proposed_leverage=5.5,
+            peer_average_leverage=5.6,
+            covenant_package_lender_friendly=False,
+            repeat_lender_relationship=True,
+            rate_lock_or_hedged=False,
+            private_credit_or_bank_match=False,
+            market_rate_volatility_bps_60d=80.0,
+        ))
+        self.assertEqual(r.tier, "conditional")
+
+    def test_at_risk_triggers_delay_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            score_syndicate_readiness,
+        )
+        r = score_syndicate_readiness(SyndicateReadinessInputs(
+            commitment_letter_signed=False,
+            lead_lender_has_sector_dry_powder=True,
+            covenant_package_lender_friendly=False,
+            repeat_lender_relationship=False,
+            proposed_leverage=6.5,
+            peer_average_leverage=5.5,
+        ))
+        self.assertIn(r.tier, {"at_risk", "unreadied"})
+
+    def test_markdown_renders_remediations(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            render_syndicate_readiness_markdown,
+            score_syndicate_readiness,
+        )
+        md = render_syndicate_readiness_markdown(
+            score_syndicate_readiness(SyndicateReadinessInputs(
+                commitment_letter_signed=False,
+            ))
+        )
+        self.assertIn("# Bank syndicate readiness", md)
+        self.assertIn("Remediations", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            SyndicateReadinessInputs,
+            score_syndicate_readiness,
+        )
+        r = score_syndicate_readiness(SyndicateReadinessInputs(
+            commitment_letter_signed=True,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
