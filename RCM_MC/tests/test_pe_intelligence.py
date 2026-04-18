@@ -16944,5 +16944,114 @@ class TestReferenceCheckFramework(unittest.TestCase):
         json.dumps(build_reference_plan("ceo").to_dict())
 
 
+# ── LOI term sheet review ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    LOIReviewInputs,
+    LOIReviewReport,
+    LOITermReview,
+    render_loi_review_markdown,
+    review_loi,
+)
+
+
+class TestLOITermSheetReview(unittest.TestCase):
+
+    def test_short_exclusivity_pushed(self) -> None:
+        r = review_loi(LOIReviewInputs(exclusivity_days=30))
+        ex = next(rv for rv in r.reviews
+                   if rv.term == "exclusivity_window")
+        self.assertEqual(ex.priority, "must_push")
+
+    def test_excess_exclusivity_pushed(self) -> None:
+        r = review_loi(LOIReviewInputs(exclusivity_days=120))
+        ex = next(rv for rv in r.reviews
+                   if rv.term == "exclusivity_window")
+        self.assertEqual(ex.priority, "should_push")
+
+    def test_large_breakup_fee_flagged(self) -> None:
+        r = review_loi(LOIReviewInputs(breakup_fee_pct=0.05))
+        bf = next(rv for rv in r.reviews
+                   if rv.term == "breakup_fee")
+        self.assertEqual(bf.priority, "must_push")
+
+    def test_no_shop_absent_mustpush(self) -> None:
+        r = review_loi(LOIReviewInputs(no_shop_present=False))
+        ns = next(rv for rv in r.reviews
+                   if rv.term == "no_shop_clause")
+        self.assertEqual(ns.priority, "must_push")
+
+    def test_hard_money_pushed_to_contingency(self) -> None:
+        r = review_loi(LOIReviewInputs(
+            financing_contingency_hard=True,
+        ))
+        self.assertTrue(any(rv.term == "financing_contingency"
+                             for rv in r.reviews))
+
+    def test_rw_cap_excessive(self) -> None:
+        r = review_loi(LOIReviewInputs(rw_cap_pct_ev=0.20))
+        cap = next(rv for rv in r.reviews
+                    if rv.term == "rw_insurance_cap")
+        self.assertEqual(cap.priority, "should_push")
+
+    def test_broad_mac_must_push(self) -> None:
+        r = review_loi(LOIReviewInputs(mac_definition_broad=True))
+        mac = next(rv for rv in r.reviews
+                    if rv.term == "mac_definition")
+        self.assertEqual(mac.priority, "must_push")
+
+    def test_loose_interim_covenants_mustpush(self) -> None:
+        r = review_loi(LOIReviewInputs(interim_covenants_tight=False))
+        ic = next(rv for rv in r.reviews
+                   if rv.term == "interim_covenants")
+        self.assertEqual(ic.priority, "must_push")
+
+    def test_regulatory_commitments_capped(self) -> None:
+        r = review_loi(LOIReviewInputs(regulatory_risk_material=True))
+        reg = next(rv for rv in r.reviews
+                    if rv.term == "regulatory_approval")
+        self.assertIn("hell-or-high-water",
+                       reg.partner_counter.lower())
+
+    def test_many_must_push_triggers_rebuild_note(self) -> None:
+        r = review_loi(LOIReviewInputs(
+            exclusivity_days=20,
+            breakup_fee_pct=0.05,
+            no_shop_present=False,
+            mac_definition_broad=True,
+            interim_covenants_tight=False,
+            regulatory_risk_material=True,
+        ))
+        self.assertGreaterEqual(r.must_push_count, 4)
+        self.assertIn("rebuild", r.partner_note.lower())
+
+    def test_clean_loi_no_escalation(self) -> None:
+        r = review_loi(LOIReviewInputs(
+            exclusivity_days=55,
+            breakup_fee_pct=0.01,
+            no_shop_present=True,
+            financing_contingency_hard=False,
+            rw_insurance_proposed=True,
+            rw_cap_pct_ev=0.12,
+            rw_deductible_pct_ev=0.005,
+            mac_definition_broad=False,
+            interim_covenants_tight=True,
+            retention_pool_sized_at_close=True,
+            regulatory_risk_material=False,
+        ))
+        self.assertEqual(r.must_push_count, 0)
+        self.assertIn("within market bands",
+                       r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_loi_review_markdown(review_loi(LOIReviewInputs()))
+        self.assertIn("# LOI term sheet review", md)
+
+    def test_json(self) -> None:
+        import json
+        r = review_loi(LOIReviewInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

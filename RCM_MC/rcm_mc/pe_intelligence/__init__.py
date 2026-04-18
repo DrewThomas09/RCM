@@ -985,6 +985,13 @@ from .reference_check_framework import (
     build_reference_plan,
     render_reference_plan_markdown,
 )
+from .loi_term_sheet_review import (
+    LOIReviewInputs,
+    LOIReviewReport,
+    LOITermReview,
+    render_loi_review_markdown,
+    review_loi,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2159,4 +2166,9 @@ __all__ = [
     "ReferenceQuestion",
     "build_reference_plan",
     "render_reference_plan_markdown",
+    "LOIReviewInputs",
+    "LOIReviewReport",
+    "LOITermReview",
+    "render_loi_review_markdown",
+    "review_loi",
 ]
