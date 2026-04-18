@@ -1125,6 +1125,15 @@ from .banker_narrative_decoder import (
     list_banker_narratives,
     render_narrative_decode_markdown,
 )
+from .bidder_landscape_reader import (
+    BidderLandscapeInputs,
+    BidderLandscapeReport,
+    BidderObservation,
+    BidderProfile,
+    list_bidder_profiles,
+    read_bidder_landscape,
+    render_bidder_landscape_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2401,4 +2410,11 @@ __all__ = [
     "decode_banker_narrative",
     "list_banker_narratives",
     "render_narrative_decode_markdown",
+    "BidderLandscapeInputs",
+    "BidderLandscapeReport",
+    "BidderObservation",
+    "BidderProfile",
+    "list_bidder_profiles",
+    "read_bidder_landscape",
+    "render_bidder_landscape_markdown",
 ]

@@ -19988,5 +19988,148 @@ class TestBankerNarrativeDecoder(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestBidderLandscapeReader(unittest.TestCase):
+    """Partner scenario: who else is in the room sets the price."""
+
+    def test_empty_yields_banker_ask_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+        )
+        r = read_bidder_landscape(BidderLandscapeInputs())
+        self.assertIn("ask the banker",
+                       r.partner_note.lower())
+
+    def test_payer_adjacent_triggers_drop(self) -> None:
+        """Partner: 'payer-backed strategic pays up; drop.'"""
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+        )
+        r = read_bidder_landscape(BidderLandscapeInputs(
+            bidders_present=["strategic_payer_adjacent"],
+            our_base_price_m=800.0,
+        ))
+        self.assertEqual(r.recommended_partner_posture, "drop")
+        self.assertAlmostEqual(r.likely_clearing_price_m,
+                                920.0, places=1)
+
+    def test_specialist_only_triggers_hold(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+        )
+        r = read_bidder_landscape(BidderLandscapeInputs(
+            bidders_present=[
+                "sponsor_healthcare_specialist",
+            ],
+            our_base_price_m=800.0,
+        ))
+        self.assertEqual(r.recommended_partner_posture, "hold")
+
+    def test_crossover_triggers_stay_backup_bid(self) -> None:
+        """Partner: 'crossover fails diligence; stay as backup.'"""
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+        )
+        r = read_bidder_landscape(BidderLandscapeInputs(
+            bidders_present=["strategic_crossover"],
+            our_base_price_m=800.0,
+        ))
+        self.assertEqual(r.recommended_partner_posture, "stay")
+
+    def test_multiple_bidders_highest_premium_wins(self) -> None:
+        """Clearing price = max premium (highest bidder sets)."""
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+        )
+        r = read_bidder_landscape(BidderLandscapeInputs(
+            bidders_present=[
+                "sponsor_healthcare_specialist",   # +0%
+                "strategic_payer_adjacent",         # +15%
+            ],
+            our_base_price_m=800.0,
+        ))
+        self.assertAlmostEqual(r.likely_clearing_price_m,
+                                920.0, places=1)
+
+    def test_unknown_bidder_name_skipped(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+        )
+        r = read_bidder_landscape(BidderLandscapeInputs(
+            bidders_present=[
+                "sponsor_healthcare_specialist",
+                "unknown_bidder_type",
+            ],
+            our_base_price_m=800.0,
+        ))
+        self.assertEqual(len(r.observations), 1)
+
+    def test_continuation_vehicle_stay_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+        )
+        r = read_bidder_landscape(BidderLandscapeInputs(
+            bidders_present=["continuation_vehicle"],
+            our_base_price_m=800.0,
+        ))
+        observation = r.observations[0]
+        self.assertIn("continuation",
+                       observation.profile.partner_counter.lower())
+
+    def test_foreign_buyer_triggers_backup_if_cfius(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+        )
+        r = read_bidder_landscape(BidderLandscapeInputs(
+            bidders_present=["foreign_buyer"],
+            our_base_price_m=800.0,
+        ))
+        # Foreign buyer is high-premium price-posture → drop.
+        self.assertEqual(r.recommended_partner_posture, "drop")
+
+    def test_list_bidder_profiles_has_expected_set(self) -> None:
+        from rcm_mc.pe_intelligence import list_bidder_profiles
+        names = list_bidder_profiles()
+        self.assertIn("strategic_payer_adjacent", names)
+        self.assertIn("sponsor_healthcare_specialist", names)
+        self.assertIn("continuation_vehicle", names)
+        self.assertEqual(len(names), 10)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+            render_bidder_landscape_markdown,
+        )
+        md = render_bidder_landscape_markdown(
+            read_bidder_landscape(BidderLandscapeInputs(
+                bidders_present=["strategic_payer_adjacent",
+                                   "sponsor_generalist"],
+                our_base_price_m=800.0,
+            ))
+        )
+        self.assertIn("# Bidder landscape read", md)
+        self.assertIn("| Profile |", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            BidderLandscapeInputs,
+            read_bidder_landscape,
+        )
+        r = read_bidder_landscape(BidderLandscapeInputs(
+            bidders_present=["strategic_payer_adjacent"],
+            our_base_price_m=800.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
