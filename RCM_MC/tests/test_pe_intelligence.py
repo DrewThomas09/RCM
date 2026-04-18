@@ -35711,5 +35711,241 @@ class TestAddOnIntegrationSequencingPlanner(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestServiceLineGrowthMarginQuadrant(unittest.TestCase):
+    """Partner voice: 'Which lines do we feed, which do we starve?'"""
+
+    def test_no_lines_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs())
+        self.assertIn(
+            "no service lines",
+            r.partner_note.lower(),
+        )
+
+    def test_star_classification(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[QuadrantServiceLine(
+                    "Star", 50.0, 0.12, 0.25)],
+            )
+        )
+        self.assertEqual(
+            r.classifications[0].quadrant, "star"
+        )
+        self.assertIn(
+            "invest",
+            r.classifications[0].recommendation.lower(),
+        )
+
+    def test_cash_cow_classification(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[QuadrantServiceLine(
+                    "CashCow", 100.0, 0.03, 0.30)],
+            )
+        )
+        self.assertEqual(
+            r.classifications[0].quadrant, "cash_cow"
+        )
+
+    def test_question_mark_classification(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[QuadrantServiceLine(
+                    "Q", 30.0, 0.15, 0.12)],
+            )
+        )
+        self.assertEqual(
+            r.classifications[0].quadrant,
+            "question_mark",
+        )
+
+    def test_dog_classification(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[QuadrantServiceLine(
+                    "Dog", 20.0, 0.02, 0.08)],
+            )
+        )
+        self.assertEqual(
+            r.classifications[0].quadrant, "dog"
+        )
+        self.assertIn(
+            "divest",
+            r.classifications[0].recommendation.lower(),
+        )
+
+    def test_healthy_portfolio_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[
+                    QuadrantServiceLine(
+                        "A", 40.0, 0.10, 0.25),
+                    QuadrantServiceLine(
+                        "B", 40.0, 0.03, 0.25),
+                ],
+            )
+        )
+        self.assertIn(
+            "healthy mix", r.partner_note.lower()
+        )
+
+    def test_dogs_dominant_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[
+                    QuadrantServiceLine(
+                        "Dog1", 30.0, 0.02, 0.10),
+                    QuadrantServiceLine(
+                        "Dog2", 30.0, 0.03, 0.12),
+                    QuadrantServiceLine(
+                        "Star", 40.0, 0.15, 0.30),
+                ],
+            )
+        )
+        self.assertIn(
+            "portfolio drag", r.partner_note.lower()
+        )
+
+    def test_questions_dominant_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[
+                    QuadrantServiceLine(
+                        "Q1", 40.0, 0.12, 0.10),
+                    QuadrantServiceLine(
+                        "Q2", 30.0, 0.15, 0.12),
+                    QuadrantServiceLine(
+                        "CashCow", 30.0, 0.02, 0.25),
+                ],
+            )
+        )
+        self.assertIn(
+            "execution-dependent",
+            r.partner_note.lower(),
+        )
+
+    def test_revenue_buckets_sum(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[
+                    QuadrantServiceLine(
+                        "A", 50.0, 0.10, 0.25),
+                    QuadrantServiceLine(
+                        "B", 30.0, 0.03, 0.25),
+                    QuadrantServiceLine(
+                        "C", 20.0, 0.02, 0.08),
+                ],
+            )
+        )
+        total = (
+            r.stars_revenue_m +
+            r.cash_cows_revenue_m +
+            r.question_marks_revenue_m +
+            r.dogs_revenue_m
+        )
+        self.assertAlmostEqual(total, 100.0)
+
+    def test_classifications_sorted_by_revenue(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[
+                    QuadrantServiceLine(
+                        "small", 10.0, 0.10, 0.25),
+                    QuadrantServiceLine(
+                        "big", 80.0, 0.03, 0.25),
+                    QuadrantServiceLine(
+                        "mid", 40.0, 0.02, 0.08),
+                ],
+            )
+        )
+        seq = [c.revenue_m for c in r.classifications]
+        self.assertEqual(
+            seq, sorted(seq, reverse=True)
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+            render_service_line_quadrant_markdown,
+        )
+        md = render_service_line_quadrant_markdown(
+            classify_service_line_portfolio(
+                QuadrantInputs(
+                    service_lines=[QuadrantServiceLine(
+                        "A", 50.0, 0.10, 0.25)])
+            )
+        )
+        self.assertIn(
+            "# Service line growth × margin quadrant",
+            md,
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            QuadrantInputs,
+            QuadrantServiceLine,
+            classify_service_line_portfolio,
+        )
+        r = classify_service_line_portfolio(
+            QuadrantInputs(
+                service_lines=[QuadrantServiceLine(
+                    "A", 50.0, 0.10, 0.25)])
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

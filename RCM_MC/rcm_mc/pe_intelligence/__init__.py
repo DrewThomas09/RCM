@@ -1738,6 +1738,14 @@ from .add_on_integration_sequencing_planner import (
     plan_add_on_sequencing,
     render_add_on_sequencing_markdown,
 )
+from .service_line_growth_margin_quadrant import (
+    LineClassification,
+    QuadrantInputs,
+    QuadrantReport,
+    ServiceLine as QuadrantServiceLine,
+    classify_service_line_portfolio,
+    render_service_line_quadrant_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3459,4 +3467,10 @@ __all__ = [
     "SequencedBoltOn",
     "plan_add_on_sequencing",
     "render_add_on_sequencing_markdown",
+    "LineClassification",
+    "QuadrantInputs",
+    "QuadrantReport",
+    "QuadrantServiceLine",
+    "classify_service_line_portfolio",
+    "render_service_line_quadrant_markdown",
 ]
