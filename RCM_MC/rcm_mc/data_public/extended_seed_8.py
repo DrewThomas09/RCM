@@ -234,13 +234,18 @@ EXTENDED_SEED_DEALS_8 = [
             "employer-sponsored; General Atlantic Series E at $1B valuation"
         ),
     },
-    # 187 — Signify Health (now CVS / Aetna)
+    # 187 — Signify Health realized exit (New Mountain Capital, via CVS/Aetna acquisition)
+    # Phase 6 Bug #1 fix: buyer was "CVS Health / Aetna" (the
+    # strategic acquirer). The realized_moic 4.5 / realized_irr 0.46
+    # belong to New Mountain Capital (the exiting PE sponsor,
+    # explicitly named in the seller field). Sponsor-ledger
+    # attribution moves to NMC; CVS context preserved in notes.
     {
         "source_id": "seed_187",
         "source": "seed",
         "deal_name": "Signify Health – CVS Health / Aetna Acquisition",
         "year": 2023,
-        "buyer": "CVS Health / Aetna",
+        "buyer": "New Mountain Capital",
         "seller": "New Mountain Capital / public shareholders",
         "ev_mm": 8000.0,
         "ebitda_at_entry_mm": 180.0,
@@ -252,8 +257,10 @@ EXTENDED_SEED_DEALS_8 = [
         },
         "notes": (
             "Home-based assessments + provider enablement; "
-            "CVS strategic at $8B; New Mountain Capital outstanding return; "
-            "ACKO/SDOH integration thesis; ~44x EBITDA premium"
+            "CVS Health / Aetna was the strategic acquirer at $8B; "
+            "New Mountain Capital is the exiting PE sponsor realizing "
+            "this MOIC/IRR. ACKO/SDOH integration thesis; "
+            "~44x EBITDA premium."
         ),
     },
     # 188 — Tenet Healthcare / USPI secondary
