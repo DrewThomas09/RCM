@@ -4229,7 +4229,33 @@ Partner note:
 
 ---
 
-## 169. Change log
+## 169. Management forecast reliability (`management_forecast_reliability.py`)
+
+**Partner statement:** "Before I believe this forecast, show me
+the last four forecasts you made."
+
+Analyzes prior forecast-vs-actual pairs and returns:
+
+- **Status per year** — beat (> +5%), at_plan (±5%), miss (< -5%).
+- **Reliability score 0-100** — starts 50; +15 per at-plan; +10
+  per beat; -20 per miss; -10 for high variance range; -15 for
+  3+ consecutive misses.
+- **Recommended haircut** on the current forecast based on miss
+  pattern.
+
+Partner note patterns:
+
+- Miss rate ≥ 50% → "do NOT underwrite to their base case;
+  haircut by X%."
+- Beat rate ≥ 75% and zero misses → "sandbagging (good buyer
+  signal) — underwrite at forecast, don't pay for upside."
+- Hit rate ≥ 60% → "reliable forecaster; base case is
+  believable."
+- Mixed high-variance → "don't chase the best year."
+
+---
+
+## 170. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4641,3 +4667,7 @@ Partner note:
   — pre-sale seller-side disclosure items by severity: kill-
   deal / price-haircut / discovery-risk / housekeeping. Full
   inventory: 166 modules, 1,689 pe_intelligence unit tests.
+- **2026-04-17** — Added `management_forecast_reliability.py`
+  (§169) — analyze prior forecasts-vs-actuals; reliability
+  score + haircut recommendation. Full inventory: 167 modules,
+  1,698 pe_intelligence unit tests.
