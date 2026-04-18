@@ -527,3 +527,24 @@ migration commits (per the "don't fix bugs in migration commits" rule).
 3. **No actual runtime bugs surfaced.** Every migrated page renders
    200 on HTTP smoke; the 33-test chartis integration suite stays
    green through every wave.
+
+4. **`/` legacy dashboard stays on its own standalone HTML.** The
+   `/` route falls through to `rcm_mc/portfolio/portfolio_dashboard.py`
+   when the store has zero analysis packets and the user doesn't
+   pass `?v2=1`. That module builds its own `<!DOCTYPE>` + `<style>`
+   via `build_portfolio_dashboard()` and is **also called from the
+   CLI** (writes an HTML file to disk). Wrapping it in
+   `chartis_shell` would break the CLI output path. Pragmatic
+   decision: leave it standalone; users with packets (the common
+   path) render through `dashboard_v2` which IS on chartis (migrated
+   in Wave 3). A future follow-up could split the builder into a
+   "body-only" helper + two separate wrappers (CLI file-writer +
+   HTTP chartis-shell) but that's out of scope here.
+
+5. **`brand.PALETTE` lingering imports** (also noted in item 2
+   above). Worth re-emphasising: ~35 pages still `from .brand import
+   PALETTE` for hex literals inside their body HTML. Those render
+   correctly via the `_CAD_COMPAT_CSS` alias layer, but the imports
+   aren't dead code — the pages still use those hex values. Removing
+   them requires a rewrite of each page's body HTML to use
+   `var(--ck-*)` CSS vars instead. Deferred.
