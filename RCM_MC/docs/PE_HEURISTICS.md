@@ -6158,7 +6158,71 @@ we've accepted on faith.
 
 ---
 
-## 201. Change log
+## 201. Physician-group friction scorer (`physician_group_friction_scorer.py`)
+
+**Partner statement:** "On a physician-practice deal,
+the thesis closes at LOI. The friction starts day 1 of
+integration. Knowing the friction list before we sign
+decides whether the 100-day plan is the first plan or
+the second."
+
+Distinct from `physician_compensation_benchmark`,
+`physician_comp_normalization_check`, and
+`management_bench_depth_check`. This module catalogs
+**post-close integration friction** in physician-group
+PE.
+
+### 10 friction points
+
+- **ancillary_ownership_unwind** — high prob, 8% EBITDA.
+- **rvu_target_resistance** — high prob, 5%.
+- **state_noncompete_gap** — medium prob, 15% (CA/ND/
+  CO/OK/VA).
+- **referral_source_loss** — medium prob, 12% (cohort
+  departures).
+- **cdi_documentation_pushback** — medium, 4%.
+- **financial_incentive_restructure** — high prob, 6%.
+- **supervisory_physician_gap** — low prob, 3%.
+- **stark_antikickback_exposure** — low prob, 10%.
+- **pms_ehr_change** — medium, 4%.
+- **clinical_protocol_standardization** — medium, 2%.
+
+### Expected-value math
+
+Each friction point has a probability weight (high 0.80,
+medium 0.50, low 0.25). Expected-value impact sums
+across all matched frictions as a single partner-level
+number.
+
+### Partner-note escalation
+
+- Expected impact ≥ 10% → "price it in + 100-day plan
+  must pre-empt each."
+- 5-10% → "named mitigation per friction point."
+- < 5% → "manageable; document mitigation but shape
+  clean."
+
+### Worked example — CA practice rollup
+
+Signals: ancillary ownership disclosed, state in
+non-compete gap list, high referral concentration,
+senior physicians 60+, aggressive RVU target.
+
+→ Matches: ancillary_unwind (high), state_noncompete
+(medium, 15%), referral_loss (medium, 12%),
+rvu_resistance (high).
+
+→ Expected impact: 0.80×0.08 + 0.50×0.15 + 0.50×0.12 +
+0.80×0.05 = ~20% → partner: price it in.
+
+### Packet signals
+
+Each friction point has its own `early_signals` list;
+see module for full signal names.
+
+---
+
+## 202. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
