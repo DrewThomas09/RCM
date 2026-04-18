@@ -1580,6 +1580,14 @@ from .lbo_debt_paydown_trajectory import (
     project_lbo_debt_paydown,
     render_lbo_debt_paydown_markdown,
 )
+from .working_capital_seasonality_detector import (
+    QuarterlyWC,
+    QuarterlyWCObservation,
+    WCSeasonalityInputs,
+    WCSeasonalityReport,
+    detect_wc_seasonality,
+    render_wc_seasonality_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3187,4 +3195,10 @@ __all__ = [
     "LBOYear",
     "project_lbo_debt_paydown",
     "render_lbo_debt_paydown_markdown",
+    "QuarterlyWC",
+    "QuarterlyWCObservation",
+    "WCSeasonalityInputs",
+    "WCSeasonalityReport",
+    "detect_wc_seasonality",
+    "render_wc_seasonality_markdown",
 ]

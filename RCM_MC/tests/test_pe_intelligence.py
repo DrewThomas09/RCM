@@ -31413,5 +31413,229 @@ class TestLBODebtPaydownTrajectory(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestWorkingCapitalSeasonalityDetector(unittest.TestCase):
+    """Partner voice: 'Q1 deductible reset isn't structural drag.'"""
+
+    def test_no_observations_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        r = detect_wc_seasonality(WCSeasonalityInputs())
+        self.assertIn(
+            "no observations", r.partner_note.lower()
+        )
+
+    def test_pure_seasonal_pattern(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        # Same pattern year over year — Q1 spike + Q4 cleaner
+        obs = []
+        for yr in [2024, 2025]:
+            obs.extend([
+                QuarterlyWCObservation(yr, 1, 58.0),
+                QuarterlyWCObservation(yr, 2, 50.0),
+                QuarterlyWCObservation(yr, 3, 48.0),
+                QuarterlyWCObservation(yr, 4, 46.0),
+            ])
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=obs,
+        ))
+        self.assertEqual(r.verdict, "seasonal")
+
+    def test_structural_drag_detected(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        # YoY same-Q DSO climbing 8 days
+        obs = [
+            QuarterlyWCObservation(2024, 1, 50.0),
+            QuarterlyWCObservation(2024, 2, 48.0),
+            QuarterlyWCObservation(2024, 3, 47.0),
+            QuarterlyWCObservation(2024, 4, 46.0),
+            QuarterlyWCObservation(2025, 1, 58.0),
+            QuarterlyWCObservation(2025, 2, 56.0),
+            QuarterlyWCObservation(2025, 3, 55.0),
+            QuarterlyWCObservation(2025, 4, 54.0),
+        ]
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=obs,
+        ))
+        self.assertEqual(r.verdict, "structural_drag")
+        self.assertIn(
+            "deteriorating", r.partner_note.lower()
+        )
+
+    def test_structural_improvement_detected(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        # YoY DSO falling 8 days
+        obs = [
+            QuarterlyWCObservation(2024, 1, 58.0),
+            QuarterlyWCObservation(2024, 2, 56.0),
+            QuarterlyWCObservation(2024, 3, 55.0),
+            QuarterlyWCObservation(2024, 4, 54.0),
+            QuarterlyWCObservation(2025, 1, 50.0),
+            QuarterlyWCObservation(2025, 2, 48.0),
+            QuarterlyWCObservation(2025, 3, 47.0),
+            QuarterlyWCObservation(2025, 4, 46.0),
+        ]
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=obs,
+        ))
+        self.assertEqual(
+            r.verdict, "structural_improvement"
+        )
+        self.assertIn(
+            "real rcm lift", r.partner_note.lower()
+        )
+
+    def test_mixed_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        # YoY drift ~3 days — mixed band
+        obs = [
+            QuarterlyWCObservation(2024, 1, 50.0),
+            QuarterlyWCObservation(2025, 1, 53.0),
+            QuarterlyWCObservation(2024, 2, 48.0),
+            QuarterlyWCObservation(2025, 2, 51.0),
+        ]
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=obs,
+        ))
+        self.assertEqual(r.verdict, "mixed")
+
+    def test_q1_seasonal_baseline_positive(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=[QuarterlyWCObservation(
+                2025, 1, 60.0)],
+        ))
+        q1 = r.quarters[0]
+        self.assertGreater(
+            q1.seasonal_baseline_days, 0
+        )
+        self.assertLess(
+            q1.seasonally_adjusted_dso, q1.dso_days
+        )
+
+    def test_q4_seasonal_baseline_negative(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=[QuarterlyWCObservation(
+                2025, 4, 45.0)],
+        ))
+        q4 = r.quarters[0]
+        self.assertLess(
+            q4.seasonal_baseline_days, 0
+        )
+
+    def test_yoy_delta_first_observation_none(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=[QuarterlyWCObservation(
+                2025, 1, 55.0)],
+        ))
+        self.assertIsNone(
+            r.quarters[0].yoy_same_q_delta_days
+        )
+
+    def test_yoy_delta_computed_when_prior_exists(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=[
+                QuarterlyWCObservation(2024, 1, 50.0),
+                QuarterlyWCObservation(2025, 1, 55.0),
+            ],
+        ))
+        q2025 = next(
+            q for q in r.quarters
+            if q.year == 2025 and q.quarter == 1
+        )
+        self.assertAlmostEqual(
+            q2025.yoy_same_q_delta_days, 5.0
+        )
+
+    def test_observations_sorted(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        # Pass out-of-order observations
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=[
+                QuarterlyWCObservation(2025, 4, 46.0),
+                QuarterlyWCObservation(2024, 1, 58.0),
+                QuarterlyWCObservation(2025, 1, 60.0),
+                QuarterlyWCObservation(2024, 4, 44.0),
+            ],
+        ))
+        ordered = [
+            (q.year, q.quarter) for q in r.quarters
+        ]
+        self.assertEqual(
+            ordered,
+            [(2024, 1), (2024, 4), (2025, 1), (2025, 4)],
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+            render_wc_seasonality_markdown,
+        )
+        md = render_wc_seasonality_markdown(
+            detect_wc_seasonality(WCSeasonalityInputs(
+                observations=[QuarterlyWCObservation(
+                    2025, 1, 55.0)],
+            ))
+        )
+        self.assertIn(
+            "# Working capital seasonality", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            QuarterlyWCObservation,
+            WCSeasonalityInputs,
+            detect_wc_seasonality,
+        )
+        r = detect_wc_seasonality(WCSeasonalityInputs(
+            observations=[QuarterlyWCObservation(
+                2025, 1, 55.0)],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
