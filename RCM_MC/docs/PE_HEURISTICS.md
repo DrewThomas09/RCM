@@ -5183,7 +5183,72 @@ shape before committing resources.
 
 ---
 
-## 186. Change log
+## 186. Subsector partner lens (`subsector_partner_lens.py`)
+
+**Partner statement:** "I don't evaluate a home-health
+deal like a hospital deal. Different intake questions,
+different ceiling risks, different exit-multiple drivers."
+
+Generic heuristics are subsector-agnostic. Real partners
+apply a subsector-specific lens that overrides generic
+rules. This module encodes the lens for **10 healthcare-
+services subsectors**.
+
+### Subsectors modeled
+
+hospital_general, specialty_physician_practice,
+behavioral_health, home_health, hospice,
+ambulatory_surgery_center, clinical_lab, dental_office,
+urgent_care, durable_medical_equipment.
+
+### Per-subsector data points
+
+- **first_question_on_intake** — the one question a partner
+  asks first.
+- **structural_ceiling_risk** — what caps upside.
+- **primary_tailwind / primary_headwind** — macro reads.
+- **reimbursement_reality** — FFS / risk / capped /
+  cash-pay.
+- **deal_killer_flags** — signals that trigger walk.
+- **key_exit_multiple_driver** — premium justification.
+- **typical_ebitda_margin_band** — peer band.
+- **typical_reimbursement_mix_note** — partner posture.
+- **partner_voice_summary** — one-line partner read.
+
+### Worked examples
+
+- **Hospital**: intake Q = "Payer mix and Medicare
+  trend?"; ceiling = reimbursement compression; margin
+  band 6-12%; partner summary: "hospitals are rate-takers
+  on 60%; ops matters less than reimbursement direction."
+
+- **Behavioral Health**: intake Q = "Capacity utilization
+  and staffing ratio?"; ceiling = clinician supply, not
+  demand; margin 12-20%; partner summary: "capacity /
+  staffing problem, not demand problem — underwrite the
+  staffing ramp."
+
+- **Hospice**: intake Q = "LOS and ever-hit-cap
+  history?"; ceiling = Medicare aggregate cap + OIG; margin
+  15-22%; partner summary: "cap discipline + audit history;
+  everything else secondary."
+
+- **DME**: intake Q = "Competitive-bid exposure and
+  product-line concentration?"; ceiling = CMS bid rounds;
+  margin 10-16%; partner summary: "Medicare compliance
+  business — audit clean + bid diversification = multiple."
+
+### Partner-note behavior
+
+- Subsector modeled + signals trigger deal-killer flag →
+  flagged with partner summary.
+- Subsector modeled + clean signals → lens applied with
+  partner summary.
+- Subsector not modeled → fallback generic heuristics note.
+
+---
+
+## 187. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
