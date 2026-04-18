@@ -214,6 +214,7 @@ NAV_ITEMS = [
     {"label": "CMS Data Browser", "href": "/cms-data-browser", "icon": "bookmark"},
     {"label": "MSA Concentration", "href": "/msa-concentration", "icon": "chart"},
     {"label": "IC Memo Generator", "href": "/ic-memo-gen", "icon": "chart"},
+    {"label": "Module Index", "href": "/module-index", "icon": "bookmark"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

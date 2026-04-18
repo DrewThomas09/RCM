@@ -2004,6 +2004,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.ic_memo_generator_page import render_ic_memo_generator
             return self._send_html(render_ic_memo_generator(_qp))
+        if path == "/module-index":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.module_index_page import render_module_index
+            return self._send_html(render_module_index(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
