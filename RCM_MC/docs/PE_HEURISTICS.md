@@ -7549,7 +7549,47 @@ Unassigned owners flagged `owner: unassigned`.
 
 ---
 
-## 226. Change log
+## 226. Insurance tail coverage designer (`insurance_tail_coverage_designer.py`)
+
+**Partner statement:** "Insurance tail coverage is one
+of those line items that gets skipped in diligence and
+then costs you a fortune when a claim lands 8 months
+post-close. I want D&O, cyber, pro-liability, and EPL
+tail math done before we sign."
+
+Distinct from `insurance_diligence` (reviews existing).
+This module **designs** the close-date tail package.
+
+### 5 tail policies
+
+- **D&O run-off** — 6 yr, limit ~5% EV, premium 2.5x
+  expiring annual.
+- **Cyber tail** — 3 yr, 2-4% EV limit (higher on prior
+  incident), premium 1.5-2.0x.
+- **Professional liability tail** — 7 yr (med-mal SoL),
+  5-8% EV, premium 2-3x.
+- **EPL run-off** — 3 yr, 1% EV, premium 1.5x.
+- **Environmental tail** — 5 yr, 2% EV when triggered by
+  material exposure + physical sites.
+
+### Partner-note escalation
+
+- ≥ $5M total tail premium → "material close cost;
+  negotiate cost-sharing with seller or escrow."
+- $2-5M → "budget into close-cost line; standard."
+- < $2M → "lean; standard close-cost basis."
+
+### Packet fields
+
+`ev_m`, `has_physical_real_estate`,
+`asset_type_is_provider`, `prior_cyber_incident`,
+`material_medmal_exposure`,
+`material_environmental_exposure`,
+`expiring_annual_premium_total_m`.
+
+---
+
+## 227. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
