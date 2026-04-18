@@ -1277,6 +1277,13 @@ from .archetype_heuristic_router import (
     render_archetype_routing_markdown,
     route_archetype,
 )
+from .thesis_break_price_calculator import (
+    BreakPriceInputs,
+    BreakPriceReport,
+    HaircutLine,
+    compute_thesis_break_price,
+    render_break_price_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2665,4 +2672,9 @@ __all__ = [
     "list_routed_archetypes",
     "render_archetype_routing_markdown",
     "route_archetype",
+    "BreakPriceInputs",
+    "BreakPriceReport",
+    "HaircutLine",
+    "compute_thesis_break_price",
+    "render_break_price_markdown",
 ]

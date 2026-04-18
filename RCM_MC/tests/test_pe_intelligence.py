@@ -23125,5 +23125,159 @@ class TestArchetypeHeuristicRouter(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestThesisBreakPriceCalculator(unittest.TestCase):
+    """Partner scenario: what's the walk-away number?"""
+
+    def test_clean_deal_no_haircut(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+        ))
+        self.assertEqual(r.walk_away_price_m, 800.0)
+        self.assertEqual(r.total_haircut_pct, 0.0)
+
+    def test_strong_pre_mortem_triggers_haircut(self) -> None:
+        """Partner: 'strong pre-mortem → 10% haircut.'"""
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+            pre_mortem_strength="strong",
+        ))
+        self.assertAlmostEqual(r.total_haircut_pct, 0.10,
+                                places=4)
+        self.assertAlmostEqual(r.walk_away_price_m, 720.0,
+                                places=1)
+
+    def test_contradicted_chain_links_each_worth_4pct(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+            thesis_contradicted_links_count=2,
+        ))
+        self.assertAlmostEqual(r.total_haircut_pct, 0.08,
+                                places=4)
+
+    def test_compound_pattern_risks_3pct_each(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+            compound_pattern_risks_count=3,
+        ))
+        self.assertAlmostEqual(r.total_haircut_pct, 0.09,
+                                places=4)
+
+    def test_multiple_expansion_heavy_triggers(self) -> None:
+        """Partner: '> 30% of MOIC from mult → 5% haircut.'"""
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+            multiple_expansion_share_pct=0.40,
+        ))
+        cycle = next(l for l in r.lines
+                      if l.source == "cycle_multiple_dependence")
+        self.assertAlmostEqual(cycle.pct, 0.05, places=4)
+
+    def test_referral_spof_triggers(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+            referral_single_point_of_failure=True,
+        ))
+        self.assertAlmostEqual(r.total_haircut_pct, 0.04,
+                                places=4)
+
+    def test_turnaround_without_operator_triggers(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+            turnaround_without_operator=True,
+        ))
+        self.assertAlmostEqual(r.total_haircut_pct, 0.06,
+                                places=4)
+
+    def test_large_cumulative_haircut_pass_note(self) -> None:
+        """Partner: '> 25% haircut → walk if seller refuses.'"""
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+            pre_mortem_strength="strong",
+            thesis_contradicted_links_count=2,
+            compound_pattern_risks_count=2,
+            turnaround_without_operator=True,
+        ))
+        # 10 + 8 + 6 + 6 = 30% > 25% → pass note.
+        self.assertIn("pass", r.partner_note.lower())
+
+    def test_haircut_capped_at_40pct(self) -> None:
+        """Partner: 'total haircut capped at 40% — beyond is walk.'"""
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        # 10 + 20 + 15 + 10 + 5 + 4 + 6 = 70% raw.
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+            pre_mortem_strength="strong",
+            thesis_contradicted_links_count=5,
+            compound_pattern_risks_count=5,
+            failure_archetype_matches_count=5,
+            multiple_expansion_share_pct=0.50,
+            referral_single_point_of_failure=True,
+            turnaround_without_operator=True,
+        ))
+        self.assertLessEqual(r.total_haircut_pct, 0.40)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+            render_break_price_markdown,
+        )
+        md = render_break_price_markdown(
+            compute_thesis_break_price(BreakPriceInputs(
+                base_price_m=800.0,
+                pre_mortem_strength="moderate",
+            ))
+        )
+        self.assertIn("# Thesis-break price", md)
+        self.assertIn("Walk-away", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            BreakPriceInputs,
+            compute_thesis_break_price,
+        )
+        r = compute_thesis_break_price(BreakPriceInputs(
+            base_price_m=800.0,
+            pre_mortem_strength="moderate",
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
