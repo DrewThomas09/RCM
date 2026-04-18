@@ -2124,6 +2124,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.operating_partners_page import render_operating_partners
             return self._send_html(render_operating_partners(_qp))
+        if path == "/compliance-attestation":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.compliance_attestation_page import render_compliance_attestation
+            return self._send_html(render_compliance_attestation(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
