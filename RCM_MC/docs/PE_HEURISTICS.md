@@ -10255,7 +10255,94 @@ come back."
 
 ---
 
-## 259. Change log
+## 259. State scope-of-practice exposure (`state_scope_of_practice_exposure.py`)
+
+**Partner statement.** "Physician deal footprint tells you most of
+the regulatory burden. NPs and PAs practicing full-scope in one
+state can't in another. CPOM-strict states force an MSO/PC structure
+that adds complexity and legal risk. Non-compete bans (CA, OK, MN,
+ND) make physician retention harder. Before I get to the tax
+structure, I want the state map — what can we legally do in each
+state this deal operates in?"
+
+### Why it matters
+
+`multi_state_regulatory_complexity_scorer` covers general multi-
+state complexity. This module is **scope-of-practice and structure-
+specific** — NP/PA authority, CPOM strictness, non-compete
+enforceability, MSO/PC model requirements.
+
+### Per-state axes (19 states in book)
+
+- **NP/PA scope:** full_practice / reduced / restricted
+- **CPOM:** strict / moderate / lenient
+- **Non-compete:** ban / narrow / enforceable / varies
+
+Selected state postures:
+
+| State | NP/PA | CPOM | Non-compete |
+|---|---|---|---|
+| CA | full_practice | strict | ban |
+| NY | full_practice | strict | varies |
+| TX | reduced | strict | narrow |
+| FL | reduced | lenient | enforceable |
+| IL | reduced | strict | narrow |
+| AZ | full_practice | lenient | enforceable |
+| ND | full_practice | lenient | ban |
+| MN | full_practice | moderate | ban |
+
+### Aggregate verdict
+
+- CPOM-strict ≥ 50% AND non-compete-ban ≥ 20% → **restrictive** —
+  "MSO/PC mandatory; retention equity-aligned, not legally bonded"
+- CPOM-strict/moderate ≥ 50% → **mso_pc_required** — "pre-validate
+  structure in R&W; state-specific counsel needed"
+- Non-compete-ban ≥ 30% → **retention_critical** — "lose the top
+  physician and lose the book; retention via rollover/earn-out/comp"
+- Known-states share < 50% → **heterogeneous** — "less-studied
+  jurisdictions; add state-specific counsel time"
+- Else → **friendly**
+
+### Per-state flags
+
+- CPOM-strict + physician-owned → "MSO/PC model required"
+- Non-compete ban → "retention requires economic alignment, not
+  legal bond"
+- NP/PA full-practice → "mid-level leverage feasible if specialty
+  allows"
+
+### Worked example
+
+CA 40% + NY 30% + ND 30%:
+- CPOM-strict share: 70% (CA + NY)
+- Non-compete-ban share: 70% (CA + ND)
+- Verdict: **restrictive**
+- Partner: "MSO/PC mandatory; equity-aligned retention"
+
+FL 50% + OH 25% + GA 25%:
+- CPOM-strict share: 0%
+- Non-compete-ban share: 0%
+- Verdict: **friendly** — "CPOM lenience and enforceable non-
+  competes support standard PE structure"
+
+### Packet fields
+
+`footprint` — list of `StateFootprint(state, share_of_npr_pct)`
+(aliased as `ScopeStateFootprint` in the public API to avoid
+collision with `geographic_reach_analyzer.StateFootprint`);
+`is_physician_owned`.
+
+### Distinct from existing modules
+
+- `multi_state_regulatory_complexity_scorer` — general complexity.
+- `medicaid_state_exposure_map` — Medicaid tier map.
+- `geographic_reach_analyzer` — site / revenue concentration.
+- This module — NP/PA scope + CPOM + non-compete + MSO/PC
+  structural posture per state.
+
+---
+
+## 260. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
