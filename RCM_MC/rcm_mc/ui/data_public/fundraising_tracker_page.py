@@ -232,4 +232,4 @@ def render_fundraising_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Fundraising Tracker", active_nav="/fundraising")
+    return chartis_shell(body, "Fundraising Tracker", active_nav="/fundraising", data_source="synthetic")

@@ -209,4 +209,4 @@ def render_cms_data_browser(params: dict = None) -> str:
         source="data_public/cms_data_browser.py; CMS.gov public-data APIs.",
         page_key="cms-data-browser",
     )
-    return chartis_shell(explainer + body, "CMS Data Browser", active_nav="/cms-data-browser")
+    return chartis_shell(explainer + body, "CMS Data Browser", active_nav="/cms-data-browser", data_source="public")

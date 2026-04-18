@@ -231,4 +231,4 @@ def render_ma_star_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "MA / Stars Tracker", active_nav="/ma-star")
+    return chartis_shell(body, "MA / Stars Tracker", active_nav="/ma-star", data_source="synthetic")

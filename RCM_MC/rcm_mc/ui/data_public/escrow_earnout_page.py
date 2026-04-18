@@ -247,4 +247,4 @@ def render_escrow_earnout(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Escrow & Earnout", active_nav="/escrow-earnout")
+    return chartis_shell(body, "Escrow & Earnout", active_nav="/escrow-earnout", data_source="synthetic")

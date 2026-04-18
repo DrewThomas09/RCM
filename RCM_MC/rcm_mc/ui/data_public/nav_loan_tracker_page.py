@@ -215,4 +215,4 @@ def render_nav_loan_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "NAV Loan Tracker", active_nav="/nav-loan-tracker")
+    return chartis_shell(body, "NAV Loan Tracker", active_nav="/nav-loan-tracker", data_source="synthetic")

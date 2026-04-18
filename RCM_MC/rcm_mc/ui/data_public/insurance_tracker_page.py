@@ -216,4 +216,4 @@ def render_insurance(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Insurance Tracker", active_nav="/insurance-tracker")
+    return chartis_shell(body, "Insurance Tracker", active_nav="/insurance-tracker", data_source="synthetic")

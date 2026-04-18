@@ -637,6 +637,35 @@ button.ck-btn-ghost:hover {{ border-color: var(--ck-accent); color: var(--ck-tex
 .warn {{ color: var(--ck-warn); }}
 .dim  {{ color: var(--ck-text-dim); }}
 .faint {{ color: var(--ck-text-faint); }}
+
+/* Page-bottom proof-of-concept / data-provenance notice */
+.ck-data-notice {{
+  margin: 28px 0 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--ck-border-dim);
+  font-family: var(--ck-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ck-text-faint);
+  line-height: 1.55;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}}
+.ck-data-notice-tag {{
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--ck-border);
+  color: var(--ck-text-dim);
+  font-size: 9px;
+  text-transform: uppercase;
+}}
+.ck-data-notice-tag.public     {{ border-color: var(--ck-pos);  color: var(--ck-pos); }}
+.ck-data-notice-tag.mixed      {{ border-color: var(--ck-warn); color: var(--ck-warn); }}
+.ck-data-notice-tag.synthetic  {{ border-color: var(--ck-neg);  color: var(--ck-neg); }}
 """
 
 # ---------------------------------------------------------------------------
@@ -1686,6 +1715,41 @@ def _nav_html(active_path: str = "") -> str:
 # Shell
 # ---------------------------------------------------------------------------
 
+_DATA_NOTICE_COPY = {
+    "public": (
+        "PUBLIC DATA",
+        "Proof of concept. Values on this page come from public data "
+        "feeds (CMS, IRS Form 990 via ProPublica, SEC EDGAR) or from "
+        "cited published benchmark sources.",
+    ),
+    "mixed": (
+        "MIXED",
+        "Proof of concept. This page aggregates over the 655-deal "
+        "corpus, which combines publicly disclosed PE healthcare "
+        "transactions with synthetic records that were generated for "
+        "modeling and backtesting.",
+    ),
+    "synthetic": (
+        "SYNTHETIC",
+        "Proof of concept. All entries on this page are seeded "
+        "demonstration data — not a real fund, portfolio, LP pipeline, "
+        "or tracker.",
+    ),
+}
+
+
+def _data_notice_html(kind: str) -> str:
+    tag, text = _DATA_NOTICE_COPY.get(kind, _DATA_NOTICE_COPY["mixed"])
+    cls = kind if kind in _DATA_NOTICE_COPY else "mixed"
+    return (
+        f'<div class="ck-data-notice">'
+        f'<span class="ck-data-notice-tag {cls}">{tag}</span>'
+        f'<span>{_html.escape(text)} Portfolio / reference only — '
+        f'not for production or commercial use.</span>'
+        f'</div>'
+    )
+
+
 def chartis_shell(
     body: str,
     title: str,
@@ -1694,6 +1758,7 @@ def chartis_shell(
     subtitle: str = "",
     extra_css: str = "",
     extra_js: str = "",
+    data_source: str = "mixed",
 ) -> str:
     """Render a full dark institutional page.
 
@@ -1704,9 +1769,14 @@ def chartis_shell(
         subtitle:   Optional subtitle below page title
         extra_css:  Additional CSS
         extra_js:   Additional JS
+        data_source: "public" | "mixed" | "synthetic" — drives the
+            bottom-of-page proof-of-concept / provenance notice.
+            Defaults to "mixed" because most corpus-aggregating pages
+            blend real and synthetic records.
     """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     sub_html = f'<div class="ck-page-sub">{_html.escape(subtitle)}</div>' if subtitle else ""
+    data_notice = _data_notice_html(data_source)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1739,6 +1809,7 @@ def chartis_shell(
       {sub_html}
     </div>
     {body}
+    {data_notice}
   </main>
 </div>
 {_palette_html()}

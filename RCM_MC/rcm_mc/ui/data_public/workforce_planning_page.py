@@ -341,4 +341,4 @@ def render_workforce_planning(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Workforce Planning", active_nav="/workforce-planning")
+    return chartis_shell(body, "Workforce Planning", active_nav="/workforce-planning", data_source="synthetic")

@@ -219,4 +219,4 @@ def render_medical_realestate(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Medical RE Tracker", active_nav="/medical-realestate")
+    return chartis_shell(body, "Medical RE Tracker", active_nav="/medical-realestate", data_source="synthetic")

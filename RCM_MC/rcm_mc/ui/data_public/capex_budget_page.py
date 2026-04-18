@@ -225,4 +225,4 @@ def render_capex_budget(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Capex Budget", active_nav="/capex-budget")
+    return chartis_shell(body, "Capex Budget", active_nav="/capex-budget", data_source="synthetic")

@@ -249,4 +249,4 @@ def render_vdr_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "VDR Tracker", active_nav="/vdr-tracker")
+    return chartis_shell(body, "VDR Tracker", active_nav="/vdr-tracker", data_source="synthetic")

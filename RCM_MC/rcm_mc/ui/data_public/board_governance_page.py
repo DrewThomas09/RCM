@@ -206,4 +206,4 @@ def render_board_governance(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Board Governance", active_nav="/board-governance")
+    return chartis_shell(body, "Board Governance", active_nav="/board-governance", data_source="synthetic")

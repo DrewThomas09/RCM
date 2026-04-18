@@ -223,4 +223,4 @@ def render_dpi_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "DPI Tracker", active_nav="/dpi-tracker")
+    return chartis_shell(body, "DPI Tracker", active_nav="/dpi-tracker", data_source="synthetic")

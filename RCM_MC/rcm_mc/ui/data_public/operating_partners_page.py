@@ -233,4 +233,4 @@ def render_operating_partners(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Operating Partners", active_nav="/operating-partners")
+    return chartis_shell(body, "Operating Partners", active_nav="/operating-partners", data_source="synthetic")

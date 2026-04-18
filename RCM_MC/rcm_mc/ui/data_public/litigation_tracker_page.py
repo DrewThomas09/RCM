@@ -223,4 +223,4 @@ def render_litigation_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Litigation Tracker", active_nav="/litigation")
+    return chartis_shell(body, "Litigation Tracker", active_nav="/litigation", data_source="synthetic")

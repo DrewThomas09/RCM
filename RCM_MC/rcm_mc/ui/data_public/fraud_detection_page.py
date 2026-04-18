@@ -204,4 +204,4 @@ def render_fraud_detection(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "FWA Detection", active_nav="/fraud-detection")
+    return chartis_shell(body, "FWA Detection", active_nav="/fraud-detection", data_source="synthetic")

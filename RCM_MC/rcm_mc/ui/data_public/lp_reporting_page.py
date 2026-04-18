@@ -213,4 +213,4 @@ def render_lp_reporting(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "LP Reporting", active_nav="/lp-reporting")
+    return chartis_shell(body, "LP Reporting", active_nav="/lp-reporting", data_source="synthetic")

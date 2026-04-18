@@ -212,4 +212,4 @@ def render_workforce_retention(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Workforce Retention", active_nav="/workforce-retention")
+    return chartis_shell(body, "Workforce Retention", active_nav="/workforce-retention", data_source="synthetic")

@@ -269,4 +269,5 @@ def render_cms_sources() -> str:
         title="CMS Data Sources",
         active_nav="/cms-sources",
         subtitle=f"{len(_CMS_SOURCES)} datasets registered · {active_count} live API endpoints · stdlib-only client",
+        data_source="public",
     )

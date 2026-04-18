@@ -231,4 +231,4 @@ def render_coinvest_pipeline(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Co-Invest Pipeline", active_nav="/coinvest-pipeline")
+    return chartis_shell(body, "Co-Invest Pipeline", active_nav="/coinvest-pipeline", data_source="synthetic")

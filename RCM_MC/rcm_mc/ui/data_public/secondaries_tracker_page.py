@@ -198,4 +198,4 @@ def render_secondaries_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Secondaries", active_nav="/secondaries-tracker")
+    return chartis_shell(body, "Secondaries", active_nav="/secondaries-tracker", data_source="synthetic")

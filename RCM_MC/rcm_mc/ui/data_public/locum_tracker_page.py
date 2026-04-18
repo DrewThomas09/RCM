@@ -242,4 +242,4 @@ def render_locum_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Locum Workforce", active_nav="/locum-tracker")
+    return chartis_shell(body, "Locum Workforce", active_nav="/locum-tracker", data_source="synthetic")

@@ -231,4 +231,4 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Clinical AI Tracker", active_nav="/clinical-ai")
+    return chartis_shell(body, "Clinical AI Tracker", active_nav="/clinical-ai", data_source="synthetic")

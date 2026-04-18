@@ -231,4 +231,4 @@ def render_capital_call_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Capital Call Tracker", active_nav="/capital-call")
+    return chartis_shell(body, "Capital Call Tracker", active_nav="/capital-call", data_source="synthetic")

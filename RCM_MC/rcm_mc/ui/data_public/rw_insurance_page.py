@@ -223,4 +223,4 @@ def render_rw_insurance(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "R&W Insurance", active_nav="/rw-insurance")
+    return chartis_shell(body, "R&W Insurance", active_nav="/rw-insurance", data_source="synthetic")
