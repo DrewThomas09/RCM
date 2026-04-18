@@ -10056,7 +10056,74 @@ seat_specific_score_0_4)`; `deal_archetype` (informs criticality).
 
 ---
 
-## 256. Change log
+## 256. Site-of-service revenue mix (`site_of_service_revenue_mix.py`)
+
+**Partner statement.** "Show me revenue split across inpatient /
+HOPD / ASC / physician office. The mix tells you the regulatory
+exposure (HOPD heavy = site-neutral risk), the margin profile (ASC
+= better margin per case), and the migration opportunity (IP
+procedures eligible for OP migration). The current mix is one
+number; the mix you can engineer over the hold is the lever."
+
+### Why it matters
+
+`site_neutral_specific_impact_calculator` quantifies the $-impact
+of a specific reg event on specific service lines. This module is
+the **broader composition view** — the actual current revenue
+distribution across the 4 site-of-service categories with margin /
+exposure / migration interpretation.
+
+### Per-site typical attributes
+
+| Site | Typical margin | Reg exposure |
+|---|---|---|
+| inpatient | 10% | low |
+| hopd | 18% | high (site-neutral) |
+| asc | 30% | medium |
+| physician_office | 22% | low |
+
+### Verdict on HOPD share
+
+- HOPD ≥ 50% → **high_reg_exposure** — "run
+  site_neutral_specific_impact_calculator on service lines; bake
+  into bridge"
+- 30-50% → **moderate_reg_exposure** — "track CMS rule cycle"
+- < 30% → **balanced** — "reg risk not binding constraint"
+
+### Add-on partner-note signals
+
+- IP migration opportunity > 0 → "model the margin uplift if
+  executed"
+- ASC share ≥ 30% → "ASC drives margin premium; protect physician
+  retention; ASC economics depend on owner alignment"
+
+### Worked example
+
+$200M NPR: $100M HOPD (50%) + $50M ASC (25%) + $50M IP (25%, $20M
+of which OP-eligible).
+
+- Weighted margin: 50% × 18% + 25% × 30% + 25% × 10% = 19%
+- HOPD share 50% → **high_reg_exposure**
+- ASC share 25% → no ASC-specific note
+- OP migration opportunity: $20M
+- Partner: "high HOPD exposure (run site-neutral calc); $20M IP
+  revenue eligible for OP migration"
+
+### Packet fields
+
+`lines` — list of `SiteRevenueLine(site_type, npr_m,
+eligible_for_op_migration)`.
+
+### Distinct from existing modules
+
+- `site_neutral_specific_impact_calculator` — reg $-impact only.
+- `outpatient_migration` archetype — narrative shape.
+- This module — actual current site-of-service composition with
+  margin / exposure / migration interpretation.
+
+---
+
+## 257. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
