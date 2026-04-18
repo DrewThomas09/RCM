@@ -6705,7 +6705,60 @@ week 1 costs weeks in the 100-day plan."
 
 ---
 
-## 210. Change log
+## 210. Cash conversion drift detector (`cash_conversion_drift_detector.py`)
+
+**Partner statement:** "DSO rising three quarters in a
+row is a tell. By the time it shows up in EBITDA, we've
+missed the QofE window. I want the trendline flagged
+before it becomes a number."
+
+Distinct from `cash_conversion.py` (point-in-time
+computation). This module is **trend-based** — catches
+direction over 4-8 quarters and flags deteriorating
+working-capital signals before they hit the P&L.
+
+### 6 drift signals
+
+- **dso_days** (rising = bad) — threshold 1.0 day/qtr.
+- **dpo_days** (falling = bad) — 1.0 day/qtr.
+- **inventory_days** (rising = bad) — 1.0 day/qtr.
+- **initial_denial_rate** (rising = bad) — 1.0 %/qtr.
+- **claim_appeal_age** (rising = bad) — 2.0 days/qtr.
+- **collections_velocity** (falling = bad) — 1.0 %/qtr.
+
+### Tier ladder
+
+- **clean** — 0 deteriorating.
+- **noise** — 1.
+- **early_warning** — 2.
+- **working_capital_stress** — ≥ 3 → "bring-down QofE
+  period-over-period comparison at close; stress cov
+  package against trajectory."
+
+### Trend math
+
+Linear regression slope over last N quarters. Signal
+"deteriorating" if slope is in wrong direction **AND**
+magnitude > threshold.
+
+### Why partners care
+
+Working-capital stress shows up in cash before it shows
+up in EBITDA. Catching the trend pre-close allows the
+partner to demand period-over-period bring-down in QofE,
+tighten covenants, or walk.
+
+### Packet fields
+
+`dso_days_series`, `dpo_days_series`,
+`inventory_days_series`, `initial_denial_rate_series`,
+`claim_appeal_age_series`,
+`collections_velocity_series` — each a list of quarterly
+observations (minimum 3 for slope).
+
+---
+
+## 211. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
