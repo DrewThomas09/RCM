@@ -7264,7 +7264,54 @@ Top specialty 80% / top procedure 45% / 3 surgeons /
 
 ---
 
-## 220. Change log
+## 220. Local market intensity (`local_market_intensity_scorer.py`)
+
+**Partner statement:** "HHI at the national level is
+noise. What matters is the MSA. If we're the 6th
+urgent-care operator in Phoenix, pricing is a race to
+the bottom. If we're the only GI practice in a 50-mile
+radius, I can underwrite growth."
+
+Distinct from `market_structure` (national HHI / CR3).
+This module measures **local-market intensity**.
+
+### 5 flag signals + 1 protective factor
+
+1. **direct_competitors_local_gte_3**
+2. **new_entrant_announced_12mo**
+3. **dominant_local_payer_gte_45pct** — price-taker
+   dynamic.
+4. **physician_labor_pool_shallow** — local wage
+   inflation risk.
+5. **consumer_retail_encroachment** — CVS/Amazon/Optum
+   commoditization.
+6. **state_con_protected** (protective) — reduces
+   effective flag count by 1.
+
+### Tier ladder (effective flags after CON adjustment)
+
+- **protected_local** (0-1 + CON state) → pricing power.
+- **balanced** (2) → peer-average growth, no gating.
+- **crowded** (3) → haircut projected growth.
+- **hypercompetitive** (4+) → price-taker; reprice or
+  walk.
+
+### Why local matters
+
+Healthcare services are local-delivered. A "national
+rollup" is a collection of MSA-level duopolies. Partners
+make the MSA-level call at underwrite, then aggregate.
+
+### Packet fields
+
+`direct_competitors_local`, `new_entrant_announced_12mo`,
+`dominant_payer_share_local`,
+`physician_labor_pool_shallow`,
+`consumer_retail_encroachment`, `state_con_protected`.
+
+---
+
+## 221. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
