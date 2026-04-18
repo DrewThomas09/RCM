@@ -1662,6 +1662,12 @@ from .claims_denial_root_cause_classifier import (
     classify_denial_root_causes,
     render_denial_root_cause_markdown,
 )
+from .patient_acquisition_cost_benchmark import (
+    PatientCACInputs,
+    PatientCACReport,
+    benchmark_patient_cac,
+    render_patient_cac_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3329,4 +3335,8 @@ __all__ = [
     "DenialRootCauseReport",
     "classify_denial_root_causes",
     "render_denial_root_cause_markdown",
+    "PatientCACInputs",
+    "PatientCACReport",
+    "benchmark_patient_cac",
+    "render_patient_cac_markdown",
 ]

@@ -33542,5 +33542,168 @@ class TestClaimsDenialRootCauseClassifier(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPatientAcquisitionCostBenchmark(unittest.TestCase):
+    """Partner voice: 'Price the CAC; growth stories don't.'"""
+
+    def test_unknown_specialty_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="unknown",
+        ))
+        self.assertFalse(r.in_catalog)
+
+    def test_default_norm_acceptable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="dermatology",
+        ))
+        self.assertEqual(r.verdict, "acceptable")
+        self.assertAlmostEqual(
+            r.cac_multiple_of_norm, 1.0
+        )
+
+    def test_efficient_low_cac(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="dermatology",
+            observed_cac_usd=200.0,
+        ))
+        self.assertEqual(r.verdict, "efficient")
+
+    def test_expensive_high_cac(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="dermatology",
+            observed_cac_usd=600.0,
+        ))
+        self.assertEqual(r.verdict, "expensive")
+
+    def test_unsustainable_cac(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="dermatology",
+            observed_cac_usd=1000.0,
+        ))
+        self.assertEqual(r.verdict, "unsustainable")
+        self.assertIn(
+            "negative unit economics",
+            r.partner_note.lower(),
+        )
+
+    def test_ltv_cac_under_3_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        # Short tenure → low LTV → low LTV/CAC
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="dermatology",
+            observed_tenure_years=0.5,
+        ))
+        if r.ltv_cac_ratio < 3.0:
+            self.assertIn(
+                "3×", r.partner_note.lower()
+            )
+
+    def test_payback_computed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="dental",
+        ))
+        self.assertGreater(r.payback_months, 0)
+
+    def test_ltv_math(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="cardiology",
+        ))
+        # Cardio: 6500 * 0.40 * 5 = 13000
+        self.assertAlmostEqual(r.ltv_usd, 13000.0)
+
+    def test_behavioral_high_cac_shape(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="behavioral",
+        ))
+        # Behavioral has $500 norm CAC and short tenure
+        self.assertGreater(r.norm_cac_usd, 400)
+
+    def test_specialty_override_revenue(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        default = benchmark_patient_cac(
+            PatientCACInputs(specialty="dermatology"))
+        higher_rev = benchmark_patient_cac(
+            PatientCACInputs(
+                specialty="dermatology",
+                observed_annual_revenue_per_patient_usd=3000.0,
+            )
+        )
+        self.assertGreater(
+            higher_rev.ltv_usd, default.ltv_usd
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+            render_patient_cac_markdown,
+        )
+        md = render_patient_cac_markdown(
+            benchmark_patient_cac(PatientCACInputs(
+                specialty="orthopedic_surgery",
+            ))
+        )
+        self.assertIn("# Patient CAC benchmark", md)
+
+    def test_unknown_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+            render_patient_cac_markdown,
+        )
+        md = render_patient_cac_markdown(
+            benchmark_patient_cac(PatientCACInputs(
+                specialty="mystery"))
+        )
+        self.assertIn("not in cac catalog", md.lower())
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            PatientCACInputs,
+            benchmark_patient_cac,
+        )
+        r = benchmark_patient_cac(PatientCACInputs(
+            specialty="dental"))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
