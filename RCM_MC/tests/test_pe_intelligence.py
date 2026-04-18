@@ -19193,5 +19193,150 @@ class TestSubsectorPartnerLens(unittest.TestCase):
         json.dumps(app.to_dict())
 
 
+class TestExitMultipleCompression(unittest.TestCase):
+    """Partner scenario: what if exit multiples mean-revert?"""
+
+    def _std_inputs(self, **over):
+        from rcm_mc.pe_intelligence import CompressionInputs
+        defaults = dict(
+            entry_ebitda_m=75.0,
+            entry_multiple=11.0,
+            equity_check_m=400.0,
+            ebitda_growth_pct_per_yr=0.06,
+            hold_years=5.0,
+            base_exit_multiple=11.0,
+        )
+        defaults.update(over)
+        return CompressionInputs(**defaults)
+
+    def test_default_runs_four_scenarios(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        r = stress_exit_multiple_compression(self._std_inputs())
+        turns = [s.turns_compression for s in r.scenarios]
+        self.assertEqual(turns, [0.0, -1.0, -2.0, -3.0])
+
+    def test_moic_monotonic_in_compression(self) -> None:
+        """More compression → lower MOIC."""
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        r = stress_exit_multiple_compression(self._std_inputs())
+        # Sort by most-to-least compression.
+        s_sorted = sorted(r.scenarios,
+                           key=lambda s: s.turns_compression,
+                           reverse=True)
+        moics = [s.moic for s in s_sorted]
+        self.assertEqual(moics, sorted(moics, reverse=True))
+
+    def test_base_moic_matches_zero_turn_scenario(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        r = stress_exit_multiple_compression(self._std_inputs())
+        zero = next(s for s in r.scenarios
+                     if s.turns_compression == 0.0)
+        self.assertAlmostEqual(r.base_moic, zero.moic, places=3)
+
+    def test_robust_thesis_detected(self) -> None:
+        """Partner: 'thesis holds through 3 turns — strong MoS.'"""
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        # Low entry multiple + strong growth → robust.
+        r = stress_exit_multiple_compression(self._std_inputs(
+            entry_multiple=7.0,
+            ebitda_growth_pct_per_yr=0.10,
+            equity_check_m=300.0,
+            base_exit_multiple=9.0,
+        ))
+        if r.compression_turns_to_break_moic is None:
+            self.assertIn("robust", r.partner_note.lower())
+
+    def test_one_turn_break_triggers_cycle_warning(self) -> None:
+        """If -1 turn breaks 2x MOIC, partner says cycle assumption."""
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        # High entry multiple, thin growth → breaks quickly.
+        r = stress_exit_multiple_compression(self._std_inputs(
+            entry_multiple=15.0,
+            ebitda_growth_pct_per_yr=0.03,
+            equity_check_m=600.0,
+            base_exit_multiple=15.0,
+        ))
+        if r.compression_turns_to_break_moic == -1.0:
+            self.assertIn("cycle", r.partner_note.lower())
+
+    def test_base_below_threshold_triggers_walk(self) -> None:
+        """Partner: 'base doesn't clear 2x — walk.'"""
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        # Entry ~= exit multiple; short hold; no growth → under 2x.
+        r = stress_exit_multiple_compression(self._std_inputs(
+            entry_multiple=13.0,
+            ebitda_growth_pct_per_yr=0.02,
+            hold_years=3.0,
+            equity_check_m=750.0,
+            base_exit_multiple=12.0,
+        ))
+        if r.base_moic < 2.0:
+            self.assertIn("walk", r.partner_note.lower())
+
+    def test_irr_derived_from_moic(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        r = stress_exit_multiple_compression(self._std_inputs())
+        # MOIC^(1/yrs) - 1 = IRR.
+        expected = (r.base_moic ** (1.0 / 5.0) - 1.0) * 100.0
+        self.assertAlmostEqual(r.base_irr_pct, expected, places=1)
+
+    def test_custom_compression_turns(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        r = stress_exit_multiple_compression(self._std_inputs(
+            compression_turns=[0.0, -0.5, -1.5],
+        ))
+        turns = [s.turns_compression for s in r.scenarios]
+        self.assertEqual(turns, [0.0, -0.5, -1.5])
+
+    def test_debt_paydown_affects_equity(self) -> None:
+        """Paying down debt during hold boosts equity proceeds."""
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        no_paydown = stress_exit_multiple_compression(
+            self._std_inputs(debt_paydown_pct_per_yr=0.0)
+        )
+        with_paydown = stress_exit_multiple_compression(
+            self._std_inputs(debt_paydown_pct_per_yr=0.05)
+        )
+        self.assertGreater(with_paydown.base_moic,
+                            no_paydown.base_moic)
+
+    def test_markdown_renders_scenario_table(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            render_compression_markdown,
+            stress_exit_multiple_compression,
+        )
+        md = render_compression_markdown(
+            stress_exit_multiple_compression(self._std_inputs())
+        )
+        self.assertIn("# Exit-multiple compression stress", md)
+        self.assertIn("| Compression |", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            stress_exit_multiple_compression,
+        )
+        r = stress_exit_multiple_compression(self._std_inputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

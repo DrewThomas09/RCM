@@ -1088,6 +1088,13 @@ from .subsector_partner_lens import (
     list_modeled_subsectors,
     render_subsector_lens_markdown,
 )
+from .exit_multiple_compression_scenarios import (
+    CompressionInputs,
+    CompressionReport,
+    CompressionScenario,
+    render_compression_markdown,
+    stress_exit_multiple_compression,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2337,4 +2344,9 @@ __all__ = [
     "apply_subsector_lens",
     "list_modeled_subsectors",
     "render_subsector_lens_markdown",
+    "CompressionInputs",
+    "CompressionReport",
+    "CompressionScenario",
+    "render_compression_markdown",
+    "stress_exit_multiple_compression",
 ]
