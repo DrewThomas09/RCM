@@ -3285,7 +3285,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             })
         # Consolidated settings page.
         if path == "/settings":
-            from .ui.shell_v2 import shell_v2 as _shell_settings
+            from .ui._chartis_kit import chartis_shell as _shell_settings
             from .auth.external_users import grant_access as _ext_grant  # noqa: F401
             from .infra.multi_fund import list_funds  # noqa: F401  # noqa: F401
             from .infra.notifications import save_config as _notif_save  # noqa: F401
@@ -3536,7 +3536,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             tag = urllib.parse.unquote(path[len("/cohort/"):]).strip("/")
             return self._route_cohort_detail(tag)
         if path == "/runs":
-            from .ui.shell_v2 import shell_v2 as _shell_runs
+            from .ui._chartis_kit import chartis_shell as _shell_runs
             from .infra.run_history import _hash_file as _rh_hash  # noqa: F401
             store = PortfolioStore(self.config.db_path)
             try:
@@ -3625,7 +3625,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 deals_for_pressure = _pd_pres.DataFrame()
             return self._send_html(_rpp(deals_for_pressure, deal_id, pkt))
         if path == "/calibration":
-            from .ui.shell_v2 import shell_v2 as _shell_cal
+            from .ui._chartis_kit import chartis_shell as _shell_cal
             store = PortfolioStore(self.config.db_path)
             try:
                 runs_df = store.list_runs()
@@ -3961,7 +3961,7 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _error_page(self, title: str, message: str, *, code: str = "404") -> None:
         """Bloomberg-style terminal error page — code, timestamp, actions."""
-        from .ui.shell_v2 import shell_v2
+        from .ui._chartis_kit import chartis_shell
         from datetime import datetime, timezone
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         req_path = html.escape(getattr(self, "path", "—")[:120])
@@ -4006,7 +4006,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             f'<kbd>?</kbd> shortcuts</div>'
             f'</div>'
         )
-        return self._send_html(shell_v2(body, title))
+        return self._send_html(chartis_shell(body, title))
 
     def _route_ml_insights(self) -> None:
         """GET /ml-insights — national ML analysis dashboard."""
@@ -4469,7 +4469,7 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_deal_query(self) -> None:
         """GET /query — rule-based deal query with natural-language-style filters."""
-        from .ui.shell_v2 import shell_v2 as _shell_q
+        from .ui._chartis_kit import chartis_shell as _shell_q
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         query_str = (qs.get("q") or [""])[0][:200]
 
@@ -6952,7 +6952,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         store = PortfolioStore(self.config.db_path)
         profile = self._load_deal_profile(deal_id)
         if not profile:
-            from .ui.shell_v2 import shell_v2 as _shell_nf
+            from .ui._chartis_kit import chartis_shell as _shell_nf
             return self._send_html(_shell_nf(
                 f'<div class="cad-card"><h2>Deal Not Found</h2>'
                 f'<p style="color:var(--cad-text3);">Deal <strong>{html.escape(deal_id)}</strong> '
@@ -8591,7 +8591,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             profile = compute_demand_profile(ccn, store)
             return self._send_html(render_demand_analysis(profile.to_dict()))
         except Exception as exc:
-            from .ui.shell_v2 import shell_v2 as _shell_dem
+            from .ui._chartis_kit import chartis_shell as _shell_dem
             return self._send_html(_shell_dem(
                 f'<div class="cad-card"><p style="color:var(--cad-text3);">'
                 f'Demand analysis unavailable for CCN {html.escape(ccn)}: '
