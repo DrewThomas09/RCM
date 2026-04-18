@@ -157,6 +157,7 @@ _CORPUS_NAV = [
     {"label": "Covenant Headroom","href": "/covenant-headroom", "icon": "▣"},
     {"label": "Red-Flag Scanner", "href": "/redflag-scanner",   "icon": "▦"},
     {"label": "Value Backtester","href": "/backtester",         "icon": "▣"},
+    {"label": "Direct Employer", "href": "/direct-employer",    "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
