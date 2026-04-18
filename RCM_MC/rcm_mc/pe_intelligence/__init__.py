@@ -1588,6 +1588,14 @@ from .working_capital_seasonality_detector import (
     detect_wc_seasonality,
     render_wc_seasonality_markdown,
 )
+from .c_suite_team_grader import (
+    CSuiteTeamInputs,
+    CSuiteTeamReport,
+    SeatExecutive,
+    SeatGrade,
+    grade_c_suite_team,
+    render_c_suite_team_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3201,4 +3209,10 @@ __all__ = [
     "WCSeasonalityReport",
     "detect_wc_seasonality",
     "render_wc_seasonality_markdown",
+    "CSuiteTeamInputs",
+    "CSuiteTeamReport",
+    "SeatExecutive",
+    "SeatGrade",
+    "grade_c_suite_team",
+    "render_c_suite_team_markdown",
 ]

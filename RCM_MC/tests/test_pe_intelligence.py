@@ -31637,5 +31637,275 @@ class TestWorkingCapitalSeasonalityDetector(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestCSuiteTeamGrader(unittest.TestCase):
+    """Partner voice: 'The deal is the team — grade each seat.'"""
+
+    def test_no_seats_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs())
+        self.assertIn(
+            "no c-suite seats", r.partner_note.lower()
+        )
+
+    def test_strong_seat_grade_a(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[SeatExecutive(
+                seat="CEO",
+                name="Strong CEO",
+                years_in_healthcare=20,
+                pe_backed_before=True,
+                transaction_experience=True,
+                seat_specific_score_0_4=4,
+            )],
+        ))
+        self.assertEqual(
+            r.seats_graded[0].letter_grade, "A"
+        )
+        self.assertEqual(
+            r.seats_graded[0].recommendation,
+            "accept",
+        )
+
+    def test_weak_seat_grade_d(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[SeatExecutive(
+                seat="CFO",
+                years_in_healthcare=1,
+                pe_backed_before=False,
+                transaction_experience=False,
+                seat_specific_score_0_4=1,
+            )],
+        ))
+        self.assertEqual(
+            r.seats_graded[0].letter_grade, "D"
+        )
+        self.assertEqual(
+            r.seats_graded[0].recommendation,
+            "replace_at_close",
+        )
+        self.assertIn("CFO", r.seats_to_replace)
+
+    def test_grade_b_accept_with_coaching(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        # 12 points: years 10 (3) + pe (4) + tx (4) + spec 1 = 12 → B
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[SeatExecutive(
+                seat="COO",
+                years_in_healthcare=10,
+                pe_backed_before=True,
+                transaction_experience=True,
+                seat_specific_score_0_4=1,
+            )],
+        ))
+        self.assertEqual(
+            r.seats_graded[0].letter_grade, "B"
+        )
+        self.assertEqual(
+            r.seats_graded[0].recommendation,
+            "accept_with_coaching",
+        )
+
+    def test_grade_c_coach_or_replace(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        # 7 points: years 2 (1) + tx (4) + spec 2 = 7 → C
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[SeatExecutive(
+                seat="CMO",
+                years_in_healthcare=2,
+                pe_backed_before=False,
+                transaction_experience=True,
+                seat_specific_score_0_4=2,
+            )],
+        ))
+        self.assertEqual(
+            r.seats_graded[0].letter_grade, "C"
+        )
+        self.assertIn("CMO", r.seats_to_coach)
+
+    def test_industry_score_caps_at_4(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[SeatExecutive(
+                seat="CEO",
+                years_in_healthcare=30,
+                pe_backed_before=True,
+                transaction_experience=True,
+                seat_specific_score_0_4=4,
+            )],
+        ))
+        # max 16
+        self.assertEqual(
+            r.seats_graded[0].score_0_16, 16
+        )
+
+    def test_diagnostic_when_first_pe_role(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[SeatExecutive(
+                seat="CFO",
+                years_in_healthcare=10,
+                pe_backed_before=False,
+                transaction_experience=True,
+                seat_specific_score_0_4=3,
+            )],
+        ))
+        diag = " ".join(
+            r.seats_graded[0].diagnostic_lines
+        ).lower()
+        self.assertIn("pe-backed", diag)
+
+    def test_diagnostic_when_no_transaction_exp(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[SeatExecutive(
+                seat="CFO",
+                years_in_healthcare=10,
+                pe_backed_before=True,
+                transaction_experience=False,
+                seat_specific_score_0_4=3,
+            )],
+        ))
+        diag = " ".join(
+            r.seats_graded[0].diagnostic_lines
+        ).lower()
+        self.assertIn("transaction", diag)
+
+    def test_composite_score_averaged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[
+                SeatExecutive(
+                    seat="CEO",
+                    years_in_healthcare=20,
+                    pe_backed_before=True,
+                    transaction_experience=True,
+                    seat_specific_score_0_4=4,
+                ),  # 16
+                SeatExecutive(
+                    seat="CFO",
+                    years_in_healthcare=2,
+                    pe_backed_before=False,
+                    transaction_experience=False,
+                    seat_specific_score_0_4=1,
+                ),  # 2
+            ],
+        ))
+        # composite = (16 + 2) / 2 = 9
+        self.assertAlmostEqual(r.composite_score, 9.0)
+
+    def test_replace_seat_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[SeatExecutive(
+                seat="CFO",
+                years_in_healthcare=1,
+                seat_specific_score_0_4=1,
+            )],
+        ))
+        self.assertIn(
+            "closing-conditions list",
+            r.partner_note.lower(),
+        )
+
+    def test_strong_team_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[
+                SeatExecutive(
+                    seat=s,
+                    years_in_healthcare=20,
+                    pe_backed_before=True,
+                    transaction_experience=True,
+                    seat_specific_score_0_4=4,
+                )
+                for s in ["CEO", "CFO", "COO", "CMO"]
+            ],
+        ))
+        self.assertEqual(r.composite_letter, "A")
+        self.assertIn(
+            "bench depth", r.partner_note.lower()
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+            render_c_suite_team_markdown,
+        )
+        md = render_c_suite_team_markdown(
+            grade_c_suite_team(CSuiteTeamInputs(
+                seats=[SeatExecutive(
+                    seat="CEO",
+                    years_in_healthcare=10,
+                    pe_backed_before=True,
+                    transaction_experience=True,
+                    seat_specific_score_0_4=3,
+                )],
+            ))
+        )
+        self.assertIn("# C-suite team grade", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            CSuiteTeamInputs,
+            SeatExecutive,
+            grade_c_suite_team,
+        )
+        r = grade_c_suite_team(CSuiteTeamInputs(
+            seats=[SeatExecutive(
+                seat="CEO",
+                years_in_healthcare=10,
+            )],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
