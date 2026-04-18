@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -86,7 +86,7 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
         f'style="text-decoration:none;">Full Analysis</a></div>'
     )
 
-    return shell_v2(body, f"Diligence Questions — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Diligence Questions — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(questions)} questions across {len(by_category)} categories")
 
@@ -157,6 +157,6 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
         f'style="text-decoration:none;">Deal Dashboard</a></div>'
     )
 
-    return shell_v2(body, f"Playbook — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Playbook — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(entries)} initiatives | ${total_impact/1e6:.1f}M total impact")

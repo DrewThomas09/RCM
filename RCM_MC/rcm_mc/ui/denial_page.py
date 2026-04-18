@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -130,7 +130,7 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
     nav = _model_nav(deal_id, "denial")
     body = f'{nav}{kpis}{drivers_section}{interp}{rec_html}{actions}'
 
-    return shell_v2(
+    return chartis_shell(
         body, f"Denial Drivers — {html.escape(deal_name)}",
         active_nav="/analysis",
         subtitle=f"Current: {denial_rate:.1f}% | Recoverable: ${total_impact/1e6:.1f}M/year",

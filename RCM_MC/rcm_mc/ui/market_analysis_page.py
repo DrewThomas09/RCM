@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -167,7 +167,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
 
     nav = _model_nav(deal_id, "market")
     body = f'{nav}{kpis}{moat_section}{interp}{comp_section}{payer_html}{actions}'
-    return shell_v2(
+    return chartis_shell(
         body, f"Market Analysis — {html.escape(deal_name)}",
         active_nav="/analysis",
         subtitle=f"{state} market | {market_size.get('hospitals', 0)} hospitals | HHI: {hhi:,.0f} ({hhi_label})",

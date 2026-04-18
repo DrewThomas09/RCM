@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -157,7 +157,7 @@ def render_analysis_landing(
     body = f'{deals_section}{market_tools}'
 
     n = len(deals) if not deals.empty else 0
-    return shell_v2(
+    return chartis_shell(
         body, "Analysis",
         active_nav="/analysis",
         subtitle=f"{n} deals — click any model to run it instantly",

@@ -9,7 +9,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -301,7 +301,7 @@ def render_library() -> str:
 
     body = f'{sections}{api_link}'
 
-    return shell_v2(
+    return chartis_shell(
         body, "Methodology",
         active_nav="/methodology",
         subtitle="Research library, model documentation & methodology references",

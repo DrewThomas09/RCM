@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 from .regression_page import _add_computed_features, _fmt_num, _COLLINEAR_PAIRS
 
@@ -66,7 +66,7 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
     df = _add_computed_features(hcris_df)
     match = df[df["ccn"] == ccn]
     if match.empty:
-        return shell_v2(
+        return chartis_shell(
             f'<div class="cad-card"><p>Hospital {_html.escape(ccn)} not found in HCRIS.</p></div>',
             f"Hospital Stats — {_html.escape(ccn)}",
         )
@@ -256,7 +256,7 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
 
     body = f'{kpis}{flags_html}{metrics_section}{residual_section}{actions}'
 
-    return shell_v2(
+    return chartis_shell(
         body,
         f"Statistical Profile — {_html.escape(name)}",
         subtitle=(
