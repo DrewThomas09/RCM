@@ -154,6 +154,7 @@ _CORPUS_NAV = [
     {"label": "Base Rates",      "href": "/base-rates",        "icon": "▤"},
     {"label": "REIT / SLB",      "href": "/reit-analyzer",     "icon": "▣"},
     {"label": "Capital Pacing",  "href": "/capital-pacing",    "icon": "▦"},
+    {"label": "Covenant Headroom","href": "/covenant-headroom", "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

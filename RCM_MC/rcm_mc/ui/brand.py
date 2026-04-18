@@ -190,6 +190,7 @@ NAV_ITEMS = [
     {"label": "Base Rates", "href": "/base-rates", "icon": "grid"},
     {"label": "REIT / SLB", "href": "/reit-analyzer", "icon": "chart"},
     {"label": "Capital Pacing", "href": "/capital-pacing", "icon": "chart"},
+    {"label": "Covenant Headroom", "href": "/covenant-headroom", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
