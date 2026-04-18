@@ -29580,5 +29580,216 @@ class TestICDialogSimulator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPostClose90DayRealityCheck(unittest.TestCase):
+    """Partner voice: 'First board meeting is the reality test.'"""
+
+    def test_clean_quarter_healthy(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        # All 6 categories on track: actuals match underwrite
+        r = run_90_day_reality_check(NinetyDayInputs(
+            actual_q1_annualized_growth_pct=0.08,
+            underwritten_annual_growth_pct=0.08,
+            actual_q1_ebitda_margin_pct=0.18,
+            underwritten_ebitda_margin_pct=0.18,
+            actual_q1_denial_drop_bps=25.0,
+            underwritten_q1_denial_drop_bps=25.0,
+            day1_actions_committed=8,
+            day1_actions_delivered=8,
+        ))
+        self.assertEqual(
+            r.aggregate_verdict, "healthy_first_quarter"
+        )
+        self.assertGreaterEqual(r.on_track_count, 5)
+
+    def test_revenue_off_track_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            actual_q1_annualized_growth_pct=0.04,
+            underwritten_annual_growth_pct=0.10,
+        ))
+        rev_cat = next(
+            c for c in r.categories
+            if c.name == "revenue_trajectory"
+        )
+        self.assertEqual(rev_cat.status, "off_track")
+
+    def test_ebitda_margin_at_risk_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            underwritten_ebitda_margin_pct=0.20,
+            actual_q1_ebitda_margin_pct=0.19,
+        ))
+        ebitda_cat = next(
+            c for c in r.categories
+            if c.name == "ebitda_margin"
+        )
+        self.assertEqual(ebitda_cat.status, "at_risk")
+
+    def test_physician_loss_off_track(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            top_5_physicians_at_close=5,
+            top_5_physicians_active_q1=2,
+        ))
+        phys = next(
+            c for c in r.categories
+            if c.name == "physician_retention"
+        )
+        self.assertEqual(phys.status, "off_track")
+        self.assertIn(
+            "named risk materializing",
+            phys.partner_read.lower(),
+        )
+
+    def test_one_physician_loss_at_risk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            top_5_physicians_at_close=5,
+            top_5_physicians_active_q1=4,
+        ))
+        phys = next(
+            c for c in r.categories
+            if c.name == "physician_retention"
+        )
+        self.assertEqual(phys.status, "at_risk")
+
+    def test_csuite_loss_off_track(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            expected_c_suite_count=3,
+            actual_c_suite_count_at_q1=1,
+        ))
+        mgmt = next(
+            c for c in r.categories
+            if c.name == "management_team_intact"
+        )
+        self.assertEqual(mgmt.status, "off_track")
+
+    def test_day1_partial_at_risk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            day1_actions_committed=10,
+            day1_actions_delivered=7,
+        ))
+        d1 = next(
+            c for c in r.categories
+            if c.name == "day1_actions_delivered"
+        )
+        self.assertEqual(d1.status, "at_risk")
+
+    def test_day1_low_off_track(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            day1_actions_committed=10,
+            day1_actions_delivered=4,
+        ))
+        d1 = next(
+            c for c in r.categories
+            if c.name == "day1_actions_delivered"
+        )
+        self.assertEqual(d1.status, "off_track")
+
+    def test_three_off_tracks_thesis_at_risk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            actual_q1_annualized_growth_pct=0.0,
+            underwritten_annual_growth_pct=0.10,
+            actual_q1_ebitda_margin_pct=0.10,
+            underwritten_ebitda_margin_pct=0.20,
+            top_5_physicians_at_close=5,
+            top_5_physicians_active_q1=2,
+        ))
+        self.assertEqual(
+            r.aggregate_verdict, "thesis_at_risk"
+        )
+        self.assertIn("escalate", r.partner_note.lower())
+
+    def test_two_off_tracks_acceleration(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            actual_q1_annualized_growth_pct=0.02,
+            underwritten_annual_growth_pct=0.10,
+            top_5_physicians_at_close=5,
+            top_5_physicians_active_q1=2,
+        ))
+        self.assertEqual(
+            r.aggregate_verdict,
+            "acceleration_warranted",
+        )
+
+    def test_one_off_diary_warranted(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs(
+            actual_q1_annualized_growth_pct=0.02,
+            underwritten_annual_growth_pct=0.10,
+        ))
+        self.assertEqual(
+            r.aggregate_verdict, "diary_warranted"
+        )
+
+    def test_six_categories_returned(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs())
+        self.assertEqual(len(r.categories), 6)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            render_90_day_markdown,
+            run_90_day_reality_check,
+        )
+        md = render_90_day_markdown(
+            run_90_day_reality_check(NinetyDayInputs())
+        )
+        self.assertIn(
+            "# 90-day post-close reality check", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            NinetyDayInputs,
+            run_90_day_reality_check,
+        )
+        r = run_90_day_reality_check(NinetyDayInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

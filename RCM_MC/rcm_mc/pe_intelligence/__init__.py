@@ -1516,6 +1516,13 @@ from .ic_dialog_simulator import (
     render_ic_dialog_markdown,
     simulate_ic_dialog,
 )
+from .post_close_90_day_reality_check import (
+    CategoryCheck as NinetyDayCategoryCheck,
+    NinetyDayInputs,
+    NinetyDayReport,
+    render_90_day_markdown,
+    run_90_day_reality_check,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3077,4 +3084,9 @@ __all__ = [
     "ICDialogReport",
     "render_ic_dialog_markdown",
     "simulate_ic_dialog",
+    "NinetyDayCategoryCheck",
+    "NinetyDayInputs",
+    "NinetyDayReport",
+    "render_90_day_markdown",
+    "run_90_day_reality_check",
 ]
