@@ -890,6 +890,12 @@ from .regional_wage_inflation_overlay import (
     overlay_wage_inflation,
     render_overlay_markdown,
 )
+from .rac_audit_exposure_estimator import (
+    RACExposureReport,
+    RACInputs,
+    estimate_rac_exposure,
+    render_rac_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1995,4 +2001,8 @@ __all__ = [
     "WageSiteFootprint",
     "overlay_wage_inflation",
     "render_overlay_markdown",
+    "RACExposureReport",
+    "RACInputs",
+    "estimate_rac_exposure",
+    "render_rac_markdown",
 ]

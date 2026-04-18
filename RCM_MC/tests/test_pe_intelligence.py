@@ -15613,5 +15613,123 @@ class TestRegionalWageInflationOverlay(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── RAC audit exposure estimator ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    RACExposureReport,
+    RACInputs,
+    estimate_rac_exposure,
+    render_rac_markdown,
+)
+
+
+class TestRACAuditExposureEstimator(unittest.TestCase):
+
+    def test_no_medicare_not_applicable(self) -> None:
+        r = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=0.0,
+            base_ebitda_m=50.0,
+        ))
+        self.assertIn("not applicable", r.partner_note.lower())
+
+    def test_aggressive_cmi_lift_raises_rate(self) -> None:
+        low = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=100.0,
+            claimed_cmi_uplift=0.02,
+            base_ebitda_m=40.0,
+        ))
+        high = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=100.0,
+            claimed_cmi_uplift=0.15,
+            base_ebitda_m=40.0,
+        ))
+        self.assertGreater(high.adjusted_audit_hit_rate,
+                            low.adjusted_audit_hit_rate)
+
+    def test_open_fca_bumps_exposure(self) -> None:
+        clean = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=100.0,
+            base_ebitda_m=40.0,
+            open_fca_exposure=False,
+        ))
+        fca = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=100.0,
+            base_ebitda_m=40.0,
+            open_fca_exposure=True,
+        ))
+        self.assertGreater(fca.adjusted_audit_hit_rate,
+                            clean.adjusted_audit_hit_rate)
+
+    def test_large_exposure_ic_blocking(self) -> None:
+        r = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=300.0,
+            historical_denial_rate=0.14,
+            claimed_cmi_uplift=0.15,
+            cdi_program_in_place=False,
+            aggressive_coding_flags=3,
+            open_fca_exposure=True,
+            base_ebitda_m=30.0,
+        ))
+        self.assertGreaterEqual(r.loss_as_pct_of_ebitda, 0.30)
+        self.assertIn("ic-blocking", r.partner_note.lower())
+
+    def test_material_triggers_earn_out_recommendation(self) -> None:
+        r = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=100.0,
+            claimed_cmi_uplift=0.08,
+            cdi_program_in_place=False,
+            base_ebitda_m=40.0,
+        ))
+        if 0.10 <= r.loss_as_pct_of_ebitda < 0.30:
+            self.assertIn("earn-out", r.partner_note.lower())
+
+    def test_low_exposure_immaterial(self) -> None:
+        r = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=20.0,
+            historical_denial_rate=0.05,
+            cdi_program_in_place=True,
+            base_ebitda_m=80.0,
+        ))
+        self.assertLess(r.loss_as_pct_of_ebitda, 0.05)
+
+    def test_rate_capped_at_15pct(self) -> None:
+        r = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=100.0,
+            historical_denial_rate=0.20,
+            claimed_cmi_uplift=0.20,
+            cdi_program_in_place=False,
+            aggressive_coding_flags=10,
+            open_fca_exposure=True,
+            base_ebitda_m=50.0,
+        ))
+        self.assertLessEqual(r.adjusted_audit_hit_rate, 0.15)
+
+    def test_low_mid_high_ordering(self) -> None:
+        r = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=100.0,
+            claimed_cmi_uplift=0.05,
+            base_ebitda_m=40.0,
+        ))
+        self.assertLess(r.expected_loss_low_m, r.expected_loss_mid_m)
+        self.assertLess(r.expected_loss_mid_m, r.expected_loss_high_m)
+
+    def test_markdown_renders(self) -> None:
+        md = render_rac_markdown(estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=100.0,
+            claimed_cmi_uplift=0.10,
+            base_ebitda_m=50.0,
+        )))
+        self.assertIn("# RAC / OIG audit exposure", md)
+        self.assertIn("Expected loss", md)
+
+    def test_json(self) -> None:
+        import json
+        r = estimate_rac_exposure(RACInputs(
+            medicare_ffs_revenue_m=100.0,
+            base_ebitda_m=50.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
