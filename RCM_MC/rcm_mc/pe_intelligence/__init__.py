@@ -1180,6 +1180,13 @@ from .named_failure_library_v2 import (
     match_failures_v2,
     render_failures_v2_markdown,
 )
+from .turnaround_feasibility_scorer import (
+    TurnaroundDimension,
+    TurnaroundFeasibilityReport,
+    TurnaroundInputs,
+    render_turnaround_feasibility_markdown,
+    score_turnaround_feasibility,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2497,4 +2504,9 @@ __all__ = [
     "list_failure_patterns_v2",
     "match_failures_v2",
     "render_failures_v2_markdown",
+    "TurnaroundDimension",
+    "TurnaroundFeasibilityReport",
+    "TurnaroundInputs",
+    "render_turnaround_feasibility_markdown",
+    "score_turnaround_feasibility",
 ]

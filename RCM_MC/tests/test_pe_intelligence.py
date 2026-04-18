@@ -21068,5 +21068,176 @@ class TestNamedFailureLibraryV2(unittest.TestCase):
         json.dumps([h.to_dict() for h in hits])
 
 
+class TestTurnaroundFeasibilityScorer(unittest.TestCase):
+    """Partner scenario: can this team actually fix it?"""
+
+    def test_infeasible_default(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs())
+        self.assertIn(r.tier, {"infeasible", "high_risk"})
+
+    def test_feasible_full_inputs(self) -> None:
+        """Partner: 'named operator, budget, CEO on exit,
+        sponsor track record → feasible.'"""
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs(
+            external_operator_identified=True,
+            operator_placement_budget_reserved=True,
+            operator_placement_budget_m=6.0,
+            ceo_on_exit_path=True,
+            sponsor_has_turnaround_track_record=True,
+            hundred_day_plan_has_operator_milestones=True,
+            labor_or_union_constraints_manageable=True,
+            turnaround_duration_months=24,
+        ))
+        self.assertEqual(r.tier, "feasible")
+        self.assertEqual(r.score, 7)
+
+    def test_budget_flag_on_large_deal_without_budget(self) -> None:
+        """Partner: 'no budget + $20M+ EBITDA target →
+        closing-condition flag.'"""
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs(
+            external_operator_identified=True,
+            operator_placement_budget_reserved=False,
+            operator_placement_budget_m=0.0,
+            current_ebitda_m=30.0,
+            thesis_requires_turnaround=True,
+        ))
+        self.assertTrue(r.operator_placement_flag)
+        self.assertIn("closing-condition",
+                       r.partner_note.lower())
+
+    def test_no_budget_flag_on_small_deal(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs(
+            current_ebitda_m=10.0,
+            thesis_requires_turnaround=True,
+        ))
+        self.assertFalse(r.operator_placement_flag)
+
+    def test_incumbent_ceo_staying_fails_dim(self) -> None:
+        """Partner: 'CEO who caused it shouldn't lead the fix.'"""
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs(
+            external_operator_identified=True,
+            operator_placement_budget_reserved=True,
+            operator_placement_budget_m=6.0,
+            ceo_on_exit_path=False,
+            sponsor_has_turnaround_track_record=True,
+            hundred_day_plan_has_operator_milestones=True,
+        ))
+        ceo_dim = next(d for d in r.dimensions
+                        if d.name == "ceo_on_exit_path")
+        self.assertFalse(ceo_dim.passed)
+        self.assertIn("creator of the problem",
+                       ceo_dim.partner_comment.lower())
+
+    def test_long_duration_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs(
+            turnaround_duration_months=48,
+        ))
+        dur_dim = next(d for d in r.dimensions
+                        if d.name ==
+                        "turnaround_duration_le_36_months")
+        self.assertFalse(dur_dim.passed)
+
+    def test_labor_constraint_blocks_dim(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs(
+            labor_or_union_constraints_manageable=False,
+        ))
+        labor_dim = next(d for d in r.dimensions
+                          if d.name ==
+                          "labor_or_union_constraints_manageable")
+        self.assertFalse(labor_dim.passed)
+
+    def test_partial_inputs_yield_qualified(self) -> None:
+        """Partner: '4-5/7 = qualified, with mitigation.'"""
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs(
+            external_operator_identified=True,
+            operator_placement_budget_reserved=True,
+            operator_placement_budget_m=6.0,
+            ceo_on_exit_path=True,
+            sponsor_has_turnaround_track_record=False,
+            hundred_day_plan_has_operator_milestones=False,
+            labor_or_union_constraints_manageable=True,
+            turnaround_duration_months=24,
+        ))
+        self.assertEqual(r.tier, "qualified")
+        self.assertIn("named mitigation",
+                       r.partner_note.lower())
+
+    def test_high_risk_triggers_walk_guidance(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs(
+            external_operator_identified=False,
+            operator_placement_budget_reserved=False,
+            ceo_on_exit_path=False,
+            sponsor_has_turnaround_track_record=False,
+            hundred_day_plan_has_operator_milestones=False,
+            labor_or_union_constraints_manageable=True,
+            turnaround_duration_months=24,
+        ))
+        self.assertIn(r.tier, {"high_risk", "infeasible"})
+
+    def test_markdown_renders_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            render_turnaround_feasibility_markdown,
+            score_turnaround_feasibility,
+        )
+        md = render_turnaround_feasibility_markdown(
+            score_turnaround_feasibility(TurnaroundInputs(
+                current_ebitda_m=30.0,
+                thesis_requires_turnaround=True,
+            ))
+        )
+        self.assertIn("# Turnaround feasibility", md)
+        self.assertIn("operator-placement", md.lower())
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            TurnaroundInputs,
+            score_turnaround_feasibility,
+        )
+        r = score_turnaround_feasibility(TurnaroundInputs(
+            external_operator_identified=True,
+            operator_placement_budget_reserved=True,
+            operator_placement_budget_m=6.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
