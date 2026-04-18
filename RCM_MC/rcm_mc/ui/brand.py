@@ -156,6 +156,7 @@ NAV_ITEMS = [
     {"label": "Scenario MC", "href": "/scenario-mc", "icon": "chart"},
     {"label": "TSA Tracker", "href": "/transition-services", "icon": "chart"},
     {"label": "Revenue Leakage", "href": "/revenue-leakage", "icon": "chart"},
+    {"label": "Reference Pricing", "href": "/ref-pricing", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
