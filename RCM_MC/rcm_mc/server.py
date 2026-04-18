@@ -2164,6 +2164,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.nsa_tracker_page import render_nsa_tracker
             return self._send_html(render_nsa_tracker(_qp))
+        if path == "/medicaid-unwinding":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.medicaid_unwinding_page import render_medicaid_unwinding
+            return self._send_html(render_medicaid_unwinding(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

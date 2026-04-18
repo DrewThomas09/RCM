@@ -246,6 +246,7 @@ NAV_ITEMS = [
     {"label": "Specialty Benchmarks", "href": "/specialty-benchmarks", "icon": "bookmark"},
     {"label": "Peer Transactions", "href": "/peer-transactions", "icon": "bookmark"},
     {"label": "NSA / IDR", "href": "/nsa-tracker", "icon": "bookmark"},
+    {"label": "Medicaid Unwinding", "href": "/medicaid-unwinding", "icon": "bookmark"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

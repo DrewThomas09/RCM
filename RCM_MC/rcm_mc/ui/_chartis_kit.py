@@ -210,6 +210,7 @@ _CORPUS_NAV = [
     {"label": "Specialty Benchmarks","href": "/specialty-benchmarks","icon": "▥"},
     {"label": "Peer Transactions","href": "/peer-transactions",    "icon": "▥"},
     {"label": "NSA / IDR",       "href": "/nsa-tracker",           "icon": "▥"},
+    {"label": "Medicaid Unwinding","href": "/medicaid-unwinding",  "icon": "▥"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
