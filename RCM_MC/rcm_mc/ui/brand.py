@@ -232,6 +232,7 @@ NAV_ITEMS = [
     {"label": "NAV Loan Tracker", "href": "/nav-loan-tracker", "icon": "chart"},
     {"label": "Medical RE Tracker", "href": "/medical-realestate", "icon": "chart"},
     {"label": "CMS APM Tracker", "href": "/cms-apm", "icon": "bookmark"},
+    {"label": "MA / Stars Tracker", "href": "/ma-star", "icon": "bookmark"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

@@ -196,6 +196,7 @@ _CORPUS_NAV = [
     {"label": "NAV Loan Tracker","href": "/nav-loan-tracker",      "icon": "▣"},
     {"label": "Medical RE Tracker","href": "/medical-realestate",  "icon": "▦"},
     {"label": "CMS APM Tracker", "href": "/cms-apm",               "icon": "▥"},
+    {"label": "MA / Stars Tracker","href": "/ma-star",             "icon": "▥"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
