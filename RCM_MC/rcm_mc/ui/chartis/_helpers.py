@@ -224,6 +224,31 @@ def flat_get(obj: Any, *keys: str, default: Any = None) -> Any:
     return cur if cur is not None else default
 
 
+def load_corpus_deals() -> List[Dict[str, Any]]:
+    """Return the full 655-deal seed corpus (35 base + 620 extended).
+
+    Mirrors the loader in ``ui/data_public/deals_library_page.py`` —
+    kept here so every chartis portfolio-level page can call it
+    without depending on that legacy module's private helper.
+    """
+    try:
+        from ...data_public.deals_corpus import _SEED_DEALS
+        from ...data_public.extended_seed import EXTENDED_SEED_DEALS
+    except Exception:
+        return []
+    result = list(_SEED_DEALS) + list(EXTENDED_SEED_DEALS)
+    for i in range(2, 32):
+        try:
+            mod = __import__(
+                f"rcm_mc.data_public.extended_seed_{i}",
+                fromlist=[f"EXTENDED_SEED_DEALS_{i}"],
+            )
+            result += list(getattr(mod, f"EXTENDED_SEED_DEALS_{i}"))
+        except (ImportError, AttributeError):
+            pass
+    return result
+
+
 def safe_dict(x: Any) -> Dict[str, Any]:
     """Coerce to a dict when something might be a dataclass/None/dict."""
     if isinstance(x, dict):
