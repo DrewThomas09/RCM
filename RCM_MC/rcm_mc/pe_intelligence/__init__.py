@@ -1081,6 +1081,13 @@ from .failure_archetype_library import (
     match_failure_archetypes,
     render_failure_archetypes_markdown,
 )
+from .subsector_partner_lens import (
+    LensApplication,
+    SubsectorLens,
+    apply_subsector_lens,
+    list_modeled_subsectors,
+    render_subsector_lens_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2325,4 +2332,9 @@ __all__ = [
     "list_all_failure_archetypes",
     "match_failure_archetypes",
     "render_failure_archetypes_markdown",
+    "LensApplication",
+    "SubsectorLens",
+    "apply_subsector_lens",
+    "list_modeled_subsectors",
+    "render_subsector_lens_markdown",
 ]

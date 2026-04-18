@@ -19080,5 +19080,118 @@ class TestFailureArchetypeLibrary(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestSubsectorPartnerLens(unittest.TestCase):
+    """Partner scenario: different lens per subsector on intake."""
+
+    def test_list_modeled_subsectors(self) -> None:
+        from rcm_mc.pe_intelligence import list_modeled_subsectors
+        subs = list_modeled_subsectors()
+        self.assertIn("hospital_general", subs)
+        self.assertIn("behavioral_health", subs)
+        self.assertIn("home_health", subs)
+        self.assertIn("hospice", subs)
+        self.assertEqual(len(subs), 10)
+
+    def test_hospital_lens_has_reimbursement_ceiling(self) -> None:
+        """Partner: 'hospital = rate-taker. Reimbursement is ceiling.'"""
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens("hospital_general")
+        self.assertIn("reimbursement",
+                       app.lens.structural_ceiling_risk.lower())
+
+    def test_behavioral_health_lens_is_staffing_ceiling(self) -> None:
+        """Partner: 'behavioral = capacity problem, not demand.'"""
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens("behavioral_health")
+        self.assertIn("staffing",
+                       app.lens.structural_ceiling_risk.lower())
+
+    def test_home_health_lens_flags_pdgm(self) -> None:
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens("home_health")
+        self.assertIn("pdgm",
+                       app.lens.first_question_on_intake.lower())
+
+    def test_asc_lens_is_physician_retention_driven(self) -> None:
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens("ambulatory_surgery_center")
+        self.assertIn("physician",
+                       app.lens.partner_voice_summary.lower())
+
+    def test_lab_lens_flags_pama(self) -> None:
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens("clinical_lab")
+        self.assertIn("pama",
+                       app.lens.primary_headwind.lower())
+
+    def test_dme_lens_flags_competitive_bid(self) -> None:
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens("durable_medical_equipment")
+        self.assertIn("competitive",
+                       app.lens.primary_headwind.lower())
+
+    def test_hospice_lens_flags_cap(self) -> None:
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens("hospice")
+        self.assertIn("cap",
+                       app.lens.structural_ceiling_risk.lower())
+
+    def test_unmodeled_subsector_fallback(self) -> None:
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens("exotic_subsector")
+        self.assertIn("not modeled",
+                       app.partner_note.lower())
+
+    def test_deal_killer_flag_triggers(self) -> None:
+        """Partner: 'founder > 30% RVU with no successor → walk.'"""
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens(
+            "specialty_physician_practice",
+            signals={
+                "Founder > 30% of RVU with no successor": True,
+            },
+        )
+        self.assertGreater(len(app.deal_killer_flags_hit), 0)
+
+    def test_exit_multiple_driver_present_per_subsector(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            apply_subsector_lens,
+            list_modeled_subsectors,
+        )
+        for sub in list_modeled_subsectors():
+            app = apply_subsector_lens(sub)
+            self.assertTrue(
+                len(app.lens.key_exit_multiple_driver) > 10,
+                f"{sub} missing exit-multiple driver"
+            )
+
+    def test_margin_band_present_per_subsector(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            apply_subsector_lens,
+            list_modeled_subsectors,
+        )
+        for sub in list_modeled_subsectors():
+            app = apply_subsector_lens(sub)
+            # Every modeled subsector has a margin band with "%".
+            self.assertIn("%", app.lens.typical_ebitda_margin_band)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            apply_subsector_lens,
+            render_subsector_lens_markdown,
+        )
+        md = render_subsector_lens_markdown(
+            apply_subsector_lens("behavioral_health")
+        )
+        self.assertIn("# Subsector lens", md)
+        self.assertIn("First question on intake", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import apply_subsector_lens
+        app = apply_subsector_lens("hospital_general")
+        json.dumps(app.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
