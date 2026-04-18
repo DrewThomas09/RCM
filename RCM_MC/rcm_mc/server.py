@@ -2224,6 +2224,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.rw_insurance_page import render_rw_insurance
             return self._send_html(render_rw_insurance(_qp))
+        if path == "/vintage-cohorts":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.vintage_cohorts_page import render_vintage_cohorts
+            return self._send_html(render_vintage_cohorts(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

@@ -222,6 +222,7 @@ _CORPUS_NAV = [
     {"label": "Treasury",        "href": "/treasury",              "icon": "▣"},
     {"label": "Sell-Side Process","href": "/sellside-process",     "icon": "▣"},
     {"label": "R&W Insurance",   "href": "/rw-insurance",          "icon": "▥"},
+    {"label": "Vintage Cohorts", "href": "/vintage-cohorts",       "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
