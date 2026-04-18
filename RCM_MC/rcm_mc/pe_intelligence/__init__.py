@@ -1284,6 +1284,13 @@ from .thesis_break_price_calculator import (
     compute_thesis_break_price,
     render_break_price_markdown,
 )
+from .ic_memo_header_synthesizer import (
+    ICHeaderInputs,
+    ICMemoHeader,
+    render_ic_memo_header_markdown,
+    render_ic_memo_header_text,
+    synthesize_ic_memo_header,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2677,4 +2684,9 @@ __all__ = [
     "HaircutLine",
     "compute_thesis_break_price",
     "render_break_price_markdown",
+    "ICHeaderInputs",
+    "ICMemoHeader",
+    "render_ic_memo_header_markdown",
+    "render_ic_memo_header_text",
+    "synthesize_ic_memo_header",
 ]

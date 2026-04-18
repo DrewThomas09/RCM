@@ -23279,5 +23279,160 @@ class TestThesisBreakPriceCalculator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestICMemoHeaderSynthesizer(unittest.TestCase):
+    """Partner scenario: one-page IC memo header."""
+
+    def test_default_recommendation_diligence_more(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            synthesize_ic_memo_header,
+        )
+        h = synthesize_ic_memo_header(ICHeaderInputs(
+            deal_name="ProjectX",
+        ))
+        self.assertEqual(h.recommendation, "diligence_more")
+
+    def test_invest_has_named_rationale(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            synthesize_ic_memo_header,
+        )
+        h = synthesize_ic_memo_header(ICHeaderInputs(
+            deal_name="ProjectX",
+            recommendation="invest",
+        ))
+        self.assertIn("deal we want",
+                       h.recommendation_rationale.lower())
+
+    def test_pass_rationale(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            synthesize_ic_memo_header,
+        )
+        h = synthesize_ic_memo_header(ICHeaderInputs(
+            deal_name="ProjectX",
+            recommendation="pass",
+        ))
+        self.assertIn("walk",
+                       h.recommendation_rationale.lower())
+
+    def test_invalid_rec_falls_back(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            synthesize_ic_memo_header,
+        )
+        h = synthesize_ic_memo_header(ICHeaderInputs(
+            deal_name="ProjectX",
+            recommendation="maybe",
+        ))
+        self.assertEqual(h.recommendation, "diligence_more")
+
+    def test_lists_cap_at_3(self) -> None:
+        """Partner: 'more than 3 = fuzzy thinking.'"""
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            synthesize_ic_memo_header,
+        )
+        h = synthesize_ic_memo_header(ICHeaderInputs(
+            deal_name="ProjectX",
+            what_works_candidates=["a", "b", "c", "d", "e"],
+            what_breaks_candidates=["1", "2", "3", "4"],
+            would_change_my_mind_candidates=[
+                "w", "x", "y", "z",
+            ],
+        ))
+        self.assertEqual(len(h.what_works), 3)
+        self.assertEqual(len(h.what_breaks), 3)
+        self.assertEqual(len(h.would_change_my_mind), 3)
+
+    def test_empty_candidates_populated_with_placeholders(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            synthesize_ic_memo_header,
+        )
+        h = synthesize_ic_memo_header(ICHeaderInputs(
+            deal_name="ProjectX",
+            recommendation="invest",
+        ))
+        self.assertGreater(len(h.what_works), 0)
+        self.assertGreater(len(h.what_breaks), 0)
+        self.assertGreater(len(h.would_change_my_mind), 0)
+
+    def test_empty_thesis_placeholder(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            synthesize_ic_memo_header,
+        )
+        h = synthesize_ic_memo_header(ICHeaderInputs(
+            deal_name="ProjectX",
+        ))
+        self.assertIn("write it before ic",
+                       h.thesis_one_sentence.lower())
+
+    def test_provided_thesis_honored(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            synthesize_ic_memo_header,
+        )
+        h = synthesize_ic_memo_header(ICHeaderInputs(
+            deal_name="ProjectX",
+            thesis_one_sentence=(
+                "Consolidate Texas GI practices via scale "
+                "commercial pricing lift."
+            ),
+        ))
+        self.assertIn("Texas GI", h.thesis_one_sentence)
+
+    def test_markdown_five_blocks(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            render_ic_memo_header_markdown,
+            synthesize_ic_memo_header,
+        )
+        md = render_ic_memo_header_markdown(
+            synthesize_ic_memo_header(ICHeaderInputs(
+                deal_name="ProjectX",
+                recommendation="invest",
+                thesis_one_sentence="Consolidate.",
+            ))
+        )
+        for block in ("## Recommendation", "## Thesis",
+                       "## What works", "## What doesn't",
+                       "## What would change my mind"):
+            self.assertIn(block, md)
+
+    def test_text_render_has_5_blocks(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            render_ic_memo_header_text,
+            synthesize_ic_memo_header,
+        )
+        t = render_ic_memo_header_text(
+            synthesize_ic_memo_header(ICHeaderInputs(
+                deal_name="ProjectX",
+                recommendation="invest",
+            ))
+        )
+        self.assertIn("Recommendation:", t)
+        self.assertIn("Thesis:", t)
+        self.assertIn("What works:", t)
+        self.assertIn("What doesn't:", t)
+        self.assertIn("What would change my mind:", t)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ICHeaderInputs,
+            synthesize_ic_memo_header,
+        )
+        h = synthesize_ic_memo_header(ICHeaderInputs(
+            deal_name="ProjectX",
+            recommendation="pass",
+        ))
+        json.dumps(h.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
