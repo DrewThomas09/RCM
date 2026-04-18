@@ -10548,7 +10548,73 @@ $0.30M/mo with $0.12M fixed + 55% variable (thin-margin site):
 
 ---
 
-## 263. Change log
+## 263. RCM vendor switching cost (`rcm_vendor_switching_cost_assessor.py`)
+
+**Partner statement.** "Every RCM conversion looks reasonable on
+the day-one plan. Then month 3 hits, denial rates spike, DSO blows
+out 12-18 days, and cash chokes. Conversion hurts for 6-9 months
+even when it goes well. If the deal's thesis requires a platform
+cut-over, I want the drag modeled."
+
+### Why it matters
+
+Back-office consolidation deals and RCM-led operational theses
+assume a platform conversion. `cash_conversion` is static.
+`working_capital_seasonality_detector` separates seasonality from
+structural drift. This module is **transition-specific**: 12-month
+DSO trajectory, WC drag, implementation cost, payback.
+
+### 12-month DSO delta patterns (days vs. pre-conversion)
+
+| Scenario | M1-4 peak | M12 |
+|---|---|---|
+| best_case | +13 | −5 (platform better) |
+| realistic | +18 | −3 |
+| bad_case | +26 | 0 (back to pre-) |
+
+### Math
+
+- DSO month = pre-DSO + pattern[month]
+- WC change = `delta_days × (monthly_NPR / 30)`
+- Cumulative WC drag = running sum
+- Payback months = `(implementation + max WC drag) / (annual_savings / 12)`
+
+### Partner-note triggers
+
+- bad_case → "factor the drag into cash-flow covenants"
+- realistic → implementation + max drag → specific payback
+- best_case → "base-case should assume realistic, not best-case"
+- payback > 24mo → "exceeds two years — verify savings or expand scope"
+
+### Worked example
+
+$300M NPR, 45-day pre-DSO, $15M → $10M annual cash cost, $4M
+implementation, realistic scenario:
+
+- Peak DSO: 63 days at month 4
+- Max cumulative WC drag: ~$11-12M
+- Annual savings: $5M → monthly $0.42M
+- Payback = ($4M + $12M) / $0.42M ≈ 38 months
+- Partner: "payback 38 months exceeds two years — verify savings"
+
+### Packet fields
+
+`npr_m`, `pre_conversion_dso_days`,
+`annual_cash_cost_pre_m`, `annual_cash_cost_post_m`,
+`implementation_cost_m`, `scenario` (best_case / realistic /
+bad_case).
+
+### Distinct from existing modules
+
+- `cash_conversion` — static FCF / EBITDA.
+- `working_capital_seasonality_detector` — seasonal vs. structural.
+- `back_office_consolidation` archetype — narrative.
+- This module — 12-month conversion-specific DSO and WC trajectory
+  with payback math.
+
+---
+
+## 264. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
