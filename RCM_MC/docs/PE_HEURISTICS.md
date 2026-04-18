@@ -4255,7 +4255,34 @@ Partner note patterns:
 
 ---
 
-## 170. Change log
+## 170. Working capital peg negotiator (`working_capital_peg_negotiator.py`)
+
+**Partner statement:** "The NWC peg is dollar-for-dollar of
+purchase price. Under-negotiate and the seller just moved $5M."
+
+Methodology selection:
+
+- Default: **trailing_12m_avg**.
+- Material one-time NWC items → **normalized_trailing_12m**
+  (strip out one-timers).
+- Seasonal business → **median_of_quarterly** (smooths
+  seasonality).
+
+Partner always adds **2% closing-period buffer** above the
+chosen methodology figure to account for NWC build between
+sign and close.
+
+Partner note:
+
+- Partner peg ≥ 10% above seller → "seller under-weighted
+  normalized WC; this is real price-paid money."
+- Seller peg > partner (unusual) → "seller building cushion
+  for adjustment at close; verify methodology."
+- Near-tie → "rounding band; not a material negotiation item."
+
+---
+
+## 171. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4671,3 +4698,7 @@ Partner note patterns:
   (§169) — analyze prior forecasts-vs-actuals; reliability
   score + haircut recommendation. Full inventory: 167 modules,
   1,698 pe_intelligence unit tests.
+- **2026-04-17** — Added `working_capital_peg_negotiator.py`
+  (§170) — counter-peg with methodology by profile + 2%
+  closing buffer. Full inventory: 168 modules, 1,708
+  pe_intelligence unit tests.
