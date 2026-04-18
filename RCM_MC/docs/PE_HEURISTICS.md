@@ -3699,7 +3699,44 @@ Partner note escalates:
 
 ---
 
-## 153. Change log
+## 153. Value creation plan generator (`value_creation_plan_generator.py`)
+
+**Partner statement:** "Give me the 3-year VCP on one page —
+here's how we get from $X to $Y."
+
+Eight conditional initiatives keyed off packet signals:
+
+- RCM denial-reduction (~3% EBITDA lift, year 1-2).
+- CDI + CMI uplift (~2%, year 1-2).
+- M&A bolt-on pipeline (~30% from 3-4 bolt-ons, year 1-5).
+- Payer renegotiation (~4%, year 1-3).
+- Site footprint optimization (~2.5%, year 1-3).
+- Labor productivity + scheduling (~3%, year 2-3).
+- Procurement / GPO (~1.5%, year 1-2).
+- Technology platform enablement (~2%, year 1-4).
+
+Each initiative has year-starts, year-of-impact, expected $
+impact, named owner, and dependency list.
+
+Execution risks fire on:
+
+- **Shared dependencies** blocking 2+ initiatives
+  (single-point-of-failure).
+- **Management capacity < 55** with 5+ concurrent initiatives
+  ("team cannot execute in parallel").
+- **Capex bottleneck** when budget < $2M vs tech/ops-heavy plan.
+
+Partner note:
+
+- Plan closes < 80% of bridge → "doesn't reach target; either
+  target wrong or plan incomplete."
+- Plan overshoots > 30% → "optimistic; partners haircut 20-30%."
+- Within ±30% → "reasonable fit; execution risks are what matter
+  now."
+
+---
+
+## 154. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4047,3 +4084,7 @@ Partner note escalates:
   — post-close QoR 4-block agenda (numbers/thesis/people/
   forward) with partner-focus per block. Full inventory: 150
   modules, 1,524 pe_intelligence unit tests.
+- **2026-04-17** — Added `value_creation_plan_generator.py`
+  (§153) — 3-year VCP with 8 conditional initiatives, owners,
+  dependencies, and execution risks. Full inventory: 151
+  modules, 1,535 pe_intelligence unit tests.
