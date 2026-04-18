@@ -1854,6 +1854,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.sponsor_heatmap_page import render_sponsor_heatmap
             return self._send_html(render_sponsor_heatmap(_qp))
+        if path == "/payer-concentration":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.payer_concentration_page import render_payer_concentration
+            return self._send_html(render_payer_concentration(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
