@@ -1298,6 +1298,15 @@ from .tax_structure_trap_scanner import (
     render_tax_trap_markdown,
     scan_tax_traps,
 )
+from .synergy_sequencing_scorer import (
+    ClaimedSynergy,
+    SynergyAssessment,
+    SynergySequencingInputs,
+    SynergySequencingReport,
+    list_synergy_categories,
+    render_synergy_sequencing_markdown,
+    score_synergy_sequencing,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2701,4 +2710,11 @@ __all__ = [
     "TaxTrapReport",
     "render_tax_trap_markdown",
     "scan_tax_traps",
+    "ClaimedSynergy",
+    "SynergyAssessment",
+    "SynergySequencingInputs",
+    "SynergySequencingReport",
+    "list_synergy_categories",
+    "render_synergy_sequencing_markdown",
+    "score_synergy_sequencing",
 ]

@@ -23599,5 +23599,188 @@ class TestTaxStructureTrapScanner(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestSynergySequencingScorer(unittest.TestCase):
+    """Partner scenario: when does each synergy actually land?"""
+
+    def test_empty_plan_no_haircut(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            SynergySequencingInputs,
+            score_synergy_sequencing,
+        )
+        r = score_synergy_sequencing(
+            SynergySequencingInputs()
+        )
+        self.assertEqual(r.total_haircut_m, 0.0)
+
+    def test_y1_payer_reneg_haircut_heavily(self) -> None:
+        """Partner: 'payer renegotiation Y1 = 60% haircut.'"""
+        from rcm_mc.pe_intelligence import (
+            ClaimedSynergy,
+            SynergySequencingInputs,
+            score_synergy_sequencing,
+        )
+        r = score_synergy_sequencing(SynergySequencingInputs(
+            claimed_synergies=[
+                ClaimedSynergy(
+                    "payer_contract_renegotiation",
+                    10.0, 1
+                ),
+            ],
+        ))
+        a = r.assessments[0]
+        # Typical Y3, claimed Y1 → 2 yrs early → 60%.
+        self.assertAlmostEqual(a.haircut_pct, 0.60, places=2)
+
+    def test_on_time_synergy_no_haircut(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClaimedSynergy,
+            SynergySequencingInputs,
+            score_synergy_sequencing,
+        )
+        r = score_synergy_sequencing(SynergySequencingInputs(
+            claimed_synergies=[
+                ClaimedSynergy(
+                    "shared_services_back_office", 5.0, 2
+                ),
+            ],
+        ))
+        a = r.assessments[0]
+        self.assertEqual(a.haircut_pct, 0.0)
+
+    def test_later_than_typical_no_haircut(self) -> None:
+        """Partner: 'claimed later than typical = still no haircut.'"""
+        from rcm_mc.pe_intelligence import (
+            ClaimedSynergy,
+            SynergySequencingInputs,
+            score_synergy_sequencing,
+        )
+        r = score_synergy_sequencing(SynergySequencingInputs(
+            claimed_synergies=[
+                ClaimedSynergy(
+                    "purchasing_gpo_rebates", 2.0, 3
+                ),
+            ],
+        ))
+        # Typical Y1, claimed Y3 — later than typical; no haircut.
+        a = r.assessments[0]
+        self.assertEqual(a.haircut_pct, 0.0)
+
+    def test_aggregate_haircut_on_mixed_plan(self) -> None:
+        """Partner: 'plan with some early + some on-time averages.'"""
+        from rcm_mc.pe_intelligence import (
+            ClaimedSynergy,
+            SynergySequencingInputs,
+            score_synergy_sequencing,
+        )
+        r = score_synergy_sequencing(SynergySequencingInputs(
+            claimed_synergies=[
+                # Early: Y1 payer reneg ($10M × 0.60 haircut = $6M cut)
+                ClaimedSynergy("payer_contract_renegotiation",
+                                10.0, 1),
+                # On time: Y1 GPO rebates ($2M, 0% haircut)
+                ClaimedSynergy("purchasing_gpo_rebates",
+                                2.0, 1),
+                # Early by 1 yr: Y1 shared services (30% haircut)
+                ClaimedSynergy("shared_services_back_office",
+                                5.0, 1),
+            ],
+        ))
+        # Total claimed = 17, haircut = 6 + 0 + 1.5 = 7.5
+        self.assertAlmostEqual(r.total_haircut_m, 7.5,
+                                places=1)
+
+    def test_heavy_mis_sequencing_triggers_rebuild(self) -> None:
+        """Partner: '30%+ haircut → rebuild the ramp.'"""
+        from rcm_mc.pe_intelligence import (
+            ClaimedSynergy,
+            SynergySequencingInputs,
+            score_synergy_sequencing,
+        )
+        r = score_synergy_sequencing(SynergySequencingInputs(
+            claimed_synergies=[
+                ClaimedSynergy("payer_contract_renegotiation",
+                                10.0, 1),
+                ClaimedSynergy("it_ehr_consolidation",
+                                8.0, 1),
+                ClaimedSynergy("cross_sell_upsell",
+                                6.0, 1),
+            ],
+        ))
+        self.assertIn("rebuild", r.partner_note.lower())
+
+    def test_haircut_capped_at_90pct(self) -> None:
+        """Partner: 'even Y0 claim capped at 90% haircut.'"""
+        from rcm_mc.pe_intelligence import (
+            ClaimedSynergy,
+            SynergySequencingInputs,
+            score_synergy_sequencing,
+        )
+        r = score_synergy_sequencing(SynergySequencingInputs(
+            claimed_synergies=[
+                ClaimedSynergy("payer_contract_renegotiation",
+                                10.0, 0),  # 3 yrs early
+            ],
+        ))
+        a = r.assessments[0]
+        self.assertLessEqual(a.haircut_pct, 0.90)
+
+    def test_unknown_category_defaults(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClaimedSynergy,
+            SynergySequencingInputs,
+            score_synergy_sequencing,
+        )
+        r = score_synergy_sequencing(SynergySequencingInputs(
+            claimed_synergies=[
+                ClaimedSynergy("unknown_cat", 5.0, 2),
+            ],
+        ))
+        # Default window (2, 3); Y2 claim → 0% haircut.
+        self.assertEqual(r.assessments[0].haircut_pct, 0.0)
+
+    def test_list_synergy_categories(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            list_synergy_categories,
+        )
+        cats = list_synergy_categories()
+        self.assertIn("payer_contract_renegotiation", cats)
+        self.assertIn("shared_services_back_office", cats)
+        self.assertIn("purchasing_gpo_rebates", cats)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClaimedSynergy,
+            SynergySequencingInputs,
+            render_synergy_sequencing_markdown,
+            score_synergy_sequencing,
+        )
+        md = render_synergy_sequencing_markdown(
+            score_synergy_sequencing(SynergySequencingInputs(
+                claimed_synergies=[
+                    ClaimedSynergy(
+                        "payer_contract_renegotiation",
+                        10.0, 1
+                    ),
+                ],
+            ))
+        )
+        self.assertIn("# Synergy sequencing scorer", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ClaimedSynergy,
+            SynergySequencingInputs,
+            score_synergy_sequencing,
+        )
+        r = score_synergy_sequencing(SynergySequencingInputs(
+            claimed_synergies=[
+                ClaimedSynergy("purchasing_gpo_rebates",
+                                2.0, 1),
+            ],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
