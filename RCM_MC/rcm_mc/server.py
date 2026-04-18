@@ -2089,6 +2089,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.medical_realestate_page import render_medical_realestate
             return self._send_html(render_medical_realestate(_qp))
+        if path == "/cms-apm":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.cms_apm_tracker_page import render_cms_apm_tracker
+            return self._send_html(render_cms_apm_tracker(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
