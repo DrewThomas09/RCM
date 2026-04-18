@@ -242,6 +242,7 @@ NAV_ITEMS = [
     {"label": "ESG / Impact", "href": "/esg-impact", "icon": "grid"},
     {"label": "340B Program", "href": "/tracker-340b", "icon": "bookmark"},
     {"label": "Risk Adj / HCC", "href": "/risk-adjustment", "icon": "bookmark"},
+    {"label": "Clinical AI", "href": "/clinical-ai", "icon": "bookmark"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
