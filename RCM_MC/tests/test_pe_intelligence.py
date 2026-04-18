@@ -34892,5 +34892,195 @@ class TestRepriceCalculator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestSubsectorEBITDAMarginBenchmark(unittest.TestCase):
+    """Partner voice: 'Hospital at 15% is fine; ASC at 15% is soft.'"""
+
+    def test_unknown_subsector_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(subsector="unknown"))
+        self.assertFalse(r.in_catalog)
+
+    def test_hospital_low_margin_in_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="hospital_acute",
+                observed_ebitda_margin_pct=0.12,
+            )
+        )
+        self.assertEqual(r.verdict, "in_band")
+
+    def test_asc_below_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        # ASC band is 28-38%
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="ambulatory_surgery_center",
+                observed_ebitda_margin_pct=0.20,
+            )
+        )
+        self.assertEqual(r.verdict, "below_band")
+        self.assertIn(
+            "expense discipline",
+            r.partner_note.lower(),
+        )
+
+    def test_dermatology_above_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        # Derm DSO band is 22-32%
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="dermatology_dso",
+                observed_ebitda_margin_pct=0.38,
+            )
+        )
+        self.assertEqual(r.verdict, "above_band")
+        self.assertIn(
+            "qofe will surface",
+            r.partner_note.lower(),
+        )
+
+    def test_gap_computed_above(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="hospital_acute",
+                observed_ebitda_margin_pct=0.20,
+            )
+        )
+        # Band high 14%; gap = 6%
+        self.assertAlmostEqual(r.gap_pct, 0.06)
+
+    def test_in_band_gap_zero(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="hospital_acute",
+                observed_ebitda_margin_pct=0.10,
+            )
+        )
+        self.assertEqual(r.gap_pct, 0)
+
+    def test_snf_low_margin_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="skilled_nursing_facility",
+            )
+        )
+        # SNF band is 8-14%
+        self.assertAlmostEqual(r.band_low_pct, 0.08)
+        self.assertAlmostEqual(r.band_high_pct, 0.14)
+
+    def test_ophtho_high_margin_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="ophthalmology_platform",
+            )
+        )
+        # Ophtho band 25-35%
+        self.assertAlmostEqual(r.band_low_pct, 0.25)
+
+    def test_subsector_note_attached(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="dialysis"))
+        self.assertIn(
+            "medicare",
+            r.subsector_note.lower(),
+        )
+
+    def test_behavioral_residential_higher_than_outpatient(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        r_out = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="behavioral_outpatient"))
+        r_res = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="behavioral_residential"))
+        self.assertGreaterEqual(
+            r_res.band_high_pct, r_out.band_high_pct
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+            render_subsector_margin_markdown,
+        )
+        md = render_subsector_margin_markdown(
+            benchmark_subsector_margin(
+                MarginBenchmarkInputs(
+                    subsector="ambulatory_surgery_center",
+                    observed_ebitda_margin_pct=0.30,
+                )
+            )
+        )
+        self.assertIn(
+            "# Subsector EBITDA margin benchmark", md
+        )
+
+    def test_unknown_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+            render_subsector_margin_markdown,
+        )
+        md = render_subsector_margin_markdown(
+            benchmark_subsector_margin(
+                MarginBenchmarkInputs(subsector="xx"))
+        )
+        self.assertIn("not in margin catalog", md.lower())
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            MarginBenchmarkInputs,
+            benchmark_subsector_margin,
+        )
+        r = benchmark_subsector_margin(
+            MarginBenchmarkInputs(
+                subsector="dental_dso",
+                observed_ebitda_margin_pct=0.22,
+            )
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

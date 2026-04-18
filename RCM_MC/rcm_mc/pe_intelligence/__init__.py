@@ -1710,6 +1710,12 @@ from .reprice_calculator import (
     compute_reprice,
     render_reprice_markdown,
 )
+from .subsector_ebitda_margin_benchmark import (
+    MarginBenchmarkInputs,
+    MarginBenchmarkReport,
+    benchmark_subsector_margin,
+    render_subsector_margin_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3411,4 +3417,8 @@ __all__ = [
     "RepriceReport",
     "compute_reprice",
     "render_reprice_markdown",
+    "MarginBenchmarkInputs",
+    "MarginBenchmarkReport",
+    "benchmark_subsector_margin",
+    "render_subsector_margin_markdown",
 ]
