@@ -27422,5 +27422,182 @@ class TestMedicareAdvantageBridgeTrap(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestDenialFixPaceDetector(unittest.TestCase):
+    """Partner voice: 'We can fix denials in 12 months is a trap.'"""
+
+    def test_defensible_modest_target(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        # 40 bps over 1 year is within ~55 bps achievable
+        r = analyze_denial_fix_pace(DenialFixInputs(
+            current_initial_denial_rate_pct=0.090,
+            target_denial_rate_pct=0.086,
+            target_years=1,
+        ))
+        self.assertEqual(r.verdict, "defensible")
+
+    def test_trap_fires_on_aggressive_1yr_claim(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        # 400 bps in 1 year is trap territory
+        r = analyze_denial_fix_pace(DenialFixInputs(
+            current_initial_denial_rate_pct=0.13,
+            target_denial_rate_pct=0.09,
+            target_years=1,
+        ))
+        self.assertEqual(r.verdict, "trap")
+        self.assertIn(
+            "12 months", r.partner_note.lower()
+        )
+
+    def test_stretch_tier_with_modest_acceleration(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        # Slightly more aggressive than defensible
+        # default achievable is ~55 bps given default mix
+        # (depends on values). Aim for implied 70 bps.
+        r = analyze_denial_fix_pace(DenialFixInputs(
+            current_initial_denial_rate_pct=0.090,
+            target_denial_rate_pct=0.076,
+            target_years=2,  # spread over 2 yrs
+        ))
+        # yr1 implied = 70 bps; achievable ~55
+        self.assertIn(
+            r.verdict, {"stretch", "defensible"}
+        )
+
+    def test_named_ops_partner_raises_achievable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        base = analyze_denial_fix_pace(DenialFixInputs())
+        with_ops = analyze_denial_fix_pace(
+            DenialFixInputs(named_ops_partner=True)
+        )
+        self.assertGreater(
+            with_ops.achievable_yr1_headline_bps,
+            base.achievable_yr1_headline_bps,
+        )
+
+    def test_it_investment_raises_achievable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        base = analyze_denial_fix_pace(DenialFixInputs())
+        with_it = analyze_denial_fix_pace(
+            DenialFixInputs(
+                it_platform_investment_m=5.0,
+            )
+        )
+        self.assertGreater(
+            with_it.achievable_yr1_headline_bps,
+            base.achievable_yr1_headline_bps,
+        )
+
+    def test_medical_necessity_dominant_mix_has_slow_yr1(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        # Mostly medical-necessity → slow Yr1 but big Yr2
+        r = analyze_denial_fix_pace(DenialFixInputs(
+            category_mix_pct={
+                "medical_necessity": 0.70,
+                "eligibility_verification": 0.30,
+            },
+        ))
+        mn = next(
+            c for c in r.categories
+            if c.category == "medical_necessity"
+        )
+        self.assertLess(mn.achievable_yr1_bps,
+                        mn.achievable_yr2_bps)
+
+    def test_eligibility_heavy_mix_fast_yr1(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        # Mostly eligibility → fast front-end wins
+        r = analyze_denial_fix_pace(DenialFixInputs(
+            category_mix_pct={
+                "eligibility_verification": 0.80,
+                "duplicate_claim": 0.20,
+            },
+        ))
+        self.assertGreater(
+            r.achievable_yr1_headline_bps, 50
+        )
+
+    def test_all_categories_return_operator_action(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        r = analyze_denial_fix_pace(DenialFixInputs())
+        for c in r.categories:
+            self.assertTrue(c.operator_action)
+            self.assertGreater(
+                len(c.operator_action), 10
+            )
+
+    def test_implied_bps_computation(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        r = analyze_denial_fix_pace(DenialFixInputs(
+            current_initial_denial_rate_pct=0.10,
+            target_denial_rate_pct=0.07,
+            target_years=3,
+        ))
+        self.assertEqual(r.implied_total_bps, 300)
+        self.assertEqual(r.implied_yr1_bps, 100)
+
+    def test_unknown_category_skipped(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        r = analyze_denial_fix_pace(DenialFixInputs(
+            category_mix_pct={
+                "eligibility_verification": 0.5,
+                "fake_category": 0.5,
+            },
+        ))
+        cats = [c.category for c in r.categories]
+        self.assertIn("eligibility_verification", cats)
+        self.assertNotIn("fake_category", cats)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+            render_denial_fix_markdown,
+        )
+        md = render_denial_fix_markdown(
+            analyze_denial_fix_pace(DenialFixInputs())
+        )
+        self.assertIn("# Denial fix pace", md)
+        self.assertIn("Achievable Year-1", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            DenialFixInputs,
+            analyze_denial_fix_pace,
+        )
+        r = analyze_denial_fix_pace(DenialFixInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

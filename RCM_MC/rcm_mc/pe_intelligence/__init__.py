@@ -1444,6 +1444,13 @@ from .medicare_advantage_bridge_trap import (
     analyze_ma_bridge,
     render_ma_bridge_markdown,
 )
+from .denial_fix_pace_detector import (
+    CategoryFeasibility,
+    DenialFixInputs,
+    DenialFixReport,
+    analyze_denial_fix_pace,
+    render_denial_fix_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2953,4 +2960,9 @@ __all__ = [
     "MABridgeReport",
     "analyze_ma_bridge",
     "render_ma_bridge_markdown",
+    "CategoryFeasibility",
+    "DenialFixInputs",
+    "DenialFixReport",
+    "analyze_denial_fix_pace",
+    "render_denial_fix_markdown",
 ]
