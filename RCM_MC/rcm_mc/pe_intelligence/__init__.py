@@ -1233,6 +1233,13 @@ from .reimbursement_cliff_calendar_2026_2029 import (
     render_cliff_calendar_markdown,
     scan_cliff_calendar_for_deal,
 )
+from .platform_vs_addon_classifier import (
+    ClassifierDimension,
+    PlatformClassificationReport,
+    PlatformClassifierInputs,
+    classify_platform_vs_addon,
+    render_platform_classification_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2589,4 +2596,9 @@ __all__ = [
     "list_cliff_event_ids",
     "render_cliff_calendar_markdown",
     "scan_cliff_calendar_for_deal",
+    "ClassifierDimension",
+    "PlatformClassificationReport",
+    "PlatformClassifierInputs",
+    "classify_platform_vs_addon",
+    "render_platform_classification_markdown",
 ]

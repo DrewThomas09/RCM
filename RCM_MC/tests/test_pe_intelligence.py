@@ -22240,5 +22240,156 @@ class TestReimbursementCliffCalendar2026_2029(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPlatformVsAddonClassifier(unittest.TestCase):
+    """Partner scenario: is this a real platform or an add-on?"""
+
+    def test_subscale_asset_classified_as_addon(self) -> None:
+        """Partner: 'sub-scale with no integration → add-on.'"""
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+        )
+        r = classify_platform_vs_addon(PlatformClassifierInputs(
+            ebitda_m=8.0,
+            standalone_back_office=False,
+            pnl_lines_under_mgmt=1,
+            geographic_or_specialty_scale=False,
+            bankable_standalone=False,
+        ))
+        self.assertEqual(r.tier, "add_on")
+        self.assertIn("7-9x", r.supported_multiple_range)
+
+    def test_full_platform_supports_11_to_14x(self) -> None:
+        """Partner: 'every platform box checked → 11-14x.'"""
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+        )
+        r = classify_platform_vs_addon(PlatformClassifierInputs(
+            ebitda_m=40.0,
+            standalone_back_office=True,
+            pnl_lines_under_mgmt=5,
+            geographic_or_specialty_scale=True,
+            bankable_standalone=True,
+            subsector_brand_recognition=True,
+            integration_capability_proven=True,
+            board_governance_ready=True,
+        ))
+        self.assertEqual(r.tier, "platform")
+        self.assertIn("11-14x", r.supported_multiple_range)
+
+    def test_hybrid_classification(self) -> None:
+        """Partner: '4-6/8 → hybrid; 9-11x.'"""
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+        )
+        r = classify_platform_vs_addon(PlatformClassifierInputs(
+            ebitda_m=30.0,
+            standalone_back_office=True,
+            pnl_lines_under_mgmt=3,
+            geographic_or_specialty_scale=True,
+            bankable_standalone=False,
+            subsector_brand_recognition=False,
+            integration_capability_proven=False,
+            board_governance_ready=False,
+        ))
+        self.assertEqual(r.tier, "hybrid")
+        self.assertIn("9-11x", r.supported_multiple_range)
+
+    def test_ebitda_below_threshold_fails_dim(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+        )
+        r = classify_platform_vs_addon(PlatformClassifierInputs(
+            ebitda_m=10.0,
+        ))
+        scale_dim = next(d for d in r.dimensions
+                          if d.name ==
+                          "ebitda_at_scale_threshold")
+        self.assertFalse(scale_dim.passed)
+
+    def test_partner_note_flags_add_on_overpay_risk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+        )
+        r = classify_platform_vs_addon(PlatformClassifierInputs(
+            ebitda_m=10.0,
+        ))
+        self.assertIn("fold into", r.partner_note.lower())
+
+    def test_thin_management_flagged(self) -> None:
+        """Partner: '<3 P&L lines → management thin; plan in CEO's head.'"""
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+        )
+        r = classify_platform_vs_addon(PlatformClassifierInputs(
+            ebitda_m=30.0,
+            pnl_lines_under_mgmt=1,
+        ))
+        pnl_dim = next(d for d in r.dimensions
+                        if d.name == "pnl_lines_under_mgmt_gte_3")
+        self.assertFalse(pnl_dim.passed)
+
+    def test_integration_track_record_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+        )
+        r = classify_platform_vs_addon(PlatformClassifierInputs(
+            ebitda_m=30.0,
+            integration_capability_proven=False,
+        ))
+        int_dim = next(d for d in r.dimensions
+                        if d.name ==
+                        "integration_capability_proven")
+        self.assertFalse(int_dim.passed)
+
+    def test_score_tracks_dimension_count(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+        )
+        r = classify_platform_vs_addon(PlatformClassifierInputs(
+            ebitda_m=30.0,
+            standalone_back_office=True,
+            pnl_lines_under_mgmt=3,
+        ))
+        self.assertEqual(
+            r.score,
+            sum(1 for d in r.dimensions if d.passed)
+        )
+
+    def test_markdown_renders_multiple_range(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+            render_platform_classification_markdown,
+        )
+        md = render_platform_classification_markdown(
+            classify_platform_vs_addon(PlatformClassifierInputs(
+                ebitda_m=30.0,
+                standalone_back_office=True,
+            ))
+        )
+        self.assertIn("# Platform vs. add-on classification",
+                       md)
+        self.assertIn("Supported multiple range", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            PlatformClassifierInputs,
+            classify_platform_vs_addon,
+        )
+        r = classify_platform_vs_addon(PlatformClassifierInputs(
+            ebitda_m=30.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
