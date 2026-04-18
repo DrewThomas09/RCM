@@ -8388,7 +8388,94 @@ mix reads defensible.
 
 ---
 
-## 236. Change log
+## 236. Unrealistic-on-face sniff test (`unrealistic_on_face_check.py`)
+
+**Partner statement.** "I don't need to do the math to know something
+is wrong. A 400M NPR rural critical-access hospital projecting 28%
+IRR is a red flag on its face. A standalone SNF buying at 9× with
+85% Medicare is a red flag on its face. A dental DSO at 4× revenue
+with 25% contribution margin is a red flag on its face. The sniff
+test is what saves the team from spending three weeks modeling a
+deal that the senior partner could have passed on by reading the
+first page of the teaser."
+
+### Why it matters
+
+Runs **before** the math — teaser / CIM-level only. The checks are
+deliberately coarse; precision is not the point. Three weeks of
+associate hours on a face-wrong deal is worse than a false-positive
+sniff-test flag that a senior partner dismisses in 30 seconds.
+
+### 14-pattern canon
+
+1. `rural_critical_access_high_irr` — rural CAH + IRR > 20% (**kill**).
+2. `snf_high_medicare_high_multiple` — standalone SNF + Medicare
+   > 70% + EV/EBITDA > 7× (**kill**).
+3. `dental_dso_revenue_multiple` — dental at > 3× revenue (**kill**).
+4. `outsized_npr_for_ownership` — physician-owned > $500M NPR claiming
+   minority structure.
+5. `single_asset_high_leverage` — single-site/single-specialty +
+   leverage > 5×.
+6. `400_bps_margin_expansion_1yr` — claim of > 400 bps margin
+   expansion in year 1.
+7. `medicare_advantage_to_offset_ffs_cuts` — MA narrative without a
+   named MA contract.
+8. `payer_mix_below_35pct_commercial_exit_14x` — exit mult > 13×
+   with commercial mix < 35%.
+9. `standalone_diagnostics_pama_pricing` — standalone lab/imaging +
+   PAMA phase in hold.
+10. `non_scaled_home_health_high_margin` — < $40M home health with
+    > 20% margin.
+11. `rollup_platform_0_cio` — roll-up strategy without named CIO.
+12. `cpom_physician_group_unverified` — CPOM-strict state (CA / NY /
+    TX / others) without verified MSO/PC model.
+13. `non_profit_to_forprofit_flip_high_margin` — post-conversion
+    margin > 2× pre-conversion (one-time reclassification).
+14. `critical_access_24x7_unit_margin_improv` — CAH claiming > 300
+    bps margin improvement.
+
+### Recommendation tiers
+
+- **stop_work** — any kill-level pattern OR ≥ 3 patterns fire. Do
+  not spend more associate hours until senior-partner opinion.
+- **senior_partner_review** — 1-2 patterns fire. Escalate before
+  committing more diligence.
+- **proceed_with_diligence** — 0 patterns.
+
+### Worked example
+
+$400M NPR rural CAH projecting 28% sponsor IRR, 3-site roll-up no
+named CIO:
+- `rural_critical_access_high_irr` (kill) + `critical_access_24x7_unit_margin_improv`
+  if margin claim > 300bps + `rollup_platform_0_cio` → **stop_work**.
+- Partner: "do not fire up the financial model. This is the teaser
+  pattern; walk before the associate spends a week on the model."
+
+### Packet fields
+
+Flags for subsector identification (`is_rural_critical_access`,
+`is_standalone_snf`, `is_dental_dso`, `is_rollup_platform`,
+`is_cpom_strict_state`, etc.); headline economics
+(`projected_sponsor_irr`, `ev_to_ebitda_multiple`,
+`ev_to_revenue_multiple`, `leverage_turns`,
+`margin_expansion_1yr_bps`, `ebitda_margin_pct`); payer-mix
+(`commercial_mix_pct`, `medicare_mix_pct`); and feature flags
+(`ma_narrative_present`, `ma_contract_named`, `has_named_cio`,
+`mso_pc_model_verified`, `recently_converted_nonprofit`, etc.).
+
+### Distinct from existing modules
+
+- `reasonableness` — band checks on model outputs (post-math).
+- `heuristics` — post-model rules.
+- `red_flags` / `deal_smell_detectors` — structured red-flag catalog
+  post-packet.
+- This module — runs on teaser-level inputs; partner's 10-second
+  nose test. Saves three weeks of associate hours on face-wrong
+  deals.
+
+---
+
+## 237. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
