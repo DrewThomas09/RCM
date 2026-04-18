@@ -7589,7 +7589,59 @@ This module **designs** the close-date tail package.
 
 ---
 
-## 227. Change log
+## 227. Data-room gap signal reader (`data_room_gap_signal_reader.py`)
+
+**Partner statement:** "The missing documents in a
+data room aren't gaps to close. They're telling you
+what the seller doesn't want you to see. A missing
+3-year GAAP means they've never been through a real
+diligence. A missing top-5 payer contract means the
+payer is on notice."
+
+Distinct from `data_room_tracker` (completeness score +
+gap list). This module **reads the gaps as signals**.
+
+### 8 gap-signal interpretations
+
+- **three_year_gaap_missing** — "never audited to PE
+  standard; expect restatement." 45-day delay.
+- **qofe_not_yet_engaged** — "not QofE-ready." 60-day
+  delay.
+- **top_5_payer_contracts_missing** — "payer on notice
+  or seller hiding concession." 30-day delay.
+- **cms_survey_deficiencies_missing** — "quality
+  compliance opacity." 21-day delay.
+- **physician_comp_schedule_missing** — "normalization
+  claims unsupported; haircut 40%." 14-day delay.
+- **it_cyber_incident_log_missing** — "breach history
+  uncertain; HIPAA opaque." 21-day delay.
+- **open_litigation_detail_missing** — "indemnity
+  sizing blind." 14-day delay.
+- **related_party_transaction_schedule_missing** —
+  "structural adjustment opacity." 14-day delay.
+
+### Partner-note escalation
+
+- ≥ 5 gaps → "seller not QofE-ready or not acting in
+  good faith — demand complete data room before LOI."
+- 3-4 gaps → "slow the process; demand specifics
+  before underwriting more hours."
+- 1-2 gaps → "standard follow-up request."
+
+### Why gaps tell more than completeness scores
+
+A completeness score treats all gaps equally. This
+module reads **what the gap means**: the absence of a
+specific document pattern-matches to seller posture.
+
+### Packet fields
+
+8 boolean flags for the specific missing documents;
+see module.
+
+---
+
+## 228. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
