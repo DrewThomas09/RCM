@@ -2002,6 +2002,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.portfolio_sim_page import render_portfolio_sim
             return self._send_html(render_portfolio_sim(_qp))
+        if path == "/qoe-analyzer":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.qoe_analyzer_page import render_qoe_analyzer
+            return self._send_html(render_qoe_analyzer(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
