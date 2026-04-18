@@ -928,6 +928,14 @@ from .earnout_design_advisor import (
     advise_earnout,
     render_earnout_markdown,
 )
+from .sponsor_reputation_tracker import (
+    SPONSOR_BOOK,
+    SponsorAssessment,
+    SponsorProfile,
+    assess_sponsor,
+    list_sponsors,
+    render_sponsor_assessment_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2061,4 +2069,10 @@ __all__ = [
     "EarnoutStructure",
     "advise_earnout",
     "render_earnout_markdown",
+    "SPONSOR_BOOK",
+    "SponsorAssessment",
+    "SponsorProfile",
+    "assess_sponsor",
+    "list_sponsors",
+    "render_sponsor_assessment_markdown",
 ]

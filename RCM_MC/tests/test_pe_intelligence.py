@@ -16191,5 +16191,88 @@ class TestEarnoutDesignAdvisor(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Sponsor reputation tracker ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    SPONSOR_BOOK,
+    SponsorAssessment,
+    SponsorProfile,
+    assess_sponsor,
+    list_sponsors,
+    render_sponsor_assessment_markdown,
+)
+
+
+class TestSponsorReputationTracker(unittest.TestCase):
+
+    def test_welsh_carson_high_discipline(self) -> None:
+        a = assess_sponsor("Welsh Carson",
+                            context="competing_bidder")
+        self.assertIsNotNone(a)
+        self.assertGreaterEqual(a.overall_score_0_100, 80)
+        self.assertIn("listen", a.partner_commentary.lower())
+
+    def test_cerberus_strip_mine_warning(self) -> None:
+        a = assess_sponsor("Cerberus", context="co_investor")
+        self.assertIsNotNone(a)
+        self.assertLess(a.profile.operating_value_add, 60)
+        self.assertIn("passive-capital",
+                       a.partner_commentary.lower())
+
+    def test_unknown_sponsor_none(self) -> None:
+        a = assess_sponsor("UnknownCo")
+        self.assertIsNone(a)
+
+    def test_kkr_platform_buyer_tag(self) -> None:
+        a = assess_sponsor("KKR")
+        self.assertIsNotNone(a)
+        self.assertIn("platform_buyer", a.profile.known_archetypes)
+
+    def test_context_switches_commentary(self) -> None:
+        bid = assess_sponsor("Welsh Carson",
+                              context="competing_bidder")
+        co = assess_sponsor("Welsh Carson",
+                             context="co_investor")
+        self.assertNotEqual(bid.partner_commentary,
+                             co.partner_commentary)
+
+    def test_exit_buyer_quality_flag(self) -> None:
+        a = assess_sponsor("Bain Capital", context="exit_buyer")
+        self.assertIn("exit-buyer candidate",
+                       a.partner_commentary.lower())
+
+    def test_list_sponsors_sorted(self) -> None:
+        sponsors = list_sponsors()
+        self.assertEqual(sponsors, sorted(sponsors))
+        self.assertIn("KKR", sponsors)
+
+    def test_strongest_weakest_dims_populated(self) -> None:
+        a = assess_sponsor("Blackstone")
+        self.assertIn(a.strongest_dim, {
+            "pricing_discipline", "operating_value_add",
+            "exit_track_record", "reputational_profile",
+            "cultural_fit_with_management",
+        })
+        self.assertIn(a.weakest_dim, {
+            "pricing_discipline", "operating_value_add",
+            "exit_track_record", "reputational_profile",
+            "cultural_fit_with_management",
+        })
+
+    def test_sponsor_book_populated(self) -> None:
+        self.assertGreaterEqual(len(SPONSOR_BOOK), 5)
+
+    def test_markdown_renders(self) -> None:
+        a = assess_sponsor("KKR")
+        md = render_sponsor_assessment_markdown(a)
+        self.assertIn("KKR", md)
+        self.assertIn("Sponsor reputation", md)
+
+    def test_json(self) -> None:
+        import json
+        a = assess_sponsor("KKR")
+        json.dumps(a.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
