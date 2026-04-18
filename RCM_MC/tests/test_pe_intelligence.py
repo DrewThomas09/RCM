@@ -29397,5 +29397,188 @@ class TestArchetypeOutcomeDistributionPredictor(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestICDialogSimulator(unittest.TestCase):
+    """Partner voice: 'When IC works, voices challenge each other.'"""
+
+    def test_default_inputs_clean_invest(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs(
+            qofe_clean=True,
+            management_track_record_strong=True,
+            payer_mix_commercial_pct=0.50,
+            growth_rate=0.08,
+            leverage_turns=4.0,
+            target_moic=2.5,
+            operator_owns_named=["RCM platform launch"],
+        ))
+        self.assertTrue(
+            r.chair_recommendation.startswith("INVEST")
+        )
+
+    def test_qofe_open_blocks_vote(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs(
+            qofe_clean=False,
+        ))
+        self.assertIn(
+            "DILIGENCE MORE",
+            r.chair_recommendation,
+        )
+        self.assertTrue(
+            any("qofe" in b.lower() for b in r.chair_vote_blocking)
+        )
+
+    def test_high_leverage_blocks(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs(
+            leverage_turns=6.5,
+        ))
+        self.assertTrue(
+            any("leverage" in b.lower() for b in r.chair_vote_blocking)
+        )
+
+    def test_historical_match_blocks(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs(
+            historical_failure_match_top="ma_startup_unwind_2023",
+        ))
+        self.assertTrue(
+            any("ma_startup" in b for b in r.chair_vote_blocking)
+        )
+
+    def test_high_target_moic_unresolved(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs(
+            target_moic=3.5,
+            qofe_clean=True,
+            management_track_record_strong=True,
+            payer_mix_commercial_pct=0.50,
+        ))
+        self.assertTrue(
+            any("burden of proof" in u.lower() for u in r.chair_unresolved)
+        )
+
+    def test_no_named_operator_unresolved(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs(
+            operator_owns_named=[],
+            qofe_clean=True,
+        ))
+        self.assertTrue(
+            any("100-day" in u for u in r.chair_unresolved)
+        )
+
+    def test_three_rounds_present(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs())
+        rounds = sorted({t.round_num for t in r.transcript})
+        self.assertEqual(rounds, [1, 2, 3])
+
+    def test_round1_has_five_voices(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs())
+        r1 = [t for t in r.transcript if t.round_num == 1]
+        self.assertEqual(len(r1), 5)
+        voices = {t.voice for t in r1}
+        self.assertEqual(len(voices), 5)
+
+    def test_round2_voices_react_to_others(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs())
+        r2 = [t for t in r.transcript if t.round_num == 2]
+        self.assertGreater(len(r2), 0)
+        # at least one voice reacts to another
+        self.assertTrue(any(t.reacts_to_voice for t in r2))
+
+    def test_chair_synthesis_in_round3(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs())
+        r3 = [t for t in r.transcript if t.round_num == 3]
+        self.assertEqual(len(r3), 1)
+        self.assertEqual(r3[0].voice, "chair")
+
+    def test_low_commercial_high_exit_blocks(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs(
+            payer_mix_commercial_pct=0.20,
+            exit_multiple=14.0,
+        ))
+        self.assertTrue(
+            any("exit multiple" in b.lower() for b in r.chair_vote_blocking)
+        )
+
+    def test_multiple_blockers_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs(
+            qofe_clean=False,
+            leverage_turns=6.5,
+        ))
+        self.assertIn(
+            "vote-blocking", r.partner_note.lower()
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            render_ic_dialog_markdown,
+            simulate_ic_dialog,
+        )
+        md = render_ic_dialog_markdown(simulate_ic_dialog(
+            ICDialogInputs(
+                qofe_clean=True,
+                operator_owns_named=["100-day plan"],
+            )
+        ))
+        self.assertIn("# IC dialog simulation", md)
+        self.assertIn("Round 1", md)
+        self.assertIn("Round 2", md)
+        self.assertIn("Round 3", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ICDialogInputs,
+            simulate_ic_dialog,
+        )
+        r = simulate_ic_dialog(ICDialogInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

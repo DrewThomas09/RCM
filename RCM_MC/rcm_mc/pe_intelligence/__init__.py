@@ -1509,6 +1509,13 @@ from .archetype_outcome_distribution_predictor import (
     predict_archetype_outcome,
     render_archetype_outcome_markdown,
 )
+from .ic_dialog_simulator import (
+    DialogTurn,
+    ICDialogInputs,
+    ICDialogReport,
+    render_ic_dialog_markdown,
+    simulate_ic_dialog,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3065,4 +3072,9 @@ __all__ = [
     "ArchetypeOutcomeReport",
     "predict_archetype_outcome",
     "render_archetype_outcome_markdown",
+    "DialogTurn",
+    "ICDialogInputs",
+    "ICDialogReport",
+    "render_ic_dialog_markdown",
+    "simulate_ic_dialog",
 ]
