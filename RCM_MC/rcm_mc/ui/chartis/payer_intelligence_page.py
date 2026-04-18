@@ -32,6 +32,7 @@ from ._helpers import (
     fmt_multiple,
     fmt_pct,
     load_corpus_deals,
+    render_page_explainer,
     small_panel,
     verdict_badge,
 )
@@ -298,8 +299,37 @@ def render_payer_intelligence(
         code="REG",
     )
 
+    explainer = render_page_explainer(
+        what=(
+            "Corpus-wide payer-mix averages, three payer-share × MOIC "
+            "correlations (commercial, medicaid, self-pay), and a "
+            "four-regime breakdown with per-regime MOIC P25/P50/P75, "
+            "median IRR, deal count, and loss rate."
+        ),
+        scale=(
+            "Payer regimes are keyed on commercial-share thresholds: "
+            "Gov-heavy < 30% commercial, Balanced 30–50%, Commercial-mix "
+            "50–70%, Commercial ≥ 70%. Correlations are Pearson r over "
+            "realized deals in the corpus."
+        ),
+        use=(
+            "Reach past the 'payer mix matters' headline. A commercial "
+            "MOIC correlation near zero says mix alone is weak signal "
+            "in this corpus; a strong negative medicaid correlation "
+            "says underwriting should haircut high-medicaid targets "
+            "versus the benchmark."
+        ),
+        source=(
+            "data_public/payer_intelligence.py::compute_payer_intelligence; "
+            "REGIME_BUCKETS constant defines the four commercial-share "
+            "bands."
+        ),
+        page_key="payer-intelligence",
+    )
+
     body = (
-        intro
+        explainer
+        + intro
         + kpi_strip
         + ck_section_header(
             "PAYER MIX — CORPUS AVERAGE",

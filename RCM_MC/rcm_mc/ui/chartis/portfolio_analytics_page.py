@@ -25,6 +25,7 @@ from ._helpers import (
     fmt_multiple,
     fmt_pct,
     load_corpus_deals,
+    render_page_explainer,
     small_panel,
     verdict_badge,
 )
@@ -439,8 +440,37 @@ def render_portfolio_analytics(
         _outlier_panel(corpus), code="OUT",
     )
 
+    explainer = render_page_explainer(
+        what=(
+            "Portfolio-scope analytics over the 655-deal corpus: "
+            "scorecard (deal count, EV, MOIC/IRR quartiles, loss + "
+            "home-run rates), vintage cohort breakdown, deal-type "
+            "mix, subsector / geography / sponsor concentration, and "
+            "realized-MOIC outliers."
+        ),
+        scale=(
+            "Home-run deals are realized MOIC ≥ 3.0x; loss deals are "
+            "< 1.0x. Vintage and deal-type medians are colored green "
+            "≥ 2.50x, amber ≥ 1.50x, red below. Outliers are deals "
+            "with |z| ≥ 2 on the realized-MOIC distribution."
+        ),
+        use=(
+            "Use the vintage cohort to time pacing decisions (which "
+            "years the corpus is over-weight in) and the concentration "
+            "panel to stress-test subsector or sponsor single-point "
+            "risk before committing a new deal."
+        ),
+        source=(
+            "data_public/portfolio_analytics.py::corpus_scorecard, "
+            "vintage_cohort_summary, deals_by_type, outlier_deals "
+            "(z-score threshold 2.0)."
+        ),
+        page_key="portfolio-analytics",
+    )
+
     body = (
-        intro
+        explainer
+        + intro
         + kpi_strip
         + ck_section_header(
             "CORPUS SCORECARD",

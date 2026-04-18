@@ -34,6 +34,7 @@ from ._helpers import (
     fmt_multiple,
     fmt_pct,
     load_corpus_deals,
+    render_page_explainer,
     small_panel,
     verdict_badge,
 )
@@ -369,7 +370,37 @@ def render_corpus_backtest(
             "GROUND-TRUTH CURVE", "realized MOIC by vintage + subsector",
         ) + self_analysis
 
-    body = _disambig_banner() + kpi_strip + body_blocks
+    explainer = render_page_explainer(
+        what=(
+            "Cross-matches platform deal predictions against the "
+            "655-deal corpus of realized outcomes. When a corpus DB "
+            "with public_deals is populated, shows prediction-vs-"
+            "realized MOIC error per deal; otherwise falls back to a "
+            "ground-truth view of realized MOIC distribution by vintage "
+            "year and subsector."
+        ),
+        scale=(
+            "Per-deal MOIC error is colored green |Δ| ≤ 0.25x, amber "
+            "≤ 0.75x, red otherwise. Vintage/subsector medians are "
+            "colored green ≥ 2.50x, amber ≥ 1.50x, red below. Subsector "
+            "cohorts with fewer than three realized deals are suppressed."
+        ),
+        use=(
+            "Use the match view to calibrate how tightly platform "
+            "forecasts track realized outcomes by cohort, and the "
+            "ground-truth view to size the unconditional prior for a "
+            "given vintage-and-subsector bucket before layering any "
+            "target-specific adjustment."
+        ),
+        source=(
+            "data_public/backtester.py::match_deals and summary_stats "
+            "(fuzzy join + error statistics); data_public/deals_corpus "
+            "(655-deal realized-outcomes seed)."
+        ),
+        page_key="corpus-backtest",
+    )
+
+    body = explainer + _disambig_banner() + kpi_strip + body_blocks
 
     return chartis_shell(
         body,

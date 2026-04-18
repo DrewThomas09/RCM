@@ -31,6 +31,7 @@ from ._helpers import (
     fmt_multiple,
     fmt_pct,
     load_corpus_deals,
+    render_page_explainer,
     small_panel,
     verdict_badge,
 )
@@ -253,8 +254,39 @@ def render_sponsor_track_record(
         f'</p>'
     )
 
+    explainer = render_page_explainer(
+        what=(
+            "Sortable league table of every PE sponsor in the 655-deal "
+            "corpus with deal count, MOIC quartiles, median IRR, median "
+            "hold, loss rate, home-run rate, and a 0–100 consistency "
+            "score blending MOIC dispersion, IRR dispersion, and deal "
+            "count."
+        ),
+        scale=(
+            "Loss deals are realized MOIC < 1.0x; home-runs are realized "
+            "MOIC > 3.0x. Consistency ≥ 0.70 is HIGH band, 0.45–0.70 "
+            "MEDIUM, below 0.45 LOW. League default sort is median MOIC "
+            "descending, filtered to sponsors with ≥ 2 tracked deals."
+        ),
+        use=(
+            "Compare sponsors before relying on their league-table "
+            "headline. A high median MOIC with low consistency is a "
+            "lottery sponsor; a lower median with tight quartiles is a "
+            "compounder. Loss rate + home-run rate together show the "
+            "shape of their distribution, not just the midpoint."
+        ),
+        source=(
+            "data_public/sponsor_track_record.py::sponsor_league_table "
+            "(thresholds at MOIC <1.0x loss, >3.0x home-run); "
+            "sponsor_consistency_score_raw (MOIC + IRR dispersion + "
+            "deal-count composite)."
+        ),
+        page_key="sponsor-track-record",
+    )
+
     body = (
-        intro
+        explainer
+        + intro
         + kpi_strip
         + ck_section_header("TOP 5 BY MEDIAN MOIC", "highest realized returns")
         + top5_strip
