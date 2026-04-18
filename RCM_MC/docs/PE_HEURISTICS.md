@@ -3634,7 +3634,39 @@ Partner note:
 
 ---
 
-## 151. Change log
+## 151. Red-flag escalation triage (`red_flag_escalation_triage.py`)
+
+**Partner statement:** "Not every red flag needs me at 7am. I'll
+take the FCA; you handle the denial rate. Triage is about WHO
+acts, not severity."
+
+Four tiers:
+
+- **partner_immediate (24h)** — legal, regulatory, reputational
+  categories (any severity) + clinical-safety incidents (high).
+  Reputational/fiduciary authority sits with partner.
+- **partner_this_week (72h)** — high-severity financial or
+  operational issues — block 30 min in the deal-team meeting.
+- **associate (168h)** — medium severity; diligence-tracker
+  item.
+- **informational (336h)** — low severity; note, no action.
+
+Partner note escalates:
+
+- ≥ 2 partner-immediate → "not queue items; partner should be
+  on the phone with counsel and CMO advisor today."
+- 1 partner-immediate → "escalate today; don't wait for the
+  deal-team meeting."
+- 2+ partner-this-week → "block partner time at next deal-team
+  meeting."
+
+This replaces the instinct to "escalate everything" with
+partner-discipline: triage by who has authority, not by how
+scary the word in the finding is.
+
+---
+
+## 152. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3974,3 +4006,7 @@ Partner note:
   banker process timing (tight close, bidder collapse,
   relaunch, walks, reprice, silence). Full inventory: 148
   modules, 1,502 pe_intelligence unit tests.
+- **2026-04-17** — Added `red_flag_escalation_triage.py` (§151)
+  — partner-immediate vs partner-this-week vs associate vs info
+  triage by category + severity. Full inventory: 149 modules,
+  1,513 pe_intelligence unit tests.
