@@ -1914,6 +1914,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.trial_site_econ_page import render_trial_site_econ
             return self._send_html(render_trial_site_econ(_qp))
+        if path == "/hcit-platform":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.hcit_platform_page import render_hcit_platform
+            return self._send_html(render_hcit_platform(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

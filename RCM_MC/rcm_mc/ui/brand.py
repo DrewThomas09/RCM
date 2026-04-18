@@ -196,6 +196,7 @@ NAV_ITEMS = [
     {"label": "Direct Employer", "href": "/direct-employer", "icon": "chart"},
     {"label": "Deal Origination", "href": "/deal-origination", "icon": "chart"},
     {"label": "Trial Site Econ", "href": "/trial-site-econ", "icon": "chart"},
+    {"label": "HCIT Platform", "href": "/hcit-platform", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
