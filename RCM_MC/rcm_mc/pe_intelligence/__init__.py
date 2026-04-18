@@ -1612,6 +1612,12 @@ from .payer_watchlist_by_name import (
     read_payer_watchlist,
     render_payer_watchlist_markdown,
 )
+from .banker_partner_pricing_tension import (
+    BankerPricingTensionInputs,
+    BankerPricingTensionReport,
+    read_banker_pricing_tension,
+    render_banker_pricing_tension_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3243,4 +3249,8 @@ __all__ = [
     "PayerWatchlistReport",
     "read_payer_watchlist",
     "render_payer_watchlist_markdown",
+    "BankerPricingTensionInputs",
+    "BankerPricingTensionReport",
+    "read_banker_pricing_tension",
+    "render_banker_pricing_tension_markdown",
 ]

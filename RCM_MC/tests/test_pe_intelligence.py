@@ -32322,5 +32322,157 @@ class TestPayerWatchlistByName(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestBankerPartnerPricingTension(unittest.TestCase):
+    """Partner voice: 'The gap IS the partner conversation.'"""
+
+    def test_zero_gap_accept_pitch(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+        )
+        r = read_banker_pricing_tension(
+            BankerPricingTensionInputs(
+                banker_suggested_multiple=10.0,
+                partner_walkaway_multiple=10.5,
+            )
+        )
+        self.assertEqual(r.verdict, "accept_pitch")
+
+    def test_bridgeable_when_upside_covers(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+        )
+        r = read_banker_pricing_tension(
+            BankerPricingTensionInputs(
+                banker_suggested_multiple=12.0,
+                partner_walkaway_multiple=10.5,
+                operational_upside_turns=1.5,
+            )
+        )
+        self.assertEqual(r.verdict, "bridgeable")
+
+    def test_thin_bridge_small_residual(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+        )
+        r = read_banker_pricing_tension(
+            BankerPricingTensionInputs(
+                banker_suggested_multiple=12.0,
+                partner_walkaway_multiple=10.5,
+                operational_upside_turns=1.2,
+            )
+        )
+        self.assertEqual(r.verdict, "thin_bridge")
+
+    def test_walk_when_residual_large(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+        )
+        r = read_banker_pricing_tension(
+            BankerPricingTensionInputs(
+                banker_suggested_multiple=13.0,
+                partner_walkaway_multiple=10.0,
+                operational_upside_turns=1.0,
+                competing_bidders_count=1,
+            )
+        )
+        self.assertEqual(r.verdict, "walk")
+        self.assertIn(
+            "low competitive pressure",
+            r.partner_note.lower(),
+        )
+
+    def test_top_quartile_flag_in_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+        )
+        r = read_banker_pricing_tension(
+            BankerPricingTensionInputs(
+                banker_suggested_multiple=12.0,
+                partner_walkaway_multiple=10.5,
+                operational_upside_turns=1.2,
+                top_quartile_execution_required=True,
+            )
+        )
+        self.assertIn(
+            "top-quartile",
+            r.partner_note.lower(),
+        )
+
+    def test_gap_dollars_computed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+        )
+        r = read_banker_pricing_tension(
+            BankerPricingTensionInputs(
+                ebitda_base_m=50.0,
+                banker_suggested_multiple=12.0,
+                partner_walkaway_multiple=10.5,
+            )
+        )
+        # Gap = 1.5 * 50M = 75M
+        self.assertAlmostEqual(r.gap_dollars_m, 75.0)
+
+    def test_bridgeable_covers_above_walk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+        )
+        # Upside exceeds gap → residual negative → bridgeable
+        r = read_banker_pricing_tension(
+            BankerPricingTensionInputs(
+                banker_suggested_multiple=12.0,
+                partner_walkaway_multiple=10.5,
+                operational_upside_turns=2.0,
+            )
+        )
+        self.assertLessEqual(r.residual_gap_turns, 0)
+        self.assertEqual(r.verdict, "bridgeable")
+
+    def test_banker_ev_computed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+        )
+        r = read_banker_pricing_tension(
+            BankerPricingTensionInputs(
+                ebitda_base_m=40.0,
+                banker_suggested_multiple=11.0,
+            )
+        )
+        self.assertAlmostEqual(
+            r.banker_implied_ev_m, 440.0
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+            render_banker_pricing_tension_markdown,
+        )
+        md = render_banker_pricing_tension_markdown(
+            read_banker_pricing_tension(
+                BankerPricingTensionInputs())
+        )
+        self.assertIn(
+            "# Banker-vs-partner pricing tension", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            BankerPricingTensionInputs,
+            read_banker_pricing_tension,
+        )
+        r = read_banker_pricing_tension(
+            BankerPricingTensionInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
