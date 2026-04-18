@@ -2027,6 +2027,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.diligence_checklist_page import render_diligence_checklist
             return self._send_html(render_diligence_checklist(_qp))
+        if path == "/value-creation":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.value_creation_page import render_value_creation
+            return self._send_html(render_value_creation(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())
