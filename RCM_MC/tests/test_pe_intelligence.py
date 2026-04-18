@@ -32154,5 +32154,173 @@ class TestSiteOfServiceRevenueMix(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPayerWatchlistByName(unittest.TestCase):
+    """Partner voice: 'Named payer tells you what to expect at renewal.'"""
+
+    def test_empty_mix_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+        )
+        r = read_payer_watchlist(
+            PayerWatchlistInputs())
+        self.assertIn(
+            "no payers", r.partner_note.lower()
+        )
+
+    def test_known_payer_in_book(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PayerInDealMix,
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+        )
+        r = read_payer_watchlist(PayerWatchlistInputs(
+            deal_mix=[PayerInDealMix(
+                "United Healthcare", 0.30)],
+        ))
+        hit = r.hits[0]
+        self.assertTrue(hit.in_book)
+        self.assertEqual(hit.posture, "aggressive")
+
+    def test_unknown_payer_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PayerInDealMix,
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+        )
+        r = read_payer_watchlist(PayerWatchlistInputs(
+            deal_mix=[PayerInDealMix(
+                "Obscure Local Plan", 0.10)],
+        ))
+        hit = r.hits[0]
+        self.assertFalse(hit.in_book)
+        self.assertEqual(hit.posture, "unknown")
+
+    def test_aggressive_exposure_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PayerInDealMix,
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+        )
+        r = read_payer_watchlist(PayerWatchlistInputs(
+            deal_mix=[
+                PayerInDealMix(
+                    "United Healthcare", 0.30),
+                PayerInDealMix("Centene", 0.10),
+            ],
+        ))
+        self.assertGreater(
+            r.aggressive_share_pct, 0.30
+        )
+        self.assertIn(
+            "rate pressure", r.partner_note.lower()
+        )
+
+    def test_cigna_cooperative_read(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PayerInDealMix,
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+        )
+        r = read_payer_watchlist(PayerWatchlistInputs(
+            deal_mix=[PayerInDealMix("Cigna", 0.25)],
+        ))
+        hit = r.hits[0]
+        self.assertIn(
+            "favorable", hit.partner_read.lower()
+        )
+
+    def test_kaiser_closed_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PayerInDealMix,
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+        )
+        r = read_payer_watchlist(PayerWatchlistInputs(
+            deal_mix=[PayerInDealMix(
+                "Kaiser Permanente", 0.25)],
+        ))
+        hit = r.hits[0]
+        self.assertEqual(hit.posture, "closed")
+
+    def test_low_aggressive_exposure(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PayerInDealMix,
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+        )
+        r = read_payer_watchlist(PayerWatchlistInputs(
+            deal_mix=[
+                PayerInDealMix(
+                    "Independence Blue Cross", 0.30),
+                PayerInDealMix("Cigna", 0.20),
+            ],
+        ))
+        self.assertLess(
+            r.aggressive_share_pct, 0.15
+        )
+        self.assertIn(
+            "not the binding", r.partner_note.lower()
+        )
+
+    def test_modest_aggressive_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PayerInDealMix,
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+        )
+        r = read_payer_watchlist(PayerWatchlistInputs(
+            deal_mix=[PayerInDealMix(
+                "Centene", 0.20)],
+        ))
+        self.assertIn(
+            "modest but non-zero",
+            r.partner_note.lower(),
+        )
+
+    def test_all_12_payers_present(self) -> None:
+        from rcm_mc.pe_intelligence.payer_watchlist_by_name import (
+            PAYER_BOOK,
+        )
+        expected_payers = [
+            "United Healthcare", "Anthem / Elevance",
+            "Aetna / CVS", "Cigna", "Humana",
+            "BCBS (state plan)", "Centene", "Molina",
+            "Kaiser Permanente", "HCSC", "Highmark",
+            "Independence Blue Cross",
+        ]
+        for p in expected_payers:
+            self.assertIn(p, PAYER_BOOK)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PayerInDealMix,
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+            render_payer_watchlist_markdown,
+        )
+        md = render_payer_watchlist_markdown(
+            read_payer_watchlist(PayerWatchlistInputs(
+                deal_mix=[PayerInDealMix(
+                    "United Healthcare", 0.30)],
+            ))
+        )
+        self.assertIn("# Payer watchlist by name", md)
+        self.assertIn("United Healthcare", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            PayerInDealMix,
+            PayerWatchlistInputs,
+            read_payer_watchlist,
+        )
+        r = read_payer_watchlist(PayerWatchlistInputs(
+            deal_mix=[PayerInDealMix(
+                "United Healthcare", 0.30)],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

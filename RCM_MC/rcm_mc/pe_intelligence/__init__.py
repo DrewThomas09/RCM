@@ -1604,6 +1604,14 @@ from .site_of_service_revenue_mix import (
     analyze_site_of_service_mix,
     render_site_of_service_mix_markdown,
 )
+from .payer_watchlist_by_name import (
+    PayerHit,
+    PayerInDealMix,
+    PayerWatchlistInputs,
+    PayerWatchlistReport,
+    read_payer_watchlist,
+    render_payer_watchlist_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3229,4 +3237,10 @@ __all__ = [
     "SiteShare",
     "analyze_site_of_service_mix",
     "render_site_of_service_mix_markdown",
+    "PayerHit",
+    "PayerInDealMix",
+    "PayerWatchlistInputs",
+    "PayerWatchlistReport",
+    "read_payer_watchlist",
+    "render_payer_watchlist_markdown",
 ]
