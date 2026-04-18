@@ -334,6 +334,11 @@ def render_deal_dashboard(
             "HHI / CR3 / CR5 + fragmentation verdict + thesis hint",
             accent=PALETTE["brand_accent"],
         ),
+        _model_tile(
+            "WHT", f"/deal/{did}/white-space", "White Space",
+            "Geographic / segment / channel adjacencies with scores",
+            accent=PALETTE["brand_accent"],
+        ),
     ]
 
     model_grid = (
