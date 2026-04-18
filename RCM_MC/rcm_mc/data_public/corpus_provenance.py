@@ -55,6 +55,21 @@ PROVENANCE_REGISTRY: Dict[str, str] = {
     # standard — the module docstring claims SEC / press-release
     # sourcing and the confirmed sample supports it.
     "extended_seed": "real",
+
+    # --- Synthetic ---
+    # Batches 2..104: extended_seed_2.py through extended_seed_104.py
+    # (~1,760 deal records). Later files (41..104) openly self-
+    # describe as "synthesized for modeling" and ship fabricated
+    # names (Azalea Vision Partners, Pinnacle ASC Partners, etc.).
+    # Files 2..40 claim public-source attribution but a 15-row
+    # spot-check surfaced 2 factually impossible dates (Chemed
+    # already owned VITAS in 2020; Vista already owned Greenway in
+    # 2018) with only 8 of 15 confirmed real. Under the agreed rule
+    # (≤ 9 of 15 real → tag whole range synthetic), the entire
+    # 2..104 range is tagged synthetic. All-or-nothing per the
+    # sprint plan — partial tagging gives false confidence in
+    # unverified rows.
+    **{f"extended_seed_{i}": "synthetic" for i in range(2, 105)},
 }
 
 
