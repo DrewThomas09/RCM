@@ -6018,7 +6018,79 @@ explicitly."
 
 ---
 
-## 199. Change log
+## 199. Turnaround feasibility scorer (`turnaround_feasibility_scorer.py`)
+
+**Partner statement:** "Every turnaround thesis starts
+with hope. The ones that work have a specific operator,
+a placement budget, and the CEO who caused the problem
+already on the exit path. If any of those is missing,
+you're underwriting on faith."
+
+Complements `failure_archetype_library` which flags
+`turnaround_without_operator` as a failure shape. This
+module is the *feasibility gate*: when a turnaround
+thesis is asserted, does the team have the inputs?
+
+### 7 dimensions scored
+
+1. **external_operator_identified** — named CEO/COO
+   pre-close.
+2. **operator_placement_budget_reserved** — ≥ $5M.
+3. **ceo_on_exit_path** — incumbent has defined
+   transition.
+4. **sponsor_has_turnaround_track_record** — sector-
+   specific prior success.
+5. **hundred_day_plan_has_operator_milestones** — named
+   hires + owned outcomes.
+6. **labor_or_union_constraints_manageable** — no
+   binding block.
+7. **turnaround_duration_le_36_months** — realistic
+   timeline.
+
+### Tier ladder
+
+- **6-7/7** = `feasible` — proceed; inputs in place.
+- **4-5/7** = `qualified` — proceed only with named
+  mitigation on missing dimensions.
+- **2-3/7** = `high_risk` — re-price or walk.
+- **0-1/7** = `infeasible` — walk.
+
+### Operator-placement budget flag
+
+On deals where `current_ebitda_m ≥ $20M` AND
+`thesis_requires_turnaround=True` AND no budget
+reserved → module emits explicit flag: "$5M+ operator-
+placement budget is a closing-condition item, not a
+nice-to-have."
+
+### Worked example
+
+Inputs: thesis requires turnaround, external operator
+NOT identified, no placement budget, current CEO
+staying, no sponsor track record, 100-day plan silent
+on operator, 30-month target duration.
+
+Score: 1/7 → `infeasible`.
+
+Partner note: "walk. No input this thesis relies on is
+in place."
+
+### Packet fields that trigger
+
+- `thesis_requires_turnaround`
+- `external_operator_identified`
+- `operator_placement_budget_reserved`,
+  `operator_placement_budget_m`
+- `ceo_on_exit_path`
+- `sponsor_has_turnaround_track_record`
+- `hundred_day_plan_has_operator_milestones`
+- `labor_or_union_constraints_manageable`
+- `turnaround_duration_months`
+- `current_ebitda_m`
+
+---
+
+## 200. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
