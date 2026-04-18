@@ -2169,6 +2169,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.medicaid_unwinding_page import render_medicaid_unwinding
             return self._send_html(render_medicaid_unwinding(_qp))
+        if path == "/workforce-retention":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.workforce_retention_page import render_workforce_retention
+            return self._send_html(render_workforce_retention(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
