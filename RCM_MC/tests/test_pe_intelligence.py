@@ -16774,5 +16774,105 @@ class TestWorkingCapitalPegNegotiator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Management rollover equity designer ────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    RolloverContext,
+    RolloverRecommendation,
+    design_rollover,
+    render_rollover_markdown,
+)
+
+
+class TestManagementRolloverEquityDesigner(unittest.TestCase):
+
+    def test_young_founder_growth_high_target(self) -> None:
+        r = design_rollover(RolloverContext(
+            ceo_is_founder=True, ceo_age=45,
+            ceo_planning_to_stay=True,
+            business_maturity="growth",
+            ceo_gross_proceeds_m=50.0,
+            proposed_rollover_pct=0.15,
+        ))
+        # Target 20-30%, 15% is thin.
+        self.assertEqual(r.alignment_grade, "thin")
+        self.assertIn("skin-in-game", r.partner_note.lower())
+
+    def test_young_founder_strong_rollover(self) -> None:
+        r = design_rollover(RolloverContext(
+            ceo_is_founder=True, ceo_age=45,
+            business_maturity="growth",
+            ceo_gross_proceeds_m=50.0,
+            proposed_rollover_pct=0.32,
+        ))
+        self.assertEqual(r.alignment_grade, "strong")
+        self.assertIn("clear conviction",
+                       r.partner_note.lower())
+
+    def test_founder_retiring_lower_target(self) -> None:
+        r = design_rollover(RolloverContext(
+            ceo_is_founder=True, ceo_age=68,
+            ceo_planning_to_stay=False,
+            ceo_gross_proceeds_m=30.0,
+            proposed_rollover_pct=0.08,
+        ))
+        # Target 5-10%, 8% is adequate.
+        self.assertEqual(r.alignment_grade, "adequate")
+
+    def test_distressed_thin_not_flagged_harshly(self) -> None:
+        r = design_rollover(RolloverContext(
+            deal_type="distressed",
+            ceo_gross_proceeds_m=10.0,
+            proposed_rollover_pct=0.02,
+        ))
+        self.assertEqual(r.alignment_grade, "thin")
+        self.assertIn("expected", r.partner_note.lower())
+
+    def test_sponsor_backed_ceo_target(self) -> None:
+        r = design_rollover(RolloverContext(
+            ceo_is_founder=False,
+            ceo_planning_to_stay=True,
+            ceo_gross_proceeds_m=20.0,
+            proposed_rollover_pct=0.20,
+        ))
+        # Target 15-25% → 20% adequate.
+        self.assertEqual(r.alignment_grade, "adequate")
+
+    def test_gap_vs_midpoint(self) -> None:
+        r = design_rollover(RolloverContext(
+            ceo_is_founder=True, ceo_age=45,
+            business_maturity="growth",
+            ceo_gross_proceeds_m=50.0,
+            proposed_rollover_pct=0.15,
+        ))
+        # midpoint 25%, proposed 15% → gap -10pp
+        self.assertAlmostEqual(r.gap_vs_target_pct, -0.10, places=2)
+
+    def test_rollover_dollar_computed(self) -> None:
+        r = design_rollover(RolloverContext(
+            ceo_is_founder=True, ceo_age=45,
+            business_maturity="growth",
+            ceo_gross_proceeds_m=100.0,
+            proposed_rollover_pct=0.25,
+        ))
+        self.assertAlmostEqual(r.proposed_rollover_m, 25.0, places=1)
+
+    def test_markdown_renders(self) -> None:
+        md = render_rollover_markdown(design_rollover(RolloverContext(
+            ceo_is_founder=True, ceo_age=45,
+            ceo_gross_proceeds_m=50.0,
+            proposed_rollover_pct=0.20,
+        )))
+        self.assertIn("# Management rollover equity", md)
+
+    def test_json(self) -> None:
+        import json
+        r = design_rollover(RolloverContext(
+            ceo_gross_proceeds_m=20.0,
+            proposed_rollover_pct=0.20,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

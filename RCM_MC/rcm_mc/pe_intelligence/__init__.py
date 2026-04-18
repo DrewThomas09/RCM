@@ -972,6 +972,12 @@ from .working_capital_peg_negotiator import (
     negotiate_wc_peg,
     render_wc_peg_markdown,
 )
+from .management_rollover_equity_designer import (
+    RolloverContext,
+    RolloverRecommendation,
+    design_rollover,
+    render_rollover_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2137,4 +2143,8 @@ __all__ = [
     "WCPegReport",
     "negotiate_wc_peg",
     "render_wc_peg_markdown",
+    "RolloverContext",
+    "RolloverRecommendation",
+    "design_rollover",
+    "render_rollover_markdown",
 ]
