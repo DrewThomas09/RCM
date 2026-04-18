@@ -1196,6 +1196,14 @@ from .packet_data_provenance_check import (
     list_provenance_tiers,
     render_packet_provenance_markdown,
 )
+from .physician_group_friction_scorer import (
+    FrictionMatch as PhysicianFrictionMatch,
+    PhysicianFrictionPoint,
+    PhysicianFrictionReport,
+    list_friction_points,
+    render_physician_friction_markdown,
+    scan_physician_friction,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2525,4 +2533,10 @@ __all__ = [
     "check_packet_provenance",
     "list_provenance_tiers",
     "render_packet_provenance_markdown",
+    "PhysicianFrictionMatch",
+    "PhysicianFrictionPoint",
+    "PhysicianFrictionReport",
+    "list_friction_points",
+    "render_physician_friction_markdown",
+    "scan_physician_friction",
 ]

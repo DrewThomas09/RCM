@@ -21419,5 +21419,134 @@ class TestPacketDataProvenanceCheck(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPhysicianGroupFrictionScorer(unittest.TestCase):
+    """Partner scenario: what breaks in physician-group post-close?"""
+
+    def test_empty_signals_low_note(self) -> None:
+        from rcm_mc.pe_intelligence import scan_physician_friction
+        r = scan_physician_friction({})
+        self.assertEqual(len(r.matches), 0)
+        self.assertIn("still tag", r.partner_note.lower())
+
+    def test_ancillary_ownership_unwind_high_prob(self) -> None:
+        """Partner: 'ancillary ownership roll-up is high-friction.'"""
+        from rcm_mc.pe_intelligence import scan_physician_friction
+        r = scan_physician_friction({
+            "ancillary_ownership_disclosed": True,
+            "ancillary_distribution_share_gt_20pct": True,
+        })
+        match = next(m for m in r.matches
+                      if m.friction.name ==
+                      "ancillary_ownership_unwind")
+        self.assertEqual(match.friction.probability, "high")
+
+    def test_state_noncompete_gap_significant_impact(self) -> None:
+        """Partner: 'CA/ND — physicians can leave immediately.'"""
+        from rcm_mc.pe_intelligence import scan_physician_friction
+        r = scan_physician_friction({
+            "practice_state_in_noncompete_gap_list": True,
+            "no_alternative_restrictive_covenant": True,
+        })
+        match = next(m for m in r.matches
+                      if m.friction.name == "state_noncompete_gap")
+        self.assertGreaterEqual(
+            match.friction.ebitda_impact_pct, 0.10
+        )
+
+    def test_referral_loss_cohort_framing(self) -> None:
+        from rcm_mc.pe_intelligence import scan_physician_friction
+        r = scan_physician_friction({
+            "physician_referral_concentration_gt_25pct": True,
+            "senior_physician_age_60_plus": True,
+        })
+        match = next(m for m in r.matches
+                      if m.friction.name == "referral_source_loss")
+        self.assertIn("staggered",
+                       match.friction.partner_counter.lower())
+
+    def test_expected_impact_accumulates(self) -> None:
+        from rcm_mc.pe_intelligence import scan_physician_friction
+        r = scan_physician_friction({
+            "ancillary_ownership_disclosed": True,
+            "rvu_target_increase_gt_10pct": True,
+            "financial_incentive_restructure":  True,
+            # trigger multiple
+            "proposed_comp_model_materially_different": True,
+        })
+        self.assertGreater(
+            r.expected_friction_ebitda_impact_pct, 0.0
+        )
+        self.assertGreaterEqual(r.high_probability_count, 2)
+
+    def test_heavy_friction_triggers_price_note(self) -> None:
+        """Partner: 'expected impact ≥ 10% → price it in.'"""
+        from rcm_mc.pe_intelligence import scan_physician_friction
+        r = scan_physician_friction({
+            # high-prob high-impact items
+            "ancillary_ownership_disclosed": True,
+            "ancillary_distribution_share_gt_20pct": True,
+            "practice_state_in_noncompete_gap_list": True,
+            "no_alternative_restrictive_covenant": True,
+            "physician_referral_concentration_gt_25pct": True,
+            "senior_physician_age_60_plus": True,
+            "rvu_target_increase_gt_10pct": True,
+        })
+        self.assertGreaterEqual(
+            r.expected_friction_ebitda_impact_pct, 0.08
+        )
+
+    def test_matches_sorted_by_prob_then_impact(self) -> None:
+        from rcm_mc.pe_intelligence import scan_physician_friction
+        r = scan_physician_friction({
+            # high-prob, mid-impact
+            "ancillary_ownership_disclosed": True,
+            # low-prob, high-impact
+            "restructure_touches_referral_flow": True,
+            "no_stark_compliance_review_planned": True,
+        })
+        # high-prob should come first.
+        first = r.matches[0].friction.probability
+        self.assertEqual(first, "high")
+
+    def test_no_signals_for_cdi_but_cdi_has_partner_counter(
+        self,
+    ) -> None:
+        """Partner: 'every friction has a counter — verify library integrity.'"""
+        from rcm_mc.pe_intelligence.physician_group_friction_scorer import (
+            FRICTION_LIBRARY,
+        )
+        for fp in FRICTION_LIBRARY:
+            self.assertTrue(len(fp.partner_counter) > 10)
+            self.assertGreater(fp.ebitda_impact_pct, 0)
+
+    def test_list_friction_points(self) -> None:
+        from rcm_mc.pe_intelligence import list_friction_points
+        names = list_friction_points()
+        self.assertIn("ancillary_ownership_unwind", names)
+        self.assertIn("state_noncompete_gap", names)
+        self.assertEqual(len(names), 10)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            render_physician_friction_markdown,
+            scan_physician_friction,
+        )
+        md = render_physician_friction_markdown(
+            scan_physician_friction({
+                "ancillary_ownership_disclosed": True,
+            })
+        )
+        self.assertIn("# Physician-group friction", md)
+        self.assertIn("Partner counter", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import scan_physician_friction
+        r = scan_physician_friction({
+            "ancillary_ownership_disclosed": True,
+        })
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
