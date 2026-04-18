@@ -217,6 +217,7 @@ _CORPUS_NAV = [
     {"label": "Payer Contracts", "href": "/payer-contracts",       "icon": "▥"},
     {"label": "Capex Budget",    "href": "/capex-budget",          "icon": "▣"},
     {"label": "PMI Integration", "href": "/pmi-integration",       "icon": "▣"},
+    {"label": "Tax Credits",     "href": "/tax-credits",           "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

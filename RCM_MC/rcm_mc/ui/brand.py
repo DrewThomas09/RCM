@@ -253,6 +253,7 @@ NAV_ITEMS = [
     {"label": "Payer Contracts", "href": "/payer-contracts", "icon": "bookmark"},
     {"label": "Capex Budget", "href": "/capex-budget", "icon": "chart"},
     {"label": "PMI Integration", "href": "/pmi-integration", "icon": "chart"},
+    {"label": "Tax Credits", "href": "/tax-credits", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
