@@ -804,6 +804,7 @@ class DealsCorpus:
         from .extended_seed_71 import EXTENDED_SEED_DEALS_71
         from .extended_seed_72 import EXTENDED_SEED_DEALS_72
         from .extended_seed_73 import EXTENDED_SEED_DEALS_73
+        from .extended_seed_74 import EXTENDED_SEED_DEALS_74
         all_seed = (
             _SEED_DEALS + EXTENDED_SEED_DEALS + EXTENDED_SEED_DEALS_2
             + EXTENDED_SEED_DEALS_3 + EXTENDED_SEED_DEALS_4 + EXTENDED_SEED_DEALS_5
@@ -850,6 +851,7 @@ class DealsCorpus:
             + EXTENDED_SEED_DEALS_71
             + EXTENDED_SEED_DEALS_72
             + EXTENDED_SEED_DEALS_73
+            + EXTENDED_SEED_DEALS_74
         )
 
         if skip_if_populated:

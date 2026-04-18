@@ -137,6 +137,7 @@ _CORPUS_NAV = [
     {"label": "Competitive Intel","href": "/competitive-intel","icon": "▦"},
     {"label": "Patient Exp / NPS","href": "/patient-experience","icon": "▣"},
     {"label": "Supply Chain",   "href": "/supply-chain",     "icon": "▦"},
+    {"label": "Provider Retention","href": "/provider-retention","icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
