@@ -5703,7 +5703,73 @@ interim).
 
 ---
 
-## 194. Change log
+## 194. Physician comp normalization check (`physician_comp_normalization_check.py`)
+
+**Partner statement:** "Every physician-practice deal
+has comp-normalization uplift in the pro-forma. Half of
+it is real; half is seller optimism. I want to see the
+specific adjustments and decide which survive."
+
+Distinct from `physician_compensation_benchmark.py` —
+that benchmarks current comp to MGMA; this module
+scrutinizes the **pro-forma EBITDA adjustments** driven
+by post-close comp normalization.
+
+### 5 adjustment categories + survival rates
+
+- `base_comp_normalization` — **60%** survives (MGMA
+  bands wide; churn risk if cut aggressive).
+- `ancillary_ownership` — **80%** (clear structural
+  change).
+- `related_party_rent_at_market` — **70%** (standard).
+- `related_party_rent_below_market` — **30%** (partner
+  rejects — can't cut below market to lower).
+- `retention_bonuses` — **50%** (blur with run-rate).
+- `management_fee_elim` — **90%** (standard).
+
+### Churn haircut — the operator-reality constraint
+
+If base-comp cut > 20%, partner applies a **physician
+churn haircut**: ~15% of physicians leave within 24
+months. Each departing physician takes 50% of their
+revenue contribution. Savings vanishes.
+
+Churn hit ≈ (physician_count × 0.15) × (stated_EBITDA /
+physician_count) × 0.50.
+
+### Verdict ladder
+
+- Aggregate haircut + churn ≥ 20% of stated EBITDA
+  (or churn flag + ≥ 10%) → **walk**.
+- 10-20% → **reprice** — model off adjusted EBITDA.
+- < 10% with no churn → **proceed_with_adjustments**.
+- No adjustments → **accept**.
+
+### Worked example
+
+Stated EBITDA $15M, proposes $8M base-comp + $3M
+retention adjustments; current $700K → $450K (36% cut).
+
+- Base-comp: $3.2M haircut (40% of $8M).
+- Retention: $1.5M haircut (50% of $3M).
+- Churn flag: yes (36% cut > 20%).
+- Churn hit on 20 physicians: 3 × $0.75M × 0.50 =
+  $1.1M.
+- Total hair + churn: $5.8M / $15M = 39%.
+- **Verdict: walk.**
+
+### Packet fields that trigger
+
+- `stated_ebitda_m`, `proposed_adjustments` (list of
+  `CompAdjustment` with category + dollar).
+- `physician_count`, `current_avg_comp_usd`,
+  `proposed_avg_comp_usd`.
+- `rent_cut_is_below_market` — flags below-market rent
+  adjustment category.
+
+---
+
+## 195. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
