@@ -29791,5 +29791,203 @@ class TestPostClose90DayRealityCheck(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestRecurringNPRLineScrubber(unittest.TestCase):
+    """Partner voice: 'Sellers stretch revenue too — scrub the top line.'"""
+
+    def test_no_line_items_stated_is_recurring(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            stated_ttm_npr_m=300.0,
+            prior_year_npr_m=280.0,
+        ))
+        self.assertAlmostEqual(
+            r.recurring_npr_m, 300.0
+        )
+
+    def test_dsh_classified_one_time(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            stated_ttm_npr_m=300.0,
+            prior_year_npr_m=280.0,
+            line_items=[
+                NPRLineItem(
+                    "DSH supplemental Medicaid payment",
+                    8.0),
+            ],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "one_time_npr"
+        )
+
+    def test_provider_relief_one_time(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            line_items=[NPRLineItem(
+                "Provider relief grant", 5.0)],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "one_time_npr"
+        )
+
+    def test_pro_forma_questionable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            line_items=[NPRLineItem(
+                "Pro forma annualized acquired revenue",
+                15.0)],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "questionable"
+        )
+
+    def test_capitation_recurring(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            line_items=[NPRLineItem(
+                "Capitation PMPM revenue", 50.0)],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "recurring"
+        )
+
+    def test_unknown_falls_to_questionable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            line_items=[NPRLineItem(
+                "Mysterious other NPR line", 5.0)],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "questionable"
+        )
+
+    def test_explicit_category_wins(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            line_items=[NPRLineItem(
+                "Capitation PMPM revenue", 50.0,
+                explicit_category="one_time_npr")],
+        ))
+        self.assertEqual(
+            r.lines[0].category, "one_time_npr"
+        )
+
+    def test_growth_distortion_detected(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        # Stated 300 with 20M one-time DSH; prior 280
+        # Seller growth = (300-280)/280 = 7.1%
+        # Recurring 280; partner growth = 0%
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            stated_ttm_npr_m=300.0,
+            prior_year_npr_m=280.0,
+            line_items=[
+                NPRLineItem(
+                    "DSH supplemental payment", 20.0),
+            ],
+        ))
+        self.assertGreater(
+            r.growth_rate_distortion_pct, 0.05
+        )
+        self.assertIn(
+            "anchor growth conversation",
+            r.partner_note.lower(),
+        )
+
+    def test_clean_growth_no_distortion(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            stated_ttm_npr_m=300.0,
+            prior_year_npr_m=280.0,
+            line_items=[
+                NPRLineItem(
+                    "Core patient service revenue",
+                    280.0),
+                NPRLineItem(
+                    "Capitation PMPM revenue", 20.0),
+            ],
+        ))
+        self.assertLess(
+            abs(r.growth_rate_distortion_pct), 0.01
+        )
+
+    def test_recurring_floor_at_zero(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            stated_ttm_npr_m=10.0,
+            line_items=[
+                NPRLineItem(
+                    "Provider relief grant", 50.0),
+            ],
+        ))
+        self.assertGreaterEqual(r.recurring_npr_m, 0.0)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            render_recurring_npr_markdown,
+            scrub_recurring_npr,
+        )
+        md = render_recurring_npr_markdown(
+            scrub_recurring_npr(RecurringNPRInputs(
+                line_items=[NPRLineItem(
+                    "DSH payment", 5.0)],
+            ))
+        )
+        self.assertIn(
+            "# Recurring-vs-one-time NPR scrub", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            NPRLineItem,
+            RecurringNPRInputs,
+            scrub_recurring_npr,
+        )
+        r = scrub_recurring_npr(RecurringNPRInputs(
+            line_items=[NPRLineItem("DSH", 5.0)],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

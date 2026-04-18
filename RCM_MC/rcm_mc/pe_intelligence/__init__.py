@@ -1523,6 +1523,14 @@ from .post_close_90_day_reality_check import (
     render_90_day_markdown,
     run_90_day_reality_check,
 )
+from .recurring_npr_line_scrubber import (
+    NPRLineItem,
+    RecurringNPRInputs,
+    RecurringNPRReport,
+    ScrubbedNPRLine,
+    render_recurring_npr_markdown,
+    scrub_recurring_npr,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3089,4 +3097,10 @@ __all__ = [
     "NinetyDayReport",
     "render_90_day_markdown",
     "run_90_day_reality_check",
+    "NPRLineItem",
+    "RecurringNPRInputs",
+    "RecurringNPRReport",
+    "ScrubbedNPRLine",
+    "render_recurring_npr_markdown",
+    "scrub_recurring_npr",
 ]
