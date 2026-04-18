@@ -6295,7 +6295,69 @@ because turnaround thesis drives it.
 
 ---
 
-## 203. Change log
+## 203. Bank syndicate readiness (`bank_syndicate_readiness_scorer.py`)
+
+**Partner statement:** "Equity thesis can work and the
+deal still dies because the debt package doesn't come
+together. I want the syndication risk on the page
+before LOI, not the week before close."
+
+Distinct from `bank_syndicate_picker` (lender selection),
+`debt_capacity_sizer` (how much), `refinancing_window`
+(post-close timing). This module is the **pre-LOI
+readiness gate**.
+
+### 8 readiness dimensions
+
+1. **commitment_letter_signed** — hard vs soft circle.
+2. **lead_lender_has_sector_dry_powder** — book capacity.
+3. **leverage_at_or_below_peer_average** — ≤ peer + 0.25x.
+4. **covenant_package_lender_friendly** — market-standard.
+5. **repeat_lender_relationship** — cycle speed.
+6. **rate_lock_or_hedged** — rate-move protection.
+7. **private_credit_or_bank_match** — capital-type fit.
+8. **market_rate_stable_at_signing** — ≤ 50 bps vol /60d.
+
+### Tier ladder
+
+- **6-8/8** = `ready` — close on timeline.
+- **4-5/8** = `conditional` — close with remediation.
+- **2-3/8** = `at_risk` — 30-60 day delay probable.
+- **0-1/8** = `unreadied` — re-pitch / restructure.
+
+### Named remediations
+
+Each failed dim emits a specific fix:
+
+- No commitment letter → "obtain signed before IC."
+- Leverage above peer → "reduce leverage or add equity."
+- Covenant not lender-friendly → "tighten cure / MAC /
+  leverage steps."
+- No rate lock → "pre-sign rate lock or SOFR cap."
+- Rate vol > 50 bps → "pre-sign market flex language."
+- Lead lender capped → "replace lead or widen
+  syndicate."
+
+### Partner-note behavior
+
+Single missing dimension is usually fixable. Three or
+more = re-think the capital structure, not just the
+lenders.
+
+### Packet fields
+
+`commitment_letter_signed`,
+`lead_lender_has_sector_dry_powder`,
+`proposed_leverage`, `peer_average_leverage`,
+`covenant_package_lender_friendly`,
+`repeat_lender_relationship`,
+`rate_lock_or_hedged`,
+`private_credit_or_bank_match`,
+`market_rate_volatility_bps_60d`.
+
+---
+
+## 204. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
