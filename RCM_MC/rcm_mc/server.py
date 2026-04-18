@@ -3821,14 +3821,23 @@ class RCMHandler(BaseHTTPRequestHandler):
             deals = store.list_deals()
         except Exception:
             deals = _pd_home.DataFrame()
-        # Use command center as the primary home page
+        # Seven-panel Chartis landing is the primary home page.
+        # Falls back to command_center then home_v2 if the chartis panel
+        # set fails — avoids ever 500ing the landing route.
         try:
-            from .data.hcris import _get_latest_per_ccn
-            from .ui.command_center import render_command_center
-            hcris = _get_latest_per_ccn()
-            return self._send_html(render_command_center(hcris, self.config.db_path))
+            from .ui.chartis.home_page import render_home as render_chartis_home
+            user = getattr(self, "_current_user", None)
+            return self._send_html(
+                render_chartis_home(store, self.config.db_path, current_user=user)
+            )
         except Exception:
-            return self._send_html(render_home(pulse, insights, deals, store))
+            try:
+                from .data.hcris import _get_latest_per_ccn
+                from .ui.command_center import render_command_center
+                hcris = _get_latest_per_ccn()
+                return self._send_html(render_command_center(hcris, self.config.db_path))
+            except Exception:
+                return self._send_html(render_home(pulse, insights, deals, store))
 
     def _route_news_page(self) -> None:
         """GET /news — healthcare PE news and research."""

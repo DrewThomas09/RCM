@@ -55,8 +55,13 @@ _SANS = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-se
 # ---------------------------------------------------------------------------
 
 _CORPUS_NAV = [
+    {"label": "SEEKING CHARTIS", "separator": True},
+    {"label": "Home",           "href": "/home",             "icon": "◎"},
+    {"label": "PE Intelligence","href": "/pe-intelligence",  "icon": "◈"},
+    {"label": "Methodology",    "href": "/methodology",      "icon": "▥"},
+    {"label": "API Docs",       "href": "/api/docs",         "icon": "▧"},
     {"label": "CORPUS INTEL", "separator": True},
-    {"label": "Deals Library",  "href": "/deals-library",   "icon": "▤"},
+    {"label": "Deals Library",  "href": "/library",          "icon": "▤"},
     {"label": "Comparables",    "href": "/comparables",      "icon": "▣"},
     {"label": "Risk Matrix",    "href": "/risk-matrix",      "icon": "▦"},
     {"label": "Underwriting",   "href": "/underwriting",    "icon": "▣"},
