@@ -1314,6 +1314,16 @@ from .hsr_antitrust_healthcare_scanner import (
     render_hsr_antitrust_markdown,
     scan_hsr_antitrust,
 )
+from .governance_package_designer import (
+    BoardSeats,
+    Committee as GovernanceCommittee,
+    GovernanceInputs,
+    GovernanceReport,
+    ReservedMatter,
+    RolloverProtection,
+    design_governance_package,
+    render_governance_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2729,4 +2739,12 @@ __all__ = [
     "HSRAntitrustReport",
     "render_hsr_antitrust_markdown",
     "scan_hsr_antitrust",
+    "BoardSeats",
+    "GovernanceCommittee",
+    "GovernanceInputs",
+    "GovernanceReport",
+    "ReservedMatter",
+    "RolloverProtection",
+    "design_governance_package",
+    "render_governance_markdown",
 ]

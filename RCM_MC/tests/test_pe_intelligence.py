@@ -23930,5 +23930,168 @@ class TestHSRAntitrustHealthcareScanner(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestGovernancePackageDesigner(unittest.TestCase):
+    """Partner scenario: close-date governance package design."""
+
+    def test_platform_board_has_7_seats(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        r = design_governance_package(GovernanceInputs(
+            platform_tier="platform",
+            sponsor_equity_pct=0.80,
+            rollover_equity_pct=0.15,
+        ))
+        self.assertEqual(r.board.total_seats, 7)
+        self.assertEqual(r.board.sponsor_seats, 3)
+
+    def test_addon_board_is_smaller(self) -> None:
+        """Partner: 'add-ons get minimal governance.'"""
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        platform = design_governance_package(GovernanceInputs(
+            platform_tier="platform",
+        ))
+        addon = design_governance_package(GovernanceInputs(
+            platform_tier="add_on",
+        ))
+        self.assertLess(addon.board.total_seats,
+                         platform.board.total_seats)
+
+    def test_large_rollover_adds_management_seat(self) -> None:
+        """Partner: '≥ 20% rollover → extra management seat.'"""
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        small = design_governance_package(GovernanceInputs(
+            rollover_equity_pct=0.10,
+        ))
+        large = design_governance_package(GovernanceInputs(
+            rollover_equity_pct=0.25,
+        ))
+        self.assertGreater(large.board.management_seats,
+                            small.board.management_seats)
+
+    def test_healthcare_subsector_has_compliance_committee(
+        self,
+    ) -> None:
+        """Partner: 'healthcare deals always get compliance committee.'"""
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        r = design_governance_package(GovernanceInputs(
+            subsector="hospital_general",
+        ))
+        self.assertTrue(any(c.name == "compliance"
+                             for c in r.committees))
+
+    def test_compliance_committee_chaired_by_independent(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        r = design_governance_package(GovernanceInputs(
+            subsector="hospital_general",
+        ))
+        compliance = next(c for c in r.committees
+                           if c.name == "compliance")
+        self.assertFalse(compliance.sponsor_chair)
+
+    def test_reserved_matters_include_strategic_m_and_a(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        r = design_governance_package(GovernanceInputs())
+        self.assertTrue(any(
+            m.matter == "strategic_m_and_a"
+            for m in r.reserved_matters
+        ))
+
+    def test_reserved_matters_always_include_ceo_hire(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        r = design_governance_package(GovernanceInputs())
+        self.assertTrue(any(
+            m.matter == "ceo_or_cfo_hire"
+            for m in r.reserved_matters
+        ))
+
+    def test_rollover_adds_tag_along(self) -> None:
+        """Partner: 'any rollover → tag-along right.'"""
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        r = design_governance_package(GovernanceInputs(
+            rollover_equity_pct=0.10,
+        ))
+        self.assertTrue(any(
+            p.protection == "tag_along_rights"
+            for p in r.rollover_protections
+        ))
+
+    def test_large_rollover_adds_liquidity_option(self) -> None:
+        """Partner: '≥ 20% rollover → Y5 put right.'"""
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        r = design_governance_package(GovernanceInputs(
+            rollover_equity_pct=0.25,
+        ))
+        self.assertTrue(any(
+            p.protection == "liquidity_option_year_5"
+            for p in r.rollover_protections
+        ))
+
+    def test_no_rollover_no_protections(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        r = design_governance_package(GovernanceInputs(
+            rollover_equity_pct=0.0,
+        ))
+        self.assertEqual(len(r.rollover_protections), 0)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+            render_governance_markdown,
+        )
+        md = render_governance_markdown(
+            design_governance_package(GovernanceInputs(
+                subsector="hospital_general",
+                rollover_equity_pct=0.15,
+            ))
+        )
+        self.assertIn("# Governance package", md)
+        self.assertIn("Reserved matters", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            GovernanceInputs,
+            design_governance_package,
+        )
+        r = design_governance_package(GovernanceInputs(
+            subsector="hospital_general",
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
