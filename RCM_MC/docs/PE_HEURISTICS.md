@@ -6663,7 +6663,49 @@ signed contract + retention at close."
 
 ---
 
-## 209. Change log
+## 209. Day 1 action plan (`day_one_action_plan.py`)
+
+**Partner statement:** "The 100-day plan gets the
+press. The first 7 days get the value. If day 1 is
+chaos, the 100-day plan is already slipping."
+
+Distinct from `hundred_day_plan`,
+`management_first_sitdown`, `first_thirty_minutes`.
+This module catalogs **12 specific day-1-to-week-1
+actions**.
+
+### 12 day-1 actions
+
+1. **ceo_all_hands** (CEO, day 1) — risk: rumor fills
+   vacuum.
+2. **top_customer_communication** (CEO, day 1).
+3. **payer_relationship_call** (CEO, week 1).
+4. **banking_transition** (CFO, day 1).
+5. **board_reconstitution** (legal, day 1).
+6. **it_access_handoff** (ops, day 1).
+7. **compensation_confirmation** (CFO, day 1).
+8. **retention_activation** (legal, day 1).
+9. **insurance_policy_transition** (legal, week 1).
+10. **auditor_transition** (CFO, week 1).
+11. **operating_committee_kickoff** (sponsor, week 1).
+12. **regulatory_notice_filings** (legal, week 1) — CHOW
+    / licensure.
+
+### Escalation behavior
+
+Actions not marked `owned` or `done` land in an
+**escalation list** with their risk-if-delayed message.
+Partner-note escalates at ≥ 3 unowned: "silence in
+week 1 costs weeks in the 100-day plan."
+
+### Packet fields
+
+- `actions_done` — list of completed action names.
+- `actions_owned` — list of actions with a named owner.
+
+---
+
+## 210. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
