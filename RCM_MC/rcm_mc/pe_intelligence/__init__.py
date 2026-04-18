@@ -978,6 +978,13 @@ from .management_rollover_equity_designer import (
     design_rollover,
     render_rollover_markdown,
 )
+from .reference_check_framework import (
+    ReferenceGroup,
+    ReferencePlan,
+    ReferenceQuestion,
+    build_reference_plan,
+    render_reference_plan_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2147,4 +2154,9 @@ __all__ = [
     "RolloverRecommendation",
     "design_rollover",
     "render_rollover_markdown",
+    "ReferenceGroup",
+    "ReferencePlan",
+    "ReferenceQuestion",
+    "build_reference_plan",
+    "render_reference_plan_markdown",
 ]

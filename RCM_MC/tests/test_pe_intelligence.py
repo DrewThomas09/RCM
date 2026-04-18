@@ -16874,5 +16874,75 @@ class TestManagementRolloverEquityDesigner(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Reference check framework ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ReferenceGroup,
+    ReferencePlan,
+    ReferenceQuestion,
+    build_reference_plan,
+    render_reference_plan_markdown,
+)
+
+
+class TestReferenceCheckFramework(unittest.TestCase):
+
+    def test_ceo_includes_board_and_direct_report(self) -> None:
+        p = build_reference_plan("ceo")
+        relationships = {g.relationship for g in p.groups}
+        self.assertIn("current_or_past_board_member", relationships)
+        self.assertIn("ex_direct_report", relationships)
+
+    def test_cfo_includes_auditor_and_bank(self) -> None:
+        p = build_reference_plan("cfo")
+        relationships = {g.relationship for g in p.groups}
+        self.assertIn("auditor", relationships)
+        self.assertIn("bank_syndicate_lead", relationships)
+
+    def test_other_role_default_groups(self) -> None:
+        p = build_reference_plan("cmo")
+        relationships = {g.relationship for g in p.groups}
+        self.assertIn("ex_boss", relationships)
+        self.assertIn("ex_direct_report", relationships)
+
+    def test_must_call_count(self) -> None:
+        p = build_reference_plan("ceo")
+        self.assertGreaterEqual(p.must_call_count, 2)
+
+    def test_each_question_has_listen_for(self) -> None:
+        p = build_reference_plan("ceo")
+        for g in p.groups:
+            for q in g.questions:
+                self.assertTrue(q.listen_for)
+
+    def test_would_you_rehire_question_present(self) -> None:
+        p = build_reference_plan("ceo")
+        all_qs = [q.question for g in p.groups for q in g.questions]
+        # CEO pattern: "would you back this CEO"
+        self.assertTrue(any("back this ceo" in q.lower()
+                             for q in all_qs))
+
+    def test_cfo_bank_trust_signal(self) -> None:
+        p = build_reference_plan("cfo")
+        bank = next(g for g in p.groups
+                     if g.relationship == "bank_syndicate_lead")
+        qs = " ".join(q.question for q in bank.questions).lower()
+        self.assertIn("covenant", qs)
+
+    def test_partner_note_has_must_call_guidance(self) -> None:
+        p = build_reference_plan("ceo")
+        self.assertIn("must-call", p.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_reference_plan_markdown(
+            build_reference_plan("ceo"))
+        self.assertIn("# CEO reference check plan", md)
+        self.assertIn("Listen for", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(build_reference_plan("ceo").to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
