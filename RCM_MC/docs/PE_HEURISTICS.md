@@ -11311,7 +11311,75 @@ $100M MA plan at 4.0 stars, HEDIS declining:
 
 ---
 
-## 274. Change log
+## 274. Sponsor-vs-strategic exit comparator (`sponsor_vs_strategic_exit_comparator.py`)
+
+**Partner statement.** "Strategic says 12x but the process takes
+12 months with FTC / AG review that could block. Sponsor says
+10x, closes in 4 months, certainty is real. The question isn't
+headline multiple — it's risk-adjusted net-per-day-of-hold."
+
+### Why it matters
+
+`exit_alternative_comparator` surveys 5 paths; `buyer_type_fit_
+analyzer` profiles 8 buyer types. This module runs a **head-to-
+head** math comparison between sponsor-to-sponsor and strategic
+with certainty, earn-out, escrow, and time-value adjustments.
+
+### Math per path
+
+- headline_ev = ebitda × multiple
+- certain_portion = 1 − escrow − earn_out
+- certain_ev = headline × certain_portion
+- earn_out_ev = headline × earn_out × 50% (risk discount)
+- escrow_ev = headline × escrow × 80% (recovery assumed)
+- expected_net = (certain + earn_out + escrow) × close_probability
+- time_discount = expected_net / (1+r)^years
+
+### Verdict
+
+- `|delta| < 2%` → "effectively tied; pick certainty"
+- Sponsor wins → "certainty + faster close outweighs strategic
+  multiple premium"
+- Strategic wins → "premium is real; run strategic; keep sponsor
+  as backup"
+
+### Worked example
+
+Sponsor: $50M EBITDA × 10× = $500M; 4mo close; 90% certain;
+3% escrow; no earn-out
+- Certain: $500 × 97% = $485M
+- Escrow adj: $500 × 3% × 80% = $12M
+- Expected net: $497M × 90% = $447M
+- Time-disc (4mo, 10%): $447M / 1.033 = $433M
+
+Strategic: same $50M × 12× = $600M; 12mo close; 70% certain;
+8% escrow; 10% earn-out
+- Certain: $600 × 82% = $492M
+- Earn-out adj: $600 × 10% × 50% = $30M
+- Escrow adj: $600 × 8% × 80% = $38.4M
+- Expected net: $560M × 70% = $392M
+- Time-disc (12mo, 10%): $392M / 1.10 = $356M
+
+Sponsor wins by $77M → "certainty + faster close outweighs
+strategic multiple premium."
+
+### Packet fields
+
+Two `ExitPathInputs` — each with `ebitda_m`, `headline_multiple`,
+`months_to_close`, `probability_of_close_pct`, `seller_escrow_pct`,
+`earn_out_portion_of_price_pct`, `annual_discount_rate_pct`.
+
+### Distinct from existing modules
+
+- `exit_alternative_comparator` — 5-path survey.
+- `buyer_type_fit_analyzer` — 8 buyer profiles.
+- `exit_buyer_view_mirror` — buyer IC.
+- This module — head-to-head two-path math with certainty + time-
+  value adjustment.
+
+---
+
+## 275. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
