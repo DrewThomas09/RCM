@@ -177,6 +177,7 @@ _CORPUS_NAV = [
     {"label": "ZBB Tracker",     "href": "/zbb-tracker",         "icon": "▣"},
     {"label": "CMS Data Browser","href": "/cms-data-browser",    "icon": "▥"},
     {"label": "MSA Concentrat.", "href": "/msa-concentration",   "icon": "▦"},
+    {"label": "IC Memo Generator","href": "/ic-memo-gen",         "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
