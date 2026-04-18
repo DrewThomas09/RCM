@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -67,7 +67,7 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
         f'{interp}'
     )
 
-    return shell_v2(body, f"Causal Inference — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Causal Inference — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(estimates)} estimates, {sig_count} significant")
 
@@ -128,7 +128,7 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
         f'{interp}'
     )
 
-    return shell_v2(body, f"Counterfactual — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Counterfactual — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Initiative impact: ${cumulative/1e6:.1f}M cumulative")
 
@@ -191,7 +191,7 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
         f'</div></div>'
     )
 
-    return shell_v2(body, "Benchmark Evolution",
+    return chartis_shell(body, "Benchmark Evolution",
                     subtitle=f"{len(drifts)} benchmarks tracked | {improving} improving, {declining} declining")
 
 
@@ -261,6 +261,6 @@ def render_predicted_vs_actual(deal_id: str, deal_name: str,
         f'{interp}'
     )
 
-    return shell_v2(body, f"Predicted vs Actual — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Predicted vs Actual — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{pct_ci:.0%} accuracy | {n_metrics} metrics | MAE: {mae:.2f}")

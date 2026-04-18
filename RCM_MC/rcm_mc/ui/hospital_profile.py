@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -381,7 +381,7 @@ def render_hospital_profile(
 
     body = f'{header}{thesis_html}{system_badge}{fundamentals}{payer_mix}{quality_section}{score_card}{comp_html}{comments_html}{actions}'
 
-    return shell_v2(
+    return chartis_shell(
         body, name,
         active_nav="/market-data/map",
         subtitle=f"CCN {ccn} — {city}, {state} — {beds} beds",

@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -282,7 +282,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
 
     body = f'{kpis}{stack}{bayes_section}{eff_section}{mkt_section}{queue_section}{nav}'
 
-    return shell_v2(
+    return chartis_shell(
         body, "Quant Lab",
         active_nav="/quant-lab",
         subtitle=(

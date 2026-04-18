@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -279,7 +279,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
 
     nav = _model_nav(deal_id, "dcf")
     body = f'{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}'
-    return shell_v2(body, f"DCF — {html.escape(deal_name)}",
+    return chartis_shell(body, f"DCF — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Enterprise Value: {_fmt_m(ev)}")
 
@@ -456,7 +456,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
 
     nav = _model_nav(deal_id, "lbo")
     body = f'{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}'
-    return shell_v2(body, f"LBO — {html.escape(deal_name)}",
+    return chartis_shell(body, f"LBO — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}")
 
@@ -562,6 +562,6 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
 
     nav = _model_nav(deal_id, "financials")
     body = f'{nav}{kpis}{is_section}{bs_section}{interp}{cf_section}{actions}'
-    return shell_v2(body, f"Financials — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Financials — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="3-statement model reconstructed from HCRIS + deal profile")

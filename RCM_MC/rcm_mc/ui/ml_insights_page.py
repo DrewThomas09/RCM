@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -232,7 +232,7 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
 
     body = f'{kpis}{cluster_section}{distress_section}{rcm_screen}{methodology}{nav}'
 
-    return shell_v2(
+    return chartis_shell(
         body,
         "ML Insights",
         active_nav="/ml-insights",
@@ -570,7 +570,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
     )
 
     body = "\n".join(sections)
-    return shell_v2(
+    return chartis_shell(
         body,
         f"ML Analysis — {_html.escape(name)}",
         subtitle=f"CCN {_html.escape(ccn)} | Clustering + Distress + RCM Opportunity",
