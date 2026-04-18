@@ -9153,7 +9153,88 @@ IRR, 5-year hold.
 
 ---
 
-## 244. Change log
+## 244. IC dialog simulator (`ic_dialog_simulator.py`)
+
+**Partner statement.** "When IC works, voices challenge each other.
+The skeptic raises a concern; the operating partner says 'we own
+that — here's how'; the LP-facing voice asks 'how does this read in
+the quarterly?'; the numbers-MD says 'the math doesn't support
+either side'; the chair synthesizes. A monolithic memo doesn't
+capture this. The dialog also surfaces: which concerns the team has
+actually answered, and which ones nobody on the team has a real
+response to."
+
+### Why it matters
+
+`partner_voice_variants` produces 5 separate voice paragraphs.
+That's monologic. The IC dialog is **dialogic** — voices respond to
+each other, and the chair surfaces what's been resolved, what's
+unresolved, and what's vote-blocking.
+
+### Three-round structure
+
+- **Round 1 — Opening:** each of 5 voices gives their first read
+  (skeptic / optimist / md_numbers / operating_partner / lp_facing).
+- **Round 2 — Challenge:** each voice picks one prior point and
+  reinforces or pushes back. Cross-voice dynamics surface where
+  the team has answers vs. where it doesn't.
+- **Round 3 — Chair synthesis:** sorts dialog into 3 buckets:
+  consensus / unresolved / vote-blocking.
+
+### Vote-blocking heuristics
+
+- QofE not clean
+- Leverage > 6.0× (firm comfort threshold)
+- Strong historical-failure match cited
+- Exit multiple > 12× with commercial mix < 30% (structural mismatch)
+
+### Unresolved heuristics
+
+- Target MOIC ≥ 3.0× → "burden of proof on us"
+- No named operator 100-day commitments → execution edge aspirational
+- Growth rate < 5% → "thesis depends on multiple expansion alone"
+
+### Consensus heuristics
+
+- QofE clean → "math base solid"
+- Strong management track record → "execution risk reduced"
+- Commercial mix ≥ 40% → "FFS protected"
+
+### Recommendation logic
+
+- Any vote-blocking item → "DILIGENCE MORE — vote-blocking items"
+- Multiple unresolved (no blocking) → "DILIGENCE MORE — unresolved
+  tensions need answers"
+- All consensus, no unresolved → "INVEST — consensus dialog"
+
+### Worked example
+
+QofE clean, strong management, commercial 0.50, leverage 4.0×,
+target 2.5×, named operator commitments. → 3 consensus, 0
+unresolved, 0 blocking → "INVEST — consensus dialog supports vote."
+
+Same deal but QofE not clean and leverage 6.5× → 2 vote-blocking
+(QofE + leverage) → "DILIGENCE MORE — vote-blocking items."
+
+### Packet fields
+
+`deal_name`, `subsector`, `recurring_ebitda_m`, `target_moic`,
+`entry_multiple`, `exit_multiple`, `top_risks`,
+`operator_owns_named`, `qofe_clean`, `payer_mix_commercial_pct`,
+`growth_rate`, `leverage_turns`,
+`management_track_record_strong`, `historical_failure_match_top`.
+
+### Distinct from existing modules
+
+- `partner_voice_variants` — 5 monologic voice paragraphs.
+- `ic_decision_synthesizer` — single recommendation + flip signals.
+- `pre_ic_chair_brief` — chair's 4-bullet pre-IC note.
+- This module — 3-round dialog with cross-voice dynamics; chair
+  outputs consensus / unresolved / vote-blocking.
+
+---
+
+## 245. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
