@@ -2204,6 +2204,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.tax_credits_page import render_tax_credits
             return self._send_html(render_tax_credits(_qp))
+        if path == "/deal-sourcing":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.deal_sourcing_page import render_deal_sourcing
+            return self._send_html(render_deal_sourcing(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
