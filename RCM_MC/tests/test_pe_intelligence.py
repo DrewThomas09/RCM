@@ -26230,5 +26230,232 @@ class TestLPQuarterlyUpdateComposer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestChangeMyMindDiligencePlan(unittest.TestCase):
+    """Partner voice: 'Every flip-hypothesis needs owner, source, cost, date.'"""
+
+    def test_empty_hypotheses_closes_in_window(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs())
+        self.assertEqual(
+            r.verdict, "closable_in_2_weeks"
+        )
+        self.assertEqual(len(r.items), 0)
+
+    def test_denial_hypothesis_matches_data_room(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_invest_hypotheses=[
+                "Denial rate improves 200 bps/yr "
+                "under new RCM platform",
+            ],
+        ))
+        self.assertEqual(len(r.items), 1)
+        i = r.items[0]
+        self.assertEqual(i.source, "data_room_pull")
+        self.assertEqual(i.cost_usd, 0.0)
+
+    def test_qofe_hypothesis_is_expensive_and_long(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_pass_hypotheses=[
+                "Quality of earnings re-cuts EBITDA by >10%",
+            ],
+        ))
+        self.assertEqual(len(r.items), 1)
+        i = r.items[0]
+        self.assertEqual(i.source, "qofe")
+        self.assertGreaterEqual(i.cost_usd, 100000)
+        self.assertGreaterEqual(i.calendar_days, 30)
+
+    def test_payer_hypothesis_routes_to_payer_call(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_pass_hypotheses=[
+                "Top-3 payer renegotiation is coming",
+            ],
+        ))
+        self.assertEqual(r.items[0].source, "payer_call")
+
+    def test_unknown_hypothesis_falls_back_to_mm(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_invest_hypotheses=[
+                "Lavender matters for Tuesday",
+            ],
+        ))
+        self.assertEqual(
+            r.items[0].source, "management_meeting"
+        )
+
+    def test_sequencing_cheapest_highest_likelihood_first(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        # 3 hypotheses: QofE (expensive), denial (cheap+fast),
+        # physician comp (cheap+medium). Denial should
+        # sort to rank 1 (highest likelihood per dollar-day).
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_invest_hypotheses=[
+                "QofE confirms EBITDA",
+                "Denial-rate trajectory is real",
+                "Physician comp claims hold up",
+            ],
+        ))
+        self.assertEqual(len(r.items), 3)
+        first = r.items[0]
+        self.assertEqual(first.sequence_rank, 1)
+        # QofE ($125k, 35d) is worst score; denial
+        # ($0, 5d) is best.
+        self.assertIn(
+            "denial", first.hypothesis.lower()
+        )
+        last = r.items[-1]
+        self.assertIn("qofe", last.hypothesis.lower())
+
+    def test_irreducible_when_qofe_exceeds_window(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_pass_hypotheses=[
+                "QofE on prior-year add-backs",
+                "Regulatory OBBBA impact quantified",
+            ],
+            diligence_window_days=14,
+            diligence_budget_remaining_usd=50000,
+        ))
+        self.assertIn(r.verdict,
+                      {"irreducible", "needs_4_weeks"})
+
+    def test_closable_when_budget_ample(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_invest_hypotheses=[
+                "Denial trajectory holds",
+                "Growth is organic not M&A",
+            ],
+            diligence_window_days=30,
+            diligence_budget_remaining_usd=500000,
+        ))
+        self.assertEqual(
+            r.verdict, "closable_in_2_weeks"
+        )
+        for i in r.items:
+            self.assertTrue(i.closable_in_window)
+
+    def test_total_cost_and_longest_day_computed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_pass_hypotheses=[
+                "QofE on EBITDA",
+                "Cyber incident history",
+            ],
+            diligence_window_days=45,
+            diligence_budget_remaining_usd=500000,
+        ))
+        self.assertGreater(
+            r.total_incremental_cost_usd, 100000
+        )
+        self.assertGreaterEqual(r.longest_calendar_days, 30)
+
+    def test_direction_preserved(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_invest_hypotheses=[
+                "Denial fix real"],
+            flip_to_pass_hypotheses=[
+                "Payer renegotiation coming"],
+        ))
+        dirs = sorted(i.direction for i in r.items)
+        self.assertEqual(
+            dirs, ["flip_to_invest", "flip_to_pass"]
+        )
+
+    def test_integration_hypothesis_probes_named_lead(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_invest_hypotheses=[
+                "Integration lead is experienced and bolt-on pipeline is real",
+            ],
+        ))
+        i = r.items[0]
+        self.assertIn(
+            "named lead", i.evidence_test.lower()
+        )
+
+    def test_evidence_test_present_on_every_item(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_invest_hypotheses=[
+                "Denial fix",
+                "Culture is strong",
+                "Customers are sticky",
+            ],
+        ))
+        for i in r.items:
+            self.assertTrue(i.evidence_test)
+            self.assertGreater(len(i.evidence_test), 15)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+            render_change_my_mind_markdown,
+        )
+        md = render_change_my_mind_markdown(
+            plan_change_my_mind(ChangeMyMindInputs(
+                flip_to_invest_hypotheses=[
+                    "denial fix real"],
+            ))
+        )
+        self.assertIn(
+            "# Change-my-mind diligence plan", md
+        )
+        self.assertIn("Total cost", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ChangeMyMindInputs,
+            plan_change_my_mind,
+        )
+        r = plan_change_my_mind(ChangeMyMindInputs(
+            flip_to_invest_hypotheses=["denial fix"],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

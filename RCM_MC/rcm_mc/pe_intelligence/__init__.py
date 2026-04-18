@@ -1407,6 +1407,13 @@ from .lp_quarterly_update_composer import (
     compose_lp_quarterly_update,
     render_lp_quarterly_markdown,
 )
+from .change_my_mind_diligence_plan import (
+    ChangeMyMindInputs,
+    ChangeMyMindItem,
+    ChangeMyMindPlan,
+    plan_change_my_mind,
+    render_change_my_mind_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2889,4 +2896,9 @@ __all__ = [
     "LPUpdateReport",
     "compose_lp_quarterly_update",
     "render_lp_quarterly_markdown",
+    "ChangeMyMindInputs",
+    "ChangeMyMindItem",
+    "ChangeMyMindPlan",
+    "plan_change_my_mind",
+    "render_change_my_mind_markdown",
 ]
