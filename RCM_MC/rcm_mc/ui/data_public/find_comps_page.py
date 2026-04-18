@@ -26,6 +26,7 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 def _percentile_rank(val: float, vals: List[float]) -> float:
@@ -359,5 +360,16 @@ def render_find_comps(params: Dict[str, str]) -> str:
   {result_html}
 </div>"""
 
+    explainer = render_page_explainer(
+        what=(
+            "Takes target-deal inputs (sector, size, payer mix, hold, "
+            "thesis) and returns the closest corpus comparables ranked "
+            "by composite similarity score, with percentile ranks and "
+            "a summary benchmark block. More focused than the IC-Memo "
+            "generator — purely peer identification."
+        ),
+        source="data_public/find_comps.py (similarity scoring).",
+        page_key="find-comps",
+    )
     subtitle = f"Searching {n:,} deals" if has_inputs else "Find deal comparables"
-    return chartis_shell(body, "Find Comps", active_nav="/find-comps", subtitle=subtitle)
+    return chartis_shell(explainer + body, "Find Comps", active_nav="/find-comps", subtitle=subtitle)

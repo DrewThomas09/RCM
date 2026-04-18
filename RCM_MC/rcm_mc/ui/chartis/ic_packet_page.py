@@ -35,6 +35,7 @@ from ._helpers import (
     deal_header_nav,
     empty_note,
     insufficient_data_banner,
+    render_page_explainer,
     safe_dict,
     small_panel,
     verdict_badge,
@@ -395,8 +396,25 @@ def render_ic_packet(
 
     audit_section = _audit_section(b.get("audit_trail"), "audit")
 
+    # TODO(phase-7): split into per-section micro-explainers as part
+    # of a later documentation polish pass.
+    explainer = render_page_explainer(
+        what=(
+            "IC-ready packet combining the IC memo, analyst "
+            "cheat-sheet, bear patterns, regulatory items, 100-day "
+            "plan, and partner discussion into a single view a "
+            "partner can skim before the meeting."
+        ),
+        source=(
+            "pe_intelligence/master_bundle.py::build_master_bundle "
+            "(top-level composer); ic_memo.render_html (memo body)."
+        ),
+        page_key="deal-ic-packet",
+    )
+
     body = (
-        header
+        explainer
+        + header
         + banner
         + kpi_strip
         + toc

@@ -31,10 +31,12 @@ from ._helpers import (
     empty_note,
     fmt_pct,
     insufficient_data_banner,
+    render_page_explainer,
     safe_dict,
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _VERDICT_META = {
@@ -71,7 +73,7 @@ def _hhi_bar(hhi: float) -> str:
         f'</div>'
         f'<div style="text-align:center;font-family:var(--ck-mono);font-size:11px;'
         f'color:{P["text"]};margin-top:4px;font-variant-numeric:tabular-nums;">'
-        f'HHI {hhi:,.0f}</div>'
+        f'HHI {render_number(hhi, "hhi")}</div>'
         f'</div>'
     )
 
@@ -98,7 +100,7 @@ def _shares_table(shares: Dict[str, float], *, target_name: Optional[str]) -> st
             f'{_html.escape(str(name))}{tag}</td>'
             f'<td style="font-family:var(--ck-mono);font-size:11px;'
             f'color:{col};font-variant-numeric:tabular-nums;text-align:right;'
-            f'width:80px;">{float(share)*100:.1f}%</td>'
+            f'width:80px;">{render_number(share, "market_share")}</td>'
             f'<td style="width:180px;">'
             f'<span style="display:block;height:6px;background:{P["border_dim"]};'
             f'border-radius:1px;overflow:hidden;">'
@@ -202,10 +204,12 @@ def render_market_structure(
     col, verdict_desc = _VERDICT_META.get(verdict, (P["text_dim"], ""))
 
     kpis = (
-        ck_kpi_block("HHI", f"{hhi:,.0f}", "0–10,000 (monopoly)")
-        + ck_kpi_block("CR3", fmt_pct(cr3), "top-3 combined share")
-        + ck_kpi_block("CR5", fmt_pct(cr5), "top-5 combined share")
-        + ck_kpi_block("Top Share", fmt_pct(top_share), f"out of {n_players} players")
+        ck_kpi_block("HHI", render_number(hhi, "hhi"), "0–10,000 (monopoly)")
+        + ck_kpi_block("CR3", render_number(cr3, "cr3"), "top-3 combined share")
+        + ck_kpi_block("CR5", render_number(cr5, "cr5"), "top-5 combined share")
+        + ck_kpi_block("Top Share",
+                        render_number(top_share, "market_share"),
+                        f"out of {n_players} players")
         + ck_kpi_block("Consolidation", fmt_pct(cons_score), "play-score 0-1")
     )
     kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'
@@ -234,8 +238,36 @@ def render_market_structure(
     target_name = _target_name_from_packet(packet, profile or {})
     shares_panel = _shares_table(shares, target_name=target_name)
 
+    explainer = render_page_explainer(
+        what=(
+            "Standard market-concentration metrics for the target's "
+            "local market: HHI (Herfindahl–Hirschman Index — sum of "
+            "squared shares), CR3 and CR5 (combined share of top-3 "
+            "and top-5 players), plus a consolidation-play score."
+        ),
+        scale=(
+            "HHI under 1,500 = unconcentrated; 1,500–2,500 = "
+            "moderately concentrated; over 2,500 = highly "
+            "concentrated. Thresholds are from the DOJ/FTC Horizontal "
+            "Merger Guidelines."
+        ),
+        use=(
+            "Use HHI + CR5 to judge pricing power and consolidation "
+            "opportunity. Deals in unconcentrated markets have more "
+            "buy-and-build runway; concentrated markets command "
+            "higher multiples but carry antitrust scrutiny."
+        ),
+        source=(
+            "pe_intelligence/market_structure.py HHI_UNCONCENTRATED "
+            "and HHI_HIGHLY_CONCENTRATED constants (DOJ/FTC Horizontal "
+            "Merger Guidelines)."
+        ),
+        page_key="deal-market-structure",
+    )
+
     body = (
-        header
+        explainer
+        + header
         + kpi_strip
         + ck_section_header(
             "COMPETITIVE STRUCTURE",

@@ -21,6 +21,8 @@ from .._chartis_kit import (
     ck_kpi_block,
     ck_section_header,
 )
+from ._helpers import render_page_explainer
+from ._sanity import REGISTRY as _METRIC_REGISTRY, render_number
 
 
 _SEV_COLORS = {
@@ -256,12 +258,16 @@ def _violations_section(review: Any) -> str:
     for b in violations:
         verdict = str(getattr(b, "verdict", "UNKNOWN"))
         col = _VERDICT_COLORS.get(verdict, P["text_faint"])
-        metric = _html.escape(str(getattr(b, "metric", "—")))
+        metric_raw = str(getattr(b, "metric", "—"))
+        metric = _html.escape(metric_raw)
         observed = getattr(b, "observed", None)
-        obs_str = (
-            f'{observed:.2f}' if isinstance(observed, (int, float))
-            else _html.escape(str(observed) if observed is not None else "—")
-        )
+        if metric_raw in _METRIC_REGISTRY:
+            obs_str = render_number(observed, metric_raw)
+        else:
+            obs_str = (
+                f'{observed:.2f}' if isinstance(observed, (int, float))
+                else _html.escape(str(observed) if observed is not None else "—")
+            )
         band = getattr(b, "band", None)
         if isinstance(band, (list, tuple)) and len(band) == 2:
             try:
@@ -341,8 +347,36 @@ def render_red_flags(
     )
     violations = _violations_section(review)
 
+    explainer = render_page_explainer(
+        what=(
+            "Focused subset of the Partner Review — only the heuristic "
+            "hits (red flags) and reasonableness band violations for "
+            "this deal. Narrative, archetype, and analytics panels "
+            "appear on the full Partner Review page."
+        ),
+        scale=(
+            "Severity: CRITICAL = hard stop; HIGH = serious concerns; "
+            "MEDIUM = watchlist; LOW = minor. Band verdicts: "
+            "OUT_OF_BAND or IMPLAUSIBLE for metrics outside the "
+            "partner-comfort envelope."
+        ),
+        use=(
+            "Read this first for a 30-second triage. If the verdict "
+            "banner says HARD STOP, stop before investing more "
+            "diligence time; otherwise use the remediation line on "
+            "each hit to scope the diligence ask."
+        ),
+        source=(
+            "pe_intelligence/heuristics.py (SEV_CRITICAL / HIGH / "
+            "MEDIUM / LOW); reasonableness.py (VERDICT_OUT_OF_BAND, "
+            "VERDICT_IMPLAUSIBLE)."
+        ),
+        page_key="deal-red-flags",
+    )
+
     body = (
-        _header_links(deal_id)
+        explainer
+        + _header_links(deal_id)
         + _severity_banner(review)
         + _kpi_strip(review)
         + ck_section_header(

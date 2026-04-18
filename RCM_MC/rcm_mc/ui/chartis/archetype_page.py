@@ -35,10 +35,12 @@ from ._helpers import (
     fmt_pct,
     insufficient_data_banner,
     kv_list,
+    render_page_explainer,
     safe_dict,
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _REGIME_COLORS = {
@@ -339,8 +341,8 @@ def render_archetype(
             ("hospital_type", str(ctx.hospital_type or "—")),
             ("platform_or_addon", str(ctx.platform_or_addon or "—")),
             ("addons_planned", str(ctx.number_of_addons_planned or "—")),
-            ("current_margin", fmt_pct(ctx.current_ebitda_margin)),
-            ("debt_to_ebitda", f"{ctx.debt_to_ebitda:.2f}x" if ctx.debt_to_ebitda else "—"),
+            ("current_margin", render_number(ctx.current_ebitda_margin, "ebitda_margin")),
+            ("debt_to_ebitda", render_number(ctx.debt_to_ebitda, "leverage_multiple")),
             ("revenue_growth", fmt_pct(ctx.revenue_growth_pct)),
             ("ebitda_growth", fmt_pct(ctx.ebitda_growth_pct)),
             ("has_rollup_thesis", str(ctx.has_rollup_thesis)),
@@ -363,8 +365,38 @@ def render_archetype(
     )
     regime_body = small_panel("Regime verdict", _regime_panel(review), code="REG")
 
+    explainer = render_page_explainer(
+        what=(
+            "Two orthogonal classifications for this deal: the "
+            "sponsor-structure archetype(s) it matches, and the "
+            "performance regime it sits in based on historical "
+            "trends."
+        ),
+        scale=(
+            "10 archetypes: platform_rollup, take_private, carve_out, "
+            "turnaround, buy_and_build, continuation, gp_led_secondary, "
+            "pipe, operating_lift, growth_equity. 5 regimes: "
+            "durable_growth, emerging_volatile, steady, stagnant, "
+            "declining_risk. Confidence score on both: HIGH ≥ 0.75, "
+            "MEDIUM ≥ 0.50, LOW below."
+        ),
+        use=(
+            "Each matched archetype carries its own playbook, named "
+            "risks, and IC-question list — use those as the diligence "
+            "scaffold. The regime classifier tells you which playbook "
+            "tone fits (e.g. steady → operating levers carry the "
+            "return, not multiple expansion)."
+        ),
+        source=(
+            "pe_intelligence/deal_archetype.py::classify_archetypes; "
+            "regime_classifier.py (five regime definitions + playbook)."
+        ),
+        page_key="deal-archetype",
+    )
+
     body = (
-        header
+        explainer
+        + header
         + kpi_strip
         + archetype_header
         + archetype_cards

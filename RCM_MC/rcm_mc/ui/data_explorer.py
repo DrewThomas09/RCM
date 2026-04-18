@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -243,7 +243,7 @@ def render_data_explorer(
 
     body = f'{source_cards}{modules_section}{pipeline}'
 
-    return shell_v2(
+    return chartis_shell(
         body, "Data Explorer",
         subtitle=f"{loaded} analytical modules | {hcris_count:,} hospital profiles",
     )

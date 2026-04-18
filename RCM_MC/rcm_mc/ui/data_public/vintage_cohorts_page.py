@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 def _quartile_color(q: int) -> str:
@@ -224,4 +225,14 @@ def render_vintage_cohorts(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Vintage Cohorts", active_nav="/vintage-cohorts")
+    explainer = render_page_explainer(
+        what=(
+            "Per-vintage cohort roll-up: deployed capital, NAV, "
+            "distributions, DPI/RVPI/TVPI, net and gross IRR, plus "
+            "Cambridge-Associates benchmark quartile and the "
+            "macro/rate regime for each vintage year."
+        ),
+        source="data_public/vintage_cohorts.py; Cambridge Associates US PE benchmarks.",
+        page_key="vintage-cohorts",
+    )
+    return chartis_shell(explainer + body, "Vintage Cohorts", active_nav="/vintage-cohorts")

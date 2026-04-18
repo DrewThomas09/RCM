@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -152,7 +152,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
     df = _add_features(hcris_df)
     match = df[df["ccn"] == ccn]
     if match.empty:
-        return shell_v2(
+        return chartis_shell(
             f'<div class="cad-card"><p>Hospital {_html.escape(ccn)} not found.</p></div>',
             "Competitive Intelligence",
         )
@@ -373,7 +373,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
 
     body = f'{kpis}{percentile_section}{gap_section}{peer_section}{nav}'
 
-    return shell_v2(
+    return chartis_shell(
         body,
         f"Competitive Intelligence — {_html.escape(name)}",
         subtitle=(

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 def _thesis_table(items) -> str:
@@ -199,4 +200,15 @@ def render_ic_memo_generator(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "IC Memo Generator", active_nav="/ic-memo-gen")
+    explainer = render_page_explainer(
+        what=(
+            "Standardized IC-memo builder: thesis-element scoring with "
+            "validation scores, diligence findings with "
+            "severity/mitigation, the seven-lever value-creation "
+            "bridge, and a final recommendation block suitable for "
+            "submission authorization."
+        ),
+        source="data_public/ic_memo_generator.py (standardized memo template).",
+        page_key="ic-memo-gen",
+    )
+    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/ic-memo-gen")

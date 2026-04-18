@@ -9,7 +9,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -279,6 +279,14 @@ def _library_section(section: Dict[str, Any]) -> str:
 
 def render_library() -> str:
     """Render the SeekingChartis research library page."""
+    from rcm_mc.ui.chartis._helpers import render_page_explainer
+    explainer = render_page_explainer(
+        what=(
+            "Reference documentation for the metrics, formulas, and "
+            "data sources used across the platform."
+        ),
+        page_key="methodology",
+    )
     sections = "".join(_library_section(s) for s in _LIBRARY_SECTIONS)
 
     extra_links = (
@@ -299,9 +307,9 @@ def render_library() -> str:
     )
     api_link = extra_links
 
-    body = f'{sections}{api_link}'
+    body = f'{explainer}{sections}{api_link}'
 
-    return shell_v2(
+    return chartis_shell(
         body, "Methodology",
         active_nav="/methodology",
         subtitle="Research library, model documentation & methodology references",

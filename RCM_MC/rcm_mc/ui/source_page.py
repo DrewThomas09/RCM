@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -79,4 +79,4 @@ def render_source_page(
 
     n = len(results) if results else 0
     sub = f"{n} matches found" if results else "Thesis-driven deal origination from HCRIS"
-    return shell_v2(body, "Deal Sourcing", subtitle=sub)
+    return chartis_shell(body, "Deal Sourcing", subtitle=sub)

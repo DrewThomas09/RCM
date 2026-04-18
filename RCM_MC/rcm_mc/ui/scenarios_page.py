@@ -1,10 +1,10 @@
-"""Scenario Explorer page renderer — shell_v2 version."""
+"""Scenario Explorer page renderer — chartis_shell version."""
 from __future__ import annotations
 
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -64,5 +64,5 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
         f'<a href="/models/challenge/se" class="cad-btn" style="text-decoration:none;">'
         f'Challenge Solver</a></div>'
     )
-    return shell_v2(body, "Scenario Explorer",
+    return chartis_shell(body, "Scenario Explorer",
                     subtitle=f"{len(presets)} preset shock scenarios")

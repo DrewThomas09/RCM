@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -86,7 +86,7 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
 
     nav = _model_nav(deal_id, "debt")
     body = f'{nav}{kpis}{table}{interp}{actions}'
-    return shell_v2(body, f"Debt Model — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Debt Model — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Leverage: {entry_leverage:.1f}x entry → {exit_leverage:.1f}x exit")
 
@@ -151,7 +151,7 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
 
     nav = _model_nav(deal_id, "challenge")
     body = f'{nav}{kpis}{table}{interp}'
-    return shell_v2(body, f"Challenge Solver — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Challenge Solver — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="Reverse solver: what breaks the deal?")
 
@@ -215,7 +215,7 @@ def render_irs990_crosscheck(deal_id: str, deal_name: str, data: Dict[str, Any])
 
     nav = _model_nav(deal_id, "irs990")
     body = f'{nav}{kpis}{comp_table}'
-    return shell_v2(body, f"IRS 990 Cross-Check — {html.escape(deal_name)}",
+    return chartis_shell(body, f"IRS 990 Cross-Check — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="Non-profit hospital financial verification")
 
@@ -273,6 +273,6 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
         f'style="text-decoration:none;">Deal Dashboard</a></div>'
     )
 
-    return shell_v2(body, f"Trend Forecast — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Trend Forecast — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{improving} improving, {declining} declining across {len(trends)} metrics")

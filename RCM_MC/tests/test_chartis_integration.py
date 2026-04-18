@@ -410,5 +410,266 @@ class TestChartisIntegration(unittest.TestCase):
                 self.assertIn("/deal/rich/ic-packet", body)
 
 
+class TestReasonablenessGuards(unittest.TestCase):
+    """Phase 4A: the sanity module that wraps every numeric render.
+
+    Every test calls the guard directly rather than hitting a live page
+    — this keeps the unit tests fast and makes the failure modes easy
+    to read. Integration tests in Phase 4B/4C exercise the guard via
+    the actual chartis pages.
+    """
+
+    def test_moic_in_range_renders_cleanly(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number(2.3, "moic")
+        self.assertIn("2.30x", out)
+        self.assertIn("ck-num", out)
+        self.assertNotIn("ck-num-bad", out)
+        self.assertNotIn("⚠", out)
+
+    def test_moic_out_of_range_renders_warning(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number(47.2, "moic")
+        self.assertIn("47.20x", out)
+        self.assertIn("ck-num-bad", out)
+        self.assertIn("⚠", out)
+        self.assertIn("Value outside expected range", out)
+        self.assertIn("0.30x", out)  # range lower bound in tooltip
+        self.assertIn("6.00x", out)  # range upper bound in tooltip
+
+    def test_moic_negative_renders_warning(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number(-0.5, "moic")
+        self.assertIn("ck-num-bad", out)
+        self.assertIn("-0.50x", out)
+
+    def test_none_renders_emdash(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number(None, "moic")
+        self.assertIn("—", out)
+        self.assertIn("ck-num-nil", out)
+        self.assertNotIn("ck-num-bad", out)
+
+    def test_nan_renders_emdash(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number(float("nan"), "moic")
+        self.assertIn("—", out)
+        self.assertIn("ck-num-nil", out)
+
+    def test_unparseable_renders_emdash(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number("banana", "moic")
+        self.assertIn("—", out)
+        self.assertIn("ck-num-nil", out)
+
+    def test_unknown_metric_raises(self):
+        from rcm_mc.ui.chartis._sanity import render_number, UnknownMetric
+        with self.assertRaises(UnknownMetric) as cm:
+            render_number(1.0, "mo1c_typo")
+        self.assertIn("not in REGISTRY", str(cm.exception))
+
+    def test_irr_in_range(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        self.assertIn("22.0%", render_number(0.22, "irr"))
+        self.assertNotIn("ck-num-bad", render_number(0.22, "irr"))
+
+    def test_irr_out_of_range(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number(0.82, "irr")  # 82% IRR — implausible
+        self.assertIn("ck-num-bad", out)
+        self.assertIn("82.0%", out)
+
+    def test_hhi_in_range(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number(1847, "hhi")
+        self.assertIn("1,847", out)
+        self.assertNotIn("ck-num-bad", out)
+
+    def test_hhi_out_of_range(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number(20000, "hhi")  # max is 10,000
+        self.assertIn("ck-num-bad", out)
+        self.assertIn("20,000", out)
+
+    def test_leverage_out_of_range(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        out = render_number(18.5, "leverage_multiple")  # max 12.0x
+        self.assertIn("ck-num-bad", out)
+        self.assertIn("18.50x", out)
+
+    def test_ebitda_margin_implausible(self):
+        from rcm_mc.ui.chartis._sanity import render_number
+        # 250% margin — obviously wrong
+        out = render_number(2.5, "ebitda_margin")
+        self.assertIn("ck-num-bad", out)
+        self.assertIn("250.0%", out)
+
+    def test_aggregate_banner_fires(self):
+        """3 out of 15 rows with bad MOIC → 'of 15' banner at top."""
+        from rcm_mc.ui.chartis._sanity import render_table_with_guards
+        rows = []
+        for i in range(15):
+            moic = 47.0 if i in (2, 7, 11) else 2.3
+            rows.append({"deal": f"Deal {i}", "moic": moic})
+        columns = [
+            ("deal", "Deal", ""),
+            ("moic", "MOIC", "moic"),
+        ]
+        html = render_table_with_guards(rows, columns)
+        self.assertIn("ck-sanity-banner", html)
+        self.assertIn("3 of 15", html)
+        # Body renders all 15 rows; 3 should be flagged
+        self.assertEqual(html.count("ck-num-bad"), 3)
+        self.assertIn("47.00x", html)
+
+    def test_aggregate_banner_silent_when_all_in_range(self):
+        from rcm_mc.ui.chartis._sanity import render_table_with_guards
+        rows = [{"deal": f"D{i}", "moic": 2.3} for i in range(10)]
+        html = render_table_with_guards(
+            rows, [("deal", "Deal", ""), ("moic", "MOIC", "moic")]
+        )
+        self.assertNotIn("ck-sanity-banner", html)
+        self.assertNotIn("ck-num-bad", html)
+
+    def test_warning_for_returns_none_in_range(self):
+        from rcm_mc.ui.chartis._sanity import warning_for
+        self.assertIsNone(warning_for(2.3, "moic"))
+        self.assertIsNone(warning_for(None, "moic"))
+        self.assertIsNone(warning_for(float("nan"), "moic"))
+
+    def test_warning_for_returns_string_out_of_range(self):
+        from rcm_mc.ui.chartis._sanity import warning_for
+        msg = warning_for(47.2, "moic")
+        self.assertIsNotNone(msg)
+        self.assertIn("outside expected range", msg)
+        self.assertIn("moic", msg)
+
+
+class TestJsonApiSanityAnnotation(unittest.TestCase):
+    """Phase 4C: JSON API responses get <metric>_warning siblings
+    attached automatically for out-of-range numeric fields. The raw
+    value is preserved — annotation is additive only."""
+
+    def test_attaches_warning_on_out_of_range(self):
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({"moic": 47.2, "deal_id": "x"})
+        self.assertEqual(out["moic"], 47.2)  # raw value preserved
+        self.assertIn("moic_warning", out)
+        self.assertIn("outside expected range", out["moic_warning"])
+
+    def test_no_warning_on_in_range(self):
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({"moic": 2.3, "deal_id": "x"})
+        self.assertEqual(out["moic"], 2.3)
+        self.assertNotIn("moic_warning", out)
+
+    def test_walks_nested_dicts(self):
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({
+            "summary": {"moic_p50": 47.2, "moic_p25": 2.0},
+            "name": "deal",
+        })
+        self.assertEqual(out["summary"]["moic_p50"], 47.2)
+        self.assertIn("moic_p50_warning", out["summary"])
+        self.assertNotIn("moic_p25_warning", out["summary"])
+
+    def test_walks_lists_of_dicts(self):
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({
+            "deals": [
+                {"deal_id": "a", "median_moic": 2.3},
+                {"deal_id": "b", "median_moic": 47.2},
+            ],
+        })
+        self.assertNotIn("median_moic_warning", out["deals"][0])
+        self.assertIn("median_moic_warning", out["deals"][1])
+
+    def test_ignores_unknown_keys(self):
+        """Arbitrary numeric fields (count, limit, score) don't get
+        annotated unless their key matches a REGISTRY metric."""
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({"count": 999999, "limit": 50, "offset": 0})
+        self.assertNotIn("count_warning", out)
+        self.assertNotIn("limit_warning", out)
+
+    def test_ignores_nil_values(self):
+        """None / NaN should not trigger warnings."""
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({"moic": None})
+        self.assertNotIn("moic_warning", out)
+
+
+class TestExplainerHelper(unittest.TestCase):
+    """Phase 3A: the render_page_explainer helper that every chartis
+    page calls at the top of its body to document what the page
+    shows, what the scale means, and how partners should use it."""
+
+    def test_explainer_with_all_three_parts_renders(self):
+        from rcm_mc.ui.chartis._helpers import render_page_explainer
+        html = render_page_explainer(
+            what="This page shows HHI for the target's local market.",
+            scale="Under 1,500 = fragmented; 2,500+ = concentrated.",
+            use="Use this to assess pricing power.",
+            source="FTC Horizontal Merger Guidelines (2023).",
+            page_key="market-structure",
+        )
+        self.assertIn("About this page", html)
+        self.assertIn("HHI", html)
+        self.assertIn(">Scale<", html)
+        self.assertIn(">How to use<", html)
+        self.assertIn("Source:", html)
+        self.assertIn("FTC Horizontal Merger Guidelines", html)
+        # Toggle + JS wired
+        self.assertIn("ck-explainer-toggle", html)
+        self.assertIn("ckExplainerToggle", html)
+        # Page key wired for localStorage
+        self.assertIn('data-page-key="market-structure"', html)
+
+    def test_explainer_with_only_what_renders(self):
+        from rcm_mc.ui.chartis._helpers import render_page_explainer
+        html = render_page_explainer(
+            what="This page shows a list of deals.",
+            page_key="library",
+        )
+        self.assertIn("This page shows a list of deals.", html)
+        # Scale / Use / Source sections absent
+        self.assertNotIn(">Scale<", html)
+        self.assertNotIn(">How to use<", html)
+        self.assertNotIn("Source:", html)
+        # Toggle still present — every explainer collapses
+        self.assertIn("ck-explainer-toggle", html)
+
+    def test_explainer_omits_source_line_when_source_empty(self):
+        from rcm_mc.ui.chartis._helpers import render_page_explainer
+        html = render_page_explainer(
+            what="No source needed.",
+            scale="Threshold X means Y.",
+            use="Use for Z.",
+            source="",
+            page_key="page",
+        )
+        self.assertIn(">Scale<", html)
+        self.assertIn(">How to use<", html)
+        self.assertNotIn("Source:", html)
+
+    def test_explainer_html_is_safe(self):
+        """XSS vectors in any of the text args must be escaped."""
+        from rcm_mc.ui.chartis._helpers import render_page_explainer
+        xss = "<script>alert('x')</script>"
+        html = render_page_explainer(
+            what=xss,
+            scale=xss,
+            use=xss,
+            source=xss,
+            page_key="p",
+        )
+        # Raw <script> tags from user text must not leak into the DOM
+        # (the helper's own <script> block is fine; that's page
+        # infrastructure). Check that the literal attack string is
+        # escaped.
+        self.assertNotIn("<script>alert('x')</script>", html)
+        self.assertIn("&lt;script&gt;", html)
+
+
 if __name__ == "__main__":
     unittest.main()

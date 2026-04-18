@@ -149,9 +149,32 @@ def render_deals_library(
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_table, ck_section_header,
     )
+    from rcm_mc.ui.chartis._helpers import render_page_explainer
 
     deals = _get_all_seed_deals()
     rows = _build_rows(deals)
+    explainer = render_page_explainer(
+        what=(
+            "Browsable 655-deal healthcare-PE corpus — name, sponsor, "
+            "entry year, sector, EV / EBITDA multiple, realized MOIC "
+            "and IRR, hold period, commercial-payer %, vintage regime, "
+            "and data grade per row."
+        ),
+        scale=(
+            "Data grade A–D reflects row completeness: A = all core "
+            "fields populated (entry + exit + payer mix + returns); "
+            "D = thin, sponsor or returns missing. Sort by any column."
+        ),
+        use=(
+            "Filter by sector + regime to assemble comparables for a "
+            "target; click a deal row to open its detail view."
+        ),
+        source=(
+            "data_public/deal_quality_score.py (grading) + "
+            "data_public/deals_corpus._SEED_DEALS + extended_seed_*.py."
+        ),
+        page_key="library",
+    )
 
     # Build filter options
     all_sectors = sorted({d.get("sector") for d in deals if d.get("sector")})
@@ -196,7 +219,7 @@ def render_deals_library(
     section = ck_section_header("DEAL CORPUS", "all healthcare PE transactions", len(rows))
     table = ck_table(rows, _COLUMNS, caption="", sortable=True, id="deals-tbl")
 
-    body = kpis + filter_bar + section + table
+    body = explainer + kpis + filter_bar + section + table
 
     return chartis_shell(
         body,

@@ -9,7 +9,7 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -30,7 +30,7 @@ def render_fund_learning(db_path: str) -> str:
     accuracy = compute_fund_accuracy(db_path)
 
     if not accuracy:
-        return shell_v2(
+        return chartis_shell(
             '<div class="cad-card">'
             '<h2>Fund Learning</h2>'
             '<p style="color:var(--cad-text2);font-size:13px;margin-bottom:12px;">'
@@ -150,7 +150,7 @@ def render_fund_learning(db_path: str) -> str:
 
     body = f'{kpis}{narrative}{lever_section}{flywheel}{nav}'
 
-    return shell_v2(
+    return chartis_shell(
         body, "Fund Learning",
         active_nav="/pipeline",
         subtitle=(

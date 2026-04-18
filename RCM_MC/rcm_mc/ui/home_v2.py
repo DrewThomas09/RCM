@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -281,7 +281,7 @@ def render_home(
 
     body = f'{pulse_section}{portfolio_summary}{insights_section}{deals_section}{freshness_section}{links_section}'
 
-    return shell_v2(
+    return chartis_shell(
         body, "Home",
         active_nav="/home",
         subtitle="Healthcare PE diligence, instrument-grade",

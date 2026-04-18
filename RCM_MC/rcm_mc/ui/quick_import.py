@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -148,7 +148,7 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
         f'</div></form></div>'
     )
 
-    return shell_v2(
+    return chartis_shell(
         form, "Import Deals",
         subtitle="Create deals directly in your browser",
     )

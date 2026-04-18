@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Dict
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 _SECTORS = [
@@ -402,8 +403,19 @@ def render_qoe_analyzer(params: dict) -> str:
 </div>
 '''
 
+    explainer = render_page_explainer(
+        what=(
+            "Quality-of-Earnings analyzer — walks a target's reported "
+            "EBITDA into adjusted EBITDA via add-back / normalization "
+            "entries, scores each adjustment's credibility, and "
+            "produces a QoE-grade and a cash-EBITDA vs reported-EBITDA "
+            "bridge."
+        ),
+        source="data_public/qoe_analyzer.py (QoE adjustment engine).",
+        page_key="qoe-analyzer",
+    )
     return chartis_shell(
-        body=content,
+        body=explainer + content,
         title=f"Quality of Earnings — {sector}",
         active_nav="/qoe-analyzer",
     )

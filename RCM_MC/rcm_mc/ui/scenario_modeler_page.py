@@ -22,7 +22,7 @@ from urllib.parse import parse_qs
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 from .ebitda_bridge_page import _compute_bridge, _compute_returns_grid, _fm, _safe_float, _load_data_room_overrides
 
@@ -197,7 +197,7 @@ def render_scenario_modeler(
 
     match = hcris_df[hcris_df["ccn"] == ccn]
     if match.empty:
-        return shell_v2(
+        return chartis_shell(
             f'<div class="cad-card"><p>Hospital {_html.escape(ccn)} not found.</p></div>',
             "Scenario Modeler",
         )
@@ -212,7 +212,7 @@ def render_scenario_modeler(
     ebitda = rev - opex
 
     if rev < 1e6:
-        return shell_v2(
+        return chartis_shell(
             f'<div class="cad-card"><p>Insufficient data for {_html.escape(name)}.</p></div>',
             "Scenario Modeler",
         )
@@ -420,7 +420,7 @@ def render_scenario_modeler(
     body = f'{selector}{kpis}{comparison}{bridge_section}{timing_section}{nav}'
 
     best = max(results, key=lambda r: r["irr"])
-    return shell_v2(
+    return chartis_shell(
         body,
         f"Scenario Modeler — {_html.escape(name)}",
         subtitle=(

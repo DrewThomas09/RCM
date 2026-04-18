@@ -25,9 +25,11 @@ from ._helpers import (
     fmt_multiple,
     fmt_pct,
     load_corpus_deals,
+    render_page_explainer,
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 def _fmt_ev_mm(v: Any) -> str:
@@ -47,16 +49,16 @@ def _scorecard_panel(sc: Dict[str, Any]) -> str:
         ("Total EV", _fmt_ev_mm(sc.get("total_ev_mm"))),
         ("Median EV", _fmt_ev_mm(sc.get("median_ev_mm"))),
         ("MOIC P25 / P50 / P75",
-         f"{fmt_multiple(sc.get('moic_p25'))} · "
-         f"{fmt_multiple(sc.get('moic_p50'))} · "
-         f"{fmt_multiple(sc.get('moic_p75'))}"),
-        ("MOIC Mean", fmt_multiple(sc.get("moic_mean"))),
+         f"{render_number(sc.get('moic_p25'), 'moic')} · "
+         f"{render_number(sc.get('moic_p50'), 'moic')} · "
+         f"{render_number(sc.get('moic_p75'), 'moic')}"),
+        ("MOIC Mean", render_number(sc.get("moic_mean"), "moic")),
         ("IRR P25 / P50 / P75",
-         f"{fmt_pct(sc.get('irr_p25'))} · "
-         f"{fmt_pct(sc.get('irr_p50'))} · "
-         f"{fmt_pct(sc.get('irr_p75'))}"),
-        ("Loss Rate", fmt_pct(sc.get("loss_rate"))),
-        ("Home-Run Rate", fmt_pct(sc.get("home_run_rate"))),
+         f"{render_number(sc.get('irr_p25'), 'irr')} · "
+         f"{render_number(sc.get('irr_p50'), 'irr')} · "
+         f"{render_number(sc.get('irr_p75'), 'irr')}"),
+        ("Loss Rate", render_number(sc.get("loss_rate"), "loss_rate")),
+        ("Home-Run Rate", render_number(sc.get("home_run_rate"), "home_run_rate")),
         ("Outliers (z≥2)", str(sc.get("outlier_count", 0))),
         ("Vintage Years", str(sc.get("vintage_years", 0))),
     ]
@@ -104,16 +106,16 @@ def _vintage_table(cohorts: List[Dict[str, Any]]) -> str:
             f'{realized}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{median_col};font-weight:600;" '
-            f'data-val="{median or 0}">{fmt_multiple(median)}</td>'
+            f'data-val="{median or 0}">{render_number(median, "moic")}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{ev or 0}">'
             f'{_fmt_ev_mm(ev)}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["negative"] if (loss or 0) > 0.3 else P["text"]};" '
-            f'data-val="{loss or 0}">{fmt_pct(loss)}</td>'
+            f'data-val="{loss or 0}">{render_number(loss, "loss_rate")}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["positive"] if (hr or 0) > 0.25 else P["text"]};" '
-            f'data-val="{hr or 0}">{fmt_pct(hr)}</td>'
+            f'data-val="{hr or 0}">{render_number(hr, "home_run_rate")}</td>'
             f'</tr>'
         )
     return (
@@ -164,13 +166,13 @@ def _deal_type_table(by_type: Dict[str, Dict[str, Any]]) -> str:
             f'{pct:.1f}%</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{median_col};font-weight:600;" '
-            f'data-val="{median or 0}">{fmt_multiple(median)}</td>'
+            f'data-val="{median or 0}">{render_number(median, "moic")}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["negative"] if (loss or 0) > 0.3 else P["text_dim"]};" '
-            f'data-val="{loss or 0}">{fmt_pct(loss)}</td>'
+            f'data-val="{loss or 0}">{render_number(loss, "loss_rate")}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["positive"] if (hr or 0) > 0.25 else P["text_dim"]};" '
-            f'data-val="{hr or 0}">{fmt_pct(hr)}</td>'
+            f'data-val="{hr or 0}">{render_number(hr, "home_run_rate")}</td>'
             f'</tr>'
         )
     return (
@@ -408,11 +410,11 @@ def render_portfolio_analytics(
                         str(sc.get("realized_deals", 0)),
                         f"{sc.get('realized_deals',0)/max(sc.get('total_deals',1),1)*100:.0f}% of corpus")
         + ck_kpi_block("Median MOIC",
-                        fmt_multiple(sc.get("moic_p50")), "realized deals")
+                        render_number(sc.get("moic_p50"), "moic"), "realized deals")
         + ck_kpi_block("Home-Run Rate",
-                        fmt_pct(sc.get("home_run_rate")), "≥ 3.0x MOIC")
+                        render_number(sc.get("home_run_rate"), "home_run_rate"), "≥ 3.0x MOIC")
         + ck_kpi_block("Loss Rate",
-                        fmt_pct(sc.get("loss_rate")), "< 1.0x MOIC")
+                        render_number(sc.get("loss_rate"), "loss_rate"), "< 1.0x MOIC")
         + ck_kpi_block("Outliers",
                         str(sc.get("outlier_count", 0)), "|z| ≥ 2")
     )
@@ -438,8 +440,37 @@ def render_portfolio_analytics(
         _outlier_panel(corpus), code="OUT",
     )
 
+    explainer = render_page_explainer(
+        what=(
+            "Portfolio-scope analytics over the 655-deal corpus: "
+            "scorecard (deal count, EV, MOIC/IRR quartiles, loss + "
+            "home-run rates), vintage cohort breakdown, deal-type "
+            "mix, subsector / geography / sponsor concentration, and "
+            "realized-MOIC outliers."
+        ),
+        scale=(
+            "Home-run deals are realized MOIC ≥ 3.0x; loss deals are "
+            "< 1.0x. Vintage and deal-type medians are colored green "
+            "≥ 2.50x, amber ≥ 1.50x, red below. Outliers are deals "
+            "with |z| ≥ 2 on the realized-MOIC distribution."
+        ),
+        use=(
+            "Use the vintage cohort to time pacing decisions (which "
+            "years the corpus is over-weight in) and the concentration "
+            "panel to stress-test subsector or sponsor single-point "
+            "risk before committing a new deal."
+        ),
+        source=(
+            "data_public/portfolio_analytics.py::corpus_scorecard, "
+            "vintage_cohort_summary, deals_by_type, outlier_deals "
+            "(z-score threshold 2.0)."
+        ),
+        page_key="portfolio-analytics",
+    )
+
     body = (
-        intro
+        explainer
+        + intro
         + kpi_strip
         + ck_section_header(
             "CORPUS SCORECARD",

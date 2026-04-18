@@ -8,7 +8,7 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 CONFERENCES = [
@@ -393,7 +393,7 @@ def render_conference_roadmap(category: str = "all") -> str:
         f'</div>'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body,
         "Conference Roadmap",
         active_nav="/conferences",

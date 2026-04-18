@@ -31,9 +31,11 @@ from ._helpers import (
     empty_note,
     fmt_pct,
     load_corpus_deals,
+    render_page_explainer,
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _DECISION_COLORS = {
@@ -138,7 +140,7 @@ def _result_row(r: Any) -> str:
         f'<td>{signal}</td>'
         f'<td style="text-align:right;font-family:var(--ck-mono);'
         f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
-        f'data-val="{r.data_completeness or 0}">{fmt_pct(r.data_completeness, digits=0)}</td>'
+        f'data-val="{r.data_completeness or 0}">{render_number(r.data_completeness, "data_completeness_pct")}</td>'
         f'<td style="color:{P["text_dim"]};font-size:11px;line-height:1.4;'
         f'white-space:normal;">{reason}</td>'
         f'</tr>'
@@ -325,8 +327,39 @@ def render_deal_screening(
         f'Sortable by any column.</p>'
     )
 
+    explainer = render_page_explainer(
+        what=(
+            "Runs every corpus deal through a rules-based screen "
+            "combining composite risk score, EV/EBITDA multiple, MOIC "
+            "floor, Medicaid exposure, EBITDA-positivity, hold-period "
+            "window, and a heuristic signal, emitting PASS, WATCH, or "
+            "FAIL. Interactive — thresholds are adjustable via form "
+            "controls and the decision mix re-renders live."
+        ),
+        scale=(
+            "ScreeningConfig defaults: risk score > 60/100 FAILs and "
+            "> 40 WATCHes; EV/EBITDA > 20.0x FAILs and > 14.0x "
+            "WATCHes; MOIC target floor 1.50x; Medicaid share > 65% "
+            "WATCHes. Any hard-threshold breach rejects; soft flags "
+            "accumulate into a WATCH."
+        ),
+        use=(
+            "Tighten the sliders to run your own fund's discipline "
+            "against the corpus — a 14x max and 50% Medicaid cap will "
+            "eliminate the deals you would not have bid on, and the "
+            "remaining PASS cohort is a comparable population for "
+            "outcome analysis."
+        ),
+        source=(
+            "data_public/deal_screening_engine.py::screen_corpus; "
+            "ScreeningConfig dataclass (threshold defaults)."
+        ),
+        page_key="deal-screening",
+    )
+
     body = (
-        intro
+        explainer
+        + intro
         + kpi_strip
         + form_panel
         + ck_section_header(

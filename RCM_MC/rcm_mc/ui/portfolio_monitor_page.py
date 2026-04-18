@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -50,7 +50,7 @@ def render_portfolio_monitor(store: Any) -> str:
         deals = []
 
     if not deals:
-        return shell_v2(
+        return chartis_shell(
             '<div class="cad-card"><p style="color:var(--cad-text3);">'
             'No active deals in portfolio. Import deals to start monitoring.</p></div>',
             "Portfolio Monitor", subtitle="No active deals",
@@ -402,7 +402,7 @@ def render_portfolio_monitor(store: Any) -> str:
 
     body = f'{kpis}{alert_html}{warning_html}{health_bar}{deal_table}{pred_vs_actual}{nav}'
 
-    return shell_v2(
+    return chartis_shell(
         body, "Portfolio Monitor",
         active_nav="/portfolio/monitor",
         subtitle=(

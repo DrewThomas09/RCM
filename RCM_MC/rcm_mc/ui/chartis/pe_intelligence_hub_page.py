@@ -12,6 +12,7 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from .._chartis_kit import P, chartis_shell, ck_kpi_block, ck_section_header
+from ._helpers import render_page_explainer
 
 
 _SEVEN_REFLEXES: List[Dict[str, str]] = [
@@ -249,6 +250,29 @@ def render_pe_intelligence_hub(
     current_user: Optional[str] = None,
 ) -> str:
     """Render the PE Intelligence Brain landing page."""
+    explainer = render_page_explainer(
+        what=(
+            "Entry point into the codified PE-partner judgment layer "
+            "— 278 modules organised around 7 partner reflexes, plus a "
+            "catalog of per-deal routes that exercise the brain on a "
+            "specific packet."
+        ),
+        scale=(
+            "The 7 reflexes: sniff test before math; archetype on "
+            "sight; named-failure pattern match; dot-connect packet "
+            "signals; recurring vs one-time discipline; specific "
+            "regulatory dollar-impact; partner voice."
+        ),
+        use=(
+            "Open a deal and follow the Partner Review link on the "
+            "deal dashboard to run the full brain. Use this hub to "
+            "jump to an inventory (reasonableness matrix, bear book, "
+            "archetype library) when you want context before a specific "
+            "per-deal read."
+        ),
+        source="pe_intelligence/README.md (seven reflex definitions).",
+        page_key="pe-intelligence",
+    )
     kpis = (
         ck_kpi_block("Modules", "278", "partner reflexes codified")
         + ck_kpi_block("Tests", "2,970", "unit tests passing")
@@ -339,7 +363,7 @@ def render_pe_intelligence_hub(
     )
 
     body = (
-        kpi_strip + intro + reflex_header + reflex_grid
+        explainer + kpi_strip + intro + reflex_header + reflex_grid
         + links_header + links_grid
         + catalog_header + catalog + cta
     )

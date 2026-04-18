@@ -123,7 +123,7 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
 
 def render_comparison(packets: List[DealAnalysisPacket]) -> str:
     """Column-per-deal table + radar chart. Used by ``GET /compare``."""
-    from .shell_v2 import shell_v2
+    from ._chartis_kit import chartis_shell
 
     if not packets:
         body = (
@@ -133,7 +133,7 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
             'style="text-decoration:none;">Go to Portfolio to select deals</a>'
             '</div>'
         )
-        return shell_v2(body, "Deal Comparison",
+        return chartis_shell(body, "Deal Comparison",
                         subtitle="Side-by-side deal analysis")
 
     header_cells = "".join(
@@ -213,7 +213,7 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
         f'<div class="cad-card">{table_html}</div>'
         f'{actions}'
     )
-    return shell_v2(
+    return chartis_shell(
         body, "Deal Comparison",
         subtitle=f"Comparing {len(packets)} deals",
     )
@@ -228,7 +228,7 @@ def render_screen_page(
     total_scanned: int = 0,
 ) -> str:
     """GET /screen — metric-based hospital screener."""
-    from .shell_v2 import shell_v2
+    from ._chartis_kit import chartis_shell
     from .brand import PALETTE
 
     filters = filters or {}
@@ -327,4 +327,4 @@ def render_screen_page(
     body = f'{form}{results_block}'
     n = len(results) if results else 0
     sub = f"{n} matches from {total_scanned:,} hospitals" if results else f"Screen {total_scanned:,} HCRIS hospitals by metrics"
-    return shell_v2(body, "Hospital Screener", active_nav="/screen", subtitle=sub)
+    return chartis_shell(body, "Hospital Screener", active_nav="/screen", subtitle=sub)

@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -242,7 +242,7 @@ def render_model_validation(
 
     con.close()
 
-    return shell_v2(
+    return chartis_shell(
         body, "Model Validation",
         active_nav="/model-validation",
         subtitle=(

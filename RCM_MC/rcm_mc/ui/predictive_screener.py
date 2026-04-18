@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlparse
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -405,7 +405,7 @@ def render_predictive_screener(
 
     body = f'{form}{kpis}{table}{save_form}{quick}'
 
-    return shell_v2(
+    return chartis_shell(
         body, "Predictive Deal Screener",
         active_nav="/predictive-screener",
         subtitle=(

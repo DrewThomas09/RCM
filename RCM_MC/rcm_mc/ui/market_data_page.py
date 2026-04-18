@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -396,7 +396,7 @@ def render_market_data(
         f'{data_source}'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body, "Market Data",
         active_nav="/market-data/map",
         subtitle=f"National hospital market intelligence — 50 states + DC" + (
@@ -476,7 +476,7 @@ def render_state_detail(
         f'&larr; National View</a></div>'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body, f"Market: {state_upper}",
         active_nav="/market-data/map",
         subtitle=f"{n} hospitals in {state_upper}",

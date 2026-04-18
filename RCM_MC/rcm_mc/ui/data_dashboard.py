@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -249,7 +249,7 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
         f'{nav}'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body, "Data Intelligence",
         active_nav="/data",
         subtitle=(

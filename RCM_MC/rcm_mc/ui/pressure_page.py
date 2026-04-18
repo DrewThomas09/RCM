@@ -1,4 +1,4 @@
-"""Pressure Test page renderer — shell_v2 version."""
+"""Pressure Test page renderer — chartis_shell version."""
 from __future__ import annotations
 
 import html
@@ -6,7 +6,7 @@ from typing import Any, List, Optional
 
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -92,4 +92,4 @@ def render_pressure_page(
     body = f'{form}{results_html}'
 
     subtitle = f"Pressure test: {selected_deal_id}" if selected_deal_id else "Stress scenarios with risk flags"
-    return shell_v2(body, "Pressure Test", subtitle=subtitle)
+    return chartis_shell(body, "Pressure Test", subtitle=subtitle)

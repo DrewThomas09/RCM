@@ -22,6 +22,8 @@ from .._chartis_kit import (
     ck_section_header,
     ck_signal_badge,
 )
+from ._helpers import render_page_explainer
+from ._sanity import render_number
 
 _STAGES = ("Sourcing", "Screened", "IOI", "LOI", "Diligence", "IC", "Closed")
 
@@ -429,14 +431,12 @@ def _corpus_insights() -> str:
         f'font-size:9px;letter-spacing:0.12em;margin-bottom:4px;">TOP VINTAGES</div>'
     ]
     for y, mean_moic, n in vintage_rows:
-        col = P["positive"] if mean_moic >= 2.5 else (P["warning"] if mean_moic >= 1.5 else P["negative"])
         right.append(
             f'<div style="display:flex;gap:8px;padding:3px 0;font-size:11px;'
             f'border-bottom:1px solid {P["border_dim"]};">'
             f'<span style="font-family:var(--ck-mono);color:{P["text_faint"]};'
             f'width:40px;">{y}</span>'
-            f'<span style="font-family:var(--ck-mono);color:{col};flex:1;'
-            f'font-variant-numeric:tabular-nums;">{mean_moic:.2f}x</span>'
+            f'<span style="flex:1;">{render_number(mean_moic, "moic")}</span>'
             f'<span style="font-family:var(--ck-mono);color:{P["text_faint"]};'
             f'font-size:9px;">n={n}</span>'
             f'</div>'
@@ -480,6 +480,15 @@ def _kpi_strip(store: Any, db_path: str) -> str:
 
 def render_home(store: Any, db_path: str, current_user: Optional[str] = None) -> str:
     """Render the seven-panel home landing page."""
+    explainer = render_page_explainer(
+        what=(
+            "Seven-panel partner landing: pipeline funnel, active alerts, "
+            "portfolio-health distribution, recent deals, upcoming "
+            "deadlines (7 days), top partner-review verdicts across the "
+            "portfolio, and corpus insights."
+        ),
+        page_key="home",
+    )
     kpi = _kpi_strip(store, db_path)
     panels = (
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">'
@@ -497,7 +506,7 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         if current_user else "Partner landing — pipeline, alerts, PE brain verdicts"
     )
     return chartis_shell(
-        kpi + panels,
+        explainer + kpi + panels,
         title="Home",
         active_nav="/home",
         subtitle=subtitle,

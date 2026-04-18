@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -77,7 +77,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     nav = _model_nav(deal_id, "")
     body = f'{nav}{kpis}{sections_html}{warning_html}{actions}'
 
-    return shell_v2(body, f"IC Memo — {html.escape(deal_name)}",
+    return chartis_shell(body, f"IC Memo — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(sections)} sections | {'AI-generated' if llm_used else 'Template-based'}")
 
@@ -140,7 +140,7 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
     nav = _model_nav(deal_id, "")
     body = f'{nav}{kpis}{issues_html}{warnings_html}'
 
-    return shell_v2(body, f"Validation — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Validation — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{'Valid' if is_valid else f'{len(issues)} issues'} | {len(warnings)} warnings | {fields} fields")
 
@@ -196,6 +196,6 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
     nav = _model_nav(deal_id, "")
     body = f'{nav}{kpis}{bar}{actions}'
 
-    return shell_v2(body, f"Completeness — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Completeness — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Grade: {grade} | {pct:.0f}% coverage | {present}/{total} fields")

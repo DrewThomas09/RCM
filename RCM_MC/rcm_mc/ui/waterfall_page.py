@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -119,6 +119,6 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     nav = _model_nav(deal_id, "waterfall")
     body = f'{nav}{kpis}{split}{interp}{tier_section}{actions}'
 
-    return shell_v2(body, f"Returns Waterfall — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Returns Waterfall — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Gross IRR: {gross_irr:.1%} | MOIC: {gross_moic:.2f}x | Hold: {hold_years:.1f}yr")

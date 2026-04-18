@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 def _modules_table(items) -> str:
@@ -133,4 +134,15 @@ def render_module_index(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Module Index", active_nav="/module-index")
+    explainer = render_page_explainer(
+        what=(
+            "Browsable catalog of every analytical module on the "
+            "platform, tagged by diligence category, lifecycle phase "
+            "(sourcing / diligence / portfolio / exit), primary "
+            "persona, route, and whether it depends on the live "
+            "corpus."
+        ),
+        source="data_public/module_index.py (module catalog).",
+        page_key="module-index",
+    )
+    return chartis_shell(explainer + body, "Module Index", active_nav="/module-index")

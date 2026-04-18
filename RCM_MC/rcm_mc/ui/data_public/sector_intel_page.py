@@ -135,6 +135,7 @@ def _moic_color(moic: float) -> str:
 
 def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
     from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui.chartis._helpers import render_page_explainer
     from rcm_mc.data_public.sector_intelligence import compute_sector_stats
 
     corpus = _load_corpus()
@@ -273,7 +274,16 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
   </div>
 </div>"""
 
-    body = kpis + ck_section_header("SECTOR SCATTER", "P50 MOIC vs loss rate — portfolio positioning map") + scatter_panel + filter_bar + ck_section_header("SECTOR BENCHMARKS", f"P25/P50/P75 MOIC · IRR · loss rate · hold — sorted by {sort_by.replace('_',' ')}") + table
+    explainer = render_page_explainer(
+        what=(
+            "Per-sector corpus benchmarks: MOIC P25/P50/P75, median "
+            "IRR, loss rate, deal count, vintage sparklines, and a "
+            "P50-MOIC vs loss-rate scatter with sector labels."
+        ),
+        source="data_public/sector_intelligence.py::compute_sector_stats.",
+        page_key="sector-intel",
+    )
+    body = explainer + kpis + ck_section_header("SECTOR SCATTER", "P50 MOIC vs loss rate — portfolio positioning map") + scatter_panel + filter_bar + ck_section_header("SECTOR BENCHMARKS", f"P25/P50/P75 MOIC · IRR · loss rate · hold — sorted by {sort_by.replace('_',' ')}") + table
 
     return chartis_shell(
         body,

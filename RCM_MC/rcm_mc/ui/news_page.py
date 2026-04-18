@@ -9,7 +9,7 @@ import html
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -446,7 +446,7 @@ def render_news(category: str = "all") -> str:
         f'</div>'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body, "News & Research",
         active_nav="/news",
         subtitle="Healthcare PE market intelligence",

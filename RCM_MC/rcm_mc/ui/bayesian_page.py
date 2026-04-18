@@ -8,7 +8,7 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -163,7 +163,7 @@ def render_bayesian_profile(
 
     body = f'{kpis}{missing_warning}{estimates_section}{method}{actions}'
 
-    return shell_v2(
+    return chartis_shell(
         body,
         f"Bayesian Calibration — {_html.escape(hospital_name)}",
         subtitle=(

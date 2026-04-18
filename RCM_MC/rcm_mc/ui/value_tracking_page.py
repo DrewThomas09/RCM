@@ -10,7 +10,7 @@ import html as _html
 import sqlite3
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -48,7 +48,7 @@ def render_value_tracker(
     con.close()
 
     if not plan_data:
-        return shell_v2(
+        return chartis_shell(
             f'<div class="cad-card">'
             f'<h2>No Value Creation Plan</h2>'
             f'<p style="color:var(--cad-text2);font-size:13px;margin-bottom:12px;">'
@@ -208,7 +208,7 @@ def render_value_tracker(
 
     body = f'{kpis}{ramp_banner}{lever_table}{entry_form}{plan_section}{nav}'
 
-    return shell_v2(
+    return chartis_shell(
         body,
         f"Value Tracker — {name}",
         subtitle=(

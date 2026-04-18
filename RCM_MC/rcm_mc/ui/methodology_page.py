@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -332,12 +332,22 @@ def render_methodology() -> str:
         f'</div></div>'
     )
 
+    from rcm_mc.ui.chartis._helpers import render_page_explainer
+    explainer = render_page_explainer(
+        what=(
+            "Step-by-step explanations of how each number on the "
+            "platform is computed — data sources, scoring model, "
+            "model assumptions, and metric ontology."
+        ),
+        page_key="methodology-calculations",
+    )
+
     body = (
-        f'{toc}{intro}{data_sources}{scoring}{market_pulse}{models}'
+        f'{explainer}{toc}{intro}{data_sources}{scoring}{market_pulse}{models}'
         f'{regression}{margins}{ontology_section}{related_links}'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body, "Methodology",
         subtitle="How every number is calculated — data sources, models & assumptions",
     )

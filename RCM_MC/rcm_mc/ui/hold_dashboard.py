@@ -229,6 +229,7 @@ def _render_scorecard(actuals_list: List[Dict[str, Any]]) -> str:
 def render_hold_dashboard(
     store: Any, deal_id: str, deal_name: str = "",
 ) -> str:
+    from ._chartis_kit import chartis_shell
     plan = _load_plan(store, deal_id)
     actuals = _load_actuals(store, deal_id)
 
@@ -237,14 +238,9 @@ def render_hold_dashboard(
     ebitda_chart = _render_ebitda_chart(actuals)
     quarters_held = len(actuals)
 
-    return (
-        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<title>{_esc(deal_name or deal_id)} — Hold Dashboard</title>'
-        f'<style>{_HOLD_CSS}</style></head>'
-        '<body class="hold-dash"><div class="hold-wrap">'
+    body = (
+        f'<div class="hold-wrap">'
         f'<div class="hold-header">'
-        f'<h1>{_esc(deal_name or deal_id)} — Hold Period</h1>'
         f'<span class="dim">{quarters_held} quarter(s) held</span>'
         f'<a href="/analysis/{_esc(deal_id)}" style="color:#3b82f6;'
         f'text-decoration:none;margin-left:auto;">← Workbench</a>'
@@ -260,5 +256,10 @@ def render_hold_dashboard(
         + (f'<div class="hold-card" style="margin-top:12px;">'
            f'<div class="hold-card-title">EBITDA: Actual vs Plan</div>'
            f'{ebitda_chart}</div>' if ebitda_chart else '') +
-        '</div></body></html>'
+        '</div>'
+    )
+    return chartis_shell(
+        body,
+        f"{deal_name or deal_id} — Hold Period",
+        extra_css=_HOLD_CSS,
     )

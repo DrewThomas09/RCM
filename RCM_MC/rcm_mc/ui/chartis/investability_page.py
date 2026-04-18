@@ -36,10 +36,12 @@ from ._helpers import (
     empty_note,
     fmt_pct,
     insufficient_data_banner,
+    render_page_explainer,
     safe_dict,
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 _GRADE_COLORS = {
@@ -71,12 +73,16 @@ _FINDING_STATUS_COLORS = {
 def _score_arc(score: int, grade: str) -> str:
     """Render a big score tile with grade + color band."""
     col = _GRADE_COLORS.get(grade.upper(), P["text_dim"])
+    # Route through the sanity guard so out-of-0-100-range scores
+    # surface as a warning pill rather than silently showing a
+    # suspicious integer.
+    score_html = render_number(score, "investability_score")
     return (
         f'<div style="display:flex;align-items:baseline;gap:18px;'
         f'padding:14px 18px;background:{P["panel"]};border:1px solid {col};'
         f'border-left-width:4px;border-radius:3px;margin-bottom:14px;">'
         f'<div style="font-family:var(--ck-mono);font-size:42px;font-weight:700;'
-        f'color:{col};line-height:1;">{score}</div>'
+        f'color:{col};line-height:1;">{score_html}</div>'
         f'<div style="display:flex;flex-direction:column;">'
         f'<span style="font-family:var(--ck-mono);font-size:9px;'
         f'letter-spacing:0.15em;color:{P["text_faint"]};">COMPOSITE SCORE · 0-100</span>'
@@ -306,8 +312,39 @@ def render_investability(
     )
     kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'
 
+    explainer = render_page_explainer(
+        what=(
+            "Two composites side by side: investability (should we be "
+            "in this deal at all) and exit readiness (is the deal "
+            "ready to sell)."
+        ),
+        scale=(
+            "Investability composite 0–100 blending three axes: "
+            "opportunity (30%), value (40%), stability (30%); mapped "
+            "to letter grades A (≥85) / B (72–84) / C (58–71) / "
+            "D (42–57) / F (<42). Exit readiness composite 0–100 "
+            "with verdicts: not_ready / needs_work / mostly_ready / "
+            "exit_ready."
+        ),
+        use=(
+            "Use the composite grade as the quick 'invest / pass' "
+            "screen; read the three subscores to see which axis is "
+            "driving the grade. Compare exit readiness against hold "
+            "plan — a high investability + low exit readiness means "
+            "defer the exit conversation."
+        ),
+        source=(
+            "pe_intelligence/investability_scorer.py module docstring "
+            "(axis weights + grade thresholds); "
+            "exit_readiness.py::score_exit_readiness (12-dimension "
+            "composite)."
+        ),
+        page_key="deal-investability",
+    )
+
     body = (
-        header
+        explainer
+        + header
         + kpi_strip
         + small_panel(
             "Investability Composite",

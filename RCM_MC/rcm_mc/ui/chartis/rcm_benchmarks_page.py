@@ -31,8 +31,37 @@ from .._chartis_kit import (
 )
 from ._helpers import (
     empty_note,
+    render_page_explainer,
     small_panel,
 )
+from ._sanity import REGISTRY as _METRIC_REGISTRY, render_number
+
+
+# Map the backend's field-prefix names to the sanity REGISTRY metric
+# names. Most line up; the exceptions (write_off_pct / collection_rate)
+# use a different name in the registry than the module exposes.
+_FIELD_TO_METRIC = {
+    "initial_denial_rate":  "denial_rate",
+    "clean_claim_rate":     "clean_claim_rate",
+    "days_in_ar":           "days_in_ar",
+    "collection_rate":      "net_collection_rate",
+    "write_off_pct":        "final_writeoff_rate",
+    "cost_to_collect":      "cost_to_collect",
+    "denial_overturn_rate": "first_pass_resolution",
+}
+
+
+def _render_band_cell(value: Any, field_prefix: str) -> str:
+    """Dispatch a rcm_benchmarks cell through the sanity guard when we
+    have a registry mapping; otherwise fall back to raw formatting."""
+    metric = _FIELD_TO_METRIC.get(field_prefix)
+    if metric and metric in _METRIC_REGISTRY:
+        return render_number(value, metric)
+    # Fallback — shouldn't be reached given the static _METRICS list
+    try:
+        return f"{float(value):.2f}"
+    except (TypeError, ValueError):
+        return "—"
 
 
 _METRICS: List[Tuple[str, str, str, str, bool]] = [
@@ -100,15 +129,12 @@ def _segment_card(seg_key: str, b: Any) -> str:
                 f'margin-left:4px;">↑ better</span>'
             )
             + f'</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{p25 or 0}">'
-            f'{_fmt_band(p25, is_pct=is_pct)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{p50_col};font-weight:600;" '
-            f'data-val="{p50 or 0}">{_fmt_band(p50, is_pct=is_pct)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{p75 or 0}">'
-            f'{_fmt_band(p75, is_pct=is_pct)}</td>'
+            f'<td style="text-align:right;" data-val="{p25 or 0}">'
+            f'{_render_band_cell(p25, field)}</td>'
+            f'<td style="text-align:right;font-weight:600;" '
+            f'data-val="{p50 or 0}">{_render_band_cell(p50, field)}</td>'
+            f'<td style="text-align:right;" data-val="{p75 or 0}">'
+            f'{_render_band_cell(p75, field)}</td>'
             f'</tr>'
         )
     table = (
@@ -157,9 +183,8 @@ def _cross_segment_table(benchmarks: Dict[str, Any]) -> str:
         for field, _, _, _, is_pct in _METRICS:
             p50 = getattr(b, f"{field}_p50", None)
             cells.append(
-                f'<td style="text-align:right;font-family:var(--ck-mono);'
-                f'font-variant-numeric:tabular-nums;color:{P["text"]};" data-val="{p50 or 0}">'
-                f'{_fmt_band(p50, is_pct=is_pct)}</td>'
+                f'<td style="text-align:right;" data-val="{p50 or 0}">'
+                f'{_render_band_cell(p50, field)}</td>'
             )
         rows.append(
             f'<tr>'
@@ -273,8 +298,41 @@ def render_rcm_benchmarks(
         f'</div>'
     )
 
+    explainer = render_page_explainer(
+        what=(
+            "Industry P25/P50/P75 bands for the seven canonical RCM "
+            "metrics (initial-denial rate, clean-claim rate, days in "
+            "AR, net collection rate, write-off %, cost to collect, "
+            "denial-overturn rate) segmented by facility type "
+            "(community, academic, CAH, LTAC, ASC, behavioral, "
+            "physician group, home health)."
+        ),
+        scale=(
+            "For each metric the P50 is the industry median and the "
+            "P25/P75 are the quartile boundaries. Metrics are labelled "
+            "'↓ better' when lower values are favourable (denial rate, "
+            "days in AR, write-offs, cost to collect) and '↑ better' "
+            "otherwise."
+        ),
+        use=(
+            "Use this as the benchmark file when comparing a target's "
+            "actuals. A target whose days-in-AR sits above P75 for its "
+            "segment is not merely 'high' — it is worse than 75% of "
+            "peers, which sizes the recoverable AR opportunity."
+        ),
+        source=(
+            "data_public/rcm_benchmarks.py::get_all_benchmarks; "
+            "band values sourced from HFMA MAP 2023, Advisory Board "
+            "Hospital Benchmarking Survey 2022, MGMA 2022–2023, ASCA "
+            "2023, Waystar 2020–2024, and segment-specific citations "
+            "in each record's benchmark_notes field."
+        ),
+        page_key="rcm-benchmarks",
+    )
+
     body = (
-        intro
+        explainer
+        + intro
         + kpi_strip
         + jump_strip
         + ck_section_header(

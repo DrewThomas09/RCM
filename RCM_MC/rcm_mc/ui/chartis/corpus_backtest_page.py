@@ -34,9 +34,11 @@ from ._helpers import (
     fmt_multiple,
     fmt_pct,
     load_corpus_deals,
+    render_page_explainer,
     small_panel,
     verdict_badge,
 )
+from ._sanity import render_number
 
 
 def _disambig_banner() -> str:
@@ -78,21 +80,18 @@ def _vintage_row(year: int, moics: List[float]) -> str:
         f'<td style="text-align:right;font-family:var(--ck-mono);'
         f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{n}">'
         f'{n}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{median_col};font-weight:600;" '
-        f'data-val="{median}">{fmt_multiple(median)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" data-val="{mean}">'
-        f'{fmt_multiple(mean)}</td>'
+        f'<td style="text-align:right;font-weight:600;" '
+        f'data-val="{median}">{render_number(median, "moic")}</td>'
+        f'<td style="text-align:right;" data-val="{mean}">'
+        f'{render_number(mean, "moic")}</td>'
+        # stdev is a dispersion, not a MOIC value — leave unguarded.
         f'<td style="text-align:right;font-family:var(--ck-mono);'
         f'font-variant-numeric:tabular-nums;color:{stdev_col};" data-val="{stdev}">'
         f'{fmt_multiple(stdev)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_faint"]};" data-val="{mn}">'
-        f'{fmt_multiple(mn)}</td>'
-        f'<td style="text-align:right;font-family:var(--ck-mono);'
-        f'font-variant-numeric:tabular-nums;color:{P["text_faint"]};" data-val="{mx}">'
-        f'{fmt_multiple(mx)}</td>'
+        f'<td style="text-align:right;" data-val="{mn}">'
+        f'{render_number(mn, "moic")}</td>'
+        f'<td style="text-align:right;" data-val="{mx}">'
+        f'{render_number(mx, "moic")}</td>'
         f'</tr>'
     )
 
@@ -166,12 +165,11 @@ def _corpus_self_analysis(corpus: List[Dict[str, Any]]) -> Tuple[str, Dict[str, 
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
             f'data-val="{len(moics)}">{len(moics)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{col};font-weight:600;" '
-            f'data-val="{median}">{fmt_multiple(median)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};" '
-            f'data-val="{mean}">{fmt_multiple(mean)}</td>'
+            f'<td style="text-align:right;font-weight:600;" '
+            f'data-val="{median}">{render_number(median, "moic")}</td>'
+            f'<td style="text-align:right;" data-val="{mean}">'
+            f'{render_number(mean, "moic")}</td>'
+            # stdev stays unguarded — it's a dispersion, not a MOIC.
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["text_faint"]};" '
             f'data-val="{stdev}">{fmt_multiple(stdev)}</td>'
@@ -240,10 +238,10 @@ def _match_results_panel(results: List[Any]) -> str:
             f'<td style="color:{P["text"]};font-size:11px;">{corpus_name}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};">{corpus_year}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text"]};">{fmt_multiple(real_moic)}</td>'
-            f'<td style="text-align:right;font-family:var(--ck-mono);'
-            f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};">{fmt_multiple(pred_moic)}</td>'
+            f'<td style="text-align:right;">{render_number(real_moic, "moic")}</td>'
+            f'<td style="text-align:right;">{render_number(pred_moic, "moic")}</td>'
+            # err is a MOIC-delta (predicted - realized), not an absolute
+            # MOIC — can legitimately be very large.
             f'<td style="text-align:right;font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{err_col};">{fmt_multiple(err)}</td>'
             f'<td style="text-align:right;font-family:var(--ck-mono);'
@@ -372,7 +370,37 @@ def render_corpus_backtest(
             "GROUND-TRUTH CURVE", "realized MOIC by vintage + subsector",
         ) + self_analysis
 
-    body = _disambig_banner() + kpi_strip + body_blocks
+    explainer = render_page_explainer(
+        what=(
+            "Cross-matches platform deal predictions against the "
+            "655-deal corpus of realized outcomes. When a corpus DB "
+            "with public_deals is populated, shows prediction-vs-"
+            "realized MOIC error per deal; otherwise falls back to a "
+            "ground-truth view of realized MOIC distribution by vintage "
+            "year and subsector."
+        ),
+        scale=(
+            "Per-deal MOIC error is colored green |Δ| ≤ 0.25x, amber "
+            "≤ 0.75x, red otherwise. Vintage/subsector medians are "
+            "colored green ≥ 2.50x, amber ≥ 1.50x, red below. Subsector "
+            "cohorts with fewer than three realized deals are suppressed."
+        ),
+        use=(
+            "Use the match view to calibrate how tightly platform "
+            "forecasts track realized outcomes by cohort, and the "
+            "ground-truth view to size the unconditional prior for a "
+            "given vintage-and-subsector bucket before layering any "
+            "target-specific adjustment."
+        ),
+        source=(
+            "data_public/backtester.py::match_deals and summary_stats "
+            "(fuzzy join + error statistics); data_public/deals_corpus "
+            "(655-deal realized-outcomes seed)."
+        ),
+        page_key="corpus-backtest",
+    )
+
+    body = explainer + _disambig_banner() + kpi_strip + body_blocks
 
     return chartis_shell(
         body,

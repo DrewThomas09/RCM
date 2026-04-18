@@ -1,10 +1,10 @@
-"""Surrogate Model page renderer — shell_v2 version."""
+"""Surrogate Model page renderer — chartis_shell version."""
 from __future__ import annotations
 
 import html
 from typing import Any, Dict
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -60,5 +60,5 @@ def render_surrogate_page(
         f'<a href="/api/surrogate/schema" class="cad-btn" style="text-decoration:none;">'
         f'API: GET /api/surrogate/schema</a></div>'
     )
-    return shell_v2(body, "Surrogate Model",
+    return chartis_shell(body, "Surrogate Model",
                     subtitle="Fast approximate prediction for screening")

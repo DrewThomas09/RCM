@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html as _html
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
 def _levers_table(items) -> str:
@@ -279,4 +280,17 @@ def render_value_backtester(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Value Backtester", active_nav="/backtester")
+    explainer = render_page_explainer(
+        what=(
+            "Value-creation backtester: compares a proposed "
+            "bridge-by-lever plan against corpus P50/P75 base rates, "
+            "applies lever-level realization rates from the corpus "
+            "(multiple arbitrage and exit re-rating historically "
+            "~48% realized; organic growth and operating leverage "
+            "~80%), and returns a risk-adjusted bridge. Distinct from "
+            "/corpus-backtest (deal-level prediction vs realized)."
+        ),
+        source="data_public/value_backtester.py; base_rates.py.",
+        page_key="value-backtester",
+    )
+    return chartis_shell(explainer + body, "Value Backtester", active_nav="/backtester")

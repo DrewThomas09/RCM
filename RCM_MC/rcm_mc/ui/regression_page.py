@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -367,7 +367,7 @@ def render_regression_page(
             f'{"Import deals first." if data_source == "portfolio" else "HCRIS data not loaded."}'
             f'</p></div>'
         )
-        return shell_v2(body, "Regression Analysis", subtitle="No data available")
+        return chartis_shell(body, "Regression Analysis", subtitle="No data available")
 
     if features is None:
         features = all_features
@@ -381,7 +381,7 @@ def render_regression_page(
             f'Insufficient data for regression. Need at least 3 observations with '
             f'non-null values for target and features.</p></div>'
         )
-        return shell_v2(body, "Regression Analysis", subtitle="Insufficient data")
+        return chartis_shell(body, "Regression Analysis", subtitle="Insufficient data")
 
     # ── KPI cards ──
     r2_color = PALETTE["positive"] if result["r2"] > 0.5 else (PALETTE["warning"] if result["r2"] > 0.2 else PALETTE["negative"])
@@ -631,7 +631,7 @@ def render_regression_page(
     )
 
     sig_count = sum(1 for c in result["coefficients"] if c["significance"])
-    return shell_v2(
+    return chartis_shell(
         body, "Regression Analysis",
         active_nav="/portfolio/regression",
         subtitle=(

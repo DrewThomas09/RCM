@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -401,7 +401,7 @@ def render_ebitda_bridge(
     """Render the EBITDA bridge page for a hospital."""
     match = hcris_df[hcris_df["ccn"] == ccn]
     if match.empty:
-        return shell_v2(
+        return chartis_shell(
             f'<div class="cad-card"><p>Hospital {_html.escape(ccn)} not found.</p></div>',
             "EBITDA Bridge",
         )
@@ -415,7 +415,7 @@ def render_ebitda_bridge(
     mc = _safe_float(hospital.get("medicare_day_pct"), 0.4)
 
     if rev < 1e6:
-        return shell_v2(
+        return chartis_shell(
             f'<div class="cad-card"><p>Insufficient revenue data for {_html.escape(name)}.</p></div>',
             "EBITDA Bridge",
         )
@@ -952,7 +952,7 @@ def render_ebitda_bridge(
         f'{method}{nav}{freshness}'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body,
         f"EBITDA Bridge — {_html.escape(name)}",
         subtitle=(

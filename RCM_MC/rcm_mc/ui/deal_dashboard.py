@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional, Tuple
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -379,7 +379,7 @@ def render_deal_dashboard(
 
     body = f'{header}{profile_section}{model_grid}{exports}'
 
-    return shell_v2(
+    return chartis_shell(
         body, name,
         active_nav="/analysis",
         subtitle=f"Deal {deal_id} · 17 analytical models · click any tile",

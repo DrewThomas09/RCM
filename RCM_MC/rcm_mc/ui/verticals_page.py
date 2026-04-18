@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from ..verticals.asc.ontology import ASC_METRIC_REGISTRY  # noqa: F401
 from ..verticals.behavioral_health.ontology import BH_METRIC_REGISTRY  # noqa: F401
 from ..verticals.mso.ontology import MSO_METRIC_REGISTRY  # noqa: F401
@@ -175,7 +175,7 @@ def render_verticals() -> str:
         f'{registry_html}'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body, "Healthcare Verticals",
         subtitle="Acute Care, ASC, Behavioral Health, MSO",
     )

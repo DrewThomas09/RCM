@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -356,7 +356,7 @@ def render_hospital_history(
 
     body = f'{kpis}{timeline_table}{covid_section}{trend_section}{peer_section}{proj_section}{actions}'
 
-    return shell_v2(
+    return chartis_shell(
         body, f"{name_esc} — History",
         active_nav="/market-data/map",
         subtitle=f"CCN {ccn_esc} | {n_years}-year financial timeline | COVID resilience: {covid_score}/100",

@@ -263,3 +263,178 @@ def safe_dict(x: Any) -> Dict[str, Any]:
         except Exception:
             pass
     return {}
+
+
+# ── Page explainer (Phase 3) ─────────────────────────────────────────
+
+# Auto-incrementing id so multiple explainers on one page don't
+# collide on localStorage keys. Each explainer picks up a stable id
+# from the route via the `page_key` param.
+def render_page_explainer(
+    what: str,
+    *,
+    scale: Optional[str] = None,
+    use: Optional[str] = None,
+    source: str = "",
+    page_key: str = "",
+) -> str:
+    """Render the standardized "About this page" block.
+
+    Every chartis page calls this at the top of its body, under the
+    page title. Three sections:
+
+      - WHAT  (required): one sentence describing what the page shows.
+      - SCALE (optional): explicit interpretation of metric thresholds.
+      - USE   (optional): one sentence on the action a partner takes.
+
+    ``source`` renders as a muted "Source: ..." footer. Leave blank
+    only for pages whose WHAT is purely descriptive (no interpretive
+    claims).
+
+    ``page_key`` is the route path (e.g. "deal-partner-review") that
+    gets hashed into the localStorage key so collapse state persists
+    per-page. Collision-safe across routes and between multiple
+    explainers on the same page.
+
+    Collapse toggle: a small "hide" button at the top-right flips a
+    localStorage flag. On next load the block renders collapsed.
+    JavaScript is added once per page (idempotent — loads the first
+    explainer's script block; subsequent ones are no-ops).
+    """
+    key = _html.escape(page_key or "default")
+    what_html = _html.escape(what)
+    scale_html = (
+        f'<div class="ck-explainer-subheading">Scale</div>'
+        f'<p class="ck-explainer-body">{_html.escape(scale)}</p>'
+        if scale else ""
+    )
+    use_html = (
+        f'<div class="ck-explainer-subheading">How to use</div>'
+        f'<p class="ck-explainer-body">{_html.escape(use)}</p>'
+        if use else ""
+    )
+    source_html = (
+        f'<div class="ck-explainer-source">Source: {_html.escape(source)}</div>'
+        if source else ""
+    )
+
+    return (
+        f'<div class="ck-explainer" data-page-key="{key}">'
+        f'<div class="ck-explainer-header">'
+        f'<span class="ck-explainer-title">About this page</span>'
+        f'<button class="ck-explainer-toggle" type="button" '
+        f'aria-label="Toggle explainer" '
+        f'onclick="ckExplainerToggle(this)">hide</button>'
+        f'</div>'
+        f'<div class="ck-explainer-content">'
+        f'<p class="ck-explainer-body ck-explainer-what">{what_html}</p>'
+        f'{scale_html}'
+        f'{use_html}'
+        f'{source_html}'
+        f'</div>'
+        f'</div>'
+        f'{_EXPLAINER_CSS_AND_JS}'
+    )
+
+
+# Single-shot CSS + JS appended on every explainer. The <style> block
+# is load-safe to repeat (duplicate rules are identical); the
+# <script> block is idempotent because the function name check
+# guards against redeclaration.
+_EXPLAINER_CSS_AND_JS = """
+<style>
+.ck-explainer {
+  background: var(--ck-panel);
+  border: 1px solid var(--ck-border);
+  border-left: 3px solid var(--ck-accent);
+  border-radius: 3px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.ck-explainer.collapsed .ck-explainer-content { display: none; }
+.ck-explainer-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.ck-explainer-title {
+  font-family: var(--ck-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ck-text-faint);
+}
+.ck-explainer-toggle {
+  background: transparent;
+  border: 1px solid var(--ck-border);
+  color: var(--ck-text-faint);
+  font-family: var(--ck-mono);
+  font-size: 9px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.ck-explainer-toggle:hover {
+  border-color: var(--ck-accent);
+  color: var(--ck-text);
+}
+.ck-explainer-body {
+  color: var(--ck-text);
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0 0 8px 0;
+}
+.ck-explainer-body:last-child { margin-bottom: 0; }
+.ck-explainer-subheading {
+  font-family: var(--ck-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ck-text-faint);
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+.ck-explainer-source {
+  font-family: var(--ck-mono);
+  font-size: 10px;
+  color: var(--ck-text-faint);
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ck-border-dim);
+}
+</style>
+<script>
+if (typeof window.ckExplainerToggle === 'undefined') {
+  window.ckExplainerToggle = function(btn) {
+    var panel = btn.closest('.ck-explainer');
+    if (!panel) return;
+    var key = 'ck-explainer-collapsed:' + (panel.getAttribute('data-page-key') || 'default');
+    if (panel.classList.contains('collapsed')) {
+      panel.classList.remove('collapsed');
+      btn.textContent = 'hide';
+      try { localStorage.removeItem(key); } catch(e) {}
+    } else {
+      panel.classList.add('collapsed');
+      btn.textContent = 'show';
+      try { localStorage.setItem(key, '1'); } catch(e) {}
+    }
+  };
+  // Restore collapsed state on load
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.ck-explainer').forEach(function(panel) {
+      var key = 'ck-explainer-collapsed:' + (panel.getAttribute('data-page-key') || 'default');
+      try {
+        if (localStorage.getItem(key) === '1') {
+          panel.classList.add('collapsed');
+          var btn = panel.querySelector('.ck-explainer-toggle');
+          if (btn) btn.textContent = 'show';
+        }
+      } catch(e) {}
+    });
+  });
+}
+</script>
+"""

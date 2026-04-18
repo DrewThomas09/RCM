@@ -9,7 +9,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -159,7 +159,7 @@ def render_deal_quick_view(
 
     body = f'{error_html}{profile_section}{completeness}{models_section}{export_section}'
 
-    return shell_v2(
+    return chartis_shell(
         body, name,
         active_nav="/analysis",
         subtitle=f"Deal: {did} — {populated} of {total_fields} profile fields populated",
