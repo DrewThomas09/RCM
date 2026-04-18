@@ -3736,7 +3736,34 @@ Partner note:
 
 ---
 
-## 154. Change log
+## 154. Exit timing signal tracker (`exit_timing_signal_tracker.py`)
+
+**Partner statement:** "Exit readiness is not a year-5 question.
+Sell into strength, not because the clock says hold year 5."
+
+Seven signals tracked each quarter:
+
+1. **EBITDA 6mo trend** — green/yellow/red (up/stable/down).
+2. **Thesis lever completion** — ≥ 70% green; 40-70% yellow.
+3. **Credit markets** — easing/stable/tightening.
+4. **Peer multiples vs entry** — ≥ +5% green; -5% to +5% yellow.
+5. **Management stability** — stable + CEO committed = green.
+6. **QofE clean quarters** — ≥ 8 green; 4-7 yellow; < 4 red.
+7. **NAV posture** — above cost + no recent write-downs = green.
+
+Recommended action:
+
+- **start_banker_rfp** — ≥ 5 greens AND 0 reds.
+- **dry_run_sale** — ≥ 3 greens AND 0 reds.
+- **wait** — any reds, or < 3 greens.
+
+Partner note names blockers explicitly. "Sell into strength, not
+clock discipline" — the module forces the timing question away
+from calendar-driven exit prep.
+
+---
+
+## 155. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4088,3 +4115,7 @@ Partner note:
   (§153) — 3-year VCP with 8 conditional initiatives, owners,
   dependencies, and execution risks. Full inventory: 151
   modules, 1,535 pe_intelligence unit tests.
+- **2026-04-17** — Added `exit_timing_signal_tracker.py` (§154)
+  — 7-signal exit readiness tracker (start_rfp / dry_run /
+  wait). Full inventory: 152 modules, 1,545 pe_intelligence
+  unit tests.
