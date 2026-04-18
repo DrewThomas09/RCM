@@ -112,6 +112,7 @@ _CORPUS_NAV = [
     {"label": "ESG Dashboard",   "href": "/esg-dashboard",   "icon": "▣"},
     {"label": "Exit Readiness",  "href": "/exit-readiness",  "icon": "▦"},
     {"label": "Tax Structure",   "href": "/tax-structure",   "icon": "▣"},
+    {"label": "Fund Attribution","href": "/fund-attribution","icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
