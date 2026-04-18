@@ -9,7 +9,7 @@ import html as _html
 import sqlite3
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -126,7 +126,7 @@ def render_team_dashboard(db_path: str) -> str:
         f'{nav}'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body, "Team",
         active_nav="/pipeline",
         subtitle=f"{len(actors)} members | {len(activity)} actions | {n_hospitals} pipeline deals",
