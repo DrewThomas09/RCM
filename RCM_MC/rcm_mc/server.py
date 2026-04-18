@@ -2012,6 +2012,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.covenant_monitor_page import render_covenant_monitor
             return self._send_html(render_covenant_monitor(_qp))
+        if path == "/provider-network":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.provider_network_page import render_provider_network
+            return self._send_html(render_provider_network(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())

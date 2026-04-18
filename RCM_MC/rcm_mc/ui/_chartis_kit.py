@@ -94,6 +94,7 @@ _CORPUS_NAV = [
     {"label": "Portfolio Sim","href": "/portfolio-sim",     "icon": "▣"},
     {"label": "QoE Analyzer", "href": "/qoe-analyzer",     "icon": "▦"},
     {"label": "Covenant Mon.", "href": "/covenant-monitor", "icon": "▣"},
+    {"label": "Provider Net.", "href": "/provider-network", "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
