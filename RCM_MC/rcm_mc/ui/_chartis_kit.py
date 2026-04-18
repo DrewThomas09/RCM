@@ -121,6 +121,7 @@ _CORPUS_NAV = [
     {"label": "TSA Tracker",    "href": "/transition-services","icon": "▦"},
     {"label": "Revenue Leakage","href": "/revenue-leakage",   "icon": "▣"},
     {"label": "Reference Pricing","href": "/ref-pricing",     "icon": "▦"},
+    {"label": "Geo Market",      "href": "/geo-market",       "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
