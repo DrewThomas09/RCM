@@ -4282,7 +4282,40 @@ Partner note:
 
 ---
 
-## 171. Change log
+## 171. Management rollover equity (`management_rollover_equity_designer.py`)
+
+**Partner statement:** "Rollover equity is the clearest signal
+of seller conviction. 2% rollover means they're taking the money
+and running; 25% means they believe the thesis."
+
+Target ranges (partner-approximated):
+
+- **Young founder (< 55), growth thesis:** 20-30%.
+- **Young founder, mature business:** 15-25%.
+- **Founder 55-65:** 10-20%.
+- **Founder ≥ 65 or retiring:** 5-10% (respect the exit).
+- **Sponsor-backed CEO joining newco:** 15-25%.
+- **Turnaround:** 5-15%.
+- **Distressed:** 3-8% (focus alignment on cash retention + MIP).
+
+Alignment grades:
+
+- Proposed ≥ upper target → **strong** ("clear conviction
+  signal").
+- Proposed in range → **adequate** ("partner comfort").
+- Proposed < lower target → **thin** ("skin-in-game reduced;
+  negotiate up or lean on MIP").
+- Distressed deal with thin rollover → "expected; focus
+  elsewhere."
+
+**Worked example:** a 45-year-old founder CEO getting $50M of
+proceeds proposing 15% rollover is thin (target 20-30%) — partner
+negotiates up or structures a larger MIP pool to fill the
+alignment gap.
+
+---
+
+## 172. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4702,3 +4735,7 @@ Partner note:
   (§170) — counter-peg with methodology by profile + 2%
   closing buffer. Full inventory: 168 modules, 1,708
   pe_intelligence unit tests.
+- **2026-04-17** — Added `management_rollover_equity_designer.py`
+  (§171) — target rollover % by CEO profile; alignment
+  grade; strong/adequate/thin. Full inventory: 169 modules,
+  1,717 pe_intelligence unit tests.
