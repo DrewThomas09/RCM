@@ -9234,7 +9234,72 @@ Same deal but QofE not clean and leverage 6.5× → 2 vote-blocking
 
 ---
 
-## 245. Change log
+## 245. 90-day post-close reality check (`post_close_90_day_reality_check.py`)
+
+**Partner statement.** "First board meeting post-close is 90 days
+in. By then I want to know: did the underwriting hold up? Are the
+leading indicators moving the way the model assumed? Three things
+have to be true at 90 days: financial trajectory on or ahead of
+underwrite, operator has named what's stuck and what's moving,
+flagged risks haven't materialized in unexpected ways."
+
+### Why it matters
+
+The 90-day mark is the partner's first real reality test on the
+underwrite. `quarterly_operating_review` has the QoR agenda;
+`hundred_day_plan` has the plan; `value_creation_tracker` runs
+long-term. This module is specifically the **first-quarter
+reality test** with per-item delta-vs-underwrite.
+
+### 6 reality-check categories
+
+| Category | On-track | At-risk | Off-track |
+|---|---|---|---|
+| revenue_trajectory | actual ≥ underwrite − 50bps | within 200bps | > 200bps below |
+| ebitda_margin | within 50bps | within 150bps | > 150bps below |
+| denial_rate_movement | within 5bps of plan | within 15bps | > 15bps behind |
+| physician_retention | 5/5 top-5 | 4/5 | ≤ 3/5 |
+| management_team_intact | full c-suite | 1 missing | ≥ 2 missing |
+| day1_actions_delivered | ≥ 85% | 65-85% | < 65% |
+
+### Aggregate verdict
+
+- **healthy_first_quarter** — ≥ 5 on-track. "Operator earned trust;
+  Q2 cadence standard."
+- **diary_warranted** — 1 off-track OR ≥ 2 at-risk. "Document for
+  next board; no intervention yet."
+- **acceleration_warranted** — 2 off-track. "Operator intervention
+  before Q2 board."
+- **thesis_at_risk** — 3+ off-track. "Escalate to IC; redo bear
+  case with Q1 actuals."
+
+### Per-category partner reads
+
+Each category emits a partner-voice sentence calibrated to the
+status — e.g., physician off-track triggers "this is the named
+risk materializing — re-run physician_retention_stress and escalate
+immediately."
+
+### Worked example
+
+Default (modest slip in revenue 7% vs 8%, EBITDA margin 17% vs
+18%, all else clean) → 4 on-track + 2 at-risk → **diary_warranted**.
+
+Same deal but 2 top-5 physicians left and 2 c-suite seats open →
+2 off-track + revenue/ebitda at-risk → **acceleration_warranted**.
+
+### Distinct from existing modules
+
+- `quarterly_operating_review` — 4-block QoR agenda (forward).
+- `hundred_day_plan` — the 100-day plan itself.
+- `value_creation_tracker` — long-term VCP execution.
+- `post_close_surprises_log` — running surprise diary.
+- This module — first-board reality test with per-item
+  delta-vs-underwrite + aggregate verdict.
+
+---
+
+## 246. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
