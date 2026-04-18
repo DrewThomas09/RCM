@@ -4166,7 +4166,39 @@ Partner note:
 
 ---
 
-## 167. Change log
+## 167. Operating partner fit matrix (`operating_partner_fit_matrix.py`)
+
+**Partner statement:** "Who do I put on the board of this one?
+Not every ops partner fits every CEO or every archetype."
+
+Six ops-partner archetypes scored by deal profile:
+
+- **turnaround** — declining EBITDA / open ops issues / weak
+  mgmt score. Drives cost-out and operational rigor.
+- **scaler** — founder-led businesses scaling $50M → $200M;
+  systems, processes, team building.
+- **healthcare_specialist** — clinical / regulatory / RCM depth;
+  essential for payer-mix and coding work.
+- **mna_integrator** — integration PMO; essential when M&A
+  pipeline is active.
+- **exit_specialist** — hold year 3+; polishes systems, builds
+  banker story.
+- **founder_coach** — low-ego senior coach for first-time-with-
+  PE founder CEOs.
+
+Scoring uses deal archetype, CEO type, hold quarter, EBITDA
+trend, management score, clinical complexity, and M&A pipeline.
+
+Partner note:
+
+- Top pick with strong score → use as primary.
+- Close call (≤ 10 gap) → primary + advisory from runner-up.
+- Top score < 50 → "bench not purpose-built for this deal;
+  consider external recruitment."
+
+---
+
+## 168. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4570,3 +4602,7 @@ Partner note:
   = min(coverage, FCF, cycle-discipline) with named binding
   constraint. Full inventory: 164 modules, 1,667
   pe_intelligence unit tests.
+- **2026-04-17** — Added `operating_partner_fit_matrix.py`
+  (§167) — 6-archetype ops partner fit (turnaround / scaler /
+  healthcare / M&A / exit / founder coach). Full inventory: 165
+  modules, 1,677 pe_intelligence unit tests.
