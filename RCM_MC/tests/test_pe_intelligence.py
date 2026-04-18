@@ -15834,5 +15834,154 @@ class TestIRRDecayCurve(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Competing deals ranker ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    CompetingDealSnapshot,
+    DealRanking,
+    RankingReport,
+    rank_deals,
+    render_ranking_markdown,
+)
+
+
+class TestCompetingDealsRanker(unittest.TestCase):
+
+    def test_clear_winner(self) -> None:
+        r = rank_deals([
+            CompetingDealSnapshot(
+                name="Strong",
+                base_moic=3.0, base_irr=0.28, bear_moic=1.8,
+                thesis_coherence_0_100=90,
+                pricing_power_0_100=80, management_score_0_100=85,
+                fund_pme_boost=True, execution_burden_0_100=40,
+                time_sensitivity_weeks=4,
+            ),
+            CompetingDealSnapshot(
+                name="Weak",
+                base_moic=2.0, base_irr=0.14, bear_moic=0.9,
+                thesis_coherence_0_100=55,
+                pricing_power_0_100=40, management_score_0_100=50,
+                execution_burden_0_100=70,
+                time_sensitivity_weeks=20,
+                scorecard_fails=1,
+            ),
+        ])
+        self.assertEqual(r.rankings[0].name, "Strong")
+        self.assertEqual(r.if_one_pick, "Strong")
+        self.assertIn("clear winner", r.partner_note.lower())
+
+    def test_near_tie_uses_execution_tiebreaker(self) -> None:
+        r = rank_deals([
+            CompetingDealSnapshot(
+                name="A",
+                base_moic=2.5, base_irr=0.22, bear_moic=1.5,
+                thesis_coherence_0_100=75,
+                pricing_power_0_100=65, management_score_0_100=70,
+                execution_burden_0_100=50,
+                time_sensitivity_weeks=8,
+            ),
+            CompetingDealSnapshot(
+                name="B",
+                base_moic=2.5, base_irr=0.22, bear_moic=1.5,
+                thesis_coherence_0_100=75,
+                pricing_power_0_100=65, management_score_0_100=70,
+                execution_burden_0_100=50,
+                time_sensitivity_weeks=8,
+            ),
+        ])
+        # Perfect tie — either wins, but partner note references
+        # tiebreaker language.
+        self.assertIn("tie", r.partner_note.lower())
+
+    def test_edge_winner(self) -> None:
+        r = rank_deals([
+            CompetingDealSnapshot(
+                name="A",
+                base_moic=2.7, base_irr=0.24, bear_moic=1.6,
+                thesis_coherence_0_100=80,
+                pricing_power_0_100=70, management_score_0_100=75,
+            ),
+            CompetingDealSnapshot(
+                name="B",
+                base_moic=2.5, base_irr=0.21, bear_moic=1.4,
+                thesis_coherence_0_100=72,
+                pricing_power_0_100=62, management_score_0_100=70,
+            ),
+        ])
+        self.assertEqual(r.rankings[0].name, "A")
+
+    def test_scorecard_fails_drag_fit(self) -> None:
+        r = rank_deals([
+            CompetingDealSnapshot(
+                name="Clean", scorecard_fails=0,
+            ),
+            CompetingDealSnapshot(
+                name="Broken", scorecard_fails=2,
+            ),
+        ])
+        clean = next(x for x in r.rankings if x.name == "Clean")
+        broken = next(x for x in r.rankings if x.name == "Broken")
+        self.assertGreater(clean.fit_component, broken.fit_component)
+
+    def test_pme_boost_raises_fit(self) -> None:
+        r = rank_deals([
+            CompetingDealSnapshot(name="BoostsPME",
+                                    fund_pme_boost=True),
+            CompetingDealSnapshot(name="Neutral",
+                                    fund_pme_boost=False),
+        ])
+        boost = next(x for x in r.rankings if x.name == "BoostsPME")
+        neutral = next(x for x in r.rankings if x.name == "Neutral")
+        self.assertGreater(boost.fit_component, neutral.fit_component)
+
+    def test_time_sensitive_higher_timing(self) -> None:
+        r = rank_deals([
+            CompetingDealSnapshot(name="Urgent",
+                                    time_sensitivity_weeks=3),
+            CompetingDealSnapshot(name="Patient",
+                                    time_sensitivity_weeks=20),
+        ])
+        urg = next(x for x in r.rankings if x.name == "Urgent")
+        pat = next(x for x in r.rankings if x.name == "Patient")
+        self.assertGreater(urg.timing_component, pat.timing_component)
+
+    def test_single_deal_no_ranking(self) -> None:
+        r = rank_deals([
+            CompetingDealSnapshot(name="OnlyOne"),
+        ])
+        self.assertEqual(r.rankings[0].name, "OnlyOne")
+        self.assertEqual(r.if_one_pick, "OnlyOne")
+
+    def test_empty_no_deals(self) -> None:
+        r = rank_deals([])
+        self.assertIn("no deals", r.partner_note.lower())
+
+    def test_ranking_sort_order(self) -> None:
+        r = rank_deals([
+            CompetingDealSnapshot(name="Mid", base_irr=0.20),
+            CompetingDealSnapshot(name="Low", base_irr=0.10),
+            CompetingDealSnapshot(name="High", base_irr=0.30),
+        ])
+        scores = [x.composite_score_0_100 for x in r.rankings]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_markdown_renders(self) -> None:
+        md = render_ranking_markdown(rank_deals([
+            CompetingDealSnapshot(name="A"),
+            CompetingDealSnapshot(name="B"),
+        ]))
+        self.assertIn("# Competing deals ranking", md)
+        self.assertIn("If I can only do one", md)
+
+    def test_json(self) -> None:
+        import json
+        r = rank_deals([
+            CompetingDealSnapshot(name="A"),
+            CompetingDealSnapshot(name="B"),
+        ])
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

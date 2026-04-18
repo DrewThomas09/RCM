@@ -903,6 +903,13 @@ from .irr_decay_curve import (
     render_decay_markdown,
     trace_irr_decay,
 )
+from .competing_deals_ranker import (
+    DealRanking,
+    DealSnapshot as CompetingDealSnapshot,
+    RankingReport,
+    rank_deals,
+    render_ranking_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2017,4 +2024,9 @@ __all__ = [
     "IRRYearPoint",
     "render_decay_markdown",
     "trace_irr_decay",
+    "DealRanking",
+    "CompetingDealSnapshot",
+    "RankingReport",
+    "rank_deals",
+    "render_ranking_markdown",
 ]
