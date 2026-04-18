@@ -24882,5 +24882,147 @@ class TestEBITDAQualityBridgeReconstructor(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestExitAlternativeComparator(unittest.TestCase):
+    """Partner scenario: sell / hold / recap / CV — which wins?"""
+
+    def _std_inputs(self, **over):
+        from rcm_mc.pe_intelligence import (
+            ExitAlternativesInputs,
+        )
+        d = dict(
+            entry_equity_m=400.0,
+            entry_ebitda_m=75.0,
+            entry_multiple=11.0,
+            current_ebitda_m=100.0,
+            current_multiple=11.5,
+            current_debt_m=420.0,
+            years_into_hold=3.0,
+            planned_exit_year=5.0,
+            planned_exit_ebitda_m=130.0,
+            planned_exit_multiple=11.0,
+            planned_exit_debt_m=420.0,
+        )
+        d.update(over)
+        return ExitAlternativesInputs(**d)
+
+    def test_five_alternatives_produced(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+        )
+        r = compare_exit_alternatives(self._std_inputs())
+        names = {a.name for a in r.alternatives}
+        self.assertEqual(len(names), 5)
+        self.assertIn("sell_strategic_now", names)
+        self.assertIn("continuation_vehicle", names)
+        self.assertIn("hold_and_build", names)
+
+    def test_strategic_premium_beats_secondary(self) -> None:
+        """Partner: 'strategic premium > PE-to-PE secondary by ~15%.'"""
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+        )
+        r = compare_exit_alternatives(self._std_inputs())
+        strat = next(a for a in r.alternatives
+                      if a.name == "sell_strategic_now")
+        secondary = next(a for a in r.alternatives
+                          if a.name == "sell_sponsor_secondary")
+        self.assertGreater(strat.moic, secondary.moic)
+
+    def test_hold_moic_higher_than_sell_when_thesis_lives(
+        self,
+    ) -> None:
+        """Partner: 'if planned exit EBITDA grows, hold wins on MOIC.'"""
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+        )
+        r = compare_exit_alternatives(self._std_inputs(
+            current_ebitda_m=100.0,
+            current_multiple=11.0,
+            planned_exit_ebitda_m=150.0,  # strong growth ahead
+            planned_exit_multiple=11.0,
+        ))
+        hold = next(a for a in r.alternatives
+                     if a.name == "hold_and_build")
+        strat = next(a for a in r.alternatives
+                      if a.name == "sell_strategic_now")
+        self.assertGreater(hold.moic, strat.moic)
+
+    def test_strategic_fast_exit(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+        )
+        r = compare_exit_alternatives(self._std_inputs())
+        strat = next(a for a in r.alternatives
+                      if a.name == "sell_strategic_now")
+        self.assertLess(strat.time_to_exit_yrs, 0.5)
+
+    def test_dividend_recap_produces_proceeds(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+        )
+        r = compare_exit_alternatives(self._std_inputs())
+        recap = next(a for a in r.alternatives
+                      if a.name == "dividend_recap_and_hold")
+        self.assertGreater(recap.equity_proceeds_m, 0)
+
+    def test_winning_alternative_named(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+        )
+        r = compare_exit_alternatives(self._std_inputs())
+        names = {a.name for a in r.alternatives}
+        self.assertIn(r.winning_alternative_name, names)
+
+    def test_entry_equity_based_moic(self) -> None:
+        """Partner: 'MOIC = proceeds / entry equity.'"""
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+        )
+        r = compare_exit_alternatives(self._std_inputs(
+            entry_equity_m=400.0,
+        ))
+        for a in r.alternatives:
+            # MOIC = proceeds / 400.
+            self.assertAlmostEqual(
+                a.moic,
+                a.equity_proceeds_m / 400.0,
+                places=2,
+            )
+
+    def test_cv_between_strategic_and_secondary(self) -> None:
+        """Partner: 'CV mark typically < strategic, ~= secondary + FO premium.'"""
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+        )
+        r = compare_exit_alternatives(self._std_inputs())
+        strat = next(a for a in r.alternatives
+                      if a.name == "sell_strategic_now")
+        cv = next(a for a in r.alternatives
+                   if a.name == "continuation_vehicle")
+        secondary = next(a for a in r.alternatives
+                          if a.name == "sell_sponsor_secondary")
+        self.assertLess(cv.moic, strat.moic)
+        self.assertGreater(cv.moic, secondary.moic)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+            render_exit_alternatives_markdown,
+        )
+        md = render_exit_alternatives_markdown(
+            compare_exit_alternatives(self._std_inputs())
+        )
+        self.assertIn("# Exit alternative comparison", md)
+        self.assertIn("sell_strategic_now", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            compare_exit_alternatives,
+        )
+        r = compare_exit_alternatives(self._std_inputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

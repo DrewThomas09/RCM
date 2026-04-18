@@ -1359,6 +1359,13 @@ from .ebitda_quality_bridge_reconstructor import (
     build_ebitda_quality_bridge,
     render_ebitda_bridge_markdown,
 )
+from .exit_alternative_comparator import (
+    Alternative as ExitAlternative,
+    ExitAlternativesInputs,
+    ExitAlternativesReport,
+    compare_exit_alternatives,
+    render_exit_alternatives_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2807,4 +2814,9 @@ __all__ = [
     "BridgeReport",
     "build_ebitda_quality_bridge",
     "render_ebitda_bridge_markdown",
+    "ExitAlternative",
+    "ExitAlternativesInputs",
+    "ExitAlternativesReport",
+    "compare_exit_alternatives",
+    "render_exit_alternatives_markdown",
 ]
