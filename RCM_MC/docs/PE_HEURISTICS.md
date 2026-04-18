@@ -4659,7 +4659,76 @@ signal, or the verdict should be `diligence_more`.
 
 ---
 
-## 178. Change log
+## 178. Hold-period shock schedule (`hold_period_shock_schedule.py`)
+
+**Partner statement:** "I don't need the worst-case total.
+I need the worst *year*. The covenant trips on one year's
+EBITDA, not on the five-year NPV."
+
+Existing regulatory stress modules
+(`obbba_sequestration_stress`, `regulatory_stress`,
+`healthcare_regulatory_calendar`) compute point-in-time
+impact. What partners actually need during diligence is the
+**year-by-year trajectory** of EBITDA under realistic
+regulatory assumptions.
+
+### How it reasons
+
+1. **Probability-weighted shock severity** — each shock
+   impact is weighted by landing probability (OBBBA 70%,
+   sequestration 85%, site-neutral 50%, state Medicaid
+   55%).
+2. **Year-indexed landing schedule** — shocks land in
+   specific hold years (default: OBBBA Y0, sequestration
+   Y1, site-neutral Y2, state Medicaid Y3).
+3. **Permanence flag** — permanent cuts (OBBBA,
+   sequestration) stack; temporary shocks (not modeled in
+   default schedule) would dissipate.
+4. **Per-year EBITDA floor** = base − cumulative permanent
+   impact.
+5. **Per-year leverage** = initial debt / per-year EBITDA.
+6. **Covenant trip detection** — first year where
+   leverage exceeds max allowed.
+
+### Partner-note escalation
+
+- **Covenant trip detected** → "widen cov package or
+  re-price equity."
+- **Worst-year leverage ≥ 90% of ceiling** → "stress
+  schedule with higher probabilities."
+- **Cumulative erosion > 15% of base** → "bake into base
+  case, not bear."
+- Otherwise → "standard stress; proceed."
+
+### Worked example
+
+Hospital: $500M NPR, $75M EBITDA, 35% Medicare FFS, 15%
+Medicare Advantage, 10% HOPD, 5.5x leverage, 7.0x cov max.
+
+Year-by-year under default schedule:
+- 2026: OBBBA 3% cut → ~$1.8M EBITDA hit (prob-weighted).
+- 2027: +sequestration 2% → +$0.9M; cumulative $2.7M.
+- 2028: +site-neutral HOPD → +$0.6M; cumulative $3.3M.
+- 2029: +state Medicaid → +$0.9M; cumulative $4.2M.
+- 2030: no new shock; cumulative stays $4.2M.
+
+Worst-year leverage = $412.5M debt / ($75M − $4.2M) ≈
+5.83x, well under 7.0x → partner-note: "shocks contained;
+proceed on current thesis."
+
+### Packet fields that trigger
+
+- `hold_start_year`, `hold_years` — the window to project.
+- `stress.*` (RegulatoryStressInputs) — subsector, revenue,
+  EBITDA, Medicare FFS/MA, HOPD, ASC, contribution margin.
+- `leverage_multiple`, `covenant_max_leverage` — cov trip
+  detection.
+- `schedule` — custom landing schedule for deal-specific
+  probabilities.
+
+---
+
+## 179. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
