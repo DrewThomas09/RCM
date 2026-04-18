@@ -3858,7 +3858,44 @@ Partner note:
 
 ---
 
-## 158. Change log
+## 158. Post-close surprises log (`post_close_surprises_log.py`)
+
+**Partner statement:** "I track diligence miss rate
+religiously. If we miss 15%+ of post-close surprises, our
+process has a systematic gap — and the fix is in the template,
+not the individual deal."
+
+Each surprise logged with:
+
+- Category (operational / clinical / legal / financial /
+  regulatory / cultural / market).
+- Description.
+- Dollar impact on EBITDA (negative = hit).
+- Was it known at close (bool) + flagged severity + actual
+  severity post-close.
+
+Rolling analysis:
+
+- Overall miss rate (missed / total) + missed EBITDA bleed.
+- Per-category stats (miss rate, avg $ impact of missed items).
+- Worst category named.
+
+Partner commentary per category:
+
+- Miss rate ≥ 30% → "systematic gap — fix template before next
+  deal in this subsector."
+- ≥ 15% → "above tolerance; review template."
+- < 15% → "within norms."
+- Missed avg impact < -$2M → "bleed category — portfolio dollars
+  bleed here."
+
+This is the partner feedback loop. Deal-by-deal the numbers look
+small; portfolio-by-portfolio they tell you which category of
+diligence always burns you.
+
+---
+
+## 159. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4227,3 +4264,6 @@ Partner note:
   (§157) — 6-dim concentration scan (customer / site / payer /
   provider / service line / geography); 30/50% thresholds. Full
   inventory: 155 modules, 1,577 pe_intelligence unit tests.
+- **2026-04-17** — Added `post_close_surprises_log.py` (§158) —
+  diligence miss-rate tracker; portfolio-level feedback loop.
+  Full inventory: 156 modules, 1,586 pe_intelligence unit tests.
