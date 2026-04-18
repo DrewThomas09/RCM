@@ -1058,6 +1058,14 @@ from .management_meeting_questions import (
     build_mm_question_plan,
     render_mm_plan_markdown,
 )
+from .seller_motivation_decoder import (
+    MotivationMatch,
+    SellerMotivation,
+    SellerMotivationReport,
+    decode_seller_motivation,
+    list_all_motivations,
+    render_seller_motivation_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2285,4 +2293,10 @@ __all__ = [
     "MMQuestionSet",
     "build_mm_question_plan",
     "render_mm_plan_markdown",
+    "MotivationMatch",
+    "SellerMotivation",
+    "SellerMotivationReport",
+    "decode_seller_motivation",
+    "list_all_motivations",
+    "render_seller_motivation_markdown",
 ]

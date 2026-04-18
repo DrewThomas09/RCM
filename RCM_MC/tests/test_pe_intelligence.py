@@ -18674,5 +18674,124 @@ class TestManagementMeetingQuestions(unittest.TestCase):
         json.dumps(p.to_dict())
 
 
+class TestSellerMotivationDecoder(unittest.TestCase):
+    """Partner scenario: why are they selling now?"""
+
+    def test_empty_signals_yields_no_matches(self) -> None:
+        from rcm_mc.pe_intelligence import decode_seller_motivation
+        r = decode_seller_motivation({})
+        self.assertEqual(len(r.matches), 0)
+        self.assertIsNone(r.dominant_motivation)
+        self.assertIn("ask the banker", r.partner_note.lower())
+
+    def test_founder_liquidity_detected(self) -> None:
+        """Partner: 'founder age 68, owns 40% — classic liquidity.'"""
+        from rcm_mc.pe_intelligence import decode_seller_motivation
+        r = decode_seller_motivation({
+            "founder_age_65_plus": True,
+            "no_family_heir_in_ops": True,
+            "founder_equity_gt_30pct": True,
+        })
+        self.assertEqual(r.dominant_motivation, "founder_liquidity")
+        match = r.matches[0]
+        self.assertAlmostEqual(match.match_score, 1.0, places=2)
+
+    def test_covenant_trip_flagged_as_high_leverage(self) -> None:
+        from rcm_mc.pe_intelligence import decode_seller_motivation
+        r = decode_seller_motivation({
+            "net_debt_gt_7x_ebitda": True,
+            "covenant_waiver_in_past_12_months": True,
+        })
+        self.assertEqual(r.dominant_motivation,
+                          "covenant_trip_imminent")
+        self.assertEqual(
+            r.matches[0].motivation.buyer_leverage, "high"
+        )
+        self.assertIn("high leverage",
+                       r.partner_note.lower())
+
+    def test_industry_trough_is_low_leverage(self) -> None:
+        """Partner: 'seller knows something — low leverage.'"""
+        from rcm_mc.pe_intelligence import decode_seller_motivation
+        r = decode_seller_motivation({
+            "medicare_ffs_gt_40pct": True,
+            "hopd_exposure_material": True,
+            "state_medicaid_vulnerability_public": True,
+        })
+        self.assertEqual(r.dominant_motivation,
+                          "industry_trough_fear")
+        self.assertEqual(
+            r.matches[0].motivation.buyer_leverage, "low"
+        )
+
+    def test_multiple_motivations_triggers_layered_note(self) -> None:
+        from rcm_mc.pe_intelligence import decode_seller_motivation
+        r = decode_seller_motivation({
+            "founder_age_65_plus": True,
+            "founder_equity_gt_30pct": True,
+            "sponsor_fund_vintage_2016_or_earlier": True,
+            "sponsor_exit_list_public": True,
+            "net_debt_gt_7x_ebitda": True,
+        })
+        self.assertGreaterEqual(len(r.matches), 3)
+        self.assertIn("layered", r.partner_note.lower())
+
+    def test_ranked_by_match_score(self) -> None:
+        from rcm_mc.pe_intelligence import decode_seller_motivation
+        r = decode_seller_motivation({
+            # Founder: 3/3 signals
+            "founder_age_65_plus": True,
+            "no_family_heir_in_ops": True,
+            "founder_equity_gt_30pct": True,
+            # Tax: 1/3 signals
+            "proposed_close_before_year_end": True,
+        })
+        scores = [m.match_score for m in r.matches]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_failed_prior_process_implies_reprice(self) -> None:
+        from rcm_mc.pe_intelligence import decode_seller_motivation
+        r = decode_seller_motivation({
+            "prior_process_within_24_months": True,
+            "process_broke_before_loi": True,
+        })
+        self.assertEqual(r.dominant_motivation,
+                          "failed_prior_process")
+        self.assertIn(
+            "re-price",
+            r.matches[0].motivation.negotiation_counter.lower()
+        )
+
+    def test_list_all_motivations_complete(self) -> None:
+        from rcm_mc.pe_intelligence import list_all_motivations
+        all_motives = list_all_motivations()
+        self.assertGreaterEqual(len(all_motives), 8)
+        self.assertIn("founder_liquidity", all_motives)
+        self.assertIn("covenant_trip_imminent", all_motives)
+        self.assertIn("industry_trough_fear", all_motives)
+
+    def test_markdown_renders_partner_counter(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            decode_seller_motivation,
+            render_seller_motivation_markdown,
+        )
+        md = render_seller_motivation_markdown(
+            decode_seller_motivation({
+                "founder_age_65_plus": True,
+                "founder_equity_gt_30pct": True,
+            })
+        )
+        self.assertIn("# Seller motivation decoder", md)
+        self.assertIn("Partner counter", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import decode_seller_motivation
+        r = decode_seller_motivation({
+            "founder_age_65_plus": True,
+        })
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
