@@ -215,6 +215,7 @@ _CORPUS_NAV = [
     {"label": "Digital Front Door","href": "/digital-front-door", "icon": "▤"},
     {"label": "Hospital Anchor", "href": "/hospital-anchor",       "icon": "▥"},
     {"label": "Payer Contracts", "href": "/payer-contracts",       "icon": "▥"},
+    {"label": "Capex Budget",    "href": "/capex-budget",          "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

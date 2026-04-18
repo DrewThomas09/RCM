@@ -251,6 +251,7 @@ NAV_ITEMS = [
     {"label": "Digital Front Door", "href": "/digital-front-door", "icon": "grid"},
     {"label": "Hospital Anchor", "href": "/hospital-anchor", "icon": "bookmark"},
     {"label": "Payer Contracts", "href": "/payer-contracts", "icon": "bookmark"},
+    {"label": "Capex Budget", "href": "/capex-budget", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
