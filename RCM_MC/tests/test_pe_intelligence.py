@@ -35082,5 +35082,166 @@ class TestSubsectorEBITDAMarginBenchmark(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestMAStarRatingRevenueImpact(unittest.TestCase):
+    """Partner voice: 'Star rating is the thesis for MA-heavy deals.'"""
+
+    def test_4_stars_bonus(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        r = impact_ma_star_rating(MAStarInputs(
+            current_star_rating=4.0,
+            ma_plan_revenue_m=100.0,
+        ))
+        self.assertAlmostEqual(
+            r.current_bonus_pct, 0.05
+        )
+        self.assertAlmostEqual(
+            r.bonus_dollars_m, 5.0
+        )
+
+    def test_3_stars_no_bonus(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        r = impact_ma_star_rating(MAStarInputs(
+            current_star_rating=3.0,
+        ))
+        self.assertEqual(r.current_bonus_pct, 0)
+
+    def test_5_stars_top_tier(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        r = impact_ma_star_rating(MAStarInputs(
+            current_star_rating=5.0,
+        ))
+        self.assertAlmostEqual(
+            r.current_bonus_pct, 0.05
+        )
+        self.assertAlmostEqual(
+            r.current_rebate_pct, 0.70
+        )
+
+    def test_half_star_drop_loses_bonus(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        # From 4.0 to 3.5 → bonus lost
+        r = impact_ma_star_rating(MAStarInputs(
+            current_star_rating=4.0,
+            ma_plan_revenue_m=100.0,
+        ))
+        # Bear delta should be negative (loss)
+        self.assertLess(
+            r.bear_half_star_drop_ebitda_m, 0
+        )
+
+    def test_high_cliff_risk_when_boundary_plus_declining(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        r = impact_ma_star_rating(MAStarInputs(
+            current_star_rating=4.0,
+            hedis_trend="declining",
+            cahps_trend="declining",
+        ))
+        self.assertEqual(r.rating_cliff_risk, "high")
+        self.assertIn(
+            "thesis", r.partner_note.lower()
+        )
+
+    def test_medium_risk_boundary_no_decline(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        r = impact_ma_star_rating(MAStarInputs(
+            current_star_rating=4.0,
+            hedis_trend="flat",
+            cahps_trend="flat",
+        ))
+        self.assertEqual(r.rating_cliff_risk, "medium")
+
+    def test_low_risk_at_5(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        r = impact_ma_star_rating(MAStarInputs(
+            current_star_rating=4.5,
+        ))
+        self.assertEqual(r.rating_cliff_risk, "low")
+
+    def test_high_risk_below_3(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        r = impact_ma_star_rating(MAStarInputs(
+            current_star_rating=2.5,
+        ))
+        self.assertEqual(r.rating_cliff_risk, "high")
+        self.assertIn(
+            "restricted", r.partner_note.lower()
+        )
+
+    def test_rebate_dollars_scale_with_revenue(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        small = impact_ma_star_rating(MAStarInputs(
+            ma_plan_revenue_m=50.0))
+        big = impact_ma_star_rating(MAStarInputs(
+            ma_plan_revenue_m=500.0))
+        self.assertAlmostEqual(
+            big.rebate_dollars_m / small.rebate_dollars_m,
+            10.0,
+            places=1,
+        )
+
+    def test_bull_lift_to_5_has_rebate_gain(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        # From 4.0 to 4.5 → rebate capture up from 0.65 to 0.70
+        r = impact_ma_star_rating(MAStarInputs(
+            current_star_rating=4.0,
+            ma_plan_revenue_m=100.0,
+        ))
+        self.assertGreater(
+            r.bull_half_star_lift_ebitda_m, 0
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+            render_ma_star_markdown,
+        )
+        md = render_ma_star_markdown(
+            impact_ma_star_rating(MAStarInputs())
+        )
+        self.assertIn("# MA Star Rating impact", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            MAStarInputs,
+            impact_ma_star_rating,
+        )
+        r = impact_ma_star_rating(MAStarInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

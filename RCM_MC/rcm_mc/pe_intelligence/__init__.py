@@ -1716,6 +1716,12 @@ from .subsector_ebitda_margin_benchmark import (
     benchmark_subsector_margin,
     render_subsector_margin_markdown,
 )
+from .ma_star_rating_revenue_impact import (
+    MAStarInputs,
+    MAStarReport,
+    impact_ma_star_rating,
+    render_ma_star_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3421,4 +3427,8 @@ __all__ = [
     "MarginBenchmarkReport",
     "benchmark_subsector_margin",
     "render_subsector_margin_markdown",
+    "MAStarInputs",
+    "MAStarReport",
+    "impact_ma_star_rating",
+    "render_ma_star_markdown",
 ]
