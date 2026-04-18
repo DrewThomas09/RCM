@@ -1959,6 +1959,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.pmi_playbook_page import render_pmi_playbook
             return self._send_html(render_pmi_playbook(_qp))
+        if path == "/fraud-detection":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.fraud_detection_page import render_fraud_detection
+            return self._send_html(render_fraud_detection(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

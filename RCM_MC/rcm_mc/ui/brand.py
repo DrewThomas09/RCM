@@ -205,6 +205,7 @@ NAV_ITEMS = [
     {"label": "Platform Maturity", "href": "/platform-maturity", "icon": "chart"},
     {"label": "Direct Lending", "href": "/direct-lending", "icon": "chart"},
     {"label": "PMI Playbook", "href": "/pmi-playbook", "icon": "chart"},
+    {"label": "FWA Detection", "href": "/fraud-detection", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
