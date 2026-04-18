@@ -4022,7 +4022,44 @@ downside is protected, time-sensitive").
 
 ---
 
-## 163. Change log
+## 163. Medicaid state exposure map (`medicaid_state_exposure_map.py`)
+
+**Partner statement:** "Medicaid is state-by-state. National-rate
+overlays miss the leverage/exposure picture."
+
+Four risk tiers (partner-approximated 2026-2028):
+
+- **high_cut_risk (5% bear)** — non-expansion + budget pressure:
+  TX, FL, GA, TN, MS, AL, SC, MO, KS, WY.
+- **waiver_risk (4% bear)** — 1115 waiver docket: AR, KY, ND, MT.
+- **medium_cut_risk (2.5% bear)** — AZ, OH, IN, NC, IA, WI, OK,
+  LA, VA.
+- **low_cut_risk (1% bear)** — expansion states with backfill:
+  NY, CA, MA, WA, OR, MN, CO, VT, MD, NJ, CT, IL, RI, HI, NM,
+  NV, DE, PA, MI, NH.
+
+Bear EBITDA impact = Medicaid revenue × tier bear cut % ×
+contribution margin (default 0.45).
+
+Partner note:
+
+- High-risk states ≥ 50% of Medicaid revenue → "underwrite with
+  full state-risk bear drag."
+- 25-50% → "monitor state budget cycles."
+- < 25% → "manageable."
+- Concentrated in low-risk → "state risk is not a material
+  lever."
+
+Unknown states default to medium_cut_risk.
+
+**Worked example:** a deal with $100M Medicaid split 60% TX +
+40% NY has 54% of Medicaid in high-cut-risk states; the bear-
+case EBITDA drag is ~$1.55M. Same $100M in NY + CA would be
+$0.45M — one-third the risk.
+
+---
+
+## 164. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4410,3 +4447,6 @@ downside is protected, time-sensitive").
   rank competing deals across return / quality / downside / fit
   / timing with if-I-can-only-do-one recommendation. Full
   inventory: 160 modules, 1,625 pe_intelligence unit tests.
+- **2026-04-17** — Added `medicaid_state_exposure_map.py` (§163)
+  — 4-tier state risk overlay with bear-case $ impact per state.
+  Full inventory: 161 modules, 1,636 pe_intelligence unit tests.
