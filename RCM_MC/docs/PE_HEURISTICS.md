@@ -4132,7 +4132,41 @@ Inaugural 11-sponsor book (illustrative, partner-refreshed):
 
 ---
 
-## 166. Change log
+## 166. Debt capacity sizer (`debt_capacity_sizer.py`)
+
+**Partner statement:** "Model says 6.5x. Let's see what the
+min-of-three-constraints says."
+
+Three stacked constraints (debt = min):
+
+1. **Coverage** — stressed EBITDA / (debt × rate) ≥ coverage
+   hurdle (default 2.5x at 15% stress haircut).
+2. **FCF** — after-tax (EBITDA - maintenance capex) / (debt ×
+   rate) ≥ hurdle (default 1.15x).
+3. **Cycle discipline** — neutral subsector leverage ± phase
+   adjustment (early_expansion +0.5, mid 0, peak -0.75,
+   contraction +0.5), + 0.5x if covenant-lite available.
+
+Neutral leverage by subsector (partner-approximated):
+
+- Hospital 5.0x, safety_net_hospital 4.0x.
+- Specialty practice 6.0x, outpatient ASC 6.5x.
+- Home health 5.5x, DME 5.5x.
+- Physician staffing 4.5x.
+
+Partner note:
+
+- < 3.0x recommended → "thin — either seller's model is over-
+  levered or deal is less attractive than it looks."
+- Cycle binds → "discipline holds even though coverage / FCF
+  could support more."
+- FCF binds → "tight cash flow after capex + tax; consider
+  lower leverage or covenant-lite."
+- Coverage binds → "partner-prudent cap at stress hurdle."
+
+---
+
+## 167. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4531,4 +4565,8 @@ Inaugural 11-sponsor book (illustrative, partner-refreshed):
   — 11-sponsor reputation book with 5 dimensions + context-
   specific commentary (competing_bidder / co_investor /
   exit_buyer). Full inventory: 163 modules, 1,657
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `debt_capacity_sizer.py` (§166) — debt
+  = min(coverage, FCF, cycle-discipline) with named binding
+  constraint. Full inventory: 164 modules, 1,667
   pe_intelligence unit tests.
