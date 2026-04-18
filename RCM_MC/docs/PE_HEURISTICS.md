@@ -10185,7 +10185,77 @@ Deal mix: 30% United + 10% Centene + 20% Cigna + 40% BCBS-TX.
 
 ---
 
-## 258. Change log
+## 258. Banker-vs-partner pricing tension (`banker_partner_pricing_tension.py`)
+
+**Partner statement.** "Every process has a pricing tension. The
+banker says 12x is where it clears. Your math says 10.5x is where
+your IRR still clears. That 1.5-turn gap is the tension. If I can
+bridge it with operational upside, I'm in. If the bridge requires
+top-quartile execution to close, I'm out. The gap IS the partner
+conversation."
+
+### Why it matters
+
+`banker_narrative_decoder` reads pitch language. This module
+**quantifies the tension**: banker price − partner walk-away = gap,
+operational upside bridges some of it, residual dictates the
+decision.
+
+### Math
+
+- `banker_ev = ebitda × banker_multiple`
+- `partner_ev = ebitda × partner_walkaway_multiple`
+- `gap_turns = banker_multiple − partner_walkaway_multiple`
+- `gap_dollars = gap_turns × ebitda`
+- `residual = gap_turns − operational_upside_turns`
+
+### Verdict
+
+- gap ≤ 0 → **accept_pitch** — no tension; price at pitch
+- residual ≤ 0 → **bridgeable** — fully covered by operational
+  upside
+- residual ≤ 0.5 → **thin_bridge** — acceptable only with real
+  competitive pressure
+- residual > 0.5 → **walk** — no bridge the IC can defend
+
+### Partner-note augments
+
+- `top_quartile_execution_required=True` with thin_bridge →
+  "closing this gap requires top-quartile execution — not base case"
+- `competing_bidders_count ≤ 1` with walk → "low competitive
+  pressure means seller will come back after failed round"
+
+### Worked example
+
+$50M EBITDA, banker 12×, partner walk-away 10.5×, operational
+upside 1.5× → residual 0 → **bridgeable**. Partner: "move to
+confirmatory on the specific levers."
+
+Same but operational upside 1.0× → residual 0.5 → **thin_bridge**.
+If `top_quartile_execution_required=True` the note flags execution
+risk.
+
+Same but 13× banker / 10× walk / 1.0× upside / 1 bidder → residual
+2.0 → **walk**; note: "low competitive pressure means seller will
+come back."
+
+### Packet fields
+
+`ebitda_base_m`, `banker_suggested_multiple`,
+`partner_walkaway_multiple`, `operational_upside_turns`,
+`top_quartile_execution_required`, `competing_bidders_count`.
+
+### Distinct from existing modules
+
+- `banker_narrative_decoder` — pitch-language tactics.
+- `cycle_timing_pricing_check` — market-cycle sanity.
+- `pricing_concession_ladder` — concession moves.
+- This module — quantifies banker-vs-partner gap with bridge
+  feasibility and accept/bridgeable/thin/walk verdict.
+
+---
+
+## 259. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
