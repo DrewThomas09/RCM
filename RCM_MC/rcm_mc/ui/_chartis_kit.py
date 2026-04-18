@@ -167,6 +167,7 @@ _CORPUS_NAV = [
     {"label": "Health Equity",   "href": "/health-equity",      "icon": "▣"},
     {"label": "Physician Labor", "href": "/physician-labor",    "icon": "▦"},
     {"label": "Platform Maturity","href": "/platform-maturity", "icon": "▣"},
+    {"label": "Direct Lending",  "href": "/direct-lending",    "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
