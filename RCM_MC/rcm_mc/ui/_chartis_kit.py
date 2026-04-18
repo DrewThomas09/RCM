@@ -207,6 +207,7 @@ _CORPUS_NAV = [
     {"label": "340B Program",    "href": "/tracker-340b",          "icon": "▥"},
     {"label": "Risk Adj / HCC",  "href": "/risk-adjustment",       "icon": "▥"},
     {"label": "Clinical AI",     "href": "/clinical-ai",           "icon": "▥"},
+    {"label": "Specialty Benchmarks","href": "/specialty-benchmarks","icon": "▥"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
