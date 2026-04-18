@@ -22873,5 +22873,166 @@ class TestDayOneActionPlan(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestCashConversionDriftDetector(unittest.TestCase):
+    """Partner scenario: DSO rising 3 quarters = tell."""
+
+    def test_empty_series_clean_tier(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs())
+        self.assertEqual(r.tier, "clean")
+
+    def test_rising_dso_flagged(self) -> None:
+        """Partner: 'DSO rising 2/qtr for 4 qtrs → deteriorating.'"""
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            dso_days_series=[40, 42, 44, 46, 48, 50],
+        ))
+        dso = next(s for s in r.signals
+                    if s.name == "dso_days")
+        self.assertTrue(dso.is_deteriorating)
+        self.assertGreater(dso.slope_per_quarter, 1.5)
+
+    def test_falling_dpo_flagged(self) -> None:
+        """Partner: 'DPO falling = vendors tightening.'"""
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            dpo_days_series=[50, 48, 46, 44, 42, 40],
+        ))
+        dpo = next(s for s in r.signals
+                    if s.name == "dpo_days")
+        self.assertTrue(dpo.is_deteriorating)
+
+    def test_collections_velocity_falling(self) -> None:
+        """Partner: '% collected in 90 days falling = collection stress.'"""
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            collections_velocity_series=[
+                0.82, 0.80, 0.78, 0.76, 0.74, 0.72
+            ],
+        ))
+        coll = next(s for s in r.signals
+                     if s.name == "collections_velocity")
+        self.assertTrue(coll.is_deteriorating)
+
+    def test_stable_series_not_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            dso_days_series=[45, 44, 45, 46, 45, 44],
+        ))
+        dso = next(s for s in r.signals
+                    if s.name == "dso_days")
+        self.assertFalse(dso.is_deteriorating)
+
+    def test_three_signals_triggers_wc_stress(self) -> None:
+        """Partner: '3+ deteriorating = working capital stress.'"""
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            dso_days_series=[40, 42, 44, 46, 48, 50],
+            initial_denial_rate_series=[
+                0.08, 0.095, 0.11, 0.125, 0.14, 0.155
+            ],
+            collections_velocity_series=[
+                0.82, 0.80, 0.78, 0.76, 0.74, 0.72
+            ],
+        ))
+        self.assertEqual(r.tier, "working_capital_stress")
+        self.assertIn("bring-down", r.partner_note.lower())
+
+    def test_two_signals_early_warning(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            dso_days_series=[40, 42, 44, 46, 48, 50],
+            collections_velocity_series=[
+                0.82, 0.80, 0.78, 0.76, 0.74, 0.72
+            ],
+        ))
+        self.assertEqual(r.tier, "early_warning")
+
+    def test_short_series_cannot_trend(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            dso_days_series=[40, 45],  # < 3 observations
+        ))
+        dso = next(s for s in r.signals
+                    if s.name == "dso_days")
+        self.assertIn("cannot trend",
+                       dso.partner_comment.lower())
+
+    def test_denial_rate_rising_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            initial_denial_rate_series=[
+                0.08, 0.09, 0.105, 0.12, 0.135
+            ],
+        ))
+        den = next(s for s in r.signals
+                    if s.name == "initial_denial_rate")
+        self.assertTrue(den.is_deteriorating)
+
+    def test_inventory_days_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            inventory_days_series=[30, 33, 36, 39, 42],
+        ))
+        inv = next(s for s in r.signals
+                    if s.name == "inventory_days")
+        self.assertTrue(inv.is_deteriorating)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+            render_drift_markdown,
+        )
+        md = render_drift_markdown(
+            detect_cash_conversion_drift(DriftInputs(
+                dso_days_series=[40, 42, 44, 46, 48, 50],
+            ))
+        )
+        self.assertIn("# Cash conversion drift", md)
+        self.assertIn("Slope / qtr", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            DriftInputs,
+            detect_cash_conversion_drift,
+        )
+        r = detect_cash_conversion_drift(DriftInputs(
+            dso_days_series=[40, 42, 44, 46],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1263,6 +1263,13 @@ from .day_one_action_plan import (
     list_day_one_actions,
     render_day_one_plan_markdown,
 )
+from .cash_conversion_drift_detector import (
+    DriftInputs,
+    DriftReport,
+    DriftSignal,
+    detect_cash_conversion_drift,
+    render_drift_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2641,4 +2648,9 @@ __all__ = [
     "assess_day_one_readiness",
     "list_day_one_actions",
     "render_day_one_plan_markdown",
+    "DriftInputs",
+    "DriftReport",
+    "DriftSignal",
+    "detect_cash_conversion_drift",
+    "render_drift_markdown",
 ]
