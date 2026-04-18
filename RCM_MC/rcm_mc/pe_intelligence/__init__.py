@@ -1681,6 +1681,13 @@ from .cost_line_decomposer_healthcare import (
     decompose_cost_lines,
     render_cost_line_markdown,
 )
+from .lp_waterfall_distribution_modeler import (
+    LPWaterfallInputs,
+    LPWaterfallReport,
+    WaterfallStep,
+    model_lp_waterfall,
+    render_lp_waterfall_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3361,4 +3368,9 @@ __all__ = [
     "CostLineReport",
     "decompose_cost_lines",
     "render_cost_line_markdown",
+    "LPWaterfallInputs",
+    "LPWaterfallReport",
+    "WaterfallStep",
+    "model_lp_waterfall",
+    "render_lp_waterfall_markdown",
 ]

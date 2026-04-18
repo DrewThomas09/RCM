@@ -34113,5 +34113,164 @@ class TestCostLineDecomposerHealthcare(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestLPWaterfallDistributionModeler(unittest.TestCase):
+    """Partner voice: 'LPs see net, not gross.'"""
+
+    def test_standard_waterfall(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        r = model_lp_waterfall(LPWaterfallInputs(
+            committed_capital_m=100.0,
+            total_proceeds_m=250.0,
+            hold_years=5.0,
+        ))
+        # 2.5x gross
+        self.assertAlmostEqual(r.gross_moic, 2.5, places=2)
+        # Net LP should be less than gross
+        self.assertLess(r.net_lp_moic, r.gross_moic)
+
+    def test_gp_carry_on_profits(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        r = model_lp_waterfall(LPWaterfallInputs(
+            committed_capital_m=100.0,
+            total_proceeds_m=200.0,
+            hold_years=5.0,
+        ))
+        # GP should earn carry + mgmt fees
+        self.assertGreater(r.gp_carry_m, 0)
+
+    def test_low_return_no_carry(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        # Below preferred return — GP gets no carry
+        r = model_lp_waterfall(LPWaterfallInputs(
+            committed_capital_m=100.0,
+            total_proceeds_m=120.0,
+            hold_years=5.0,
+            preferred_return_pct=0.08,
+        ))
+        # Total proceeds $120 < $147 pref target
+        # → GP carry should be 0
+        self.assertAlmostEqual(r.gp_carry_m, 0.0, places=0)
+
+    def test_waterfall_steps_present(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        r = model_lp_waterfall(LPWaterfallInputs())
+        step_names = [s.step for s in r.steps]
+        self.assertIn("return_of_capital", step_names)
+        self.assertIn("lp_preferred_return", step_names)
+        self.assertIn("gp_catchup", step_names)
+        self.assertIn("80_20_split", step_names)
+
+    def test_net_lp_irr_below_gross(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        r = model_lp_waterfall(LPWaterfallInputs(
+            committed_capital_m=100.0,
+            total_proceeds_m=250.0,
+            hold_years=5.0,
+        ))
+        self.assertLess(r.net_lp_irr, r.gross_irr)
+
+    def test_mgmt_fees_reduce_lp_net(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        low = model_lp_waterfall(LPWaterfallInputs(
+            management_fee_pct_per_year=0.005))
+        high = model_lp_waterfall(LPWaterfallInputs(
+            management_fee_pct_per_year=0.025))
+        self.assertGreater(
+            low.net_lp_moic, high.net_lp_moic
+        )
+
+    def test_wide_gap_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        r = model_lp_waterfall(LPWaterfallInputs(
+            committed_capital_m=100.0,
+            total_proceeds_m=300.0,
+            hold_years=5.0,
+        ))
+        gap = r.gross_moic - r.net_lp_moic
+        if gap > 0.50:
+            self.assertIn(
+                "lead with net", r.partner_note.lower()
+            )
+
+    def test_return_of_capital_first_step(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        r = model_lp_waterfall(LPWaterfallInputs(
+            committed_capital_m=100.0,
+            total_proceeds_m=250.0,
+        ))
+        roc = next(
+            s for s in r.steps
+            if s.step == "return_of_capital"
+        )
+        self.assertAlmostEqual(
+            roc.amount_m, 100.0
+        )
+        self.assertAlmostEqual(roc.to_gp_m, 0.0)
+
+    def test_total_proceeds_allocated(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        r = model_lp_waterfall(LPWaterfallInputs(
+            committed_capital_m=100.0,
+            total_proceeds_m=250.0,
+        ))
+        # Sum of steps LP + GP (excluding mgmt fees step) should equal proceeds
+        total_allocated = sum(
+            s.amount_m for s in r.steps
+            if s.step != "management_fees_deducted_from_lp"
+        )
+        self.assertAlmostEqual(
+            total_allocated, 250.0, places=0
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+            render_lp_waterfall_markdown,
+        )
+        md = render_lp_waterfall_markdown(
+            model_lp_waterfall(LPWaterfallInputs())
+        )
+        self.assertIn(
+            "# LP waterfall distribution", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            LPWaterfallInputs,
+            model_lp_waterfall,
+        )
+        r = model_lp_waterfall(LPWaterfallInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
