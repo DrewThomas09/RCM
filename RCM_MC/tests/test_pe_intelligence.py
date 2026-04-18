@@ -17053,5 +17053,184 @@ class TestLOITermSheetReview(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestClosingConditionsList(unittest.TestCase):
+    """Partner scenario: what actually has to be true at close?"""
+
+    def test_default_healthcare_has_hsr_and_state_reg(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(ClosingConditionsInputs())
+        names = {c.name for c in r.conditions}
+        self.assertIn("hsr_antitrust_clearance", names)
+        self.assertIn("state_healthcare_regulatory", names)
+        self.assertIn("medicare_provider_number_transfer", names)
+
+    def test_hsr_high_risk_on_large_deal(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(
+            ClosingConditionsInputs(deal_size_m=900.0)
+        )
+        hsr = next(c for c in r.conditions
+                   if c.name == "hsr_antitrust_clearance")
+        self.assertEqual(hsr.blocking_risk, "high")
+        self.assertTrue(hsr.walk_right)
+
+    def test_hsr_medium_risk_on_small_deal(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(
+            ClosingConditionsInputs(deal_size_m=150.0)
+        )
+        hsr = next(c for c in r.conditions
+                   if c.name == "hsr_antitrust_clearance")
+        self.assertEqual(hsr.blocking_risk, "medium")
+
+    def test_no_hsr_when_not_required(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(
+            ClosingConditionsInputs(hsr_filing_required=False)
+        )
+        names = {c.name for c in r.conditions}
+        self.assertNotIn("hsr_antitrust_clearance", names)
+
+    def test_non_healthcare_omits_cms_items(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(
+            ClosingConditionsInputs(
+                sector="software",
+                state_regulatory_required=False,
+            )
+        )
+        names = {c.name for c in r.conditions}
+        self.assertNotIn("state_healthcare_regulatory", names)
+        self.assertNotIn("medicare_provider_number_transfer", names)
+
+    def test_rw_insurance_bound_at_signing(self) -> None:
+        """Partner: 'Bind R&W at signing, not close.'"""
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(ClosingConditionsInputs())
+        rw = next(c for c in r.conditions
+                  if c.name == "rw_insurance_bound")
+        self.assertEqual(rw.satisfied_at, "signing")
+        self.assertEqual(rw.who_controls, "buyer")
+
+    def test_mac_gives_walk_right(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(ClosingConditionsInputs())
+        mac = next(c for c in r.conditions
+                   if c.name == "no_material_adverse_change")
+        self.assertTrue(mac.walk_right)
+
+    def test_bring_down_walk_right_configurable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(
+            ClosingConditionsInputs(seller_breach_brings_walk=False)
+        )
+        bd = next(c for c in r.conditions
+                  if c.name == "reps_true_at_closing")
+        self.assertFalse(bd.walk_right)
+
+    def test_payer_consents_third_party(self) -> None:
+        """Partner: 'Payer consents aren't ours — chase 60 days out.'"""
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(ClosingConditionsInputs())
+        payer = next(c for c in r.conditions
+                     if c.name == "payer_contract_consents")
+        self.assertEqual(payer.who_controls, "third_party")
+
+    def test_partner_note_escalates_on_multi_high_risk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(
+            ClosingConditionsInputs(deal_size_m=900.0)
+        )
+        self.assertGreaterEqual(r.high_risk_count, 2)
+        self.assertIn("outside date", r.partner_note.lower())
+
+    def test_partner_note_clean_close_when_low_risk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(ClosingConditionsInputs(
+            sector="software",
+            deal_size_m=200.0,
+            hsr_filing_required=False,
+            state_regulatory_required=False,
+            payer_consents_material=False,
+            landlord_consents_required=False,
+            financing_external=False,
+            it_cyber_attestation_required=False,
+        ))
+        self.assertEqual(r.high_risk_count, 0)
+        self.assertIn("clean close", r.partner_note.lower())
+
+    def test_third_party_count_nonzero_when_external(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(ClosingConditionsInputs())
+        self.assertGreater(r.third_party_dependent_count, 3)
+
+    def test_walk_rights_include_mac_and_hsr(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(ClosingConditionsInputs())
+        walk_names = {c.name for c in r.conditions if c.walk_right}
+        self.assertIn("no_material_adverse_change", walk_names)
+        self.assertIn("hsr_antitrust_clearance", walk_names)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+            render_closing_conditions_markdown,
+        )
+        md = render_closing_conditions_markdown(
+            build_closing_conditions(ClosingConditionsInputs())
+        )
+        self.assertIn("# Closing conditions list", md)
+        self.assertIn("| Condition |", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ClosingConditionsInputs,
+            build_closing_conditions,
+        )
+        r = build_closing_conditions(ClosingConditionsInputs())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
