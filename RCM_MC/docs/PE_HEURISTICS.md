@@ -4791,7 +4791,67 @@ signal; seller recut required."
 
 ---
 
-## 180. Change log
+## 180. Pre-IC chair brief (`pre_ic_chair_brief.py`)
+
+**Partner statement:** "Before IC I walk the chair through
+4 bullets: the thesis, where the math works, where it
+doesn't, and what would change my mind. If I can't get
+that on one page, the team isn't ready."
+
+Distinct from:
+
+- `deal_one_liner` — the single sentence (too short for
+  the chair).
+- `ic_memo` — the full 60-page IC deck (too long for 30
+  min before IC).
+- `ic_decision_synthesizer` — multi-dimensional breakdown
+  (useful but not a one-pager).
+
+The chair brief is exactly 4 bullets:
+
+1. **Thesis** — what we're buying and why, in plain
+   English.
+2. **Where the math works** — 2-3 numbers that anchor the
+   upside case.
+3. **Where the math doesn't work** — 2-3 numbers that
+   anchor the bear case.
+4. **What would change my mind** — 3 specific things that,
+   if resolved, flip the verdict.
+
+### Verdict inference
+
+If no explicit recommendation is provided:
+
+- Any **contradicted thesis link** → `pass`.
+- ≥ 2 **compound risks** → `reprice`.
+- In-band checks present AND no high-risk unresolved →
+  `invest`.
+- Otherwise → `diligence_more`.
+
+### Why 4 bullets exactly
+
+The chair doesn't have time for 5 bullets. Three isn't
+enough for the structure to work (you need thesis +
+bull + bear + change-my-mind, minimum). Four is the
+partner-brain default because it forces the team to
+collapse the case into a structure the chair can push
+back on bullet-by-bullet.
+
+### Packet fields that trigger
+
+- `deal_name`, `thesis_sentence`, `recurring_ebitda_m`,
+  `entry_multiple`, `target_moic`, `target_irr`,
+  `hold_years` — thesis bullet.
+- `in_band_count`, `math_works_numbers` — math-works
+  bullet.
+- `out_of_band_count`, `compound_risks`,
+  `contradicted_thesis_links` — math-breaks bullet.
+- `high_risk_unresolved_links`,
+  `change_my_mind_items` — change-my-mind bullet.
+
+---
+
+## 181. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
