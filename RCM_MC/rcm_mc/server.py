@@ -2037,6 +2037,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.underwriting_model_page import render_underwriting_model
             return self._send_html(render_underwriting_model(_qp))
+        if path == "/mgmt-fee-tracker":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.mgmt_fee_tracker_page import render_mgmt_fee_tracker
+            return self._send_html(render_mgmt_fee_tracker(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())

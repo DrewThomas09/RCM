@@ -99,6 +99,7 @@ _CORPUS_NAV = [
     {"label": "Diligence Chk.", "href": "/diligence-checklist","icon": "▦"},
     {"label": "Value Creation","href": "/value-creation",     "icon": "▣"},
     {"label": "UW Model",     "href": "/underwriting-model", "icon": "▦"},
+    {"label": "Fee Tracker",  "href": "/mgmt-fee-tracker",  "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

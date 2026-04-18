@@ -135,6 +135,7 @@ NAV_ITEMS = [
     {"label": "Diligence Checklist", "href": "/diligence-checklist", "icon": "doc"},
     {"label": "Value Creation Tracker", "href": "/value-creation", "icon": "chart"},
     {"label": "Underwriting Model", "href": "/underwriting-model", "icon": "chart"},
+    {"label": "Mgmt Fee Tracker", "href": "/mgmt-fee-tracker", "icon": "chart"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
