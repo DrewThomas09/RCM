@@ -11503,7 +11503,72 @@ growth_rate_pct, ebitda_margin_pct)` (aliased
 
 ---
 
-## 277. Change log
+## 277. CON state exposure assessor (`con_state_exposure_assessor.py`)
+
+**Partner statement.** "CON states protect incumbents but block
+expansion. If the deal is already the dominant operator in a CON
+state, the moat is real; if we're trying to build de novos in a
+CON state, every site needs a board application and a 12-18 month
+hearing."
+
+### Why it matters
+
+`state_scope_of_practice_exposure` covers CPOM + non-compete.
+`multi_state_regulatory_complexity_scorer` is generic. This module
+is CON-specific and crucially **distinguishes protection from
+barrier** — same law, opposite effect depending on whether the
+deal is incumbent or entrant.
+
+### 29-state catalog × 4 service lines
+
+Per-state CON strictness for hospital / ASC / home_health /
+hospice:
+
+| Region | Examples | Profile |
+|---|---|---|
+| Strict CON | AL, NC, NY, VA, WV, MS, MD, HI, KY | Most lines CON-regulated |
+| Moderate | FL, OH, IL, MI, MA, WA | Some lines, some thresholds |
+| Non-CON | TX, CA, AZ, CO, PA, KS, NM, ID, UT, WY | Generally deregulated |
+
+### Exposure classification
+
+- CON line + incumbent → **protection** (moat)
+- CON line + entrant → **barrier** (12-18mo hearing per site)
+- No CON on line → **neutral**
+
+### Aggregate verdict
+
+- Protection ≥ 50% → **incumbent_moat** — "durable moat; protect
+  via CON board relationships"
+- Barrier ≥ 30% → **expansion_blocked** — "price regulatory
+  friction into timeline + capex"
+- Both > 0 → **mixed** — "per-state strategy needed"
+- Otherwise → **neutral**
+
+### Worked example
+
+Deal with 80% NPR in NC hospitals as existing operator: 80%
+protection → **incumbent_moat** → "durable moat against entrants."
+
+Same deal as **entrant** building de novos: 80% barrier →
+**expansion_blocked** → "each site needs 12-18 month hearing;
+price friction into timeline."
+
+### Packet fields
+
+`footprint` — list of `CONStateExposure(state,
+share_of_npr_pct, is_incumbent, primary_line)`.
+
+### Distinct from existing modules
+
+- `state_scope_of_practice_exposure` — CPOM + non-compete.
+- `multi_state_regulatory_complexity_scorer` — general complexity.
+- This module — CON-specific with protection/barrier flip on
+  incumbent/entrant role.
+
+---
+
+## 278. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
