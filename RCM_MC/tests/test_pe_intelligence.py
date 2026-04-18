@@ -19509,5 +19509,189 @@ class TestPreMortemSimulator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPricingConcessionLadder(unittest.TestCase):
+    """Partner scenario: give cheap concessions first, price last."""
+
+    def test_default_ladder_has_multiple_moves(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        l = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+            buyer_base_offer_m=800.0,
+        ))
+        self.assertGreaterEqual(len(l.moves), 7)
+
+    def test_price_bump_is_last_round(self) -> None:
+        """Partner: 'price last.'"""
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        l = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+            buyer_base_offer_m=800.0,
+        ))
+        price_move = next(m for m in l.moves
+                           if m.name == "price_bump")
+        # Final round = 4 under defaults.
+        self.assertGreaterEqual(price_move.recommended_round, 3)
+
+    def test_cheap_moves_come_first(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        l = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+            buyer_base_offer_m=800.0,
+        ))
+        # First round should include at least one low-cost move.
+        round_1 = [m for m in l.moves
+                    if m.recommended_round == 1]
+        self.assertTrue(any(m.cost_to_buyer == "low"
+                             for m in round_1))
+
+    def test_seller_above_walkaway_triggers_gap_note(self) -> None:
+        """Partner: 'seller above walk — close gap or walk.'"""
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        l = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=950.0,   # $100M above walk
+            buyer_base_offer_m=800.0,
+        ))
+        self.assertIn("above walk-away",
+                       l.partner_note.lower())
+
+    def test_already_conceded_moves_removed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        l = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+            buyer_base_offer_m=800.0,
+            already_conceded=["earnout_structure",
+                                "working_capital_peg"],
+        ))
+        names = {m.name for m in l.moves}
+        self.assertNotIn("earnout_structure", names)
+        self.assertNotIn("working_capital_peg", names)
+
+    def test_high_urgency_compresses_rounds(self) -> None:
+        """Partner: 'high urgency = ladder collapses.'"""
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        normal = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+            buyer_base_offer_m=800.0,
+            seller_urgency="medium",
+        ))
+        urgent = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+            buyer_base_offer_m=800.0,
+            seller_urgency="high",
+        ))
+        # Urgent ladder sums to smaller total rounds.
+        normal_sum = sum(m.recommended_round for m in normal.moves)
+        urgent_sum = sum(m.recommended_round for m in urgent.moves)
+        self.assertLess(urgent_sum, normal_sum)
+
+    def test_family_liquidity_prioritizes_cash(self) -> None:
+        """Partner: 'family wants cash; earn-out resisted.'"""
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        l = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+            buyer_base_offer_m=800.0,
+            seller_motivation="family_liquidity",
+        ))
+        earnout = next(m for m in l.moves
+                        if m.name == "earnout_structure")
+        # Family resists earn-out → pushed later.
+        self.assertGreaterEqual(earnout.recommended_round, 4)
+
+    def test_sponsor_vintage_end_prioritizes_rw(self) -> None:
+        """Partner: 'LP-scorecard sellers accept R&W fast.'"""
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        l = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+            buyer_base_offer_m=800.0,
+            seller_motivation="sponsor_vintage_end",
+        ))
+        rw = next(m for m in l.moves
+                   if m.name == "rw_insurance_mechanics")
+        self.assertEqual(rw.recommended_round, 1)
+
+    def test_seller_at_or_below_base_no_price_concession(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        l = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=790.0,
+            buyer_base_offer_m=800.0,
+        ))
+        self.assertIn("no concessions required",
+                       l.partner_note.lower())
+
+    def test_catalog_list_completeness(self) -> None:
+        from rcm_mc.pe_intelligence import list_concession_catalog
+        names = list_concession_catalog()
+        self.assertIn("price_bump", names)
+        self.assertIn("earnout_structure", names)
+        self.assertIn("working_capital_peg", names)
+        self.assertIn("rw_insurance_mechanics", names)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+            render_concession_ladder_markdown,
+        )
+        md = render_concession_ladder_markdown(
+            build_concession_ladder(ConcessionInputs(
+                buyer_walk_away_price_m=850.0,
+                current_seller_ask_m=900.0,
+                buyer_base_offer_m=800.0,
+            ))
+        )
+        self.assertIn("# Pricing concession ladder", md)
+        self.assertIn("| Round |", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ConcessionInputs,
+            build_concession_ladder,
+        )
+        l = build_concession_ladder(ConcessionInputs(
+            buyer_walk_away_price_m=850.0,
+            current_seller_ask_m=900.0,
+            buyer_base_offer_m=800.0,
+        ))
+        json.dumps(l.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
