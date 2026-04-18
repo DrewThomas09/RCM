@@ -4059,7 +4059,43 @@ $0.45M — one-third the risk.
 
 ---
 
-## 164. Change log
+## 164. Earn-out design advisor (`earnout_design_advisor.py`)
+
+**Partner statement:** "Earn-outs are for measurable disagreements
+in 12-36 months. Not every price gap deserves one."
+
+Driver classification:
+
+- **Good drivers** — `signed_commercial_contract`,
+  `ebitda_run_rate_milestone`, `bolton_close_count`,
+  `regulatory_licensure`, `site_expansion_count`. Measurable
+  outcomes that resolve the dispute.
+- **Bad drivers** — `generic_ebitda_threshold` (gameable),
+  `quality_metric` (subjective), `management_subjective`,
+  `market_share_claim`. Too easy to dispute.
+
+Recommendation logic:
+
+- Bad driver → **do NOT propose earn-out**; cut headline price
+  80% of gap instead, share upside through MIP.
+- Unknown driver → propose at 50% of gap; negotiate specific
+  measurable language.
+- Good driver:
+  - Seller flinching (high buyer skepticism, low seller
+    conviction) → 90% of gap deferred.
+  - Both confident but disagreeing → 60% of gap (classic
+    earn-out zone).
+  - Modest disagreement → 70% of gap.
+
+Structure notes:
+
+- Physician-owner deals add retention bonus component.
+- Binary outcomes (licensure, signed contracts) → cliff-vest,
+  not pro-rata.
+
+---
+
+## 165. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4450,3 +4486,7 @@ $0.45M — one-third the risk.
 - **2026-04-17** — Added `medicaid_state_exposure_map.py` (§163)
   — 4-tier state risk overlay with bear-case $ impact per state.
   Full inventory: 161 modules, 1,636 pe_intelligence unit tests.
+- **2026-04-17** — Added `earnout_design_advisor.py` (§164) —
+  when/how to structure earn-out by driver quality + seller-
+  conviction × buyer-skepticism. Full inventory: 162 modules,
+  1,646 pe_intelligence unit tests.
