@@ -6090,7 +6090,75 @@ in place."
 
 ---
 
-## 200. Change log
+## 200. Packet data provenance check (`packet_data_provenance_check.py`)
+
+**Partner statement:** "When the seller says 'EBITDA is
+$75M,' what I hear is 'management's number is $75M.'
+When QofE says it, I hear '$75M, roughly.' When my team
+rebuilt it from GL, I hear '$75M.' Same number, three
+different confidences."
+
+### 7 provenance tiers (partner-judgment weights)
+
+- `seller_mgmt_unverified` — 0.40
+- `seller_banker_book` — 0.50
+- `qofe_preliminary` — 0.65
+- `qofe_complete` — 0.85
+- `third_party_diligence` — 0.90
+- `public_data` — 0.95
+- `partner_team_modeled` — 1.00
+
+### High-stakes fields requiring QofE-level provenance
+
+`reported_ebitda`, `recurring_vs_onetime_ebitda`,
+`working_capital_peg`, `debt_balance`, `payer_mix`,
+`top_customer_concentration`,
+`physician_productivity_rvu`, `cms_star_rating`,
+`open_audit_exposure`, `pending_litigation_exposure`.
+
+Any high-stakes field tagged below `qofe_complete`
+triggers a pre-IC verification requirement.
+
+### Partner-note escalation
+
+- **No fields tagged** → "tag at minimum EBITDA, WC,
+  payer-mix before IC."
+- **High-stakes unverified** → "must be QofE-verified
+  or third-party-verified before IC."
+- **Any below threshold** → "flag for diligence if
+  thesis-critical."
+- **All ≥ 85% weighted** → "partner-level discipline;
+  proceed to IC."
+
+### Worked example
+
+Fields:
+- `reported_ebitda` from `seller_mgmt_unverified`
+  (high-stakes, below threshold).
+- `payer_mix` from `seller_banker_book` (high-stakes,
+  below threshold).
+
+→ 2 high-stakes unverified → partner note: "must be
+QofE-verified or third-party-verified before IC."
+
+### Why this discipline matters
+
+Partners have been burned by closing on packets where
+the headline EBITDA came from management-only sources.
+Post-QofE, the number drops 10%+. This module is the
+pre-IC discipline: name what we've verified vs. what
+we've accepted on faith.
+
+### Packet fields that trigger
+
+- `fields` — list of `PacketField` (name + provenance
+  + optional thesis weight).
+- `confidence_threshold` — default 0.70; tighten for
+  high-volatility deals.
+
+---
+
+## 201. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
