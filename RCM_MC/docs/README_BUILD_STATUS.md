@@ -231,9 +231,9 @@ leverage table is auditable. No black-box coefficients.
 12. **xlsx export.** Optional openpyxl dep; same fallback pattern
     as docx/pptx.
 
-## How to contribute
+## Codebase discipline
 
-The codebase discipline (summarized in `CLAUDE.md`):
+Conventions used throughout this project (summarized in `CLAUDE.md`):
 
 1. **No new runtime dependencies** without discussion.
 2. **Parameterized SQL only** — never f-string values into SQL.
@@ -254,7 +254,7 @@ The codebase discipline (summarized in `CLAUDE.md`):
 10. **Additive dataclass changes only.** Every new field gets a
     sensible default so old packets still round-trip.
 
-## Where to start reading (for a new contributor)
+## Where to start reading
 
 1. [README_INDEX.md](README_INDEX.md) — this tree.
 2. [README_GLOSSARY.md](README_GLOSSARY.md) — terms first.

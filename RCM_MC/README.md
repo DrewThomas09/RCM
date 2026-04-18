@@ -174,4 +174,9 @@ Each source package (`rcm_mc/ai/`, `rcm_mc/deals/`, etc.) also has its own READM
 
 ## License
 
-Proprietary. See LICENSE file.
+Proprietary — all rights reserved. This repository is made public
+for portfolio and reference purposes. No part of this code may be
+copied, modified, distributed, or used in any commercial or
+production context without written permission from Drew Thomas.
+
+For licensing inquiries, contact: ast3801@gmail.com

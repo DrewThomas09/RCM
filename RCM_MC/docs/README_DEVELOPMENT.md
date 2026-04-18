@@ -1,6 +1,6 @@
 # RCM-MC Developer Guide
 
-Deep-dive into the architecture, module structure, testing patterns, and coding conventions for contributing to RCM-MC.
+Deep-dive into the architecture, module structure, testing patterns, and coding conventions used in RCM-MC.
 
 ---
 
