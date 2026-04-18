@@ -8800,7 +8800,92 @@ amount_m, explicit_category)`), `exit_multiple`.
 
 ---
 
-## 240. Change log
+## 240. Site-neutral / OBBBA specific-impact calculator (`site_neutral_specific_impact_calculator.py`)
+
+**Partner statement.** "Site-neutral isn't a vague risk. It's a
+specific set of codes, on a specific schedule, with a specific rate
+delta. OBBBA expanded the services that pay the same rate regardless
+of site — and the arbitrage between HOPD and freestanding is gone
+for those codes."
+
+### Why it matters
+
+Regulatory stress modules handle generic shocks (IPPS cuts,
+sequestration). Site-neutral is specific: service lines, effective
+years, pre-OBBBA HOPD premium. Model it concretely, not as a 1%
+stress.
+
+### 8 service-line bands
+
+| Service family | HOPD premium | Site-neutral by year |
+|---|---|---|
+| clinic_visit_E_M | 40-60% | 2022 (done) |
+| drug_admin | 25-40% | 2022 (done) |
+| imaging_diagnostic | 20-35% | 2025 (proposed) |
+| imaging_advanced | 30-50% | 2026 (likely) |
+| procedures_intermediate | 15-30% | 2027 (plausible) |
+| gi_endoscopy | 20-40% | 2027 (plausible) |
+| cardiac_diagnostic | 25-45% | 2028 (exposed) |
+| orthopedic_procedure | 30-55% | 2028 (exposed) |
+
+### Math
+
+Per service line:
+- `hopd_npr = service_npr × hopd_share_pct`
+- `annual_npr_risk = hopd_npr × premium / (1 + premium)` (rate
+  collapse removes the HOPD markup)
+- `annual_ebitda_risk = annual_npr_risk × contribution_margin_pct`
+- `cumulative = annual_ebitda_risk × years_affected` (in hold)
+
+`years_affected`:
+- If effective year ≤ hold start → `hold_years`
+- If effective year > hold end → 0
+- Otherwise → `hold_end − effective_year`
+
+`grandfathered=True` zeros out exposure (site-level grandfathering).
+
+### Partner verdict
+
+- > $20M cumulative → "bake into exit-case EBITDA; price in purchase
+  multiple now, not after LOI."
+- $5-20M → "include in base-case bridge; track CMS rulemaking."
+- < $5M → "monitor; does not re-price."
+
+### Worked example
+
+$40M imaging-advanced NPR with 70% HOPD share, 2026 hold start, 5-yr
+hold, 35% contribution margin:
+- HOPD NPR: $40M × 70% = $28M
+- Premium 40% → NPR risk: $28M × 40% / 140% = $8.0M annual
+- EBITDA risk: $8.0M × 35% = $2.8M annual
+- Years affected: 5 (2026 effective, full hold)
+- Cumulative: $2.8M × 5 = $14M
+
+Combined with $30M GI endoscopy at 80% HOPD share (2027 effective):
+- HOPD: $24M; premium 30% → $5.5M annual NPR risk
+- EBITDA: $1.9M annual × 4 years = $7.7M cumulative
+
+Total: ~$22M cumulative EBITDA exposure over hold → material →
+"bake into exit case."
+
+### Packet fields
+
+`service_lines` (list of `ServiceLineExposure(service_line, npr_m,
+hopd_share_pct, grandfathered)`), `hold_start_year`, `hold_years`,
+`contribution_margin_pct`.
+
+### Distinct from existing modules
+
+- `regulatory_stress` — generic rate shocks.
+- `regulatory_watch` — event calendar (binary exists or not).
+- `reimbursement_cliff_calendar_2026_2029` — broader CMS/state
+  calendar.
+- This module — narrow on OBBBA / site-neutral with named service-
+  line bands, HOPD premium assumptions, and a concrete dollar model.
+
+---
+
+## 241. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
