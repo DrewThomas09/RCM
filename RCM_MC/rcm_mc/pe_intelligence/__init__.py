@@ -839,6 +839,13 @@ from .quarterly_operating_review import (
     build_qor_agenda,
     render_qor_agenda_markdown,
 )
+from .value_creation_plan_generator import (
+    VCPContext,
+    VCPInitiative,
+    VCPRoadmap,
+    build_vcp,
+    render_vcp_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1907,4 +1914,9 @@ __all__ = [
     "QoRContext",
     "build_qor_agenda",
     "render_qor_agenda_markdown",
+    "VCPContext",
+    "VCPInitiative",
+    "VCPRoadmap",
+    "build_vcp",
+    "render_vcp_markdown",
 ]

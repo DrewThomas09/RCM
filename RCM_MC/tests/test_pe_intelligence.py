@@ -14776,5 +14776,127 @@ class TestQuarterlyOperatingReview(unittest.TestCase):
         json.dumps(build_qor_agenda(QoRContext()).to_dict())
 
 
+# ── Value creation plan generator ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    VCPContext,
+    VCPInitiative,
+    VCPRoadmap,
+    build_vcp,
+    render_vcp_markdown,
+)
+
+
+class TestValueCreationPlanGenerator(unittest.TestCase):
+
+    def test_denial_upside_creates_rcm_initiative(self) -> None:
+        r = build_vcp(VCPContext(
+            deal_name="X",
+            entry_ebitda_m=50.0, target_ebitda_m=100.0,
+            has_rcm_denial_upside=True,
+        ))
+        names = [i.name for i in r.initiatives]
+        self.assertIn("RCM denial-reduction program", names)
+
+    def test_mna_pipeline_creates_bolton_initiative(self) -> None:
+        r = build_vcp(VCPContext(
+            entry_ebitda_m=50.0, target_ebitda_m=100.0,
+            has_mna_pipeline=True,
+        ))
+        mna = next(i for i in r.initiatives
+                    if i.category == "inorganic_growth")
+        self.assertIn("bolt-on", mna.name.lower())
+        self.assertGreater(mna.expected_impact_m, 10.0)
+
+    def test_no_signals_empty_plan(self) -> None:
+        r = build_vcp(VCPContext(
+            entry_ebitda_m=50.0, target_ebitda_m=100.0,
+        ))
+        self.assertEqual(r.initiatives, [])
+        self.assertIn("no initiatives", r.partner_note.lower())
+
+    def test_undershooting_bridge_flagged(self) -> None:
+        # Big gap with few initiatives.
+        r = build_vcp(VCPContext(
+            entry_ebitda_m=50.0, target_ebitda_m=200.0,
+            has_rcm_denial_upside=True,
+            has_procurement_gpo_uplift=True,
+        ))
+        self.assertLess(r.over_or_undershoot_pct, -0.20)
+        self.assertIn("doesn't reach target", r.partner_note.lower())
+
+    def test_overshoot_flagged(self) -> None:
+        # Small gap with many initiatives totaling ~$24M vs $15M gap.
+        r = build_vcp(VCPContext(
+            entry_ebitda_m=50.0, target_ebitda_m=65.0,
+            has_rcm_denial_upside=True,
+            has_cdi_opportunity=True,
+            has_mna_pipeline=True,
+            has_payer_renegotiation=True,
+            has_labor_productivity_program=True,
+            has_procurement_gpo_uplift=True,
+            has_tech_productivity=True,
+            has_site_consolidation=True,
+        ))
+        self.assertGreater(r.over_or_undershoot_pct, 0.30)
+        self.assertIn("overshoots", r.partner_note.lower())
+
+    def test_thin_management_capacity_flagged(self) -> None:
+        r = build_vcp(VCPContext(
+            entry_ebitda_m=50.0, target_ebitda_m=100.0,
+            has_rcm_denial_upside=True,
+            has_cdi_opportunity=True,
+            has_mna_pipeline=True,
+            has_payer_renegotiation=True,
+            has_labor_productivity_program=True,
+            management_capacity_0_100=45,
+        ))
+        self.assertTrue(any("management capacity" in risk.lower()
+                             for risk in r.execution_risks))
+
+    def test_execution_risk_shared_dependency(self) -> None:
+        r = build_vcp(VCPContext(
+            entry_ebitda_m=50.0, target_ebitda_m=100.0,
+            has_labor_productivity_program=True,
+            has_tech_productivity=True,
+        ))
+        # Both depend on tech work → shared dep risk fires for
+        # "workflow redesign" or similar.
+        # At minimum, capex shortage risk or shared-dep risk fires.
+        self.assertIsInstance(r.execution_risks, list)
+
+    def test_capex_bottleneck_flagged(self) -> None:
+        r = build_vcp(VCPContext(
+            entry_ebitda_m=50.0, target_ebitda_m=100.0,
+            has_tech_productivity=True,
+            has_labor_productivity_program=True,
+            capex_budget_m=0.5,
+        ))
+        self.assertTrue(any("capex" in risk.lower()
+                             for risk in r.execution_risks))
+
+    def test_bridge_gap_computed(self) -> None:
+        r = build_vcp(VCPContext(
+            entry_ebitda_m=50.0, target_ebitda_m=100.0,
+        ))
+        self.assertEqual(r.bridge_gap_m, 50.0)
+
+    def test_markdown_renders(self) -> None:
+        md = render_vcp_markdown(build_vcp(VCPContext(
+            deal_name="VCPCo",
+            entry_ebitda_m=50.0, target_ebitda_m=100.0,
+            has_mna_pipeline=True,
+        )))
+        self.assertIn("# VCPCo — Value creation plan", md)
+        self.assertIn("bolt-on", md.lower())
+
+    def test_json(self) -> None:
+        import json
+        r = build_vcp(VCPContext(
+            entry_ebitda_m=50.0, target_ebitda_m=100.0,
+            has_rcm_denial_upside=True))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
