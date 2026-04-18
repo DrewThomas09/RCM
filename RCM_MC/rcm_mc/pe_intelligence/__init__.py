@@ -910,6 +910,15 @@ from .competing_deals_ranker import (
     rank_deals,
     render_ranking_markdown,
 )
+from .medicaid_state_exposure_map import (
+    STATE_RISK_TIER,
+    TIER_BEAR_CUT_PCT,
+    MedicaidMapReport,
+    StateExposure,
+    StateMedicaidSite,
+    map_medicaid_exposure,
+    render_medicaid_map_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2029,4 +2038,11 @@ __all__ = [
     "RankingReport",
     "rank_deals",
     "render_ranking_markdown",
+    "STATE_RISK_TIER",
+    "TIER_BEAR_CUT_PCT",
+    "MedicaidMapReport",
+    "StateExposure",
+    "StateMedicaidSite",
+    "map_medicaid_exposure",
+    "render_medicaid_map_markdown",
 ]

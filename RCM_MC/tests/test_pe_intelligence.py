@@ -15983,5 +15983,104 @@ class TestCompetingDealsRanker(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Medicaid state exposure map ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    STATE_RISK_TIER,
+    TIER_BEAR_CUT_PCT,
+    MedicaidMapReport,
+    StateExposure,
+    StateMedicaidSite,
+    map_medicaid_exposure,
+    render_medicaid_map_markdown,
+)
+
+
+class TestMedicaidStateExposureMap(unittest.TestCase):
+
+    def test_no_exposure_flagged(self) -> None:
+        r = map_medicaid_exposure([])
+        self.assertIn("no medicaid exposure",
+                       r.partner_note.lower())
+
+    def test_high_risk_state_deep_bear(self) -> None:
+        r = map_medicaid_exposure([
+            StateMedicaidSite(state="TX", medicaid_revenue_m=100.0),
+        ])
+        tx = r.exposures[0]
+        self.assertEqual(tx.risk_tier, "high_cut_risk")
+        self.assertEqual(tx.bear_rate_cut_pct, 0.05)
+
+    def test_low_risk_state_small_bear(self) -> None:
+        r = map_medicaid_exposure([
+            StateMedicaidSite(state="NY", medicaid_revenue_m=50.0),
+        ])
+        ny = r.exposures[0]
+        self.assertEqual(ny.risk_tier, "low_cut_risk")
+        self.assertLess(ny.bear_rate_cut_pct, 0.02)
+
+    def test_waiver_state(self) -> None:
+        r = map_medicaid_exposure([
+            StateMedicaidSite(state="AR", medicaid_revenue_m=30.0),
+        ])
+        ar = r.exposures[0]
+        self.assertEqual(ar.risk_tier, "waiver_risk")
+
+    def test_high_concentration_partner_note(self) -> None:
+        r = map_medicaid_exposure([
+            StateMedicaidSite(state="TX", medicaid_revenue_m=60.0),
+            StateMedicaidSite(state="FL", medicaid_revenue_m=40.0),
+            StateMedicaidSite(state="NY", medicaid_revenue_m=10.0),
+        ])
+        # 100/110 = 91% high-risk.
+        self.assertGreaterEqual(r.high_risk_revenue_share_pct, 50)
+        self.assertIn("bear drag", r.partner_note.lower())
+
+    def test_worst_state_tracked(self) -> None:
+        r = map_medicaid_exposure([
+            StateMedicaidSite(state="CA", medicaid_revenue_m=10.0),
+            StateMedicaidSite(state="TX", medicaid_revenue_m=50.0),
+            StateMedicaidSite(state="WA", medicaid_revenue_m=20.0),
+        ])
+        self.assertEqual(r.worst_state, "TX")
+
+    def test_same_state_aggregated(self) -> None:
+        r = map_medicaid_exposure([
+            StateMedicaidSite(state="TX", medicaid_revenue_m=30.0),
+            StateMedicaidSite(state="TX", medicaid_revenue_m=20.0),
+            StateMedicaidSite(state="tx", medicaid_revenue_m=10.0),
+        ])
+        self.assertEqual(len(r.exposures), 1)
+        self.assertAlmostEqual(r.exposures[0].medicaid_revenue_m,
+                                60.0, places=1)
+
+    def test_unmapped_state_medium_default(self) -> None:
+        r = map_medicaid_exposure([
+            StateMedicaidSite(state="ZZ", medicaid_revenue_m=20.0),
+        ])
+        zz = r.exposures[0]
+        self.assertEqual(zz.risk_tier, "medium_cut_risk")
+
+    def test_library_structure(self) -> None:
+        self.assertEqual(STATE_RISK_TIER["TX"], "high_cut_risk")
+        self.assertEqual(STATE_RISK_TIER["NY"], "low_cut_risk")
+        self.assertEqual(TIER_BEAR_CUT_PCT["high_cut_risk"], 0.05)
+
+    def test_markdown_renders(self) -> None:
+        md = render_medicaid_map_markdown(map_medicaid_exposure([
+            StateMedicaidSite(state="TX", medicaid_revenue_m=50.0),
+            StateMedicaidSite(state="NY", medicaid_revenue_m=30.0),
+        ]))
+        self.assertIn("# Medicaid state exposure map", md)
+        self.assertIn("TX", md)
+
+    def test_json(self) -> None:
+        import json
+        r = map_medicaid_exposure([
+            StateMedicaidSite(state="CA", medicaid_revenue_m=10.0),
+        ])
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
