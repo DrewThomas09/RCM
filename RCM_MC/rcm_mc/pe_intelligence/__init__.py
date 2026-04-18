@@ -1352,6 +1352,13 @@ from .multi_state_regulatory_complexity_scorer import (
     render_multi_state_markdown,
     score_multi_state_complexity,
 )
+from .ebitda_quality_bridge_reconstructor import (
+    BridgeInputs,
+    BridgeLine,
+    BridgeReport,
+    build_ebitda_quality_bridge,
+    render_ebitda_bridge_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2795,4 +2802,9 @@ __all__ = [
     "StateCategory",
     "render_multi_state_markdown",
     "score_multi_state_complexity",
+    "BridgeInputs",
+    "BridgeLine",
+    "BridgeReport",
+    "build_ebitda_quality_bridge",
+    "render_ebitda_bridge_markdown",
 ]

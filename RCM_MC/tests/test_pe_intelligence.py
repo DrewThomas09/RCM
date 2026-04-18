@@ -24735,5 +24735,152 @@ class TestMultiStateRegulatoryComplexityScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestEBITDAQualityBridgeReconstructor(unittest.TestCase):
+    """Partner scenario: stated → partner run-rate EBITDA."""
+
+    def test_no_adjustments_equal_to_stated(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+        ))
+        self.assertEqual(r.partner_run_rate_ebitda_m, 75.0)
+        self.assertEqual(r.total_haircut_m, 0.0)
+
+    def test_qofe_haircut_subtracted(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+            qofe_haircut_m=8.0,
+        ))
+        self.assertAlmostEqual(r.partner_run_rate_ebitda_m,
+                                67.0, places=1)
+
+    def test_physician_comp_haircut_added(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+            physician_comp_normalization_haircut_m=4.0,
+        ))
+        self.assertAlmostEqual(r.partner_run_rate_ebitda_m,
+                                71.0, places=1)
+
+    def test_covid_strip(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+            covid_tailwind_strip_m=6.0,
+        ))
+        self.assertAlmostEqual(r.partner_run_rate_ebitda_m,
+                                69.0, places=1)
+
+    def test_cash_release_strip_when_over_30pct(self) -> None:
+        """Partner: 'Y1 cash release > 30% → strip half.'"""
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+            cash_release_share_in_y1_gain=0.60,
+            y1_claimed_ebitda_gain_m=10.0,
+        ))
+        # 0.60 × 10 = 6.0 × 0.5 = 3.0 strip.
+        self.assertAlmostEqual(r.partner_run_rate_ebitda_m,
+                                72.0, places=1)
+
+    def test_cash_release_not_stripped_below_30pct(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+            cash_release_share_in_y1_gain=0.20,
+            y1_claimed_ebitda_gain_m=10.0,
+        ))
+        self.assertEqual(r.partner_run_rate_ebitda_m, 75.0)
+
+    def test_ev_impact_scales_with_multiple(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        # $10M haircut × 11x entry multiple = $110M EV.
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+            qofe_haircut_m=10.0,
+            entry_multiple=11.0,
+        ))
+        self.assertAlmostEqual(r.ev_delta_m, 110.0, places=1)
+
+    def test_material_haircut_triggers_run_rate_note(self) -> None:
+        """Partner: '20%+ haircut → do not underwrite off stated.'"""
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+            qofe_haircut_m=12.0,
+            physician_comp_normalization_haircut_m=5.0,
+            covid_tailwind_strip_m=4.0,
+        ))
+        self.assertIn("do not underwrite off stated",
+                       r.partner_note.lower())
+
+    def test_biggest_haircut_source_named(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+            qofe_haircut_m=3.0,
+            physician_comp_normalization_haircut_m=8.0,
+            covid_tailwind_strip_m=2.0,
+        ))
+        self.assertEqual(r.biggest_haircut_source,
+                          "physician_comp_normalization")
+
+    def test_markdown_renders_bridge_lines(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+            render_ebitda_bridge_markdown,
+        )
+        md = render_ebitda_bridge_markdown(
+            build_ebitda_quality_bridge(BridgeInputs(
+                stated_ebitda_m=75.0,
+                qofe_haircut_m=8.0,
+            ))
+        )
+        self.assertIn("# EBITDA quality bridge", md)
+        self.assertIn("qofe_addback_haircut", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            BridgeInputs,
+            build_ebitda_quality_bridge,
+        )
+        r = build_ebitda_quality_bridge(BridgeInputs(
+            stated_ebitda_m=75.0,
+            qofe_haircut_m=5.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
