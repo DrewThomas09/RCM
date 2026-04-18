@@ -7810,7 +7810,112 @@ multiple applies.)
 
 ---
 
-## 230. Change log
+## 230. Change-my-mind diligence plan (`change_my_mind_diligence_plan.py`)
+
+**Partner statement.** "Tell me the three things I'd need to see to
+change my mind. Not abstract concerns — specific data I can get in
+diligence. If I can't tell you the source, the hypothesis is air. If
+I can't tell you the calendar days, I can't sequence the diligence.
+Every hypothesis that flips the call must have an owner, a source, a
+cost, and a date."
+
+### Why it matters
+
+`ic_decision_synthesizer` produces three flip-the-call signals — the
+abstract shape of what would change the recommendation. That's not a
+plan; it's a premise. The partner's actual next move after the first
+IC read is: for each flip signal, "what specifically do I ask, of
+whom, for how much, over how many days, and what answer confirms or
+denies." This module outputs that **ordered operational ask list**.
+
+### Per-hypothesis shape
+
+Each flip-hypothesis produces an item with:
+
+- `direction` — `flip_to_invest` or `flip_to_pass`.
+- `data_needed` — the specific document / number / interview output.
+- `source` — `management_meeting`, `qofe`, `payer_call`,
+  `site_visit`, `customer_call`, `legal_drop`, `third_party_specialist`,
+  or `data_room_pull`.
+- `cost_usd` — incremental out-of-pocket diligence cost.
+- `calendar_days` — time to close the hypothesis.
+- `likelihood_pct` — rough odds we get a usable answer in the window.
+- `evidence_test` — what answer confirms / denies.
+
+### Catalog coverage
+
+The module matches hypothesis text against 12 common healthcare-PE
+flip patterns:
+
+1. **Denial rate** → data-room pull, $0, 5d, 90%
+2. **Payer renegotiation** → payer call, $25k, 14d, 65%
+3. **EBITDA quality / QofE** → QofE engagement, $125k, 35d, 95%
+4. **CMS survey / 2567** → legal drop, $10k, 10d, 85%
+5. **Physician comp / productivity** → management meeting, $0, 7d, 70%
+6. **Culture / CEO** → references + site visit, $8k, 12d, 75%
+7. **Customer concentration** → customer calls, $15k, 10d, 60%
+8. **Cyber / HIPAA / breach** → legal drop + pen-test, $20k, 14d, 85%
+9. **Litigation** → legal drop + counsel opinion, $15k, 10d, 80%
+10. **Regulatory (OBBBA / site-neutral / Medicaid)** → policy
+    specialist, $25k, 14d, 70%
+11. **Integration / bolt-on pipeline** → management meeting, $0, 7d, 75%
+12. **Same-store growth** → data-room pull, $0, 7d, 85%
+
+Unknown hypotheses fall back to a structured management-meeting probe
+($0, 7d, 55%). Every hypothesis gets a closable plan; the partner is
+never left with "here's a concern, figure it out."
+
+### Sequencing
+
+`score = likelihood / (1 + cost/1000 + days/7)`, sorted descending.
+Cheapest, fastest, most-likely-to-answer items go first. The partner
+sequences diligence to knock out the easy flippers before spending
+on QofE or site visits — if they close, conviction is bought or
+saved.
+
+### Verdict tiers
+
+- **closable_in_2_weeks** — every hypothesis fits the window and
+  budget. Run the full plan before IC reconvenes.
+- **needs_4_weeks** — one or more hypotheses needs longer or exceeds
+  budget. Extend diligence or de-scope lowest-likelihood items.
+- **irreducible** — at least one hypothesis cannot be closed in the
+  window at any feasible spend. Partner must decide with open
+  question; build deal-structure protection (escrow, earn-out,
+  walk-right) around the irreducible item rather than try to
+  diligence past it.
+
+### Worked example
+
+Flip-to-invest list: "denial fix is real," "growth is organic," "QofE
+confirms EBITDA." 21-day window, $150k budget.
+
+Sequencing:
+1. Denial fix (data-room, $0, 5d, 90%)
+2. Growth organic (data-room, $0, 7d, 85%)
+3. QofE confirm ($125k, 35d, 95%) — **not closable in 21-day window**.
+
+Verdict: `needs_4_weeks`. Partner: "extend window for QofE or de-scope
+it and decide on the first two alone."
+
+### Packet fields
+
+`current_recommendation`, `flip_to_invest_hypotheses` (list of
+sentences), `flip_to_pass_hypotheses`, `diligence_window_days`,
+`diligence_budget_remaining_usd`.
+
+### Distinct from existing modules
+
+- `ic_decision_synthesizer` — produces the 3 flip-signals (abstract).
+- This module — translates each flip-signal into an **operational
+  ask** with source, cost, days, evidence-test; orders them for
+  sequencing.
+- `diligence_tracker` — tracks known diligence items through status;
+  this module *generates* the ask list from flip-hypotheses.
+
+---
+
+## 231. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
