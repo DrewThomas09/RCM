@@ -222,7 +222,22 @@ def render_value_backtester(params: dict = None) -> str:
                "Ophthalmology", "Fertility / IVF", "Telehealth Platform", "Oncology"]
     sector_opts = "".join(f'<option value="{_html.escape(s)}"{" selected" if s == sector else ""}>{_html.escape(s)}</option>' for s in sectors)
 
-    form = f"""
+    disambig = (
+        f'<div style="background:{panel};border:1px solid {border};'
+        f'border-left:3px solid {acc};padding:10px 14px;margin-bottom:14px;'
+        f'border-radius:3px;">'
+        f'<span style="font-family:JetBrains Mono,monospace;font-size:9.5px;'
+        f'letter-spacing:0.15em;color:{text_dim};">VALUE BRIDGE BACKTEST</span>'
+        f'<div style="color:{text};font-size:12px;margin-top:4px;">'
+        f'This page backtests an <em>individual deal model</em> — '
+        f'predicted MOIC vs corpus calibration + lever attribution. '
+        f'For the <strong>platform prediction audit</strong> (how well '
+        f'platform outputs matched realized outcomes across the 655-deal '
+        f'corpus) see '
+        f'<a href="/corpus-backtest" style="color:{acc};">/corpus-backtest</a>.'
+        f'</div></div>'
+    )
+    form = disambig + f"""
 <form method="GET" action="/backtester" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
   <label style="font-size:11px;color:{text_dim}">Sector<select name="sector" style="margin-left:6px;background:{panel};border:1px solid {border};color:{text};padding:4px 8px;font-size:11px;font-family:JetBrains Mono,monospace">{sector_opts}</select></label>
   <label style="font-size:11px;color:{text_dim}">Predicted MOIC<input name="pred_moic" value="{pred_moic}" type="number" step="0.1" style="margin-left:6px;background:{panel};border:1px solid {border};color:{text};padding:4px 8px;font-size:11px;font-family:JetBrains Mono,monospace;width:80px"/></label>

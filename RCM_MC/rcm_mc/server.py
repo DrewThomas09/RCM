@@ -1794,16 +1794,25 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.quick_import import render_quick_import
             return self._send_html(render_quick_import())
         if path == "/methodology":
+            # Methodology hub — renders the reference-catalogue (formerly /library).
+            # The detailed calculation explainer moved to /methodology/calculations.
+            from .ui.library_page import render_library
+            return self._send_html(render_library())
+        if path == "/methodology/calculations":
             from .ui.methodology_page import render_methodology
             return self._send_html(render_methodology())
         # Corpus Intelligence pages
         if path == "/deals-library":
-            _qs = urllib.parse.parse_qs(parsed.query)
-            sector = _qs.get("sector", [""])[0]
-            regime = _qs.get("regime", [""])[0]
-            q = _qs.get("q", [""])[0]
-            from .ui.data_public.deals_library_page import render_deals_library
-            return self._send_html(render_deals_library(sector_filter=sector, regime_filter=regime, search=q))
+            # Renamed → /library. 301 redirect preserves query string so
+            # ?sector=... still lands on the corpus after the move.
+            target = "/library"
+            if parsed.query:
+                target = f"/library?{parsed.query}"
+            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+            self.send_header("Location", target)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if path == "/cms-sources":
             from .ui.data_public.cms_sources_page import render_cms_sources
             return self._send_html(render_cms_sources())
@@ -2868,8 +2877,63 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/market-data/state/"):
             st = urllib.parse.unquote(path[len("/market-data/state/"):]).strip("/")
             return self._route_market_data_state(st)
+        if path == "/pe-intelligence":
+            from .ui.chartis.pe_intelligence_hub_page import render_pe_intelligence_hub
+            store = PortfolioStore(self.config.db_path)
+            cu = self._current_user() or {}
+            username = cu.get("username") if isinstance(cu, dict) else None
+            return self._send_html(
+                render_pe_intelligence_hub(store=store, current_user=username)
+            )
+        if path == "/sponsor-track-record":
+            from .ui.chartis.sponsor_track_record_page import render_sponsor_track_record
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_sponsor_track_record(
+                store=store, current_user=self._chartis_username(),
+            ))
+        if path == "/payer-intelligence":
+            from .ui.chartis.payer_intelligence_page import render_payer_intelligence
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_payer_intelligence(
+                store=store, current_user=self._chartis_username(),
+            ))
+        if path == "/rcm-benchmarks":
+            from .ui.chartis.rcm_benchmarks_page import render_rcm_benchmarks
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_rcm_benchmarks(
+                store=store, current_user=self._chartis_username(),
+            ))
+        if path == "/corpus-backtest":
+            from .ui.chartis.corpus_backtest_page import render_corpus_backtest
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_corpus_backtest(
+                store=store, store_db_path=self.config.db_path,
+                current_user=self._chartis_username(),
+            ))
+        if path == "/deal-screening":
+            from .ui.chartis.deal_screening_page import render_deal_screening
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_deal_screening(
+                store=store, query=parsed.query,
+                current_user=self._chartis_username(),
+            ))
+        if path == "/portfolio-analytics":
+            from .ui.chartis.portfolio_analytics_page import render_portfolio_analytics
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_portfolio_analytics(
+                store=store, current_user=self._chartis_username(),
+            ))
         if path == "/library":
-            return self._route_library_page()
+            # /library now surfaces the 655-deal corpus (previously at
+            # /deals-library). The methodology hub moved to /methodology.
+            _qs = urllib.parse.parse_qs(parsed.query)
+            sector = _qs.get("sector", [""])[0]
+            regime = _qs.get("regime", [""])[0]
+            q = _qs.get("q", [""])[0]
+            from .ui.data_public.deals_library_page import render_deals_library
+            return self._send_html(
+                render_deals_library(sector_filter=sector, regime_filter=regime, search=q)
+            )
         # Screener API
         if path == "/api/screener/run":
             return self._send_json({"error": "use POST"}, status=HTTPStatus.METHOD_NOT_ALLOWED)
@@ -3667,6 +3731,41 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/initiative/"):
             init_id = urllib.parse.unquote(path[len("/initiative/"):]).strip("/")
             return self._route_initiative_detail(init_id)
+        # Per-deal PE intelligence surfaces must match before the generic
+        # /deal/<id> route below, otherwise "/deal/x/partner-review" is
+        # caught as a deal_id and 404s.
+        if path.startswith("/deal/") and path.endswith("/partner-review"):
+            mid = path[len("/deal/"):-len("/partner-review")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_partner_review(deal_id)
+        if path.startswith("/deal/") and path.endswith("/red-flags"):
+            mid = path[len("/deal/"):-len("/red-flags")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_red_flags(deal_id)
+        if path.startswith("/deal/") and path.endswith("/archetype"):
+            mid = path[len("/deal/"):-len("/archetype")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_archetype(deal_id)
+        if path.startswith("/deal/") and path.endswith("/investability"):
+            mid = path[len("/deal/"):-len("/investability")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_investability(deal_id)
+        if path.startswith("/deal/") and path.endswith("/market-structure"):
+            mid = path[len("/deal/"):-len("/market-structure")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_market_structure(deal_id)
+        if path.startswith("/deal/") and path.endswith("/white-space"):
+            mid = path[len("/deal/"):-len("/white-space")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_white_space(deal_id)
+        if path.startswith("/deal/") and path.endswith("/stress"):
+            mid = path[len("/deal/"):-len("/stress")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_stress(deal_id)
+        if path.startswith("/deal/") and path.endswith("/ic-packet"):
+            mid = path[len("/deal/"):-len("/ic-packet")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_ic_packet(deal_id)
         if path.startswith("/deal/"):
             deal_id = urllib.parse.unquote(path[len("/deal/"):]).strip("/")
             if not deal_id:
@@ -3821,14 +3920,24 @@ class RCMHandler(BaseHTTPRequestHandler):
             deals = store.list_deals()
         except Exception:
             deals = _pd_home.DataFrame()
-        # Use command center as the primary home page
+        # Seven-panel Chartis landing is the primary home page.
+        # Falls back to command_center then home_v2 if the chartis panel
+        # set fails — avoids ever 500ing the landing route.
         try:
-            from .data.hcris import _get_latest_per_ccn
-            from .ui.command_center import render_command_center
-            hcris = _get_latest_per_ccn()
-            return self._send_html(render_command_center(hcris, self.config.db_path))
+            from .ui.chartis.home_page import render_home as render_chartis_home
+            cu = self._current_user() or {}
+            username = cu.get("username") if isinstance(cu, dict) else None
+            return self._send_html(
+                render_chartis_home(store, self.config.db_path, current_user=username)
+            )
         except Exception:
-            return self._send_html(render_home(pulse, insights, deals, store))
+            try:
+                from .data.hcris import _get_latest_per_ccn
+                from .ui.command_center import render_command_center
+                hcris = _get_latest_per_ccn()
+                return self._send_html(render_command_center(hcris, self.config.db_path))
+            except Exception:
+                return self._send_html(render_home(pulse, insights, deals, store))
 
     def _route_news_page(self) -> None:
         """GET /news — healthcare PE news and research."""
@@ -6867,6 +6976,307 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.deal_quick_view import render_deal_quick_view
             return self._send_html(render_deal_quick_view(
                 deal_id, profile, error_msg=str(exc)))
+
+    def _build_partner_review_context(self, deal_id: str) -> Tuple[Any, Optional[str], Dict[str, Any]]:
+        """Shared packet-load + partner_review() wrapper.
+
+        Returns ``(review_or_None, error_or_None, meta)`` where ``meta`` carries
+        ``deal_name`` and ``missing_fields`` for the error path. Used by both
+        ``/deal/<id>/partner-review`` and ``/deal/<id>/red-flags`` so the brain
+        runs once per packet, not twice. partner_review() is defensive — it
+        only raises on structural bugs, not missing fields — but we still
+        wrap it so a bad import doesn't crash the route.
+        """
+        meta: Dict[str, Any] = {"deal_name": "", "missing_fields": []}
+        profile = self._load_deal_profile(deal_id)
+        if not profile:
+            return None, "Deal not found.", meta
+        meta["deal_name"] = str(profile.get("name", "") or "")
+        try:
+            from .analysis.analysis_store import get_or_build_packet
+            from .pe_intelligence import partner_review
+        except Exception as exc:  # noqa: BLE001
+            return None, f"pe_intelligence import failed: {exc!r}", meta
+        try:
+            packet = get_or_build_packet(self._require_store(), deal_id, skip_simulation=True)
+        except Exception as exc:  # noqa: BLE001
+            meta["missing_fields"] = ["analysis packet (run a simulation first)"]
+            return None, f"packet build failed: {exc!r}", meta
+        try:
+            review = partner_review(packet)
+        except Exception as exc:  # noqa: BLE001
+            return None, f"partner_review raised: {exc!r}", meta
+        return review, None, meta
+
+    def _require_store(self) -> Any:
+        """Fetch a PortfolioStore handle for this request."""
+        return PortfolioStore(self.config.db_path)
+
+    def _chartis_username(self) -> Optional[str]:
+        """Pull the display username (or None) for chartis page headers."""
+        cu = self._current_user() or {}
+        if isinstance(cu, dict):
+            return cu.get("username") or cu.get("display_name")
+        return None
+
+    def _route_partner_review(self, deal_id: str) -> None:
+        """GET /deal/<deal_id>/partner-review — full PE brain verdict."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.partner_review_page import render_partner_review
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_partner_review(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        return self._send_html(render_partner_review(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            current_user=username,
+        ))
+
+    def _route_archetype(self, deal_id: str) -> None:
+        """GET /deal/<deal_id>/archetype — classify_archetypes + regime."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.archetype_page import (
+            render_archetype, _build_archetype_context,
+        )
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_archetype(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        # The PartnerReview gives us the regime dict for free; we still
+        # need to run the archetype classifier separately because the
+        # review doesn't carry archetype hits.
+        profile = self._load_deal_profile(deal_id) or {}
+        try:
+            from .analysis.analysis_store import get_or_build_packet
+            packet = get_or_build_packet(
+                self._require_store(), deal_id, skip_simulation=True,
+            )
+        except Exception:
+            packet = None
+        try:
+            from .pe_intelligence.deal_archetype import (
+                classify_archetypes, primary_archetype,
+            )
+            ctx = _build_archetype_context(profile, packet)
+            hits = classify_archetypes(ctx)
+            primary = primary_archetype(ctx)
+        except Exception as exc:  # noqa: BLE001
+            return self._send_html(render_archetype(
+                review, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=f"archetype classifier raised: {exc!r}",
+                missing_fields=["hospital_type + deal-structure flags"],
+                current_user=username,
+            ))
+        return self._send_html(render_archetype(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            archetype_hits=hits,
+            primary=primary,
+            archetype_context=ctx,
+            current_user=username,
+        ))
+
+    def _route_investability(self, deal_id: str) -> None:
+        """GET /deal/<id>/investability — composite score + exit readiness."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.investability_page import render_investability
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_investability(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        exit_report = None
+        try:
+            from .pe_intelligence.partner_review import _extract_context
+            from .pe_intelligence.exit_readiness import (
+                ExitReadinessInputs, score_exit_readiness,
+            )
+            from .analysis.analysis_store import get_or_build_packet
+            packet = get_or_build_packet(
+                self._require_store(), deal_id, skip_simulation=True,
+            )
+            ctx = _extract_context(packet)
+            profile = self._load_deal_profile(deal_id) or {}
+            readiness_inputs = ExitReadinessInputs(
+                has_audited_financials_3yr=profile.get("has_audited_financials_3yr"),
+                has_trailing_12mo_kpis=profile.get("has_trailing_12mo_kpis"),
+                data_room_organized=profile.get("data_room_organized"),
+                quality_of_earnings_prepared=profile.get("quality_of_earnings_prepared"),
+                ebitda_trending_up_last_2q=profile.get("ebitda_trending_up_last_2q"),
+                margin_trending_up_last_2q=profile.get("margin_trending_up_last_2q"),
+                buyer_universe_mapped=profile.get("buyer_universe_mapped"),
+                management_retained_through_close=profile.get("management_retained_through_close"),
+                legal_litigation_clean=profile.get("legal_litigation_clean"),
+                ebitda_adj_recon_documented=profile.get("ebitda_adj_recon_documented"),
+                ebitda_vs_plan=profile.get("ebitda_vs_plan"),
+                revenue_vs_plan=profile.get("revenue_vs_plan"),
+            )
+            exit_report = score_exit_readiness(ctx, readiness_inputs)
+        except Exception:  # noqa: BLE001
+            exit_report = None  # fall through — investability can still render
+        return self._send_html(render_investability(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            exit_report=exit_report,
+            current_user=username,
+        ))
+
+    def _route_market_structure(self, deal_id: str) -> None:
+        """GET /deal/<id>/market-structure — HHI / CR3 / CR5 + thesis hint."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.market_structure_page import render_market_structure
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_market_structure(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        profile = self._load_deal_profile(deal_id) or {}
+        packet = None
+        try:
+            from .analysis.analysis_store import get_or_build_packet
+            packet = get_or_build_packet(
+                self._require_store(), deal_id, skip_simulation=True,
+            )
+        except Exception:
+            packet = None
+        return self._send_html(render_market_structure(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            packet=packet,
+            profile=profile,
+            current_user=username,
+        ))
+
+    def _route_white_space(self, deal_id: str) -> None:
+        """GET /deal/<id>/white-space — detect_white_space opportunities."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.white_space_page import render_white_space
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_white_space(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        return self._send_html(render_white_space(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            current_user=username,
+        ))
+
+    def _route_stress(self, deal_id: str) -> None:
+        """GET /deal/<id>/stress — scenario stress grid."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.stress_page import render_stress
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_stress(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        return self._send_html(render_stress(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            current_user=username,
+        ))
+
+    def _route_ic_packet(self, deal_id: str) -> None:
+        """GET /deal/<id>/ic-packet — master_bundle + ic_memo full packet."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.ic_packet_page import render_ic_packet
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_ic_packet(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        bundle = None
+        try:
+            from .analysis.analysis_store import get_or_build_packet
+            from .pe_intelligence.master_bundle import build_master_bundle
+            packet = get_or_build_packet(
+                self._require_store(), deal_id, skip_simulation=True,
+            )
+            bundle = build_master_bundle(packet)
+        except Exception:  # noqa: BLE001
+            bundle = None
+        return self._send_html(render_ic_packet(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            bundle=bundle,
+            current_user=username,
+        ))
+
+    def _route_red_flags(self, deal_id: str) -> None:
+        """GET /deal/<deal_id>/red-flags — focused red-flag surface."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.red_flags_page import render_red_flags
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_red_flags(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        return self._send_html(render_red_flags(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            current_user=username,
+        ))
 
     def _build_mc_context(self, deal_id: str, payload: Dict[str, Any]) -> Any:
         """Assemble the bridge + simulator for a MC endpoint.

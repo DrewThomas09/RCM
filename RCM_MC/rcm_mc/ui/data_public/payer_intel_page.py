@@ -271,8 +271,22 @@ def render_payer_intel() -> str:
   </div>
 </div>"""
 
+    deeper_link = (
+        f'<div style="background:#111827;border:1px solid #1e293b;'
+        f'border-left:3px solid #3b82f6;padding:10px 14px;margin-bottom:14px;'
+        f'border-radius:3px;">'
+        f'<span style="font-family:JetBrains Mono,monospace;font-size:9.5px;'
+        f'letter-spacing:0.15em;color:#94a3b8;">SUMMARY VIEW</span>'
+        f'<div style="color:#e2e8f0;font-size:12px;margin-top:4px;">'
+        f'This is the summary. For the comprehensive payer-mix breakdown '
+        f'(4 regimes, per-band MOIC distributions, correlation coefficients) '
+        f'see <a href="/payer-intelligence" style="color:#3b82f6;">'
+        f'/payer-intelligence</a>.</div></div>'
+    )
+
     body = (
-        kpis
+        deeper_link
+        + kpis
         + ck_section_header("PAYER MIX", "corpus-average composition and return correlation")
         + f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">{mix_panel}{scatter_panel}</div>'
         + ck_section_header("PAYER REGIME ANALYSIS", "P25/P50/P75 MOIC by commercial % bucket")

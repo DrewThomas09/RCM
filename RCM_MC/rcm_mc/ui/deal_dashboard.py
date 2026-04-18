@@ -309,6 +309,46 @@ def render_deal_dashboard(
             "Per-metric trend detection & short-horizon forecast",
             accent=PALETTE["positive"],
         ),
+        _model_tile(
+            "PRV", f"/deal/{did}/partner-review", "Partner Review",
+            "PE brain verdict: recommendation, bull/bear, investability",
+            accent=PALETTE["brand_accent"],
+        ),
+        _model_tile(
+            "RED", f"/deal/{did}/red-flags", "Red Flags",
+            "Critical/high heuristic hits + reasonableness violations",
+            accent=PALETTE["negative"],
+        ),
+        _model_tile(
+            "ARC", f"/deal/{did}/archetype", "Archetype",
+            "Sponsor-structure archetype match + time-series regime",
+            accent=PALETTE["brand_accent"],
+        ),
+        _model_tile(
+            "INV", f"/deal/{did}/investability", "Investability",
+            "Composite 0-100 + exit readiness + three things to fix",
+            accent=PALETTE["brand_accent"],
+        ),
+        _model_tile(
+            "MKT", f"/deal/{did}/market-structure", "Market Structure",
+            "HHI / CR3 / CR5 + fragmentation verdict + thesis hint",
+            accent=PALETTE["brand_accent"],
+        ),
+        _model_tile(
+            "WHT", f"/deal/{did}/white-space", "White Space",
+            "Geographic / segment / channel adjacencies with scores",
+            accent=PALETTE["brand_accent"],
+        ),
+        _model_tile(
+            "STR", f"/deal/{did}/stress", "Stress Grid",
+            "Scenario stress grid: rate / volume / multiple / lever shocks",
+            accent=PALETTE["warning"],
+        ),
+        _model_tile(
+            "ICP", f"/deal/{did}/ic-packet", "IC Packet",
+            "master_bundle: IC memo + cheatsheet + 100-day + bear book",
+            accent=PALETTE["brand_accent"],
+        ),
     ]
 
     model_grid = (
