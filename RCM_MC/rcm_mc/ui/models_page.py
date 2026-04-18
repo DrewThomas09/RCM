@@ -92,12 +92,24 @@ def _fmt_m(val: Any) -> str:
         return "—"
 
 
-def _fmt_pct(val: Any) -> str:
+def _fmt_pct(val: Any, is_fraction: bool = False) -> str:
+    """Format a percentage.
+
+    Auto-detect mode (is_fraction=False): values with ``abs(v) < 1``
+    are treated as fractions (0.10 → "10.0%"); values ≥ 1 are treated
+    as already-%. This is the legacy path for assumption fields like
+    WACC / terminal_growth.
+
+    Explicit fraction mode (is_fraction=True): always treats input as
+    a fraction. Callers rendering IRR ≥ 100% (e.g., 1.3022 on an
+    absurd LBO output) must pass ``is_fraction=True`` so 1.3 doesn't
+    render as "1.3%" when it means "130%".
+    """
     if val is None:
         return "—"
     try:
         v = float(val)
-        if abs(v) < 1:
+        if is_fraction or abs(v) < 1:
             return f"{v:.1%}"
         return f"{v:.1f}%"
     except (TypeError, ValueError):
@@ -304,7 +316,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     kpis = (
         f'<div class="cad-kpi-grid">'
         f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{irr_color};">'
-        f'{_fmt_pct(irr)}</div>'
+        f'{_fmt_pct(irr, is_fraction=True)}</div>'
         f'<div class="cad-kpi-label">IRR</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_x(moic)}</div>'
         f'<div class="cad-kpi-label">MOIC</div></div>'
@@ -442,7 +454,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
         f'<h2 style="margin:0;">Interpretation</h2>'
         f'<span class="cad-section-code" style="color:{irr_color};border-color:{irr_color};">INT</span></div>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>At <strong>{_fmt_x(moic)}</strong> MOIC and <strong>{_fmt_pct(irr)}</strong> IRR '
+        f'<p>At <strong>{_fmt_x(moic)}</strong> MOIC and <strong>{_fmt_pct(irr, is_fraction=True)}</strong> IRR '
         f'over <strong>{hold_years:.0f} years</strong>, this deal {irr_assessment}.</p>'
         f'<p style="margin-top:8px;"><strong>Key drivers:</strong> '
         f'Check the <a href="/models/bridge/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">EBITDA bridge</a> '
@@ -458,7 +470,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     body = f'{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}'
     return chartis_shell(body, f"LBO — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}")
+                    subtitle=f"IRR: {_fmt_pct(irr, is_fraction=True)} | MOIC: {_fmt_x(moic)}")
 
 
 def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) -> str:

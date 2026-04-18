@@ -144,6 +144,42 @@ class TestLBO(unittest.TestCase):
         su = result.sources_and_uses
         self.assertAlmostEqual(su.total_sources, su.total_uses, places=0)
 
+    def test_lbo_entry_and_exit_are_consistent_on_revenue_override(self):
+        """Regression: MOIC=64x / IRR=130% was the visible symptom.
+
+        When build_lbo is called with revenue_base overridden but not
+        entry_ebitda, the projection loop uses the new revenue × margin
+        while the entry capitalization still uses the default
+        entry_ebitda of $50M. That mismatch balloons MOIC by ~30x.
+        """
+        result = build_lbo(revenue_base=8_944_000_000, ebitda_margin_base=0.12)
+        a = result.assumptions
+        expected_entry_ebitda = a.revenue_base * a.ebitda_margin_base
+        self.assertAlmostEqual(
+            a.entry_ebitda, expected_entry_ebitda, delta=1.0,
+            msg=("entry_ebitda must be consistent with revenue_base × "
+                 "ebitda_margin_base; mismatch produces absurd MOIC"),
+        )
+        self.assertLess(result.returns.moic, 10.0,
+                        f"MOIC {result.returns.moic:.2f}x is implausible "
+                        f"for a 5-yr LBO with 4% rev growth")
+        self.assertGreater(result.returns.moic, 0.5)
+
+    def test_lbo_from_deal_honors_margin(self):
+        """Regression: server called build_lbo(ebitda_margin=...) but
+        the dataclass field is ebitda_margin_base. The mismatched kwarg
+        was silently dropped. build_lbo_from_deal must honour the
+        profile's margin so callers don't stumble on kwarg drift.
+        """
+        result = build_lbo_from_deal({
+            "net_revenue": 400_000_000,
+            "ebitda_margin": 0.15,
+        })
+        self.assertAlmostEqual(
+            result.assumptions.ebitda_margin_base, 0.15, places=3,
+            msg="build_lbo_from_deal must honour the profile's margin",
+        )
+
     def test_lbo_api(self):
         tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         tf.close()
@@ -164,6 +200,22 @@ class TestLBO(unittest.TestCase):
                 server.shutdown(); server.server_close()
         finally:
             os.unlink(tf.name)
+
+    def test_lbo_fmt_pct_handles_large_irr(self):
+        """Regression: _fmt_pct auto-detected fraction vs. already-%
+        using abs(v) < 1, so an IRR of 1.3022 (= 130.2%) rendered as
+        '1.3%'. Partners mis-read that as a broken deal.
+
+        The IRR field on LBOReturns is a fraction (0.22 = 22%). The
+        formatter must treat it as a fraction regardless of magnitude
+        when an explicit ``is_fraction=True`` signal is passed.
+        """
+        from rcm_mc.ui.models_page import _fmt_pct
+        self.assertEqual(_fmt_pct(0.22, is_fraction=True), "22.0%")
+        self.assertEqual(_fmt_pct(1.3022, is_fraction=True), "130.2%")
+        # Legacy auto-detect path preserved for assumptions like
+        # WACC=0.10 — still rendered as 10.0%.
+        self.assertEqual(_fmt_pct(0.10), "10.0%")
 
 
 class TestRegression(unittest.TestCase):

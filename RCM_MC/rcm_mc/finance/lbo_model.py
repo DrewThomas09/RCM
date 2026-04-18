@@ -133,9 +133,21 @@ def build_lbo(
 ) -> LBOResult:
     """Build a full LBO model."""
     a = assumptions or LBOAssumptions()
+    # Track whether entry_ebitda was explicitly overridden so we can
+    # reconcile it against revenue_base × margin when it wasn't.
+    entry_ebitda_overridden = "entry_ebitda" in overrides
     for k, v in overrides.items():
         if hasattr(a, k):
             setattr(a, k, v)
+
+    # Consistency: if the caller overrode revenue_base or margin but
+    # not entry_ebitda, derive entry_ebitda from the projection inputs.
+    # Otherwise the entry valuation ($EV = entry_ebitda × entry_multiple)
+    # is priced off an unrelated default while the projection runs on
+    # the override — producing MOIC in the 30-60x range from nothing
+    # more than a kwarg mismatch.
+    if not entry_ebitda_overridden:
+        a.entry_ebitda = a.revenue_base * a.ebitda_margin_base
 
     # Sources & Uses
     ev = a.entry_ebitda * a.entry_multiple

@@ -4810,16 +4810,19 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_model_lbo(self, deal_id: str) -> None:
         """GET /models/lbo/<deal_id> — browser-rendered LBO model."""
-        from .finance.lbo_model import build_lbo
+        from .finance.lbo_model import build_lbo_from_deal
         from .ui.models_page import render_lbo_page
         profile = self._load_deal_profile(deal_id)
         if not profile:
             return self._error_page("Deal Not Found", f"No deal or hospital found for ID '{html.escape(deal_id)}'. Try searching from the home page.")
         try:
-            lbo_rev = float(profile.get("net_revenue", 200e6))
-            lbo_margin = float(profile.get("ebitda_margin", 0.12))
-            lbo_margin = max(0.03, min(0.25, lbo_margin))
-            result = build_lbo(revenue_base=lbo_rev, ebitda_margin=lbo_margin)
+            # Use build_lbo_from_deal: it normalizes the profile's
+            # revenue / margin into consistent entry_ebitda. The prior
+            # direct build_lbo(revenue_base=, ebitda_margin=) call
+            # silently dropped the margin override (wrong kwarg name —
+            # the field is ebitda_margin_base) and left entry_ebitda
+            # at its default, producing absurd MOIC.
+            result = build_lbo_from_deal(profile)
             lbo_dict = result.to_dict()
         except Exception as exc:
             lbo_dict = {"error": str(exc), "returns": {}, "sources_and_uses": {},
