@@ -29163,5 +29163,239 @@ class TestExitBuyerViewMirror(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestArchetypeOutcomeDistributionPredictor(unittest.TestCase):
+    """Partner voice: 'What's realistic for this archetype shape?'"""
+
+    def test_unknown_archetype_returns_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        r = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(archetype="not_real")
+        )
+        self.assertEqual(
+            r.moic_percentile_band, "unknown_archetype"
+        )
+
+    def test_above_median_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        # back_office median = 2.0; project 2.3 → above_median
+        r = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="back_office_consolidation",
+                deal_team_projected_moic=2.3,
+                deal_team_projected_irr=0.18,
+            )
+        )
+        self.assertEqual(
+            r.moic_percentile_band, "above_median"
+        )
+
+    def test_top_decile_burden_of_proof(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        # back_office top_decile = 3.2; project 3.5
+        r = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="back_office_consolidation",
+                deal_team_projected_moic=3.5,
+                deal_team_projected_irr=0.18,
+            )
+        )
+        self.assertEqual(
+            r.moic_percentile_band, "top_decile"
+        )
+        self.assertIn(
+            "burden of proof", r.partner_note.lower()
+        )
+
+    def test_below_median_recommends_repurchase(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        # rollup median 2.2; project 1.6 → below_median
+        r = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="rollup_platform",
+                deal_team_projected_moic=1.6,
+                deal_team_projected_irr=0.14,
+            )
+        )
+        self.assertEqual(
+            r.moic_percentile_band, "below_median"
+        )
+        self.assertIn(
+            "re-price", r.partner_note.lower()
+        )
+
+    def test_bottom_decile_pass_recommendation(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        # outpatient bottom_decile 0.6; project 0.5
+        r = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="outpatient_migration",
+                deal_team_projected_moic=0.5,
+                deal_team_projected_irr=0.05,
+            )
+        )
+        self.assertEqual(
+            r.moic_percentile_band, "bottom_decile"
+        )
+        self.assertIn("pass", r.partner_note.lower())
+
+    def test_irr_outside_range_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        # capacity typical 0.10-0.17; project 0.30
+        r = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="capacity_expansion",
+                deal_team_projected_moic=2.0,
+                deal_team_projected_irr=0.30,
+            )
+        )
+        self.assertFalse(r.irr_in_typical_range)
+        self.assertIn(
+            "outside typical", r.partner_note.lower()
+        )
+
+    def test_hold_delta_flagged_when_long(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        r = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="back_office_consolidation",
+                deal_team_projected_moic=2.0,
+                deal_team_projected_hold_years=8.0,
+            )
+        )
+        self.assertGreater(
+            r.hold_years_vs_median_delta, 1.5
+        )
+        self.assertIn(
+            "stress", r.partner_note.lower()
+        )
+
+    def test_distribution_returned(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        r = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="rollup_platform",
+            )
+        )
+        self.assertIn(
+            "median_moic", r.distribution
+        )
+        self.assertIn(
+            "shape_note", r.distribution
+        )
+
+    def test_capacity_lowest_failure_rate(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        cap = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="capacity_expansion",
+            )
+        )
+        cmi = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="cmi_uplift",
+            )
+        )
+        self.assertLess(
+            cap.distribution["failure_rate_pct"],
+            cmi.distribution["failure_rate_pct"],
+        )
+
+    def test_rollup_longest_median_hold(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        rollup = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="rollup_platform",
+            )
+        )
+        cost = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="cost_basis_compression",
+            )
+        )
+        self.assertGreater(
+            rollup.distribution["median_hold_years"],
+            cost.distribution["median_hold_years"],
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+            render_archetype_outcome_markdown,
+        )
+        md = render_archetype_outcome_markdown(
+            predict_archetype_outcome(
+                ArchetypeOutcomeInputs(
+                    archetype="rollup_platform",
+                    deal_team_projected_moic=2.5,
+                )
+            )
+        )
+        self.assertIn(
+            "# Archetype outcome distribution", md
+        )
+        self.assertIn("Top decile", md)
+
+    def test_unknown_archetype_markdown(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+            render_archetype_outcome_markdown,
+        )
+        md = render_archetype_outcome_markdown(
+            predict_archetype_outcome(
+                ArchetypeOutcomeInputs(
+                    archetype="not_real",
+                )
+            )
+        )
+        self.assertIn(
+            "# Archetype outcome distribution", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ArchetypeOutcomeInputs,
+            predict_archetype_outcome,
+        )
+        r = predict_archetype_outcome(
+            ArchetypeOutcomeInputs(
+                archetype="rollup_platform",
+            )
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

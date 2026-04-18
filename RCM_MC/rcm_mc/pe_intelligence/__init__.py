@@ -1503,6 +1503,12 @@ from .exit_buyer_view_mirror import (
     render_exit_buyer_mirror_markdown,
     write_exit_buyer_mirror,
 )
+from .archetype_outcome_distribution_predictor import (
+    ArchetypeOutcomeInputs,
+    ArchetypeOutcomeReport,
+    predict_archetype_outcome,
+    render_archetype_outcome_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3055,4 +3061,8 @@ __all__ = [
     "ExitBuyerInputs",
     "render_exit_buyer_mirror_markdown",
     "write_exit_buyer_mirror",
+    "ArchetypeOutcomeInputs",
+    "ArchetypeOutcomeReport",
+    "predict_archetype_outcome",
+    "render_archetype_outcome_markdown",
 ]
