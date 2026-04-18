@@ -8885,7 +8885,107 @@ hopd_share_pct, grandfathered)`), `hold_start_year`, `hold_years`,
 
 ---
 
-## 241. Change log
+## 241. Deal-to-historical-failure matcher (`deal_to_historical_failure_matcher.py`)
+
+**Partner statement.** "Every deal I see, I ask: what blow-up does
+this look like? Not for catastrophism — to pull the specific lesson
+that applies. The sponsor who thought MA risk was priced right in
+2023 didn't have a bad model; they had an under-updated pattern
+library. The partner reading the same deal last year would have
+said 'I've seen this movie, here's the reel.' That's pattern-
+matching."
+
+### Why it matters
+
+`failure_archetype_library` + `named_failure_library_v2` catalog
+20 named failures. But the partner reflex isn't to read the
+catalog; it's to *match current deal signals against it*. This
+module operationalizes that reflex — takes 30+ diagnostic signals
+from the current deal, runs them against each historical
+fingerprint, and returns top-3 matches with the specific lesson.
+
+### Matching method
+
+Each historical failure has a fingerprint: 2-7 signal conditions
+that were true for the failed deal.
+
+- `hits` = conditions that match on the current deal.
+- `coverage` = hits / len(conditions).
+- `specificity` = coverage × rarity_weight.
+
+Sort by specificity, return top-3.
+
+### 20 dated pattern fingerprints (2018-2024)
+
+- `ma_startup_unwind_2023` — MA risk contract + rapid enrollment
+  + FFS→MA cover narrative.
+- `behavioral_staffing_collapse_2024` — behavioral health +
+  clinician supply stretched.
+- `pdgm_transition_fallout_2020` — home health + hold spans PDGM.
+- `nsa_platform_rate_shock_2022` — OON billing heavy + NSA exposure.
+- `ma_provider_risk_contract_2023` — primary-care risk platform +
+  MA risk contract.
+- `tele_health_hype_fade_2023` — telehealth + valuation peak era.
+- `rcm_vendor_concentration_loss_2022` — RCM-as-service + top-
+  customer > 25%.
+- `dental_dso_over_rollup_2021` — dental DSO + aggressive bolt-on
+  + peak era.
+- `strategic_acquisition_peak_2022` — strategic peak acquirer +
+  peak era.
+- `ma_benefit_lockout_decay_2018` — MA benefit differentiation
+  assumption.
+- `rural_cah_high_irr_pattern` — rural hospital + high-IRR claim.
+- `aca_exchange_shock_2018` — ACA exchange dependent.
+- `state_medicaid_rebasing_2019` — state Medicaid cut.
+- `pama_lab_phase_in_2024` — standalone lab + PAMA phase in hold.
+- `over_leveraged_healthcare_2022` — leverage > 6× + covenant tight.
+- `denial_fix_overpromise_2020` — aggressive denial-fix claim.
+- `payer_renegotiation_miss_2021` — payer renegotiation in hold.
+- `cmi_rac_recapture_2019` — aggressive CMI/coding claim.
+- `owner_comp_qofe_haircut_2020` — large owner-comp add-back.
+- `single_producer_physician_walk_2021` — top-1 physician
+  concentration.
+
+### Output shape
+
+Per top-3 match:
+- `failure_name`, `year`, `hits`, `coverage`, `specificity_score`
+- `matched_conditions` — which specific signals fired
+- `lesson` — the one-sentence takeaway
+- `specific_application` — "here's how it applies to the current
+  deal"
+
+### Partner-note tiers
+
+- Top match specificity ≥ 0.9 → "strong match; treat as live
+  pattern."
+- Top match 0.5-0.9 → "partial match; review top-3 before IC."
+- Below 0.5 → "weak match; signals partially align."
+- No matches → "deal is novel or signal set is too sparse."
+
+### Packet fields
+
+`HistoricalDealSignals` — 30+ optional bool/float flags (MA risk,
+behavioral health, home health with PDGM hold, NSA exposure, primary
+care risk, telehealth, RCM-as-service + top customer %, dental DSO,
+bolt-on pace, valuation peak era, MA benefit assumption, rural
+hospital, ACA exchange, state Medicaid cut, standalone lab + PAMA
+phase, leverage turns + covenant tight, denial fix claim, payer
+renegotiation in hold, CMI aggressive claim, owner comp add-back
+size, single physician producer concentration, etc.).
+
+### Distinct from existing modules
+
+- `failure_archetype_library` / `named_failure_library_v2` — the
+  catalog.
+- `cross_pattern_digest` — integrates multiple pattern libraries at
+  the module-output level.
+- This module — fingerprint-matches current deal **signals** to
+  the historical catalog; returns the specific lesson to apply.
+
+---
+
+## 242. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
