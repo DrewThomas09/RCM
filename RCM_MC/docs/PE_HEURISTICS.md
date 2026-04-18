@@ -8301,7 +8301,94 @@ assumption."
 
 ---
 
-## 235. Change log
+## 235. Denial fix pace detector (`denial_fix_pace_detector.py`)
+
+**Partner statement.** "Every RCM deck says we can take the
+initial-denial rate from 9% to 6% in 12 months. Five percent of
+them actually do. The rest find out that some denial categories drop
+in 90 days with front-end eligibility tools, and others — medical-
+necessity denials rooted in coding and documentation — take 18-24
+months if they move at all. Don't buy the 'denials down 300 bps in
+year one' story without knowing WHICH denial categories and what the
+trajectory is per category."
+
+### Why it matters
+
+Third of the three named healthcare-PE failure traps, alongside "the
+payer renegotiation is coming" and "Medicare Advantage will make it
+up." The model bridge often loads the denial-rate improvement into
+Year 1; the operator reality is that category-level pace varies by
+10× between front-end (eligibility, format validation) and back-end
+(medical-necessity, non-covered).
+
+### 8-category pace catalog (bps within-category per quarter)
+
+| Category | Q1 | Q2 | Q3 | Q4 | Yr2 |
+|---|---|---|---|---|---|
+| eligibility_verification | 30 | 20 | 10 | 10 | 20 |
+| prior_authorization | 10 | 25 | 25 | 20 | 25 |
+| timely_filing | 25 | 15 | 10 | 5 | 5 |
+| duplicate_claim | 20 | 20 | 10 | 5 | 5 |
+| coordination_of_benefits | 10 | 15 | 15 | 10 | 10 |
+| invalid_format | 40 | 10 | 0 | 0 | 0 |
+| medical_necessity | 0 | 5 | 10 | 15 | 50 |
+| non_covered_service | 0 | 0 | 5 | 5 | 10 |
+
+Headline bps contribution = within-category bps × category mix share.
+
+Each category carries a prescribed operator action (e.g., medical
+necessity → "CDI program + physician education + payer-specific
+medical policy library").
+
+### Named-ops-partner and IT-investment premiums
+
+- `named_ops_partner=True` → yr1 × 1.15 (front-end wins compound)
+- `it_platform_investment_m ≥ 3.0` → yr1 × 1.10 (additional;
+  stacks with ops partner)
+
+### Verdict thresholds
+
+- Implied Yr1 ≤ empirical Yr1 → **defensible** — plan holds.
+- Implied Yr1 within 25% above empirical → **stretch** — achievable
+  only with named ops partner + IT investment; price execution risk.
+- Implied Yr1 > 25% above empirical → **trap** — "we can fix denials
+  in 12 months" pattern. Re-underwrite without the excess denial-
+  fix dollars; medical-necessity category is especially slow.
+
+### Worked example
+
+Target: 9.5% → 6.5% over 1 year = 300 bps implied.
+
+Default mix (25% eligibility / 20% prior auth / 20% med necessity /
+etc.) gives achievable Yr1 ≈ 55-65 bps headline.
+
+Implied 300 bps vs. 55 bps achievable → **trap**. Partner: "re-
+underwrite without excess denial-fix; medical-necessity and non-
+covered denial categories take 18-24 months."
+
+Same target spread over 3 years (implied yr1 = 100 bps) still
+triggers trap; only a 40-50 bps yr1 target with a front-end-heavy
+mix reads defensible.
+
+### Packet fields
+
+`current_initial_denial_rate_pct`, `target_denial_rate_pct`,
+`target_years`, `category_mix_pct` (dict of 8 categories → share),
+`named_ops_partner`, `it_platform_investment_m`.
+
+### Distinct from existing modules
+
+- `rcm_ebitda_bridge` — 7-lever bridge math (outside
+  pe_intelligence).
+- `cash_conversion_drift_detector` — trend detector (past direction,
+  not future feasibility).
+- This module — **forward feasibility** of a claimed denial-fix
+  trajectory against category-level empirical pace bands. Closes the
+  loop on the third named failure trap.
+
+---
+
+## 236. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
