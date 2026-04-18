@@ -821,6 +821,17 @@ from .process_stopwatch import (
     read_process,
     render_process_markdown,
 )
+from .red_flag_escalation_triage import (
+    TIER_ASSOCIATE,
+    TIER_INFO,
+    TIER_PARTNER_IMMEDIATE,
+    TIER_PARTNER_THIS_WEEK,
+    RedFlagInput,
+    TriageDecision,
+    TriageReport,
+    render_triage_markdown,
+    triage,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1875,4 +1886,13 @@ __all__ = [
     "ProcessTiming",
     "read_process",
     "render_process_markdown",
+    "TIER_ASSOCIATE",
+    "TIER_INFO",
+    "TIER_PARTNER_IMMEDIATE",
+    "TIER_PARTNER_THIS_WEEK",
+    "RedFlagInput",
+    "TriageDecision",
+    "TriageReport",
+    "render_triage_markdown",
+    "triage",
 ]

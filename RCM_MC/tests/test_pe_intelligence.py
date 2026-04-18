@@ -14599,5 +14599,93 @@ class TestProcessStopwatch(unittest.TestCase):
         json.dumps(read_process(ProcessTiming()).to_dict())
 
 
+# ── Red-flag escalation triage ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    TIER_ASSOCIATE,
+    TIER_INFO,
+    TIER_PARTNER_IMMEDIATE,
+    TIER_PARTNER_THIS_WEEK,
+    RedFlagInput,
+    TriageDecision,
+    TriageReport,
+    render_triage_markdown,
+    triage,
+)
+
+
+class TestRedFlagEscalationTriage(unittest.TestCase):
+
+    def test_legal_always_partner_immediate(self) -> None:
+        r = triage([RedFlagInput(name="FCA exposure",
+                                   severity="medium",
+                                   category="legal")])
+        self.assertEqual(r.decisions[0].tier, TIER_PARTNER_IMMEDIATE)
+
+    def test_regulatory_always_partner_immediate(self) -> None:
+        r = triage([RedFlagInput(name="OIG inquiry",
+                                   severity="medium",
+                                   category="regulatory")])
+        self.assertEqual(r.decisions[0].tier, TIER_PARTNER_IMMEDIATE)
+
+    def test_reputational_always_partner_immediate(self) -> None:
+        r = triage([RedFlagInput(name="Media coverage",
+                                   severity="low",
+                                   category="reputational")])
+        self.assertEqual(r.decisions[0].tier, TIER_PARTNER_IMMEDIATE)
+
+    def test_clinical_high_partner_immediate(self) -> None:
+        r = triage([RedFlagInput(name="Quality event",
+                                   severity="high",
+                                   category="clinical")])
+        self.assertEqual(r.decisions[0].tier, TIER_PARTNER_IMMEDIATE)
+
+    def test_financial_high_partner_this_week(self) -> None:
+        r = triage([RedFlagInput(name="Covenant risk",
+                                   severity="high",
+                                   category="financial")])
+        self.assertEqual(r.decisions[0].tier, TIER_PARTNER_THIS_WEEK)
+
+    def test_medium_operational_is_associate(self) -> None:
+        r = triage([RedFlagInput(name="Denial rate uptick",
+                                   severity="medium",
+                                   category="operational")])
+        self.assertEqual(r.decisions[0].tier, TIER_ASSOCIATE)
+
+    def test_low_severity_informational(self) -> None:
+        r = triage([RedFlagInput(name="Minor",
+                                   severity="low",
+                                   category="operational")])
+        self.assertEqual(r.decisions[0].tier, TIER_INFO)
+
+    def test_multiple_immediate_partner_note(self) -> None:
+        r = triage([
+            RedFlagInput(name="FCA", severity="medium",
+                          category="legal"),
+            RedFlagInput(name="OIG", severity="medium",
+                          category="regulatory"),
+        ])
+        self.assertEqual(r.partner_immediate_count, 2)
+        self.assertIn("on the phone", r.partner_note.lower())
+
+    def test_empty_list_no_escalation(self) -> None:
+        r = triage([])
+        self.assertIn("no red flags", r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_triage_markdown(triage([
+            RedFlagInput(name="FCA", severity="medium",
+                          category="legal"),
+        ]))
+        self.assertIn("# Red-flag escalation triage", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(triage([
+            RedFlagInput(name="x", severity="medium",
+                          category="operational"),
+        ]).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
