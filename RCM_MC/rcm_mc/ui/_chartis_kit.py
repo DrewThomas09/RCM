@@ -191,6 +191,7 @@ _CORPUS_NAV = [
     {"label": "Escrow & Earnout","href": "/escrow-earnout",        "icon": "▣"},
     {"label": "Debt Financing",  "href": "/debt-financing",        "icon": "▣"},
     {"label": "VCP Tracker",     "href": "/vcp-tracker",           "icon": "▣"},
+    {"label": "Co-Invest Pipeline","href": "/coinvest-pipeline",   "icon": "▤"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},

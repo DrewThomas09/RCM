@@ -227,6 +227,7 @@ NAV_ITEMS = [
     {"label": "Escrow & Earnout", "href": "/escrow-earnout", "icon": "chart"},
     {"label": "Debt Financing", "href": "/debt-financing", "icon": "chart"},
     {"label": "VCP Tracker", "href": "/vcp-tracker", "icon": "chart"},
+    {"label": "Co-Invest Pipeline", "href": "/coinvest-pipeline", "icon": "grid"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

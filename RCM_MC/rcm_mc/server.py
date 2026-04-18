@@ -2069,6 +2069,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.vcp_tracker_page import render_vcp_tracker
             return self._send_html(render_vcp_tracker(_qp))
+        if path == "/coinvest-pipeline":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.coinvest_pipeline_page import render_coinvest_pipeline
+            return self._send_html(render_coinvest_pipeline(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
