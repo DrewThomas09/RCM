@@ -4728,7 +4728,70 @@ proceed on current thesis."
 
 ---
 
-## 179. Change log
+## 179. QofE pre-screen (`qofe_prescreen.py`)
+
+**Partner statement:** "Sellers normalize aggressively.
+Good QofE strips back 20-30%. Know which add-backs will
+survive before you engage the firm."
+
+`qofe_tracker` handles status/progress on a QofE
+engagement. `qofe_prescreen` is the *pre*-QofE partner
+read: given the seller's adjustments schedule, what
+fraction will survive QofE, and what's the true EBITDA
+to underwrite against?
+
+### Partner-judgment survival rates
+
+Based on healthcare-services PE patterns:
+
+- `owner_comp_excess` — 85% survives.
+- `related_party_rent` — 70% if market; sale-leaseback
+  risk.
+- `nonrecurring_legal` — 60%; recurring is run-rate.
+- `covid_windfall` — 20%; stripped aggressively.
+- `systems_migration_onetime` — 50%; partners
+  question "one-time" framing.
+- `executive_severance` — 70%.
+- `deferred_maintenance_capex_as_opex` — 10%; walk
+  signal if material.
+- `pro_forma_acquisition` — 40%; TTM actuals required.
+- `management_fee_elim` — 90%; standard normalization.
+- `startup_losses` — 50%; vintage cohort support.
+- `litigation_settlement` — 60%.
+- `other` — 50% default.
+
+### Partner-note escalation
+
+- Haircut ≥ 20% → "re-price from adjusted EBITDA or pass."
+- Haircut 10-20% → "model off adjusted, not stated."
+- Haircut < 10% → "proceed; verify at QofE."
+- Deferred-maintenance material → "walk signal; seller recut
+  required."
+
+### Worked example
+
+Seller asserts $75M EBITDA with add-backs:
+
+- $10M covid windfall → $2M surviving, $8M haircut.
+- $3M deferred maintenance as opex → $0.3M surviving,
+  $2.7M haircut + walk signal.
+- $2M owner comp → $1.7M surviving, $0.3M haircut.
+
+QofE-adjusted EBITDA = $75 − $8 − $2.7 − $0.3 = $64M.
+
+Partner note: "Expected QofE haircut $11M (15%). Model
+off $64M, not $75M. Deferred-maintenance capex → walk
+signal; seller recut required."
+
+### Packet fields that trigger
+
+- `stated_ebitda_m` — seller's headline number.
+- `seller_add_backs` — list of SellerAddBack (category +
+  dollar amount).
+
+---
+
+## 180. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
