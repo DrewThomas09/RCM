@@ -219,6 +219,7 @@ _CORPUS_NAV = [
     {"label": "PMI Integration", "href": "/pmi-integration",       "icon": "▣"},
     {"label": "Tax Credits",     "href": "/tax-credits",           "icon": "▣"},
     {"label": "Deal Sourcing",   "href": "/deal-sourcing",         "icon": "▤"},
+    {"label": "Treasury",        "href": "/treasury",              "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
