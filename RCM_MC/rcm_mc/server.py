@@ -2184,6 +2184,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.hospital_anchor_page import render_hospital_anchor
             return self._send_html(render_hospital_anchor(_qp))
+        if path == "/payer-contracts":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.payer_contracts_page import render_payer_contracts
+            return self._send_html(render_payer_contracts(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
