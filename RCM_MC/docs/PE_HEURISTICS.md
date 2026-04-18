@@ -9381,7 +9381,105 @@ DSH supplemental payment.
 
 ---
 
-## 247. Change log
+## 247. Physician specialty economic profiler (`physician_specialty_economic_profiler.py`)
+
+**Partner statement.** "Every specialty has a different economic
+shape. An orthopedic surgeon generates 4-6× revenue of a primary
+care physician at a similar share of comp. Dermatology runs 75%
+commercial; ENT runs 50/50. Cardiology lives off Medicare and the
+case mix is procedure-heavy. Knowing the specialty shape is partner
+reflex — when the seller's numbers diverge from the specialty's
+typical shape, that's where to dig."
+
+### Why it matters
+
+`physician_compensation_benchmark` benches comp/wRVU vs MGMA;
+`subsector_partner_lens` covers 10 business-level subsectors. This
+module is the **per-specialty economic shape**: revenue per
+physician, contribution margin band, typical payer mix, procedure
+concentration, named risks the partner applies on sight.
+
+### 12 specialties
+
+orthopedic_surgery / gastroenterology / dermatology / cardiology /
+medical_oncology / ob_gyn / urology / ent / ophthalmology / dental /
+behavioral / radiology.
+
+### Per-specialty profile fields
+
+- `typical_revenue_per_physician_m`
+- `typical_contribution_margin_pct`
+- `typical_commercial_mix_pct` / `typical_medicare_mix_pct`
+- `procedure_concentration_pct`
+- `payer_density_concern` — top concern from payer side
+- `regulatory_concern_top` — sniff-test reg concern
+- `named_risk_pattern` — partner reflex on this specialty
+- `roll_up_attractiveness` — high / medium / low
+
+### Highlights from the catalog
+
+- **orthopedic_surgery** — $2.4M / physician, 45% margin, 55%
+  commercial; named risk: "loss of top surgeon collapses revenue
+  concentration." Roll-up: high.
+- **gastroenterology** — $1.8M / physician, 65% procedure
+  concentration; named risk: "ASC ownership; loss of OON anesthesia
+  fees post-NSA." Roll-up: high.
+- **dermatology** — 75% commercial; named risk: "DSO model dilutes
+  physician ownership; high mid-level ratio drives scrutiny." Roll-
+  up: high.
+- **medical_oncology** — $3.0M / physician (drug-heavy), 30% margin,
+  55% Medicare; named risk: "EBITDA driven by drug margin, not
+  physician services — drug-pricing reform is existential."
+- **behavioral** — $0.6M / physician, 25% margin; named risk:
+  "clinician supply is binding constraint (see 2024 staffing
+  collapse)." Roll-up: low.
+- **radiology** — hospital-based group risk: "hospital can switch
+  contract mid-cycle; teleradiology commoditizes."
+
+### Divergence detection
+
+Per provided seller metric (revenue per physician, contribution
+margin, commercial mix), flag `above_typical` / `in_band` /
+`below_typical` at ±20% tolerance.
+
+When divergent: "Where the seller's number is above-typical, ask
+what's driving it; where below, ask what's missing." Standing risk
+always echoed regardless.
+
+### Worked example
+
+Seller pitches dermatology DSO with $1.8M revenue per physician and
+35% margin (vs. typical $1.2M / 50%).
+
+- Revenue per physician: above_typical (+50%) — investigate: is
+  this driven by mid-level leverage, Mohs surgery concentration,
+  or pathology-billed-by-derm?
+- Contribution margin: below_typical (−15 pts) — investigate: is
+  comp structure inflated to retain owner physicians?
+
+Partner: "DSO with above-typical revenue but below-typical margin
+suggests revenue is real but cost-side is heavy. Probe the comp
+structure and ancillary mix before pricing."
+
+### Packet fields
+
+`specialty` (one of 12), optional
+`seller_revenue_per_physician_m`,
+`seller_contribution_margin_pct`,
+`seller_commercial_mix_pct`.
+
+### Distinct from existing modules
+
+- `subsector_partner_lens` — 10 business-level subsectors.
+- `physician_compensation_benchmark` — comp/wRVU vs MGMA.
+- `physician_comp_normalization_check` — adjustment validation.
+- `physician_retention_stress_model` — retention scenarios.
+- This module — per-specialty economic shape with payer/reg/named-
+  risk patterns + divergence flags.
+
+---
+
+## 248. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
