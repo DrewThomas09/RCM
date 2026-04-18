@@ -30962,5 +30962,277 @@ class TestVBCPortfolioAggregator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestContractRenewalCliffCalendar(unittest.TestCase):
+    """Partner voice: 'Stack every contract renewal by quarter — that's my diligence calendar.'"""
+
+    def test_empty_calendar(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        r = build_renewal_calendar(
+            RenewalCalendarInputs())
+        self.assertEqual(r.total_renewals_in_hold, 0)
+        self.assertIn("no contracts", r.partner_note.lower())
+
+    def test_single_renewal_in_hold(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                contracts=[ContractRenewal(
+                    name="BCBS",
+                    contract_type="commercial_payer",
+                    expiration_date=date(2027, 6, 1),
+                    annual_value_m=20.0,
+                )],
+                hold_start_date=date(2026, 1, 1),
+                hold_years=5,
+            )
+        )
+        self.assertEqual(r.total_renewals_in_hold, 1)
+        self.assertEqual(
+            r.cliff_quarter_value_m, 20.0
+        )
+
+    def test_pre_hold_contract_skipped(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                contracts=[ContractRenewal(
+                    name="past",
+                    contract_type="commercial_payer",
+                    expiration_date=date(2025, 1, 1),
+                    annual_value_m=10.0,
+                )],
+                hold_start_date=date(2026, 1, 1),
+            )
+        )
+        self.assertEqual(r.total_renewals_in_hold, 0)
+
+    def test_cliff_warning_when_concentrated(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        # 50M in one quarter, 20M spread across rest
+        contracts = [
+            ContractRenewal(
+                "BCBS", "commercial_payer",
+                date(2027, 6, 1), 30.0),
+            ContractRenewal(
+                "United", "commercial_payer",
+                date(2027, 6, 15), 20.0),
+            ContractRenewal(
+                "lease", "real_estate_lease",
+                date(2028, 3, 1), 5.0),
+            ContractRenewal(
+                "GPO", "gpo_supply",
+                date(2029, 1, 1), 10.0),
+            ContractRenewal(
+                "IT", "it_vendor",
+                date(2028, 9, 1), 5.0),
+        ]
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                contracts=contracts,
+                hold_start_date=date(2026, 1, 1),
+            )
+        )
+        self.assertEqual(r.verdict, "cliff_warning")
+        self.assertIn(
+            "underwrite that quarter",
+            r.partner_note.lower(),
+        )
+
+    def test_balanced_when_spread(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        contracts = [
+            ContractRenewal(
+                f"c{i}", "commercial_payer",
+                date(2026 + i, (i % 4) * 3 + 1, 1),
+                10.0,
+            )
+            for i in range(5)
+        ]
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                contracts=contracts,
+                hold_start_date=date(2026, 1, 1),
+                hold_years=5,
+            )
+        )
+        self.assertEqual(r.verdict, "balanced")
+
+    def test_type_concentration_computed(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                contracts=[
+                    ContractRenewal(
+                        "BCBS", "commercial_payer",
+                        date(2027, 6, 1), 80.0),
+                    ContractRenewal(
+                        "GPO", "gpo_supply",
+                        date(2028, 6, 1), 20.0),
+                ],
+            )
+        )
+        self.assertAlmostEqual(
+            r.type_concentration["commercial_payer"],
+            0.80,
+        )
+        self.assertAlmostEqual(
+            r.type_concentration["gpo_supply"], 0.20
+        )
+
+    def test_cliff_label_format(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                contracts=[ContractRenewal(
+                    "BCBS", "commercial_payer",
+                    date(2027, 6, 1), 20.0,
+                )],
+                hold_start_date=date(2026, 1, 1),
+            )
+        )
+        self.assertRegex(
+            r.cliff_quarter_label, r"Y\dQ\d"
+        )
+
+    def test_total_value_aggregated(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                contracts=[
+                    ContractRenewal(
+                        "A", "commercial_payer",
+                        date(2027, 6, 1), 10.0),
+                    ContractRenewal(
+                        "B", "gpo_supply",
+                        date(2028, 6, 1), 15.0),
+                    ContractRenewal(
+                        "C", "lease",
+                        date(2029, 6, 1), 5.0),
+                ],
+            )
+        )
+        self.assertAlmostEqual(
+            r.total_annual_value_in_hold_m, 30.0
+        )
+
+    def test_quarters_count_correct(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                hold_years=3,
+            )
+        )
+        self.assertEqual(len(r.quarters), 12)
+
+    def test_lumpy_band(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        # cliff between 25% and 40% of total
+        contracts = [
+            ContractRenewal("A", "commercial_payer",
+                            date(2027, 6, 1), 30.0),
+            ContractRenewal("B", "commercial_payer",
+                            date(2028, 1, 1), 25.0),
+            ContractRenewal("C", "gpo_supply",
+                            date(2028, 6, 1), 25.0),
+            ContractRenewal("D", "lease",
+                            date(2029, 1, 1), 20.0),
+        ]
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                contracts=contracts,
+                hold_start_date=date(2026, 1, 1),
+            )
+        )
+        self.assertEqual(r.verdict, "lumpy")
+
+    def test_markdown_renders(self) -> None:
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+            render_renewal_calendar_markdown,
+        )
+        md = render_renewal_calendar_markdown(
+            build_renewal_calendar(
+                RenewalCalendarInputs(
+                    contracts=[ContractRenewal(
+                        "BCBS", "commercial_payer",
+                        date(2027, 6, 1), 20.0,
+                    )],
+                )
+            )
+        )
+        self.assertIn(
+            "# Contract renewal cliff calendar", md
+        )
+        self.assertIn("Type concentration", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from datetime import date
+        from rcm_mc.pe_intelligence import (
+            ContractRenewal,
+            RenewalCalendarInputs,
+            build_renewal_calendar,
+        )
+        r = build_renewal_calendar(
+            RenewalCalendarInputs(
+                contracts=[ContractRenewal(
+                    "BCBS", "commercial_payer",
+                    date(2027, 6, 1), 20.0,
+                )],
+            )
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

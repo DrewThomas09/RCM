@@ -1565,6 +1565,14 @@ from .vbc_portfolio_aggregator import (
     aggregate_vbc_portfolio,
     render_vbc_portfolio_markdown,
 )
+from .contract_renewal_cliff_calendar import (
+    ContractRenewal,
+    QuarterStack,
+    RenewalCalendarInputs,
+    RenewalCalendarReport,
+    build_renewal_calendar,
+    render_renewal_calendar_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3161,4 +3169,10 @@ __all__ = [
     "VBCPortfolioReport",
     "aggregate_vbc_portfolio",
     "render_vbc_portfolio_markdown",
+    "ContractRenewal",
+    "QuarterStack",
+    "RenewalCalendarInputs",
+    "RenewalCalendarReport",
+    "build_renewal_calendar",
+    "render_renewal_calendar_markdown",
 ]
