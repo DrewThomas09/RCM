@@ -185,6 +185,7 @@ NAV_ITEMS = [
     {"label": "340B Drug Pricing", "href": "/drug-pricing-340b", "icon": "chart"},
     {"label": "Sponsor Heatmap", "href": "/sponsor-heatmap", "icon": "grid"},
     {"label": "Payer Concentration", "href": "/payer-concentration", "icon": "chart"},
+    {"label": "Roll-Up Economics", "href": "/rollup-economics", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
