@@ -1622,7 +1622,7 @@ from .state_scope_of_practice_exposure import (
     ScopeOfPracticeInputs,
     ScopeOfPracticeReport,
     StateExposure,
-    StateFootprint,
+    StateFootprint as ScopeStateFootprint,
     analyze_scope_of_practice,
     render_scope_of_practice_markdown,
 )
@@ -3264,7 +3264,7 @@ __all__ = [
     "ScopeOfPracticeInputs",
     "ScopeOfPracticeReport",
     "StateExposure",
-    "StateFootprint",
+    "ScopeStateFootprint",
     "analyze_scope_of_practice",
     "render_scope_of_practice_markdown",
 ]
