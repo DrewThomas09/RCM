@@ -1345,6 +1345,13 @@ from .local_market_intensity_scorer import (
     render_local_market_markdown,
     score_local_market_intensity,
 )
+from .multi_state_regulatory_complexity_scorer import (
+    MultiStateInputs,
+    MultiStateReport,
+    StateCategory,
+    render_multi_state_markdown,
+    score_multi_state_complexity,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2783,4 +2790,9 @@ __all__ = [
     "LocalMarketReport",
     "render_local_market_markdown",
     "score_local_market_intensity",
+    "MultiStateInputs",
+    "MultiStateReport",
+    "StateCategory",
+    "render_multi_state_markdown",
+    "score_multi_state_complexity",
 ]

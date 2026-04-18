@@ -24578,5 +24578,162 @@ class TestLocalMarketIntensityScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestMultiStateRegulatoryComplexityScorer(unittest.TestCase):
+    """Partner scenario: state-by-state compliance drag."""
+
+    def test_single_state_simple_tier(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        r = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["NV"],
+        ))
+        self.assertEqual(r.tier, "simple")
+
+    def test_california_triggers_multiple_categories(self) -> None:
+        """Partner: 'CA = MSO + non-compete void + aggressive AG + provider tax.'"""
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        r = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["CA"],
+            asset_type_requires_mso=True,
+        ))
+        nc_void = next(c for c in r.categories
+                        if c.category == "noncompete_void")
+        mso = next(c for c in r.categories
+                    if c.category == "mso_structure_required")
+        ag = next(c for c in r.categories
+                   if c.category == "aggressive_ag_review")
+        pt = next(c for c in r.categories
+                   if c.category == "provider_tax")
+        for cat in (nc_void, mso, ag, pt):
+            self.assertIn("CA", cat.states)
+
+    def test_con_triggered_only_if_service_line_triggers(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        # Service doesn't trigger CON → no con_requirement category.
+        r_no_con = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["FL", "NY"],
+            service_line_triggers_con=False,
+        ))
+        self.assertFalse(any(c.category == "con_requirement"
+                              for c in r_no_con.categories))
+        # Service triggers CON → FL and NY both are CON states.
+        r_con = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["FL", "NY"],
+            service_line_triggers_con=True,
+        ))
+        con_cat = next(c for c in r_con.categories
+                        if c.category == "con_requirement")
+        self.assertEqual(con_cat.state_count, 2)
+
+    def test_non_provider_no_mso(self) -> None:
+        """Partner: 'non-provider assets → no MSO concern.'"""
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        r = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["CA", "NY"],
+            asset_type_requires_mso=False,
+        ))
+        self.assertFalse(any(c.category == "mso_structure_required"
+                              for c in r.categories))
+
+    def test_very_complex_on_many_states(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        r = score_multi_state_complexity(MultiStateInputs(
+            operating_states=[
+                "CA", "NY", "TX", "FL", "IL", "WA", "OR", "NV",
+            ],
+            service_line_triggers_con=True,
+        ))
+        self.assertEqual(r.tier, "very_complex")
+        self.assertIn("multi-state regulatory counsel",
+                       r.partner_note.lower())
+
+    def test_complex_tier_on_5_states(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        r = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["NV", "AZ", "UT", "CO", "ID"],
+        ))
+        self.assertEqual(r.tier, "complex")
+
+    def test_moderate_tier_on_3_states(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        r = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["NV", "AZ", "UT"],
+        ))
+        self.assertEqual(r.tier, "moderate")
+
+    def test_noncompete_void_flagged(self) -> None:
+        """Partner: 'CA / ND / OK void non-competes → retention risk.'"""
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        r = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["CA", "OK", "MN"],
+        ))
+        nc = next(c for c in r.categories
+                   if c.category == "noncompete_void")
+        self.assertEqual(nc.state_count, 3)
+        self.assertIn("deferred-comp",
+                       nc.partner_comment.lower())
+
+    def test_provider_tax_counted(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        r = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["TX", "OR", "NV"],
+        ))
+        pt = next(c for c in r.categories
+                   if c.category == "provider_tax")
+        self.assertEqual(pt.state_count, 2)
+        self.assertIn("TX", pt.states)
+        self.assertIn("OR", pt.states)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            render_multi_state_markdown,
+            score_multi_state_complexity,
+        )
+        md = render_multi_state_markdown(
+            score_multi_state_complexity(MultiStateInputs(
+                operating_states=["CA", "TX", "NY"],
+            ))
+        )
+        self.assertIn("# Multi-state regulatory complexity", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            MultiStateInputs,
+            score_multi_state_complexity,
+        )
+        r = score_multi_state_complexity(MultiStateInputs(
+            operating_states=["CA", "TX"],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
