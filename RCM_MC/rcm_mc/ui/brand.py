@@ -216,6 +216,7 @@ NAV_ITEMS = [
     {"label": "IC Memo Generator", "href": "/ic-memo-gen", "icon": "chart"},
     {"label": "Module Index", "href": "/module-index", "icon": "bookmark"},
     {"label": "Deal Post-Mortem", "href": "/deal-postmortem", "icon": "chart"},
+    {"label": "Secondaries", "href": "/secondaries-tracker", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

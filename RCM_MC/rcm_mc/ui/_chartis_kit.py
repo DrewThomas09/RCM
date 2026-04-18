@@ -180,6 +180,7 @@ _CORPUS_NAV = [
     {"label": "IC Memo Generator","href": "/ic-memo-gen",         "icon": "▣"},
     {"label": "Module Index",    "href": "/module-index",         "icon": "▥"},
     {"label": "Deal Post-Mortem","href": "/deal-postmortem",      "icon": "▣"},
+    {"label": "Secondaries",     "href": "/secondaries-tracker",   "icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
