@@ -2134,6 +2134,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.esg_impact_page import render_esg_impact
             return self._send_html(render_esg_impact(_qp))
+        if path == "/tracker-340b":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.tracker_340b_page import render_tracker_340b
+            return self._send_html(render_tracker_340b(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

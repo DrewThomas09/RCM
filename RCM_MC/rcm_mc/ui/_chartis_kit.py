@@ -204,6 +204,7 @@ _CORPUS_NAV = [
     {"label": "Operating Partners","href": "/operating-partners",  "icon": "▤"},
     {"label": "Compliance / SOC 2","href": "/compliance-attestation", "icon": "▥"},
     {"label": "ESG / Impact",    "href": "/esg-impact",            "icon": "▤"},
+    {"label": "340B Program",    "href": "/tracker-340b",          "icon": "▥"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
