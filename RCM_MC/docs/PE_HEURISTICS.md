@@ -9786,7 +9786,71 @@ diversified."
 
 ---
 
-## 252. Change log
+## 252. Contract renewal cliff calendar (`contract_renewal_cliff_calendar.py`)
+
+**Partner statement.** "Stack every contract renewal — commercial
+payer, GPO, IT vendor, real-estate lease, key-employment agreement
+— by quarter. That's my diligence calendar. The cliff is the
+quarter with the most material dollars rolling over. Underwrite
+that quarter explicitly. The rest of the calendar is the warning
+system."
+
+### Why it matters
+
+`payer_renegotiation_timing_model` covers commercial payer
+contracts only. `reimbursement_cliff_calendar_2026_2029` covers
+regulatory rule events. This module unifies **all contract types**
+into one quarter-by-quarter calendar over the hold so the partner
+can see the cliff.
+
+### 8 contract types
+
+`commercial_payer`, `gpo_supply`, `it_vendor`,
+`real_estate_lease`, `key_employment`, `physician_employment`,
+`medical_director`, `risk_share_vbc`.
+
+### Output
+
+- per-quarter `QuarterStack` (year/quarter, count, $ annual value,
+  contracts list)
+- `total_renewals_in_hold`, `total_annual_value_in_hold_m`
+- `cliff_quarter_label` ("Y2Q3"), `cliff_quarter_value_m`
+- `type_concentration` — share of total $ value per contract type
+- `verdict` — balanced / lumpy / cliff_warning
+
+### Verdict thresholds
+
+- cliff > 40% of total → **cliff_warning** — "underwrite that
+  quarter explicitly; one bad outcome compounds."
+- 25-40% → **lumpy** — "manageable; pre-prep the cliff quarter."
+- < 25% → **balanced** — "standard cadence."
+
+### Worked example
+
+5 contracts: 2 commercial payer (BCBS $30M + United $20M) both
+Y2Q2; 1 lease $5M Y3Q1; 1 GPO $10M Y4Q1; 1 IT $5M Y3Q4. Total $70M
+in hold; cliff Y2Q2 = $50M (71%) → **cliff_warning**.
+
+Same total spread evenly: $14M per quarter across 5 quarters →
+**balanced**.
+
+### Packet fields
+
+`contracts` (list of `ContractRenewal(name, contract_type,
+expiration_date, annual_value_m, expected_rate_change_pct,
+notes)`), `hold_start_date`, `hold_years`.
+
+### Distinct from existing modules
+
+- `payer_renegotiation_timing_model` — only commercial payer.
+- `reimbursement_cliff_calendar_2026_2029` — regulatory only.
+- `contract_diligence` — generic per-contract review.
+- This module — multi-type renewal stack with cliff detection and
+  type-concentration breakdown.
+
+---
+
+## 253. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
