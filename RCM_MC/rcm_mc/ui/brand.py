@@ -165,6 +165,7 @@ NAV_ITEMS = [
     {"label": "Real Estate", "href": "/real-estate", "icon": "chart"},
     {"label": "Workforce Plan", "href": "/workforce-planning", "icon": "chart"},
     {"label": "Tech Stack", "href": "/tech-stack", "icon": "chart"},
+    {"label": "Growth Runway", "href": "/growth-runway", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
