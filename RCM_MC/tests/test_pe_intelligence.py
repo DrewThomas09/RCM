@@ -27848,5 +27848,225 @@ class TestUnrealisticOnFaceCheck(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestConnectTheDotsPacketReader(unittest.TestCase):
+    """Partner voice: 'The packet reports each number in isolation; the brain reads the chain.'"""
+
+    def test_clean_packet_no_chains(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals())
+        self.assertEqual(len(r.chains), 0)
+        self.assertIn("no cross-module", r.headline.lower())
+
+    def test_denial_fix_connects_to_medicare_bridge(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            denial_rate_change_bps=-150,
+            cmi_propped_by_appeals=True,
+            medicare_npr_m=120.0,
+        ))
+        names = [c.name for c in r.chains]
+        self.assertIn(
+            "denial_fix_to_cmi_to_medicare_bridge", names
+        )
+        chain = next(
+            c for c in r.chains
+            if c.name == "denial_fix_to_cmi_to_medicare_bridge"
+        )
+        self.assertEqual(len(chain.steps), 4)
+        self.assertIn(
+            "don't cheer", chain.partner_summary.lower()
+        )
+
+    def test_denial_fix_without_cmi_prop_no_chain(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            denial_rate_change_bps=-150,
+            cmi_propped_by_appeals=False,
+        ))
+        names = [c.name for c in r.chains]
+        self.assertNotIn(
+            "denial_fix_to_cmi_to_medicare_bridge", names
+        )
+
+    def test_payer_shift_connects_to_cmi_margin(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            commercial_mix_change_pct=0.05,
+        ))
+        self.assertIn(
+            "payer_shift_to_case_mix_to_cmi_to_ip_margin",
+            [c.name for c in r.chains],
+        )
+
+    def test_wage_step_triggers_addback_risk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            wage_inflation_bps=250,
+            physician_comp_of_npr_pct=0.40,
+            comp_normalization_addback_m=2.0,
+            ebitda_base_m=40.0,
+        ))
+        chain = next(
+            c for c in r.chains if "wage_step" in c.name
+        )
+        self.assertIn(
+            "qofe will call it",
+            chain.partner_summary.lower(),
+        )
+
+    def test_volume_decline_flags_covenant_trip(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            volume_change_pct=-0.10,
+            fixed_cost_share_pct=0.60,
+            ebitda_base_m=40.0,
+            covenant_headroom_pct=0.10,
+        ))
+        chain = next(
+            c for c in r.chains
+            if c.name.startswith("volume_decline")
+        )
+        self.assertIn(
+            "trip", chain.partner_summary.lower()
+        )
+
+    def test_dso_rise_affects_div_recap(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            dso_change_days=12.0,
+            npr_m=400.0,
+            planned_div_recap_year=2028,
+        ))
+        chain = next(
+            c for c in r.chains
+            if c.name.startswith("dso_rise")
+        )
+        self.assertIn(
+            "2028", chain.partner_summary
+        )
+        self.assertIn(
+            "recap", chain.partner_summary.lower()
+        )
+
+    def test_reg_event_flows_to_ebitda(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            upcoming_reg_event_name=(
+                "OBBBA outpatient site-neutral"),
+            service_line_exposed_pct_of_npr=0.30,
+            service_line_price_cut_pct=0.04,
+            npr_m=300.0,
+        ))
+        chain = next(
+            c for c in r.chains
+            if c.name.startswith("reg_event")
+        )
+        self.assertIn(
+            "price into bridge",
+            chain.partner_summary.lower(),
+        )
+
+    def test_multiple_chains_fire_together(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            denial_rate_change_bps=-200,
+            cmi_propped_by_appeals=True,
+            commercial_mix_change_pct=0.04,
+            wage_inflation_bps=200,
+            dso_change_days=10.0,
+        ))
+        self.assertGreaterEqual(len(r.chains), 3)
+
+    def test_small_signals_dont_fire(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            denial_rate_change_bps=-10,  # below 50bps threshold
+            commercial_mix_change_pct=0.005,  # below 2%
+            wage_inflation_bps=50,  # below 100
+            volume_change_pct=-0.01,  # above -3%
+            dso_change_days=2.0,  # below 5
+        ))
+        self.assertEqual(len(r.chains), 0)
+
+    def test_chain_step_ordering(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            denial_rate_change_bps=-200,
+            cmi_propped_by_appeals=True,
+        ))
+        chain = r.chains[0]
+        step_names = [s.step for s in chain.steps]
+        # first step should be a denial rate drop, last
+        # should be a medicare bridge impact
+        self.assertEqual(
+            step_names[0], "denial_rate_drop"
+        )
+        self.assertEqual(
+            step_names[-1], "medicare_bridge_impact"
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+            render_dot_connect_markdown,
+        )
+        md = render_dot_connect_markdown(connect_the_dots(
+            PacketSignals(
+                denial_rate_change_bps=-150,
+                cmi_propped_by_appeals=True,
+            )
+        ))
+        self.assertIn(
+            "# Connect-the-dots packet read", md
+        )
+        self.assertIn("medicare_bridge_impact", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            PacketSignals,
+            connect_the_dots,
+        )
+        r = connect_the_dots(PacketSignals(
+            denial_rate_change_bps=-100,
+            cmi_propped_by_appeals=True,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

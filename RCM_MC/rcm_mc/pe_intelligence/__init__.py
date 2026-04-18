@@ -1458,6 +1458,14 @@ from .unrealistic_on_face_check import (
     render_sniff_markdown,
     run_sniff_test,
 )
+from .connect_the_dots_packet_reader import (
+    ChainStep,
+    DotConnectReport,
+    FiredChain,
+    PacketSignals,
+    connect_the_dots,
+    render_dot_connect_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2977,4 +2985,10 @@ __all__ = [
     "SniffTestReport",
     "render_sniff_markdown",
     "run_sniff_test",
+    "ChainStep",
+    "DotConnectReport",
+    "FiredChain",
+    "PacketSignals",
+    "connect_the_dots",
+    "render_dot_connect_markdown",
 ]
