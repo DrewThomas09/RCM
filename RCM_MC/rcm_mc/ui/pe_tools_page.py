@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -123,7 +123,7 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
 
     nav = _model_nav(deal_id, "bridge")
     body = f'{nav}{kpis}{bridge_section}{interp}{actions}'
-    return shell_v2(body, f"Value Bridge — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Value Bridge — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Current ${current/1e6:.0f}M → Target ${(current+total_impact)/1e6:.0f}M (+${total_impact/1e6:.1f}M)")
 
@@ -168,7 +168,7 @@ def render_comparable_hospitals(deal_id: str, deal_name: str,
         f'style="text-decoration:none;">Full Analysis</a></div>'
     )
 
-    return shell_v2(body, f"Comparables — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Comparables — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(comparables)} comparable hospitals found")
 
@@ -221,7 +221,7 @@ def render_anomaly_report(deal_id: str, deal_name: str,
         f'style="text-decoration:none;">Full Analysis</a></div>'
     )
 
-    return shell_v2(body, f"Anomaly Report — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Anomaly Report — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(anomalies)} anomalies, {n_high} high severity")
 
@@ -272,6 +272,6 @@ def render_service_lines(deal_id: str, deal_name: str,
         f'style="text-decoration:none;">Full Analysis</a></div>'
     )
 
-    return shell_v2(body, f"Service Lines — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Service Lines — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(lines)} service lines | ${total_rev/1e6:.0f}M total revenue")

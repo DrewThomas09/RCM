@@ -87,10 +87,10 @@ def render_heatmap(
     ``deltas`` maps ``deal_id`` → ``{metric: value_change}`` from
     :func:`rcm_mc.portfolio.portfolio_monitor.compute_deltas`.
     """
-    from .shell_v2 import shell_v2
+    from ._chartis_kit import chartis_shell
 
     if not packets:
-        return shell_v2(
+        return chartis_shell(
             '<div class="cad-card"><p style="color:var(--cad-text3);">No deals to display. '
             '<a href="/import" style="color:var(--cad-link);">Create your first deal &rarr;</a></p></div>',
             "Portfolio Heatmap",
@@ -153,7 +153,7 @@ def render_heatmap(
         f'<tbody>{"".join(rows_html)}</tbody></table>'
     )
     body = f'<div class="cad-card">{table}</div>'
-    return shell_v2(body, "Portfolio Heatmap",
+    return chartis_shell(body, "Portfolio Heatmap",
                     active_nav="/portfolio",
                     subtitle=f"{len(packets)} deals — cells coloured by percentile rank",
                     extra_css=css)

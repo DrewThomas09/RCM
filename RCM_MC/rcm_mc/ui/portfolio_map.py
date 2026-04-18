@@ -44,7 +44,7 @@ def render_portfolio_map(
     con_states: Optional[Dict[str, bool]] = None,
 ) -> str:
     """Full-page HTML with an inline SVG US map + deal markers."""
-    from .shell_v2 import shell_v2
+    from ._chartis_kit import chartis_shell
 
     # State background rectangles (simplified — just shade CON vs non-CON).
     state_bg = ""
@@ -130,7 +130,7 @@ def render_portfolio_map(
     </div>
     <div class="map-wrap">{svg}</div>
     """
-    return shell_v2(body, "Portfolio Map",
+    return chartis_shell(body, "Portfolio Map",
                     active_nav="/portfolio",
                     subtitle=f"{len(deals)} deals mapped",
                     extra_css=css)

@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 from .provenance import source_tag, Source, data_freshness_footer
 
@@ -59,7 +59,7 @@ def render_portfolio_bridge(
     active = [h for h in hospitals if h.stage not in ("passed",)]
 
     if not active:
-        return shell_v2(
+        return chartis_shell(
             '<div class="cad-card">'
             '<h2>No Pipeline Hospitals</h2>'
             '<p style="color:var(--cad-text2);">Add hospitals to the pipeline from the '
@@ -324,7 +324,7 @@ def render_portfolio_bridge(
         f'{nav}{freshness}'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body, "Portfolio EBITDA Bridge",
         active_nav="/pipeline",
         subtitle=(

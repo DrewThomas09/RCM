@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -117,6 +117,6 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     nav = _model_nav(deal_id, "")
     body = f'{nav}{kpis}{interp}{cov_section}{actions}'
 
-    return shell_v2(body, f"Returns & Covenant — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Returns & Covenant — {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"IRR: {irr:.1%} | MOIC: {moic:.2f}x | Covenant cushion: {cushion:.0%}")
