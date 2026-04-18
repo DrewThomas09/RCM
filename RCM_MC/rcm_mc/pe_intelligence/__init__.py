@@ -867,6 +867,13 @@ from .add_on_fit_scorer import (
     render_add_on_fit_markdown,
     score_add_on,
 )
+from .concentration_risk_multidim import (
+    ConcentrationFinding,
+    ConcentrationInputs,
+    ConcentrationReport,
+    render_concentration_markdown,
+    scan_concentration,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1955,4 +1962,9 @@ __all__ = [
     "FitDimension",
     "render_add_on_fit_markdown",
     "score_add_on",
+    "ConcentrationFinding",
+    "ConcentrationInputs",
+    "ConcentrationReport",
+    "render_concentration_markdown",
+    "scan_concentration",
 ]

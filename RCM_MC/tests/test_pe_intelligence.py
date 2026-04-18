@@ -15239,5 +15239,91 @@ class TestAddOnFitScorer(unittest.TestCase):
             target_name="X")).to_dict())
 
 
+# ── Concentration risk multi-dimensional ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    ConcentrationFinding,
+    ConcentrationInputs,
+    ConcentrationReport,
+    render_concentration_markdown,
+    scan_concentration,
+)
+
+
+class TestConcentrationRiskMultiDim(unittest.TestCase):
+
+    def test_no_concentration_empty(self) -> None:
+        r = scan_concentration(ConcentrationInputs())
+        self.assertEqual(r.findings, [])
+        self.assertIn("diversified", r.partner_note.lower())
+
+    def test_top_payer_50_triggers_high(self) -> None:
+        r = scan_concentration(ConcentrationInputs(
+            top_payer_share=0.55,
+        ))
+        payer = next(f for f in r.findings
+                      if f.dimension == "payer_top_1")
+        self.assertEqual(payer.severity, "high")
+        self.assertIn("underwriting constraint",
+                       payer.partner_commentary.lower())
+
+    def test_single_high_forces_mitigation_note(self) -> None:
+        r = scan_concentration(ConcentrationInputs(
+            top_customer_share=0.60,
+        ))
+        self.assertIn("mitigation", r.partner_note.lower())
+
+    def test_two_high_structural_issue(self) -> None:
+        r = scan_concentration(ConcentrationInputs(
+            top_customer_share=0.55,
+            top_payer_share=0.55,
+        ))
+        self.assertIn("structural issue", r.partner_note.lower())
+
+    def test_medium_severity_standard_diligence(self) -> None:
+        r = scan_concentration(ConcentrationInputs(
+            top_site_share=0.35,
+        ))
+        site = next(f for f in r.findings
+                     if f.dimension == "site_top_1")
+        self.assertEqual(site.severity, "medium")
+        self.assertIn("diligence flag", site.partner_commentary.lower())
+
+    def test_low_severity_noted(self) -> None:
+        r = scan_concentration(ConcentrationInputs(
+            top_service_line_share=0.18,
+        ))
+        self.assertEqual(r.findings[0].severity, "low")
+
+    def test_worst_dimension_tracked(self) -> None:
+        r = scan_concentration(ConcentrationInputs(
+            top_payer_share=0.45,
+            top_state_share=0.60,
+            top_customer_share=0.20,
+        ))
+        self.assertEqual(r.worst_dimension, "geography_top_state")
+        self.assertEqual(r.worst_value, 0.6)
+
+    def test_multiple_mediums_reported(self) -> None:
+        r = scan_concentration(ConcentrationInputs(
+            top_customer_share=0.35,
+            top_payer_share=0.32,
+            top_site_share=0.31,
+        ))
+        med = sum(1 for f in r.findings if f.severity == "medium")
+        self.assertEqual(med, 3)
+
+    def test_markdown_renders(self) -> None:
+        md = render_concentration_markdown(scan_concentration(
+            ConcentrationInputs(top_payer_share=0.40)))
+        self.assertIn("# Concentration risk", md)
+        self.assertIn("payer_top_1", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(scan_concentration(
+            ConcentrationInputs(top_payer_share=0.40)).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
