@@ -200,6 +200,7 @@ NAV_ITEMS = [
     {"label": "Biosimilars", "href": "/biosimilars", "icon": "chart"},
     {"label": "Telehealth Econ", "href": "/telehealth-econ", "icon": "chart"},
     {"label": "De Novo Expansion", "href": "/denovo-expansion", "icon": "chart"},
+    {"label": "Health Equity", "href": "/health-equity", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

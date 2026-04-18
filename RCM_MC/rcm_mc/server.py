@@ -1934,6 +1934,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.denovo_expansion_page import render_denovo_expansion
             return self._send_html(render_denovo_expansion(_qp))
+        if path == "/health-equity":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.health_equity_page import render_health_equity
+            return self._send_html(render_health_equity(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
