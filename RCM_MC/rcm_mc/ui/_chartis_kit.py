@@ -141,6 +141,7 @@ _CORPUS_NAV = [
     {"label": "Demand Forecast","href": "/demand-forecast",  "icon": "▦"},
     {"label": "Reinvestment",   "href": "/reinvestment",     "icon": "▣"},
     {"label": "Partner Economics","href": "/partner-economics","icon": "▦"},
+    {"label": "Insurance Tracker","href": "/insurance-tracker","icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
