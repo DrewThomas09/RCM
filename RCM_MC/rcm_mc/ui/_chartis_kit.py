@@ -648,19 +648,21 @@ button.ck-btn-ghost:hover {{ border-color: var(--ck-accent); color: var(--ck-tex
 #   4. Vim-style shortcuts     — power-user keyboard nav (?, /, g+<key>)
 # ---------------------------------------------------------------------------
 
-# 25-entry curated shortcut list for the Cmd+K palette. Merges shell_v2's
-# original 20 + the new Phase 2A/B/C chartis routes. Kept short by design:
-# palette is curated, not a directory — the full sidebar is for everything
-# else.
+# Curated shortcut list for the Cmd+K palette. Mirrors the three nav
+# groups (PLATFORM / ANALYTICS / REFERENCE) and adds the highest-value
+# legacy routes that are no longer in the sidebar after the Phase 5
+# consolidation. Hard-capped at 30 — the palette is a curated jump
+# list, not a directory.
 _PALETTE_ENTRIES = [
-    # NAV — day-to-day
+    # NAV — PLATFORM group
     ("NAV", "Home",                     "/home"),
     ("NAV", "Dashboard",                "/"),
     ("NAV", "Pipeline",                 "/pipeline"),
     ("NAV", "Portfolio",                "/portfolio"),
     ("NAV", "Alerts",                   "/alerts"),
     ("NAV", "Import Deal",              "/import"),
-    # ANL — analytics / brain
+    ("NAV", "Audit",                    "/audit"),
+    # ANL — ANALYTICS group + high-value legacy analytics
     ("ANL", "PE Intelligence",          "/pe-intelligence"),
     ("ANL", "Deal Screening",           "/deal-screening"),
     ("ANL", "Portfolio Analytics",      "/portfolio-analytics"),
@@ -673,7 +675,12 @@ _PALETTE_ENTRIES = [
     ("ANL", "Deal Search",              "/deal-search"),
     ("ANL", "Corpus Dashboard",         "/corpus-dashboard"),
     ("ANL", "Quant Lab",                "/quant-lab"),
-    # REF — reference / docs
+    ("ANL", "Base Rates",               "/base-rates"),
+    ("ANL", "Sponsor Heatmap",          "/sponsor-heatmap"),
+    ("ANL", "Vintage Cohorts",          "/vintage-cohorts"),
+    ("ANL", "Find Comps",               "/find-comps"),
+    ("ANL", "Exit Readiness",           "/exit-readiness"),
+    # REF — REFERENCE group
     ("REF", "Library (Corpus)",         "/library"),
     ("REF", "Methodology",              "/methodology"),
     ("REF", "API Docs",                 "/api/docs"),
