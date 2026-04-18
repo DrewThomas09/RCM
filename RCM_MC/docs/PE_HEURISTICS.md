@@ -11441,7 +11441,69 @@ strategic_priority_0_4, already_signed)`;
 
 ---
 
-## 276. Change log
+## 276. Service line growth × margin quadrant (`service_line_growth_margin_quadrant.py`)
+
+**Partner statement.** "For a multi-service-line deal, put each
+line on the growth × margin 2x2. Stars are high-growth
+high-margin (invest). Cash cows are low-growth high-margin
+(harvest). Question marks are high-growth low-margin (invest with
+caution). Dogs are low-growth low-margin (divest or starve). The
+portfolio conversation is which to feed and which to starve."
+
+### Why it matters
+
+`service_line_analysis` does concentration + HHI.
+`subsector_ebitda_margin_benchmark` benchmarks a single subsector's
+margin. This module is the **per-line 2x2 classifier** partners
+use to allocate management attention and capital across a
+multi-line portfolio.
+
+### Thresholds
+
+- growth ≥ 7% = high growth
+- margin ≥ 20% = high margin
+
+### Quadrants × action
+
+- **star** (high G, high M) → invest
+- **cash_cow** (low G, high M) → harvest
+- **question_mark** (high G, low M) → invest with caution
+- **dog** (low G, low M) → divest or starve
+
+### Portfolio verdict
+
+- Stars + cash cows ≥ 60% → "healthy mix"
+- Question marks ≥ 30% → "execution-dependent"
+- Dogs ≥ 30% → "portfolio drag"
+- Otherwise → "balanced; standard management attention"
+
+### Worked example
+
+Specialty practice with 4 lines at $50M revenue each:
+- Line A: +12% growth, 25% margin → star ($50M)
+- Line B: +3% growth, 25% margin → cash_cow ($50M)
+- Line C: +15% growth, 12% margin → question_mark ($50M)
+- Line D: +2% growth, 10% margin → dog ($50M)
+
+Stars+cows = 50% of revenue → balanced. Partner: "feed A, harvest
+B, watch C's margin, starve or divest D."
+
+### Packet fields
+
+`service_lines` — list of `ServiceLine(name, revenue_m,
+growth_rate_pct, ebitda_margin_pct)` (aliased
+`QuadrantServiceLine` at package level).
+
+### Distinct from existing modules
+
+- `service_line_analysis` — concentration / HHI.
+- `subsector_ebitda_margin_benchmark` — headline margin band.
+- This module — per-line 2x2 classifier with revenue-weighted
+  portfolio verdict.
+
+---
+
+## 277. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
