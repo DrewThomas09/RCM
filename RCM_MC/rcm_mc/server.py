@@ -1829,6 +1829,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.aco_economics_page import render_aco_economics
             return self._send_html(render_aco_economics(_qp))
+        if path == "/phys-comp-plan":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.phys_comp_plan_page import render_phys_comp_plan
+            return self._send_html(render_phys_comp_plan(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

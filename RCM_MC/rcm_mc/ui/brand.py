@@ -179,6 +179,7 @@ NAV_ITEMS = [
     {"label": "Partner Economics", "href": "/partner-economics", "icon": "chart"},
     {"label": "Insurance Tracker", "href": "/insurance-tracker", "icon": "chart"},
     {"label": "ACO Economics", "href": "/aco-economics", "icon": "chart"},
+    {"label": "Phys Comp Plan", "href": "/phys-comp-plan", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
