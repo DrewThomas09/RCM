@@ -1225,6 +1225,14 @@ from .value_creation_attribution import (
     attribute_value_creation,
     render_attribution_markdown,
 )
+from .reimbursement_cliff_calendar_2026_2029 import (
+    CalendarHit as ReimbursementCalendarHit,
+    CalendarReport as ReimbursementCalendarReport,
+    CliffEvent,
+    list_cliff_event_ids,
+    render_cliff_calendar_markdown,
+    scan_cliff_calendar_for_deal,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2575,4 +2583,10 @@ __all__ = [
     "AttributionReport",
     "attribute_value_creation",
     "render_attribution_markdown",
+    "CliffEvent",
+    "ReimbursementCalendarHit",
+    "ReimbursementCalendarReport",
+    "list_cliff_event_ids",
+    "render_cliff_calendar_markdown",
+    "scan_cliff_calendar_for_deal",
 ]

@@ -22080,5 +22080,165 @@ class TestValueCreationAttribution(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestReimbursementCliffCalendar2026_2029(unittest.TestCase):
+    """Partner scenario: which cliffs hit this deal's hold window?"""
+
+    def test_hospital_hold_2026_2030_catches_obbba(self) -> None:
+        """Partner: 'OBBBA phase-1 hits hospitals in 2026.'"""
+        from rcm_mc.pe_intelligence import (
+            scan_cliff_calendar_for_deal,
+        )
+        r = scan_cliff_calendar_for_deal(
+            subsector="hospital_general",
+            hold_start_year=2026,
+            hold_years=5,
+        )
+        event_ids = {h.event.id for h in r.hits}
+        self.assertIn("obbba_medicare_cut_phase1", event_ids)
+        self.assertIn("obbba_medicare_cut_phase2", event_ids)
+
+    def test_lab_catches_pama(self) -> None:
+        """Partner: 'PAMA round 4 is the lab-specific cliff.'"""
+        from rcm_mc.pe_intelligence import (
+            scan_cliff_calendar_for_deal,
+        )
+        r = scan_cliff_calendar_for_deal(
+            subsector="clinical_lab",
+            hold_start_year=2026,
+        )
+        event_ids = {h.event.id for h in r.hits}
+        self.assertIn("pama_lab_cuts_round_4", event_ids)
+
+    def test_dme_competitive_bid_in_hold(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            scan_cliff_calendar_for_deal,
+        )
+        r = scan_cliff_calendar_for_deal(
+            subsector="durable_medical_equipment",
+            hold_start_year=2026,
+            hold_years=5,
+        )
+        event_ids = {h.event.id for h in r.hits}
+        self.assertIn("dme_competitive_bid_round_2028", event_ids)
+
+    def test_hospice_catches_cap_tightening(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            scan_cliff_calendar_for_deal,
+        )
+        r = scan_cliff_calendar_for_deal(
+            subsector="hospice",
+            hold_start_year=2026,
+            hold_years=5,
+        )
+        event_ids = {h.event.id for h in r.hits}
+        self.assertIn("hospice_cap_tightening_2028", event_ids)
+
+    def test_site_neutral_only_hospital_and_asc(self) -> None:
+        """Partner: 'site-neutral is HOPD-only — hits hospital + ASC.'"""
+        from rcm_mc.pe_intelligence import (
+            scan_cliff_calendar_for_deal,
+        )
+        hosp = scan_cliff_calendar_for_deal(
+            subsector="hospital_general",
+            hold_start_year=2026,
+            hold_years=5,
+        )
+        dental = scan_cliff_calendar_for_deal(
+            subsector="dental_office",
+            hold_start_year=2026,
+            hold_years=5,
+        )
+        hosp_ids = {h.event.id for h in hosp.hits}
+        dental_ids = {h.event.id for h in dental.hits}
+        self.assertIn("site_neutral_hopd_finalization", hosp_ids)
+        self.assertNotIn(
+            "site_neutral_hopd_finalization", dental_ids
+        )
+
+    def test_hold_outside_window_yields_no_hits(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            scan_cliff_calendar_for_deal,
+        )
+        r = scan_cliff_calendar_for_deal(
+            subsector="hospital_general",
+            hold_start_year=2035,   # past modeled events
+            hold_years=5,
+        )
+        self.assertEqual(len(r.hits), 0)
+        self.assertIn("no cliff events",
+                       r.partner_note.lower())
+
+    def test_total_bps_sums_correctly(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            scan_cliff_calendar_for_deal,
+        )
+        r = scan_cliff_calendar_for_deal(
+            subsector="hospital_general",
+            hold_start_year=2026,
+            hold_years=5,
+        )
+        expected = sum(h.event.rate_change_bps for h in r.hits)
+        self.assertAlmostEqual(r.total_bps_in_hold,
+                                expected, places=1)
+
+    def test_rural_wage_index_is_positive_event(self) -> None:
+        """Partner: 'rural wage floor is one of few upsides.'"""
+        from rcm_mc.pe_intelligence.reimbursement_cliff_calendar_2026_2029 import (
+            CLIFF_CALENDAR,
+        )
+        rural = next(e for e in CLIFF_CALENDAR
+                      if e.id == "wage_index_rural_floor_2027")
+        self.assertGreater(rural.rate_change_bps, 0)
+
+    def test_material_headwind_triggers_base_case_note(self) -> None:
+        """Partner: '>500 bps → bake into base case.'"""
+        from rcm_mc.pe_intelligence import (
+            scan_cliff_calendar_for_deal,
+        )
+        r = scan_cliff_calendar_for_deal(
+            subsector="hospital_general",
+            hold_start_year=2026,
+            hold_years=5,
+        )
+        # Hospital gets multiple major cuts stacking > 500 bps.
+        if r.total_bps_in_hold <= -500:
+            self.assertIn("base case",
+                           r.partner_note.lower())
+
+    def test_list_cliff_event_ids_complete(self) -> None:
+        from rcm_mc.pe_intelligence import list_cliff_event_ids
+        ids = list_cliff_event_ids()
+        self.assertIn("obbba_medicare_cut_phase1", ids)
+        self.assertIn("pama_lab_cuts_round_4", ids)
+        self.assertIn("site_neutral_hopd_finalization", ids)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            render_cliff_calendar_markdown,
+            scan_cliff_calendar_for_deal,
+        )
+        md = render_cliff_calendar_markdown(
+            scan_cliff_calendar_for_deal(
+                subsector="hospital_general",
+                hold_start_year=2026,
+                hold_years=5,
+            )
+        )
+        self.assertIn("# Reimbursement cliff calendar", md)
+        self.assertIn("Partner note", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            scan_cliff_calendar_for_deal,
+        )
+        r = scan_cliff_calendar_for_deal(
+            subsector="hospital_general",
+            hold_start_year=2026,
+            hold_years=5,
+        )
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
