@@ -178,6 +178,7 @@ NAV_ITEMS = [
     {"label": "Reinvestment", "href": "/reinvestment", "icon": "chart"},
     {"label": "Partner Economics", "href": "/partner-economics", "icon": "chart"},
     {"label": "Insurance Tracker", "href": "/insurance-tracker", "icon": "chart"},
+    {"label": "ACO Economics", "href": "/aco-economics", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
