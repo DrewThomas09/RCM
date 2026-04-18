@@ -11039,7 +11039,72 @@ $60M+ minimum target → "auction is thin; CV alternative."
 
 ---
 
-## 270. Change log
+## 270. CMS annual rule cycle tracker (`cms_rule_cycle_tracker.py`)
+
+**Partner statement.** "The CMS rule cycle is a calendar you can
+set your watch to. IPPS proposed April / final July. OPPS proposed
+July / final November. MPFS proposed July / final November. MA
+Advance Notice February / Rate Announcement April. Each rule
+touches specific service lines."
+
+### Why it matters
+
+`regulatory_watch` is a general event registry.
+`reimbursement_cliff_calendar_2026_2029` tracks named events. This
+module specifically maps the **4 major CMS rules** to their annual
+cycle dates + per-rule service-line mapping so the partner knows
+which rule cycle matters for this specific deal.
+
+### 4 major CMS rules
+
+| Rule | Proposed | Final | Effective | Service lines |
+|---|---|---|---|---|
+| IPPS | April | July/Aug | October | inpatient medicine / surgery |
+| OPPS | July | November | January | HOPD / ASC / outpatient surgery / infusion |
+| MPFS | July | November | January | physician office / E&M / telehealth |
+| MA Rates | Feb (Advance Notice) | April (Rate Announcement) | January | MA / risk contracts / capitation |
+
+### Cycle stages
+
+- `pre_cycle` — current month before proposed
+- `proposed_phase` — between proposed and final
+- `final_phase` — after final publication
+- `effective` — rule is live
+
+### Verdict
+
+- Top rule touching ≥ 30% of NPR → **priority rule for diligence
+  cycle; allocate counsel + specialist time**
+- Applicable rules > 0 but ≤ 30% top → **modest exposure**
+- No rules touch deal → **deal is not CMS-rate-driven**
+
+### Worked example
+
+ASC-heavy ambulatory surgery platform (50% ASC + 30% outpatient
+surgery) in July:
+- OPPS applies at 80% NPR share, cycle stage proposed_phase → top
+  rule
+- MPFS may also apply if E&M component present
+- Partner: "OPPS is priority rule this cycle; assign specialist to
+  July proposed rule on specific service lines touching this deal."
+
+### Packet fields
+
+`service_lines` — list of `ServiceLineProfile(service_line,
+share_of_npr_pct)`; `current_month`.
+
+### Distinct from existing modules
+
+- `regulatory_watch` — general event registry.
+- `reimbursement_cliff_calendar_2026_2029` — named events with
+  dollar impact.
+- `healthcare_regulatory_calendar` — broader event list.
+- This module — **annual cycle** of 4 CMS rules with per-rule
+  service-line mapping and current-cycle-stage detection.
+
+---
+
+## 271. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
