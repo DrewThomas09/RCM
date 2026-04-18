@@ -1421,6 +1421,14 @@ from .rollup_arbitrage_math import (
     compute_rollup_arbitrage,
     render_rollup_arbitrage_markdown,
 )
+from .physician_retention_stress_model import (
+    Physician as RetentionPhysician,
+    RetentionStressInputs,
+    RetentionStressReport,
+    RetentionStressTier,
+    render_retention_stress_markdown,
+    run_retention_stress,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2913,4 +2921,10 @@ __all__ = [
     "TuckInDeal",
     "compute_rollup_arbitrage",
     "render_rollup_arbitrage_markdown",
+    "RetentionPhysician",
+    "RetentionStressInputs",
+    "RetentionStressReport",
+    "RetentionStressTier",
+    "render_retention_stress_markdown",
+    "run_retention_stress",
 ]

@@ -26654,5 +26654,287 @@ class TestRollupArbitrageMath(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestPhysicianRetentionStressModel(unittest.TestCase):
+    """Partner voice: 'In a physician-driven business, the EBITDA is the physicians.'"""
+
+    def _doctors(self) -> list:
+        from rcm_mc.pe_intelligence import RetentionPhysician
+        # top-3 producers in a 5-physician practice
+        return [
+            RetentionPhysician(
+                "Dr. A", annual_revenue_m=4.0,
+                annual_comp_m=0.9, owner=True,
+                outside_options=True,
+                revenue_portability_pct=0.60,
+            ),
+            RetentionPhysician(
+                "Dr. B", annual_revenue_m=3.5,
+                annual_comp_m=0.85, owner=True,
+                outside_options=False,
+                revenue_portability_pct=0.50,
+            ),
+            RetentionPhysician(
+                "Dr. C", annual_revenue_m=3.0,
+                annual_comp_m=0.8, owner=True,
+                outside_options=True,
+                revenue_portability_pct=0.55,
+            ),
+            RetentionPhysician(
+                "Dr. D", annual_revenue_m=1.5,
+                annual_comp_m=0.45, owner=False,
+                outside_options=False,
+                revenue_portability_pct=0.40,
+            ),
+            RetentionPhysician(
+                "Dr. E", annual_revenue_m=1.2,
+                annual_comp_m=0.40, owner=False,
+                outside_options=False,
+                revenue_portability_pct=0.40,
+            ),
+        ]
+
+    def test_baseline_ebitda_sums_contributing_margin(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=self._doctors(),
+        ))
+        # sum of 40% × each revenue = 0.4 × 13.2 = 5.28
+        self.assertAlmostEqual(
+            r.baseline_ebitda_m, 5.28, places=2
+        )
+
+    def test_four_tiers_produced(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=self._doctors(),
+        ))
+        labels = [t.tier_label for t in r.tiers]
+        self.assertEqual(
+            labels,
+            ["lose_top_1", "lose_top_2",
+             "lose_top_3", "lose_top_5"],
+        )
+
+    def test_losing_top_physician_hits_top_revenue(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=self._doctors(),
+        ))
+        # top-1 is Dr. A with $4M revenue
+        top1 = r.tiers[0]
+        self.assertAlmostEqual(
+            top1.revenue_lost_m, 4.0, places=2
+        )
+
+    def test_owner_with_outside_options_needs_biggest_retention(
+        self,
+    ) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=self._doctors(),
+        ))
+        # Dr. A (owner + outside options, comp 0.9) → 1.35M bond
+        top1 = r.tiers[0]
+        self.assertAlmostEqual(
+            top1.retention_package_needed_m, 1.35, places=2
+        )
+
+    def test_signed_retention_reduces_package_needed(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionPhysician,
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        docs = self._doctors()
+        docs[0].retention_bonus_signed_m = 1.35  # already signed
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=docs,
+        ))
+        top1 = r.tiers[0]
+        self.assertAlmostEqual(
+            top1.retention_package_needed_m, 0.0, places=2
+        )
+
+    def test_heavy_concentration_triggers_walk(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionPhysician,
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        # Two physicians, one holds 80% of revenue
+        docs = [
+            RetentionPhysician(
+                "Dr. Big", annual_revenue_m=16.0,
+                annual_comp_m=2.0, owner=True,
+                outside_options=True,
+                revenue_portability_pct=0.80,
+            ),
+            RetentionPhysician(
+                "Dr. Small", annual_revenue_m=4.0,
+                annual_comp_m=0.6,
+            ),
+        ]
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=docs,
+        ))
+        top1 = r.tiers[0]
+        self.assertEqual(top1.partner_verdict, "walk")
+        self.assertEqual(r.overall_verdict, "walk")
+        self.assertIn(
+            "pre-signed", top1.partner_read.lower()
+        )
+
+    def test_acceptable_when_concentration_is_mild(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionPhysician,
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        docs = [
+            RetentionPhysician(
+                f"Dr. {i}", annual_revenue_m=1.0,
+                annual_comp_m=0.3,
+                revenue_portability_pct=0.20,
+            )
+            for i in range(20)
+        ]
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=docs,
+        ))
+        top3 = next(
+            t for t in r.tiers
+            if t.tier_label == "lose_top_3"
+        )
+        self.assertEqual(
+            top3.partner_verdict, "acceptable"
+        )
+
+    def test_price_in_triggers_in_middle_range(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionPhysician,
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        # Top-3 carry ~20% of EBITDA (between 15% and 30%)
+        docs = [
+            RetentionPhysician(
+                f"Dr. top-{i}", annual_revenue_m=2.0,
+                annual_comp_m=0.5, owner=True,
+                revenue_portability_pct=0.50,
+            )
+            for i in range(3)
+        ] + [
+            RetentionPhysician(
+                f"Dr. bot-{i}", annual_revenue_m=1.2,
+                annual_comp_m=0.35,
+                revenue_portability_pct=0.30,
+            )
+            for i in range(8)
+        ]
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=docs,
+        ))
+        top3 = next(
+            t for t in r.tiers
+            if t.tier_label == "lose_top_3"
+        )
+        self.assertEqual(
+            top3.partner_verdict, "price_in"
+        )
+
+    def test_empty_physicians_gives_neutral_verdict(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=[],
+        ))
+        self.assertEqual(r.overall_verdict, "acceptable")
+        self.assertEqual(r.baseline_ebitda_m, 0.0)
+
+    def test_replacement_cost_scales_with_ramp_length(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        docs = self._doctors()
+        short = run_retention_stress(
+            RetentionStressInputs(
+                physicians=docs,
+                replacement_ramp_months=6,
+            )
+        )
+        long_ = run_retention_stress(
+            RetentionStressInputs(
+                physicians=docs,
+                replacement_ramp_months=18,
+            )
+        )
+        self.assertLess(
+            short.tiers[0].replacement_cost_m,
+            long_.tiers[0].replacement_cost_m,
+        )
+
+    def test_non_owner_no_options_zero_retention(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionPhysician,
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        docs = [
+            RetentionPhysician(
+                "Dr. Salary", annual_revenue_m=2.0,
+                annual_comp_m=0.5, owner=False,
+                outside_options=False,
+            ),
+        ]
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=docs,
+        ))
+        self.assertEqual(
+            r.tiers[0].retention_package_needed_m, 0.0
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            RetentionStressInputs,
+            render_retention_stress_markdown,
+            run_retention_stress,
+        )
+        md = render_retention_stress_markdown(
+            run_retention_stress(RetentionStressInputs(
+                physicians=self._doctors(),
+            ))
+        )
+        self.assertIn(
+            "# Physician retention stress", md
+        )
+        self.assertIn("Baseline EBITDA", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            RetentionStressInputs,
+            run_retention_stress,
+        )
+        r = run_retention_stress(RetentionStressInputs(
+            physicians=self._doctors(),
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
