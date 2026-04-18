@@ -123,6 +123,7 @@ _CORPUS_NAV = [
     {"label": "Reference Pricing","href": "/ref-pricing",     "icon": "▦"},
     {"label": "Geo Market",      "href": "/geo-market",       "icon": "▣"},
     {"label": "Capital Schedule","href": "/capital-schedule", "icon": "▦"},
+    {"label": "Peer Valuation", "href": "/peer-valuation",   "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
