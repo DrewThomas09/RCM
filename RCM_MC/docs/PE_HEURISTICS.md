@@ -6222,7 +6222,80 @@ see module for full signal names.
 
 ---
 
-## 202. Change log
+## 202. Diligence spend budget (`diligence_spend_budget.py`)
+
+**Partner statement:** "I don't run the same diligence
+on a $100M deal that I run on a $1B deal. I don't run
+the same diligence on a clean asset that I run on one
+matching three failure archetypes. The spend has to fit
+the shape."
+
+### 8 workstream allocations
+
+- **qofe** — 30% base; scaled by subsector + compound-
+  pattern-risk count.
+- **legal_corporate_tax** — 25% base; scaled by source
+  type (proprietary gets more scope).
+- **regulatory_healthcare_compliance** — 5% base; +30%
+  per regulatory overhang.
+- **clinical_quality** — 5% base; 1.8x on material
+  clinical risk.
+- **commercial_market** — 10% base; 1.75x when
+  commercial is primary lever.
+- **it_cyber** — 8% base; 2.0x on material cyber
+  exposure.
+- **insurance_rw** — 7% base; 1.2x on $500M+ deals.
+- **consultants_operators** — 10% base; 2.5x on
+  turnaround theses.
+
+### Size adjustment
+
+- $200M EV or less → 70 bps.
+- $200-500M → 50 bps baseline.
+- $500M-1B → 45 bps.
+- $1B+ → 35 bps (economies of scale).
+
+### Source-type adjustment (legal line)
+
+- broad_auction → 0.70x (compressed timeline).
+- proprietary_from_relationship → 1.25x (extended).
+- second_look → 1.40x (deep dig on prior breakage).
+- distressed → 0.80x (fast track).
+
+### Partner-note escalation
+
+- ≥ 80 bps of EV → "high — biggest line addresses the
+  identified risk axis."
+- ≤ 30 bps → "lean — clean deal, standard scope."
+- Otherwise → "standard, with biggest-line named."
+
+### Worked example
+
+$500M turnaround thesis with material cyber exposure +
+2 regulatory overhangs, limited-auction source:
+
+- qofe $0.75M × 1.0 → $0.75M
+- legal $0.625M × 1.0 → $0.625M
+- regulatory $0.125M × 1.60 → $0.20M
+- clinical $0.125M × 1.0 → $0.125M
+- commercial $0.25M × 1.0 → $0.25M
+- it_cyber $0.20M × 2.0 → $0.40M
+- insurance_rw $0.175M × 1.2 → $0.21M
+- consultants $0.25M × 2.5 → $0.625M
+
+Total ≈ $3.2M (64 bps) — consultants is biggest line
+because turnaround thesis drives it.
+
+### Packet fields that trigger
+
+`ev_m`, `subsector`, `source`,
+`compound_pattern_risk_count`, `regulatory_overhang_count`,
+`clinical_risk_material`, `cyber_exposure_material`,
+`turnaround_thesis`, `commercial_thesis`.
+
+---
+
+## 203. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
