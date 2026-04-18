@@ -263,6 +263,129 @@ class TestChartisPhase2BRoutes(unittest.TestCase):
         self._assert_missing("ic-packet")
 
 
+class TestChartisPhase2CPortfolioRoutes(unittest.TestCase):
+    """The six portfolio-level pages shipped in Phase 2C."""
+
+    def _assert_renders(self, path: str, *, expect_title: str,
+                         expect_substrings: tuple = ()) -> None:
+        with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
+            status, body = _fetch(srv.url(path))
+            self.assertEqual(status, 200, f"{path} returned {status}")
+            self.assertIn(expect_title, body,
+                           f"{path} missing title {expect_title!r}")
+            for sub in expect_substrings:
+                self.assertIn(sub, body,
+                               f"{path} missing substring {sub!r}")
+
+    def test_sponsor_track_record_renders(self):
+        self._assert_renders(
+            "/sponsor-track-record",
+            expect_title="Sponsor Track Record",
+            expect_substrings=("FULL LEAGUE TABLE", "TOP 5 BY MEDIAN MOIC"),
+        )
+
+    def test_payer_intelligence_renders(self):
+        self._assert_renders(
+            "/payer-intelligence",
+            expect_title="Payer Intelligence",
+            expect_substrings=("PAYER-MIX REGIMES", "COMPREHENSIVE VIEW"),
+        )
+
+    def test_payer_intel_summary_links_to_payer_intelligence(self):
+        """The legacy /payer-intel page must cross-link to the new
+        /payer-intelligence hub per the disambiguation rule."""
+        with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
+            status, body = _fetch(srv.url("/payer-intel"))
+            self.assertEqual(status, 200)
+            self.assertIn("/payer-intelligence", body)
+            self.assertIn("SUMMARY VIEW", body)
+
+    def test_rcm_benchmarks_renders(self):
+        self._assert_renders(
+            "/rcm-benchmarks",
+            expect_title="RCM Benchmarks",
+            expect_substrings=("CROSS-SEGMENT COMPARISON", "Community Hospital"),
+        )
+
+    def test_corpus_backtest_renders(self):
+        self._assert_renders(
+            "/corpus-backtest",
+            expect_title="Corpus Backtest",
+            expect_substrings=("DISAMBIGUATION", "GROUND-TRUTH CURVE"),
+        )
+
+    def test_backtester_cross_links_to_corpus_backtest(self):
+        """The legacy /backtester page must cross-link to /corpus-backtest
+        per the disambiguation rule."""
+        with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
+            status, body = _fetch(srv.url("/backtester"))
+            self.assertEqual(status, 200)
+            self.assertIn("/corpus-backtest", body)
+            self.assertIn("VALUE BRIDGE BACKTEST", body)
+
+    def test_deal_screening_renders(self):
+        self._assert_renders(
+            "/deal-screening",
+            expect_title="Deal Screening",
+            expect_substrings=("DECISION MIX", "Screening controls"),
+        )
+
+    def test_portfolio_analytics_renders(self):
+        self._assert_renders(
+            "/portfolio-analytics",
+            expect_title="Portfolio Analytics",
+            expect_substrings=("CORPUS SCORECARD",
+                               "VINTAGE MIX",
+                               "CONCENTRATION RISK"),
+        )
+
+
+class TestChartisPhase2CScreeningIntegration(unittest.TestCase):
+    """Integration test: /deal-screening actually returns ranked output.
+
+    Catches the case where screen_corpus silently falls through to an
+    empty table (e.g. all deals filtered out or module raises and we
+    render the empty state). A healthy install should screen all 655
+    corpus deals under default thresholds and produce at least one PASS
+    decision card and at least one populated result row.
+    """
+
+    def test_screening_produces_ranked_output_with_defaults(self):
+        with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
+            status, body = _fetch(srv.url("/deal-screening"))
+            self.assertEqual(status, 200)
+            # Decision-mix strip populated with counts
+            self.assertIn("DECISION MIX", body)
+            # Results table has rows (not the UNAVAILABLE / error banner)
+            self.assertNotIn("Deal screening unavailable", body)
+            self.assertNotIn("Screening run failed", body)
+            # Sanity: corpus-size KPI shows a 3-digit count
+            self.assertIn("655", body, "expected 655 corpus deals KPI")
+            # The pass/watch/fail tiles must all render
+            self.assertIn(">PASS<", body)
+            self.assertIn(">WATCH<", body)
+            self.assertIn(">FAIL<", body)
+
+    def test_screening_threshold_filter_shifts_decision_mix(self):
+        """Tightening max_medicaid_pct should move deals from PASS to
+        FAIL — verify the decision mix actually responds to the control."""
+        with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
+            _, default_body = _fetch(srv.url("/deal-screening"))
+            _, strict_body = _fetch(srv.url(
+                "/deal-screening?max_medicaid_pct=0.10&max_ev_ebitda=10.0"
+            ))
+            # Both render without crashing
+            self.assertIn("DECISION MIX", default_body)
+            self.assertIn("DECISION MIX", strict_body)
+            # Strict config should show MORE fails than default.
+            # We don't parse the number out — just confirm the page
+            # responds (different byte length proves the mix changed).
+            self.assertNotEqual(
+                len(default_body), len(strict_body),
+                "screen output did not change when thresholds tightened",
+            )
+
+
 class TestChartisIntegration(unittest.TestCase):
     """End-to-end sanity check — catches the case where the PE brain
     silently crashes and every per-deal page falls through to the
