@@ -8475,7 +8475,128 @@ Flags for subsector identification (`is_rural_critical_access`,
 
 ---
 
-## 237. Change log
+## 237. Connect-the-dots packet reader (`connect_the_dots_packet_reader.py`)
+
+**Partner statement.** "The thing a senior partner does that a model
+doesn't: we connect dots. A denial rate change has coding
+implications, which have CMI implications, which change the Medicare
+bridge math. A payer-mix shift has case-mix implications, which have
+CMI implications, which have IP margin implications. A DSO jump has
+working-capital implications, which have covenant implications,
+which have dividend-recap-timing implications. The packet reports
+each number in isolation. The brain reads the chain."
+
+### Why it matters
+
+This is the crown-jewel module for the "connects dots across the
+packet" partner reflex. It traces packet-level signals through named
+causal chains and outputs the quantified impact at each step — so
+the partner's IC narrative is "if X moves Y bps, Z falls $A M" not
+just "here are six unrelated changes."
+
+### Six causal chains
+
+1. **denial_fix_to_cmi_to_medicare_bridge**
+   - Trigger: denial-rate change ≥ 50 bps + CMI propped by appeals.
+   - `denial_rate_drop → coding_accuracy_rises → cmi_reversal →
+     medicare_bridge_impact`.
+   - Quantified: 150 bps denial fix ≈ 2% CMI reversal × Medicare NPR.
+   - Partner: "Don't cheer the denial fix; the Medicare leg reverses."
+
+2. **payer_shift_to_case_mix_to_cmi_to_ip_margin**
+   - Trigger: commercial mix shift ≥ 2%.
+   - `payer_mix_shifts → case_mix_reweights → cmi_impact →
+     ip_margin_flows_through`.
+   - Quantified: 1% CMI shift ≈ 50 bps IP margin.
+   - Partner: "CMI is the transmission; don't model payer-mix in
+     isolation."
+
+3. **wage_step_to_physcomp_to_ebitda_to_addback_risk**
+   - Trigger: wage inflation ≥ 100 bps.
+   - `wage_inflation → physician_comp_pressure → ebitda_margin_hit →
+     addback_stress`.
+   - Quantified: wage bps × physician-comp share × NPR → EBITDA drag.
+   - Partner: "Comp-normalization add-back becomes stressed; QofE
+     will call it."
+
+4. **volume_decline_to_fixed_cost_to_covenant_headroom**
+   - Trigger: volume change ≤ −3%.
+   - `volume_decline → fixed_cost_deleverage → ebitda_margin_hit →
+     covenant_headroom`.
+   - Quantified: volume × fixed-cost share → bps margin drag →
+     covenant trip if remaining headroom < 10%.
+   - Partner: "Covenant trips in Q3; call the bank."
+
+5. **dso_rise_to_wc_to_fcf_to_div_recap_timing**
+   - Trigger: DSO change ≥ 5 days.
+   - `dso_change → wc_absorbs → fcf_compression → recap_timing`.
+   - Quantified: DSO days × NPR / 365 = WC drag; recap delays if
+     drag > $3M and a recap is planned.
+   - Partner: "Planned recap slips; rebuild the model or give up a
+     turn of leverage."
+
+6. **reg_event_to_service_line_to_volume_to_ebitda**
+   - Trigger: named upcoming reg event + exposed service line.
+   - `reg_event → service_line_exposure → volume_or_price_hit →
+     ebitda_flow_through`.
+   - Quantified: exposed service-line NPR × price cut × contribution
+     margin = EBITDA hit.
+   - Partner: "Price into bridge or exit multiple contracts."
+
+### Output shape
+
+Each fired chain returns:
+- `name` — canonical chain id.
+- `steps` — ordered list of `(step, effect_detail,
+  quantified_impact)`.
+- `partner_summary` — one-sentence cross-module narrative with
+  quantified impact.
+
+Report-level `headline`: "N dot-connect chain(s) active — packet
+signals are not independent."
+
+### Distinct from existing modules
+
+- `cross_module_connective_tissue` — composes module *outputs* into
+  summaries (module-level).
+- `thesis_implications_chain` — traces at the *thesis* level.
+- This module — traces at the *signal* level (packet-level inputs
+  → downstream financial impact chains). Operates on raw packet
+  signals, not module outputs.
+
+### Packet fields
+
+`PacketSignals` has 20+ fields across denial / coding
+(denial_rate_change_bps, cmi_propped_by_appeals, medicare_npr_m),
+payer mix (commercial_mix_change_pct, medicare_mix_change_pct),
+wage / comp (wage_inflation_bps, physician_comp_of_npr_pct,
+comp_normalization_addback_m), volume / margin (volume_change_pct,
+fixed_cost_share_pct, ebitda_base_m, covenant_headroom_pct),
+working capital (dso_change_days, wc_required_as_pct_of_npr, npr_m,
+planned_div_recap_year), reg events (upcoming_reg_event_name,
+service_line_exposed_pct_of_npr, service_line_price_cut_pct).
+
+### Worked example
+
+Packet signals: denial fix of −150 bps with CMI propped by appeals,
+commercial mix +4%, wage inflation +200 bps, DSO +10 days.
+
+Four chains fire. Partner's IC narrative (crossed-module):
+
+- "Denial fix of 150 bps reverses appeals-propped CMI by ~2%;
+  Medicare bridge loses $2.4M."
+- "Commercial mix +4% → CMI shift +1.6% → IP margin +80 bps."
+- "Wage inflation 200 bps → physician-comp drag 80 bps → $0.32M
+  EBITDA hit; comp-normalization add-back stressed."
+- "DSO +10 days → $8.2M WC drag → FCF hit; planned recap slips."
+
+Net: seller story is "4 things improving," partner reads the chain
+and sees net EBITDA flat with more stress points. This is the
+dot-connect the packet doesn't do on its own.
+
+---
+
+## 238. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
