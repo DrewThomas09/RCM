@@ -170,6 +170,7 @@ _CORPUS_NAV = [
     {"label": "Direct Lending",  "href": "/direct-lending",    "icon": "▦"},
     {"label": "PMI Playbook",    "href": "/pmi-playbook",       "icon": "▣"},
     {"label": "FWA Detection",   "href": "/fraud-detection",    "icon": "▦"},
+    {"label": "Drug Shortage",   "href": "/drug-shortage",      "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
