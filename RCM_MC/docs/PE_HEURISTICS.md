@@ -3602,7 +3602,39 @@ Partner note:
 
 ---
 
-## 150. Change log
+## 150. Process stopwatch (`process_stopwatch.py`)
+
+**Partner statement:** "The banker's clock tells you things the
+CIM doesn't."
+
+Seven signal detectors:
+
+- **tight_close_clock** (high) — ≤ 4 weeks LOI-to-close is
+  designed to prevent deep diligence.
+- **bidder_collapse** (high) — round 2 has ≤ 25% of round 1
+  bidders. Specific finding is spreading through the group.
+- **process_relaunched** (high) — seller re-engaging prior
+  passers means first process failed.
+- **multiple_walks** (medium) — ≥ 3 bidders walked mid-process.
+  Call a peer partner — what did they find?
+- **repriced_during_process** (medium) — price reset downward
+  pre-close. Use as leverage; don't anchor on original ask.
+- **banker_rigid_on_price** (medium) — aggressive price defense
+  usually means weak comps and no natural clearing price.
+- **diligence_silence** (medium) — seller/management quiet
+  during diligence is often bad news.
+
+Partner note:
+
+- ≥ 2 high signals → "clock is telling you to be careful;
+  press banker for what's actually happening in the room."
+- 1 high → "investigate before moving forward."
+- Medium only → "fold into diligence questions."
+- Clean → "process tempo reads normal."
+
+---
+
+## 151. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -3938,3 +3970,7 @@ Partner note:
   — category × timing × evidence credibility scoring with
   partner-prudent realization %. Full inventory: 147 modules,
   1,491 pe_intelligence unit tests.
+- **2026-04-17** — Added `process_stopwatch.py` (§150) — read
+  banker process timing (tight close, bidder collapse,
+  relaunch, walks, reprice, silence). Full inventory: 148
+  modules, 1,502 pe_intelligence unit tests.
