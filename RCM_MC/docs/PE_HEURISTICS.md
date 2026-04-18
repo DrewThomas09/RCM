@@ -5950,7 +5950,75 @@ into a system.
 
 ---
 
-## 198. Change log
+## 198. Named failure library V2 (`named_failure_library_v2.py`)
+
+**Partner statement:** "Every named blow-up teaches one
+specific lesson. The more you have catalogued, the
+faster you pattern-match."
+
+Extends `historical_failure_library` (10 named patterns)
+with 10 more, each capturing a named failure mode the
+partner has internalized as 'do not let this shape
+repeat.'
+
+### 10 additional patterns
+
+1. **ma_startup_unwind_2023** — MA plan enrollment
+   outpacing margin.
+2. **behavioral_staffing_collapse_2024** — clinician
+   supply ceiling.
+3. **pdgm_transition_fallout_2020** — home health
+   missing the coding shift.
+4. **nsa_platform_rate_shock_2022** — No Surprises Act
+   IDR reset.
+5. **ma_provider_risk_contract_2023** — global-risk MA
+   without actuarial chassis.
+6. **tele_health_hype_fade_2023** — virtual utilization
+   mean-reversion.
+7. **rcm_vendor_concentration_loss_2022** — top-customer
+   acquired away.
+8. **dental_dso_over_rollup_2021** — dentist attrition
+   vs acquisition pace.
+9. **strategic_acquisition_peak_2022** — strategic paid
+   peak, wrote down.
+10. **ma_benefit_lockout_decay_2018** — MA supplemental
+    benefit intermediary margin compressed by plan
+    insourcing.
+
+### Partner-lessons (samples)
+
+- `ma_startup_unwind_2023`: "MA plan underwriting is
+  bid-math driven — measure MLR by cohort vintage."
+- `behavioral_staffing_collapse_2024`: "In behavioral
+  health, supply is the ceiling, not demand."
+- `nsa_platform_rate_shock_2022`: "Regulatory shifts
+  that hand bargaining power to payers compound."
+- `ma_provider_risk_contract_2023`: "Taking MA risk
+  without actuarial chassis is a one-shot roll."
+- `tele_health_hype_fade_2023`: "COVID-driven
+  utilization is not secular."
+
+### Packet triggers (matcher functions)
+
+Each pattern has a matcher function reading the packet
+context for specific signal combinations. E.g.,
+`ma_startup_unwind_2023` fires when
+`ma_plan_platform=True` AND (`mlr_rising_trend=True` OR
+`enrollment_outpacing_margin=True`).
+
+### Worked example
+
+Packet signals: `behavioral_health_platform=True` +
+`clinician_vacancy_gt_15pct=True`.
+
+→ Pattern matched: `behavioral_staffing_collapse_2024`.
+→ Partner lesson: "In behavioral health, supply is the
+ceiling — underwrite therapist-hiring cadence
+explicitly."
+
+---
+
+## 199. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
