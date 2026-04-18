@@ -8596,7 +8596,118 @@ dot-connect the packet doesn't do on its own.
 
 ---
 
-## 238. Change log
+## 238. Healthcare thesis archetype recognizer (`healthcare_thesis_archetype_recognizer.py`)
+
+**Partner statement.** "There are seven healthcare deal shapes.
+Payer-mix shift. Back-office consolidation. Outpatient migration.
+CMI uplift. Roll-up platform. Cost-basis compression. Capacity
+expansion. Every deal I see fits one or two of these. Naming the
+archetype before I model tells me which levers matter, which risks
+are real, and which parts of the packet I should zoom in on."
+
+### Why it matters
+
+`deal_archetype` covers *sponsor-structure* archetypes
+(platform_rollup / take_private / carve_out / turnaround / …).
+`thesis_templates` provides generic narrative scaffolds. This module
+captures the third layer: **healthcare-specific thesis shapes** —
+the *why* of the deal. Naming the thesis archetype lets the partner
+apply the right lever stack and risk set without re-reading the CIM.
+
+### 7 archetypes
+
+1. **payer_mix_shift** — Medicare/Medicaid → commercial via in-
+   network / geographic expansion / service-line add.
+2. **back_office_consolidation** — RCM / billing / HR /
+   supply-chain centralization across ≥ 3 sites.
+3. **outpatient_migration** — IP → OP procedures (ASC/HOPD
+   arbitrage).
+4. **cmi_uplift** — CDI / physician documentation / coding to raise
+   case-mix index.
+5. **rollup_platform** — multi-site roll-up with named platform
+   services + bolt-on pipeline ≥ 2.
+6. **cost_basis_compression** — unit-economics improvement (labor,
+   supply, productivity) ≥ 100 bps planned.
+7. **capacity_expansion** — de novo sites / bed expansion / service
+   line addition.
+
+### Per-archetype output
+
+- **diagnostic_signals** — the packet patterns that indicated this
+  shape.
+- **confidence** — 0-1, driven by signal strength.
+- **lever_stack** — the operating levers to underwrite.
+- **named_risks** — the specific failure modes.
+- **partner_zoom** — the next piece of the packet to read.
+- **archetype_specific_sniff** — the most-common failure pattern.
+
+### Example per archetype
+
+**outpatient_migration:**
+- Named risks include "OBBBA site-neutral collapses the arbitrage"
+  — automatically links to the site-neutral regulatory stress.
+- Partner zoom: "Model OP arbitrage NET of site-neutral; if
+  arbitrage depends on payment asymmetry, it's at risk."
+- Sniff: "If OP arbitrage is assumed to persist through OBBBA
+  unchanged, it's the site-neutral trap."
+
+**cmi_uplift:**
+- Named risks include "RAC audit exposure on aggressive coding."
+- Sniff: "If CMI bridge depends on 50+ bps uplift in year 1, the
+  RAC will find it."
+
+**cost_basis_compression:**
+- Named risks: "labor reductions hit quality metrics."
+- Sniff: "200+ bps labor reduction in year 1 without a named ops
+  partner is a red flag — cost-basis is execution-heavy."
+
+### Worked example
+
+Signals: commercial mix shift +8%, 8 sites with $3M RCM + $2M IT
+investment, CDI program planned.
+
+Matches:
+- `payer_mix_shift` (confidence 0.80): lever stack includes
+  "in-network contracting," risk "payer doesn't grant favorable
+  terms."
+- `back_office_consolidation` (confidence 0.50): lever stack
+  "centralized RCM platform," risk "site resistance."
+- `cmi_uplift` (confidence 0.60): lever stack "CDI specialist
+  hires," risk "RAC audit exposure."
+
+Dominant: `payer_mix_shift`. Partner: "read the payer-mix section
+next; confirm the in-network strategy is named contracts not
+aspirations."
+
+### Packet fields
+
+Per-archetype signal fields on `HealthcareArchetypeSignals`:
+- `commercial_mix_change_planned_pct`, `network_expansion_planned`
+- `multi_site_count`, `centralized_rcm_investment_m`,
+  `it_platform_investment_planned_m`
+- `inpatient_to_outpatient_shift_planned`, `owns_asc_or_hopd`
+- `cdi_program_planned`, `coding_gap_vs_peers_bps`
+- `bolt_on_pipeline_count`, `platform_services_named`
+- `labor_cost_reduction_planned_bps`,
+  `supply_cost_reduction_planned_bps`,
+  `productivity_improvement_planned_pct`
+- `de_novo_count_planned`, `bed_expansion_planned_count`,
+  `service_line_addition_count`
+
+### Distinct from existing modules
+
+- `deal_archetype` — sponsor-structure archetypes.
+- `thesis_templates` — generic thesis narrative scaffolds.
+- `thesis_validator` / `thesis_sharpness_scorer` /
+  `thesis_coherence_check` — operate on a text thesis, not the
+  packet signals.
+- This module — pattern-matches packet signals to healthcare-
+  specific thesis shapes, each with a ready-to-use lever stack
+  and risk set.
+
+---
+
+## 239. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
