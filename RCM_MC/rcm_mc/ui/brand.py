@@ -146,6 +146,7 @@ NAV_ITEMS = [
     {"label": "Cost Structure", "href": "/cost-structure", "icon": "chart"},
     {"label": "Quality Scorecard", "href": "/quality-scorecard", "icon": "chart"},
     {"label": "ESG Dashboard", "href": "/esg-dashboard", "icon": "chart"},
+    {"label": "Exit Readiness", "href": "/exit-readiness", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
