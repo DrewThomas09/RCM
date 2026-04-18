@@ -192,6 +192,7 @@ NAV_ITEMS = [
     {"label": "Capital Pacing", "href": "/capital-pacing", "icon": "chart"},
     {"label": "Covenant Headroom", "href": "/covenant-headroom", "icon": "chart"},
     {"label": "Red-Flag Scanner", "href": "/redflag-scanner", "icon": "chart"},
+    {"label": "Value Backtester", "href": "/backtester", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
