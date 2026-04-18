@@ -7412,7 +7412,52 @@ partner's math but does in seller's.
 
 ---
 
-## 223. Change log
+## 223. Exit alternative comparator (`exit_alternative_comparator.py`)
+
+**Partner statement:** "Every board meeting I ask the
+same question: if we had to decide today, sell / hold /
+recap / continuation vehicle — which one wins on risk-
+adjusted MOIC? The answer changes every year."
+
+### 5 alternatives modeled
+
+1. **sell_strategic_now** — current EV × strategic
+   premium (+10%), net advisory 1.5%. Time ≈ 3 months.
+2. **sell_sponsor_secondary** — PE-to-PE at -5% from
+   strategic. Time ≈ 6 months.
+3. **continuation_vehicle** — GP-led secondary at
+   fairness-opinion +3% premium. Time ≈ 12 months.
+4. **dividend_recap_and_hold** — lever to 6x, pay 40%
+   of equity as dividend, hold to planned exit.
+5. **hold_and_build** — ride thesis to planned exit.
+
+### Winning-alternative ranker
+
+Ranks by MOIC per year: `moic^(1/time_to_exit_yrs) - 1`
+approximates IRR. The right answer changes as:
+
+- Current EBITDA grows → hold increasingly dominates.
+- Strategic multiple premium widens → strategic wins.
+- LP fund-life clock pressures → continuation vehicle
+  wins on sponsor side.
+- Debt markets open → dividend recap becomes cheap.
+
+### Packet fields
+
+`entry_equity_m`, `entry_ebitda_m`, `entry_multiple`,
+`current_ebitda_m`, `current_multiple`, `current_debt_m`,
+`years_into_hold`, `planned_exit_year`,
+`planned_exit_ebitda_m`, `planned_exit_multiple`,
+`planned_exit_debt_m`, `strategic_premium_pct`,
+`secondary_mark_discount_pct`,
+`continuation_fairness_opinion_pct`,
+`advisory_fees_pct_of_ev`,
+`dividend_recap_leverage_multiple`,
+`dividend_recap_dividend_pct_of_equity`.
+
+---
+
+## 224. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
