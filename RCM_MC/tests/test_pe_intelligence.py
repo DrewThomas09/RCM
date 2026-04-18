@@ -20131,5 +20131,127 @@ class TestBidderLandscapeReader(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestSigningToCloseRiskRegister(unittest.TestCase):
+    """Partner scenario: the 60-120 day window between sign and close."""
+
+    def test_empty_signals_yields_clean_note(self) -> None:
+        from rcm_mc.pe_intelligence import scan_sign_to_close_risks
+        r = scan_sign_to_close_risks({})
+        self.assertEqual(len(r.matches), 0)
+        self.assertIn("no sign-to-close risks",
+                       r.partner_note.lower())
+
+    def test_key_employee_risk_is_walk_right(self) -> None:
+        """Partner: 'key-15 can walk → purchase agreement walk-right.'"""
+        from rcm_mc.pe_intelligence import scan_sign_to_close_risks
+        r = scan_sign_to_close_risks({
+            "key_employee_retention_not_signed": True,
+            "key_employee_cashed_out_at_close": True,
+        })
+        match = next(m for m in r.matches
+                      if m.risk.name == "key_employee_departure")
+        self.assertEqual(match.risk.severity, "walk_right")
+
+    def test_qofe_risk_is_reprice_trigger(self) -> None:
+        from rcm_mc.pe_intelligence import scan_sign_to_close_risks
+        r = scan_sign_to_close_risks({
+            "qofe_not_complete_at_signing": True,
+            "aggressive_add_back_schedule": True,
+        })
+        match = next(m for m in r.matches
+                      if m.risk.name == "qofe_material_adjustment")
+        self.assertEqual(match.risk.severity, "reprice_trigger")
+
+    def test_two_walk_rights_triggers_bring_down_note(self) -> None:
+        """Partner: '≥2 walk-rights → bring-down certifications.'"""
+        from rcm_mc.pe_intelligence import scan_sign_to_close_risks
+        r = scan_sign_to_close_risks({
+            "key_employee_retention_not_signed": True,
+            "open_cms_survey_deficiency": True,
+            "oig_investigation_active": True,
+        })
+        self.assertGreaterEqual(r.walk_right_count, 2)
+        self.assertIn("bring-down certifications",
+                       r.partner_note.lower())
+
+    def test_three_reprice_triggers_price_adjustment_note(
+        self,
+    ) -> None:
+        """Partner: '3+ reprice triggers → build adjustment mechanism.'"""
+        from rcm_mc.pe_intelligence import scan_sign_to_close_risks
+        r = scan_sign_to_close_risks({
+            "top_10_customer_contract_expiring_interim": True,
+            "qofe_not_complete_at_signing": True,
+            "pending_cms_rule_in_comment_period": True,
+            "regulatory_calendar_window_overlaps_interim": True,
+            "pending_litigation_disclosed_as_immaterial": True,
+        })
+        self.assertGreaterEqual(r.reprice_trigger_count, 3)
+        self.assertIn("price-adjustment mechanism",
+                       r.partner_note.lower())
+
+    def test_ranking_severity_then_signals_hit(self) -> None:
+        from rcm_mc.pe_intelligence import scan_sign_to_close_risks
+        r = scan_sign_to_close_risks({
+            # walk-right: 1 signal hit
+            "key_employee_retention_not_signed": True,
+            # reprice: 2 signals hit
+            "qofe_not_complete_at_signing": True,
+            "aggressive_add_back_schedule": True,
+        })
+        # walk-right should come first despite fewer signals.
+        self.assertEqual(r.matches[0].risk.severity,
+                          "walk_right")
+
+    def test_interim_financial_miss_is_high_frequency(self) -> None:
+        """Partner: 'interim miss is the most common problem.'"""
+        from rcm_mc.pe_intelligence import scan_sign_to_close_risks
+        r = scan_sign_to_close_risks({
+            "forecast_accuracy_history_weak": True,
+            "q4_back_loaded_plan": True,
+        })
+        match = next(m for m in r.matches
+                      if m.risk.name == "interim_financial_miss")
+        self.assertEqual(match.risk.frequency, "high")
+
+    def test_mac_event_triggers_walk_right(self) -> None:
+        from rcm_mc.pe_intelligence import scan_sign_to_close_risks
+        r = scan_sign_to_close_risks({
+            "narrow_mac_definition_in_agreement": True,
+        })
+        match = next(m for m in r.matches
+                      if m.risk.name == "mac_triggered")
+        self.assertEqual(match.risk.severity, "walk_right")
+
+    def test_list_sign_to_close_risks_complete(self) -> None:
+        from rcm_mc.pe_intelligence import list_sign_to_close_risks
+        names = list_sign_to_close_risks()
+        self.assertIn("qofe_material_adjustment", names)
+        self.assertIn("key_employee_departure", names)
+        self.assertIn("mac_triggered", names)
+        self.assertEqual(len(names), 12)
+
+    def test_markdown_renders_partner_counter(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            render_sign_to_close_markdown,
+            scan_sign_to_close_risks,
+        )
+        md = render_sign_to_close_markdown(
+            scan_sign_to_close_risks({
+                "key_employee_retention_not_signed": True,
+            })
+        )
+        self.assertIn("# Signing-to-close risk register", md)
+        self.assertIn("Partner counter", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import scan_sign_to_close_risks
+        r = scan_sign_to_close_risks({
+            "key_employee_retention_not_signed": True,
+        })
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

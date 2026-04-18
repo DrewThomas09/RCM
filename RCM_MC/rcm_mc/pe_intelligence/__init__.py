@@ -1134,6 +1134,14 @@ from .bidder_landscape_reader import (
     read_bidder_landscape,
     render_bidder_landscape_markdown,
 )
+from .signing_to_close_risk_register import (
+    SignToCloseMatch,
+    SignToCloseReport,
+    SignToCloseRisk,
+    list_sign_to_close_risks,
+    render_sign_to_close_markdown,
+    scan_sign_to_close_risks,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2417,4 +2425,10 @@ __all__ = [
     "list_bidder_profiles",
     "read_bidder_landscape",
     "render_bidder_landscape_markdown",
+    "SignToCloseMatch",
+    "SignToCloseReport",
+    "SignToCloseRisk",
+    "list_sign_to_close_risks",
+    "render_sign_to_close_markdown",
+    "scan_sign_to_close_risks",
 ]
