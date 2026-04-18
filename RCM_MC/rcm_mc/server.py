@@ -3704,6 +3704,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             mid = path[len("/deal/"):-len("/red-flags")]
             deal_id = urllib.parse.unquote(mid).strip("/")
             return self._route_red_flags(deal_id)
+        if path.startswith("/deal/") and path.endswith("/archetype"):
+            mid = path[len("/deal/"):-len("/archetype")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_archetype(deal_id)
         if path.startswith("/deal/"):
             deal_id = urllib.parse.unquote(path[len("/deal/"):]).strip("/")
             if not deal_id:
@@ -6976,6 +6980,59 @@ class RCMHandler(BaseHTTPRequestHandler):
         return self._send_html(render_partner_review(
             review, deal_id,
             deal_name=meta.get("deal_name", ""),
+            current_user=username,
+        ))
+
+    def _route_archetype(self, deal_id: str) -> None:
+        """GET /deal/<deal_id>/archetype — classify_archetypes + regime."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.archetype_page import (
+            render_archetype, _build_archetype_context,
+        )
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_archetype(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        # The PartnerReview gives us the regime dict for free; we still
+        # need to run the archetype classifier separately because the
+        # review doesn't carry archetype hits.
+        profile = self._load_deal_profile(deal_id) or {}
+        try:
+            from .analysis.analysis_store import get_or_build_packet
+            packet = get_or_build_packet(
+                self._require_store(), deal_id, skip_simulation=True,
+            )
+        except Exception:
+            packet = None
+        try:
+            from .pe_intelligence.deal_archetype import (
+                classify_archetypes, primary_archetype,
+            )
+            ctx = _build_archetype_context(profile, packet)
+            hits = classify_archetypes(ctx)
+            primary = primary_archetype(ctx)
+        except Exception as exc:  # noqa: BLE001
+            return self._send_html(render_archetype(
+                review, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=f"archetype classifier raised: {exc!r}",
+                missing_fields=["hospital_type + deal-structure flags"],
+                current_user=username,
+            ))
+        return self._send_html(render_archetype(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            archetype_hits=hits,
+            primary=primary,
+            archetype_context=ctx,
             current_user=username,
         ))
 

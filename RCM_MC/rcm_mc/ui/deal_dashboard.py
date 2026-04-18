@@ -319,6 +319,11 @@ def render_deal_dashboard(
             "Critical/high heuristic hits + reasonableness violations",
             accent=PALETTE["negative"],
         ),
+        _model_tile(
+            "ARC", f"/deal/{did}/archetype", "Archetype",
+            "Sponsor-structure archetype match + time-series regime",
+            accent=PALETTE["brand_accent"],
+        ),
     ]
 
     model_grid = (
