@@ -952,6 +952,13 @@ from .operating_partner_fit_matrix import (
     match_ops_partners,
     render_ops_partner_match_markdown,
 )
+from .reverse_diligence_checklist import (
+    DisclosureItem,
+    ReverseContext,
+    ReverseDiligenceReport,
+    build_reverse_diligence,
+    render_reverse_diligence_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2103,4 +2110,9 @@ __all__ = [
     "OpsPartnerMatch",
     "match_ops_partners",
     "render_ops_partner_match_markdown",
+    "DisclosureItem",
+    "ReverseContext",
+    "ReverseDiligenceReport",
+    "build_reverse_diligence",
+    "render_reverse_diligence_markdown",
 ]

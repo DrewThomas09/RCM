@@ -16479,5 +16479,105 @@ class TestOperatingPartnerFitMatrix(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+# ── Reverse diligence checklist ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DisclosureItem,
+    ReverseContext,
+    ReverseDiligenceReport,
+    build_reverse_diligence,
+    render_reverse_diligence_markdown,
+)
+
+
+class TestReverseDiligenceChecklist(unittest.TestCase):
+
+    def test_fca_is_kill_deal(self) -> None:
+        r = build_reverse_diligence(ReverseContext(
+            has_pending_fca=True,
+        ))
+        fca = next(i for i in r.items if i.name == "pending_fca")
+        self.assertEqual(fca.category, "kill_deal")
+
+    def test_kill_deal_note_forces_delay(self) -> None:
+        r = build_reverse_diligence(ReverseContext(
+            has_pending_fca=True, material_litigation=True,
+        ))
+        self.assertGreaterEqual(r.kill_deal_count, 2)
+        self.assertIn("cannot proceed", r.partner_note.lower())
+
+    def test_pro_forma_haircut(self) -> None:
+        r = build_reverse_diligence(ReverseContext(
+            pro_forma_addbacks_pct=0.20,
+        ))
+        self.assertTrue(any(i.name == "pro_forma_overstatement"
+                             for i in r.items))
+
+    def test_dar_flag(self) -> None:
+        r = build_reverse_diligence(ReverseContext(
+            days_in_ar=60,
+        ))
+        self.assertTrue(any(i.name == "dar_controls" for i in r.items))
+
+    def test_coding_is_discovery_risk(self) -> None:
+        r = build_reverse_diligence(ReverseContext(
+            aggressive_coding_history=True,
+        ))
+        coding = next(i for i in r.items
+                       if i.name == "aggressive_coding_pattern")
+        self.assertEqual(coding.category, "discovery_risk")
+
+    def test_top_payer_concentration_haircut(self) -> None:
+        r = build_reverse_diligence(ReverseContext(
+            concentration_top_payer=0.50,
+        ))
+        payer = next(i for i in r.items
+                      if i.name == "top_payer_concentration")
+        self.assertEqual(payer.category, "price_haircut")
+
+    def test_integration_incomplete_flag(self) -> None:
+        r = build_reverse_diligence(ReverseContext(
+            incomplete_integration_pct=0.30,
+        ))
+        self.assertTrue(any(i.name == "incomplete_integration"
+                             for i in r.items))
+
+    def test_mip_housekeeping(self) -> None:
+        r = build_reverse_diligence(ReverseContext(
+            mip_not_yet_vested_pct=0.55,
+        ))
+        mip = next(i for i in r.items
+                    if i.name == "mip_vesting_cleanup")
+        self.assertEqual(mip.category, "housekeeping")
+
+    def test_data_room_audit_always_on(self) -> None:
+        r = build_reverse_diligence(ReverseContext())
+        self.assertTrue(any(i.name == "data_room_audit"
+                             for i in r.items))
+
+    def test_clean_book_note(self) -> None:
+        r = build_reverse_diligence(ReverseContext(
+            pro_forma_addbacks_pct=0.05,
+            days_in_ar=40,
+            denial_rate=0.06,
+            concentration_top_payer=0.20,
+            concentration_top_customer=0.20,
+            mip_not_yet_vested_pct=0.10,
+            incomplete_integration_pct=0.05,
+        ))
+        self.assertIn("clean book", r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        md = render_reverse_diligence_markdown(build_reverse_diligence(
+            ReverseContext(has_pending_fca=True)))
+        self.assertIn("# Reverse diligence checklist", md)
+        self.assertIn("pending_fca", md)
+
+    def test_json(self) -> None:
+        import json
+        r = build_reverse_diligence(ReverseContext())
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
