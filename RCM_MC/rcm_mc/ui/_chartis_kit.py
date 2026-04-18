@@ -55,20 +55,42 @@ _SANS = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-se
 # ---------------------------------------------------------------------------
 
 _CORPUS_NAV = [
-    {"label": "SEEKING CHARTIS", "separator": True},
-    {"label": "Home",           "href": "/home",             "icon": "◎"},
-    {"label": "PE Intelligence","href": "/pe-intelligence",  "icon": "◈"},
-    {"label": "Methodology",    "href": "/methodology",      "icon": "▥"},
-    {"label": "API Docs",       "href": "/api/docs",         "icon": "▧"},
-    {"label": "REFERENCE DATA", "separator": True},
-    {"label": "Sponsor Track Record", "href": "/sponsor-track-record", "icon": "▤"},
-    {"label": "Payer Intelligence",   "href": "/payer-intelligence",   "icon": "▦"},
-    {"label": "RCM Benchmarks",       "href": "/rcm-benchmarks",       "icon": "▤"},
-    {"label": "CORPUS ANALYTICS", "separator": True},
-    {"label": "Corpus Backtest",   "href": "/corpus-backtest",    "icon": "◉"},
-    {"label": "Deal Screening",    "href": "/deal-screening",     "icon": "◉"},
-    {"label": "Portfolio Analytics","href": "/portfolio-analytics","icon": "◈"},
-    {"label": "CORPUS INTEL", "separator": True},
+    # PLATFORM — day-to-day operator entries.
+    {"label": "PLATFORM", "separator": True},
+    {"label": "Home",        "href": "/home",    "icon": "◎"},
+    {"label": "Dashboard",   "href": "/",        "icon": "◈"},
+    {"label": "Alerts",      "href": "/alerts",  "icon": "◉"},
+    {"label": "Import Deal", "href": "/import",  "icon": "▣"},
+    {"label": "Audit",       "href": "/audit",   "icon": "▥"},
+
+    # ANALYTICS — the scored / brain views. Partner-facing analysis.
+    {"label": "ANALYTICS", "separator": True},
+    {"label": "PE Intelligence Hub", "href": "/pe-intelligence",       "icon": "◈"},
+    {"label": "Deal Screening",      "href": "/deal-screening",        "icon": "◉"},
+    {"label": "Portfolio Analytics", "href": "/portfolio-analytics",   "icon": "◈"},
+    {"label": "Sponsor Track Record","href": "/sponsor-track-record",  "icon": "▤"},
+    {"label": "Payer Intelligence",  "href": "/payer-intelligence",    "icon": "▦"},
+    {"label": "RCM Benchmarks",      "href": "/rcm-benchmarks",        "icon": "▤"},
+    {"label": "Corpus Backtest",     "href": "/corpus-backtest",       "icon": "◉"},
+
+    # REFERENCE — docs + catalogs. Look-up, not analysis.
+    {"label": "REFERENCE", "separator": True},
+    {"label": "Library",      "href": "/library",      "icon": "▤"},
+    {"label": "Methodology",  "href": "/methodology",  "icon": "▥"},
+    {"label": "API Docs",     "href": "/api/docs",     "icon": "▧"},
+    {"label": "Module Index", "href": "/module-index", "icon": "▥"},
+
+    # NOTE: everything previously under "CORPUS INTEL" and the back-
+    # link row remains served by the router — only the sidebar listing
+    # is consolidated. High-value routes are reachable via the Cmd+K
+    # palette; the long tail is linked from the pages that stay in-nav.
+]
+
+
+# Legacy nav entries preserved as a detached list. Not rendered in
+# the sidebar after the Phase 5 consolidation, but kept so any code
+# that iterates legacy routes can still find them.
+_CORPUS_NAV_LEGACY = [
     {"label": "Deals Library",  "href": "/library",          "icon": "▤"},
     {"label": "Comparables",    "href": "/comparables",      "icon": "▣"},
     {"label": "Risk Matrix",    "href": "/risk-matrix",      "icon": "▦"},
@@ -240,10 +262,6 @@ _CORPUS_NAV = [
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
-    {"label": "MAIN APP",       "separator": True},
-    {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},
-    {"label": "← Analysis",     "href": "/analysis",         "icon": "◉"},
-    {"label": "← Home",         "href": "/home",             "icon": "◎"},
 ]
 
 # ---------------------------------------------------------------------------
