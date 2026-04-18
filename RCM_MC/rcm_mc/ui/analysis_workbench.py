@@ -2252,10 +2252,16 @@ _EXPLAIN_JS = r"""
 def render_workbench(packet: DealAnalysisPacket) -> str:
     """Produce the full ``<!doctype html>`` document for
     ``/analysis/<deal_id>``. One call, one packet, one rendered page.
+
+    Wrapped in chartis_shell for consistency with the rest of the
+    platform. The custom _WORKBENCH_CSS is passed via extra_css so
+    the tab layout + explain-panel styling persists; _WORKBENCH_JS
+    and _EXPLAIN_JS go through extra_js.
     """
+    from ._chartis_kit import chartis_shell
     header = _render_header(packet)
     nav = _render_tab_nav()
-    body = (
+    body_inner = (
         _render_overview(packet)
         + _render_rcm_profile(packet)
         + _render_bridge(packet)
@@ -2275,17 +2281,13 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         f'<script id="wb-explain-data" type="application/json">'
         f'{_esc(explain_data)}</script>'
     )
-    return (
-        '<!DOCTYPE html>'
-        '<html lang="en"><head>'
-        '<meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<title>{_esc(packet.deal_name or packet.deal_id)} · Analysis</title>'
-        f'<style>{_WORKBENCH_CSS}</style>'
-        '</head>'
-        '<body class="analysis-workbench">'
-        f'{header}{nav}{body}{explain_panel}'
-        f'<script>{_WORKBENCH_JS}</script>'
-        f'<script>{_EXPLAIN_JS}</script>'
-        '</body></html>'
+    shell_body = (
+        f'<div class="analysis-workbench-scope">{header}{nav}{body_inner}'
+        f'{explain_panel}</div>'
+    )
+    return chartis_shell(
+        shell_body,
+        f"{packet.deal_name or packet.deal_id} — Analysis Workbench",
+        extra_css=_WORKBENCH_CSS,
+        extra_js=_WORKBENCH_JS + _EXPLAIN_JS,
     )
