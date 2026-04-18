@@ -141,7 +141,7 @@ class TestChartisLandingRoutes(unittest.TestCase):
 
 
 class TestChartisPerDealRoutes(unittest.TestCase):
-    """The two per-deal brain surfaces."""
+    """The two per-deal brain surfaces shipped in Phase 2A."""
 
     def test_partner_review_renders_for_seeded_deal(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -174,6 +174,117 @@ class TestChartisPerDealRoutes(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertIn("nonexistent", body)
             self.assertIn("UNAVAILABLE", body)
+
+
+class TestChartisPhase2BRoutes(unittest.TestCase):
+    """The six per-deal drill-down pages shipped in Phase 2B."""
+
+    def _assert_seeded(self, suffix: str, *, expect_title: str,
+                        expect_substrings: tuple = ()) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed_with_pe_math(tmp, "td")
+            with _ServerHarness(tmp) as srv:
+                status, body = _fetch(srv.url(f"/deal/td/{suffix}"))
+                self.assertEqual(status, 200, f"{suffix} non-200")
+                self.assertIn(expect_title, body, f"{suffix} title missing")
+                self.assertIn("td", body, f"{suffix} deal_id missing")
+                for sub in expect_substrings:
+                    self.assertIn(sub, body,
+                                   f"{suffix} expected substring missing: {sub!r}")
+
+    def _assert_missing(self, suffix: str) -> None:
+        """The missing-deal path must render 200 with UNAVAILABLE, not 500."""
+        with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
+            status, body = _fetch(srv.url(f"/deal/nonexistent/{suffix}"))
+            self.assertEqual(status, 200, f"{suffix} non-200 on missing deal")
+            self.assertIn("UNAVAILABLE", body,
+                           f"{suffix} expected UNAVAILABLE banner")
+
+    def test_archetype_renders_for_seeded_deal(self):
+        self._assert_seeded(
+            "archetype",
+            expect_title="Archetype",
+            expect_substrings=("SPONSOR-STRUCTURE ARCHETYPES",
+                               "REGIME CLASSIFICATION"),
+        )
+
+    def test_archetype_handles_missing_deal(self):
+        self._assert_missing("archetype")
+
+    def test_investability_renders_for_seeded_deal(self):
+        self._assert_seeded(
+            "investability",
+            expect_title="Investability",
+            expect_substrings=("THREE THINGS THAT MOST NEED",
+                               "Exit Readiness"),
+        )
+
+    def test_investability_handles_missing_deal(self):
+        self._assert_missing("investability")
+
+    def test_market_structure_renders_for_seeded_deal(self):
+        self._assert_seeded(
+            "market-structure",
+            expect_title="Market Structure",
+            expect_substrings=(),  # shares are optional — empty state OK
+        )
+
+    def test_market_structure_handles_missing_deal(self):
+        self._assert_missing("market-structure")
+
+    def test_white_space_renders_for_seeded_deal(self):
+        self._assert_seeded(
+            "white-space",
+            expect_title="White Space",
+            expect_substrings=(),  # empty-state path is allowed
+        )
+
+    def test_white_space_handles_missing_deal(self):
+        self._assert_missing("white-space")
+
+    def test_stress_renders_for_seeded_deal(self):
+        self._assert_seeded(
+            "stress",
+            expect_title="Stress Grid",
+            expect_substrings=("ROBUSTNESS GRADE", "SCENARIO GRID"),
+        )
+
+    def test_stress_handles_missing_deal(self):
+        self._assert_missing("stress")
+
+    def test_ic_packet_renders_for_seeded_deal(self):
+        self._assert_seeded(
+            "ic-packet",
+            expect_title="IC Packet",
+            expect_substrings=("IC-READY PACKET", "IC Memo"),
+        )
+
+    def test_ic_packet_handles_missing_deal(self):
+        self._assert_missing("ic-packet")
+
+
+class TestChartisIntegration(unittest.TestCase):
+    """End-to-end sanity check — catches the case where the PE brain
+    silently crashes and every per-deal page falls through to the
+    insufficient-data placeholder."""
+
+    def test_partner_review_exercises_the_brain_on_a_seeded_deal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed_with_pe_math(tmp, "rich")
+            with _ServerHarness(tmp) as srv:
+                status, body = _fetch(srv.url("/deal/rich/partner-review"))
+                self.assertEqual(status, 200)
+                self.assertNotIn("INSUFFICIENT DATA", body,
+                                  "brain should run on _seed_with_pe_math deal")
+                # Sections that only appear when partner_review() actually ran:
+                self.assertIn("IC VERDICT", body)
+                self.assertIn("Partner Voice", body)
+                self.assertIn("Reasonableness Bands", body)
+                self.assertIn("SECONDARY ANALYTICS", body)
+                # Cross-link strip to Phase 2B drill-downs:
+                self.assertIn("/deal/rich/archetype", body)
+                self.assertIn("/deal/rich/stress", body)
+                self.assertIn("/deal/rich/ic-packet", body)
 
 
 if __name__ == "__main__":
