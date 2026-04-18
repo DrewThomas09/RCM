@@ -9920,7 +9920,66 @@ Same with 30% growth and $20M entry EBITDA, $200M entry debt:
 
 ---
 
-## 254. Change log
+## 254. WC seasonality detector (`working_capital_seasonality_detector.py`)
+
+**Partner statement.** "Healthcare WC has a Q1 deductible reset
+spike — patients haven't met deductible yet so the AR ages faster,
+DSO climbs, cash drags. By Q3 it normalizes. If a seller flags 'WC
+drag' in Q1 and your model carries that into trailing twelve, you're
+double-counting a seasonal swing as structural."
+
+### Why it matters
+
+`working_capital` and `working_capital_peer_band` benchmark
+point-in-time. `cash_conversion_drift_detector` checks trend
+generally. This module separates **seasonal** from **structural**
+WC movement using same-Q YoY comparison.
+
+### Healthcare seasonal baselines (DSO days)
+
+| Quarter | Baseline delta | Driver |
+|---|---|---|
+| Q1 | +8.0 | deductible reset |
+| Q2 | 0.0 | normalization |
+| Q3 | −2.0 | summer slowdown but cleaner cash |
+| Q4 | −4.0 | year-end Medicare claim push |
+
+### Verdict thresholds
+
+- abs(YoY drift) < 1.5 days → **seasonal** — "don't model the Q1
+  spike as structural"
+- 1.5-5 days → **mixed** — "diligence on a same-Q basis"
+- > +5 days → **structural_drag** — "collections deteriorating;
+  investigate denials, payer mix shift, or coding"
+- < −5 days → **structural_improvement** — "real RCM lift; counter
+  the seller's WC story with the trend"
+
+### Worked example
+
+5 quarters at Q1=58, Q2=50, Q3=48, Q4=46 in 2024 and same in 2025
+→ YoY drift = 0 → **seasonal** ("don't model Q1 spike as
+structural").
+
+Same shape but 2025 values uniformly +8 → YoY drift = +8 →
+**structural_drag** ("collections deteriorating; investigate").
+
+### Packet fields
+
+`observations` — list of `QuarterlyWCObservation(year, quarter,
+dso_days)`; `baseline_dso_days`.
+
+### Distinct from existing modules
+
+- `working_capital` — point-in-time WC math.
+- `working_capital_peer_band` — peer comparison.
+- `cash_conversion_drift_detector` — trend without seasonal
+  decomposition.
+- This module — separates seasonal swing from YoY same-Q drift to
+  distinguish healthcare-specific seasonality from structural drag.
+
+---
+
+## 255. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
