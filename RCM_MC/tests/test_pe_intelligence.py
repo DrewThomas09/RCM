@@ -22391,5 +22391,185 @@ class TestPlatformVsAddonClassifier(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestCapexIntensityStress(unittest.TestCase):
+    """Partner scenario: is there deferred capex behind the EBITDA?"""
+
+    def test_in_line_with_peer_clean_note(self) -> None:
+        """Partner: 'capex at peer median → no material stress.'"""
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            stress_capex_intensity,
+        )
+        r = stress_capex_intensity(CapexStressInputs(
+            revenue_m=500.0,
+            ebitda_m=75.0,
+            historical_capex_pct_revenue=0.04,
+            peer_median_capex_pct_revenue=0.04,
+        ))
+        self.assertEqual(r.deferred_catchup_m, 0.0)
+        self.assertIn("in-line", r.partner_note.lower())
+
+    def test_below_peer_years_trigger_catchup(self) -> None:
+        """Partner: 'capex 1.5% below peer for 4 years → deferred maintenance.'"""
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            stress_capex_intensity,
+        )
+        r = stress_capex_intensity(CapexStressInputs(
+            revenue_m=500.0,
+            ebitda_m=75.0,
+            historical_capex_pct_revenue=0.025,
+            peer_median_capex_pct_revenue=0.04,
+            years_below_peer=4,
+        ))
+        # Gap 1.5% × 500 × 4 = $30M catchup.
+        self.assertAlmostEqual(r.deferred_catchup_m, 30.0,
+                                places=0)
+
+    def test_explicit_backlog_added(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            stress_capex_intensity,
+        )
+        r = stress_capex_intensity(CapexStressInputs(
+            revenue_m=500.0,
+            ebitda_m=75.0,
+            historical_capex_pct_revenue=0.04,
+            peer_median_capex_pct_revenue=0.04,
+            deferred_maintenance_backlog_m=15.0,
+        ))
+        defer = next(c for c in r.components
+                      if c.name == "deferred_maintenance_catchup")
+        self.assertAlmostEqual(defer.amount_m, 15.0, places=1)
+
+    def test_new_sites_inflates_projection(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            stress_capex_intensity,
+        )
+        clean = stress_capex_intensity(CapexStressInputs(
+            revenue_m=500.0,
+            ebitda_m=75.0,
+            historical_capex_pct_revenue=0.04,
+            peer_median_capex_pct_revenue=0.04,
+        ))
+        with_build = stress_capex_intensity(CapexStressInputs(
+            revenue_m=500.0,
+            ebitda_m=75.0,
+            historical_capex_pct_revenue=0.04,
+            peer_median_capex_pct_revenue=0.04,
+            new_sites_build_pipeline_m=25.0,
+        ))
+        self.assertAlmostEqual(
+            with_build.projected_3yr_capex_m -
+            clean.projected_3yr_capex_m,
+            25.0,
+            places=1,
+        )
+
+    def test_it_modernization_in_components(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            stress_capex_intensity,
+        )
+        r = stress_capex_intensity(CapexStressInputs(
+            revenue_m=500.0,
+            ebitda_m=75.0,
+            historical_capex_pct_revenue=0.04,
+            peer_median_capex_pct_revenue=0.04,
+            it_ehr_modernization_needed_m=10.0,
+        ))
+        it = next(c for c in r.components
+                   if c.name == "it_ehr_modernization")
+        self.assertAlmostEqual(it.amount_m, 10.0, places=1)
+
+    def test_high_haircut_triggers_price_in_note(self) -> None:
+        """Partner: '> 15% haircut → price in; capex workstream.'"""
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            stress_capex_intensity,
+        )
+        r = stress_capex_intensity(CapexStressInputs(
+            revenue_m=300.0,
+            ebitda_m=30.0,   # small EBITDA
+            historical_capex_pct_revenue=0.015,
+            peer_median_capex_pct_revenue=0.045,
+            years_below_peer=5,
+            deferred_maintenance_backlog_m=20.0,
+            it_ehr_modernization_needed_m=15.0,
+        ))
+        self.assertIn("price in", r.partner_note.lower())
+
+    def test_compliance_capex_partner_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            stress_capex_intensity,
+        )
+        r = stress_capex_intensity(CapexStressInputs(
+            revenue_m=500.0,
+            ebitda_m=75.0,
+            historical_capex_pct_revenue=0.04,
+            peer_median_capex_pct_revenue=0.04,
+            compliance_cyber_capex_m=8.0,
+        ))
+        comp = next(c for c in r.components
+                     if c.name == "compliance_cyber_capex")
+        self.assertIn("no deferral",
+                       comp.partner_commentary.lower())
+
+    def test_projected_sums_all_components(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            stress_capex_intensity,
+        )
+        r = stress_capex_intensity(CapexStressInputs(
+            revenue_m=500.0,
+            ebitda_m=75.0,
+            historical_capex_pct_revenue=0.03,
+            peer_median_capex_pct_revenue=0.04,
+            years_below_peer=2,
+            deferred_maintenance_backlog_m=10.0,
+            new_sites_build_pipeline_m=20.0,
+            it_ehr_modernization_needed_m=8.0,
+            clinical_equipment_replacement_due_m=6.0,
+            compliance_cyber_capex_m=4.0,
+        ))
+        total = sum(c.amount_m for c in r.components)
+        self.assertAlmostEqual(r.projected_3yr_capex_m, total,
+                                places=1)
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            render_capex_stress_markdown,
+            stress_capex_intensity,
+        )
+        md = render_capex_stress_markdown(
+            stress_capex_intensity(CapexStressInputs(
+                revenue_m=500.0,
+                ebitda_m=75.0,
+                historical_capex_pct_revenue=0.03,
+                peer_median_capex_pct_revenue=0.04,
+                years_below_peer=3,
+            ))
+        )
+        self.assertIn("# Capex intensity stress", md)
+        self.assertIn("FCF-vs-EBITDA", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            CapexStressInputs,
+            stress_capex_intensity,
+        )
+        r = stress_capex_intensity(CapexStressInputs(
+            revenue_m=500.0,
+            ebitda_m=75.0,
+            historical_capex_pct_revenue=0.04,
+            peer_median_capex_pct_revenue=0.04,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1240,6 +1240,13 @@ from .platform_vs_addon_classifier import (
     classify_platform_vs_addon,
     render_platform_classification_markdown,
 )
+from .capex_intensity_stress import (
+    CapexComponent,
+    CapexStressInputs,
+    CapexStressReport,
+    render_capex_stress_markdown,
+    stress_capex_intensity,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2601,4 +2608,9 @@ __all__ = [
     "PlatformClassifierInputs",
     "classify_platform_vs_addon",
     "render_platform_classification_markdown",
+    "CapexComponent",
+    "CapexStressInputs",
+    "CapexStressReport",
+    "render_capex_stress_markdown",
+    "stress_capex_intensity",
 ]
