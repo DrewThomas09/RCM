@@ -548,3 +548,24 @@ migration commits (per the "don't fix bugs in migration commits" rule).
    aren't dead code — the pages still use those hex values. Removing
    them requires a rewrite of each page's body HTML to use
    `var(--ck-*)` CSS vars instead. Deferred.
+
+---
+
+## Appendix: numerical bugs surfaced by sanity guards
+
+Phase 4B migration log. As every chartis page is wrapped with
+`render_number()`, implausible values that were being silently
+rendered by the old unguarded formatters now show up as red warning
+pills. Each such pill is a numerical bug that needs a backend fix —
+but per the Phase 4 rule ("do not fix bugs in the migration commits"),
+they're logged here for a separate bug-fix pass. This appendix is
+the Phase 6 backlog.
+
+Format per bug:
+- **Route**: page/route where the implausible value appeared.
+- **Metric · Value**: which metric, and the value we saw.
+- **Likely source**: backend module computing it (best guess).
+- **Severity**: P0 = partner would see on demo; P1 = edge case.
+- **Observed during**: which migration commit surfaced it.
+
+_(bugs will be populated as migration progresses)_

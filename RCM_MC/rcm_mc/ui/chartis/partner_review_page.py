@@ -31,6 +31,7 @@ from .._chartis_kit import (
     ck_section_header,
 )
 from ._helpers import related_views_panel
+from ._sanity import REGISTRY as _METRIC_REGISTRY, render_number
 
 
 _REC_COLORS = {
@@ -145,7 +146,7 @@ def _kpi_strip(review: Any) -> str:
     stretch = bands.get("STRETCH", 0)
     oob = bands.get("OUT_OF_BAND", 0) + bands.get("IMPLAUSIBLE", 0)
 
-    inv_val = f"{inv_score:.0f}" if inv_score is not None else "—"
+    inv_val = render_number(inv_score, "investability_score")
 
     tiles = (
         ck_kpi_block("Verdict", _html.escape(rec), "")
@@ -220,12 +221,19 @@ def _bands_table(review: Any) -> str:
     for b in checks:
         verdict = str(getattr(b, "verdict", "UNKNOWN") or "UNKNOWN")
         col = _VERDICT_COLORS.get(verdict, P["text_faint"])
-        metric = _html.escape(str(getattr(b, "metric", "—")))
+        metric_raw = str(getattr(b, "metric", "—"))
+        metric = _html.escape(metric_raw)
         observed = getattr(b, "observed", None)
-        obs_str = (
-            f'{observed:.2f}' if isinstance(observed, (int, float))
-            else _html.escape(str(observed) if observed is not None else "—")
-        )
+        # Route the observed value through the sanity guard if the
+        # BandCheck metric matches a known REGISTRY entry. If not
+        # (e.g. "lever_realizability"), fall back to the old :.2f.
+        if metric_raw in _METRIC_REGISTRY:
+            obs_str = render_number(observed, metric_raw)
+        else:
+            obs_str = (
+                f'{observed:.2f}' if isinstance(observed, (int, float))
+                else _html.escape(str(observed) if observed is not None else "—")
+            )
         band = getattr(b, "band", None)
         band_str = ""
         if isinstance(band, (list, tuple)) and len(band) == 2:
@@ -324,6 +332,28 @@ def _secondary_analytics(review: Any) -> str:
             return x
         return {}
 
+    # Map secondary-analytics dict keys to REGISTRY metric names so
+    # render_number can guard the right range. Keys not in this map
+    # fall back to generic float formatting.
+    _KEY_METRIC = {
+        "hhi": "hhi",
+        "cr3": "cr3",
+        "cr5": "cr5",
+        "top_player_share": "market_share",
+        "base_moic": "moic",
+        "bear_moic": "moic",
+        "bull_moic": "moic",
+        "base_irr": "irr",
+        "bear_irr": "irr",
+        "bull_irr": "irr",
+        "current_margin": "ebitda_margin",
+        "peer_median_margin": "ebitda_margin",
+        "composite_score": "investability_score",
+        "score": "investability_score",
+        "investability_score": "investability_score",
+        "confidence": "cr3",  # reuse 0-1 range check
+    }
+
     def _mini_block(title: str, data: Dict[str, Any], fields: List[str]) -> str:
         if not data or data.get("error"):
             err = data.get("error") if isinstance(data, dict) else None
@@ -339,17 +369,26 @@ def _secondary_analytics(review: Any) -> str:
                 if val is None:
                     continue
                 shown_any = True
-                if isinstance(val, float):
+                metric = _KEY_METRIC.get(key)
+                if metric:
+                    val_html = render_number(val, metric)
+                elif isinstance(val, float):
                     val_str = f"{val:.3f}" if abs(val) < 10 else f"{val:,.2f}"
+                    val_html = (
+                        f'<span style="color:{P["text"]};font-family:var(--ck-mono);'
+                        f'font-variant-numeric:tabular-nums;">{val_str}</span>'
+                    )
                 else:
-                    val_str = _html.escape(str(val))
+                    val_html = (
+                        f'<span style="color:{P["text"]};font-family:var(--ck-mono);">'
+                        f'{_html.escape(str(val))}</span>'
+                    )
                 items.append(
                     f'<div style="display:flex;gap:10px;padding:3px 0;'
                     f'border-bottom:1px solid {P["border_dim"]};font-size:11px;">'
                     f'<span style="color:{P["text_faint"]};font-family:var(--ck-mono);'
                     f'font-size:10px;width:150px;">{_html.escape(key)}</span>'
-                    f'<span style="color:{P["text"]};font-family:var(--ck-mono);'
-                    f'font-variant-numeric:tabular-nums;">{val_str}</span>'
+                    f'{val_html}'
                     f'</div>'
                 )
             if not shown_any:

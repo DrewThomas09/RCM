@@ -21,6 +21,7 @@ from .._chartis_kit import (
     ck_kpi_block,
     ck_section_header,
 )
+from ._sanity import REGISTRY as _METRIC_REGISTRY, render_number
 
 
 _SEV_COLORS = {
@@ -256,12 +257,16 @@ def _violations_section(review: Any) -> str:
     for b in violations:
         verdict = str(getattr(b, "verdict", "UNKNOWN"))
         col = _VERDICT_COLORS.get(verdict, P["text_faint"])
-        metric = _html.escape(str(getattr(b, "metric", "—")))
+        metric_raw = str(getattr(b, "metric", "—"))
+        metric = _html.escape(metric_raw)
         observed = getattr(b, "observed", None)
-        obs_str = (
-            f'{observed:.2f}' if isinstance(observed, (int, float))
-            else _html.escape(str(observed) if observed is not None else "—")
-        )
+        if metric_raw in _METRIC_REGISTRY:
+            obs_str = render_number(observed, metric_raw)
+        else:
+            obs_str = (
+                f'{observed:.2f}' if isinstance(observed, (int, float))
+                else _html.escape(str(observed) if observed is not None else "—")
+            )
         band = getattr(b, "band", None)
         if isinstance(band, (list, tuple)) and len(band) == 2:
             try:
