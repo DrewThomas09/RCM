@@ -5305,7 +5305,84 @@ Base MOIC below 2.0x → partner: "walk or cut entry 1-1.5x."
 
 ---
 
-## 188. Change log
+## 188. Pre-mortem simulator (`pre_mortem_simulator.py`)
+
+**Partner statement:** "Before I commit, I write the
+post-mortem. If I can picture the write-up, the deal has
+a named failure mode. That's when I either fix it or
+walk."
+
+`post_mortem.py` is a **look-back** template for exited
+deals. This module is the **look-forward** mirror:
+simulate the post-mortem that would be written in Year 5
+if the deal fails today.
+
+### Prospective hindsight
+
+Decision literature: imagining a failure forces concrete
+attribution. "The team failed" doesn't prevent anything.
+"In Y2, CFO missed 3 forecasts, entered covenant cure; in
+Y3, lender pushed sale" is testable and avoidable.
+
+### Dated attribution chain
+
+Module constructs events for Y1 / Y2 / Y3 / Y4 / Exit
+using:
+
+- Thesis contradicted / unresolved links.
+- Pattern matches (`fix_denials_in_12_months`, etc.).
+- Failure archetype matches (integration optimism,
+  turnaround-without-operator, MA over-reliance).
+- Worst-year leverage vs covenant.
+- Regulatory shock schedule worst year.
+- Management retention / rollover posture.
+
+Each year carries: **What happens**, **Root-cause signal**
+(what we should have seen), **Fix we missed** (the
+specific mitigation not demanded).
+
+### Strength ladder
+
+- ≥ 4 events constructable → **strong** → "do not close
+  without explicit mitigation on each."
+- 2-3 events → **moderate** → "document mitigation in IC
+  memo or don't proceed."
+- < 2 events → **thin** → "proceed on current thesis."
+
+### Exit narrative
+
+Severity-based:
+- 3+ failure modes stack → "sponsor process broke; sold
+  at 0.8x MOIC to distressed buyer at 5.5x."
+- 1-2 failure modes → "secondary to continuation
+  vehicle at 1.6x; hold extended 18 months."
+- 0 failure modes → no exit narrative.
+
+### Worked example
+
+Inputs:
+- Thesis denial_reduction, contradicted on cash-release.
+- Pattern fix_denials_in_12_months.
+- Worst-year leverage 7.3x vs 7.0x cov.
+- Archetype turnaround_without_operator.
+
+Pre-mortem reads: Y1 cash-release catch-up, Y2 cov cure,
+Y3 shocks, Y4 CEO transition — **strong**, partner:
+"do not close without explicit mitigation."
+
+### Packet fields that trigger
+
+`thesis`, `thesis_contradicted_links`,
+`thesis_unresolved_links`, `pattern_matches`,
+`failure_archetype_matches`, `worst_year_leverage`,
+`covenant_max_leverage`, `worst_shock_year`,
+`worst_shock_cumulative_m`, `base_ebitda_m`,
+`management_retained`, `management_rolled_equity`,
+`key_retention_signed`.
+
+---
+
+## 189. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
