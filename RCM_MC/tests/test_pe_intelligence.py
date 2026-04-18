@@ -25206,5 +25206,205 @@ class TestClinicalOutcomeLeadingIndicator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestIntegrationVelocityTracker(unittest.TestCase):
+    """Partner scenario: are we on pace for the 100-day plan?"""
+
+    def test_empty_plan_on_pace(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        r = track_integration_velocity(VelocityInputs(
+            current_day=45,
+        ))
+        # No milestones → nothing due, nothing failed.
+        self.assertEqual(r.tier, "on_pace")
+
+    def test_all_complete_on_pace(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        r = track_integration_velocity(VelocityInputs(
+            milestones=[
+                Milestone("systems_handoff", 7, 6,
+                            status="complete"),
+                Milestone("kpi_cadence", 14, 14,
+                            status="complete"),
+                Milestone("payer_meeting", 30, 28,
+                            status="complete"),
+            ],
+            current_day=45,
+        ))
+        self.assertEqual(r.tier, "on_pace")
+        self.assertEqual(r.on_pace_pct, 1.0)
+
+    def test_critical_path_slip_triggers_behind(self) -> None:
+        """Partner: 'critical path slipping → owner check.'"""
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        r = track_integration_velocity(VelocityInputs(
+            milestones=[
+                Milestone("systems_handoff", 7, 6,
+                            status="complete"),
+                Milestone("payer_reneg_kickoff", 20,
+                            is_critical_path=True,
+                            status="in_progress"),
+            ],
+            current_day=45,
+        ))
+        self.assertIn(r.tier, {"behind", "at_risk",
+                                 "off_track"})
+        self.assertGreaterEqual(r.critical_path_slips, 1)
+
+    def test_off_track_3_critical_slips(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        r = track_integration_velocity(VelocityInputs(
+            milestones=[
+                Milestone("m1", 7, is_critical_path=True),
+                Milestone("m2", 14, is_critical_path=True),
+                Milestone("m3", 21, is_critical_path=True),
+                Milestone("m4", 28,
+                            status="complete",
+                            actual_day=27),
+            ],
+            current_day=45,
+        ))
+        self.assertEqual(r.tier, "off_track")
+        self.assertIn("ops-committee escalation",
+                       r.partner_note.lower())
+
+    def test_at_risk_status_counted(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        r = track_integration_velocity(VelocityInputs(
+            milestones=[
+                Milestone("m1", 7, 6, status="complete"),
+                Milestone("m2", 14, status="at_risk"),
+                Milestone("m3", 21, status="at_risk"),
+            ],
+            current_day=45,
+        ))
+        self.assertEqual(r.at_risk_count, 2)
+
+    def test_milestones_past_due_not_counted(self) -> None:
+        """Partner: 'milestones due after today don't count yet.'"""
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        r = track_integration_velocity(VelocityInputs(
+            milestones=[
+                Milestone("m1", 7, 6, status="complete"),
+                Milestone("m2", 90),  # not yet due
+            ],
+            current_day=45,
+        ))
+        self.assertEqual(r.milestones_due_to_date, 1)
+
+    def test_owner_named_in_escalation(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        r = track_integration_velocity(VelocityInputs(
+            milestones=[
+                Milestone("payer_reneg_kickoff", 20,
+                            is_critical_path=True,
+                            owner="cco",
+                            status="in_progress"),
+            ],
+            current_day=45,
+        ))
+        self.assertTrue(any("cco" in e
+                             for e in r.escalation_list))
+
+    def test_unassigned_owner_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        r = track_integration_velocity(VelocityInputs(
+            milestones=[
+                Milestone("payer_reneg", 20,
+                            is_critical_path=True,
+                            owner="",
+                            status="in_progress"),
+            ],
+            current_day=45,
+        ))
+        self.assertTrue(any("unassigned" in e
+                             for e in r.escalation_list))
+
+    def test_behind_tier_on_80pct_no_critical(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        # 4 of 5 complete = 80%, no critical slips.
+        r = track_integration_velocity(VelocityInputs(
+            milestones=[
+                Milestone("m1", 7, 6, status="complete"),
+                Milestone("m2", 14, 14, status="complete"),
+                Milestone("m3", 21, 20, status="complete"),
+                Milestone("m4", 28, 27, status="complete"),
+                Milestone("m5", 35, status="in_progress"),
+            ],
+            current_day=45,
+        ))
+        self.assertEqual(r.tier, "behind")
+
+    def test_markdown_renders_escalations(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            render_velocity_markdown,
+            track_integration_velocity,
+        )
+        md = render_velocity_markdown(
+            track_integration_velocity(VelocityInputs(
+                milestones=[
+                    Milestone("m1", 7,
+                                is_critical_path=True,
+                                owner="coo",
+                                status="in_progress"),
+                ],
+                current_day=45,
+            ))
+        )
+        self.assertIn("# Integration velocity", md)
+        self.assertIn("Escalations", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            Milestone,
+            VelocityInputs,
+            track_integration_velocity,
+        )
+        r = track_integration_velocity(VelocityInputs(
+            milestones=[
+                Milestone("m1", 7, 6, status="complete"),
+            ],
+            current_day=45,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

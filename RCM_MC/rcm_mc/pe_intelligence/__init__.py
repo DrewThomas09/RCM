@@ -1373,6 +1373,13 @@ from .clinical_outcome_leading_indicator_scanner import (
     render_clinical_outcome_markdown,
     scan_clinical_outcomes,
 )
+from .integration_velocity_tracker import (
+    Milestone,
+    VelocityInputs,
+    VelocityReport,
+    render_velocity_markdown,
+    track_integration_velocity,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2831,4 +2838,9 @@ __all__ = [
     "ClinicalOutcomeReport",
     "render_clinical_outcome_markdown",
     "scan_clinical_outcomes",
+    "Milestone",
+    "VelocityInputs",
+    "VelocityReport",
+    "render_velocity_markdown",
+    "track_integration_velocity",
 ]
