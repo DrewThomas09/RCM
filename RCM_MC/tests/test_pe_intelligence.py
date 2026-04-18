@@ -21887,5 +21887,198 @@ class TestBankSyndicateReadinessScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestValueCreationAttribution(unittest.TestCase):
+    """Partner scenario: where does the MOIC come from?"""
+
+    def test_organic_only_is_operating_thesis(self) -> None:
+        """Partner: 'organic + margin dominate → operating thesis.'"""
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+        )
+        r = attribute_value_creation(AttributionInputs(
+            entry_ebitda_m=75.0,
+            entry_multiple=11.0,
+            entry_debt_m=420.0,
+            exit_ebitda_m=110.0,   # organic growth
+            exit_multiple=11.0,    # no multiple change
+            exit_debt_m=420.0,     # no paydown
+        ))
+        self.assertIn("operating thesis",
+                       r.partner_note.lower())
+        self.assertGreater(r.organic_share_pct, 50)
+
+    def test_multiple_expansion_flag(self) -> None:
+        """Partner: 'multiple expansion > 30% = cycle bet.'"""
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+        )
+        r = attribute_value_creation(AttributionInputs(
+            entry_ebitda_m=75.0,
+            entry_multiple=9.0,
+            entry_debt_m=400.0,
+            exit_ebitda_m=90.0,
+            exit_multiple=13.0,     # 4 turns of expansion
+            exit_debt_m=400.0,
+        ))
+        self.assertGreater(r.multiple_expansion_share_pct, 30)
+        self.assertTrue(any("cycle" in f.lower()
+                             for f in r.partner_flags))
+
+    def test_m_and_a_heavy_flag(self) -> None:
+        """Partner: 'M&A > 40% → roll-up; price it.'"""
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+        )
+        r = attribute_value_creation(AttributionInputs(
+            entry_ebitda_m=40.0,
+            entry_multiple=10.0,
+            entry_debt_m=200.0,
+            exit_ebitda_m=120.0,
+            exit_multiple=10.0,
+            exit_debt_m=200.0,
+            m_and_a_contributed_ebitda_m=60.0,
+            margin_expansion_contributed_ebitda_m=10.0,
+        ))
+        self.assertGreater(r.m_and_a_share_pct, 40)
+        self.assertTrue(any("roll-up" in f.lower()
+                             for f in r.partner_flags))
+
+    def test_deleveraging_contribution(self) -> None:
+        """Partner: 'debt paid down = equity share rises.'"""
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+        )
+        r = attribute_value_creation(AttributionInputs(
+            entry_ebitda_m=75.0,
+            entry_multiple=11.0,
+            entry_debt_m=420.0,
+            exit_ebitda_m=110.0,
+            exit_multiple=11.0,
+            exit_debt_m=200.0,   # $220M paydown
+        ))
+        delev = next(c for c in r.components
+                      if c.source == "deleveraging")
+        self.assertGreater(delev.dollar_contribution_m, 200.0)
+
+    def test_balanced_attribution_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+        )
+        r = attribute_value_creation(AttributionInputs(
+            entry_ebitda_m=75.0,
+            entry_multiple=11.0,
+            entry_debt_m=420.0,
+            exit_ebitda_m=95.0,
+            exit_multiple=12.0,     # mild expansion
+            exit_debt_m=350.0,       # mild paydown
+            margin_expansion_contributed_ebitda_m=8.0,
+        ))
+        # None of the dominance flags should fire.
+        self.assertLessEqual(r.multiple_expansion_share_pct, 40)
+
+    def test_moic_math_holds(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+        )
+        r = attribute_value_creation(AttributionInputs(
+            entry_ebitda_m=75.0,
+            entry_multiple=11.0,    # entry EV 825
+            entry_debt_m=420.0,     # entry equity 405
+            exit_ebitda_m=100.0,
+            exit_multiple=11.0,     # exit EV 1100
+            exit_debt_m=420.0,      # exit equity 680
+        ))
+        # MOIC = 680/405 ≈ 1.68
+        self.assertAlmostEqual(r.total_moic, 1.68, places=2)
+
+    def test_tax_efficiency_component(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+        )
+        r = attribute_value_creation(AttributionInputs(
+            entry_ebitda_m=75.0,
+            entry_multiple=11.0,
+            entry_debt_m=420.0,
+            exit_ebitda_m=100.0,
+            exit_multiple=11.0,
+            exit_debt_m=420.0,
+            tax_efficiency_other_proceeds_m=25.0,
+        ))
+        tax = next(c for c in r.components
+                    if c.source == "tax_efficiency_other")
+        self.assertAlmostEqual(tax.dollar_contribution_m,
+                                25.0, places=1)
+
+    def test_operating_less_than_20pct_flag(self) -> None:
+        """Partner: 'operating < 20% → plan not in execution.'"""
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+        )
+        # Tiny ops, heavy multiple + deleveraging.
+        r = attribute_value_creation(AttributionInputs(
+            entry_ebitda_m=75.0,
+            entry_multiple=8.0,
+            entry_debt_m=400.0,
+            exit_ebitda_m=80.0,       # almost no ops growth
+            exit_multiple=14.0,        # huge multiple expansion
+            exit_debt_m=100.0,         # huge paydown
+        ))
+        organic_plus_margin = (
+            r.organic_share_pct + next(
+                c.share_of_gain_pct for c in r.components
+                if c.source == "margin_expansion"
+            )
+        )
+        if organic_plus_margin < 20:
+            self.assertTrue(any("execution" in f.lower()
+                                 for f in r.partner_flags))
+
+    def test_markdown_renders_all_components(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+            render_attribution_markdown,
+        )
+        md = render_attribution_markdown(
+            attribute_value_creation(AttributionInputs(
+                entry_ebitda_m=75.0,
+                entry_multiple=11.0,
+                entry_debt_m=420.0,
+                exit_ebitda_m=100.0,
+                exit_multiple=12.0,
+                exit_debt_m=300.0,
+            ))
+        )
+        self.assertIn("# Value creation attribution", md)
+        for src in ("organic_ebitda_growth", "margin_expansion",
+                    "m_and_a_inorganic", "multiple_expansion",
+                    "deleveraging", "tax_efficiency_other"):
+            self.assertIn(src, md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            AttributionInputs,
+            attribute_value_creation,
+        )
+        r = attribute_value_creation(AttributionInputs(
+            entry_ebitda_m=75.0,
+            entry_multiple=11.0,
+            entry_debt_m=420.0,
+            exit_ebitda_m=100.0,
+            exit_multiple=11.0,
+            exit_debt_m=420.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

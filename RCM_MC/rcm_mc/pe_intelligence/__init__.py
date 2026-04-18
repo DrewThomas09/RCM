@@ -1218,6 +1218,13 @@ from .bank_syndicate_readiness_scorer import (
     render_syndicate_readiness_markdown,
     score_syndicate_readiness,
 )
+from .value_creation_attribution import (
+    AttributionComponent,
+    AttributionInputs,
+    AttributionReport,
+    attribute_value_creation,
+    render_attribution_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2563,4 +2570,9 @@ __all__ = [
     "SyndicateReadinessReport",
     "render_syndicate_readiness_markdown",
     "score_syndicate_readiness",
+    "AttributionComponent",
+    "AttributionInputs",
+    "AttributionReport",
+    "attribute_value_creation",
+    "render_attribution_markdown",
 ]
