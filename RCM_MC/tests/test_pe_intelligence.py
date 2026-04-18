@@ -34453,5 +34453,216 @@ class TestExitBuyerShortListBuilder(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestCMSRuleCycleTracker(unittest.TestCase):
+    """Partner voice: 'CMS rule cycle is a calendar you can set your watch to.'"""
+
+    def test_empty_profile_no_exposure(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs())
+        self.assertEqual(r.applicable_rules_count, 0)
+        self.assertIn(
+            "not cms-rate-driven",
+            r.partner_note.lower(),
+        )
+
+    def test_inpatient_hits_ipps(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile(
+                    "inpatient_surgery", 0.60),
+                ServiceLineProfile(
+                    "inpatient_medicine", 0.20),
+            ],
+        ))
+        ipps = next(
+            rt for rt in r.rules if rt.rule == "IPPS"
+        )
+        self.assertTrue(ipps.applies)
+        self.assertAlmostEqual(
+            ipps.combined_npr_share_pct, 0.80
+        )
+
+    def test_ambulatory_hits_opps(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile("asc", 0.50),
+                ServiceLineProfile(
+                    "outpatient_surgery", 0.30),
+            ],
+        ))
+        opps = next(
+            rt for rt in r.rules if rt.rule == "OPPS"
+        )
+        self.assertTrue(opps.applies)
+        self.assertGreaterEqual(
+            opps.combined_npr_share_pct, 0.80
+        )
+
+    def test_physician_office_hits_mpfs(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile(
+                    "physician_office", 0.80),
+            ],
+        ))
+        mpfs = next(
+            rt for rt in r.rules if rt.rule == "MPFS"
+        )
+        self.assertTrue(mpfs.applies)
+
+    def test_ma_risk_hits_ma_rates(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile(
+                    "medicare_advantage", 0.50),
+            ],
+        ))
+        ma = next(
+            rt for rt in r.rules if rt.rule == "MA_RATES"
+        )
+        self.assertTrue(ma.applies)
+
+    def test_priority_rule_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        # 50% OPPS share → priority rule note
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile("hopd_outpatient", 0.50),
+            ],
+        ))
+        self.assertIn(
+            "priority rule", r.partner_note.lower()
+        )
+
+    def test_april_is_ipps_proposed_phase(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile(
+                    "inpatient_medicine", 0.50),
+            ],
+            current_month=4,
+        ))
+        ipps = next(
+            rt for rt in r.rules if rt.rule == "IPPS"
+        )
+        self.assertEqual(
+            ipps.cycle_stage, "proposed_phase"
+        )
+
+    def test_november_is_opps_final_phase(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile("asc", 0.50),
+            ],
+            current_month=11,
+        ))
+        opps = next(
+            rt for rt in r.rules if rt.rule == "OPPS"
+        )
+        self.assertEqual(
+            opps.cycle_stage, "final_phase"
+        )
+
+    def test_unmatched_service_line_no_touch(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile(
+                    "dental_services", 1.0),
+            ],
+        ))
+        self.assertEqual(r.applicable_rules_count, 0)
+
+    def test_mixed_mix_multiple_rules(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile("asc", 0.40),
+                ServiceLineProfile(
+                    "physician_office", 0.30),
+                ServiceLineProfile(
+                    "medicare_advantage", 0.30),
+            ],
+        ))
+        self.assertGreaterEqual(
+            r.applicable_rules_count, 3
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            render_cms_rule_cycle_markdown,
+            track_cms_rule_cycle,
+        )
+        md = render_cms_rule_cycle_markdown(
+            track_cms_rule_cycle(CMSRuleCycleInputs(
+                service_lines=[
+                    ServiceLineProfile("asc", 0.50),
+                ],
+            ))
+        )
+        self.assertIn("# CMS annual rule cycle", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            CMSRuleCycleInputs,
+            ServiceLineProfile,
+            track_cms_rule_cycle,
+        )
+        r = track_cms_rule_cycle(CMSRuleCycleInputs(
+            service_lines=[
+                ServiceLineProfile("asc", 0.50),
+            ],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
