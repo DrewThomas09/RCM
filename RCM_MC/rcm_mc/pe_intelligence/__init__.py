@@ -999,6 +999,14 @@ from .closing_conditions_list import (
     build_closing_conditions,
     render_closing_conditions_markdown,
 )
+from .cross_pattern_digest import (
+    CompoundRisk,
+    CrossPatternDigest,
+    PatternContext,
+    PatternMatch,
+    cross_pattern_scan,
+    render_cross_pattern_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2183,4 +2191,10 @@ __all__ = [
     "ClosingConditionsReport",
     "build_closing_conditions",
     "render_closing_conditions_markdown",
+    "CompoundRisk",
+    "CrossPatternDigest",
+    "PatternContext",
+    "PatternMatch",
+    "cross_pattern_scan",
+    "render_cross_pattern_markdown",
 ]

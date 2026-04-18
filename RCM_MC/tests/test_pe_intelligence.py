@@ -17232,5 +17232,201 @@ class TestClosingConditionsList(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestCrossPatternDigest(unittest.TestCase):
+    """Partner scenario: do multiple libraries agree this deal is broken?"""
+
+    def test_empty_context_yields_proceed(self) -> None:
+        """No signals = no matches = proceed."""
+        from rcm_mc.pe_intelligence import (
+            PatternContext,
+            cross_pattern_scan,
+        )
+        d = cross_pattern_scan(PatternContext())
+        self.assertEqual(d.recommendation, "proceed")
+        self.assertEqual(len(d.matches), 0)
+        self.assertEqual(len(d.compound_risks), 0)
+
+    def test_aggressive_denial_trap_alone_is_single_match(self) -> None:
+        """Seller says denials 12% → 5% in 12 months. One library fires."""
+        from rcm_mc.pe_intelligence import (
+            PatternContext,
+            cross_pattern_scan,
+        )
+        ctx = PatternContext(
+            packet_fields={
+                "current_denial_rate": 0.12,
+                "target_denial_rate": 0.05,
+                "months_to_target": 12,
+            }
+        )
+        d = cross_pattern_scan(ctx)
+        names = {m.pattern_id for m in d.matches}
+        self.assertIn("fix_denials_in_12_months", names)
+
+    def test_rollup_compound_risk_fires_across_libraries(self) -> None:
+        """High leverage + aggressive margin expansion: bear + other."""
+        from rcm_mc.pe_intelligence import (
+            PatternContext,
+            cross_pattern_scan,
+        )
+        ctx = PatternContext(
+            ebitda_m=40.0,
+            leverage_multiple=6.5,
+            hold_years=3.5,
+            margin_expansion_bps_per_yr=400,
+            covenant_headroom_pct=0.08,
+            ebitda_margin=0.10,
+            packet_fields={
+                "current_denial_rate": 0.12,
+                "target_denial_rate": 0.05,
+                "months_to_target": 12,
+            },
+        )
+        d = cross_pattern_scan(ctx)
+        # Leverage/operator/integration compound from rollup + high-lev.
+        themes = {c.theme for c in d.compound_risks}
+        self.assertTrue(
+            themes & {"leverage", "operator", "integration"},
+            f"expected leverage/operator/integration compound, got {themes}"
+        )
+
+    def test_recommendation_escalates_with_severity(self) -> None:
+        """Stack more flags → recommendation moves toward 'pass'."""
+        from rcm_mc.pe_intelligence import (
+            PatternContext,
+            cross_pattern_scan,
+        )
+        # Clean deal.
+        clean = cross_pattern_scan(PatternContext())
+        # Broken deal: rollup+high-lev+denials+MA trap.
+        broken = cross_pattern_scan(PatternContext(
+            ebitda_m=30.0,
+            leverage_multiple=6.8,
+            hold_years=3.0,
+            margin_expansion_bps_per_yr=500,
+            covenant_headroom_pct=0.05,
+            ebitda_margin=0.08,
+            payer_mix={"medicare_advantage": 0.30},
+            packet_fields={
+                "current_denial_rate": 0.14,
+                "target_denial_rate": 0.05,
+                "months_to_target": 10,
+                "medicare_advantage_pct": 0.30,
+                "regulatory_risk_material": True,
+            },
+        ))
+        self.assertEqual(clean.recommendation, "proceed")
+        self.assertIn(broken.recommendation,
+                       {"diligence_more", "reprice", "pass"})
+        self.assertGreater(broken.total_severity, clean.total_severity)
+
+    def test_compound_partner_voice_names_libraries(self) -> None:
+        """Compound voice should cite which libraries hit."""
+        from rcm_mc.pe_intelligence import (
+            PatternContext,
+            cross_pattern_scan,
+        )
+        ctx = PatternContext(
+            ebitda_m=40.0,
+            leverage_multiple=6.5,
+            hold_years=3.5,
+            margin_expansion_bps_per_yr=400,
+            packet_fields={
+                "current_denial_rate": 0.12,
+                "target_denial_rate": 0.05,
+                "months_to_target": 12,
+            },
+        )
+        d = cross_pattern_scan(ctx)
+        if d.compound_risks:
+            voice = d.compound_risks[0].partner_voice.lower()
+            self.assertTrue(
+                "libraries" in voice or "libraries" in d.partner_note.lower()
+            )
+
+    def test_severity_ordered_matches(self) -> None:
+        """Matches list is ordered by severity descending."""
+        from rcm_mc.pe_intelligence import (
+            PatternContext,
+            cross_pattern_scan,
+        )
+        d = cross_pattern_scan(PatternContext(
+            ebitda_m=30.0,
+            leverage_multiple=6.8,
+            hold_years=3.0,
+            margin_expansion_bps_per_yr=500,
+            packet_fields={
+                "current_denial_rate": 0.14,
+                "target_denial_rate": 0.05,
+                "months_to_target": 10,
+            },
+        ))
+        sevs = [m.severity for m in d.matches]
+        self.assertEqual(sevs, sorted(sevs, reverse=True))
+
+    def test_trap_only_without_bear_stays_at_diligence_or_below(
+        self,
+    ) -> None:
+        """One trap with no bear signals → not a pass."""
+        from rcm_mc.pe_intelligence import (
+            PatternContext,
+            cross_pattern_scan,
+        )
+        d = cross_pattern_scan(PatternContext(
+            packet_fields={
+                "current_denial_rate": 0.12,
+                "target_denial_rate": 0.05,
+                "months_to_target": 12,
+            }
+        ))
+        self.assertIn(d.recommendation,
+                       {"proceed_with_mitigants", "diligence_more"})
+        self.assertNotEqual(d.recommendation, "pass")
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            PatternContext,
+            cross_pattern_scan,
+            render_cross_pattern_markdown,
+        )
+        d = cross_pattern_scan(PatternContext(
+            leverage_multiple=6.5,
+            ebitda_m=40.0,
+            hold_years=3.5,
+            margin_expansion_bps_per_yr=400,
+        ))
+        md = render_cross_pattern_markdown(d)
+        self.assertIn("# Cross-pattern digest", md)
+        self.assertIn("Recommendation", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            PatternContext,
+            cross_pattern_scan,
+        )
+        d = cross_pattern_scan(PatternContext(
+            ebitda_m=40.0,
+            leverage_multiple=6.5,
+        ))
+        s = json.dumps(d.to_dict())
+        self.assertIn("recommendation", s)
+
+    def test_patterncontext_to_packet_dict_flattens_payer_mix(self) -> None:
+        """Payer mix conversion: both 0.30 and 30.0 should normalize to 0.30."""
+        from rcm_mc.pe_intelligence import PatternContext
+        ctx = PatternContext(
+            payer_mix={"medicare_advantage": 0.30, "commercial": 0.40}
+        )
+        d = ctx.to_packet_dict()
+        self.assertAlmostEqual(d["medicare_advantage_pct"], 0.30, places=3)
+        # Percentage scale normalizes to fraction.
+        ctx2 = PatternContext(
+            payer_mix={"medicare_advantage": 30.0, "commercial": 40.0}
+        )
+        d2 = ctx2.to_packet_dict()
+        self.assertAlmostEqual(d2["medicare_advantage_pct"], 0.30, places=3)
+
+
 if __name__ == "__main__":
     unittest.main()
