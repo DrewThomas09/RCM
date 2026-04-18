@@ -18511,5 +18511,168 @@ class TestSellerMathReverse(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestManagementMeetingQuestions(unittest.TestCase):
+    """Partner scenario: specific questions for CEO/CFO/COO/CMO."""
+
+    def test_base_roles_produce_questions(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(
+            roles=["ceo", "cfo", "coo"],
+        ))
+        self.assertEqual(len(p.role_sets), 3)
+        for rs in p.role_sets:
+            self.assertGreater(len(rs.questions), 0)
+
+    def test_ceo_base_has_must_ask_team_question(self) -> None:
+        """Partner: 'top hires question is must-ask.'"""
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(roles=["ceo"]))
+        ceo = p.role_sets[0]
+        hires_q = next((q for q in ceo.questions
+                         if "top 3 hires" in q.question.lower()),
+                        None)
+        self.assertIsNotNone(hires_q)
+        self.assertEqual(hires_q.priority, "must_ask")
+
+    def test_cfo_base_has_covenant_question(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(roles=["cfo"]))
+        cfo = p.role_sets[0]
+        cov_q = next((q for q in cfo.questions
+                      if "covenant" in q.question.lower()), None)
+        self.assertIsNotNone(cov_q)
+        self.assertEqual(cov_q.priority, "must_ask")
+
+    def test_thesis_denial_reduction_adds_cfo_question(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(
+            thesis="denial_reduction",
+            roles=["cfo"],
+        ))
+        cfo = p.role_sets[0]
+        denial_q = next((q for q in cfo.questions
+                          if "denial" in q.question.lower()), None)
+        self.assertIsNotNone(denial_q)
+
+    def test_thesis_rollup_adds_ceo_lois_question(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(
+            thesis="rollup_consolidation",
+            roles=["ceo"],
+        ))
+        ceo = p.role_sets[0]
+        lois_q = next((q for q in ceo.questions
+                        if "loi" in q.question.lower()), None)
+        self.assertIsNotNone(lois_q)
+
+    def test_pattern_match_adds_targeted_question(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(
+            pattern_matches=["fix_denials_in_12_months"],
+            roles=["coo"],
+        ))
+        coo = p.role_sets[0]
+        # The pattern-triggered q references "700 bps" or denial.
+        matched = [q for q in coo.questions
+                   if "700" in q.question or "bps" in q.question]
+        self.assertGreater(len(matched), 0)
+
+    def test_packet_gap_triggers_follow_up(self) -> None:
+        """Partner: 'gap in packet → ask mgmt directly.'"""
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(
+            packet_gaps=["cmi_trend"],
+            roles=["cmo"],
+        ))
+        cmo = p.role_sets[0]
+        gap_q = [q for q in cmo.questions
+                 if q.closes_gap == "cmi_trend"]
+        self.assertGreaterEqual(len(gap_q), 1)
+
+    def test_must_ask_count_aggregates(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(
+            roles=["ceo", "cfo", "coo", "cmo"],
+            thesis="denial_reduction",
+            pattern_matches=["high_leverage_thin_coverage"],
+        ))
+        self.assertGreaterEqual(p.must_ask_count, 6)
+
+    def test_high_must_ask_triggers_two_hour_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(
+            roles=["ceo", "cfo", "coo", "cmo", "cco", "cio"],
+            thesis="rollup_consolidation",
+            pattern_matches=["fix_denials_in_12_months",
+                             "high_leverage_thin_coverage",
+                             "ceo_will_stay_through_close"],
+        ))
+        self.assertIn("2 hours", p.partner_note)
+
+    def test_unknown_role_omitted(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(
+            roles=["ceo", "not_a_real_role"],
+        ))
+        self.assertEqual(len(p.role_sets), 1)
+        self.assertEqual(p.role_sets[0].role, "ceo")
+
+    def test_markdown_renders_must_ask_marker(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+            render_mm_plan_markdown,
+        )
+        md = render_mm_plan_markdown(
+            build_mm_question_plan(MMInputs(
+                roles=["ceo", "cfo"],
+            ))
+        )
+        self.assertIn("# Management-meeting question plan", md)
+        self.assertIn("must-ask", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            MMInputs,
+            build_mm_question_plan,
+        )
+        p = build_mm_question_plan(MMInputs(
+            roles=["ceo", "cfo"],
+            thesis="denial_reduction",
+        ))
+        json.dumps(p.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

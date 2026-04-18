@@ -1050,6 +1050,14 @@ from .seller_math_reverse import (
     render_seller_math_markdown,
     reverse_engineer_seller_math,
 )
+from .management_meeting_questions import (
+    MMInputs,
+    MMQuestion,
+    MMQuestionPlan,
+    MMQuestionSet,
+    build_mm_question_plan,
+    render_mm_plan_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2271,4 +2279,10 @@ __all__ = [
     "SellerMathReport",
     "render_seller_math_markdown",
     "reverse_engineer_seller_math",
+    "MMInputs",
+    "MMQuestion",
+    "MMQuestionPlan",
+    "MMQuestionSet",
+    "build_mm_question_plan",
+    "render_mm_plan_markdown",
 ]
