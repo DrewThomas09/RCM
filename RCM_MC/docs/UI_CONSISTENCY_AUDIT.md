@@ -484,3 +484,46 @@ If the decision is "skip the port, accept the loss":
 
 The CSRF and alert-badge ports are non-negotiable. The palette and
 shortcuts are a judgment call but cheap.
+
+---
+
+## Appendix: bugs / dead code discovered during migration
+
+Items discovered while performing Waves 1-3 that weren't fixed in the
+migration commits (per the "don't fix bugs in migration commits" rule).
+
+1. **Four test files tested dead features.** Deleted them in the
+   cleanup phase because their subject-under-test no longer exists:
+
+   - `tests/test_caduceus_brand.py` — tested shell_v2 rendering,
+     NAV_ITEMS catalog, and brand-palette Bloomberg hex values. All
+     three subjects were deleted.
+   - `tests/test_improvements_b87.py` — tested the light-theme
+     `prefers-color-scheme: dark` media query inside the legacy
+     `_ui_kit.BASE_CSS`. That BASE_CSS was dead code (never reached
+     any route — `_ui_kit.shell()` delegated to shell_v2).
+   - `tests/test_improvements_b93.py` — tested a workbench tab-switch
+     keyboard JS block and a toast-notification CSS class in the
+     legacy BASE_CSS. The tab-switch JS was inside shell_v2; the
+     toast CSS was inside BASE_CSS. Both gone.
+   - `tests/test_ui_kit.py` — tested the shared light-theme UI kit
+     (BASE_CSS constants + PALETTE). Both constants removed.
+
+   These weren't "broken tests worth fixing" — they were testing code
+   that shouldn't exist after the migration. Deletion is the right
+   call. Any test that still tests shell behaviour should be written
+   against `chartis_shell` fresh.
+
+2. **`brand.PALETTE` is still imported by ~35 pages** for colour
+   literals in their body HTML (hex codes from the Bloomberg shade,
+   not chartis). This isn't a bug — pages render correctly via the
+   `_CAD_COMPAT_CSS` layer that maps class names onto chartis vars —
+   but the imports are a lingering artefact of the shell_v2 era.
+   Deferred: a clean-up pass could rewrite every
+   `background: {PALETTE['bg_secondary']}` literal to
+   `background: var(--ck-panel)` and drop the brand.PALETTE import
+   entirely. Outside this phase's scope.
+
+3. **No actual runtime bugs surfaced.** Every migrated page renders
+   200 on HTTP smoke; the 33-test chartis integration suite stays
+   green through every wave.
