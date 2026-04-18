@@ -6923,7 +6923,59 @@ past."
 
 ---
 
-## 214. Change log
+## 214. Tax structure trap scanner (`tax_structure_trap_scanner.py`)
+
+**Partner statement:** "Tax drives after-tax IRR. I
+don't need to be a tax lawyer, but I need the top 10
+traps flagged before I sign. Every one of them costs
+100-300 bps of IRR if missed."
+
+Distinct from `tax_structuring` (high-level
+structure). This module is a **red-flag scanner** for
+10 specific tax-structure traps common in healthcare
+PE.
+
+### 10 traps with IRR-drag estimates
+
+1. **golden_parachute_280g_exposure** — 150 bps.
+2. **nol_382_limitation** — 200 bps.
+3. **sales_tax_nexus_services** — 100 bps.
+4. **r_and_d_credit_carryforward_risk** — 80 bps.
+5. **stock_option_acceleration** — 80 bps.
+6. **ubti_exposure_tax_exempt_lps** — 120 bps.
+7. **cod_income_seller_note** — 60 bps.
+8. **state_provider_tax** — 100 bps (CA / NY / OR / TX
+   / MI / WA).
+9. **section_263a_healthcare_r_and_d** — 50 bps.
+10. **unclaimed_hsa_balances** — 30 bps.
+
+### Partner-note escalation
+
+- ≥ 400 bps total → "retain tax counsel pre-LOI;
+  specific restructuring required before IC."
+- 150-400 bps → "tax-counsel review scoped in
+  diligence."
+- < 150 bps → "document in tax workstream."
+- 0 triggered → "proceed on standard tax scope."
+
+### Worked example
+
+Inputs: 2 execs with acceleration + no safe harbor,
+NOLs + ownership change, telehealth + gross-receipts
+nexus.
+
+Triggered: 280G (150) + NOL 382 (200) + sales nexus
+(100) = 450 bps → partner: "retain tax counsel pre-
+LOI."
+
+### Packet fields
+
+Per-trap signal booleans; see module for the full
+input surface.
+
+---
+
+## 215. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
