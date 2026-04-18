@@ -7311,7 +7311,53 @@ make the MSA-level call at underwrite, then aggregate.
 
 ---
 
-## 221. Change log
+## 221. Multi-state regulatory complexity (`multi_state_regulatory_complexity_scorer.py`)
+
+**Partner statement:** "A deal operating in 5 states is
+not 5x the complexity — it's 12x. Each state has its
+own CON, licensure transfer, MSO rules, non-compete
+law, and provider tax."
+
+### 5 state-category lookups
+
+- **CON states** (33 states) — CON required for select
+  services creates filing-cycle friction.
+- **Non-compete void** (CA, ND, OK, MN, CO) —
+  physician retention via deferred-comp clawback only.
+- **MSO / CPOM** (CA, NY, NJ, IL, TX, MI, OH, PA, WA,
+  CO) — corporate practice of medicine states require
+  friendly-PC / MSO structure.
+- **Aggressive AGs** (CA, NY, WA, MA) — state-level
+  antitrust review on top of FTC.
+- **Provider tax** (CA, NY, OR, TX, MI, WA) — 2-4% of
+  revenue exposure.
+
+### Tier ladder
+
+- **simple** — ≤ 2 states, no category issues.
+- **moderate** — 3-4 states OR 1 issue-category with
+  ≥ 2 states.
+- **complex** — 5-7 states OR 2 issue-categories.
+- **very_complex** — 8+ states OR 3+ issue-categories
+  → "retain multi-state regulatory counsel pre-LOI."
+
+### Worked example
+
+CA + NY + TX:
+- Non-compete void: CA.
+- MSO states: CA, NY, TX.
+- Aggressive AG: CA, NY.
+- Provider tax: CA, NY, TX.
+- 4 categories with ≥ 2 state overlap → `very_complex`.
+
+### Packet fields
+
+`operating_states`, `service_line_triggers_con`,
+`asset_type_requires_mso`.
+
+---
+
+## 222. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
