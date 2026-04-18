@@ -344,6 +344,11 @@ def render_deal_dashboard(
             "Scenario stress grid: rate / volume / multiple / lever shocks",
             accent=PALETTE["warning"],
         ),
+        _model_tile(
+            "ICP", f"/deal/{did}/ic-packet", "IC Packet",
+            "master_bundle: IC memo + cheatsheet + 100-day + bear book",
+            accent=PALETTE["brand_accent"],
+        ),
     ]
 
     model_grid = (
