@@ -5887,7 +5887,70 @@ before team commits diligence dollars.
 
 ---
 
-## 197. Change log
+## 197. Management bench depth check (`management_bench_depth_check.py`)
+
+**Partner statement:** "The CEO is always named. But
+what happens if the CFO walks at 6 months? If the COO
+is new? If no direct reports own a P&L? That's where the
+real key-person risk lives."
+
+### 7 dimensions scored
+
+1. **ceo_rollover_pct ≥ 15%** — skin in the game.
+2. **cfo_successor_identified** — bench visible.
+3. **coo_in_role ≥ 12 months** — past honeymoon.
+4. **≥ 3 P&L-owning direct reports** — distributed
+   accountability.
+5. **key_person_dependencies ≤ 2** — concentration risk.
+6. **≥ 1 board operating director** — independent ops
+   experience.
+7. **exec_retention_signed_at_close** — contracts vs.
+   handshake.
+
+### Tier ladder
+
+- **6-7/7** = `deep` — can absorb 1-2 departures
+  without thesis reset.
+- **4-5/7** = `adequate` — one departure manageable.
+- **2-3/7** = `thin` — single departure resets plan;
+  ship with operator-placement plan.
+- **0-1/7** = `critical` — every seat single-threaded;
+  restructure or walk.
+
+### Named key-person risks
+
+Each failed dimension emits a specific partner counter
+that feeds the 100-day plan + LOI retention-condition
+language:
+
+- CEO rollover < 15% → "rollover ≥ 15% or vesting-based
+  equity."
+- No CFO successor → "retention + controller-level #2
+  in 100-day plan."
+- < 3 P&L owners → "redesign org around P&L owners day
+  1; CEO shouldn't be only holder of plan."
+- Key-person deps > 2 → "sign retention + non-compete
+  at close for each; no best-efforts."
+- No retention contracts at close → "make retention
+  closing condition."
+
+### Why partners care
+
+Scar tissue: most deal-level blow-ups trace to a named
+seat failing in year 1-2. A "strong CEO" with thin
+bench is a one-shot roll. Bench depth turns the team
+into a system.
+
+### Packet fields
+
+`ceo_rollover_pct`, `cfo_successor_identified`,
+`coo_months_in_role`, `pnl_owning_direct_reports_count`,
+`key_person_dependencies`, `board_operating_director_count`,
+`exec_retention_signed_at_close`.
+
+---
+
+## 198. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
