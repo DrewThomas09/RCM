@@ -4980,7 +4980,78 @@ the **actual questions** the partner brings to MM, tied to:
 
 ---
 
-## 183. Change log
+## 183. Seller motivation decoder (`seller_motivation_decoder.py`)
+
+**Partner statement:** "Before I counter-price I want to
+know why they're at the table. A founder who needs
+liquidity negotiates differently from a sponsor at
+vintage end. Same price, different leverage."
+
+Healthcare-services sellers come to market for a finite
+set of reasons. Each carries a distinct **leverage
+profile** — the partner's position depends on **why** the
+seller is motivated to close by a specific date.
+
+### Motivations modeled (10)
+
+1. **founder_liquidity** — high urgency, high leverage,
+   medium price-sensitivity. Counter: rollover + earn-out.
+2. **tax_timing** — high urgency, medium leverage. Counter:
+   installment / earn-out structured to seller's tax
+   calendar.
+3. **family_liquidity** — high urgency, high leverage, low
+   price-sensitivity. Counter: clean cash at close.
+4. **sponsor_vintage_end** — high urgency, medium leverage,
+   low price-sensitivity. Counter: LP-scorecard sellers
+   hold price but accept R&W insurance.
+5. **covenant_trip_imminent** — high urgency, high
+   leverage, high price-sensitivity. Counter: distressed
+   framing.
+6. **failed_prior_process** — medium urgency, high
+   leverage, high price-sensitivity. Counter: aggressive
+   re-price; verify why prior buyers walked.
+7. **management_exit_wanted** — medium urgency, medium
+   leverage. Counter: CEO search pre-close.
+8. **strategic_fatigue** — medium urgency, medium leverage.
+   Counter: sell partnership story.
+9. **industry_trough_fear** — high urgency, **low**
+   leverage, **low** price-sensitivity. Counter: regulatory
+   diligence cold; walk if exposed.
+10. **activist_pressure** — medium urgency, medium
+    leverage. Counter: negotiate with parent IR, not
+    target mgmt.
+
+### Partner-note escalation
+
+- 3+ motivations fire → "layered story; negotiate against
+  highest-urgency."
+- Dominant motivation carries `buyer_leverage="high"` →
+  "counter below sticker + structural asks."
+- No signals → "ask the banker directly — 'why are they
+  selling now?'"
+
+### Worked example
+
+Signals detected:
+- `net_debt_gt_7x_ebitda`
+- `covenant_waiver_in_past_12_months`
+- `private_credit_lender_on_record`
+
+→ Dominant: `covenant_trip_imminent` (score 1.00).
+→ Partner note: "high leverage — counter below sticker +
+structural asks."
+→ Partner counter: "distressed framing. Offer meaningfully
+below sticker with fast close. Watch for unannounced
+liabilities."
+
+### Packet signals
+
+Each motivation carries its own signal list. See
+`packet_signals` attribute per `SellerMotivation`.
+
+---
+
+## 184. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
