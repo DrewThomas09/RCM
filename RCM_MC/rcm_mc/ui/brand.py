@@ -233,6 +233,7 @@ NAV_ITEMS = [
     {"label": "Medical RE Tracker", "href": "/medical-realestate", "icon": "chart"},
     {"label": "CMS APM Tracker", "href": "/cms-apm", "icon": "bookmark"},
     {"label": "MA / Stars Tracker", "href": "/ma-star", "icon": "bookmark"},
+    {"label": "GPO / Supply", "href": "/gpo-supply", "icon": "grid"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
