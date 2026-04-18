@@ -10974,7 +10974,72 @@ carry + 1.5% mgmt; pitch on $212.5M net to LP."
 
 ---
 
-## 269. Change log
+## 269. Exit buyer short list builder (`exit_buyer_short_list_builder.py`)
+
+**Partner statement.** "An exit thesis isn't a multiple — it's a
+named list of buyers. Who are the 5-10 strategic acquirers, sponsor
+platforms, or IPO comps? If you can't name them, the exit is
+hypothetical. I'll trade multiple points for a credible bidder
+list."
+
+### Why it matters
+
+`buyer_type_fit_analyzer` scores 8 buyer types abstractly.
+`exit_buyer_view_mirror` is first-person buyer IC. This module is
+the **named bidder list** — actual platforms and strategics with
+per-subsector catalog.
+
+### 7 subsectors × 4 named buyers each
+
+| Subsector | Representative buyers |
+|---|---|
+| dental_dso | Heartland, Aspen, Smile Brands, Pacific |
+| physician_practice_multi_specialty | OptumHealth, Amedisys/Humana, VillageMD, Oak Street |
+| asc | USPI, SCA, HCA, Surgery Partners |
+| behavioral | Acadia, UHS, LifeStance, Summit |
+| home_health | Amedisys, LHC, Encompass, Enhabit |
+| ophthalmology | EyeCare Partners, US Eye, AEG Vision, Acuity |
+| dermatology | Advanced Dermatology, Forefront, Epiphany, US Dermatology |
+
+Each buyer tagged with bucket (strategic / sponsor_platform /
+public_comp_ipo) and minimum target EV.
+
+### Size filter
+
+Buyer `fits_size = expected_exit_ev >= min_target_ev`. Buyers that
+don't fit size are kept in output but flagged.
+
+### Verdict
+
+- ≥ 5 fit-size named buyers → "credible bidder list"
+- 3-4 → "thin bidder field; downside is real"
+- ≤ 2 → "auction is thin; consider continuation vehicle or single-
+  bidder sale"
+
+### Worked example
+
+Dental DSO exit at $500M EV: Heartland ($100M min), Aspen ($150M),
+Smile Brands ($80M), Pacific ($60M) — all fit → **credible bidder
+list**.
+
+Same DSO at $30M exit: none of the sponsor platforms fit their own
+$60M+ minimum target → "auction is thin; CV alternative."
+
+### Packet fields
+
+`subsector`, `expected_exit_ev_m`.
+
+### Distinct from existing modules
+
+- `buyer_type_fit_analyzer` — 8 abstract buyer types.
+- `exit_buyer_view_mirror` — first-person buyer IC.
+- `exit_alternative_comparator` — 5 exit paths.
+- This module — per-subsector **named buyer list** with size filter
+  and credibility verdict.
+
+---
+
+## 270. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
