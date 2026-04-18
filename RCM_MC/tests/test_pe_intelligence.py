@@ -14687,5 +14687,94 @@ class TestRedFlagEscalationTriage(unittest.TestCase):
         ]).to_dict())
 
 
+# ── Quarterly operating review ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    QoRAgenda,
+    QoRBlock,
+    QoRContext,
+    build_qor_agenda,
+    render_qor_agenda_markdown,
+)
+
+
+class TestQuarterlyOperatingReview(unittest.TestCase):
+
+    def test_four_blocks_always(self) -> None:
+        a = build_qor_agenda(QoRContext(deal_name="X"))
+        titles = [b.title for b in a.blocks]
+        self.assertEqual(titles, [
+            "Numbers", "Thesis Progress",
+            "People + Operating Rhythm", "Forward-look + Asks",
+        ])
+
+    def test_ebitda_miss_triggers_intervention_note(self) -> None:
+        a = build_qor_agenda(QoRContext(
+            deal_name="X",
+            ebitda_vs_plan_pct=-0.15,
+        ))
+        self.assertIn("intervention", a.partner_note.lower())
+
+    def test_ebitda_miss_bullets_pushed_in_numbers_block(self) -> None:
+        a = build_qor_agenda(QoRContext(
+            ebitda_vs_plan_pct=-0.08,
+        ))
+        nums = a.blocks[0]
+        self.assertIn("hard on the ebitda miss",
+                       nums.partner_focus.lower())
+
+    def test_rising_denial_focus(self) -> None:
+        a = build_qor_agenda(QoRContext(
+            denial_rate_trend="rising",
+        ))
+        nums = a.blocks[0]
+        self.assertIn("denial", nums.partner_focus.lower())
+
+    def test_ceo_search_drives_people_block(self) -> None:
+        a = build_qor_agenda(QoRContext(
+            has_open_ceo_hire=True,
+        ))
+        people = next(b for b in a.blocks
+                       if b.title.startswith("People"))
+        self.assertIn("ceo search", people.partner_focus.lower())
+
+    def test_late_hold_includes_exit_readiness(self) -> None:
+        a = build_qor_agenda(QoRContext(
+            hold_quarter=10,
+        ))
+        fwd = next(b for b in a.blocks
+                    if b.title.startswith("Forward"))
+        self.assertTrue(any("exit" in bullet.lower()
+                             for bullet in fwd.bullets))
+
+    def test_multiple_levers_behind_triggers_recovery_ask(self) -> None:
+        a = build_qor_agenda(QoRContext(
+            lever_behind_count=3,
+        ))
+        thesis = next(b for b in a.blocks
+                       if b.title.startswith("Thesis"))
+        self.assertIn("recovery plan", thesis.partner_focus.lower())
+
+    def test_outperforming_uses_time_to_pull_forward(self) -> None:
+        a = build_qor_agenda(QoRContext(
+            ebitda_vs_plan_pct=0.10,
+        ))
+        self.assertIn("outperforming", a.partner_note.lower())
+
+    def test_total_minutes_adds_to_60(self) -> None:
+        a = build_qor_agenda(QoRContext())
+        self.assertEqual(a.total_minutes, 60)
+
+    def test_markdown_renders(self) -> None:
+        md = render_qor_agenda_markdown(build_qor_agenda(QoRContext(
+            deal_name="MemoCo", hold_quarter=4)))
+        self.assertIn("# MemoCo — QoR Q4", md)
+        self.assertIn("Partner focus", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(build_qor_agenda(QoRContext()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -832,6 +832,13 @@ from .red_flag_escalation_triage import (
     render_triage_markdown,
     triage,
 )
+from .quarterly_operating_review import (
+    QoRAgenda,
+    QoRBlock,
+    QoRContext,
+    build_qor_agenda,
+    render_qor_agenda_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1895,4 +1902,9 @@ __all__ = [
     "TriageReport",
     "render_triage_markdown",
     "triage",
+    "QoRAgenda",
+    "QoRBlock",
+    "QoRContext",
+    "build_qor_agenda",
+    "render_qor_agenda_markdown",
 ]
