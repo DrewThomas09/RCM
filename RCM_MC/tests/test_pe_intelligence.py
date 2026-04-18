@@ -30549,5 +30549,211 @@ class TestVBCRiskShareUnderwriter(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestArchetypeCanonicalBearWriter(unittest.TestCase):
+    """Partner voice: 'Each archetype has its own canonical bear case.'"""
+
+    def test_unknown_archetype_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="unknown",
+        ))
+        self.assertEqual(r.bear_story, "")
+        self.assertIn(
+            "no canonical bear", r.partner_note.lower()
+        )
+
+    def test_payer_mix_shift_canonical_bear(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="payer_mix_shift",
+            base_ebitda_m=50.0,
+        ))
+        self.assertIn(
+            "payer", r.bear_story.lower()
+        )
+        self.assertGreater(
+            r.expected_ebitda_hit_m, 0
+        )
+
+    def test_outpatient_thesis_broken(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="outpatient_migration",
+        ))
+        self.assertEqual(
+            r.recovery_posture, "thesis-broken"
+        )
+        self.assertIn(
+            "site-neutral",
+            r.bear_story.lower(),
+        )
+
+    def test_cmi_uplift_thesis_broken(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="cmi_uplift",
+        ))
+        self.assertEqual(
+            r.recovery_posture, "thesis-broken"
+        )
+        self.assertIn(
+            "rac", r.bear_story.lower()
+        )
+
+    def test_back_office_recoverable(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="back_office_consolidation",
+        ))
+        self.assertEqual(
+            r.recovery_posture, "recoverable"
+        )
+
+    def test_rollup_hold_extension(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="rollup_platform",
+        ))
+        self.assertEqual(
+            r.recovery_posture, "hold-extension"
+        )
+        self.assertIn(
+            "auction", r.bear_story.lower()
+        )
+
+    def test_capacity_expansion_named_breakage(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="capacity_expansion",
+        ))
+        self.assertIn(
+            "de-novo", r.named_breakage_point.lower()
+        )
+
+    def test_cost_basis_compression_quality(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="cost_basis_compression",
+        ))
+        self.assertIn(
+            "quality", r.bear_story.lower()
+        )
+
+    def test_ebitda_hit_scales_with_base(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        small = write_canonical_bear(ArchetypeBearInputs(
+            archetype="rollup_platform",
+            base_ebitda_m=20.0,
+        ))
+        large = write_canonical_bear(ArchetypeBearInputs(
+            archetype="rollup_platform",
+            base_ebitda_m=100.0,
+        ))
+        self.assertAlmostEqual(
+            large.expected_ebitda_hit_m / small.expected_ebitda_hit_m,
+            5.0,
+            places=2,
+        )
+
+    def test_thesis_broken_partner_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="cmi_uplift",
+        ))
+        self.assertIn(
+            "thesis-broken", r.partner_note.lower()
+        )
+
+    def test_early_warning_present_all_archetypes(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        for archetype in [
+            "payer_mix_shift",
+            "back_office_consolidation",
+            "outpatient_migration",
+            "cmi_uplift",
+            "rollup_platform",
+            "cost_basis_compression",
+            "capacity_expansion",
+        ]:
+            r = write_canonical_bear(ArchetypeBearInputs(
+                archetype=archetype,
+            ))
+            self.assertGreater(
+                len(r.early_warning_indicator), 20,
+                f"{archetype} early-warning missing",
+            )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            render_canonical_bear_markdown,
+            write_canonical_bear,
+        )
+        md = render_canonical_bear_markdown(
+            write_canonical_bear(ArchetypeBearInputs(
+                archetype="rollup_platform",
+            ))
+        )
+        self.assertIn("# Archetype canonical bear", md)
+        self.assertIn("Bear story", md)
+
+    def test_unknown_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            render_canonical_bear_markdown,
+            write_canonical_bear,
+        )
+        md = render_canonical_bear_markdown(
+            write_canonical_bear(ArchetypeBearInputs(
+                archetype="not_real",
+            ))
+        )
+        self.assertIn("no canonical bear", md.lower())
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ArchetypeBearInputs,
+            write_canonical_bear,
+        )
+        r = write_canonical_bear(ArchetypeBearInputs(
+            archetype="rollup_platform",
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1552,6 +1552,12 @@ from .vbc_risk_share_underwriter import (
     render_vbc_underwrite_markdown,
     underwrite_vbc_contract,
 )
+from .archetype_canonical_bear_writer import (
+    ArchetypeBearInputs,
+    CanonicalBearReport,
+    render_canonical_bear_markdown,
+    write_canonical_bear,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3139,4 +3145,8 @@ __all__ = [
     "VBCRiskShareReport",
     "render_vbc_underwrite_markdown",
     "underwrite_vbc_contract",
+    "ArchetypeBearInputs",
+    "CanonicalBearReport",
+    "render_canonical_bear_markdown",
+    "write_canonical_bear",
 ]
