@@ -25024,5 +25024,187 @@ class TestExitAlternativeComparator(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestClinicalOutcomeLeadingIndicator(unittest.TestCase):
+    """Partner scenario: quality metric deterioration hits in 18 months."""
+
+    def test_empty_inputs_no_deterioration(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        r = scan_clinical_outcomes(ClinicalOutcomeInputs())
+        self.assertEqual(r.deteriorating_count, 0)
+
+    def test_readmission_rising_flagged(self) -> None:
+        """Partner: 'readmission rate rising → HRRP penalty ahead.'"""
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        r = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            readmission_rate_30d_series=[
+                0.12, 0.125, 0.13, 0.135, 0.14
+            ],
+            medicare_revenue_m=200.0,
+        ))
+        read = next(i for i in r.indicators
+                     if i.name == "readmission_rate_30d")
+        self.assertTrue(read.is_deteriorating)
+
+    def test_star_rating_falling_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        r = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            cms_star_rating_series=[4.0, 3.8, 3.5, 3.3, 3.1],
+            medicare_revenue_m=200.0,
+        ))
+        star = next(i for i in r.indicators
+                     if i.name == "cms_star_rating")
+        self.assertTrue(star.is_deteriorating)
+
+    def test_hcahps_falling_flagged(self) -> None:
+        """Partner: 'HCAHPS top-box falling → VBP impact.'"""
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        r = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            hcahps_top_box_pct_series=[
+                0.72, 0.70, 0.68, 0.66, 0.64
+            ],
+            medicare_revenue_m=200.0,
+        ))
+        hc = next(i for i in r.indicators
+                   if i.name == "hcahps_top_box_pct")
+        self.assertTrue(hc.is_deteriorating)
+
+    def test_flat_series_no_deterioration(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        r = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            readmission_rate_30d_series=[
+                0.12, 0.121, 0.120, 0.119, 0.122
+            ],
+        ))
+        read = next(i for i in r.indicators
+                     if i.name == "readmission_rate_30d")
+        self.assertFalse(read.is_deteriorating)
+
+    def test_three_plus_triggers_turnaround_required_note(
+        self,
+    ) -> None:
+        """Partner: '3 deteriorating → quality turnaround.'"""
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        r = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            readmission_rate_30d_series=[
+                0.12, 0.125, 0.13, 0.135, 0.14
+            ],
+            hcahps_top_box_pct_series=[
+                0.72, 0.70, 0.68, 0.66, 0.64
+            ],
+            cms_star_rating_series=[4.0, 3.8, 3.5, 3.3, 3.1],
+            medicare_revenue_m=200.0,
+        ))
+        self.assertEqual(r.deteriorating_count, 3)
+        self.assertIn("turnaround required",
+                       r.partner_note.lower())
+
+    def test_dollar_hit_scales_with_medicare_rev(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        small = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            readmission_rate_30d_series=[
+                0.12, 0.125, 0.13, 0.135, 0.14
+            ],
+            medicare_revenue_m=100.0,
+        ))
+        large = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            readmission_rate_30d_series=[
+                0.12, 0.125, 0.13, 0.135, 0.14
+            ],
+            medicare_revenue_m=400.0,
+        ))
+        self.assertGreater(large.forward_reimbursement_hit_m,
+                            small.forward_reimbursement_hit_m)
+
+    def test_short_series_cannot_trend(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        r = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            readmission_rate_30d_series=[0.12, 0.13],
+        ))
+        read = next(i for i in r.indicators
+                     if i.name == "readmission_rate_30d")
+        self.assertIn("cannot trend",
+                       read.partner_comment.lower())
+
+    def test_bps_capped_at_500(self) -> None:
+        """Partner: 'cap aggregate at 500 bps — don't compound pain infinitely.'"""
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        # All 6 deteriorating.
+        r = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            readmission_rate_30d_series=[
+                0.12, 0.125, 0.13, 0.135, 0.14
+            ],
+            hac_score_percentile_series=[30, 35, 40, 45, 50],
+            hcahps_top_box_pct_series=[
+                0.72, 0.70, 0.68, 0.66, 0.64
+            ],
+            cms_star_rating_series=[4.0, 3.8, 3.5, 3.3, 3.1],
+            sentinel_event_frequency_series=[
+                0.1, 0.2, 0.3, 0.4, 0.5
+            ],
+            physician_turnover_rate_series=[
+                0.10, 0.13, 0.16, 0.19, 0.22
+            ],
+            medicare_revenue_m=200.0,
+        ))
+        self.assertLessEqual(
+            r.total_forward_reimbursement_hit_bps, 500.0
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            render_clinical_outcome_markdown,
+            scan_clinical_outcomes,
+        )
+        md = render_clinical_outcome_markdown(
+            scan_clinical_outcomes(ClinicalOutcomeInputs(
+                readmission_rate_30d_series=[
+                    0.12, 0.125, 0.13, 0.135, 0.14
+                ],
+                medicare_revenue_m=200.0,
+            ))
+        )
+        self.assertIn("# Clinical outcome leading indicators",
+                       md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            ClinicalOutcomeInputs,
+            scan_clinical_outcomes,
+        )
+        r = scan_clinical_outcomes(ClinicalOutcomeInputs(
+            readmission_rate_30d_series=[0.12, 0.13, 0.14],
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

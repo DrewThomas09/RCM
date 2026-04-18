@@ -1366,6 +1366,13 @@ from .exit_alternative_comparator import (
     compare_exit_alternatives,
     render_exit_alternatives_markdown,
 )
+from .clinical_outcome_leading_indicator_scanner import (
+    ClinicalIndicator,
+    ClinicalOutcomeInputs,
+    ClinicalOutcomeReport,
+    render_clinical_outcome_markdown,
+    scan_clinical_outcomes,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2819,4 +2826,9 @@ __all__ = [
     "ExitAlternativesReport",
     "compare_exit_alternatives",
     "render_exit_alternatives_markdown",
+    "ClinicalIndicator",
+    "ClinicalOutcomeInputs",
+    "ClinicalOutcomeReport",
+    "render_clinical_outcome_markdown",
+    "scan_clinical_outcomes",
 ]
