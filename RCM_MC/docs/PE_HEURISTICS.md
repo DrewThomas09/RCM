@@ -5769,7 +5769,61 @@ retention adjustments; current $700K → $450K (36% cut).
 
 ---
 
-## 195. Change log
+## 195. Deal source quality reader (`deal_source_quality_reader.py`)
+
+**Partner statement:** "A proprietary deal from a 10-
+year relationship is a different animal from a 20-bidder
+auction. Same asset, different process, different price,
+different diligence scope. Know the source before you
+set the team's mandate."
+
+### 8 source profiles
+
+- **proprietary_from_relationship** — -5% price, 12-week
+  process, lean in.
+- **limited_auction_invited** — +3% price, 8 weeks,
+  balanced.
+- **broad_auction** — +8% price, 5 weeks, caution; win
+  on structure.
+- **second_look_after_broken_process** — -8% price, 10
+  weeks, caution — investigate *why* prior buyers walked.
+- **distressed_forced_sale** — -15% price, 4 weeks, lean
+  in if asset clean.
+- **continuation_vehicle_inside** — 0% price (fairness-
+  opinion mark), 16 weeks, balanced.
+- **reverse_inquiry** — -3% price, 10 weeks, balanced —
+  ask why now.
+- **management_led_carveout** — -5% price, 14 weeks,
+  balanced — TSA complexity.
+
+### Partner-note escalation
+
+- **distressed** → "lean in on clean-liability; R&W
+  essential; speed is a real edge."
+- **second_look** → "spend first diligence week on why
+  prior buyers walked."
+- **broad_auction** → "win on structure or don't swing."
+- **proprietary** → "extended diligence available; don't
+  let relationship pressure override discipline."
+
+### Worked example
+
+Base market price $800M:
+- `distressed_forced_sale` → expected $680M (save $120M).
+- `broad_auction` → expected $864M (pay $64M more).
+- `proprietary_from_relationship` → expected $760M (save
+  $40M).
+
+Same asset, three very different starting positions.
+
+### Packet fields that trigger
+
+- `source` — source profile name.
+- `base_market_price_m` — anchor for expected-price math.
+
+---
+
+## 196. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
