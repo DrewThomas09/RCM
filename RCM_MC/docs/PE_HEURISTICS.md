@@ -10410,7 +10410,71 @@ TX 50% + FL 50% → no state AG notice laws → **no_state_ag_exposure**
 
 ---
 
-## 261. Change log
+## 261. Continuation vehicle readiness scorer (`continuation_vehicle_readiness_scorer.py`)
+
+**Partner statement.** "Not every asset is a continuation
+candidate. CV investors want a known asset with a clear remaining
+value-creation runway, management that wants to stay and re-up, and
+a GP that can actually commit additional capital. The worst CVs are
+the ones where the GP just couldn't find a buyer — LP advisory
+committees now see those a mile away."
+
+### Why it matters
+
+`exit_alternative_comparator` compares 5 exit paths. This module is
+**CV-specific** — scores the asset on what LP-side secondary
+investors actually probe before pricing a continuation vehicle.
+
+### 6 CV fit dimensions (0-4 each, 0-24 composite)
+
+1. **remaining_runway_years** — CV investors want 3-5 years of
+   visible upside; < 2 years reads as "couldn't find a buyer"
+2. **management_rollover_intent_pct** — ≥ 50% strong, < 25%
+   concerning
+3. **gp_reinvest_commitment_m** — GP cross-fund commitment size
+4. **strip_sale_price_validated** — market-tested fallback price
+5. **lp_advisory_committee_recent_approval** — AC playbook
+   precedent
+6. **third_party_lead_identified** — named lead (Goldman /
+   Lexington / Ardian / HarbourVest / AlpInvest)
+
+### Verdict
+
+- composite ≥ 18 AND existing MOIC ≥ 2.0 → **pursue_cv** — "pursue
+  with named lead and LP AC pre-alignment"
+- composite ≥ 12 → **conditional** — "CV viable with specific gaps
+  closed; prioritize strip-sale validation and management rollover"
+- otherwise → **pursue_sale** — "the pattern LP secondaries now
+  screen for is 'GP couldn't find a buyer'; run a real sale process"
+
+### Worked example
+
+Strong: 4.5yr runway + 60% mgmt rollover + $30M GP commitment +
+validated strip sale + recent AC approval + named lead →
+composite 23 → **pursue_cv**.
+
+Weak: 1.5yr runway + 10% rollover + $3M GP + no strip sale + no AC
+precedent + no lead → composite 3 → **pursue_sale** with "couldn't
+find a buyer" flag.
+
+### Packet fields
+
+`remaining_runway_years`, `management_rollover_intent_pct`,
+`gp_reinvest_commitment_m`, `strip_sale_price_validated`,
+`lp_ac_recent_similar_cv_approved`,
+`third_party_lead_identified`, `existing_moic`, `existing_irr`.
+
+### Distinct from existing modules
+
+- `exit_alternative_comparator` — compares 5 exit paths.
+- `exit_buyer_view_mirror` — buyer IC memo.
+- `exit_planning` — readiness checklist.
+- This module — CV-specific with 6 LP-secondary-investor dimensions
+  and "couldn't find a buyer" screen.
+
+---
+
+## 262. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
