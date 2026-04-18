@@ -209,6 +209,7 @@ NAV_ITEMS = [
     {"label": "Drug Shortage", "href": "/drug-shortage", "icon": "chart"},
     {"label": "Anti-Trust Screener", "href": "/antitrust-screener", "icon": "chart"},
     {"label": "AI Operating Model", "href": "/ai-operating-model", "icon": "chart"},
+    {"label": "Cyber Risk", "href": "/cyber-risk", "icon": "chart"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
