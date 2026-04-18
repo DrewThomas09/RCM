@@ -2022,6 +2022,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.exit_multiple_page import render_exit_multiple
             return self._send_html(render_exit_multiple(_qp))
+        if path == "/diligence-checklist":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.diligence_checklist_page import render_diligence_checklist
+            return self._send_html(render_diligence_checklist(_qp))
         if path == "/size-intel":
             from .ui.data_public.size_intel_page import render_size_intel
             return self._send_html(render_size_intel())

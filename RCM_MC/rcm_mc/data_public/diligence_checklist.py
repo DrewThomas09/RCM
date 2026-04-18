@@ -1,455 +1,269 @@
-"""Integrated PE diligence checklist for a hospital M&A deal.
-
-Aggregates outputs from all corpus analytical modules into a single,
-structured checklist that a senior PE healthcare partner would review
-before an IC presentation.
-
-Checklist sections:
-    1. Deal Overview          — basic facts and corpus comparables
-    2. Returns Analysis       — exit scenarios, IRR, MOIC vs corpus P50
-    3. Capital Structure      — leverage, coverage, covenant headroom
-    4. Payer Mix Risk         — sensitivity scenarios (Medicaid cut, MA creep, etc.)
-    5. PE Intelligence        — deal type, red flags, lever timeframes
-    6. Data Quality           — completeness and credibility score
-    7. Vintage Context        — entry timing vs macro cycle norms
-    8. Open Questions         — auto-generated based on gaps and red flags
-
-Public API:
-    ChecklistItem    dataclass
-    DiligenceChecklist dataclass
-    build_checklist(deal, corpus_db_path, assumptions)  -> DiligenceChecklist
-    checklist_text(checklist)                            -> str (formatted report)
-    checklist_json(checklist)                            -> dict
-"""
+"""Diligence Checklist Generator — sector-specific PE diligence items from corpus patterns."""
 from __future__ import annotations
 
-import json
+import importlib
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 
-# ---------------------------------------------------------------------------
-# Dataclasses
-# ---------------------------------------------------------------------------
+_PRIORITY = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
+
+_PRIORITY_COLORS = {
+    "Critical": "#ef4444",
+    "High":     "#ea580c",
+    "Medium":   "#f59e0b",
+    "Low":      "#64748b",
+}
+
 
 @dataclass
 class ChecklistItem:
-    section: str
-    item: str
-    status: str        # "OK" | "WARNING" | "CRITICAL" | "MISSING" | "INFO"
-    detail: str = ""
-
-    def as_dict(self) -> Dict[str, Any]:
-        return {"section": self.section, "item": self.item,
-                "status": self.status, "detail": self.detail}
+    id: str
+    category: str
+    title: str
+    description: str
+    priority: str
+    priority_color: str
+    red_flag_trigger: str
+    corpus_fail_rate: float
+    is_red_flag: bool
+    status: str = "Open"
 
 
 @dataclass
-class DiligenceChecklist:
-    deal_name: str
-    items: List[ChecklistItem] = field(default_factory=list)
-    open_questions: List[str] = field(default_factory=list)
-    summary_flags: List[str] = field(default_factory=list)  # critical/warning items
-
-    @property
-    def critical_count(self) -> int:
-        return sum(1 for i in self.items if i.status == "CRITICAL")
-
-    @property
-    def warning_count(self) -> int:
-        return sum(1 for i in self.items if i.status == "WARNING")
-
-    def as_dict(self) -> Dict[str, Any]:
-        by_section: Dict[str, List[Dict]] = {}
-        for item in self.items:
-            by_section.setdefault(item.section, []).append(item.as_dict())
-        return {
-            "deal_name": self.deal_name,
-            "critical_count": self.critical_count,
-            "warning_count": self.warning_count,
-            "sections": by_section,
-            "open_questions": self.open_questions,
-            "summary_flags": self.summary_flags,
-        }
+class DiligenceChecklistResult:
+    sector: str
+    ev_mm: float
+    total_items: int
+    critical_items: int
+    high_items: int
+    items: List[ChecklistItem]
+    by_category: Dict[str, List[ChecklistItem]]
+    red_flags_triggered: int
+    corpus_deal_count: int
 
 
-# ---------------------------------------------------------------------------
-# Helper: safe import + call
-# ---------------------------------------------------------------------------
+# ------- item definitions -------
 
-def _safe(fn, *args, **kwargs):
+_ITEMS = [
+    # Financial
+    ("fin_001","Financial Quality","Revenue Recognition Policy Audit",
+     "Verify revenue recognized on contractual vs expected net realization. Flag if AR >90 days > 20%.",
+     "Critical",[],">90-day AR > 20% or denial rate >15%",0.28),
+    ("fin_002","Financial Quality","Add-Back Credibility Review",
+     "Scrutinize all EBITDA add-backs. Flag if total > 30% of reported EBITDA.",
+     "Critical",[],"Add-backs >30% of reported EBITDA",0.22),
+    ("fin_003","Financial Quality","Payer Mix Sustainability",
+     "Validate payer mix stability over 3 years. Flag single-payer > 60% concentration.",
+     "High",[],"Single payer >60% or mix shift >10pp in 2 yrs",0.31),
+    ("fin_004","Financial Quality","EBITDA Margin Benchmarking",
+     "Compare margin to corpus P25/P50/P75. Flag if below P25.",
+     "High",[],"Margin below corpus P25",0.19),
+    ("fin_005","Financial Quality","CapEx Normalization",
+     "Confirm maintenance CapEx ≥2% revenue. Flag underinvestment.",
+     "Medium",[],"CapEx <2% revenue for 2+ years",0.14),
+    ("fin_006","Financial Quality","Working Capital / DSO Trend",
+     "Measure DSO trend. Flag if DSO increasing >5 days YoY or >50 for commercial-heavy mix.",
+     "High",[],"DSO increasing or >60 days",0.25),
+    # Operations
+    ("ops_001","Operations","Key Provider Dependency",
+     "Flag if top 3 physicians generate >40% revenue. Assess tail covenant.",
+     "Critical",["Physician Group","Dental","Dermatology","Ophthalmology"],
+     "Top 3 providers >40% revenue",0.45),
+    ("ops_002","Operations","Provider Attrition Rate",
+     "Review trailing 24-month physician turnover. Flag if >20% annual.",
+     "High",["Physician Group","Behavioral Health","Urgent Care"],
+     "Turnover >20% trailing 12 months",0.33),
+    ("ops_003","Operations","Payor Contract Terms & Renewal Schedule",
+     "Map all commercial contract terms and renewal dates. Flag if >30% contracts expire in year 1.",
+     "Critical",[],"Major contracts expiring within 12 months of close",0.38),
+    ("ops_004","Operations","Denial Rate Benchmarking",
+     "Initial denial rate vs. industry. Flag if >15% initial denial or >5% final write-off.",
+     "High",[],"Initial denial >15% or final write-off >5%",0.29),
+    ("ops_005","Operations","Clinical Quality Metrics",
+     "CMS star ratings, readmission rates, HAI. Flag if below national average.",
+     "High",["Home Health","Hospice","Skilled Nursing","Ambulatory Surgery"],
+     "CMS star <3 or below national average",0.21),
+    ("ops_006","Operations","Staffing & Agency Dependency",
+     "Agency/traveler staff as % total labor. Flag if >20% clinical hours from agency.",
+     "High",["Staffing","Behavioral Health","Home Health","Skilled Nursing"],
+     "Agency labor >20% clinical hours",0.35),
+    # Regulatory
+    ("reg_001","Regulatory","CMS Survey & Certification Status",
+     "Review last 3 CMS surveys. Flag IJ citations, SFF status, or pending termination.",
+     "Critical",["Home Health","Hospice","Skilled Nursing","Ambulatory Surgery"],
+     "IJ citation or SFF designation",0.12),
+    ("reg_002","Regulatory","OIG/SAM Exclusion Screening",
+     "Screen all providers, owners, management against OIG/SAM exclusion lists.",
+     "Critical",[],"Any provider or owner on exclusion list",0.04),
+    ("reg_003","Regulatory","Stark Law / Anti-Kickback Compliance",
+     "Review all physician compensation arrangements. Flag missing or stale FMV opinions.",
+     "Critical",["Physician Group","Radiology","Laboratory"],
+     "Compensation without FMV opinions",0.16),
+    ("reg_004","Regulatory","HIPAA / Privacy Compliance",
+     "Breach notification history and BAA coverage. Flag undisclosed breaches.",
+     "High",[],"Undisclosed PHI breach or missing BAA",0.08),
+    ("reg_005","Regulatory","State Licensure & CON",
+     "Confirm all licenses current. Flag lapsed or under-scrutiny.",
+     "High",[],"Lapsed licensure or active CON challenge",0.09),
+    ("reg_006","Regulatory","Medicare/Medicaid Program Integrity",
+     "RAC, MAC, state audit history. Flag if >$500K pending recoupment.",
+     "High",[],"Active RAC audit or recoupment >$500K",0.11),
+    # Market
+    ("mkt_001","Market","Geographic Market Concentration",
+     "Map patient origin. Flag if >50% revenue from single MSA.",
+     "Medium",[],"Single MSA >50% revenue",0.40),
+    ("mkt_002","Market","Competitive Positioning",
+     "Top 3 competitors, market share trend. Flag if market share declining.",
+     "High",[],"Market share declining >5pp in 2 years",0.18),
+    ("mkt_003","Market","Referral Source Concentration",
+     "Top 5 referrals. Flag if top 2 referrers >60% of new volume.",
+     "High",["Home Health","Hospice","Physical Therapy","Behavioral Health"],
+     "Top 2 referrers >60% of volume",0.32),
+    ("mkt_004","Market","Population Demographics",
+     "Target market age, income, insurance penetration trends.",
+     "Medium",[],"Population decline or aging-out of service population",0.15),
+    # Leverage
+    ("lev_001","Leverage","Entry Leverage vs. Benchmark",
+     "Entry leverage vs. corpus P50 for sector/size. Flag if >1.5 turns above P75.",
+     "High",[],"Entry leverage >1.5 turns above corpus P75",0.17),
+    ("lev_002","Leverage","Covenant Headroom at Close",
+     "Model covenant compliance through base case. Flag if <15% headroom.",
+     "Critical",[],"Covenant headroom <15% in base case",0.13),
+    ("lev_003","Leverage","Interest Coverage Stress",
+     "Coverage with 15% EBITDA haircut. Flag if <1.5x.",
+     "High",[],"Coverage <1.5x under 15% EBITDA stress",0.20),
+    # Management
+    ("mgmt_001","Management","CEO/CFO Tenure & Alignment",
+     "Management incentive alignment. Flag if CEO/CFO tenure <18 months or no rollover equity.",
+     "High",[],"CEO/CFO <18 months tenure or no equity rollover",0.24),
+    ("mgmt_002","Management","Succession Plan",
+     "Single-point-of-failure risk. Flag if no documented succession plan.",
+     "Medium",[],"No succession plan for C-suite",0.41),
+    ("mgmt_003","Management","Integration Track Record",
+     "For platform/add-on, review prior integration success.",
+     "Medium",["Physician Group","Dental","Dermatology"],
+     "Prior acquisitions integration >18 months",0.28),
+]
+
+
+def _is_applicable(sectors_filter, sector: str) -> bool:
+    if not sectors_filter:
+        return True
+    s = sector.lower()
+    return any(f.lower() in s or s in f.lower() for f in sectors_filter)
+
+
+def _is_red_flag(item_id: str, sector: str, ev_mm: float, comm_pct: float, ar_days: float) -> bool:
+    if item_id == "fin_001" and ar_days > 50:
+        return True
+    if item_id == "fin_003" and comm_pct > 0.65:
+        return True
+    if item_id == "ops_001" and "physician" in sector.lower():
+        return True
+    if item_id == "mkt_001" and ev_mm < 100:
+        return True
+    if item_id == "lev_001" and ev_mm > 400:
+        return True
+    return False
+
+
+def _load_corpus() -> List[dict]:
+    deals: List[dict] = []
+    for i in range(2, 57):
+        try:
+            mod = importlib.import_module(f"rcm_mc.data_public.extended_seed_{i}")
+            deals.extend(getattr(mod, f"EXTENDED_SEED_DEALS_{i}", []))
+        except ImportError:
+            pass
     try:
-        return fn(*args, **kwargs)
+        from rcm_mc.data_public.deals_corpus import _SEED_DEALS, EXTENDED_SEED_DEALS
+        deals = _SEED_DEALS + EXTENDED_SEED_DEALS + deals
     except Exception:
-        return None
+        pass
+    return deals
 
 
-# ---------------------------------------------------------------------------
-# Section builders
-# ---------------------------------------------------------------------------
+def compute_diligence_checklist(
+    sector: str,
+    ev_mm: float = 200.0,
+    ebitda_margin: float = 0.18,
+    comm_pct: float = 0.55,
+    ar_days: float = 45.0,
+) -> DiligenceChecklistResult:
+    corpus = _load_corpus()
 
-def _section_overview(
-    deal: Dict[str, Any],
-    corpus_db_path: str,
-    items: List[ChecklistItem],
-    questions: List[str],
-) -> None:
-    S = "1. Deal Overview"
-    name = deal.get("deal_name", "—")
-    ev = deal.get("ev_mm")
-    ebitda = deal.get("ebitda_at_entry_mm")
-    buyer = deal.get("buyer", "—")
-    year = deal.get("year")
-
-    items.append(ChecklistItem(S, "Deal name", "INFO", str(name)))
-    items.append(ChecklistItem(S, "Entry year", "INFO" if year else "MISSING",
-                               str(year) if year else "year not recorded"))
-    items.append(ChecklistItem(S, "Buyer", "INFO" if buyer and buyer != "—" else "MISSING",
-                               str(buyer)))
-    items.append(ChecklistItem(S, "Enterprise Value",
-                               "OK" if ev else "MISSING",
-                               f"${ev:,.0f}M" if ev else "EV not recorded"))
-    items.append(ChecklistItem(S, "EBITDA at entry",
-                               "OK" if ebitda else "MISSING",
-                               f"${ebitda:,.0f}M" if ebitda else "EBITDA not recorded"))
-
-    if ev and ebitda and ebitda > 0:
-        mult = ev / ebitda
-        status = "OK" if 4 <= mult <= 20 else "WARNING"
-        items.append(ChecklistItem(S, "Entry EV/EBITDA multiple",
-                                   status, f"{mult:.1f}x"))
-        if mult > 20:
-            questions.append("Entry multiple > 20x — confirm EBITDA add-backs and synergy thesis.")
-
-    # Comparable deals
-    from .comparables import find_comparables
-    comps = _safe(find_comparables, deal, corpus_db_path, 3) or []
-    if comps:
-        comp_str = "; ".join(f"{c.deal_name} ({c.similarity_score:.0f}%)" for c in comps[:3])
-        items.append(ChecklistItem(S, "Closest corpus comparables", "INFO", comp_str))
-    else:
-        items.append(ChecklistItem(S, "Closest corpus comparables", "WARNING",
-                                   "No comparable deals found — corpus may be sparse for this deal type"))
-
-
-def _section_returns(
-    deal: Dict[str, Any],
-    corpus_db_path: str,
-    entry_debt_mm: Optional[float],
-    exit_assumptions: Optional[Any],
-    items: List[ChecklistItem],
-    questions: List[str],
-    flags: List[str],
-) -> None:
-    S = "2. Returns Analysis"
-    from .exit_modeling import model_all_exits, ExitAssumptions
-    from .base_rates import get_benchmarks
-
-    a = exit_assumptions or ExitAssumptions()
-    results = _safe(model_all_exits, deal, entry_debt_mm, a) or {}
-
-    if results:
-        strategic = results.get("strategic_sale")
-        if strategic:
-            moic = strategic.moic
-            irr = strategic.irr
-            status = "OK" if moic >= 2.0 else ("WARNING" if moic >= 1.5 else "CRITICAL")
-            items.append(ChecklistItem(S, "Strategic exit MOIC",
-                                       status, f"{moic:.2f}x  IRR={irr:.1%}"))
-            if status != "OK":
-                flags.append(f"Returns: Strategic MOIC {moic:.2f}x below 2.0x threshold")
-
-        for route, result in results.items():
-            if route == "strategic_sale":
-                continue
-            items.append(ChecklistItem(
-                S, f"{route.replace('_', ' ').title()} MOIC",
-                "INFO", f"{result.moic:.2f}x  IRR={result.irr:.1%}"
-            ))
-
-    # Compare to corpus P50
-    benchmarks = _safe(get_benchmarks, corpus_db_path)
-    if benchmarks and benchmarks.moic_p50 and results.get("strategic_sale"):
-        corp_p50 = benchmarks.moic_p50
-        deal_moic = results["strategic_sale"].moic
-        delta = deal_moic - corp_p50
-        status = "OK" if delta >= -0.3 else "WARNING"
+    items: List[ChecklistItem] = []
+    for row in _ITEMS:
+        iid, cat, title, desc, prio, sectors_f, rft, cfr = row
+        if not _is_applicable(sectors_f, sector):
+            continue
+        rf = _is_red_flag(iid, sector, ev_mm, comm_pct, ar_days)
         items.append(ChecklistItem(
-            S, "vs corpus MOIC P50",
-            status, f"{deal_moic:.2f}x vs corpus P50={corp_p50:.2f}x  (Δ{delta:+.2f}x)"
+            id=iid, category=cat, title=title, description=desc,
+            priority=prio, priority_color=_PRIORITY_COLORS[prio],
+            red_flag_trigger=rft, corpus_fail_rate=cfr,
+            is_red_flag=rf, status="Open",
         ))
 
+    items.sort(key=lambda x: (_PRIORITY[x.priority], x.category, x.id))
 
-def _section_capital_structure(
-    deal: Dict[str, Any],
-    entry_debt_mm: Optional[float],
-    items: List[ChecklistItem],
-    questions: List[str],
-    flags: List[str],
-) -> None:
-    S = "3. Capital Structure"
-    from .leverage_analysis import model_leverage, covenant_headroom
+    by_cat: Dict[str, List[ChecklistItem]] = {}
+    for item in items:
+        by_cat.setdefault(item.category, []).append(item)
 
-    profile = _safe(model_leverage, deal,
-                    {"entry_debt_mm": entry_debt_mm} if entry_debt_mm else None)
-    if not profile:
-        items.append(ChecklistItem(S, "Leverage model", "MISSING",
-                                   "Cannot model — ev_mm or ebitda_at_entry_mm missing"))
-        return
+    critical = sum(1 for i in items if i.priority == "Critical")
+    high = sum(1 for i in items if i.priority == "High")
+    red_flags = sum(1 for i in items if i.is_red_flag)
 
-    status = "OK" if profile.entry_leverage <= 6.0 else \
-             ("WARNING" if profile.entry_leverage <= 8.0 else "CRITICAL")
-    items.append(ChecklistItem(S, "Entry leverage",
-                               status, f"{profile.entry_leverage:.1f}x Net Debt / EBITDA"))
-    if status == "CRITICAL":
-        flags.append(f"Capital Structure: Entry leverage {profile.entry_leverage:.1f}x > 8x")
-
-    ic_status = "OK" if profile.entry_interest_coverage >= 2.0 else \
-                ("WARNING" if profile.entry_interest_coverage >= 1.5 else "CRITICAL")
-    items.append(ChecklistItem(S, "Entry interest coverage",
-                               ic_status, f"{profile.entry_interest_coverage:.2f}x"))
-
-    ch = covenant_headroom(profile)
-    headroom = ch.get("min_headroom_turns", 0.0) or 0.0
-    h_status = "OK" if headroom >= 1.0 else ("WARNING" if headroom >= 0.5 else "CRITICAL")
-    items.append(ChecklistItem(S, "Min covenant headroom (hold period)",
-                               h_status, f"{headroom:.2f}x turns"))
-    if headroom < 0.5:
-        flags.append(f"Capital Structure: Covenant headroom {headroom:.2f}x dangerously thin")
-
-    if profile.covenant_at_risk:
-        items.append(ChecklistItem(S, "Covenant breach risk",
-                                   "CRITICAL",
-                                   f"Projected breach in Year {profile.covenant_breach_year}"))
-        flags.append(f"Capital Structure: Covenant breach projected in Year {profile.covenant_breach_year}")
-        questions.append("Model covenant waiver scenario — what EBITDA cushion is needed?")
-
-
-def _section_payer_mix(
-    deal: Dict[str, Any],
-    items: List[ChecklistItem],
-    questions: List[str],
-    flags: List[str],
-) -> None:
-    S = "4. Payer Mix Risk"
-    from .payer_sensitivity import run_all_scenarios
-
-    pm = deal.get("payer_mix")
-    if not pm:
-        items.append(ChecklistItem(S, "Payer mix", "MISSING",
-                                   "No payer mix data — cannot run sensitivity"))
-        questions.append("Obtain payer mix breakdown before IC presentation.")
-        return
-
-    if isinstance(pm, str):
-        try:
-            pm = json.loads(pm)
-        except Exception:
-            pm = None
-
-    if pm:
-        medicaid = pm.get("medicaid", 0)
-        commercial = pm.get("commercial", 0)
-        ma = pm.get("medicare_advantage", pm.get("medicare", 0))
-        status = "OK" if medicaid <= 0.30 else ("WARNING" if medicaid <= 0.45 else "CRITICAL")
-        items.append(ChecklistItem(S, "Medicaid exposure",
-                                   status, f"{medicaid:.0%}"))
-        if medicaid > 0.45:
-            flags.append(f"Payer Mix: Medicaid {medicaid:.0%} — high political rate risk")
-
-        items.append(ChecklistItem(S, "Commercial mix", "INFO", f"{commercial:.0%}"))
-
-    scenarios = _safe(run_all_scenarios, deal) or []
-    if scenarios:
-        worst = min(scenarios, key=lambda s: s.ebitda_delta_pct or 0)
-        if worst.ebitda_delta_pct is not None:
-            ws = "OK" if worst.ebitda_delta_pct >= -0.10 else \
-                 ("WARNING" if worst.ebitda_delta_pct >= -0.20 else "CRITICAL")
-            sname = worst.scenario_name
-            items.append(ChecklistItem(
-                S, f"Worst scenario ({sname})",
-                ws, f"EBITDA impact: {worst.ebitda_delta_pct:.1%}"
-            ))
-            if worst.ebitda_delta_pct < -0.20:
-                flags.append(f"Payer Sensitivity: {sname} → {worst.ebitda_delta_pct:.1%} EBITDA")
-                questions.append(f"Stress scenario: {sname} — does capital structure survive?")
-
-
-def _section_pe_intelligence(
-    deal: Dict[str, Any],
-    corpus_db_path: str,
-    items: List[ChecklistItem],
-    questions: List[str],
-    flags: List[str],
-) -> None:
-    S = "5. PE Intelligence"
-    from .pe_intelligence import full_intelligence_report
-
-    report = _safe(full_intelligence_report, deal, {}, corpus_db_path)
-    if not report:
-        items.append(ChecklistItem(S, "PE intelligence", "MISSING",
-                                   "Could not run intelligence report"))
-        return
-
-    items.append(ChecklistItem(S, "Deal type", "INFO", report.deal_type.value))
-
-    rs = report.risk_score
-    rs_status = "OK" if rs <= 4 else ("WARNING" if rs <= 6 else "CRITICAL")
-    items.append(ChecklistItem(S, "Risk score", rs_status, f"{rs}/10"))
-    if rs > 6:
-        flags.append(f"PE Intelligence: High risk score {rs}/10")
-
-    for flag in report.red_flags[:3]:
-        items.append(ChecklistItem(S, "Red flag", "CRITICAL", flag))
-        flags.append(f"Red Flag: {flag[:80]}")
-        questions.append(f"Address red flag: {flag}")
-
-    for w in report.lever_warnings[:2]:
-        items.append(ChecklistItem(S, "Lever warning", "WARNING", w))
-
-    for note in report.heuristic_notes[:2]:
-        items.append(ChecklistItem(S, "Heuristic", "INFO", note))
-
-
-def _section_data_quality(
-    deal: Dict[str, Any],
-    items: List[ChecklistItem],
-    questions: List[str],
-    flags: List[str],
-) -> None:
-    S = "6. Data Quality"
-    from .deal_scorer import score_deal
-
-    score = _safe(score_deal, deal)
-    if not score:
-        items.append(ChecklistItem(S, "Data quality score", "MISSING", "Could not score deal"))
-        return
-
-    s_status = "OK" if score.grade in ("A", "B") else \
-               ("WARNING" if score.grade == "C" else "CRITICAL")
-    items.append(ChecklistItem(S, "Data quality grade",
-                               s_status, f"{score.grade}  ({score.total_score:.0f}/100)"))
-    if score.grade in ("D", "F"):
-        flags.append(f"Data Quality: Grade {score.grade} — low-confidence deal record")
-        questions.append("Improve data quality: obtain missing EV, EBITDA, payer mix data.")
-
-    for issue in score.issues[:3]:
-        items.append(ChecklistItem(S, "Data issue", "WARNING" if "missing" in issue.lower()
-                                   else "INFO", issue))
-
-
-def _section_vintage(
-    deal: Dict[str, Any],
-    corpus_db_path: str,
-    items: List[ChecklistItem],
-    questions: List[str],
-) -> None:
-    S = "7. Vintage Context"
-    year = deal.get("year")
-    if not year:
-        items.append(ChecklistItem(S, "Vintage year", "MISSING",
-                                   "Year not recorded — cannot assess entry timing"))
-        return
-
-    from .vintage_analysis import entry_timing_assessment
-    assessment = _safe(entry_timing_assessment, year, corpus_db_path)
-    if not assessment:
-        return
-
-    items.append(ChecklistItem(S, "Macro cycle", "INFO",
-                               f"{assessment['cycle_label']} ({assessment['cycle']})"))
-    items.append(ChecklistItem(S, "Entry timing vs corpus",
-                               "OK" if assessment["relative_performance"] != "below par" else "WARNING",
-                               assessment["relative_performance"]))
-
-    for note in assessment.get("timing_notes", [])[:2]:
-        items.append(ChecklistItem(S, "Timing context", "INFO", note))
-
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
-def build_checklist(
-    deal: Dict[str, Any],
-    corpus_db_path: str,
-    entry_debt_mm: Optional[float] = None,
-    exit_assumptions: Optional[Any] = None,
-) -> DiligenceChecklist:
-    """Build a complete diligence checklist for a deal.
-
-    Args:
-        deal:             deal dict (from corpus or raw)
-        corpus_db_path:   path to corpus SQLite file
-        entry_debt_mm:    override entry debt ($M); defaults to 60% of EV
-        exit_assumptions: ExitAssumptions instance (or None for defaults)
-
-    Returns:
-        DiligenceChecklist with ChecklistItems across all sections.
-    """
-    name = str(deal.get("deal_name", "Unknown"))
-    items: List[ChecklistItem] = []
-    questions: List[str] = []
-    flags: List[str] = []
-
-    _section_overview(deal, corpus_db_path, items, questions)
-    _section_returns(deal, corpus_db_path, entry_debt_mm, exit_assumptions,
-                     items, questions, flags)
-    _section_capital_structure(deal, entry_debt_mm, items, questions, flags)
-    _section_payer_mix(deal, items, questions, flags)
-    _section_pe_intelligence(deal, corpus_db_path, items, questions, flags)
-    _section_data_quality(deal, items, questions, flags)
-    _section_vintage(deal, corpus_db_path, items, questions)
-
-    return DiligenceChecklist(
-        deal_name=name,
-        items=items,
-        open_questions=list(dict.fromkeys(questions)),   # deduplicate, preserve order
-        summary_flags=list(dict.fromkeys(flags)),
+    return DiligenceChecklistResult(
+        sector=sector, ev_mm=ev_mm,
+        total_items=len(items), critical_items=critical, high_items=high,
+        items=items, by_category=by_cat,
+        red_flags_triggered=red_flags, corpus_deal_count=len(corpus),
     )
 
 
-def checklist_text(checklist: DiligenceChecklist) -> str:
-    """Format the checklist as a human-readable text report."""
-    STATUS_ICON = {
-        "OK":       "✓",
-        "WARNING":  "⚠",
-        "CRITICAL": "✗",
-        "MISSING":  "?",
-        "INFO":     "·",
-    }
+# ---------------------------------------------------------------------------
+# Legacy compatibility aliases (expected by data_public/__init__.py)
+# ---------------------------------------------------------------------------
 
-    lines = [
-        f"PE Diligence Checklist: {checklist.deal_name}",
-        f"  {checklist.critical_count} critical  |  {checklist.warning_count} warnings",
-        "=" * 80,
-    ]
+def build_checklist(sector: str, ev_mm: float = 200.0, **kwargs) -> DiligenceChecklistResult:
+    """Alias for compute_diligence_checklist."""
+    return compute_diligence_checklist(sector=sector, ev_mm=ev_mm, **kwargs)
 
-    current_section = None
-    for item in checklist.items:
-        if item.section != current_section:
-            lines.append(f"\n  {item.section}")
-            lines.append("  " + "-" * 60)
-            current_section = item.section
-        icon = STATUS_ICON.get(item.status, "·")
-        detail = f"  — {item.detail}" if item.detail else ""
-        lines.append(f"    [{icon}] {item.item}{detail}")
 
-    if checklist.summary_flags:
-        lines.append("\n\n  SUMMARY FLAGS")
-        lines.append("  " + "-" * 60)
-        for flag in checklist.summary_flags:
-            lines.append(f"    ✗ {flag}")
-
-    if checklist.open_questions:
-        lines.append("\n\n  OPEN QUESTIONS FOR IC PREP")
-        lines.append("  " + "-" * 60)
-        for i, q in enumerate(checklist.open_questions, 1):
-            lines.append(f"    {i}. {q}")
-
+def checklist_text(sector: str, ev_mm: float = 200.0, **kwargs) -> str:
+    """Return plain-text summary of checklist."""
+    result = compute_diligence_checklist(sector=sector, ev_mm=ev_mm, **kwargs)
+    lines = [f"Diligence Checklist — {sector} (${ev_mm:.0f}M)",
+             f"Total: {result.total_items} | Critical: {result.critical_items} | High: {result.high_items}",
+             f"Red Flags Triggered: {result.red_flags_triggered}", ""]
+    for cat, items in result.by_category.items():
+        lines.append(f"=== {cat} ===")
+        for item in items:
+            flag = " [RED FLAG]" if item.is_red_flag else ""
+            lines.append(f"  [{item.priority}] {item.title}{flag}")
+            lines.append(f"    {item.description}")
     return "\n".join(lines)
 
 
-def checklist_json(checklist: DiligenceChecklist) -> Dict[str, Any]:
-    """Return the checklist as a JSON-serialisable dict."""
-    return checklist.as_dict()
+def checklist_json(sector: str, ev_mm: float = 200.0, **kwargs) -> dict:
+    """Return JSON-serializable dict of checklist."""
+    result = compute_diligence_checklist(sector=sector, ev_mm=ev_mm, **kwargs)
+    return {
+        "sector": result.sector,
+        "ev_mm": result.ev_mm,
+        "total_items": result.total_items,
+        "critical_items": result.critical_items,
+        "high_items": result.high_items,
+        "red_flags_triggered": result.red_flags_triggered,
+        "items": [
+            {
+                "id": i.id, "category": i.category, "title": i.title,
+                "priority": i.priority, "is_red_flag": i.is_red_flag,
+                "corpus_fail_rate": i.corpus_fail_rate,
+            }
+            for i in result.items
+        ],
+    }
