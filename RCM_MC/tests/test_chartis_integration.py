@@ -545,5 +545,59 @@ class TestReasonablenessGuards(unittest.TestCase):
         self.assertIn("moic", msg)
 
 
+class TestJsonApiSanityAnnotation(unittest.TestCase):
+    """Phase 4C: JSON API responses get <metric>_warning siblings
+    attached automatically for out-of-range numeric fields. The raw
+    value is preserved — annotation is additive only."""
+
+    def test_attaches_warning_on_out_of_range(self):
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({"moic": 47.2, "deal_id": "x"})
+        self.assertEqual(out["moic"], 47.2)  # raw value preserved
+        self.assertIn("moic_warning", out)
+        self.assertIn("outside expected range", out["moic_warning"])
+
+    def test_no_warning_on_in_range(self):
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({"moic": 2.3, "deal_id": "x"})
+        self.assertEqual(out["moic"], 2.3)
+        self.assertNotIn("moic_warning", out)
+
+    def test_walks_nested_dicts(self):
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({
+            "summary": {"moic_p50": 47.2, "moic_p25": 2.0},
+            "name": "deal",
+        })
+        self.assertEqual(out["summary"]["moic_p50"], 47.2)
+        self.assertIn("moic_p50_warning", out["summary"])
+        self.assertNotIn("moic_p25_warning", out["summary"])
+
+    def test_walks_lists_of_dicts(self):
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({
+            "deals": [
+                {"deal_id": "a", "median_moic": 2.3},
+                {"deal_id": "b", "median_moic": 47.2},
+            ],
+        })
+        self.assertNotIn("median_moic_warning", out["deals"][0])
+        self.assertIn("median_moic_warning", out["deals"][1])
+
+    def test_ignores_unknown_keys(self):
+        """Arbitrary numeric fields (count, limit, score) don't get
+        annotated unless their key matches a REGISTRY metric."""
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({"count": 999999, "limit": 50, "offset": 0})
+        self.assertNotIn("count_warning", out)
+        self.assertNotIn("limit_warning", out)
+
+    def test_ignores_nil_values(self):
+        """None / NaN should not trigger warnings."""
+        from rcm_mc.ui.chartis._sanity import attach_sanity_warnings
+        out = attach_sanity_warnings({"moic": None})
+        self.assertNotIn("moic_warning", out)
+
+
 if __name__ == "__main__":
     unittest.main()

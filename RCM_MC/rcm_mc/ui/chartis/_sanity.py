@@ -544,6 +544,107 @@ def metric_explainer(metric_name: str) -> Dict[str, str]:
     }
 
 
+# ── JSON response auto-annotation (Phase 4C) ─────────────────────────
+
+# Map alias / common JSON field names onto REGISTRY metric names. Keeps
+# the annotator from having to guess when the JSON uses a slightly-
+# different name than the registry key.
+_JSON_ALIASES: Dict[str, str] = {
+    # MOIC aliases
+    "median_moic":    "moic",
+    "mean_moic":      "moic",
+    "moic_p25":       "moic",
+    "moic_p50":       "moic",
+    "moic_p75":       "moic",
+    "moic_p90":       "moic",
+    "realized_moic":  "moic",
+    "predicted_moic": "moic",
+    "base_moic":      "moic",
+    "bear_moic":      "moic",
+    "bull_moic":      "moic",
+    # IRR aliases
+    "median_irr":     "irr",
+    "mean_irr":       "irr",
+    "irr_p25":        "irr",
+    "irr_p50":        "irr",
+    "irr_p75":        "irr",
+    "irr_p90":        "irr",
+    "realized_irr":   "irr",
+    "predicted_irr":  "irr",
+    "base_irr":       "irr",
+    "bear_irr":       "irr",
+    "bull_irr":       "irr",
+    "projected_irr":  "irr",
+    # Margin aliases
+    "current_margin":      "ebitda_margin",
+    "peer_median_margin":  "ebitda_margin",
+    "ebitda_margin_p50":   "ebitda_margin",
+    "new_ebitda_margin":   "ebitda_margin",
+    # Multiple aliases
+    "entry_ev_multiple":   "entry_multiple",
+    "exit_ev_multiple":    "exit_multiple",
+    # Leverage
+    "net_debt_to_ebitda":  "leverage_multiple",
+    "debt_to_ebitda":      "leverage_multiple",
+    # RCM
+    "initial_denial_rate": "denial_rate",
+    "collection_rate":     "net_collection_rate",
+    "write_off_pct":       "final_writeoff_rate",
+    # Market structure
+    "top_share":           "market_share",
+    "top_player_share":    "market_share",
+    # Hold period
+    "median_hold_years":   "hold_years",
+    # Score aliases
+    "composite_score":     "investability_score",
+}
+
+
+def _resolve_metric(key: str) -> Optional[str]:
+    """Return the REGISTRY metric name for a JSON key, or None."""
+    if key in REGISTRY:
+        return key
+    return _JSON_ALIASES.get(key)
+
+
+def attach_sanity_warnings(payload: Any) -> Any:
+    """Recursively walk a JSON-serialisable structure and, for every
+    numeric field whose key maps to a REGISTRY metric, attach a
+    sibling ``<key>_warning`` string when the value is out of range.
+
+    Rules:
+      - The raw value is never modified. Downstream consumers keep
+        the number; the warning is additive only.
+      - Dicts are walked; lists of dicts are walked element-wise.
+      - Non-dict / non-list values are returned unchanged.
+      - A key is considered a metric if it's in REGISTRY (directly) or
+        appears in _JSON_ALIASES.
+
+    The annotator is conservative: it only fires when the key matches a
+    known metric name. Arbitrary numeric fields with names like
+    ``request_id`` or ``count`` are never annotated.
+    """
+    if isinstance(payload, dict):
+        out: Dict[str, Any] = {}
+        # First pass — copy the payload
+        for k, v in payload.items():
+            out[k] = attach_sanity_warnings(v)
+        # Second pass — add warning siblings for metric-named numeric keys
+        for k, v in list(out.items()):
+            if k.endswith("_warning"):
+                continue
+            metric = _resolve_metric(k)
+            if metric is None:
+                continue
+            msg = warning_for(v, metric)
+            if msg is not None and f"{k}_warning" not in out:
+                out[f"{k}_warning"] = msg
+        return out
+    if isinstance(payload, list):
+        return [attach_sanity_warnings(item) for item in payload]
+    return payload
+
+
 __all__ = [
     "MetricRange",
     "REGISTRY",
@@ -554,4 +655,5 @@ __all__ = [
     "warning_for",
     "render_table_with_guards",
     "metric_explainer",
+    "attach_sanity_warnings",
 ]

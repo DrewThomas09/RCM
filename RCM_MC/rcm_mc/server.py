@@ -8126,6 +8126,17 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return o.decode("utf-8", errors="replace")
             raise TypeError(f"Object not JSON serializable: {type(o)}")
 
+        # Phase 4C: walk the payload and attach <metric>_warning
+        # siblings for any numeric field whose key maps to a REGISTRY
+        # metric and whose value is outside the plausible envelope.
+        # Never modifies the raw value — additive only — so downstream
+        # consumers still get the number but can surface the warning
+        # (and partners looking at the JSON see flagged fields).
+        try:
+            from .ui.chartis._sanity import attach_sanity_warnings
+            payload = attach_sanity_warnings(payload)
+        except Exception:  # noqa: BLE001 — sanity guard must not break API
+            pass
         body = _json.dumps(payload, indent=2, default=_safe).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
