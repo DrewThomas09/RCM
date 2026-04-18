@@ -1338,6 +1338,13 @@ from .specialty_mix_stress_scorer import (
     render_specialty_mix_markdown,
     score_specialty_mix_stress,
 )
+from .local_market_intensity_scorer import (
+    LocalMarketFlag,
+    LocalMarketInputs,
+    LocalMarketReport,
+    render_local_market_markdown,
+    score_local_market_intensity,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2771,4 +2778,9 @@ __all__ = [
     "SpecialtyMixReport",
     "render_specialty_mix_markdown",
     "score_specialty_mix_stress",
+    "LocalMarketFlag",
+    "LocalMarketInputs",
+    "LocalMarketReport",
+    "render_local_market_markdown",
+    "score_local_market_intensity",
 ]

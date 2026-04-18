@@ -24419,5 +24419,164 @@ class TestSpecialtyMixStressScorer(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestLocalMarketIntensityScorer(unittest.TestCase):
+    """Partner scenario: how crowded is the local market?"""
+
+    def test_empty_inputs_protected_or_balanced(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        r = score_local_market_intensity(LocalMarketInputs())
+        self.assertIn(r.tier, {"protected_local", "balanced"})
+
+    def test_hyper_competitive_4plus_flags(self) -> None:
+        """Partner: '4+ flags → price-taker, walk.'"""
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        r = score_local_market_intensity(LocalMarketInputs(
+            direct_competitors_local=5,
+            new_entrant_announced_12mo=True,
+            dominant_payer_share_local=0.55,
+            physician_labor_pool_shallow=True,
+            consumer_retail_encroachment=True,
+        ))
+        self.assertEqual(r.tier, "hypercompetitive")
+        self.assertIn("reprice or walk", r.partner_note.lower())
+
+    def test_dominant_payer_triggers(self) -> None:
+        """Partner: '>= 45% local payer share = price-taker.'"""
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        r = score_local_market_intensity(LocalMarketInputs(
+            dominant_payer_share_local=0.50,
+        ))
+        d = next(f for f in r.flags
+                  if f.name == "dominant_local_payer_gte_45pct")
+        self.assertTrue(d.triggered)
+
+    def test_con_protection_reduces_effective_flags(self) -> None:
+        """Partner: 'CON protection = 1 flag of shielding.'"""
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        no_con = score_local_market_intensity(LocalMarketInputs(
+            direct_competitors_local=4,
+            new_entrant_announced_12mo=True,
+            state_con_protected=False,
+        ))
+        with_con = score_local_market_intensity(LocalMarketInputs(
+            direct_competitors_local=4,
+            new_entrant_announced_12mo=True,
+            state_con_protected=True,
+        ))
+        # Same raw flag count, different effective tier.
+        self.assertEqual(no_con.triggered_count,
+                          with_con.triggered_count)
+        # Same tier mapping possible if both fall in same band;
+        # test tier doesn't worsen with protection.
+        tier_rank = {"protected_local": 0, "balanced": 1,
+                     "crowded": 2, "hypercompetitive": 3}
+        self.assertLessEqual(tier_rank[with_con.tier],
+                              tier_rank[no_con.tier])
+
+    def test_retail_encroachment_flagged(self) -> None:
+        """Partner: 'CVS/Amazon moving in = commoditization risk.'"""
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        r = score_local_market_intensity(LocalMarketInputs(
+            consumer_retail_encroachment=True,
+        ))
+        enc = next(f for f in r.flags
+                    if f.name == "consumer_retail_encroachment")
+        self.assertTrue(enc.triggered)
+        self.assertIn("commoditization",
+                       enc.partner_comment.lower())
+
+    def test_thin_labor_pool_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        r = score_local_market_intensity(LocalMarketInputs(
+            physician_labor_pool_shallow=True,
+        ))
+        pool = next(f for f in r.flags
+                     if f.name == "physician_labor_pool_shallow")
+        self.assertTrue(pool.triggered)
+        self.assertIn("wage inflation",
+                       pool.partner_comment.lower())
+
+    def test_new_entrant_flagged(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        r = score_local_market_intensity(LocalMarketInputs(
+            new_entrant_announced_12mo=True,
+        ))
+        ent = next(f for f in r.flags
+                    if f.name == "new_entrant_announced_12mo")
+        self.assertTrue(ent.triggered)
+
+    def test_crowded_triggers_haircut_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        r = score_local_market_intensity(LocalMarketInputs(
+            direct_competitors_local=4,
+            new_entrant_announced_12mo=True,
+            consumer_retail_encroachment=True,
+        ))
+        self.assertEqual(r.tier, "crowded")
+        self.assertIn("haircut", r.partner_note.lower())
+
+    def test_protected_con_note(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        r = score_local_market_intensity(LocalMarketInputs(
+            direct_competitors_local=1,
+            state_con_protected=True,
+        ))
+        self.assertEqual(r.tier, "protected_local")
+        self.assertIn("pricing power",
+                       r.partner_note.lower())
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            render_local_market_markdown,
+            score_local_market_intensity,
+        )
+        md = render_local_market_markdown(
+            score_local_market_intensity(LocalMarketInputs(
+                direct_competitors_local=4,
+                new_entrant_announced_12mo=True,
+            ))
+        )
+        self.assertIn("# Local market intensity", md)
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            LocalMarketInputs,
+            score_local_market_intensity,
+        )
+        r = score_local_market_intensity(LocalMarketInputs(
+            direct_competitors_local=3,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
