@@ -15000,5 +15000,114 @@ class TestExitTimingSignalTracker(unittest.TestCase):
         json.dumps(track_exit_timing(ExitTimingContext()).to_dict())
 
 
+# ── Buyer-type fit analyzer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    BuyerFitContext,
+    BuyerFitReport,
+    BuyerTypeFit,
+    analyze_buyer_fit,
+    render_buyer_fit_markdown,
+)
+
+
+class TestBuyerTypeFitAnalyzer(unittest.TestCase):
+
+    def test_large_growth_asset_prefers_larger_sponsor(self) -> None:
+        r = analyze_buyer_fit(BuyerFitContext(
+            ebitda_m=100.0, revenue_m=400.0,
+            organic_growth_pct=0.12,
+            recurring_ebitda_pct=0.95,
+            cycle_phase="mid_expansion",
+            subsector="outpatient_asc",
+        ))
+        # Should feature larger sponsor near the top.
+        top_names = [f.buyer_type for f in r.fits[:2]]
+        self.assertIn("larger_sponsor", top_names)
+
+    def test_vbc_asset_prefers_payer(self) -> None:
+        r = analyze_buyer_fit(BuyerFitContext(
+            subsector="home_health",
+            ebitda_m=60.0,
+            vbc_revenue_pct=0.30,
+            has_national_scale=True,
+            commercial_payer_pct=0.60,
+        ))
+        top = r.fits[0]
+        self.assertEqual(top.buyer_type, "strategic_payer_led")
+
+    def test_real_estate_heavy_surfaces_reit(self) -> None:
+        r = analyze_buyer_fit(BuyerFitContext(
+            subsector="hospital",
+            has_real_estate_heavy=True,
+        ))
+        reit = next(f for f in r.fits
+                     if f.buyer_type == "industry_passive")
+        self.assertGreaterEqual(reit.score_0_100, 50)
+
+    def test_specialty_rollup_consolidator_priority(self) -> None:
+        r = analyze_buyer_fit(BuyerFitContext(
+            subsector="specialty_practice",
+            has_mna_pipeline=True,
+            ebitda_m=40.0,
+        ))
+        # Consolidator should rank near top.
+        cons = next(f for f in r.fits
+                     if f.buyer_type == "specialty_consolidator")
+        self.assertGreaterEqual(cons.score_0_100, 60)
+
+    def test_ipo_requires_scale(self) -> None:
+        small = analyze_buyer_fit(BuyerFitContext(
+            ebitda_m=25.0, revenue_m=100.0,
+        ))
+        big = analyze_buyer_fit(BuyerFitContext(
+            ebitda_m=100.0, revenue_m=500.0,
+            is_category_leader=True,
+            organic_growth_pct=0.18,
+        ))
+        small_ipo = next(f for f in small.fits
+                          if f.buyer_type == "ipo")
+        big_ipo = next(f for f in big.fits
+                        if f.buyer_type == "ipo")
+        self.assertGreater(big_ipo.score_0_100, small_ipo.score_0_100)
+
+    def test_health_system_for_inpatient_outpatient(self) -> None:
+        r = analyze_buyer_fit(BuyerFitContext(
+            subsector="outpatient_asc",
+            has_clean_geography=True,
+            ebitda_m=60.0,
+            is_category_leader=True,
+        ))
+        hs = next(f for f in r.fits
+                   if f.buyer_type == "strategic_health_system")
+        self.assertGreaterEqual(hs.score_0_100, 75)
+
+    def test_fits_ranked_descending(self) -> None:
+        r = analyze_buyer_fit(BuyerFitContext())
+        scores = [f.score_0_100 for f in r.fits]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_named_targets_present_for_top(self) -> None:
+        r = analyze_buyer_fit(BuyerFitContext(
+            ebitda_m=80.0, organic_growth_pct=0.12,
+        ))
+        self.assertGreater(len(r.fits[0].named_targets), 0)
+
+    def test_partner_note_names_top_and_runner_up(self) -> None:
+        r = analyze_buyer_fit(BuyerFitContext(ebitda_m=60.0))
+        self.assertIn(r.top_pick, r.partner_note)
+        self.assertIn(r.fits[1].buyer_type, r.partner_note)
+
+    def test_markdown_renders(self) -> None:
+        md = render_buyer_fit_markdown(analyze_buyer_fit(
+            BuyerFitContext(ebitda_m=60.0)))
+        self.assertIn("# Buyer-type fit analyzer", md)
+        self.assertIn("Rationale per type", md)
+
+    def test_json(self) -> None:
+        import json
+        json.dumps(analyze_buyer_fit(BuyerFitContext()).to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()

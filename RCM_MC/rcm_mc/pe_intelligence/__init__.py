@@ -853,6 +853,13 @@ from .exit_timing_signal_tracker import (
     render_exit_timing_markdown,
     track_exit_timing,
 )
+from .buyer_type_fit_analyzer import (
+    BuyerFitContext,
+    BuyerFitReport,
+    BuyerTypeFit,
+    analyze_buyer_fit,
+    render_buyer_fit_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -1931,4 +1938,9 @@ __all__ = [
     "ExitTimingReport",
     "render_exit_timing_markdown",
     "track_exit_timing",
+    "BuyerFitContext",
+    "BuyerFitReport",
+    "BuyerTypeFit",
+    "analyze_buyer_fit",
+    "render_buyer_fit_markdown",
 ]
