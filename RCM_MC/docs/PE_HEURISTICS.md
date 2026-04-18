@@ -4198,7 +4198,38 @@ Partner note:
 
 ---
 
-## 168. Change log
+## 168. Reverse diligence checklist (`reverse_diligence_checklist.py`)
+
+**Partner statement:** "If a buyer's QofE team arrived tomorrow,
+what would come out in the wash?" Partners run reverse diligence
+12-18 months before sale.
+
+Items grouped by category:
+
+- **kill_deal** — buyer walks. Open FCA, material litigation.
+  Close now or plan sale around them.
+- **price_haircut** — lets buyer reprice. Pro-forma ≥ 15%
+  addbacks, DAR ≥ 55, denial rate ≥ 10%, top-payer ≥ 40%,
+  incomplete integration ≥ 20%, CMS survey issues. Fix 9-12
+  months pre-sale.
+- **discovery_risk** — might or might not come out. Aggressive
+  coding history, contract renewal overhang. Fix if possible.
+- **housekeeping** — MIP vesting cleanup, data-room audit.
+  Tidy in last 6 months.
+
+Always-on: data-room dry-run 3-4 months pre-sale.
+
+Partner note:
+
+- ≥ 1 kill-deal → "sale cannot proceed; push sale date or
+  close now."
+- ≥ 3 haircut → "fix each; each fix is 2-3x ROI vs bid
+  reduction."
+- Clean book → "only housekeeping in last 6 months."
+
+---
+
+## 169. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4606,3 +4637,7 @@ Partner note:
   (§167) — 6-archetype ops partner fit (turnaround / scaler /
   healthcare / M&A / exit / founder coach). Full inventory: 165
   modules, 1,677 pe_intelligence unit tests.
+- **2026-04-17** — Added `reverse_diligence_checklist.py` (§168)
+  — pre-sale seller-side disclosure items by severity: kill-
+  deal / price-haircut / discovery-risk / housekeeping. Full
+  inventory: 166 modules, 1,689 pe_intelligence unit tests.
