@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -161,7 +161,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
 
     data = _build_memo_data(ccn, hcris_df, db_path=db_path)
     if data is None:
-        return shell_v2(
+        return chartis_shell(
             f'<div class="cad-card"><p>Hospital {_html.escape(ccn)} not found or has insufficient data.</p></div>',
             "IC Memo", subtitle="Error",
         )
@@ -512,7 +512,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
 
     body = "\n".join(sections)
 
-    return shell_v2(
+    return chartis_shell(
         body,
         f"IC Memo — {_html.escape(data['name'])}",
         subtitle=(

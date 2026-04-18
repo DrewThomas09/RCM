@@ -201,10 +201,10 @@ def render_timeline(
     events: List[Dict[str, Any]],
 ) -> str:
     """Full-page timeline HTML."""
-    from .shell_v2 import shell_v2
+    from ._chartis_kit import chartis_shell
 
     if not events:
-        return shell_v2(
+        return chartis_shell(
             '<div class="cad-card"><p style="color:var(--cad-text3);">No activity recorded yet. '
             f'<a href="/analysis/{_esc(deal_id)}" style="color:var(--cad-link);">View analysis &rarr;</a>'
             '</p></div>',
@@ -240,7 +240,7 @@ def render_timeline(
     <h2>{_esc(deal_name)} — Activity Timeline ({len(events)} events)</h2>
     <div>{''.join(cards)}</div>
     """
-    return shell_v2(
+    return chartis_shell(
         f'<div>{"".join(cards)}</div>',
         f"{deal_name} — Timeline",
         subtitle=f"{len(events)} events",

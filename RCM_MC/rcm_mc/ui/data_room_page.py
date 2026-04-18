@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -325,7 +325,7 @@ def render_data_room(
 
     body = f'{kpis}{entry_form}{surprise_html}{bridge_impact}{cal_section}{history_section}{nav}'
 
-    return shell_v2(
+    return chartis_shell(
         body,
         f"Data Room — {_html.escape(hospital_name)}",
         subtitle=(

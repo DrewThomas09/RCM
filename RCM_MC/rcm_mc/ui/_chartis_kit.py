@@ -926,6 +926,263 @@ _KEEP_FEATURES_CSS = f"""
 """
 
 
+# Compatibility CSS — maps the .cad-* class names used in pages that were
+# originally written against shell_v2 onto chartis's CSS variables. Added
+# so Wave 1/2/3 migrations can be a pure shell-import swap without having
+# to rewrite every page's body HTML. Covers the 40 most-used .cad-*
+# classes (~95% of references). See UI_CONSISTENCY_AUDIT.md appendix.
+#
+# This block is intentionally additive — it does not override any .ck-*
+# rules. Pages that reference both .cad-* and .ck-* will render both.
+# The block can be deleted when every page has been ported off .cad-*
+# class names (out of scope for this migration wave).
+_CAD_COMPAT_CSS = f"""
+/* ── cad-compat: shell_v2 class aliases for migrated pages ── */
+
+/* Layout */
+.cad-main {{ flex: 1; overflow-y: auto; padding: 16px 20px; min-width: 0; }}
+
+/* Text tones */
+.cad-text   {{ color: var(--ck-text); }}
+.cad-text2  {{ color: var(--ck-text-dim); }}
+.cad-text3  {{ color: var(--ck-text-faint); }}
+.cad-mono   {{ font-family: var(--ck-mono); }}
+.cad-pos    {{ color: {P['positive']}; }}
+.cad-neg    {{ color: {P['negative']}; }}
+.cad-warn   {{ color: {P['warning']}; }}
+.cad-amber  {{ color: {P['warning']}; }}
+.cad-accent {{ color: {P['accent']}; }}
+.cad-link   {{ color: {P['accent']}; text-decoration: none; }}
+.cad-link:hover {{ text-decoration: underline; }}
+
+/* Backgrounds */
+.cad-bg2    {{ background: var(--ck-panel); }}
+.cad-bg3    {{ background: var(--ck-panel-alt); }}
+.cad-border    {{ border-color: var(--ck-border) !important; }}
+.cad-border-lt {{ border-color: var(--ck-border-dim) !important; }}
+
+/* Cards / panels — map to .ck-panel look */
+.cad-card {{
+  background: var(--ck-panel);
+  border: 1px solid var(--ck-border);
+  border-radius: 3px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}}
+.cad-card h2 {{
+  font-family: var(--ck-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ck-text);
+  margin-bottom: 10px;
+}}
+
+/* KPI grid */
+.cad-kpi-grid {{
+  display: flex;
+  gap: 1px;
+  background: var(--ck-border);
+  border: 1px solid var(--ck-border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}}
+.cad-kpi {{
+  background: var(--ck-panel);
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 110px;
+}}
+.cad-kpi-value {{
+  font-family: var(--ck-mono);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ck-text);
+  line-height: 1;
+}}
+.cad-kpi-label {{
+  font-family: var(--ck-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ck-text-faint);
+  margin-top: 4px;
+}}
+.cad-kpi-delta {{
+  font-family: var(--ck-mono);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 3px;
+}}
+
+/* Buttons */
+.cad-btn {{
+  display: inline-block;
+  background: var(--ck-panel-alt);
+  border: 1px solid var(--ck-border);
+  color: var(--ck-text);
+  font-family: var(--ck-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  padding: 5px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+}}
+.cad-btn:hover {{ border-color: {P['accent']}; color: {P['accent']}; }}
+.cad-btn-primary {{
+  background: {P['accent']};
+  border-color: {P['accent']};
+  color: #fff;
+  font-weight: 600;
+}}
+.cad-btn-primary:hover {{ background: #2563eb; border-color: #2563eb; color: #fff; }}
+
+/* Tables */
+.cad-table {{ width: 100%; border-collapse: collapse; font-size: 11.5px; }}
+.cad-table th {{
+  background: var(--ck-panel-alt);
+  border-bottom: 1px solid var(--ck-border);
+  padding: 6px 8px;
+  font-family: var(--ck-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ck-text-dim);
+  text-align: left;
+  white-space: nowrap;
+}}
+.cad-table th.num {{ text-align: right; }}
+.cad-table td {{
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--ck-border-dim);
+  color: var(--ck-text);
+  vertical-align: middle;
+}}
+.cad-table td.num {{
+  text-align: right;
+  font-family: var(--ck-mono);
+  font-variant-numeric: tabular-nums;
+}}
+.cad-table tr:nth-child(even) td {{ background: var(--ck-stripe); }}
+
+/* Badges */
+.cad-badge {{
+  display: inline-block;
+  font-family: var(--ck-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+}}
+.cad-badge-green {{ background: rgba(16,185,129,0.15); color: {P['positive']}; border: 1px solid rgba(16,185,129,0.3); }}
+.cad-badge-amber {{ background: rgba(245,158,11,0.15); color: {P['warning']};  border: 1px solid rgba(245,158,11,0.3); }}
+.cad-badge-red   {{ background: rgba(239,68,68,0.15);  color: {P['negative']}; border: 1px solid rgba(239,68,68,0.3); }}
+.cad-badge-blue  {{ background: rgba(59,130,246,0.15); color: {P['accent']};   border: 1px solid rgba(59,130,246,0.3); }}
+.cad-badge-muted {{ background: rgba(100,116,139,0.15); color: var(--ck-text-faint); border: 1px solid var(--ck-border); }}
+
+/* Section code chip — small Bloomberg-style tag */
+.cad-section-code {{
+  font-family: var(--ck-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ck-text-faint);
+  background: var(--ck-panel-alt);
+  border: 1px solid var(--ck-border);
+  padding: 1px 6px;
+  border-radius: 2px;
+}}
+
+/* Form fields */
+.cad-input, .cad-field input, .cad-field textarea, .cad-field select {{
+  background: var(--ck-panel-alt);
+  border: 1px solid var(--ck-border);
+  color: var(--ck-text);
+  font-family: var(--ck-mono);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  outline: none;
+}}
+.cad-input:focus, .cad-field input:focus, .cad-field textarea:focus, .cad-field select:focus {{
+  border-color: {P['accent']};
+}}
+.cad-field {{ display: flex; flex-direction: column; gap: 4px; }}
+.cad-field label {{
+  font-family: var(--ck-mono);
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  color: var(--ck-text-faint);
+  text-transform: uppercase;
+}}
+
+/* Ticker-id chip (used on a few pages for deal identifiers) */
+.cad-ticker-id {{
+  font-family: var(--ck-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--ck-text-dim);
+  border: 1px solid var(--ck-border);
+  padding: 1px 6px;
+  border-radius: 2px;
+}}
+.cad-ticker-id:hover {{ border-color: {P['accent']}; color: {P['accent']}; }}
+
+/* Status bar items — shown only where pages include the old status row */
+.cad-status-item {{ display: inline-flex; align-items: baseline; gap: 6px; margin-right: 14px; }}
+.cad-status-key {{
+  font-family: var(--ck-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--ck-text-faint);
+  text-transform: uppercase;
+}}
+.cad-status-val {{
+  font-family: var(--ck-mono);
+  font-size: 10.5px;
+  color: var(--ck-text);
+  font-variant-numeric: tabular-nums;
+}}
+
+/* Deal-identity strip used on deal dashboard + per-deal pages */
+.cad-deal-ident {{
+  font-family: var(--ck-mono);
+  font-size: 10.5px;
+  color: var(--ck-text-dim);
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}}
+.cad-deal-ident .ident-key {{ color: var(--ck-text-faint); margin-right: 3px; }}
+.cad-deal-ident .ident-val {{ color: var(--ck-text); font-weight: 600; }}
+.cad-deal-ident .ident-sep {{ color: var(--ck-border); padding: 0 6px; }}
+
+/* Heatmap cells — three-tier color scale used by a few pages */
+.cad-heat-1 {{ background: rgba(239,68,68,0.18); color: {P['negative']}; }}
+.cad-heat-2 {{ background: rgba(245,158,11,0.18); color: {P['warning']}; }}
+.cad-heat-3 {{ background: rgba(16,185,129,0.18); color: {P['positive']}; }}
+
+/* Legacy sticky-layout opt-out: shell_v2 set body overflow:hidden +
+ * height:100vh. Chartis is scrollable. Force pages to behave. */
+body.caduceus {{
+  background: var(--ck-bg);
+  color: var(--ck-text);
+  font-family: var(--ck-sans);
+  font-size: 12px;
+  overflow: auto;
+  height: auto;
+}}
+"""
+
+
 # JavaScript for the four features. Concatenated into the shell's
 # <script> block at render time. Each block is a self-contained IIFE so
 # one failure can't take the others down.
@@ -1437,6 +1694,7 @@ def chartis_shell(
 <style>
 {_BASE_CSS}
 {_KEEP_FEATURES_CSS}
+{_CAD_COMPAT_CSS}
 {extra_css}
 </style>
 </head>

@@ -1,14 +1,14 @@
 """Settings pages: custom KPIs, automations, integrations.
 
 Route: GET /settings/custom-kpis, /settings/automations, /settings/integrations.
-All use shell_v2 for consistent SeekingChartis branding.
+All use chartis_shell for consistent SeekingChartis branding.
 """
 from __future__ import annotations
 
 import html
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -55,7 +55,7 @@ def render_custom_kpis_page(store: Any) -> str:
         f'<a href="/api/metrics/custom" class="cad-btn" style="text-decoration:none;">'
         f'API: GET /api/metrics/custom</a></div></div>'
     )
-    return shell_v2(body, "Custom KPIs", active_nav="/settings",
+    return chartis_shell(body, "Custom KPIs", active_nav="/settings",
                     subtitle="Define custom metrics for your fund")
 
 
@@ -100,7 +100,7 @@ def render_automations_page(store: Any) -> str:
         f'<a href="/api/automations" class="cad-btn" style="text-decoration:none;">'
         f'API: GET /api/automations</a></div></div>'
     )
-    return shell_v2(body, "Automation Rules", active_nav="/settings",
+    return chartis_shell(body, "Automation Rules", active_nav="/settings",
                     subtitle="Event-driven workflow automation")
 
 
@@ -214,5 +214,5 @@ def render_integrations_page(store: Any) -> str:
         f'<a href="/api/webhooks" class="cad-btn" style="text-decoration:none;">'
         f'API: GET /api/webhooks</a></div>'
     )
-    return shell_v2(body, "Integrations", active_nav="/settings",
+    return chartis_shell(body, "Integrations", active_nav="/settings",
                     subtitle="Webhooks, exports & third-party connections")

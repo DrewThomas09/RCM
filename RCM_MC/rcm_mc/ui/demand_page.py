@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -192,7 +192,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
 
     body = f'{kpis}{prevalence_section}{stick_section}{elas_section}{tw_section}{interp}{actions}'
 
-    return shell_v2(
+    return chartis_shell(
         body, f"Demand Analysis — {name}",
         active_nav="/market-data/map",
         subtitle=f"{county}, {state} | Density: {density:.0f} | Stickiness: {stickiness:.0f} | Elasticity: {elasticity:.2f}",
