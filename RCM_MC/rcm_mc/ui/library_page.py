@@ -279,6 +279,14 @@ def _library_section(section: Dict[str, Any]) -> str:
 
 def render_library() -> str:
     """Render the SeekingChartis research library page."""
+    from rcm_mc.ui.chartis._helpers import render_page_explainer
+    explainer = render_page_explainer(
+        what=(
+            "Reference documentation for the metrics, formulas, and "
+            "data sources used across the platform."
+        ),
+        page_key="methodology",
+    )
     sections = "".join(_library_section(s) for s in _LIBRARY_SECTIONS)
 
     extra_links = (
@@ -299,7 +307,7 @@ def render_library() -> str:
     )
     api_link = extra_links
 
-    body = f'{sections}{api_link}'
+    body = f'{explainer}{sections}{api_link}'
 
     return chartis_shell(
         body, "Methodology",

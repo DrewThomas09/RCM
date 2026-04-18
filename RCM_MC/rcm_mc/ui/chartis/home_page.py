@@ -22,6 +22,7 @@ from .._chartis_kit import (
     ck_section_header,
     ck_signal_badge,
 )
+from ._helpers import render_page_explainer
 from ._sanity import render_number
 
 _STAGES = ("Sourcing", "Screened", "IOI", "LOI", "Diligence", "IC", "Closed")
@@ -479,6 +480,15 @@ def _kpi_strip(store: Any, db_path: str) -> str:
 
 def render_home(store: Any, db_path: str, current_user: Optional[str] = None) -> str:
     """Render the seven-panel home landing page."""
+    explainer = render_page_explainer(
+        what=(
+            "Seven-panel partner landing: pipeline funnel, active alerts, "
+            "portfolio-health distribution, recent deals, upcoming "
+            "deadlines (7 days), top partner-review verdicts across the "
+            "portfolio, and corpus insights."
+        ),
+        page_key="home",
+    )
     kpi = _kpi_strip(store, db_path)
     panels = (
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">'
@@ -496,7 +506,7 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         if current_user else "Partner landing — pipeline, alerts, PE brain verdicts"
     )
     return chartis_shell(
-        kpi + panels,
+        explainer + kpi + panels,
         title="Home",
         active_nav="/home",
         subtitle=subtitle,
