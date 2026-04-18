@@ -1674,6 +1674,13 @@ from .ehr_transition_risk_assessor import (
     assess_ehr_transition,
     render_ehr_transition_markdown,
 )
+from .cost_line_decomposer_healthcare import (
+    CostLineFinding,
+    CostLineInputs,
+    CostLineReport,
+    decompose_cost_lines,
+    render_cost_line_markdown,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -3349,4 +3356,9 @@ __all__ = [
     "EHRTransitionReport",
     "assess_ehr_transition",
     "render_ehr_transition_markdown",
+    "CostLineFinding",
+    "CostLineInputs",
+    "CostLineReport",
+    "decompose_cost_lines",
+    "render_cost_line_markdown",
 ]

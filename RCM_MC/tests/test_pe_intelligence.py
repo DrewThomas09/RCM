@@ -33898,5 +33898,220 @@ class TestEHRTransitionRiskAssessor(unittest.TestCase):
         json.dumps(r.to_dict())
 
 
+class TestCostLineDecomposerHealthcare(unittest.TestCase):
+    """Partner voice: 'Each cost line has a peer band by subsector.'"""
+
+    def test_unknown_subsector_handled(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="unknown"))
+        self.assertFalse(r.in_catalog)
+
+    def test_all_in_band_no_alarms(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        # Use mid-band observations
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="hospital",
+            npr_m=300.0,
+            observed_pct_by_line={
+                "labor": 0.50,
+                "supply": 0.14,
+                "professional_fees": 0.05,
+                "rent_occupancy": 0.035,
+                "malpractice_insurance": 0.03,
+                "utilities": 0.02,
+                "admin_overhead": 0.07,
+            },
+        ))
+        self.assertEqual(
+            r.total_above_band_opportunity_m, 0
+        )
+        self.assertEqual(
+            r.total_below_band_risk_m, 0
+        )
+
+    def test_above_band_labor(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        # Hospital labor band is 45-55%; 60% is above
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="hospital",
+            npr_m=300.0,
+            observed_pct_by_line={"labor": 0.60},
+        ))
+        labor = next(
+            f for f in r.findings if f.line == "labor"
+        )
+        self.assertEqual(labor.status, "above_band")
+        self.assertGreater(
+            labor.savings_opportunity_m, 0
+        )
+
+    def test_below_band_supply_flag(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        # Hospital supply band is 10-18%; 5% is below
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="hospital",
+            npr_m=300.0,
+            observed_pct_by_line={"supply": 0.05},
+        ))
+        supply = next(
+            f for f in r.findings
+            if f.line == "supply"
+        )
+        self.assertEqual(supply.status, "below_band")
+
+    def test_asc_supply_higher_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        # ASC supply band is 18-26%
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="asc",
+            npr_m=100.0,
+            observed_pct_by_line={"supply": 0.20},
+        ))
+        supply = next(
+            f for f in r.findings
+            if f.line == "supply"
+        )
+        self.assertEqual(supply.status, "in_band")
+
+    def test_post_acute_labor_higher_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        # Post-acute labor 55-70%; 60% should be in-band
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="post_acute",
+            npr_m=100.0,
+            observed_pct_by_line={"labor": 0.60},
+        ))
+        labor = next(
+            f for f in r.findings if f.line == "labor"
+        )
+        self.assertEqual(labor.status, "in_band")
+
+    def test_total_opportunity_aggregates(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="hospital",
+            npr_m=300.0,
+            observed_pct_by_line={
+                "labor": 0.60,
+                "supply": 0.22,
+            },
+        ))
+        # Expect material savings opportunity
+        self.assertGreater(
+            r.total_above_band_opportunity_m, 10
+        )
+
+    def test_lever_hints_attached(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="hospital"))
+        for f in r.findings:
+            self.assertGreater(len(f.lever_hint), 10)
+
+    def test_findings_sorted_by_opportunity(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="hospital",
+            npr_m=300.0,
+            observed_pct_by_line={
+                "labor": 0.62,
+                "supply": 0.20,
+                "utilities": 0.03,
+            },
+        ))
+        seq = [
+            f.savings_opportunity_m for f in r.findings
+        ]
+        self.assertEqual(
+            seq, sorted(seq, reverse=True)
+        )
+
+    def test_partner_note_flags_above_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="hospital",
+            npr_m=300.0,
+            observed_pct_by_line={"labor": 0.62},
+        ))
+        self.assertIn(
+            "opportunity", r.partner_note.lower()
+        )
+
+    def test_partner_note_flags_below_band(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="hospital",
+            npr_m=300.0,
+            observed_pct_by_line={
+                "labor": 0.30,
+                "supply": 0.05,
+            },
+        ))
+        self.assertIn(
+            "under-investment",
+            r.partner_note.lower(),
+        )
+
+    def test_markdown_renders(self) -> None:
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+            render_cost_line_markdown,
+        )
+        md = render_cost_line_markdown(
+            decompose_cost_lines(CostLineInputs(
+                subsector="asc",
+                npr_m=80.0,
+            ))
+        )
+        self.assertIn(
+            "# Healthcare cost-line decomposition", md
+        )
+
+    def test_json_roundtrip(self) -> None:
+        import json
+        from rcm_mc.pe_intelligence import (
+            CostLineInputs,
+            decompose_cost_lines,
+        )
+        r = decompose_cost_lines(CostLineInputs(
+            subsector="hospital"))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
