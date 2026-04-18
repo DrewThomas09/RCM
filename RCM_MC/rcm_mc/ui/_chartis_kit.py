@@ -152,6 +152,7 @@ _CORPUS_NAV = [
     {"label": "Roll-Up Economics","href": "/rollup-economics",  "icon": "▣"},
     {"label": "CIN Analyzer",    "href": "/cin-analyzer",      "icon": "▦"},
     {"label": "Base Rates",      "href": "/base-rates",        "icon": "▤"},
+    {"label": "REIT / SLB",      "href": "/reit-analyzer",     "icon": "▣"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
