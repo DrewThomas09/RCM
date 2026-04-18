@@ -108,6 +108,7 @@ _CORPUS_NAV = [
     {"label": "Physician Prod.","href": "/physician-productivity","icon": "▣"},
     {"label": "Regulatory Risk","href": "/regulatory-risk",  "icon": "▦"},
     {"label": "Cost Structure","href": "/cost-structure",     "icon": "▣"},
+    {"label": "Quality Scorecard","href": "/quality-scorecard","icon": "▦"},
     {"label": "Sponsor League", "href": "/sponsor-league",    "icon": "▤"},
     {"label": "Exit Timing",    "href": "/exit-timing",     "icon": "▦"},
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
