@@ -621,6 +621,467 @@ button.ck-btn-ghost:hover {{ border-color: var(--ck-accent); color: var(--ck-tex
 .faint {{ color: var(--ck-text-faint); }}
 """
 
+# ---------------------------------------------------------------------------
+# KEEP features ported from shell_v2 (see docs/UI_CONSISTENCY_AUDIT.md
+# appendix). Four behaviours that chartis needs for feature parity:
+#   1. CSRF token patcher      — security, non-optional
+#   2. Alert-badge poller      — UX, hits /api/alerts/active-count
+#   3. Cmd+K command palette   — power-user jump
+#   4. Vim-style shortcuts     — power-user keyboard nav (?, /, g+<key>)
+# ---------------------------------------------------------------------------
+
+# 25-entry curated shortcut list for the Cmd+K palette. Merges shell_v2's
+# original 20 + the new Phase 2A/B/C chartis routes. Kept short by design:
+# palette is curated, not a directory — the full sidebar is for everything
+# else.
+_PALETTE_ENTRIES = [
+    # NAV — day-to-day
+    ("NAV", "Home",                     "/home"),
+    ("NAV", "Dashboard",                "/"),
+    ("NAV", "Pipeline",                 "/pipeline"),
+    ("NAV", "Portfolio",                "/portfolio"),
+    ("NAV", "Alerts",                   "/alerts"),
+    ("NAV", "Import Deal",              "/import"),
+    # ANL — analytics / brain
+    ("ANL", "PE Intelligence",          "/pe-intelligence"),
+    ("ANL", "Deal Screening",           "/deal-screening"),
+    ("ANL", "Portfolio Analytics",      "/portfolio-analytics"),
+    ("ANL", "Corpus Backtest",          "/corpus-backtest"),
+    ("ANL", "Sponsor Track Record",     "/sponsor-track-record"),
+    ("ANL", "Payer Intelligence",       "/payer-intelligence"),
+    ("ANL", "RCM Benchmarks",           "/rcm-benchmarks"),
+    ("ANL", "Hospital Screener",        "/screen"),
+    ("ANL", "Market Data",              "/market-data/map"),
+    ("ANL", "Deal Search",              "/deal-search"),
+    ("ANL", "Corpus Dashboard",         "/corpus-dashboard"),
+    ("ANL", "Quant Lab",                "/quant-lab"),
+    # REF — reference / docs
+    ("REF", "Library (Corpus)",         "/library"),
+    ("REF", "Methodology",              "/methodology"),
+    ("REF", "API Docs",                 "/api/docs"),
+    ("REF", "Module Index",             "/module-index"),
+    ("REF", "News",                     "/news"),
+    ("REF", "Settings",                 "/settings"),
+]
+
+
+def _palette_html() -> str:
+    """Cmd+K command palette — hidden modal rendered on every chartis page."""
+    items = []
+    for cat, label, href in _PALETTE_ENTRIES:
+        items.append(
+            f'<a class="ck-palette-item" data-label="{_html.escape(label.lower())}" '
+            f'href="{href}">'
+            f'<span class="ck-palette-item-label">{_html.escape(label)}</span>'
+            f'<span class="ck-palette-item-cat">{cat}</span></a>'
+        )
+    return (
+        '<div class="ck-palette-backdrop" id="ck-palette-bd" role="dialog" '
+        'aria-label="Command palette" aria-hidden="true">'
+        '<div class="ck-palette">'
+        '<input type="text" class="ck-palette-input" id="ck-palette-input" '
+        'placeholder="Type a command or page…" aria-label="Command palette">'
+        f'<div class="ck-palette-results" id="ck-palette-results">{"".join(items)}</div>'
+        '<div class="ck-palette-hint">'
+        '<span><kbd>&uarr;&darr;</kbd> Navigate</span>'
+        '<span><kbd>&crarr;</kbd> Open</span>'
+        '<span><kbd>Esc</kbd> Close</span>'
+        '</div>'
+        '</div></div>'
+    )
+
+
+def _kb_help_html() -> str:
+    """Vim-style shortcut help modal — toggled by `?` key."""
+    rows = [
+        ("?",     "Show / hide this help"),
+        ("/",     "Focus search (if present)"),
+        ("Cmd/Ctrl + K", "Open command palette"),
+        ("g h",   "Home"),
+        ("g a",   "Analysis landing"),
+        ("g p",   "Portfolio"),
+        ("g s",   "Hospital Screener"),
+        ("g m",   "Market Data"),
+        ("g n",   "News"),
+        ("g r",   "Portfolio Regression"),
+        ("g l",   "Library (corpus)"),
+        ("g i",   "Import Deal"),
+        ("g d",   "API Docs"),
+        ("g b",   "PE Intelligence Brain"),
+        ("g o",   "Portfolio Analytics"),
+    ]
+    items = "".join(
+        f'<div class="ck-kbhelp-row">'
+        f'<kbd class="ck-kbd">{_html.escape(k)}</kbd>'
+        f'<span>{_html.escape(d)}</span>'
+        f'</div>'
+        for k, d in rows
+    )
+    return (
+        '<div class="ck-kbhelp-backdrop" id="ck-kbhelp-bd" role="dialog" '
+        'aria-label="Keyboard shortcuts" aria-hidden="true">'
+        '<div class="ck-kbhelp">'
+        '<div class="ck-kbhelp-title">Keyboard Shortcuts</div>'
+        f'<div class="ck-kbhelp-list">{items}</div>'
+        '<div class="ck-kbhelp-hint">Press <kbd class="ck-kbd">?</kbd> or '
+        '<kbd class="ck-kbd">Esc</kbd> to close</div>'
+        '</div></div>'
+    )
+
+
+def _alert_bell_html() -> str:
+    """Topbar bell icon with a count pill populated by the polling JS."""
+    return (
+        f'<a href="/alerts" class="ck-bar-bell" title="Active alerts" '
+        f'aria-label="Active alerts">'
+        f'<span class="ck-bar-bell-icon">&#128276;</span>'
+        f'<span class="ck-bar-bell-count" id="ck-alert-count" '
+        f'aria-live="polite" style="display:none;"></span>'
+        f'</a>'
+    )
+
+
+# CSS for the four ported features. Kept in a separate constant so it's
+# easy to see what was added for the shell_v2 port.
+_KEEP_FEATURES_CSS = f"""
+/* ── Alert-bell in topbar (ported from shell_v2) ── */
+.ck-bar-bell {{
+  color: var(--ck-text-dim);
+  text-decoration: none;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+}}
+.ck-bar-bell:hover {{ color: {P['accent']}; }}
+.ck-bar-bell-icon {{ font-size: 14px; line-height: 1; }}
+.ck-bar-bell-count {{
+  background: {P['negative']};
+  color: #fff;
+  font-family: var(--ck-mono);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+  min-width: 16px;
+  text-align: center;
+}}
+
+/* ── Cmd+K command palette (ported from shell_v2) ── */
+.ck-palette-backdrop {{
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  z-index: 1000;
+}}
+.ck-palette-backdrop.open {{ display: flex; }}
+.ck-palette {{
+  width: 100%; max-width: 560px;
+  background: var(--ck-panel);
+  border: 1px solid var(--ck-border);
+  border-radius: 6px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  max-height: 60vh;
+}}
+.ck-palette-input {{
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--ck-border);
+  color: var(--ck-text);
+  font-family: var(--ck-mono);
+  font-size: 13px;
+  padding: 14px 18px;
+  outline: none;
+  letter-spacing: 0.02em;
+}}
+.ck-palette-input::placeholder {{ color: var(--ck-text-faint); }}
+.ck-palette-results {{
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 0;
+}}
+.ck-palette-item {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 18px;
+  color: var(--ck-text-dim);
+  text-decoration: none;
+  font-size: 12px;
+  gap: 10px;
+}}
+.ck-palette-item:hover,
+.ck-palette-item.sel {{
+  background: var(--ck-panel-alt);
+  color: var(--ck-text);
+}}
+.ck-palette-item-label {{ font-weight: 500; }}
+.ck-palette-item-cat {{
+  font-family: var(--ck-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--ck-text-faint);
+  background: var(--ck-panel-alt);
+  padding: 2px 6px;
+  border: 1px solid var(--ck-border);
+  border-radius: 2px;
+}}
+.ck-palette-item.sel .ck-palette-item-cat {{
+  color: {P['accent']};
+  border-color: {P['accent']};
+}}
+.ck-palette-hint {{
+  border-top: 1px solid var(--ck-border);
+  padding: 8px 18px;
+  display: flex;
+  gap: 14px;
+  font-size: 10px;
+  color: var(--ck-text-faint);
+  font-family: var(--ck-mono);
+  letter-spacing: 0.05em;
+}}
+.ck-palette-hint kbd {{
+  font-family: var(--ck-mono);
+  font-size: 10px;
+  background: var(--ck-panel-alt);
+  border: 1px solid var(--ck-border);
+  padding: 1px 5px;
+  border-radius: 2px;
+  margin-right: 4px;
+}}
+
+/* ── Vim-style keyboard help modal (ported from shell_v2) ── */
+.ck-kbhelp-backdrop {{
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}}
+.ck-kbhelp-backdrop.open {{ display: flex; }}
+.ck-kbhelp {{
+  background: var(--ck-panel);
+  border: 1px solid var(--ck-border);
+  border-radius: 6px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  padding: 20px 24px;
+  min-width: 320px;
+  max-width: 400px;
+}}
+.ck-kbhelp-title {{
+  font-family: var(--ck-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ck-text);
+  border-bottom: 1px solid var(--ck-border);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}}
+.ck-kbhelp-list {{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}}
+.ck-kbhelp-row {{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11.5px;
+  color: var(--ck-text-dim);
+}}
+.ck-kbhelp-row kbd {{ flex-shrink: 0; }}
+.ck-kbhelp-hint {{
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ck-border);
+  font-size: 10px;
+  color: var(--ck-text-faint);
+  font-family: var(--ck-mono);
+}}
+.ck-kbd {{
+  font-family: var(--ck-mono);
+  font-size: 10.5px;
+  background: var(--ck-panel-alt);
+  border: 1px solid var(--ck-border);
+  padding: 2px 7px;
+  border-radius: 2px;
+  color: var(--ck-text);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  min-width: 56px;
+  display: inline-block;
+  text-align: center;
+}}
+"""
+
+
+# JavaScript for the four features. Concatenated into the shell's
+# <script> block at render time. Each block is a self-contained IIFE so
+# one failure can't take the others down.
+_KEEP_FEATURES_JS = """
+/* 1. CSRF token patcher — reads rcm_csrf cookie, injects csrf_token into
+ *    POST forms and sets X-CSRF-Token on non-GET fetch() calls.
+ *    Harmless if the cookie is absent (open mode). */
+(function(){
+  function c(n){var m=document.cookie.match(new RegExp('(?:^|; )'+n+'=([^;]*)'));
+    return m?decodeURIComponent(m[1]):null;}
+  document.addEventListener('submit',function(e){
+    var t=c('rcm_csrf');if(!t)return;
+    var f=e.target;if(!f||f.tagName!=='FORM')return;
+    if(f.method&&f.method.toLowerCase()!=='post')return;
+    var x=f.querySelector('input[name=csrf_token]');
+    if(!x){x=document.createElement('input');x.type='hidden';
+      x.name='csrf_token';f.appendChild(x);}
+    x.value=t;
+  },true);
+  var of=window.fetch;
+  if(of){window.fetch=function(u,o){
+    o=o||{};var t=c('rcm_csrf');
+    if(t&&o.method&&o.method.toUpperCase()!=='GET'){
+      o.headers=o.headers||{};
+      if(!o.headers['X-CSRF-Token'])o.headers['X-CSRF-Token']=t;
+    }
+    return of(u,o);
+  };}
+})();
+
+/* 2. Alert badge poll — fetch /api/alerts/active-count once on load,
+ *    show red pill with count when > 0. Silent on network error. */
+(function(){
+  fetch('/api/alerts/active-count')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var b=document.getElementById('ck-alert-count');
+      if(b&&d&&d.count>0){b.textContent=d.count;b.style.display='inline';}
+    })
+    .catch(function(){});
+})();
+
+/* 3. Vim-style shortcuts: ? opens help, / focuses search, g+<key> jumps.
+ *    Disabled while typing in inputs/textareas/selects. */
+(function(){
+  var gMode=false,gTimer=null;
+  var shortcuts={
+    "h":"/home","a":"/analysis","p":"/portfolio","s":"/screen",
+    "m":"/market-data/map","n":"/news","r":"/portfolio/regression",
+    "l":"/library","i":"/import","d":"/api/docs",
+    "b":"/pe-intelligence","o":"/portfolio-analytics"
+  };
+  document.addEventListener('keydown',function(e){
+    if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'
+        ||e.target.tagName==='SELECT'))return;
+    // '?' toggles help (? == shift+/ so check for shift)
+    if(e.key==='?'){
+      e.preventDefault();
+      var bd=document.getElementById('ck-kbhelp-bd');
+      if(!bd)return;
+      if(bd.classList.contains('open')){
+        bd.classList.remove('open');bd.setAttribute('aria-hidden','true');
+      } else {
+        bd.classList.add('open');bd.setAttribute('aria-hidden','false');
+      }
+      return;
+    }
+    if(e.key==='Escape'){
+      var bd=document.getElementById('ck-kbhelp-bd');
+      if(bd&&bd.classList.contains('open')){
+        bd.classList.remove('open');bd.setAttribute('aria-hidden','true');
+        e.preventDefault();return;
+      }
+    }
+    if(e.key==='/'){
+      // Forward to the command palette if the page has no search input.
+      var si=document.querySelector('input[type=search],input[name=q]');
+      if(si){e.preventDefault();si.focus();return;}
+    }
+    if(e.key==='g'&&!gMode){
+      gMode=true;clearTimeout(gTimer);
+      gTimer=setTimeout(function(){gMode=false;},800);
+      return;
+    }
+    if(gMode){
+      gMode=false;clearTimeout(gTimer);
+      var dest=shortcuts[e.key];
+      if(dest){e.preventDefault();window.location.href=dest;}
+    }
+  });
+})();
+
+/* 4. Cmd+K command palette: modal with fuzzy filter, arrow nav, Enter to
+ *    open the highlighted entry. Opens on Cmd+K (or Ctrl+K on non-Mac). */
+(function(){
+  var bd=document.getElementById('ck-palette-bd');
+  var inp=document.getElementById('ck-palette-input');
+  var res=document.getElementById('ck-palette-results');
+  if(!bd||!inp||!res)return;
+  var items=Array.prototype.slice.call(res.querySelectorAll('.ck-palette-item'));
+  function render(q){
+    q=(q||'').trim().toLowerCase();
+    var firstMatch=null;
+    items.forEach(function(el){
+      var lbl=el.getAttribute('data-label')||'';
+      var match=!q||lbl.indexOf(q)!==-1;
+      el.style.display=match?'flex':'none';
+      el.classList.remove('sel');
+      if(match&&!firstMatch){firstMatch=el;}
+    });
+    if(firstMatch)firstMatch.classList.add('sel');
+  }
+  function open(){
+    bd.classList.add('open');bd.setAttribute('aria-hidden','false');
+    inp.value='';render('');
+    setTimeout(function(){inp.focus();},10);
+  }
+  function close(){
+    bd.classList.remove('open');bd.setAttribute('aria-hidden','true');
+  }
+  function move(dir){
+    var visible=items.filter(function(el){return el.style.display!=='none';});
+    if(!visible.length)return;
+    var curIdx=visible.findIndex(function(el){return el.classList.contains('sel');});
+    if(curIdx<0)curIdx=0;
+    visible[curIdx].classList.remove('sel');
+    curIdx=(curIdx+dir+visible.length)%visible.length;
+    visible[curIdx].classList.add('sel');
+    visible[curIdx].scrollIntoView({block:'nearest'});
+  }
+  function pick(){
+    var s=res.querySelector('.ck-palette-item.sel');
+    if(s&&s.style.display!=='none'){window.location.href=s.getAttribute('href');}
+  }
+  document.addEventListener('keydown',function(e){
+    var cmd=e.metaKey||e.ctrlKey;
+    if(cmd&&(e.key==='k'||e.key==='K')){
+      e.preventDefault();
+      if(bd.classList.contains('open'))close();else open();
+      return;
+    }
+    if(!bd.classList.contains('open'))return;
+    if(e.key==='Escape'){e.preventDefault();close();}
+    else if(e.key==='ArrowDown'){e.preventDefault();move(1);}
+    else if(e.key==='ArrowUp'){e.preventDefault();move(-1);}
+    else if(e.key==='Enter'){e.preventDefault();pick();}
+  });
+  inp.addEventListener('input',function(){render(inp.value);});
+  res.addEventListener('click',function(e){
+    var a=e.target.closest('.ck-palette-item');if(a)close();
+  });
+  bd.addEventListener('click',function(e){if(e.target===bd)close();});
+})();
+"""
+
+
 _SORTABLE_JS = """
 (function() {
   const tables = document.querySelectorAll('table.sortable');
@@ -975,6 +1436,7 @@ def chartis_shell(
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 {_BASE_CSS}
+{_KEEP_FEATURES_CSS}
 {extra_css}
 </style>
 </head>
@@ -984,6 +1446,7 @@ def chartis_shell(
   <span class="ck-bar-section">Corpus Intelligence</span>
   <span class="ck-bar-title">{_html.escape(title)}</span>
   <span class="ck-bar-time">{now}</span>
+  {_alert_bell_html()}
 </div>
 <div class="ck-layout">
   {_nav_html(active_nav)}
@@ -995,8 +1458,11 @@ def chartis_shell(
     {body}
   </main>
 </div>
+{_palette_html()}
+{_kb_help_html()}
 <script>
 {_SORTABLE_JS}
+{_KEEP_FEATURES_JS}
 {extra_js}
 </script>
 </body>
