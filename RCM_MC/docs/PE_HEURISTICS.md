@@ -1,0 +1,11998 @@
+# PE Healthcare Heuristics — Living Reference
+
+This document codifies the partner-voice rules of thumb that drive
+the `rcm_mc.pe_intelligence` package. It is a living doc: every
+adjustment to a band, threshold, or rule should be reflected here in
+the same commit. These are the rules a senior healthcare-PE partner
+applies reflexively when they look at a deal — the "sniff test"
+before any formal modeling.
+
+The rules fall into three classes, each in its own module:
+
+- **Reasonableness bands** (`reasonableness.py`) — numeric sanity
+  ranges for IRR, EBITDA margin, exit multiple, and lever delivery.
+- **Heuristics** (`heuristics.py`) — triggerable rules of thumb that
+  fire a titled, severity-stamped finding on a pattern.
+- **Narrative** (`narrative.py`) — the partner-voice IC paragraph that
+  synthesizes both into one prose recommendation.
+
+---
+
+## 1. Reasonableness bands
+
+### 1.1 IRR bands by (size × payer mix)
+
+IRR ranges are the partner-defensible bands for a 5-year hold under
+reasonable leverage. Four verdicts: `IN_BAND`, `STRETCH` (defensible
+with a specific story), `OUT_OF_BAND` (needs re-underwriting), and
+`IMPLAUSIBLE` (do not show at IC).
+
+Size buckets (by current EBITDA, $M):
+
+- `small` < $10M
+- `lower_mid` $10–25M
+- `mid` $25–75M
+- `upper_mid` $75–200M
+- `large` > $200M
+
+Payer regimes:
+
+- `commercial_heavy` — Commercial ≥ 45%
+- `balanced` — default prior
+- `medicare_heavy` — Medicare ≥ 55%
+- `medicaid_heavy` — Medicaid ≥ 30%
+- `govt_heavy` — Medicare + Medicaid ≥ 70%
+
+Commercial-heavy deals carry the highest IRR ceilings because of rate-
+growth optionality and multiple expansion. Government-heavy deals
+carry the tightest because reimbursement is capped.
+
+Representative bands (see `reasonableness._IRR_BANDS` for the full
+25-cell matrix):
+
+| Size × Payer                | IN_BAND        | STRETCH | IMPLAUSIBLE |
+|----------------------------|----------------|---------|-------------|
+| lower_mid × commercial     | 18%–30%        | ≤38%    | > 50%       |
+| mid × balanced             | 14%–22%        | ≤28%    | > 38%       |
+| mid × medicare_heavy       | 9%–16%         | ≤21%    | > 28%       |
+| upper_mid × govt_heavy     | 6%–12%         | ≤16%    | > 20%       |
+| large × medicaid_heavy     | 6%–12%         | ≤15%    | > 20%       |
+
+Source: HC-PE deal-outcome data 2019-2024; middle-market transaction
+surveys; partner-calibrated envelope adjustments for 2023–2025 rate
+environment.
+
+### 1.2 EBITDA margin bands by hospital type
+
+Healthcare subtypes have structurally different margin profiles — a
+20% margin on an ASC is boring, a 20% margin on an acute-care hospital
+is a flag. The bands:
+
+| Type                 | IN_BAND     | STRETCH  | IMPLAUSIBLE |
+|---------------------|-------------|----------|-------------|
+| acute_care          | 4%–12%      | ≤15%     | > 25% or < –15% |
+| asc                 | 18%–32%     | ≤40%     | > 55%       |
+| behavioral          | 12%–22%     | ≤28%     | > 38%       |
+| post_acute (SNF/LTACH/rehab) | 6%–14% | ≤18%  | > 25%       |
+| specialty           | 10%–20%     | ≤28%     | > 40%       |
+| outpatient / clinic | 10%–22%     | ≤30%     | > 42%       |
+| critical_access     | 0%–6%       | ≤10%     | > 15%       |
+
+Sources: AHA annual report, CMS cost reports, ASC industry surveys.
+
+### 1.3 Exit multiple ceilings by payer mix
+
+Medicare/Medicaid-heavy assets do not trade at commercial-heavy
+multiples. Ceilings encode the discount:
+
+| Regime              | IN_BAND     | STRETCH  | IMPLAUSIBLE |
+|--------------------|-------------|----------|-------------|
+| commercial_heavy   | 7.0x–11.0x  | ≤13.5x   | > 16.5x     |
+| balanced           | 6.5x–10.0x  | ≤12.0x   | > 14.5x     |
+| medicare_heavy     | 5.5x–8.5x   | ≤10.5x   | > 13.0x     |
+| medicaid_heavy     | 5.0x–7.5x   | ≤9.5x    | > 12.0x     |
+| govt_heavy         | 4.5x–7.0x   | ≤9.0x    | > 11.5x     |
+
+### 1.4 Lever realizability by timeframe
+
+How much can a given lever actually deliver in N months? Exceeding
+`stretch_max` is aggressive; exceeding `implausible_max` is not
+something we have observed.
+
+| Lever               | Unit | 6mo reasonable/stretch/implausible | 12mo | 24mo |
+|---------------------|------|--------------------------------------|------|------|
+| denial_rate         | bps  | 100 / 175 / 300                      | 200 / 350 / 600 | 400 / 650 / 1000 |
+| days_in_ar          | days | 5 / 9 / 15                           | 10 / 18 / 30 | 18 / 30 / 50 |
+| clean_claim_rate    | bps  | 150 / 300 / 500                      | 400 / 700 / 1100 | 750 / 1200 / 1800 |
+| final_writeoff_rate | bps  | —                                    | 150 / 275 / 450 | 300 / 500 / 800 |
+| npsr_margin         | pct  | —                                    | 1.0 / 2.0 / 3.5 | 2.0 / 3.5 / 5.5 |
+| organic_rev_growth  | pct  | —                                    | 6.0 / 10.0 / 18.0 | — |
+
+Rationale: mature RCM programs deliver 150–200 bps/yr of denial
+reduction. The first 200 bps come from obvious front-end eligibility
+edits — everything beyond that requires system or workflow change.
+
+---
+
+## 2. Heuristics (rules of thumb)
+
+Each heuristic has a stable `id`, a severity ceiling, and a
+partner-voice phrasing. They compound — multiple `HIGH` or a single
+`CRITICAL` will push the narrative recommendation to `PASS`.
+
+### 2.1 `medicare_heavy_multiple_ceiling` — Medicare ≥ 60% and exit > 9.5x
+
+Anchor: Medicare-heavy hospitals trade at a 2–3x multiple discount to
+commercial-heavy peers. Even with RCM lift, no recent comp supports an
+exit above ~9.5x on a Medicare-heavy acute-care asset.
+
+**Partner voice:** "Show me one closed comp with a Medicare mix this
+high that cleared this multiple. If you can't, reset exit to 8.5–9.0x
+and tell me if the deal still clears the hurdle."
+
+**Remediation:** Cap exit multiple at 9.0x in base case; keep 10.5x in
+upside only.
+
+### 2.2 `aggressive_denial_improvement` — > 200 bps/yr
+
+Mature RCM programs deliver 150–200 bps/yr of initial-denial-rate
+improvement. Above 200 bps is stretch. Above 600 bps/yr is not
+something we've seen sustain in diligence-observable timeframes.
+
+**Partner voice:** "The first 200 bps come from obvious edits. Beyond
+that you need a platform change, and that takes 18–24 months, not 12."
+
+**Remediation:** Haircut years 2+ by 40%; push the stretch into the
+upside case only.
+
+### 2.3 `capitation_vbc_uses_ffs_growth` — VBC with FFS revenue math
+
+Capitated or value-based revenue doesn't grow via volume × rate. It
+grows via lives × PMPM × (1 – MLR) + shared savings. If the deal is
+tagged as capitation but the projection uses > 4% annual revenue
+growth without a lives-growth story, the math is structurally wrong.
+
+**Remediation:** Rebuild the revenue stack; don't underwrite
+FFS-style growth on a VBC chassis.
+
+### 2.4 `multiple_expansion_carrying_return` — Δmultiple > 15% of entry
+
+If the modeled exit multiple exceeds entry by more than 15% of the
+entry multiple, the return is at least partly betting on the market —
+not on operating alpha.
+
+**Partner voice:** "Multiple expansion is the first thing that
+compresses in a bad cycle. Show me the return at a flat entry/exit
+multiple."
+
+### 2.5 `margin_expansion_too_fast` — > 200 bps/yr
+
+100–200 bps/yr of EBITDA margin expansion is healthy. > 400 bps/yr is
+usually a repricing of labor or a divestiture of a low-margin service
+line, not an operating-improvement story.
+
+### 2.6 `leverage_too_high_govt_mix` — Leverage > 5.5x with govt ≥ 60%
+
+Government-heavy deals cannot carry sponsor-style leverage through a
+bad reimbursement year. 5.5x is the practical ceiling at close; above
+6.5x is critical.
+
+### 2.7 `covenant_headroom_tight` — < 20% headroom
+
+Tight maintenance covenants + one bad quarter = waiver conversation.
+Target ≥ 25% headroom or negotiate equity-cure rights.
+
+### 2.8 `insufficient_data_coverage` — < 60% populated from
+`OBSERVED`/`EXTRACTED`
+
+We do not pencil IC bids against imputed metrics. Escalate the data
+request to the seller before finalizing the underwrite.
+
+### 2.9 `case_mix_missing` — acute-care hospital without CMI
+
+CMI drives DRG-level reimbursement and acuity-adjusted peer comps on
+acute-care deals. Pull it from HCRIS Worksheet S-3 before running the
+bridge.
+
+### 2.10 `ar_days_above_peer` — Days in AR > 55
+
+AR > 55 days is a symptom. > 70 days needs a named root cause (billing
+vs. payer). The cure path differs materially between the two.
+
+### 2.11 `denial_rate_elevated` — Initial denial > 10%
+
+Above 10% is an opportunity; above 14% is a systemic intake/
+eligibility problem. Only underwrite the fix if the top-10 denial
+reason codes account for ≥ 60% of volume.
+
+### 2.12 `small_deal_mega_irr` — EBITDA < $25M, IRR > 40%
+
+Small-deal IRR distributions are extremely wide. A modeled > 40% IRR
+is either genuine alpha or — more often — an understated entry
+multiple. Size the equity check accordingly.
+
+### 2.13 `hold_too_short_for_rcm` — Hold < 4yr with RCM-driven thesis
+
+RCM programs take 18–24 months to mature. A sub-4-year hold leaves
+the second-stage cash for the buyer. Either extend the hold or
+discount the RCM lever NPV by 30–40%.
+
+### 2.14 `writeoff_rate_high` — Final write-off > 6%
+
+Top-quartile RCM shops run < 4%. Above 6% is a leak; above 9% needs
+a reason-code-bucket diagnosis before any lever is underwritten.
+
+### 2.15 `critical_access_reimbursement` — CAH classification
+
+CAH facilities are reimbursed at 101% of allowable Medicare cost.
+Cost takeout reduces revenue almost 1:1. Thesis must be mix, volume,
+or scale — not cost.
+
+### 2.16 `moic_cagr_too_high` — Implied CAGR > 28%
+
+Top-quartile healthcare PE returns 25–30% CAGR on invested equity.
+Above that, the model is underwriting luck. Stress a 15% shock on any
+one leg (entry, exit, ramp) and require MOIC ≥ 2.0x.
+
+### 2.17 `teaching_hospital_complexity` — Major teaching hospital
+
+GME/IME payments are regulated and do not respond to operating
+levers. Carve out of the bridge; forecast separately with CMS update
+rules.
+
+### 2.18 `ar_reduction_aggressive` — AR reduction > 8 days/yr
+
+Focused AR programs deliver 5–8 days/yr. Above 15 days/yr implies a
+billing-system replacement, not a tuning project. Pair the claim with
+committed capex or haircut years 2+.
+
+### 2.19 `state_medicaid_volatility` — Medicaid-heavy in volatile state
+
+States with repeated rate freezes or pending changes (IL, NY, CA, LA,
+OK, MS, AR). Flat-line Medicaid rate growth in base case.
+
+---
+
+## 3. Narrative synthesis
+
+The narrative composer converts band checks + heuristic hits into five
+pieces of prose:
+
+1. **Headline** — one sentence. The partner's bottom line.
+2. **Bull case** — what's working, 2–3 sentences.
+3. **Bear case** — what breaks, 2–3 sentences.
+4. **Key questions** — 3–5 items for the deal team.
+5. **Recommendation** — one of: `PASS`, `PROCEED_WITH_CAVEATS`,
+   `PROCEED`, `STRONG_PROCEED`.
+
+### Recommendation logic
+
+- **`PASS`** — Any `IMPLAUSIBLE` band check OR any `CRITICAL` heuristic.
+- **`PROCEED_WITH_CAVEATS`** — `OUT_OF_BAND` bands, ≥2 `HIGH`
+  heuristics, or `STRETCH` on any band.
+- **`PROCEED`** — Otherwise, with ≤1 `MEDIUM` item.
+- **`STRONG_PROCEED`** — All bands `IN_BAND`, no flags above `LOW`.
+
+### Voice rules
+
+- No hedging. Partner commentary picks a side.
+- Every claim has a number attached.
+- Plain English. Full sentences. No consultant-speak.
+- The bear case must be specific: "what would break this deal" and
+  not "there may be risks."
+
+---
+
+## 4. References
+
+- [Reasonableness module](../rcm_mc/pe_intelligence/reasonableness.py)
+- [Heuristics module](../rcm_mc/pe_intelligence/heuristics.py)
+- [Narrative composer](../rcm_mc/pe_intelligence/narrative.py)
+- [Partner review entry point](../rcm_mc/pe_intelligence/partner_review.py)
+- [Deal Analysis Packet](./ANALYSIS_PACKET.md)
+
+Calibration sources by band section:
+
+- **IRR bands:** HC-PE outcome panel 2019–2024 (middle-market + large),
+  segmented by payer-mix at close.
+- **Margin bands:** AHA annual survey, CMS cost reports, ASC industry
+  surveys, specialty-hospital PE deal memos.
+- **Exit multiples:** HC-PE transaction comps 2020–2024, segmented by
+  payer mix at signing.
+- **Lever timeframes:** Partner-observed RCM program outcomes across
+  the portfolio book 2018–2024.
+
+---
+
+## 5. Red-flag detectors
+
+Red flags are the subset of rules a partner treats as categorical.
+They live in `red_flags.py` so the base heuristics file stays clean;
+they compose via `run_all_rules()` which `partner_review` calls.
+
+Each red flag requires a field not present on the base
+`HeuristicContext` dataclass — populate via `setattr` on a context or
+via a profile/observed key on the packet. Field list is exported as
+`RED_FLAG_FIELDS`.
+
+### 5.1 `payer_concentration_risk` — single (non-govt) payer ≥ 40%
+
+Commercial payer concentration is a contract-negotiation risk.
+Exclude Medicare, Medicaid, and aggregate "commercial" buckets from
+the calculation — only single named payers count.
+
+**Partner voice:** "What's the current contract expiry, and have we
+modeled a down-rate renewal? If the answer is 'no change', we're not
+actually diligencing."
+
+### 5.2 `contract_labor_dependency` — agency labor ≥ 15% of labor
+
+Rates are volatile and 2022 taught everyone that a 10% agency-rate
+reset is a real line item.
+
+### 5.3 `service_line_concentration` — top DRG ≥ 30%
+
+One CMS update can wipe out margin if the top service line is a
+single point of concentration.
+
+### 5.4 `340b_margin_dependency` — 340B ≥ 15% of EBITDA
+
+The 340B program has been cut twice by CMS since 2018. Build an
+ex-340B sensitivity; hold the bid to clearing at half the current
+benefit.
+
+### 5.5 `covid_relief_unwind` — COVID relief ≥ 5% of baseline EBITDA
+
+PRF, ERC, and temporary rate add-ons do not recur. Strip from
+baseline before applying entry multiple.
+
+### 5.6 `known_rate_cliff_in_hold` — named reimbursement cliff in hold window
+
+IMD waiver expirations, sequestration resets, 340B rule changes.
+Don't exit into the cliff — shorten the hold or discount the exit.
+
+### 5.7 `ehr_migration_planned` — EHR swap inside hold
+
+Every EHR conversion the partner has seen produced 6–12 months of
+claims lag, DNFB growth, DSO extension. Model a 9–12 month
+revenue-drag period.
+
+### 5.8 `prior_regulatory_action` — CIA, OIG, CMS penalty on record
+
+Not a walk-away but posture-shaping. Document current compliance
+program + corrective-action outcomes before LOI.
+
+### 5.9 `quality_score_below_peer` — CMS Star Rating < 3
+
+Triggers VBP penalty schedules on ~2% of Medicare revenue and
+correlates with weaker operating maturity. Discount RCM-lever
+realization 15–25%.
+
+### 5.10 `debt_maturity_in_hold` — existing term debt matures before exit
+
+Refinance rates inside the hold shape exit cash coverage. Term-out
+at close or build a rate-shock sensitivity.
+
+---
+
+## 6. Worked examples
+
+### 6.1 The Medicare-heavy acute hospital at 11.5x
+
+**Inputs:**
+- Mid-size acute-care hospital, $50M EBITDA, 220 beds
+- Payer mix: 60% Medicare, 30% commercial, 10% Medicaid
+- Projected IRR 22%, exit multiple 11.5x, leverage 5.8x at close
+- Denial improvement plan: 350 bps/yr over 5yr hold
+
+**What fires:**
+- Reasonableness: IRR `STRETCH` (band: 9–16% IN_BAND, ≤21% STRETCH,
+  >28% IMPLAUSIBLE for mid × medicare_heavy).
+- `medicare_heavy_multiple_ceiling` HIGH — 11.5x above 9.5x ceiling
+  for Medicare ≥ 60%.
+- `aggressive_denial_improvement` MEDIUM — 350 bps/yr is stretch.
+
+**Narrative recommendation:** `PROCEED_WITH_CAVEATS`.
+
+**Key questions surfaced:**
+1. Name a closed comp with a Medicare mix this high that cleared
+   the modeled exit multiple.
+2. What evidence supports >200 bps/yr of denial-rate improvement —
+   capex, vendor, or staffing change?
+3. What is the single operating advantage that produces the modeled
+   IRR, and has it been validated by a comparable deal?
+
+### 6.2 The clean mid-market commercial deal
+
+**Inputs:**
+- Mid-size acute-care hospital, $40M EBITDA
+- Payer mix: 50% commercial, 35% Medicare, 15% Medicaid
+- IRR 19%, exit 9.0x (entering at 8.5x), leverage 4.8x
+- Denial improvement 150 bps/yr, AR reduction 6 days/yr, 5yr hold
+
+**What fires:** Nothing above LOW. All bands IN_BAND.
+
+**Recommendation:** `STRONG_PROCEED`.
+
+### 6.3 The crisis scenario — don't bring to IC
+
+**Inputs:**
+- $30M EBITDA lower-middle acute-care
+- 70% Medicare, 20% Medicaid (= 90% government)
+- Projected IRR 35%, exit 14x, leverage 6.8x, headroom 8%
+- Denial improvement 700 bps/yr (!)
+- Data coverage 35%
+- Contract labor 28% of labor spend
+
+**What fires:**
+- IRR `IMPLAUSIBLE` (government-heavy cap at 24% for lower_mid).
+- Exit multiple `IMPLAUSIBLE` (govt-heavy ceiling 11.5x).
+- `aggressive_denial_improvement` CRITICAL (> 600 bps/yr).
+- `leverage_too_high_govt_mix` CRITICAL.
+- `contract_labor_dependency` HIGH.
+- `insufficient_data_coverage` HIGH.
+- `covenant_headroom_tight` HIGH.
+
+**Recommendation:** `PASS`.
+
+**Narrative:** "Critical-risk flag on this acute-care hospital —
+the deal does not clear as modeled."
+
+---
+
+## 7. Valuation sanity checks (`valuation_checks.py`)
+
+Beyond the operating-metric bands, partners ask six valuation-level
+questions on every deal. Each has a defensible range and a partner-
+voice note.
+
+| Check | IN_BAND | STRETCH | IMPLAUSIBLE |
+|-------|---------|---------|-------------|
+| WACC | 8%–12% | 7%–14% | <5% or >18% |
+| EV walk residual | ≤1% | ≤3% | >10% |
+| TV share of DCF | 55%–80% | 45%–88% | <30% or >95% |
+| Terminal growth | 1.5%–3.0% | 0.5%–4.0% | <0% or >5.5% |
+| Interest coverage | ≥3.0x | ≥2.0x | <1.5x |
+| Equity concentration | ≤15% of fund | ≤25% | >35% |
+
+These checks take a `ValuationInputs` bag. Missing inputs produce
+`UNKNOWN` verdicts rather than raising.
+
+---
+
+## 8. Stress tests (`scenario_stress.py`)
+
+Five mechanical shocks a partner asks about every deal:
+
+1. **rate_down** — CMS down-rate 200 bps. Does leverage covenant hold?
+2. **volume_down** — 7% volume decline, 40% flows to EBITDA.
+3. **multiple_compression** — recompute MOIC at entry == exit multiple.
+4. **lever_slip** — levers deliver 60% of plan.
+5. **labor_shock** — agency labor rate +12%.
+
+Each returns a `StressResult` with `shocked_ebitda`, `covenant_breach`,
+`passes`, and a `partner_note`. A `worst_case_summary` aggregates the
+results for the narrative layer.
+
+---
+
+## 9. IC memo formatter (`ic_memo.py`)
+
+Renders a `PartnerReview` as an IC-ready memo in three formats:
+
+- `render_markdown(review)` — Slack / Notion / email thread.
+- `render_html(review)` — workbench `/partner-review` page, with
+  dark-mode CSS variables.
+- `render_text(review)` — CLI-friendly plaintext briefing.
+
+Memo structure: recommendation → context → bull/bear → reasonableness
+table → pattern flags → key questions → partner dictation block.
+
+---
+
+## 10. Sector benchmarks (`sector_benchmarks.py`)
+
+Peer-median benchmarks by healthcare subsector (p25 / p50 / p75) for
+dashboard positioning. Current coverage:
+
+- `acute_care` — EBITDA margin, days_in_ar, initial_denial_rate,
+  final_writeoff_rate, clean_claim_rate, case_mix_index, occupancy.
+- `asc` — margin, AR, denial, cases per OR.
+- `behavioral` — margin, AR, denial, LOS, census.
+- `post_acute` — margin, AR, occupancy, Medicare mix.
+- `specialty` — margin, AR, denial.
+- `outpatient` — margin, AR, denial, RVUs.
+- `critical_access` — margin, AR, Medicare mix.
+
+`compare_to_peers(subsector, observations)` returns a list of
+`GapFinding` objects with percentile placement (15/40/65/85 buckets)
+and direction (above/below peer median) plus commentary.
+
+---
+
+## 11. Deal archetype classification (`deal_archetype.py`)
+
+Ten PE healthcare deal patterns, each with its own playbook, risks,
+and key questions:
+
+| Archetype | Core signal |
+|-----------|-------------|
+| `platform_rollup` | Platform + ≥3 add-ons + rollup thesis |
+| `take_private` | Public target + go-private intent |
+| `carve_out` | Strategic seller + carve-out flag |
+| `turnaround` | Distressed + sub-peer margin |
+| `buy_and_build` | Platform + 1-2 targeted add-ons, organic ≥10% |
+| `continuation` | Continuation-fund transaction |
+| `gp_led_secondary` | Sponsor-to-sponsor, not continuation |
+| `operating_lift` | RCM thesis + LBO leverage (4.0-6.5x) |
+| `growth_equity` | Minority stake + rapid revenue growth |
+| `pipe` | Public + minority |
+
+Each hit includes `playbook` (what to do), `risks` (what goes wrong),
+and `questions` (what the partner asks before signing).
+
+---
+
+## 12. Bear book (`bear_book.py`)
+
+Pattern recognition against known failure modes. Each pattern encodes
+a combination of signals that rhymes with deals that have gone wrong.
+
+- `rollup_integration_failure` — sub-$50M platform + aggressive
+  margin expansion + high leverage + short hold.
+- `medicare_margin_compression` — Medicare ≥ 50% + margin expansion
+  > 150 bps/yr.
+- `carveout_tsa_sprawl` — low data coverage + high AR + missing CMI.
+- `turnaround_without_operator` — sub-3% margin + aggressive plan.
+- `covid_tailwind_fade` — acute-care + margin > 14% + exit > 10x.
+- `high_leverage_thin_coverage` — leverage ≥ 6.0x + headroom < 15%.
+- `vbc_priced_as_ffs` — capitation structure + volume growth math.
+- `rural_single_payer_cliff` — CAH + ≥60% Medicare or ≥35% Medicaid.
+
+Each hit exposes a `failure_mode` (what goes wrong) and a
+`partner_voice` warning.
+
+---
+
+## 13. Exit readiness (`exit_readiness.py`)
+
+12-dimension pre-exit checklist yielding a 0–100 readiness score:
+
+- **≥ 85** → engage banker immediately.
+- **65 – 84** → soft-launch ready; fix gaps before formal process.
+- **< 65** → not exit-ready; address core gaps first.
+
+Dimensions include: audited financials, TTM KPIs, data-room
+organization, QoE preparation, EBITDA trend, margin trend, buyer
+universe mapping, management retention, legal cleanliness, adjustment
+reconciliation, EBITDA-vs-plan, revenue-vs-plan.
+
+---
+
+## 14. Payer math (`payer_math.py`)
+
+Deterministic payer-mix-aware projection helpers:
+
+- `blended_rate_growth(mix, rate_by_payer)` — weighted growth rate.
+- `project_revenue(inputs)` — year-by-year revenue + EBITDA walk.
+- `compare_payer_scenarios(base, scenarios)` — side-by-side.
+- `vbc_revenue_projection(inputs)` — capitation math: premium, claims,
+  admin, underwriting margin, shared savings.
+- `standard_scenarios()` — base, CMS cut, commercial rate boom,
+  frozen rates.
+
+Used by the narrative layer to answer "what happens if CMS cuts?"
+without a full MC run.
+
+---
+
+## 15. Regulatory watch (`regulatory_watch.py`)
+
+Curated registry of ~15 CMS / OIG / state regulatory items affecting
+healthcare-PE underwriting. Each item:
+
+- `scope` — national or state code (e.g. CA, NY, TX).
+- `status` — proposed, finalized, effective, expired, watch.
+- `affected_subsectors` — acute_care, asc, behavioral, post_acute, etc.
+- `affected_payers` — medicare, medicaid, commercial.
+- `impact_summary` + `partner_relevance`.
+
+Example entries: CMS OPPS site-neutral expansion, 340B payback
+schedule, Medicaid PHE redetermination, No Surprises Act IDR,
+MPFS conversion factor, SNF VBP, IMD waiver expirations, California
+seismic capex, NY Medicaid rate-freeze history, Florida non-expansion,
+Maryland all-payer rate-setting.
+
+`regulatory_items_for_deal(subsector, state, payer_mix)` returns only
+items relevant to a given deal profile.
+
+---
+
+## 16. LP pitch (`lp_pitch.py`)
+
+Renders a PartnerReview as an LP-facing one-pager with softened tone:
+"Do not show this at IC" → "We will re-check this." Output in
+Markdown and HTML.
+
+Sections: opportunity snapshot (table), why this deal, risks and
+mitigations, diligence priorities, strengths vs peer. Disclaimer
+footer included.
+
+---
+
+## 17. 100-Day post-close plan (`hundred_day_plan.py`)
+
+Generates a dated, owned 100-day action plan from a PartnerReview.
+Four workstreams:
+
+- **Operational** — KPI cascade, RCM triage (AR aging, denial reason-
+  code concentration, write-off buckets), integration playbook.
+- **Financial** — monthly close, covenant-tracking dashboard, lender
+  engagement, rate-update monitoring.
+- **People** — top-20 retention plan, incentive redesign, contract-
+  labor reduction.
+- **Systems** — data-coverage close-out, CMI/acuity reporting, TSA
+  tracker, EHR cutover plan.
+
+Actions are triggered by heuristic hits in the review: if
+`ar_days_above_peer` fired, the plan adds an AR-aging diagnosis with
+a 45-day due date. If `covenant_headroom_tight` fired, a 15-day
+lender-engagement action is added. Payer-mix drives CMS monitoring.
+
+Output: `generate_plan(review) -> HundredDayPlan` and
+`render_plan_markdown(plan) -> str` for partner-ready markdown.
+
+---
+
+## 18. IC voting (`ic_voting.py`)
+
+Weighted IC vote aggregator. Voters carry role-based weights
+(`managing_partner=2.0`, `partner=1.5`, `principal=1.0`, `vp=0.5`).
+Veto holders can reject a deal regardless of tally. Votes can be:
+
+- `yes` — straight approval.
+- `no` — with required rationale.
+- `yes_with_caveats` — approve subject to listed conditions.
+- `abstain` — non-counting but recorded.
+
+Outcomes: `APPROVED`, `APPROVED_WITH_CONDITIONS`, `REJECTED`, `TABLED`.
+
+`auto_vote_from_review(recommendation, voters)` produces a synthetic
+vote that mirrors the review's recommendation — useful for
+sensitivity analysis.
+
+---
+
+## 19. Diligence tracker (`diligence_tracker.py`)
+
+Lightweight board for diligence workstream status. Tracks:
+
+- Per-item status (`not_started`, `in_progress`, `blocked`,
+  `complete`, `dropped`).
+- Priority (`P0`, `P1`, `P2`).
+- Owner, due date, blocker reason, finding, critical flag.
+
+`board_from_review(review)` auto-seeds a board from a
+PartnerReview's heuristic hits — hits map to appropriate
+workstreams (operational, financial, commercial, legal, it,
+regulatory, etc.) with severity → priority mapping.
+
+`is_ic_ready()` returns True only when every P0 item is complete and
+no critical blockers remain.
+
+---
+
+## 20. Comparative analytics (`comparative_analytics.py`)
+
+Portfolio-level cross-deal comparison helpers:
+
+- `portfolio_concentration(deals)` — EBITDA-weighted sector, state,
+  and payer shares plus top-share highlights.
+- `concentration_warnings(conc)` — partner-voice warnings when
+  sector > 40%, state > 35%, or single payer > 50%.
+- `deal_vs_book(candidate, book)` — per-metric direction (better /
+  worse / same / n/a) for a candidate against book medians.
+- `deal_rank_vs_peers(candidate, peers)` — blended-score ranking
+  (50% IRR, 25% margin, 25% reciprocal leverage).
+- `correlation_risk(candidate, book)` — flag deals likely to co-move
+  (same sector + state, Medicare-heavy + Medicare-heavy).
+
+---
+
+## 21. Module inventory
+
+As of 2026-04-17, the `rcm_mc.pe_intelligence` package contains 91
+modules + test suite:
+
+| Module | Role |
+|--------|------|
+| `reasonableness.py` | IRR / margin / multiple / lever bands (25-cell IRR matrix, 7 hospital-type margin bands, 5 payer-regime multiple ceilings, 7-lever × 3-timeframe realizability) |
+| `heuristics.py` | 19 partner-voice rules of thumb |
+| `red_flags.py` | 10 deal-killer detectors |
+| `bear_book.py` | 8 historical-failure pattern detectors |
+| `valuation_checks.py` | WACC / EV walk / TV share / growth / coverage / concentration |
+| `scenario_stress.py` | 5 mechanical partner stresses |
+| `sector_benchmarks.py` | Peer p25/p50/p75 by healthcare subsector |
+| `regulatory_watch.py` | 15 national/state regulatory items |
+| `deal_archetype.py` | 10-archetype classifier with playbooks |
+| `narrative.py` | Senior-partner-voice IC commentary composer |
+| `partner_review.py` | Main entry — packet → PartnerReview |
+| `ic_memo.py` | Markdown / HTML / plaintext IC-memo renderers |
+| `lp_pitch.py` | LP-facing one-pager with softened tone |
+| `hundred_day_plan.py` | Post-close 4-workstream action plan |
+| `ic_voting.py` | Role-weighted IC vote aggregator with veto + dissent |
+| `diligence_tracker.py` | Workstream board with IC-ready check |
+| `comparative_analytics.py` | Portfolio concentration + deal-vs-book |
+| `exit_readiness.py` | 12-dimension pre-exit readiness score |
+| `payer_math.py` | Payer-mix-aware revenue/EBITDA projection + VBC math |
+| `value_creation_tracker.py` | Monthly lever-vs-plan tracker |
+| `exit_math.py` | Waterfall + preferred + catch-up + reverse MOIC |
+| `workbench_integration.py` | UI bundle + compact API payload |
+| `deal_comparables.py` | Illustrative comp set + multiple stats |
+| `debt_sizing.py` | Prudent leverage by (subsector × payer) + covenant stress |
+| `management_assessment.py` | 6-dimension team scoring |
+| `thesis_validator.py` | 8 internal-consistency rules |
+| `synergy_modeler.py` | Cost + revenue + RCM + procurement synergies |
+| `working_capital.py` | AR/AP/DIO days-to-cash release math |
+| `fund_model.py` | Fund-level DPI/TVPI/NAV + vintage percentile |
+| `regulatory_stress.py` | $ EBITDA impact of CMS/Medicaid/340B shocks |
+| `cash_conversion.py` | FCF/EBITDA by subsector with peer bands |
+| `lp_side_letter_flags.py` | LP conformance (sector / state / concentration / ESG) |
+| `pipeline_tracker.py` | Sourcing funnel + stale-deal detection |
+| `operational_kpi_cascade.py` | Rank KPI levers by $ EBITDA impact |
+| `commercial_due_diligence.py` | TAM / share / growth / competitive position |
+| `icr_gate.py` | IC-Ready gate consolidator |
+| `cohort_tracker.py` | Vintage-cohort benchmarking |
+| `partner_discussion.py` | Autogen partner Q&A |
+| `kpi_alert_rules.py` | Monthly ops KPI threshold alerts |
+| `recon.py` | Cross-artifact coherence check |
+| `capital_plan.py` | Capex by year/purpose + intensity validation |
+| `auditor_view.py` | Full decision audit trail for regulators/LPs |
+| `thesis_templates.py` | 6 prebuilt narrative scaffolds for common theses |
+| `regime_classifier.py` | 5-regime classifier (durable / emerging / steady / stagnant / declining) |
+| `market_structure.py` | HHI / CR3 / CR5 + consolidation-play score |
+| `stress_test.py` | Downside/upside scenario grid with robustness grade |
+| `operating_posture.py` | 5-posture classifier (scenario_leader / resilient_core / etc.) |
+| `white_space.py` | Geographic / segment / channel adjacency detection |
+| `investability_scorer.py` | Composite opportunity×value×stability 0..100 |
+| `extra_heuristics.py` | 8 additional partner-voice rules |
+| `extra_bands.py` | Capex / occupancy / RVU / CMI / LOS subsector bands |
+| `narrative_styles.py` | 5 alternate narrative voices |
+| `memo_formats.py` | 5 IC memo renderers (one-pager / slack / email / pdf / deck) |
+| `extra_archetypes.py` | 8 specialized deal patterns |
+| `extra_red_flags.py` | 10 more deal-killer detectors |
+| `scenario_narrative.py` | Stress-grid → partner-voice prose |
+| `deal_comparison.py` | Side-by-side two-review comparison |
+| `priority_scoring.py` | Multi-deal partner-queue ranker |
+| `board_memo.py` | Governance memo w/ approval matrix + disclosures |
+| `contract_diligence.py` | Payer-contract portfolio risk scoring |
+| `service_line_analysis.py` | DRG/specialty mix + margin contribution |
+| `quality_metrics.py` | CMS Star / HRRP / HCAHPS → Medicare $ impact |
+| `labor_cost_analytics.py` | Contract labor / overtime / productivity |
+| `analyst_cheatsheet.py` | 1-page associate IC pre-read |
+| `reimbursement_bands.py` | Payer rate growth / gross-to-net / site-neutral parity |
+| `ebitda_quality.py` | Add-back classifier → partner-EBITDA |
+| `covenant_monitor.py` | Live covenant tracking + break-EBITDA |
+| `liquidity_monitor.py` | 13-week cash projection + runway |
+| `ma_pipeline.py` | Add-on acquisition funnel + capacity |
+| `esg_screen.py` | ESG exclusions + composite + reporting gaps |
+| `deepdive_heuristics.py` | 10 mature-diligence partner rules |
+| `master_bundle.py` | One-call build of every PE-intel artifact |
+| `tax_structuring.py` | Step-up / 163(j) / QSBS / state drag checks |
+| `insurance_diligence.py` | PL / cyber / SIR / claims adequacy |
+| `portfolio_dashboard.py` | Desk-view across multiple reviews |
+| `integration_readiness.py` | Post-close integration scorecard |
+| `management_comp.py` | MIP/LTIP/vesting/rollover checks |
+| `red_team_review.py` | Adversarial attack + pass rationale |
+| `data_room_tracker.py` | 34-item canonical checklist scorer |
+| `workstream_tracker.py` | Post-close integration milestone aggregator |
+| `negotiation_position.py` | Anchor / walkaway / leverage / concessions |
+| `loi_drafter.py` | LOI term-sheet generator |
+| `post_mortem.py` | Exit-deal lessons-learned template |
+| `cycle_timing.py` | Market-cycle phase classifier |
+| `exit_planning.py` | Year-by-year exit preparation roadmap |
+| `benchmark_bands.py` | SG&A / interest / SSSG / NWC / outpatient bands |
+| `payer_mix_risk.py` | Payer HHI + MA / MMC / ACA / mix-shift flags |
+| `peer_discovery.py` | Similarity-weighted peer ranking |
+| `reimbursement_cliff.py` | Named rate-cliff modeling in hold window |
+| `scenario_comparison.py` | Base/bull/bear MOIC side-by-side |
+| `vintage_return_curve.py` | J-curve DPI/TVPI projection by vintage |
+
+Every module has corresponding tests in
+`tests/test_pe_intelligence.py`.
+
+---
+
+## 22. Value creation tracker (`value_creation_tracker.py`)
+
+Monthly lever-vs-plan tracker for portfolio ops:
+
+- `LeverPlan` — baseline + year1..year5 targets + `lower_is_better`
+  flag.
+- `LeverActual` — observed value at a given date.
+- `evaluate_lever(plan, actual, year_in_hold)` — returns ``LeverStatus``
+  with verdicts `ahead`, `on_track`, `behind`, `off_track`, `unknown`.
+- `rollup_status(statuses)` — portfolio-level headline and counts.
+
+Used by the operating-partner monthly review to flag levers that
+need intervention before the quarter closes.
+
+---
+
+## 23. Exit math (`exit_math.py`)
+
+Classic US PE waterfall + sensitivities:
+
+- `project_exit_ev(exit_ebitda, exit_multiple, exit_net_debt, fees)`
+  — gross EV, fees, equity value.
+- `exit_waterfall(total_proceeds, lp_equity_in, gp_equity_in,
+  hold_years, ...)` — full 4-stage waterfall: return-of-capital, 8%
+  preferred, 100% GP catch-up to 20% of profit, 80/20 LP/GP split.
+- `moic_cagr_to_irr(moic, years)` — quick CAGR approximation.
+- `required_exit_ebitda_for_moic(target_moic, equity_in, exit_multiple,
+  exit_net_debt)` — reverse-math: what EBITDA hits a target MOIC?
+
+Useful for partner sensitivities pre-IC: "what does EBITDA need to
+reach for us to hit 2.5x."
+
+---
+
+## 24. Workbench integration (`workbench_integration.py`)
+
+Server-friendly bundle helpers:
+
+- `build_workbench_bundle(packet)` — single-call produces the full
+  artifact set: review, IC memo (markdown + html + text), LP pitch
+  (markdown + html), 100-day plan, diligence board, bear patterns,
+  regulatory items.
+- `build_api_payload(packet)` — compact JSON payload without HTML,
+  for network-efficient API responses.
+- `archetype_summary(review)` — archetype ranking for a deal.
+
+Intended entry points for UI routes like `/partner-review/<deal_id>`
+and `/api/partner-review/<deal_id>`.
+
+---
+
+## 25. Deal comparables (`deal_comparables.py`)
+
+Illustrative healthcare-PE comp registry (16 starter entries across
+acute care, ASC, behavioral, post-acute, specialty, outpatient, and
+critical access). Not a live feed — refresh quarterly with real
+closed-deal comps.
+
+- `filter_comps(sector, payer_regime, size_bucket, min_year, max_year)`
+  — subset the registry.
+- `multiple_stats(comps)` — min / median / mean / max of EV/EBITDA.
+- `position_in_comps(modeled_multiple, comps)` — percentile placement
+  of a modeled multiple against the comp set, with partner commentary.
+
+Used to defend an exit multiple at IC: "our exit sits at the 55th
+percentile of the acute-care commercial-heavy 2022-2024 comp set."
+
+---
+
+## 26. Debt sizing (`debt_sizing.py`)
+
+Partner-prudent leverage table by (subsector × payer_regime):
+
+- Acute care with commercial-heavy tolerates up to 5.5x at close;
+  acute-care govt-heavy capped at 3.5x.
+- ASC stretches to 6.0x on commercial-heavy platforms.
+- Critical access capped at 2.5-4.0x across regimes.
+
+Helpers: `leverage_headroom`, `max_interest_rate_to_break`,
+`covenant_stress_passes` (leverage + coverage joint test).
+
+---
+
+## 27. Management assessment (`management_assessment.py`)
+
+6-dimension team scoring: CEO, CFO, operational depth, RCM leadership,
+clinical, alignment. Returns a composite 0–100 score plus per-dimension
+findings and seat-add recommendations. Status verdicts:
+`strong` / `adequate` / `concerns` / `replace`.
+
+---
+
+## 28. Thesis validator (`thesis_validator.py`)
+
+8 internal-consistency rules flagging contradictions in a thesis:
+
+- RCM thesis with sub-4yr hold.
+- VBC structure priced with FFS growth.
+- Aggressive IRR with flat entry/exit multiples.
+- Margin expansion faster than revenue growth.
+- High leverage with government-heavy mix.
+- Turnaround + roll-up simultaneously.
+- MOIC and IRR targets that don't reconcile.
+- Large denial-improvement lift without RCM thesis tag.
+
+---
+
+## 29. Synergy modeler (`synergy_modeler.py`)
+
+Roll-up/tuck-in synergy math: cost (SG&A consolidation), revenue
+(cross-sell at margin), RCM (bps margin lift at scale), procurement
+(COGS savings). Applies a partner haircut (default 35%) and 5-year
+realization ramp.
+
+---
+
+## 30. Working capital (`working_capital.py`)
+
+One-time cash release from lever programs:
+
+- `ar_days_to_cash` — DSO reduction × revenue / 365.
+- `ap_days_to_cash` — DPO extension × cogs / 365.
+- `inventory_days_to_cash` — DIO reduction × inventory cost / 365.
+
+Partner notes distinguish sustainable tuning from one-time
+billing-system cleanup. Never applied to exit multiple.
+
+---
+
+## 31. Fund model (`fund_model.py`)
+
+Fund-level rollup: given a list of `FundDeal` commitments + holds +
+projected MOICs, projects year-by-year called capital, distributions,
+NAV, DPI, TVPI, RVPI. `fund_vintage_percentile` places a fund against
+healthcare-PE vintage quartile cutoffs.
+
+---
+
+## 32. Regulatory stress (`regulatory_stress.py`)
+
+Models the $ EBITDA impact of specific regulatory shocks:
+
+- **CMS IPPS / OPPS rate cut** — N-bps reduction on Medicare revenue.
+- **Medicaid rate freeze** — foregone inflation over N years.
+- **340B program reduction** — X% haircut on current 340B EBITDA.
+- **Site-neutral expansion** — HOPD rate compression X%.
+- **SNF VBP acceleration** — additional Medicare withhold (post-acute only).
+
+`run_regulatory_stresses(inputs)` returns all relevant shocks sorted
+by $ impact; `summarize_regulatory_exposure(shocks, base_ebitda)`
+produces a partner-facing headline.
+
+Paired with `regulatory_watch.py`: the watch-list identifies which
+items are *pending*, the stress module quantifies *how much they
+hurt*.
+
+---
+
+## 33. Cash conversion (`cash_conversion.py`)
+
+Measures how much EBITDA actually shows up as free cash flow.
+`expected_conversion_by_subsector` returns target bands:
+ASC 70-85%, acute care 50-68%, behavioral 60-75%, post-acute 55-70%,
+specialty 60-75%, outpatient 65-82%, critical access 40-60%.
+`assess_conversion` returns status ("above" / "in_band" / "below")
+with partner commentary — low conversion with high leverage is the
+pattern that kills deals.
+
+---
+
+## 34. LP side-letter conformance (`lp_side_letter_flags.py`)
+
+Checks a candidate deal against an LP `SideLetterSet`:
+
+- Sector exclusions (e.g., "no ASCs").
+- Geographic exclusions.
+- Single-deal concentration cap.
+- Government-payer mix cap.
+- ESG screens (no tobacco, no short-term detention).
+
+Returns `ConformanceFinding` items flagged as "breach" / "warning" /
+"info". `has_breach(findings)` for quick gate check.
+
+---
+
+## 35. Pipeline tracker (`pipeline_tracker.py`)
+
+Sourcing-funnel analyzer: counts deals at each stage
+(sourced → screened → ioi → meeting → loi → exclusive → closed),
+computes stage-to-stage yields with target benchmarks, and flags
+stages where the funnel is leaking. `stale_deals(today, threshold)`
+surfaces pipeline items with no activity in 60+ days.
+
+`source_mix(deals)` returns channel breakdown (banker / direct /
+sponsor) — useful for partnership-review conversations.
+
+---
+
+## 36. Operational KPI cascade (`operational_kpi_cascade.py`)
+
+Ranks operating KPIs by $ EBITDA impact given current/target values:
+
+- `initial_denial_rate` — × revenue × flow factor (default 50%).
+- `final_writeoff_rate` — × revenue (100% flow-through).
+- `days_in_ar` — × revenue / 365 (flagged as one-time cash).
+- `clean_claim_rate` — × revenue × flow factor (default 30%).
+- `labor_pct_of_revenue` — × revenue (100% flow-through).
+
+`build_cascade(inputs)` returns movements sorted by $ impact desc.
+`total_ebitda_impact(cascade)` excludes the AR one-time cash from
+the recurring EBITDA total — prevents double-counting.
+
+---
+
+## 37. Commercial due diligence (`commercial_due_diligence.py`)
+
+Partner-prudent sanity checks on market claims:
+
+- `market_size_sanity` — TAM vs US-subsector ceilings (acute $1.4T,
+  ASC $45B, behavioral $180B, etc.).
+- `market_share_check` — implied share from revenue/TAM.
+- `growth_plausibility` — flags claims above subsector norms.
+- `competitive_position` — maps differentiation × intensity to one
+  of nine position categories.
+
+---
+
+## 38. IC-Ready gate (`icr_gate.py`)
+
+Single entry point: given a PartnerReview (and optionally a
+diligence board, LP side-letter findings, management score), returns
+`ICReadinessResult` with a boolean + ordered blocker list. Gates:
+
+1. No CRITICAL heuristic hits.
+2. No IMPLAUSIBLE band verdicts.
+3. Data coverage ≥ 60%.
+4. All P0 diligence items complete.
+5. No LP side-letter breach.
+6. Management score ≥ 50.
+
+---
+
+## 39. Cohort tracker (`cohort_tracker.py`)
+
+Vintage-cohort benchmarking:
+
+- `cohort_stats(deals, vintage)` — p25/p50/p75 for IRR/MOIC/margin.
+- `rank_within_cohort` — blended-score ranking.
+- `top_decile` / `bottom_decile` — cohort outliers.
+- `compare_to_cohort` — candidate's delta vs cohort medians.
+
+---
+
+## 40. Partner discussion (`partner_discussion.py`)
+
+Autogen Q&A from a PartnerReview. Heuristic hits and band verdicts
+map to partner-voice questions and answers — the kind of back-and-
+forth an associate rehearses before IC.
+
+`build_discussion(review)` returns `DiscussionItem` list;
+`render_discussion_markdown(items)` produces IC-rehearsal Markdown.
+
+---
+
+## 41. KPI alert rules (`kpi_alert_rules.py`)
+
+Threshold-based alerts for monthly ops reviews. Default rules cover
+denial rate, write-off rate, AR days, clean claim rate, margin,
+labor ratio, and census occupancy. Each rule has:
+
+- `direction` — higher_is_better / lower_is_better.
+- `guardrail_low` / `guardrail_high` — breach = medium alert.
+- `hard_floor` / `hard_ceiling` — breach = high alert.
+
+`evaluate_kpi_alerts(observations)` returns alerts sorted highest
+severity first with partner notes + escalation paths.
+
+---
+
+## 42. Recon (`recon.py`)
+
+Reconciliation checks across PE-intel artifacts. Ensures the
+PartnerReview, 100-day plan, and diligence board tell the same
+story:
+
+- Recommendation phrase appears in IC-memo dictation.
+- Every HIGH/CRITICAL heuristic hit has a plan action.
+- Every CRITICAL hit appears as a P0 item on the diligence board.
+
+`has_mismatch(findings)` is the quick gate check for cross-artifact
+drift.
+
+---
+
+## 43. Capital plan (`capital_plan.py`)
+
+Structures post-close capex + maintenance/growth split, validates
+against subsector intensity bands (acute-care capex typically 5-7%
+of revenue, ASC 5-7%, CAH 4-6%). Flags:
+
+- Total intensity > subsector ceiling.
+- Year-1 concentration > 12% of revenue.
+- Maintenance < 30% of total (growth-heavy plans that defer
+  asset-reinvestment risk).
+
+---
+
+## 44. Auditor view (`auditor_view.py`)
+
+Produces a full structured decision-audit-trail for a PartnerReview.
+Every context input, every band verdict, every heuristic hit, and
+every narrative choice gets an `AuditEntry` with trigger values and
+rationale.
+
+Regulators and LPs asking "why did this deal pass?" get a
+JSON-serializable answer six months later.
+
+---
+
+## 45. Thesis templates (`thesis_templates.py`)
+
+Six prebuilt narrative scaffolds for common healthcare-PE theses:
+
+1. **Platform + tuck-ins** — consolidation in a fragmented subsector.
+2. **Operational improvement** — RCM / labor / mix levers.
+3. **Scale + margin** — volume-driven fixed-cost leverage.
+4. **Turnaround** — distressed asset with named operator.
+5. **Strategic exit** — positioning for strategic acquisition.
+6. **Value-based care** — lives growth + shared-savings.
+
+Each template provides opening paragraph, bull/bear case framing,
+lever priority stack, and 5 partner questions. Templates are
+field-substituted (`{subsector}`, `{entry_multiple}`, `{hold_years}`,
+etc.) and rendered as IC-ready Markdown.
+
+---
+
+## 46. Regime classifier (`regime_classifier.py`)
+
+Places a deal into one of five performance regimes based on growth /
+volatility / consistency signals:
+
+- `durable_growth` — consistent positive growth + stable margins.
+- `emerging_volatile` — fast growth with wide dispersion.
+- `steady` — modest growth, low volatility.
+- `stagnant` — flat growth, stable margins.
+- `declining_risk` — negative growth and/or deteriorating margins.
+
+Each regime ships a partner note, playbook, and key-risk statement.
+`rank_all_regimes` returns every regime scored, sorted by confidence
+desc, when the primary classification is borderline.
+
+---
+
+## 47. Market structure (`market_structure.py`)
+
+Industrial-organization metrics applied to deal markets:
+
+- **HHI** on 0..10000 scale with DOJ/FTC thresholds (1500 / 2500).
+- **CR3 / CR5** top-N concentration ratios.
+- **Fragmentation verdict** — fragmented / consolidating / consolidated.
+- **Consolidation-play score** — 0..1 blend of HHI, CR5, player count,
+  and dominance penalty. `is_consolidation_play(result, min_score)`
+  is the boolean gate for "is this a roll-up setup".
+
+Partners use it to hint the right thesis archetype
+(`platform_rollup` vs `buy_and_build` vs `challenger_or_niche`).
+
+---
+
+## 48. Stress test (`stress_test.py`)
+
+Runs a scenario grid on top of `scenario_stress.py`:
+
+- 10 downside scenarios (rate cuts at 100/200/300 bps, volume declines
+  5/10%, multiple compression flat, lever slip 40/60%, labor shocks 10/20%).
+- 2+ upside scenarios (full lever realization, +1 turn multiple expansion).
+
+Outputs `downside_pass_rate`, `upside_capture_rate`, worst/best case
+delta, covenant-breach count, and a letter grade A..F with a partner
+summary.
+
+---
+
+## 49. Operating posture (`operating_posture.py`)
+
+Labels a deal with one of five postures based on stress + regime +
+concentration flags:
+
+- `scenario_leader` — robust downside + strong upside.
+- `resilient_core` — robust downside, capped upside.
+- `balanced` — neither especially robust nor asymmetric.
+- `growth_optional` — weak downside, strong upside (high beta).
+- `concentration_risk` — payer/state/service-line concentration
+  dominates both tails.
+
+Each posture carries a playbook. `posture_from_stress_and_heuristics`
+pulls the inputs directly from an existing stress-grid dict + hit
+list.
+
+---
+
+## 50. White space (`white_space.py`)
+
+Detects unserved-opportunity adjacencies across three dimensions:
+
+- **Geographic** — candidate states vs existing footprint; scores
+  adjacent states (same census region) higher than distant ones.
+- **Segment** — service-line extensions by subsector registry
+  (e.g. acute_care → outpatient imaging, ambulatory surgery).
+- **Channel** — payer/contracting channels by subsector registry
+  (e.g. post_acute → medicare_advantage, I-SNPs).
+
+Each opportunity gets a 0..1 attractiveness score and barriers list.
+`top_opportunities(result, n)` returns the best-scoring ones.
+
+---
+
+## 51. Investability scorer (`investability_scorer.py`)
+
+Composite 0..100 blending three axes:
+
+- **Opportunity** (30%) — market-structure score + white-space.
+- **Value** (40%) — IRR / MOIC vs peer bands + raw return levels.
+- **Stability** (30%) — stress grade + regime + posture + critical-
+  hit penalty.
+
+Maps to A..F letter grade with a partner note listing top strengths
+and weaknesses. `inputs_from_review(review)` builds the input bag
+from an existing PartnerReview so the composite uses the same data
+as every other analytic.
+
+---
+
+## 52. Extra heuristics (`extra_heuristics.py`)
+
+Eight additional partner-voice rules beyond the base 19:
+
+- `clean_claim_rate_low` — clean-claim below 88%.
+- `growth_volatility_without_driver` — > 10% growth with no named driver.
+- `payer_contract_staleness` — low clean-claim + low denial plan.
+- `check_size_concentration` — deal EBITDA > $300M implies top-check.
+- `missing_ttm_kpi_reporting` — coverage < 50%.
+- `cah_teaching_mismatch` — CAH + teaching flags together.
+- `urban_outpatient_gold_rush` — urban commercial MSO at >12x exit.
+- `hold_moic_inconsistency` — implied CAGR > 40% sustained-return.
+
+`run_all_plus_extras` unions base + red flags + extras, dedup by id.
+
+---
+
+## 53. Extra bands (`extra_bands.py`)
+
+Finer-grained subsector bands beyond the core reasonableness matrix:
+
+- Capital intensity (% of revenue, by subsector).
+- Bed occupancy (acute / post-acute / behavioral).
+- RVU per provider (outpatient / specialty).
+- Case Mix Index (acute care).
+- Length of stay (behavioral / post-acute).
+
+`run_extra_bands` runs every check that has enough input.
+
+---
+
+## 54. Narrative styles (`narrative_styles.py`)
+
+Five alternate narrative voices beyond the default senior-partner:
+
+- `analyst_brief` — neutral, data-first.
+- `skeptic` — adversarial pre-mortem.
+- `founder_voice` — target-founder perspective.
+- `bullish` — optimistic frame.
+- `three_sentence` — compressed summary.
+
+`compose_styled_narrative(style, ...)` dispatches by name.
+
+---
+
+## 55. Memo formats (`memo_formats.py`)
+
+Five renderers for the IC memo beyond the default markdown/html/text:
+
+- `render_one_pager` — constrained single-page markdown.
+- `render_memo_slack` — slack-formatted (stars for bold, emoji).
+- `render_memo_email` — subject + plain-text body.
+- `render_pdf_ready` — markdown with `\pagebreak` for pandoc.
+- `render_deck_bullets` — ≤ 10 short bullets for slide copy-paste.
+
+`render_all_memo_formats(review)` returns every format.
+
+---
+
+## 56. Extra archetypes (`extra_archetypes.py`)
+
+Eight specialized deal patterns beyond the core 10:
+
+- `de_novo_build` — pre-revenue platform build.
+- `joint_venture` — sponsor + strategic (or sponsor + sponsor) JV.
+- `distressed_restructuring` — DIP / chapter-11 emergence.
+- `carveout_platform` — carve-out that becomes a rollup platform.
+- `succession_transition` — family-founder exit.
+- `public_to_private_tender` — tender-offer mechanics.
+- `spinco_carveout` — RMT / spin-co structures.
+- `late_stage_growth` — minority pre-IPO investment.
+
+---
+
+## 57. Extra red flags (`extra_red_flags.py`)
+
+Ten additional deal-killer detectors beyond the core 10 in
+`red_flags.py`:
+
+- `physician_turnover_high` — retention < 85%.
+- `clinical_staff_shortage` — RN vacancy > 15%.
+- `payer_denial_spike` — QoQ denial rate delta > 200 bps.
+- `bad_debt_spike` — bad-debt growth > revenue × 2.
+- `it_system_eol` — EHR end-of-life inside hold.
+- `lease_expiration_cluster` — > 30% of leased sites expire in hold.
+- `regulatory_inspection_open` — unresolved CMS / state inspection.
+- `self_insurance_tail` — under-funded self-insurance reserves.
+- `capex_deferral_pattern` — capex/D&A < 0.80.
+- `key_payer_churn` — top-3 commercial payer departure risk.
+
+Field list exported as `EXTRA_RED_FLAG_FIELDS` for caller wiring.
+
+---
+
+## 58. Scenario narrative (`scenario_narrative.py`)
+
+Turns a `StressGridResult` into partner-voice prose:
+
+- **Headline** — grade-specific one-liner.
+- **Worst-case sentence** — names the single most damaging
+  downside scenario with $ / pct impact.
+- **Passing-downside summary** — the shocks the deal absorbs.
+- **Compound-shock warning** — pairs of marginal-pass scenarios that
+  together would break the deal.
+
+`render_scenario_markdown(grid_dict)` produces a ready-to-paste
+markdown block.
+
+---
+
+## 59. Deal comparison (`deal_comparison.py`)
+
+Side-by-side comparison of two :class:`PartnerReview` objects:
+
+- Per-metric deltas on IRR, MOIC, margin, leverage, AR days, denial
+  rate, write-offs, stress grade, downside pass rate, covenant
+  breaches, investability, critical / high-hit counts, and
+  recommendation.
+- Winner tally with a 2-vote buffer before declaring an overall
+  winner.
+- Partner-ready markdown table via `render_comparison_markdown`.
+
+---
+
+## 60. Priority scoring (`priority_scoring.py`)
+
+Ranks a portfolio of :class:`PartnerReview` objects by composite:
+
+- **Urgency** (30%) — days to next gate.
+- **Leverage of attention** (40%) — count of open stretch / high
+  items where partner input still matters.
+- **Investability** (20%) — composite score from
+  `investability_scorer`.
+- **Strategic** (10%) — flagship / strategic flags from caller.
+
+`rank_deal_portfolio([(review, inputs), ...])` returns a ranked list
+with `.rank` populated.
+
+---
+
+## 61. Board memo (`board_memo.py`)
+
+Governance-focused memo renderer:
+
+- **Fiduciary reminder** — board duties in one paragraph.
+- **Approval matrix** — item-by-item approve vs informed schedule.
+- **Required disclosures** — surfaced from heuristic hits (capital
+  structure, payer concentration, regulatory history, key-
+  dependency).
+- **Action list** — concrete asks of the board.
+
+Translates IC recommendation to board language (PROCEED → APPROVE,
+PASS → DECLINE).
+
+---
+
+## 62. Contract diligence (`contract_diligence.py`)
+
+Scores a payer-contract portfolio by contract-level risk:
+
+- Expiry inside hold + revenue share.
+- Termination mechanic (at-will / anti-assignment / standard).
+- Rate-reset mechanic (CPI-only penalized).
+- Government + volatile-state combination.
+
+Aggregates to portfolio-level metrics: top-3 concentration, maturity
+wall (revenue expiring in hold), high-risk contract count. Produces
+a ranked action list (renegotiate / monitor / note).
+
+---
+
+## 63. Service-line analysis (`service_line_analysis.py`)
+
+Per-service-line concentration, margin contribution, and reimburse-
+ment-exposure scoring. Classifies the portfolio as:
+
+- `well_diversified` — HHI < 1500, no line > 25%.
+- `balanced` — HHI < 2500.
+- `anchor_dependent` — top line ≥ 40% of revenue.
+- `specialty_concentration` — top EBITDA contributor ≥ 60% even
+  when revenue share is moderate.
+
+---
+
+## 64. Quality metrics (`quality_metrics.py`)
+
+Translates CMS Star Rating, readmission percentile, HCAHPS, HAC
+penalty status, and mortality percentile into a composite 0..1
+score + estimated Medicare-revenue payment impact:
+
+- VBP bonuses/cuts from Stars (~1-2%).
+- HRRP penalties (up to 3%).
+- HCAHPS contribution to VBP (~0.5%).
+- HAC program (1% cut for bottom quartile).
+
+Verdict: leader / average / drag.
+
+---
+
+## 65. Labor-cost analytics (`labor_cost_analytics.py`)
+
+Scores staffing profile across five dimensions:
+
+- Contract / agency labor share.
+- Overtime share.
+- Nurse-patient ratio.
+- Wage growth vs local CPI.
+- Productivity vs peer.
+
+Estimates $ shock impact of 10% wage reset and $ savings from 5%
+productivity lever. Verdict: strong / moderate / drag.
+
+---
+
+## 66. Analyst cheatsheet (`analyst_cheatsheet.py`)
+
+Condensed IC pre-read for the associate. Renders a `PartnerReview`
+into a 1-page reference: top 5 facts, top 5 flags with partner-voice
+quotes, top 3 questions, and quick-number summary (IRR / MOIC /
+leverage / investability / stress grade). Different from the
+`ic_memo` renderer — this is the associate's desk reference during
+IC discussion, not the partner's document.
+
+---
+
+## 67. Reimbursement bands (`reimbursement_bands.py`)
+
+Payer-level rate-assumption bands:
+
+- **Rate growth** — Medicare 1.5-2.5%, Medicaid 0-2.5%, Commercial
+  3-5.5%. Above each band's ceiling requires a named story.
+- **Gross-to-net** — per-payer collection-ratio ranges (Medicare
+  28-42%, Medicaid 22-38%, Commercial 40-65%).
+- **HOPD / ASC parity** — site-neutral policy exposure via rate
+  ratio between HOPD and ASC / office equivalents.
+
+`run_reimbursement_bands(payer_rate_growths, gross_to_net_ratios,
+hopd_asc_parity)` runs every check with populated inputs.
+
+---
+
+## 68. EBITDA quality (`ebitda_quality.py`)
+
+Classifies add-backs against reported EBITDA:
+
+- **Defensible** (one_time, documented) — haircut 5-10%.
+- **Aggressive** (normalization, rent, CEO comp) — haircut 30-50%.
+- **Phantom** (synergies, run-rate, projected) — haircut 60-75%.
+
+Produces a partner-EBITDA (reported + haircut-adjusted add-backs)
+and a quality verdict (high / moderate / low / implausible) based
+on both the add-back ratio and phantom-share.
+
+---
+
+## 69. Covenant monitor (`covenant_monitor.py`)
+
+Live covenant-compliance tracker for Ops partners:
+
+- Per-covenant status (green / amber / red) based on headroom %.
+- Break-EBITDA math — the EBITDA level that triggers a technical
+  default given known debt + interest.
+- Trend projection — status at end of next quarter given per-
+  quarter trend.
+- Aggregate report flags the worst status and counts red/amber
+  covenants.
+
+Intended for the monthly ops-partner review cadence alongside
+`value_creation_tracker.py`.
+
+---
+
+## 70. Liquidity monitor (`liquidity_monitor.py`)
+
+13-week cash projection with runway + covenant-floor breach
+detection. Projects opening / collections / outflows / debt-service
+/ ending balance per week. Flags:
+
+- **Red** when the projection breaches the covenant cash floor at
+  any week.
+- **Amber** when runway is under 26 weeks.
+- **Green** otherwise.
+
+---
+
+## 71. M&A pipeline (`ma_pipeline.py`)
+
+Add-on acquisition pipeline tracking:
+
+- Stage inventory across `sourced / outreach / loi / diligence /
+  closed / passed`.
+- Conversion probabilities per stage (sourced 30%, outreach 40%,
+  loi 60%, diligence 75%).
+- Weighted-close EBITDA = sum of target EBITDA × prob(close | stage).
+- Expected closes/year from active count × avg conversion × cycle
+  speed.
+- Capacity-check ratio vs platform EBITDA.
+
+---
+
+## 72. ESG screen (`esg_screen.py`)
+
+ESG diligence screen for LP reporting:
+
+- **Hard exclusions** — tobacco, firearms, short-term detention,
+  fossil-fuel-primary, controversial weapons. Any triggers → score
+  zero'd, gate closed.
+- **Composite scoring** — blend of E/S/G scores, board diversity
+  vs 30% threshold, and reporting completeness (scope-1/2,
+  DEI metrics, worker safety).
+- **Reporting gaps** — specific items missing from current tracking.
+- A..F grade; penalty of up to 25 points for reporting gaps.
+
+---
+
+## 73. Deep-dive heuristics (`deepdive_heuristics.py`)
+
+Ten more mature-diligence partner rules:
+
+- `entry_equals_exit_same_year` — flat-multiple + short-hold combo.
+- `rural_govt_concentration` — rural / CAH + ≥60% government mix.
+- `teaching_cmi_mismatch` — major-teaching flag + low CMI.
+- `ebitda_growth_no_volume` — margin expansion > 250 bps with
+  < 5% revenue growth.
+- `long_hold_thin_conversion` — 7+ year hold on < 10% margin asset.
+- `no_operating_partner_assigned` — RCM thesis without named op
+  partner.
+- `mgmt_rollover_too_high` — equity rollover > 30% signals founder-
+  scale limits.
+- `staff_turnover_trend_up` — turnover trending up > 2 pp/yr.
+- `pending_cms_rule` — specific CMS rulemaking affects thesis.
+- `gp_valuation_too_aggressive` — GP mark well above peer comps.
+
+---
+
+## 74. Master bundle (`master_bundle.py`)
+
+One-call aggregator that produces every PE-intel artifact for a
+packet: review, IC memo (markdown / html / text), LP pitch
+(markdown / html), memo formats (one-pager / slack / email / pdf /
+deck), analyst cheatsheet, board memo, 100-day plan markdown,
+narrative styles (analyst / skeptic / three-sentence), extras
+(heuristics, red flags, deepdive, bear-book), regulatory items,
+scenario narrative, partner discussion, audit trail.
+
+Each artifact is guarded — a bug in any one does not take down the
+bundle. Returns a flat JSON-serializable dict for caller persistence
+(SQLite blob, S3, Notion page).
+
+---
+
+## 75. Tax structuring (`tax_structuring.py`)
+
+Partner-prudent tax structure checks:
+
+- **Step-up eligibility** — partnership/S-corp/LLC sellers enable
+  step-up; C-corp sellers require 338(h)(10) or F-reorg.
+- **State drag** — high-income-tax states (CA/NY/NJ/etc) vs no-
+  income-tax states (TX/FL/TN/etc).
+- **163(j) interest cap** — flags when interest exceeds 30% of
+  adjusted taxable income.
+- **QSBS** — Section 1202 eligibility with 5-yr hold tests.
+- **F-reorganization** — captures C-corp step-up complexity.
+- **International** — GILTI / Subpart-F exposure flag.
+
+Output includes estimated $ impact where computable (e.g., lost tax
+shield from 163(j) cap excess).
+
+---
+
+## 76. Insurance diligence (`insurance_diligence.py`)
+
+Insurance-program review across healthcare programs:
+
+- **Professional liability** — minimum multiple of EBITDA by sub-
+  sector (acute-care 3x, ASC 1.5x, behavioral 2.5x, etc.).
+- **Cyber** — $5M healthcare breach benchmark.
+- **Self-insured retention** — flags under-funded actuarial reserves.
+- **Claims frequency** — 24-month window; >15 claims = systemic.
+- **Largest open claim** — escrow / indemnity recommended when
+  >40% of EBITDA.
+- **Tail policy** — recommended on claims-made program changes.
+
+Partner-facing output: list of `InsuranceGap` items + overall gap
+score + tail-policy recommendation.
+
+---
+
+## 77. Portfolio dashboard (`portfolio_dashboard.py`)
+
+Desk-view aggregator that takes a list of `PartnerReview` objects
+and returns:
+
+- Recommendation mix (PASS / PROCEED / STRONG_PROCEED counts).
+- Regime + posture + sector + state concentration.
+- Deals with critical / 3+ high-severity flags.
+- Avg investability score + avg stress grade.
+- Partner-facing summary naming the top priorities.
+
+---
+
+## 78. Integration readiness (`integration_readiness.py`)
+
+Post-close integration scorecard across 11 dimensions: integration
+officer, day-1 systems plan, management retention + comp alignment,
+workstream leads (RCM / IT / clinical / finance / HR), integration
+budget, communications plan. 100-point weighted composite with
+verdict `ready` / `qualified` / `not_ready`.
+
+Penalties for long TSA (> 12mo) and missing integration officer on
+roll-up theses.
+
+---
+
+## 79. Management compensation (`management_comp.py`)
+
+Partner-prudent checks on MIP / LTIP structure:
+
+- **MIP pool** — 8-15% of fully-diluted pool.
+- **CEO share of MIP** — 30-50%.
+- **Vesting** — 4-5 years.
+- **Cliff** — 12 months standard.
+- **Acceleration** — double-trigger standard, single-trigger flagged.
+- **CEO rollover** — 5-15% for alignment.
+- **LTIP** — 25-75% of base.
+- **Performance vesting** — 20-70% of grant.
+
+Flags each item as `standard / aggressive / light` with concrete
+remediation.
+
+---
+
+## 80. Red-team review (`red_team_review.py`)
+
+Adversarial-pushback generator. Takes a `PartnerReview` and returns:
+
+- Top 3-4 attacks by vector (valuation / operating / regulatory /
+  structure / concentration).
+- Alternative sponsor-side narratives.
+- Break-the-deal scenarios.
+- "If I had to pass, why?" rationale.
+
+Complements `narrative_styles.compose_skeptic_view` with a longer-
+form, multi-vector adversarial take.
+
+---
+
+## 81. Data-room tracker (`data_room_tracker.py`)
+
+Scores a seller-provided data-room against a 34-item canonical
+checklist across 8 categories (financial, payer, operational,
+clinical, regulatory, legal, it, hr). Priority weighting: P0 × 3,
+P1 × 2, P2 × 1. Returns a 0-100 completeness score, per-category
+completeness, P0 / P1 gap lists, and readiness verdict
+(`ready` / `partial` / `insufficient`).
+
+---
+
+## 82. Workstream tracker (`workstream_tracker.py`)
+
+Post-close integration workstream tracker. Each `Workstream` (RCM,
+IT, clinical, finance, HR, PMO) has a lead, a list of milestones,
+and a health flag (green / amber / red). Aggregator surfaces:
+
+- Overall completion percentage.
+- Delayed milestone count.
+- Red / amber workstream list for ops-partner escalation.
+
+Distinct from `diligence_tracker.py` (pre-close) — runs post-close
+alongside `value_creation_tracker.py` and `hundred_day_plan.py`.
+
+---
+
+## 83. Negotiation position (`negotiation_position.py`)
+
+Translates a `PartnerReview` into a pricing-negotiation cheatsheet:
+
+- **Anchor** — opening-offer multiple + price (below seller ask).
+- **Walkaway** — below which the partner pulls the bid.
+- **Leverage points** — findings from the review to justify a
+  lower offer.
+- **Concessions** — non-price items to unstick talks (higher
+  rollover, R&W tail, earnout, staged close).
+- **Cadence** — `aggressive` / `disciplined` / `walk` based on the
+  recommendation + critical flags.
+
+---
+
+## 84. LOI drafter (`loi_drafter.py`)
+
+Generates a partner-voice LOI term sheet from a `PartnerReview` +
+`NegotiationPosition`. Includes purchase price / structure,
+exclusivity period (30-60 days by recommendation), diligence
+scope (extended per flagged findings), financing terms,
+management terms, closing conditions, and explicit binding vs
+non-binding delineation.
+
+---
+
+## 85. Post-mortem (`post_mortem.py`)
+
+Structured lessons-learned template for exited deals. Compares
+actual vs planned across IRR / MOIC / exit multiple / exit EBITDA.
+Classifies net-vs-plan (outperform / on_plan / underperform) and
+surfaces lessons tied to the underperformance dimension, with
+concrete playbook-update suggestions that map back to
+`heuristics.py`.
+
+---
+
+## 86. Cycle timing (`cycle_timing.py`)
+
+Classifies the current healthcare-PE market into one of four cycle
+phases (early_expansion / mid_expansion / peak / contraction)
+using indicators: current vs 10-year avg multiple, deal-volume
+YoY, LP commitment YoY, fed-funds direction, debt spreads.
+
+Returns phase + confidence + entry implication + exit implication.
+Used when the partner asks "should we be deploying aggressively
+right now."
+
+---
+
+## 87. Exit planning (`exit_planning.py`)
+
+Generates a year-by-year exit preparation roadmap tailored to hold
+length + thesis type. Year-1 front-loads audit/close discipline;
+mid-years build buyer-candidate lists and data hygiene; last
+year is the formal process. Extra milestones for roll-up, RCM,
+distressed, and IPO theses.
+
+Complement to `exit_readiness.py` (static scorecard) —
+`exit_planning.py` is the dynamic roadmap.
+
+---
+
+## 88. Benchmark bands (`benchmark_bands.py`)
+
+Additional subsector bands extending the reasonableness matrix:
+
+- **SG&A as % of revenue** — subsector-specific overhead bands.
+- **Interest-to-EBITDA** — LBO debt-service intensity.
+- **Same-store sales growth** — volume-vs-rate decomposition.
+- **Net working-capital days** — AR + inventory - AP.
+- **Outpatient revenue share** — for acute-care and CAH.
+
+---
+
+## 89. Payer-mix risk (`payer_mix_risk.py`)
+
+Finer-grained payer-mix analysis beyond simple regime classification:
+
+- Payer HHI (0-10000 scale).
+- Dominant-payer flag (single payer ≥ 50%).
+- Medicare Advantage ≥ 30% flag (MA behaves differently from FFS).
+- Medicaid Managed Care ≥ 30% flag.
+- ACA exchange ≥ 20% flag.
+- Mix-shift flags from year-over-year trend data.
+
+---
+
+## 90. Peer discovery (`peer_discovery.py`)
+
+Finds the most-similar peers for a candidate deal from a universe
+using a weighted similarity function over:
+
+- Sector (30%)
+- Size bucket (20%)
+- Payer regime (20%)
+- State (10%)
+- Margin band (10%)
+- Leverage band (10%)
+
+Used pre-IC to surface known analogs and post-close to build
+cohorts for lever-benchmarking.
+
+---
+
+## 91. Reimbursement cliffs (`reimbursement_cliff.py`)
+
+Models named reimbursement rate-change events (Medicare sequestration
+reset, IMD waiver expiry, site-neutral expansion, 340B rule
+updates) against a deal's hold window. Returns cliffs inside hold,
+dollar impact at each cliff given payer-level revenue exposure,
+and severity ranking.
+
+`default_cliff_library()` provides a starter catalog — deal teams
+extend per deal.
+
+---
+
+## 92. Scenario comparison (`scenario_comparison.py`)
+
+Builds base / bull / bear three-column pricing comparison. Each
+column computes exit EBITDA, exit multiple, EV, equity, MOIC, and
+IRR. Bull/bear deltas are caller-configurable (default +15% / +1x
+and -20% / -1x). Returns MOIC spread with partner-voice commentary
+on deal sensitivity.
+
+---
+
+## 93. Vintage return curve (`vintage_return_curve.py`)
+
+Projects year-by-year DPI / TVPI / called-capital curve for a
+given fund vintage + target MOIC. Produces the classic J-curve
+shape: early draw-down, inflection around year 3, peak around
+year 5-7. Outputs trough year, inflection year, and partner note.
+
+---
+
+## 94. Co-invest sizing (`coinvest_sizing.py`)
+
+Splits a deal's equity check between fund commitment and LP
+co-investment offering. Fund commitment = min of three binders:
+total equity, concentration cap (typically 10-15% of fund size),
+and per-deal budget ((fund × (1 - reserve)) / expected deals).
+Co-invest offered = total_equity - fund_commitment.
+
+When LPs signal demand, compute coverage = demand / coinvest.
+≥ 1.5x = oversubscribed (allocation decisions matter); < 1.0x =
+undercovered (widen invite list or reduce syndication). Fully
+covered by fund means no co-invest needed.
+
+This replaces partner intuition (\"let's offer $X to LPs\") with
+a cap-table-aware number that respects concentration limits.
+
+---
+
+## 95. Sensitivity grid (`sensitivity_grid.py`)
+
+One-variable-at-a-time MOIC / IRR sweeps. Supported variables:
+entry_multiple, exit_multiple, ebitda_growth, leverage_multiple,
+hold_years. Produces a grid of ``SensitivityPoint`` rows and
+summary stats (base MOIC, swing, deltas vs base).
+
+Directionality partners should confirm the model reproduces:
+
+- **Exit multiple ↑ → MOIC ↑** (linear in exit EV).
+- **Entry multiple ↑ → MOIC ↓** (same exit, bigger entry equity).
+- **EBITDA growth ↑ → MOIC ↑** (compounds over hold).
+- **Leverage ↑ → MOIC ↑** (for a winner — equity base shrinks).
+  But leverage also amplifies bear cases; this grid shows magnitude
+  only, pair with ``stress_test`` for downside.
+- **Hold years ↑ → MOIC ↑** (more EBITDA growth compounds) but
+  IRR may flatten or decline since the exit is further out.
+
+``tornado(base, sweeps)`` runs several sweeps and returns them
+sorted by MOIC swing — the widest swing is the variable the deal
+is most sensitive to. That's where diligence time goes.
+
+---
+
+## 96. Capital structure trade-off (`capital_structure_tradeoff.py`)
+
+The "how much leverage?" question made explicit. For each leverage
+multiple in a sweep, compute:
+
+- **Equity MOIC / IRR** — winner-case, same exit multiple.
+- **Interest coverage** — EBITDA / annual interest at entry.
+- **Default risk score (0-100)** — heuristic based on coverage and
+  absolute leverage.
+- **Status** — `green` (coverage ≥ 3x AND leverage < 6x),
+  `yellow` (coverage ≥ 2x AND leverage < 7x), `red` (below either
+  threshold).
+
+Healthcare PE prudence bounds:
+
+- Coverage < 2.0x → covenant trip probability material in a rate
+  shock or a -10% EBITDA year. Red.
+- Leverage ≥ 7.0x → bank syndicate will apply FDIC SNC
+  "non-pass" scrutiny; pricing ratchets up. Red.
+- 6.0x-7.0x or coverage 2.0x-3.0x → yellow (workable but needs
+  headroom cushion in base case).
+- < 6.0x AND coverage ≥ 3.0x → green zone.
+
+``sweep_cap_structure`` returns the max-MOIC point that is still
+non-red as the recommendation. Partners routinely push against
+this to squeeze more MOIC; the module's role is to make the
+coverage cost of that decision visible.
+
+---
+
+## 97. Refinancing window (`refinancing_window.py`)
+
+Rule-based refi decision engine over a debt stack. For each
+tranche, produces one of:
+
+- **refi_now** — maturity within 1 year, OR current rate is
+  ≥100 bps above market with healthy covenant headroom in a
+  flat/rising-rate environment.
+- **refi_in_1_year** — rates rising AND maturity in 2-3 years;
+  lock in before the squeeze.
+- **wait** — rates falling (better pricing coming), OR covenant
+  headroom too thin (< 15%) to approach lenders.
+- **hold_to_maturity** — no edge available.
+
+Aggregate output: `total_maturity_wall_m` (principal due in next
+24 months) + partner note. This replaces "should we refi?" gut
+calls with a rule-based board-ready memo.
+
+Healthcare-PE wrinkles not yet encoded:
+
+- PIK debt behaves differently; this module treats it as cash-pay.
+- Revolver reserves don't mature in the normal sense — treat
+  as operating runway, not refi object.
+
+---
+
+## 98. Dividend recap analyzer (`dividend_recap_analyzer.py`)
+
+Tests whether a portfolio company can be re-levered to return
+cash to LPs (DPI without an exit). Gates:
+
+- **Max leverage tolerance** — post-recap leverage ≤ 6.5x (default).
+- **Post-recap interest coverage** — must remain ≥ 2.5x at
+  market debt rate.
+- **No incremental debt capacity** — if already at the cap, block.
+
+Output: proposed dividend size (incremental debt × 98% fee
+haircut), post-recap leverage + coverage, **DPI uplift**
+(dividend / fund equity invested). The DPI number is what drives
+partner conversations — a 0.5x DPI uplift mid-hold materially
+improves the vintage's interim return profile.
+
+Blockers are explicit: if coverage would drop below the target,
+if current leverage is already past the cap, or if there's no
+incremental debt capacity, the module returns feasible=False with
+named reasons.
+
+---
+
+## 99. Carve-out risks (`carve_out_risks.py`)
+
+Carve-out deals (buying a business from a larger parent) carry a
+structurally different risk profile from LBOs of standalone
+companies. This module codifies the specific risks:
+
+- **TSA scope gaps** — if < 80% of shared services covered, Day-1
+  operations are at risk. < 50% is high severity.
+- **Short TSA duration** — < 12 months forces accelerated stand-up.
+- **Change-of-control contracts** — ≥ 20% of revenue with CoC
+  clauses is material; ≥ 40% is high severity. Buyer must secure
+  customer consents pre-close.
+- **Unaudited carve-out financials** — always high severity.
+  Allocations (parent overhead, shared-service cost) are
+  judgmental and can distort EBITDA by 10-30%.
+- **Shared IT systems** — ≥ 3 is medium, ≥ 5 high. ERP / CRM
+  separations run $2M+ each and 12-18 months.
+- **Parent brand dependency** — medium when present; rebrand
+  required within the TSA window.
+- **Payer re-credentialing (healthcare only)** — each new NPI/TIN
+  payer contract takes 90-120 days. 20+ contracts is high severity.
+- **Key employee retention** — < 75% expected retention is
+  medium; < 60% is high severity.
+
+Aggregate output: total separation cost estimate, longest-path
+timeline, high-severity count, partner note ("Severe", "Material",
+"Standard", or "Clean"). Each risk ships with a mitigation line
+that IC wants on the first diligence call.
+
+---
+
+## 100. Secondary sale valuation (`secondary_sale_valuation.py`)
+
+Prices two types of secondary transactions:
+
+- **LP-led** — one LP sells a fund interest. Priced at a
+  discount to NAV:
+  - Base: 500 bps healthcare / 800 bps non-healthcare.
+  - Fund age ≥ 10y: +700 bps. ≥ 7y: +300 bps. ≤ 3y: -200 bps.
+  - DPI < 0.10x: +500 bps. DPI ≥ 0.80x: -200 bps.
+  - Top-asset concentration ≥ 40%: +400 bps.
+
+- **GP-led continuation vehicle** — usually priced near or above
+  NAV. Pricing is driven by projected remaining IRR vs buyer's
+  required hurdle:
+  - Projected IRR > hurdle + 500 bps → 500 bps premium possible.
+  - Projected IRR < hurdle → 600 bps discount required.
+
+Output: indicative bps vs NAV (positive = discount, negative =
+premium), implied price in $M, driver list. Partner tone is
+calibrated: ≥ 2000 bps = "deep discount / tail-end", 1000-2000 =
+"material", 500-1000 = "modest", 0-500 = "near NAV", < 0 =
+"premium pricing".
+
+---
+
+## 101. LBO stress scenarios (`lbo_stress_scenarios.py`)
+
+Named partner-recognizable downside scenarios with covenant
+breach checks. Library (healthcare-flavored):
+
+- `recession_soft` — -10% EBITDA, rates +100 bps.
+- `recession_hard` — -25% EBITDA, rates +200 bps.
+- `denial_rate_spike` — -15% EBITDA (working-capital hit).
+- `medicare_cut` — -8% EBITDA (IPPS / fee schedule).
+- `labor_shock` — -18% EBITDA (wage inflation).
+- `cyber_attack` — -20% EBITDA + $5M one-time cash outflow.
+- `lost_contract` — -12% EBITDA (large payer loss).
+
+For each scenario, the module computes stressed EBITDA,
+post-shock leverage and coverage, whether either covenant is
+breached, and a rough **months-to-default** estimate assuming
+EBITDA doesn't recover. Cash runway = cash / (interest - stressed
+EBITDA). No recovery modeled.
+
+Aggregate output ranks scenarios by worst coverage and produces
+a partner note:
+
+- 0 breaches → "Covenants hold".
+- 1-2 breaches → "Manageable, focused monitoring".
+- 3+ breaches → "Capital structure is fragile — reduce entry
+  leverage or negotiate covenant-lite terms".
+
+---
+
+## 102. Physician compensation benchmark (`physician_compensation_benchmark.py`)
+
+For physician-practice PE (PPMs, specialty consolidators), comp
+is the single largest cost line. This module compares actual
+comp vs partner-approximated MGMA medians across 9 specialties:
+
+- Primary care, cardiology, orthopedics, dermatology,
+  gastroenterology, ophthalmology, anesthesiology, emergency
+  medicine, radiology.
+
+Two ratios benchmarked:
+
+- **Total comp vs median** — ≥ 1.20× = high (margin pressure);
+  ≤ 0.85× = low (flight risk).
+- **Comp per wRVU vs median** — ≥ 1.20× = inefficient
+  (overpaying for output); ≤ 0.85× = efficient or under-comp.
+
+Structural check on base-productivity mix:
+
+- Base ≥ 80% of total → weak productivity incentive; expect
+  flat volume.
+- Base ≤ 30% of total → retention risk for average producers.
+
+Optional ``coastal_adjust=True`` shifts median 5% for NYC/SF/LA
+markets. Aggregate partner note names the risk (above-market
+margin opportunity, below-market flight risk, or within bands).
+
+---
+
+## 103. EBITDA normalization (`ebitda_normalization.py`)
+
+Sellers push "Adjusted EBITDA" hard. This module codifies the
+partner haircut discipline:
+
+- **Defensible (100% credit)** — one-time legal / cyber / fire
+  costs, CEO severance, founder-family non-economic salary,
+  pre-IPO readiness costs.
+- **Defensible with support (70% credit)** — signed synergies,
+  signed-contract revenue annualization, executed cost takeouts
+  (severance paid).
+- **Aggressive (30% credit)** — projected-not-realized synergies,
+  pipeline revenue run-rate, "non-recurring" items that recur.
+- **Reject (0% credit)** — sponsor management fees, pre-opening
+  losses as add-backs, stock-comp add-backs.
+
+Output: **Partner's Adjusted EBITDA** = Reported + Σ (amount ×
+haircut). The gap between Seller's and Partner's numbers is the
+renegotiation lever:
+
+- ≥ 20% gap → renegotiate purchase price off partner view.
+- 10-20% gap → modest renegotiation leverage.
+- < 10% gap → bridge largely supportable.
+
+Unknown categories default to "aggressive" (30% credit) — the
+partner-prudent posture when in doubt.
+
+---
+
+## 104. Staffing pipeline analyzer (`staffing_pipeline_analyzer.py`)
+
+Healthcare services live or die on clinician supply. Projects
+4-quarter headcount trajectory per role with:
+
+- **Hire yield** — assumes 60% of offers convert.
+- **Attrition** — quarterly rate applied to current headcount.
+- **Floor breach** — first quarter headcount drops below required
+  minimum (regulatory / contractual).
+- **Lost revenue** — open reqs × time-to-fill × daily revenue.
+
+Default TTF: 90d physician, 45d NP/PA, 60d RN, 30d tech. Default
+productivity ramp: 6mo / 3mo / 2mo / 1mo.
+
+Findings flagged:
+
+- **High** — attrition ≥ 10%/qtr, or headcount projected below
+  floor.
+- **Medium** — open reqs > max(3, HC/10), or pipeline < 2× open
+  reqs.
+
+Aggregate partner note: 2+ high findings = "material deal risk";
+1 high = "address at 100-day plan"; none = "manageable" or
+"healthy posture".
+
+---
+
+## 105. M&A integration scoreboard (`ma_integration_scoreboard.py`)
+
+Roll-up / platform deals depend on bolt-on integration execution.
+This module scores each bolt-on on six dimensions with partner
+weights:
+
+- **IT cutover (20%)** — systems consolidated onto platform.
+- **Billing conversion (20%)** — billing on platform codes.
+- **Synergy realization (25%)** — realized vs target on schedule.
+- **Customer retention (20%)** — revenue retained vs pre-close.
+- **Employee retention (10%)** — key staff retained.
+- **Brand migration (5%)** — typically lowest weight, done last.
+
+Per-deal health is a 0-100 weighted score. Platform health is
+revenue-weighted across bolt-ons. Red flags fire for:
+
+- Customer retention < 90%.
+- Synergy realization < 50% of expected curve.
+- Employee retention < 80%.
+- Past target-complete date with IT/billing incomplete.
+
+Partner note cuts to the right action: "strong", "focus on
+laggards", or "elevate to platform PMO".
+
+---
+
+## 106. Customer concentration drilldown (`customer_concentration_drilldown.py`)
+
+Goes beyond "top customer = X%". Per customer:
+
+- **Revenue share** (% of book).
+- **Churn probability (12mo)** — heuristic over:
+  - 5% base; +20% at-will; +15% expiring; +10% renewing in
+    ≤ 6mo; +10% relationship < 1yr; -3% relationship ≥ 5yr;
+    max 60% if known_at_risk.
+- **Revenue at risk** = churn_p × revenue.
+- **Cross-sell upside** = unpurchased products × revenue/product
+  × 50% realization.
+
+Book-level output:
+
+- Top-1, top-5, top-10 %.
+- **Customer HHI** on revenue shares.
+- Total revenue-at-risk and cross-sell upside.
+
+Partner tone: top-1 ≥ 25% = "material concentration risk";
+top-5 ≥ 50% = "moderately concentrated"; otherwise "reasonably
+diversified". Flags per customer name the specific action:
+diversification priority, renewal squeeze, at-will conversion, etc.
+
+---
+
+## 107. Geographic reach analyzer (`geographic_reach_analyzer.py`)
+
+Multi-state healthcare carries compounding complexity. Module
+outputs:
+
+- **State HHI** on revenue.
+- **Top-state share** — single-state risk.
+- **CPOM exposure** — revenue in restrictive corporate-practice
+  states (CA, NY, TX, IL, NJ, OH, MI, WA, CO, IA, OR).
+- **Density** — sites/state (operations leverage).
+- **Expansion whitespace** — favorable states not yet entered
+  (FL, TX, AZ, NC, TN, GA, SC, NV, UT, ID) minus present states.
+
+Findings fire for:
+
+- **High** — top state ≥ 60%; or CPOM exposure ≥ 50%.
+- **Medium** — top state ≥ 40%; density < 2 sites/state across
+  ≥ 5 states; ≥ 20 states (compliance overhead).
+- **Info** — top state < 30% AND ≥ 10 states (diversified);
+  density ≥ 5 sites/state (strong leverage).
+
+Partner tone escalates with 2+ high findings (material risk,
+reprice); otherwise "healthy", "standard", or "watch one finding".
+
+---
+
+## 108. Growth algorithm diagnostic (`growth_algorithm_diagnostic.py`)
+
+Decomposes total revenue growth into:
+
+- **Organic growth** = price + volume + mix.
+- **Acquisition growth** = revenue from bolt-ons closed in period
+  (as % of prior-year revenue).
+
+Organic further splits:
+
+- **Price** — rate / chargemaster / reimbursement per unit.
+- **Volume** — visits, admits, cases, members.
+- **Mix** — shift toward higher- or lower-reimbursement services,
+  payers, or acuity. Inferred as `organic - price - volume` if
+  not provided.
+
+Quality score (0-100) weights components by sustainability:
+volume (×4) > price (×2.5) > mix (×1.5) > acquisition (×1.0).
+Volume growth is the most defensible — it reflects real
+competitive position.
+
+Partner note priorities:
+
+- Organic < 0 → "contracting; acquisitions masking core decline".
+- Acquisition ≥ 60% of total → "acquisition-driven; underwrite
+  roll-up engine, not asset".
+- Organic ≥ 10% with volume ≥ 5% → "defensible algorithm".
+- Price-led with thin volume → "stress test pricing durability".
+
+---
+
+## 109. Technology debt assessor (`technology_debt_assessor.py`)
+
+Scores tech debt across eight areas, each with severity + cost +
+timeline. Triggers:
+
+- **EHR** — legacy or ≥ 12 years old = high ($15M / 24mo);
+  aging or ≥ 8 years = medium ($3M / 12mo).
+- **Billing / RCM** — legacy = high ($5M / 18mo); aging = medium.
+- **Integrations** — ≥ 20 without API layer = high; ≥ 10 without
+  = medium.
+- **Security** — gaps in MFA / SSO / SOC 2 / HITRUST / recent pen
+  test; 3+ = high, else medium.
+- **Data / analytics** — no warehouse = high; partial = medium.
+- **Uptime** — > 48h outage/12mo = high; > 16h = medium.
+- **Eng staffing** — < 2 engineers per 1,000 employees = high.
+- **Cloud** — on-prem only = medium.
+
+Aggregate: total cost, longest-path months, risk score 0-100
+(15 × high + 7 × medium, capped). Partner note escalates:
+
+- 3+ high → "material pre-close risk; flag to IC".
+- 1-2 high → "fold into 100-day plan".
+- Medium only → "include in operating plan".
+- None → "clean".
+
+---
+
+## 110. ROIC decomposition (`roic_decomposition.py`)
+
+DuPont-style: ROIC = margin × turnover × (1 - tax rate), where
+margin = EBIT / revenue and turnover = revenue / invested capital.
+
+Subsector peer bands (partner-approximated):
+
+- Specialty practice: margin 18-25%, turnover 1.5-2.5x,
+  ROIC 20-35%.
+- Hospital: margin 10-15%, turnover 0.6-0.8x, ROIC 7-12%.
+- Outpatient / ASC: margin 25-35%, turnover 1.2-1.8x, ROIC 25-40%.
+- DME supplier: margin 8-12%, turnover 2.0-3.5x, ROIC 15-25%.
+- Home health: margin 10-15%, turnover 3.0-5.0x, ROIC 25-40%.
+
+Per-component verdict: `in_band`, `below_band`, `above_band`.
+Partner note fires on:
+
+- ≥ 2 below-band → "ROIC below peer band; operating posture
+  needs intervention".
+- 1 below-band → "weak link: [component]".
+- ≥ 2 above-band → "top of peer range; confirm sustainability".
+
+ROIC is the single cleanest metric for "how good is this
+business" — margin tells ops story, turnover tells asset-light
+story, tax tells structure story.
+
+---
+
+## 111. Working capital peer band (`working_capital_peer_band.py`)
+
+Per-subsector DSO / DPO / DIO bands with cash-release estimation
+against the favorable end of each band:
+
+- Specialty practice: DSO 35-55, DPO 30-45, DIO 5-15.
+- Hospital: DSO 45-60, DPO 30-45, DIO 30-45.
+- Outpatient / ASC: DSO 40-50, DPO 30-45, DIO 15-25.
+- DME: DSO 55-85, DPO 40-60, DIO 45-60.
+- Home health: DSO 50-70, DPO 30-45, DIO 0-5.
+
+Directionality:
+
+- **DSO ↓** favorable (collect faster).
+- **DPO ↑** favorable (pay later).
+- **DIO ↓** favorable (less inventory on hand).
+
+Cash release = days above / below favorable threshold × daily
+revenue (DSO) or daily COGS (DPO / DIO). CCC = DSO + DIO - DPO.
+
+Partner note:
+
+- 2+ unfavorable levers → "high priority lever, $XM opportunity".
+- 1 unfavorable → "weak link: [component]".
+- In-band with residual ≥ $5M → "in-band but opportunity to
+  best-in-class".
+- All favorable → "preserve, don't optimize further".
+
+---
+
+## 112. Hold period optimizer (`hold_period_optimizer.py`)
+
+For each possible exit year, compute exit EV (EBITDA × exit
+multiple), exit equity (EV - debt), MOIC (equity / entry equity
+net of fees), and IRR. Partners face the classic tension:
+
+- **IRR-max year** is typically earlier (compounding haircuts
+  later returns).
+- **MOIC-max year** is typically later (EBITDA compounding).
+
+Module returns both years and a partner note:
+
+- IRR peak < MOIC peak → "Classic tension — exit at IRR peak if
+  LP scoring metric; hold to MOIC peak if narrative matters".
+- IRR peak == MOIC peak → "No ambiguity on hold year".
+- IRR peak > MOIC peak → "Unusual shape — review exit multiple
+  assumptions".
+
+Inputs accept year-by-year exit multiples, so multiple compression
+assumptions (e.g., 11x → 10x over hold) flow directly into the
+optimizer.
+
+---
+
+## 113. Pricing power diagnostic (`pricing_power_diagnostic.py`)
+
+Six-dimension weighted score (0-100) of the company's ability to
+raise prices:
+
+- **Payer concentration (20%)** — top payer ≥ 50% → score 20;
+  ≥ 30% → 45; else 75.
+- **Market share (20%)** — ≥ 40% → 90 (must-have); ≥ 20% → 65;
+  else 35.
+- **Differentiation (20%)** — base 30, +30 CoE, +30 exclusive
+  service line.
+- **Contract structure (15%)** — capitation (×1.0) > VBC (×0.8)
+  > FFS (×0.3).
+- **Payer mix (15%)** — commercial ≥ 60% → 85; ≥ 40% → 60; else 30.
+- **Pricing history (10%)** — historical rate increases ≥ 5% → 90;
+  ≥ 3% → 65; < 3% → 30.
+
+Partner guidance on base-case rate assumption:
+
+- ≥ 75 (strong) → model 3-4%/yr.
+- 55-74 (moderate) → model 2-3%/yr; stress test at flat.
+- 35-54 (weak) → model 0-1.5%/yr; pricing is not the lever.
+- < 35 → pricing is not a lever.
+
+---
+
+## 114. Portfolio rollup viewer (`portfolio_rollup_viewer.py`)
+
+Fund-level dashboard over per-deal snapshots. Aggregates:
+
+- Totals: cost, NAV, realized, unrealized.
+- **Weighted gross MOIC** = (realized + NAV) / cost.
+- **Cost-weighted IRR** (deals with current_irr populated only).
+- **Status counts** — held / exited / written off.
+- **Top 5 gainers / losers** by period-over-period NAV delta.
+- **By sub-sector** — deal count + NAV + cost.
+- **By vintage year** — deal count.
+- **By stage** — platform vs add-on.
+
+Partner note:
+
+- MOIC ≥ 2.5x → "strong".
+- 1.8-2.5x → "on track".
+- 1.2-1.8x → "pedestrian; need outperformance from later vintages".
+- < 1.2x → "under water; GP intervention required".
+
+This is the one-page view partners share with the Investment
+Committee and LPs. Fast, honest, no hedging.
+
+---
+
+## 115. Bank syndicate picker (`bank_syndicate_picker.py`)
+
+Picks lenders for a deal from a 21-lender universe covering
+bulge bracket, commercial banks, healthcare specialists, and
+direct lenders / BDCs.
+
+Scoring:
+
+- Size fit: +20 if debt in lender's hold range.
+- Bulge preference for >$1B deals: +15.
+- Commercial preference for $100M-$500M: +10.
+- Direct-lender preference for ≤$100M: +10.
+- Healthcare specialist when requested: +30.
+- Direct lender when partner prefers looser covenants: +25.
+- Explicitly looser covenant posture: +15.
+
+Tiers: position 0 = lead, 1-2 = joint, 3+ = participant. Fallback
+list is next 3 candidates behind the primaries.
+
+Partner note scales to deal size:
+
+- \>$1B → "bulge-led syndicate with 4-6 joint arrangers".
+- $250M-$1B → "commercial or direct-lender club with 2-4".
+- ≤$250M → "single direct lender or 2-lender club".
+
+Universe can grow; library is partner-approximated not exhaustive.
+
+---
+
+## 116. Exit channel selector (`exit_channel_selector.py`)
+
+Ranks the four exit channels:
+
+- **Strategic** — base 40; +25 if strategic interest expressed;
+  ±15 for sector heat; +10 if EBITDA ≥ $50M. Timing 9 months.
+  Expected 11x base, up to 13x hot.
+- **Sponsor** — base 55; ±15 for sector heat; ±10 for rate env;
+  +10 if EBITDA ≥ $25M. Timing 6 months. Expected 10x base.
+- **IPO** — base 25; +20 if revenue ≥ $300M AND EBITDA ≥ $75M,
+  else -15; ±30 for IPO window open/closed. Timing 12 months.
+  Expected 12x base.
+- **Continuation** — base 30; +25 if runway thesis; +10 if held
+  ≥ 5 years; +15 when IPO closed and sector not hot.
+
+Best channel is highest score; partner note names the winner and
+runner-up. Expected multiples and timings flow into waterfall
+and MOIC projections.
+
+---
+
+## 117. Management incentive sizer (`mgmt_incentive_sizer.py`)
+
+Sizes post-LBO MIP + LTIP + vesting. Base pool % by deal type:
+
+- Platform LBO: 10%.
+- Physician PPM: 13% (retention-critical).
+- Carve-out: 8% (harder to justify more).
+- Add-on: 5%.
+
+Adjustments: +1.5pp if CEO is founder; +1pp if management
+headcount ≥ 15. Capped at 18%.
+
+Layer split:
+
+- CEO: 25% of pool (30% if founder).
+- C-suite (COO/CFO/CRO/CMO): 35%.
+- Broader management (VP+): remainder.
+
+LTIP annual cash target = 20% of CEO cash comp.
+
+Vesting: 4-year cliff + quarterly post-cliff. Accelerator: 100%
+vest at target MOIC; 50% at target-0.5x.
+
+Partner note:
+
+- Pool ≥ 15% → "above market; justify on retention/founder risk".
+- Pool ≤ 6% → "thin; verify management engagement".
+- Otherwise → "within market band".
+
+---
+
+## 118. QofE tracker (`qofe_tracker.py`)
+
+Quality-of-Earnings diligence progress monitor. Tracks:
+
+- **Status** — not_started / in_progress / draft / final.
+- **Total adjustments** with "supported" / "unsupported" split.
+- **NWC vs peg** — actual - peg.
+- **High-severity findings** count.
+- **Days until target completion**.
+
+Critical-path flag fires when:
+
+- Status is not final, AND
+- Days < 10 OR high-severity findings ≥ 2.
+
+Partner note scales:
+
+- Final + 0 high → "clean".
+- Final + high findings → "reflect in purchase-price mechanism".
+- Critical path → "NOT on track; escalate to deal team lead".
+- Draft → "review adjustments ($X unsupported)".
+- Otherwise → "monitor daily as deadline approaches".
+
+---
+
+## 119. Board composition analyzer (`board_composition_analyzer.py`)
+
+Scores portco board composition:
+
+- **Independent seats %** — ≥ 25% market standard. Below → high gap.
+- **Diverse representation %** — LP reporting threshold ≈ 25%.
+  Below 20% → medium gap.
+- **Experience coverage** — healthcare ops / clinical / public co /
+  finance. Missing any → medium gap each.
+- **Committees** — audit + compensation always required; compliance
+  required in healthcare. Missing → high gap each.
+
+Partner note: 2+ high gaps = "address before next LP update"; any
+gaps = "decent with minor gaps"; none = "strong".
+
+---
+
+## 120. Historical failure library (`historical_failure_library.py`)
+
+Named, dated healthcare-PE failures with packet-field matchers.
+Unlike the generic bear_book, each entry captures a specific
+deal with: thesis at entry, what went wrong, ebitda destruction %,
+early-warning signals, partner lesson, and the packet_triggers
+needed to pattern-match it.
+
+Inaugural library (10 patterns):
+
+- **envision_surprise_billing_2023** — NSA compression on OON-
+  dependent staffing book.
+- **steward_reit_dependency_2024** — rent/EBITDA > 0.5 on
+  sale-leasebacked hospital book; multi-state failure.
+- **prospect_medical_cashflow_2023** — dividend recaps + capex
+  starvation in safety-net hospitals.
+- **hahnemann_bankruptcy_2019** — real-estate-motivated hospital
+  buyout, no operating competence.
+- **radiology_partners_rate_shock_2022** — >6.5x leverage +
+  floating unhedged + NSA overlap.
+- **adapthealth_accounting_2021** — acquisition pace outstripping
+  integration; pro-forma fiction.
+- **kindred_at_home_2018** — PDGM reset mid-hold compressed
+  home-health margins.
+- **shopko_rx_pharmacy_2019** — DIR fees + PBM squeeze ate
+  pharmacy margins.
+- **21st_century_oncology_2017** — FCA settlement + regulatory
+  investigations → bankruptcy.
+- **surgery_partners_leverage_2016** — ASC same-site growth
+  assumptions above 5% collided with reality.
+
+Usage: `match_failures(ctx)` scans a dict of packet fields and
+returns the patterns that fire. Partner reads each match as "this
+deal looks like <pattern>". Treat as a strong prior against the
+thesis unless specifically mitigated in underwrite.
+
+Adding a new pattern: add a `FailurePattern` to `FAILURE_LIBRARY`
+and a matcher to `_matchers()`. Matcher should read packet fields
+defensively (`_get_float`, `_get_str`, `_get_bool`).
+
+---
+
+## 121. Partner-voice IC memo (`partner_voice_memo.py`)
+
+A one-page, recommendation-first IC memo written in partner voice.
+Not a replacement for `ic_memo` (structured template) — this is the
+"60 seconds with the chairman" version.
+
+Structure:
+
+1. **Recommendation up top**: INVEST / DILIGENCE MORE / PASS.
+2. **One-paragraph summary** — numbers-first, direct.
+3. **Bull / Base / Bear case** — one line each with MOIC + IRR.
+4. **Three things that would change my mind** — honest pre-mortem,
+   capped at three.
+5. **Open deal-killers** — any unresolved red flags, historical
+   pattern matches, or valuation stretch.
+
+Scoring (0-100, higher = more INVEST-leaning):
+
+- Start 50.
+- -12 per high red flag; -3 per other red flag.
+- -3 per reasonableness out-of-band cell.
+- -4 per valuation concern.
+- -5 per bear_book hit; -8 per historical failure match.
+- +10 defensible organic growth; +5 clear exit path.
+- ±(score-50) × 0.20 for pricing power and management scores.
+- -4 peak cycle; -6 contraction; +4 early expansion.
+
+Hard rules override score:
+
+- 2+ open deal-killers OR 2+ historical pattern matches → PASS.
+- Score ≥ 70 AND no open deal-killers → INVEST.
+- Score ≤ 35 → PASS.
+- Otherwise → DILIGENCE MORE.
+
+**Why:** Partners think in terms of decisions, not scorecards.
+The memo forces a yes/no/maybe up top, then justifies it with
+the three things that would change the answer. This is how IC
+actually runs.
+
+---
+
+## 122. Recurring vs one-time EBITDA (`recurring_vs_onetime_ebitda.py`)
+
+**The exit multiple only applies to recurring EBITDA.**
+
+Worked example: $50M reported EBITDA that is $40M recurring +
+$10M from a one-time contract termination payment. At 12x exit:
+
+- Wrong: $50M × 12 = $600M exit EV.
+- Right: $40M × 12 + $10M × 1 = $490M exit EV.
+
+$110M error — the difference between a strong MOIC and a weak
+one.
+
+Recurring categories: `ongoing_operations`, `contracted_revenue`,
+`recurring_fees`, `subscription`, `run_rate_operating`.
+
+One-time categories: `working_capital_release`,
+`sale_leaseback_proceeds`, `contract_termination_payment`,
+`legal_settlement_recovery`, `insurance_recovery`,
+`gain_on_asset_sale`, `one_time_cost_takeout`,
+`grant_or_subsidy_one_time`, `covid_relief`.
+
+Unknown categories default to one-time (partner-prudent).
+
+Packet fields that trigger this: any `ebitda_bridge` item with a
+category keyword indicating a one-time event.
+
+---
+
+## 123. OBBBA / sequestration / site-neutral stress (`obbba_sequestration_stress.py`)
+
+Specific-dollar regulatory shocks partners underwrite against:
+
+- **OBBBA 3% Medicare cut** — applied to Medicare FFS + 50%
+  pass-through MA.
+- **Sequestration extension 2%** — same exposure base.
+- **Site-neutral HOPD** — 22% rate cut on HOPD revenue share.
+- **State Medicaid freeze 3%** — Medicaid exposure by subsector:
+  hospital 22%, safety-net 40%, home-health 25%, specialty 10%,
+  ASC 8%.
+
+Per-shock: `revenue_impact_pct`, `ebitda_impact_m`, and % of base
+EBITDA. Combined partner note:
+
+- ≥ 30% combined → "catastrophic; reduce leverage or pass".
+- 15-30% → "material; model at 50% probability; check covenants".
+- 5-15% → "manageable; fold into downside".
+- < 5% → "immaterial; largely insulated".
+
+Contribution margin on affected revenue is tunable (default
+0.50). Packet fields that trigger: `medicare_ffs_pct`,
+`medicare_advantage_pct`, `hopd_revenue_pct`, subsector.
+
+---
+
+## 124. Archetype subrunners (`archetype_subrunners.py`)
+
+Partners don't apply generic checks — they apply checks that
+match the archetype. This module branches into 7 specialized
+runners. Each is a small heuristic pack with partner-voice
+warnings.
+
+Archetypes and the questions they answer:
+
+- **payer_mix_shift** — "Can this asset actually renegotiate
+  into a better mix, or is that wishful thinking?" Flags:
+  Medicaid heavy without commercial leverage, rate-growth
+  assumption > 6%, VBC ramp too fast.
+- **roll_up** — "Is the roll-up engine healthy, or is pro-forma
+  EBITDA fiction?" Flags: platform age < 3y + 5+ acq/yr
+  (AdaptHealth pattern), < 80% integrated, flat organic volume
+  under the wrapper.
+- **cmi_uplift** — "Is the CMI lift defensible, or a RAC trap?"
+  Flags: CMI gap > 0.15 in 24 months, high denial rate
+  compounding the lift, long DAR.
+- **outpatient_migration** — "Does the thesis survive
+  site-neutral?" Flags: high inpatient share transitioning
+  out; high HOPD exposure.
+- **back_office_consolidation** — "How many ERPs? How many
+  shared-services functions?" Flags: > 3 ERPs (24-36mo
+  program), < 2 shared-services functions consolidated.
+- **cost_basis_compression** — "Is there any fat left to cut?"
+  Flags: labor < 40% of revenue (already lean).
+- **capacity_expansion** — "Are we filling before adding?"
+  Flags: utilization < 65% (value-destructive to add more),
+  5+ new sites (ramp drag in years 1-2).
+
+Dispatch via `run_archetype(name, ctx)`. Each runner reads what
+it needs from the loose `ArchetypeSubrunnerContext` bag —
+unused fields don't matter. Add a new archetype by writing a
+runner and registering it in `ARCHETYPE_RUNNERS`.
+
+**Worked example:** a deal pitched as a roll-up with 2-year-old
+platform and 8 acquisitions/year produces an "AdaptHealth
+pattern" high-severity warning; a partner reads that and asks
+for the pro-forma-to-GAAP bridge before writing anything else.
+
+---
+
+## 125. Unrealistic-on-its-face detector (`unrealistic_on_its_face.py`)
+
+**Partner statement:** some deal profiles are red flags on sight,
+before any model runs — pass before we spend diligence hours.
+
+Canonical worked example: **$400M NPR rural critical-access
+hospital projecting 28% IRR.** That combination is physically
+implausible. Rural CAH economics + cost-based reimbursement + no
+commercial leverage cap IRR in mid-single-digit-to-low-teens at
+best. 22%+ is not an achievable outcome — the seller either
+mis-modelled or is selling what they cannot deliver.
+
+Seven detectors:
+
+- **rural_cah_irr_implausible** — rural/CAH + claimed IRR ≥ 22%.
+- **hospital_margin_impossible** — hospital EBITDA margin ≥ 20%.
+- **practice_margin_impossible** — specialty-practice margin ≥ 35%
+  (likely includes cash-pay or non-operating income).
+- **leverage_coverage_impossible** — leverage + coverage that
+  arithmetic cannot support at market rates.
+- **hospital_growth_implausible** — hospital annual growth ≥ 12%
+  (M&A-hidden inorganic).
+- **practice_growth_implausible** — specialty practice organic
+  growth ≥ 25%.
+- **government_heavy_high_margin_implausible** — ≥ 70% Medicare +
+  Medicaid combined WITH ≥ 18% EBITDA margin.
+- **small_deal_extraordinary_irr** — EBITDA ≤ $20M + IRR ≥ 30%
+  (check equity base; small deals inflate IRR on pennies).
+
+Output grouped: `ImplausibilityFinding` per detector with
+`claim`, `reality`, and partner note. Overall: "pass-before-
+modeling" when 2+ high severity, otherwise push seller on
+specifics.
+
+Packet fields that trigger: `subsector`, `revenue_m`, `ebitda_m`,
+`medicare_pct`, `medicaid_pct`, `claimed_irr`, `leverage`,
+`claimed_interest_coverage`, `is_rural`, `is_critical_access`.
+
+---
+
+## 126. Partner voice variants (`partner_voice_variants.py`)
+
+A deal goes to IC narrated five different ways in a partner's
+head. This module produces each:
+
+- **Skeptic** — "what breaks this?"; numbers-first, no hedging;
+  invokes historical pattern matches when present; ends with the
+  question "pass unless X".
+- **Optimist** — "where does this 10x?"; upside case; believer
+  tone; ends with "this is the best deal in the pipeline" when
+  conviction is warranted.
+- **MD-numbers** — senior physician-investor; clinical + financial
+  blend; flags CMS survey history and covenant headroom.
+- **Operating partner** — "day 100 view"; what do I own; where
+  are the execution gaps; hiring plan if mgmt score is low.
+- **LP-facing** — what the GP would write in the next LP update;
+  quoted update-style paragraph with base-case MOIC/IRR + risks.
+
+`compose_all_voices(ctx)` produces all five. `compose_voice(name, ctx)`
+produces one. Rendered markdown reads as a cross-examination of
+the same deal from five senior perspectives — which is what
+partners actually do before IC.
+
+---
+
+## 127. Cross-module connective tissue (`cross_module_connective_tissue.py`)
+
+**The partner brain connects dots, not lists.** A denial rate
+change has coding implications which have CMI implications which
+change the Medicare bridge. This module does that explicitly:
+takes a `SignalBundle` tagged with outputs from several modules
+and emits **ConnectedInsight** narratives that only fire when
+signals co-occur.
+
+Inaugural detectors:
+
+- **envision_thesis_confirmed** — historical:envision match +
+  OON revenue ≥ 20% + pricing power < 50. Partner voice: "this
+  is the Envision failure, not a mitigated version." Pass.
+- **rollup_earnings_fiction** — archetype:roll_up + integration
+  < 70% + pro-forma add-backs > 15%. "Exit buyer underwrites
+  what is actually integrated."
+- **peak_cycle_covenant_breach_likely** — peak cycle + leverage
+  ≥ 6.5x + NOT covenant_lite. "Garden-variety 10% EBITDA miss
+  trips the coverage test."
+- **cmi_uplift_cash_squeeze** — CMI uplift + denial rate ≥ 10% +
+  DAR ≥ 55. "Cash gets WORSE before it gets better."
+- **medicare_heavy_no_defense** — Medicare ≥ 40% + pricing power
+  < 40 + OBBBA combined ≥ 10%. "No base-case defense; thesis is
+  a rate-policy bet."
+- **bear_book_plus_reasonableness_stacked** — 2+ bear hits + 2+
+  out-of-band reasonableness cells. "Stacked-risk signature."
+
+Each insight includes the literal signals that triggered it, so
+the partner can interrogate the logic. This is the first module
+where the *reasoning* is the product; all other modules feed into
+this one.
+
+**Worked example:** Envision-pattern match + OON 30% + pricing
+power 35/100 produces not "three separate warnings" but one
+connected partner-voice insight: *"this is exactly the failed
+thesis, pass."*
+
+---
+
+## 128. Live diligence checklist (`diligence_checklist_live.py`)
+
+Canonical 30-item list across financial / clinical / legal / ops.
+Each item is tagged with its source: `packet`, `mi` (management
+interview), or `third_party`. The walker takes the running
+diligence state and returns per-item status:
+
+- **answered** — source closed.
+- **needs_mi** — MI scheduled but not complete.
+- **needs_third_party** — report outstanding.
+- **stale** — packet data > 90 days old.
+- **missing** — nothing scheduled.
+
+Aggregate **IC-ready %** = answered / total. Partner note:
+
+- ≥ 90% → "IC-ready; close remainder in final-IC pass".
+- 70-90% → "target 2-3 weeks to IC-ready".
+- < 70% → "missing items require MI scheduling or third-party
+  engagement".
+
+This replaces the generic diligence_tracker's purely-tracking
+view with one that knows the *nature* of each gap — packet data
+you can't fix with more calls, vs an MI that you schedule, vs a
+third-party report that takes 4 weeks.
+
+---
+
+## 129. Partner traps library (`partner_traps_library.py`)
+
+Named thesis traps partners have seen before. Each has a
+seller_pitch, partner_rebuttal, and matching packet fields. The
+user explicitly cited three:
+
+- **fix_denials_in_12_months** — "we can get initial-denial rate
+  from 12% down to 5% in 12 months." Partner rebuttal: 200-300
+  bps/yr is the realistic ceiling; model 50% realization.
+- **payer_renegotiation_is_coming** — "we're up for renegotiation
+  next year; scale gives us leverage." Partner rebuttal: rate
+  cards rarely deliver 5%+; headline wins come from mix shifts.
+- **ma_will_make_it_up** — "Medicare Advantage enrollment growth
+  will offset Medicare FFS rate risk." Partner rebuttal: MA
+  plans pass through rate changes with 12-18mo lag — absorbs
+  risk, doesn't cushion it.
+
+Plus 7 more:
+
+- **back_office_synergies_year_1** — 25-30% is year-1 realization.
+- **robust_bolt_on_pipeline** — 10-15% close rate on pipeline.
+- **ceo_stays_through_exit** — founder retention past 3 years
+  runs ~40%.
+- **we_are_underpenetrated** — structural bottlenecks often
+  misdiagnosed as market-share gaps.
+- **quality_and_growth_together** — rapid growth depresses
+  quality 18-24 months.
+- **multiple_will_re_rate** — exit multiple expansion is the
+  weakest leg; underwrite ≤ entry.
+- **technology_platform_lift** — first-year gains are 3-5%, not
+  10%+.
+
+`match_traps(ctx)` scans the packet; each trap has a matcher that
+reads specific fields. Rendered markdown reads as "here's what
+the seller is likely to say and here's the partner response" — a
+drop-in tool for anyone preparing for IC.
+
+---
+
+## 130. First thirty minutes (`first_thirty_minutes.py`)
+
+**Partner statement:** walking into an MI, a senior partner does
+not ask generic questions. They ask three to five questions that
+the packet has already pointed at, specifically enough to force
+a non-rehearsed answer.
+
+Tiers:
+
+- **Landmine** — specific risk that kills the deal if true.
+  Always goes first. Cannot be deflected to week-6 diligence.
+- **Opening** — sets the tone; usually about the thing the deck
+  tried hardest to downplay.
+- **Probe** — follow-ups that test whether the answer is genuine
+  or canned.
+
+12 question detectors currently wired:
+
+- Denial rate ≥ 10% → opening: "three biggest denial reasons by
+  payer; structural vs fixable."
+- DAR ≥ 55 → probe: "billing timing vs payer-mix vs clean-claim."
+- One-time % EBITDA ≥ 15% → opening: "recurring trajectory."
+- OON ≥ 20% → landmine: "NSA exposure + in-network pipeline."
+- Denial rate delta +≥ 1.5pp → probe: "what broke; owner; timeline."
+- C-suite tenure < 2.5 → probe: "retention packages through exit."
+- Pending FCA → landmine: "settlement exposure, timeline."
+- Rate growth > 5% → probe: "signed contract wins; 5%+ rate-card
+  number does not exist."
+- Top payer ≥ 35% → landmine: "renewal date, escalators,
+  contingency if they walk or cut 5%."
+- Historical pattern match → opening: "three structural
+  mitigations that prevent the same outcome."
+- Year-1 synergies > $5M → probe: "actions in months 1-6 vs
+  7-12 with named owners."
+- Sale-leaseback in thesis → landmine: "rent-to-EBITDA at -10%
+  EBITDA; Steward told us what happens."
+
+Each question ships with the packet trigger (e.g.
+`current_denial_rate=0.15`) so the associate can reference the
+data when management deflects.
+
+**Worked example:** an Envision-pattern staffing deal with 30%
+OON, rising denials, and a 45% top-payer concentration generates
+three landmine questions up top — exactly how a senior partner
+would open.
+
+---
+
+## 131. Thesis coherence check (`thesis_coherence_check.py`)
+
+**Partner statement:** "You claim margin expansion AND 15% volume
+growth AND labor cost reduction AND quality improvement — how
+does all that work together?"
+
+Most decks list thesis pillars independently. This module checks
+them against each other. Named tensions:
+
+- **volume_growth ↔ margin_expansion** — high: if you grow 12%+
+  and expand margin without labor investment, you're burning
+  existing staff. Pick two.
+- **price_growth ↔ contract_reality** — medium: > 5% rate growth
+  hides mix shift; underwrite pure rate 2-3%.
+- **volume_growth ↔ quality_improvement** — medium: rapid growth
+  typically depresses quality 18-24 months. Both improving
+  simultaneously is rare.
+- **roll_up_closings ↔ integration_investment** — high: aggressive
+  roll-up without proportional integration spend is pro-forma
+  fiction (AdaptHealth pattern).
+- **multiple_expansion ↔ exit_underwriting** — medium: the weakest
+  leg in any MOIC bridge. If the math needs expansion to work,
+  the math doesn't work.
+- **labor_cost_reduction ↔ enabling_investment** — high: labor
+  cuts ≥ 5% without tech or process investment is RIFs, which
+  compress quality and trigger flight.
+
+Score 100 minus penalties (high = -20, medium = -8). Partner note:
+
+- ≥ 85 → "pillars fit together".
+- 60-85 → "pillars in tension; walk management through specifics".
+- < 60 → "internally incoherent; deck has not done the work".
+
+Worked example: a deck claiming 20% volume + 4% margin + -10%
+labor + 20% roll-up + 7% price + multiple expansion produces
+5+ contradictions. The partner reads all of it and says "which
+one are we buying?"
+
+---
+
+## 132. Margin of safety (`margin_of_safety.py`)
+
+**Partner statement:** "How wrong can I be on each lever before
+MOIC falls below hurdle?"
+
+For each of four levers (EBITDA growth, exit multiple, entry
+multiple, leverage), binary-search the breakeven value where MOIC
+equals the hurdle. Express as % delta from base.
+
+Safety grade per lever:
+
+- **Thin** — harmful move of < 10% crosses breakeven.
+- **Moderate** — 10-25%.
+- **Ample** — ≥ 25%.
+
+Plus a **combined shock**: -5pp growth + -1x exit multiple at once.
+If this drops below the hurdle, the base case is fragile.
+
+Partner note:
+
+- Base MOIC already below hurdle → "pass; no margin of safety".
+- 2+ thin levers → "load-bearing on aggressive assumptions".
+- 1 thin lever → "pressure-test that lever specifically".
+- All ample → "absorbs reasonable downside".
+
+**Worked example:** a deal entering at 13x with 8% growth and
+5.5x leverage at 2.3x hurdle shows thin margin on exit multiple
+(~8% headroom) and moderate on growth. Partner reads: "the deal
+cannot tolerate multiple compression. Either negotiate entry
+down or stress the exit-multiple assumption."
+
+---
+
+## 133. Management vs packet gap (`management_vs_packet_gap.py`)
+
+**Partner statement:** when management's story and the packet
+numbers disagree, the gap size tells you what you are dealing
+with.
+
+Classification by |gap %|:
+
+- **< 5%** → minor; rounding or timing.
+- **5-15%** → material; management rounding in their favor OR
+  sandbagging. Push for the packet number in underwriting.
+- **≥ 15%** → contradicted; credibility issue — they are
+  selling what the numbers do not show. Force reconciliation
+  before IC.
+
+Favorable-for-mgmt direction depends on `higher_is_better`:
+EBITDA margin and growth are higher-is-better; denial rate and
+DAR are lower-is-better.
+
+Partner note escalates:
+
+- 2+ contradictions → "credibility problem, not a metrics
+  problem. Pause diligence until reconciled."
+- 1 contradiction → "force explicit reconciliation before IC."
+- 3+ material → "rounding pattern — underwrite to packet numbers
+  not deck."
+
+---
+
+## 134. RCM lever cascade (`rcm_lever_cascade.py`)
+
+**The canonical cross-module reasoning example** the user named:
+*"a denial rate change has coding implications, which have CMI
+implications, which change the Medicare bridge math."*
+
+This module traces the cascade in four named steps:
+
+1. **Denial rate shift** — EBITDA + cash hit. Every +1pp of denial
+   is ~(cases × CMI × base_rate × 1% × 40% appeal-conversion) of
+   write-off. At 10,000 cases × 1.30 CMI × $8K = 104M gross
+   Medicare; +1pp denial → ~$416K EBITDA and ~$1.04M cash.
+2. **Coding remediation / CDI** — if a CDI program is in place,
+   CMI nudges up (e.g. +0.05). Positive EBITDA offset, but
+   partner flags RAC-audit exposure on the upcoded records
+   (21st_century_oncology pattern). If CDI is NOT in place, the
+   lever exists but is not being pulled — 100-day-plan ask.
+3. **Medicare bridge** — net Medicare EBITDA impact flows here;
+   no additional hit but the partner sees the bridge line.
+4. **Working capital** — denial rise extends DAR ~5 days per 1pp;
+   cash pressure compounds. Covenants can trip from the cash side
+   even when EBITDA holds.
+
+Output includes both EBITDA and cash impact per step (kept
+distinct because exit multiple applies to EBITDA but covenant
+coverage watches cash). Partner note:
+
+- Total EBITDA < -$2M → "material; not just a denial blip — it
+  cascades."
+- Modest negative → "watch covenant headroom."
+- Positive → "CDI lift exceeds denial drag; confirm CDI is
+  operating not planned."
+
+---
+
+## 135. Bear case generator (`bear_case_generator.py`)
+
+**Partner statement:** "If I can't write the bear case, I haven't
+done the work. And the bear case has to be specific to this deal,
+not 'a recession hits everyone.'"
+
+The module fires 10 deal-specific bear drivers based on the
+packet. Each has a named haircut:
+
+- **medicare_rate_shock** — Medicare FFS ≥ 30% → 3% + delta haircut.
+- **nsa_oon_compression** — OON ≥ 20% → 40% of OON revenue.
+- **top_payer_walk** — top payer ≥ 40% → 25% of that book.
+- **denial_compounding** — denial rate ≥ 10% → (rate - 8%) × 1.5.
+- **historical:<pattern>** — any named match → 20%.
+- **steward_sale_leaseback** — sale-leaseback in thesis → 15%.
+- **weak_management** — score < 60 → 8%.
+- **rate_growth_miss** — claimed > 5% → 5%.
+- **pro_forma_fiction** — pro-forma ≥ 15% → half of pro-forma.
+- **labor_inflation** — labor ≥ 50% of revenue → 6%.
+
+Haircuts combine multiplicatively (not additively). Bear exit
+multiple = base − 1.5x (floor 5.0x).
+
+Output includes:
+
+- Bear EBITDA, bear exit multiple, bear MOIC, bear IRR.
+- Probability-weighted MOIC using configurable base_probability.
+- Partner-voice bear **story** that names the top driver and
+  weaves in the second/third.
+
+Partner note:
+
+- Bear < 1.0x → "loses money; only buy if base-case probability
+  ≥ 70%."
+- Bear 1.0-1.5x → "clears principal but not hurdle; bet on base."
+- Bear ≥ 1.5x → "real downside protection."
+
+**Worked example:** a staffing deal with 35% OON and an Envision
+pattern-match produces a bear case narrative that leads with NSA
+compression, compounds with the historical pattern, and puts
+bear MOIC under 1.0x. The partner reads it in 30 seconds and
+knows exactly what they are betting against.
+
+---
+
+## 136. Payer-mix shift cascade (`payer_mix_shift_cascade.py`)
+
+Sister module to `rcm_lever_cascade`. When a deck claims payer-mix
+shift (Medicaid → commercial), the cascade has 5 steps:
+
+1. **Magnitude** — pp of commercial share moving; annualized.
+2. **Effective rate change** — blended rate lift using partner-
+   approximated multipliers: commercial 1.60x, Medicare FFS 1.0x,
+   MA 1.05x, Medicaid 0.65x, self-pay 0.45x.
+3. **Revenue impact** — revenue × rate delta.
+4. **EBITDA impact** — revenue × contribution margin.
+5. **Exit multiple uplift** — ~0.25x per 10pp commercial shift;
+   buyers discount un-contracted mix by 50%.
+
+Credibility score 0-100:
+
+- -30 if pace > 3pp/yr.
+- -25 if no signed commercial contracts with claimed shift.
+- -15 if pipeline < (pp_shift / 2).
+
+Partner note:
+
+- < 40 → "aggressive AND thin pipeline; underwrite at ≤ 25%
+  realization."
+- 40-70 → "some backing; underwrite 50%."
+- ≥ 70 with signed contracts → "credible; 70-80% realization."
+- No shift → "straight on current blended rate."
+
+**Worked example:** a deck claims 30% → 60% commercial over 3
+years with 1 contract in pipeline. Credibility drops below 40.
+Partner reads: "this is a pitch, not a thesis — underwrite at
+25% of claimed lift."
+
+---
+
+## 137. Labor shortage cascade (`labor_shortage_cascade.py`)
+
+Third canonical cross-module cascade (after RCM and payer-mix).
+When clinician turnover rises, the effects cascade:
+
+1. **Turnover delta** — pp above baseline; extra departures =
+   headcount × delta.
+2. **Agency premium cost** — backfill at agency rates (~70%
+   premium over W-2). Incremental = W-2 cost × premium × share
+   delta.
+3. **Margin compression** — labor is 100% pass-through to EBITDA;
+   no < 12-month offset lever.
+4. **Quality / volume impact** — high-turnover units reduce
+   throughput 3-8%; revenue dips.
+5. **Covenant pressure** — stressed EBITDA + possibly floating
+   debt compresses coverage. Breach flagged when coverage <
+   80% of pre-shock level.
+
+Partner note priority:
+
+- Covenant breach → "not tolerable given base posture."
+- EBITDA hit ≥ 15% of base → "material; focus diligence on
+  retention + agency contract terms."
+- Positive but modest → "manageable; monitor agency trends
+  quarterly."
+- Zero → "immaterial."
+
+**Why this cascade:** agency spend is a canary. If 2025 Q3
+agency trending up, 2026 EBITDA model needs a haircut. Partner
+checks quarterly labor data religiously; this module formalizes
+the propagation.
+
+---
+
+## 138. Exit story generator (`exit_story_generator.py`)
+
+**Partner statement:** "If I can't write the sell-side CIM
+headline at entry, I don't know what I'm buying."
+
+The exit story is NOT the investment thesis. It is the
+two-sentence pitch a banker will make in 5 years. The module
+composes it from: scale multiplier, revenue CAGR, recurring-
+EBITDA %, payer mix, CoE/category-leader flags, M&A count.
+
+Outputs:
+
+- **Headline** — "Premium strategic asset / Sponsor-ready
+  platform / Public-ready company" + subsector + NPR + EBITDA +
+  CAGR + scale multiple.
+- **Three bullets** — growth, quality of earnings, differentiation
+  or M&A. Capped at 3; banker discipline.
+- **Likely buyers** — based on target channel.
+- **Exit risk** — the derailer (low growth, pro-forma, M&A-
+  dependency, IPO window, cycle timing).
+- **Banker multiple range** — subsector base ± differentiation
+  adjustments (e.g., +0.5x CoE, +1.0x category leader, +0.25x
+  high recurring, +0.5x commercial ≥ 60%).
+
+Subsector bases (partner-approximated):
+
+- Hospital: 7-10x.
+- Specialty practice: 9-13x.
+- Outpatient ASC: 11-15x.
+- Home health: 10-13x.
+- DME: 8-11x.
+- Physician staffing: 7-10x.
+
+Partner note:
+
+- Weak story (low CAGR + <2 bullets) → "banker will struggle;
+  shift to continuation."
+- Strong (category leader / CoE) → "defensible range."
+- Middling → "workable; main risk: [X]."
+
+---
+
+## 139. Partner scorecard (`partner_scorecard.py`)
+
+**Partner statement:** "Here's my must-have list. Any ONE
+failure is typically a pass. I don't trade dimensions against
+each other."
+
+Seven binary dimensions:
+
+1. **Scale** — EBITDA ≥ fund minimum (default $15M).
+2. **Team** — management score ≥ 55/100.
+3. **Market position** — local share ≥ 10% OR CoE / exclusive
+   service line.
+4. **Unit economics** — EBITDA margin ≥ 85% of peer median AND
+   cash conversion ≥ 65%.
+5. **Balance sheet** — leverage ≤ 7.0x AND stress coverage ≥
+   1.5x.
+6. **Exit path** — articulable exit story AND credibility ≥
+   50/100.
+7. **Thesis integrity** — recurring EBITDA ≥ 80% AND thesis
+   coherence ≥ 60/100.
+
+Partner note escalates:
+
+- All pass → "buy on fundamentals alone."
+- 1 fail → "that alone is typically enough to pass; force
+  remediation if sponsor conviction is exceptional."
+- 2+ fail → "do not spend partner time on remaining
+  diligence."
+
+Not weighted. Partners who weight their must-haves end up
+talking themselves into deals that fail the binary test.
+
+---
+
+## 140. Cycle timing pricing check (`cycle_timing_pricing_check.py`)
+
+**Partner statement:** "Am I paying peak multiple for peak
+EBITDA?" Late-cycle discipline. The double-count is the most
+expensive mistake in PE — it looks fine in the model because
+normal × normal is fine, but peak × peak overstates value by
+2 turns of multiple or more.
+
+Two flags:
+
+- **peak_multiple** — entry multiple ≥ 110% of subsector cycle-
+  average AND cycle_phase is peak or mid_expansion.
+- **peak_ebitda** — entry EBITDA ≥ 115% of 3-year trailing
+  average.
+
+Subsector cycle-average exit multiples (partner-approximated):
+
+- Hospital 8.5x
+- Specialty practice 10.5x
+- Outpatient ASC 12.5x
+- Home health 11.0x
+- DME 9.5x
+- Physician staffing 8.0x
+
+Recommended haircut:
+
+- **Double peak** → entry multiple compressed by ~50% of premium
+  to cycle avg, or pass.
+- **Peak multiple only** → 25% haircut; walk the exit multiple
+  assumption.
+- **Peak EBITDA only** → verify recent EBITDA is durable, not
+  cyclical.
+- **Neither** → cycle timing not a pricing concern.
+
+---
+
+## 141. 100-day plan from packet (`one_hundred_day_plan_from_packet.py`)
+
+**Partner statement:** "When I read the packet I already have the
+100-day plan sketched. The packet SHOULD tell me what to do in
+the first 100 days."
+
+14 conditional rules + 2 always-on (board cadence, KPI
+instrumentation). Each rule fires when a specific packet signal
+is present:
+
+- **FCA exposure** → engage specialized counsel, week 1.
+- **No MIP finalized** → finalize grants, week 2.
+- **Denial ≥ 10%** → RCM denial-reduction blitz, week 3.
+- **Weak management OR tenure < 2y OR role gaps** → named search,
+  week 4.
+- **Leverage ≥ 6x, covenanted** → weekly covenant monitor, week 4.
+- **CMS survey issues** → remediation plan, week 5.
+- **Integration < 80%** → integration sprint, week 6.
+- **DAR ≥ 55** → DAR reduction program, week 6.
+- **CDI not in place** → stand-up, week 8.
+- **Top payer ≥ 40%** → contingency plan, week 9.
+- **≥ 3 ERPs** → consolidation charter, week 10.
+- **Commercial < 50%** → payer strategy review, week 12.
+
+Cap at 15 actions (partner discipline — more is a wish list).
+Sorted by latest-start week. Expected $ impact quantified where
+calculable (denial blitz $2M, DAR $1M, CDI $1.5M).
+
+Partner note:
+
+- < 6 actions → "thin plan; confirm packet is complete."
+- 6-11 → "standard plan, $X quantified impact."
+- ≥ 12 → "aggressive; ensure CEO can execute 12+ simultaneous
+  workstreams."
+
+**Worked example:** a deal with denials at 12%, weak management,
+covenant-tight structure, and no MIP produces a week-sorted
+list of ~8 actions the partner can hand to the deal team on the
+day of close.
+
+---
+
+## 142. Outpatient migration cascade (`outpatient_migration_cascade.py`)
+
+Fourth canonical cascade (after RCM, payer-mix, labor). When a
+hospital thesis assumes IP-to-OP procedure migration:
+
+1. **Magnitude** — % of IP revenue in motion. > 20% in 5 years
+   requires infrastructure + physician-contract changes decks
+   often under-budget.
+2. **OP rate differential** — OP rates typically 55-75% of IP.
+   Top-line shrinks first; the "higher margin outpatient"
+   narrative ignores this.
+3. **Margin swap** — OP margin × rate-adjusted revenue vs IP
+   margin × original revenue. Net positive only when OP margin
+   differential beats the rate haircut.
+4. **Capacity unlock** — freed IP capacity: if backfilled with
+   higher-acuity cases (default 50% fill × 20% higher rate),
+   positive. If no named demand, fixed-cost drag.
+5. **Site-neutral risk** — HOPD share × site-neutral haircut
+   (22%) × OP margin. Bear-case assumes partial realization.
+
+Partner note:
+
+- Net EBITDA < 0 → "revenue loss from lower OP rates dominates;
+  backfill and margin swap don't close the gap."
+- Net positive but ≥ 50% from HOPD exposure → "regulatory bet,
+  not operational one."
+- Net positive with low HOPD share → "validate backfill
+  assumption and site-neutral exposure."
+
+---
+
+## 143. Quality of diligence scorer (`quality_of_diligence_scorer.py`)
+
+**Partner statement:** "Before I recommend invest or pass, I
+audit my OWN team's work. The failure mode is going to IC with
+a thin book and learning in the room."
+
+Six dimensions, each with a required checklist:
+
+- **Financial** (6 items) — QofE, NWC peg, recurring vs one-time
+  split, 3yr capex, debt schedule, capital plan.
+- **Commercial** (5) — payer map, top-10 contract review,
+  competitive map, customer references, pricing power.
+- **Clinical** (5) — quality metrics, CMS history, physician
+  interviews, coding audit, RAC history.
+- **Operational** (5) — IT inventory, KPI dashboards,
+  integration playbook, labor costs, staffing pipeline.
+- **Legal** (6) — QoL, FCA, Stark/AKS, litigation, CoC consents,
+  environmental.
+- **Management** (5) — CEO/CFO refs, MIP finalized, succession,
+  board charter.
+
+**IC-ready = every dimension ≥ 80%.** Not an average — a floor.
+The weakest dimension is always named.
+
+Partner note:
+
+- IC-ready → "weakest dimension still is X at Y%."
+- Near-ready → "close gaps on X: missing items Y, Z."
+- Weakest < 50% → "NOT IC-ready; decline to recommend; pull IC
+  back 2-3 weeks."
+
+---
+
+## 144. Management first sit-down (`management_first_sitdown.py`)
+
+**Partner statement:** "First post-LOI session is not 'tell me
+about yourself.' I walk in with an agenda calibrated to what the
+packet already told me."
+
+Three blocks:
+
+- **Confirm the thesis** (15-25 min) — "walk me through pillars
+  AS YOU SEE THEM, not the banker's version." Tests ownership
+  vs recital.
+- **Name the risks** (10-30 min) — "what keeps you up at night?"
+  Specific probes for denial rate, top-payer concentration, FCA
+  exposure, historical-pattern matches.
+- **Sign up for outcomes** (15-25 min) — "5 metrics I hold you
+  to with numbers"; MIP structure commitments; team-gap hiring
+  plan if management score is weak.
+
+Each item ships with a **probe-if-canned** note — the follow-up
+when management gives the CIM answer. Partners don't take
+rehearsed responses; they push past them.
+
+Partner note when any block is missing → "sit-down is
+incomplete; extend the meeting." Thesis + risks + outcomes is
+not negotiable.
+
+---
+
+## 145. IC decision synthesizer (`ic_decision_synthesizer.py`)
+
+**Partner statement:** "Give me one recommendation and three
+reasons. That's IC."
+
+This is the crown-jewel cross-module module. It consumes a
+bundle of pre-computed signals from the other brain modules
+(scorecard, QoD, bear case, margin of safety, face-plausibility,
+partner-trap, historical-failure, coherence, cross-module insights,
+cycle timing) and synthesizes:
+
+- **Recommendation** — INVEST / DILIGENCE MORE / PASS.
+- **Three reasons FOR** — drawn from strongest positives.
+- **Three flip-the-call signals** — what would flip it.
+- **Must-close before IC** — IC-blocking gaps.
+- **Chair opening line** — the partner's actual first sentence
+  at IC.
+
+Hard rules override score:
+
+- Any face-level implausibility → PASS (math doesn't work).
+- 2+ historical pattern matches → PASS ("this is X with a
+  different logo").
+- 2+ scorecard fails → PASS.
+- Bear MOIC < 1.0x AND combined-shock MOIC < 1.0x → PASS.
+- QoD not IC-ready → DILIGENCE MORE.
+- Score ≥ 72 with zero scorecard fails → INVEST.
+- Score ≤ 40 → PASS.
+- Otherwise → DILIGENCE MORE.
+
+**Worked example:** an Envision-pattern staffing deal with heavy
+OON + thin QoD produces PASS with the chair line "this is
+envision_surprise_billing_2023 with a different logo." The
+partner reads the recommendation + one sentence and knows how
+IC will go.
+
+---
+
+## 146. Healthcare regulatory calendar (`healthcare_regulatory_calendar.py`)
+
+**Partner statement:** "What's happening in 2026-2028 that a
+deal in this subsector needs to model?"
+
+12 named events (partner-approximated, refreshed against actual
+docket before IC):
+
+- **2026 Q1** — physician fee schedule cut (-2.8%, affects
+  specialty practice / staffing / ASC).
+- **2026 Q1** — sequestration 2% baseline (all subsectors);
+  4% extension risk 2027-2028.
+- **2026 Q3** — site-neutral HOPD phase 2 (-6% impact on
+  affected services).
+- **2026 Q1** — home-health PDGM recalibration (-3.5% on routine).
+- **2026 Q1** — MA risk-adjustment v28 (-1.5% pass-through).
+- **2026 Q2** — NSA IDR cycle (-4%, staffing only).
+- **2026 Q2** — state Medicaid redetermination wave 2 (-2.5%
+  safety-net).
+- **2026 Q1** — ASC covered-procedures expansion (**+5% tailwind**).
+- **2026 Q2** — OIG / AKS enforcement bump (litigation exposure,
+  not rate).
+- **2027 Q1** — 340B program integrity rule (-2%).
+- **2027 Q3** — MedPAC hospital IPPS advisory (-1.5%).
+- **2028 Q1** — commercial rate transparency enforcement (-1%).
+
+`events_for_deal(subsector, hold_start, hold_years)` returns the
+events landing mid-hold, sorted by date, with cumulative
+revenue-impact % and partner note:
+
+- Cumulative ≤ -10% → "regulatory-headwind subsector; don't rely
+  on rate growth."
+- -5 to -10% → "model flat real rates in base case."
+- Net tailwind → "confirm ramp assumptions against regulatory
+  timeline."
+
+---
+
+## 147. Deal smell detectors (`deal_smell_detectors.py`)
+
+**Partner statement:** "I've seen this before, and I didn't
+like it."
+
+Different from historical_failure_library (named/dated real
+failures) and partner_traps_library (specific pitch claims).
+These are SMELLS — combined-signal patterns partners recognize
+on sight. Each prints in partner-voice shorthand.
+
+Nine smells currently wired:
+
+- **rollup_running_out_of_boltons** — ≥ 5 acq/yr + thin pipeline
+  + platform ≥ 3y.
+- **denials_paper_over_payer_concentration** — denial ≥ 9%,
+  rising, + top payer ≥ 35%.
+- **founder_wants_out** — founder CEO + (age 60+ OR retiring
+  flag).
+- **ebitda_pulled_forward** — recent EBITDA jump ≥ 15% + close
+  deadline ≤ 8 weeks + pro-forma ≥ 10%.
+- **covenant_already_tight** — leverage ≥ 6.0x + headroom ≤ 10%.
+- **clinician_flight_in_progress** — ≥ 15% of headcount departed
+  in last 12 months.
+- **organic_declining_under_rollup** — negative organic + strong
+  acquisition growth (AdaptHealth pattern).
+- **management_churn** — ≥ 3 C-suite transitions in 2 years.
+- **quality_compliance_canary** — CMS survey issues + ≥ 2
+  litigation items.
+
+Partner note:
+
+- ≥ 2 high smells → "'something isn't right' deal; pass unless
+  specific remediation for each is on the table."
+- 1 high → "push IC back and diligence the specific signal."
+- 0 high → "passes the gut-check layer."
+
+---
+
+## 148. Letter to seller (`letter_to_seller.py`)
+
+**Partner statement:** "The banker runs 5 processes a year and
+remembers who was dismissive. Even when we pass, we write a good
+letter."
+
+Three letter variants keyed off the IC recommendation:
+
+- **PASS** — opens with thanks, names what we liked, states the
+  specific reasons we can't move forward, optionally frames the
+  price gap (if > 10%), offers to revisit if circumstances
+  change.
+- **INVEST** — short, direct; names closing-week conditions.
+- **DILIGENCE MORE** — asks for specific additional sessions in
+  the next 10-14 days.
+
+Tone discipline: no platitudes. A pass letter should name real
+reasons (payer concentration, site-neutral exposure, regulatory
+calendar) not "timing" or "priorities" — bankers know when
+they're being brushed off.
+
+---
+
+## 149. Synergy credibility scorer (`synergy_credibility_scorer.py`)
+
+**Partner statement:** "Are these real synergies or aspirational?
+Signed actions are real; management estimates are not."
+
+Base realization % by category (partner-approximated):
+
+- **procurement_gpo** 0.85 — real; GPO rebates are contractual.
+- **shared_services** 0.70 — if owned.
+- **back_office_consolidation** 0.60 — slow but real.
+- **contract_renegotiation** 0.55 — depends on leverage.
+- **rcm_denial_reduction** 0.50 — needs a CDI program.
+- **labor_productivity** 0.45.
+- **cross_sell_revenue** 0.30 — hardest to hit.
+- **revenue_mix_shift** 0.25.
+- **network_effects** 0.15 — this phrase is a red flag on its own.
+- **cultural_alignment** 0.10 — not a synergy, a platitude.
+
+Credibility modifiers: +20 signed contract; +15 action already
+executed; +10 benchmark reference; +5 named owner. Year-3+
+timing: -10 to -20. Source: +10 signed, +5 third-party,
+-5 management estimate.
+
+Realization = base × (credibility / 75), clamped to [0.40×,
+1.25×] of base and capped at 95%. Partner-prudent credit =
+claimed × realization.
+
+Partner note:
+
+- Total synergies ≥ 30% of entry EBITDA → "huge thesis share;
+  diligence the top 3 by owner, not the list."
+- Overall realization < 40% → "aspirational, not operational;
+  underwrite heavily haircut."
+- ≥ 70% → "strong; signed/executed actions backing claims."
+
+---
+
+## 150. Process stopwatch (`process_stopwatch.py`)
+
+**Partner statement:** "The banker's clock tells you things the
+CIM doesn't."
+
+Seven signal detectors:
+
+- **tight_close_clock** (high) — ≤ 4 weeks LOI-to-close is
+  designed to prevent deep diligence.
+- **bidder_collapse** (high) — round 2 has ≤ 25% of round 1
+  bidders. Specific finding is spreading through the group.
+- **process_relaunched** (high) — seller re-engaging prior
+  passers means first process failed.
+- **multiple_walks** (medium) — ≥ 3 bidders walked mid-process.
+  Call a peer partner — what did they find?
+- **repriced_during_process** (medium) — price reset downward
+  pre-close. Use as leverage; don't anchor on original ask.
+- **banker_rigid_on_price** (medium) — aggressive price defense
+  usually means weak comps and no natural clearing price.
+- **diligence_silence** (medium) — seller/management quiet
+  during diligence is often bad news.
+
+Partner note:
+
+- ≥ 2 high signals → "clock is telling you to be careful;
+  press banker for what's actually happening in the room."
+- 1 high → "investigate before moving forward."
+- Medium only → "fold into diligence questions."
+- Clean → "process tempo reads normal."
+
+---
+
+## 151. Red-flag escalation triage (`red_flag_escalation_triage.py`)
+
+**Partner statement:** "Not every red flag needs me at 7am. I'll
+take the FCA; you handle the denial rate. Triage is about WHO
+acts, not severity."
+
+Four tiers:
+
+- **partner_immediate (24h)** — legal, regulatory, reputational
+  categories (any severity) + clinical-safety incidents (high).
+  Reputational/fiduciary authority sits with partner.
+- **partner_this_week (72h)** — high-severity financial or
+  operational issues — block 30 min in the deal-team meeting.
+- **associate (168h)** — medium severity; diligence-tracker
+  item.
+- **informational (336h)** — low severity; note, no action.
+
+Partner note escalates:
+
+- ≥ 2 partner-immediate → "not queue items; partner should be
+  on the phone with counsel and CMO advisor today."
+- 1 partner-immediate → "escalate today; don't wait for the
+  deal-team meeting."
+- 2+ partner-this-week → "block partner time at next deal-team
+  meeting."
+
+This replaces the instinct to "escalate everything" with
+partner-discipline: triage by who has authority, not by how
+scary the word in the finding is.
+
+---
+
+## 152. Quarterly operating review (`quarterly_operating_review.py`)
+
+**Partner statement:** "Generic 'how are things going' is a
+waste of the 60 minutes. A disciplined QoR is four blocks of
+15 minutes with a specific partner-focus per block."
+
+Four blocks:
+
+1. **Numbers (15 min)** — EBITDA vs plan, revenue vs plan,
+   denial-rate trend, DAR, cash runway, covenant headroom.
+   Partner-focus shifts: EBITDA miss → pushes hard on named
+   driver; denial rising → RCM deep-dive; covenant tight →
+   13-week cash walk.
+2. **Thesis progress (15 min)** — levers on-track vs behind;
+   bolt-on integration status. Focus escalates: 2+ behind =
+   demand named recovery plan with owner + date.
+3. **People + operating rhythm (15 min)** — CEO search status
+   (if open), departures, retention tracker, MIP vesting.
+4. **Forward-look + asks (15 min)** — next-90-day priorities,
+   CEO's asks of the board, next-quarter KPI targets. In hold
+   year 3+: exit readiness + banker-prep items.
+
+Partner note escalates:
+
+- EBITDA < -10% → "intervention, not review; extend numbers
+  block."
+- 2+ levers behind OR open CEO search → "multiple items need
+  partner attention."
+- Outperforming ≥ 5% → "pull forward levers or assess early
+  exit readiness."
+
+---
+
+## 153. Value creation plan generator (`value_creation_plan_generator.py`)
+
+**Partner statement:** "Give me the 3-year VCP on one page —
+here's how we get from $X to $Y."
+
+Eight conditional initiatives keyed off packet signals:
+
+- RCM denial-reduction (~3% EBITDA lift, year 1-2).
+- CDI + CMI uplift (~2%, year 1-2).
+- M&A bolt-on pipeline (~30% from 3-4 bolt-ons, year 1-5).
+- Payer renegotiation (~4%, year 1-3).
+- Site footprint optimization (~2.5%, year 1-3).
+- Labor productivity + scheduling (~3%, year 2-3).
+- Procurement / GPO (~1.5%, year 1-2).
+- Technology platform enablement (~2%, year 1-4).
+
+Each initiative has year-starts, year-of-impact, expected $
+impact, named owner, and dependency list.
+
+Execution risks fire on:
+
+- **Shared dependencies** blocking 2+ initiatives
+  (single-point-of-failure).
+- **Management capacity < 55** with 5+ concurrent initiatives
+  ("team cannot execute in parallel").
+- **Capex bottleneck** when budget < $2M vs tech/ops-heavy plan.
+
+Partner note:
+
+- Plan closes < 80% of bridge → "doesn't reach target; either
+  target wrong or plan incomplete."
+- Plan overshoots > 30% → "optimistic; partners haircut 20-30%."
+- Within ±30% → "reasonable fit; execution risks are what matter
+  now."
+
+---
+
+## 154. Exit timing signal tracker (`exit_timing_signal_tracker.py`)
+
+**Partner statement:** "Exit readiness is not a year-5 question.
+Sell into strength, not because the clock says hold year 5."
+
+Seven signals tracked each quarter:
+
+1. **EBITDA 6mo trend** — green/yellow/red (up/stable/down).
+2. **Thesis lever completion** — ≥ 70% green; 40-70% yellow.
+3. **Credit markets** — easing/stable/tightening.
+4. **Peer multiples vs entry** — ≥ +5% green; -5% to +5% yellow.
+5. **Management stability** — stable + CEO committed = green.
+6. **QofE clean quarters** — ≥ 8 green; 4-7 yellow; < 4 red.
+7. **NAV posture** — above cost + no recent write-downs = green.
+
+Recommended action:
+
+- **start_banker_rfp** — ≥ 5 greens AND 0 reds.
+- **dry_run_sale** — ≥ 3 greens AND 0 reds.
+- **wait** — any reds, or < 3 greens.
+
+Partner note names blockers explicitly. "Sell into strength, not
+clock discipline" — the module forces the timing question away
+from calendar-driven exit prep.
+
+---
+
+## 155. Buyer-type fit analyzer (`buyer_type_fit_analyzer.py`)
+
+**Partner statement:** "Given THIS asset's profile, which
+SPECIFIC buyer type should the banker target first?"
+
+Eight buyer types scored 0-100 with named targets:
+
+- **strategic_health_system** — HCA, Tenet, CommonSpirit,
+  Ascension, AdventHealth. Best for outpatient / home health /
+  ASC with defensible geography.
+- **strategic_payer_led** — Optum, Carelon, CenterWell, Aetna,
+  Evernorth. Best for VBC-ready books + national footprint.
+- **specialty_consolidator** — USOC, US Dermatology, Heartland
+  Dental. Best for roll-up-ready specialty practices.
+- **larger_sponsor** — KKR, Blackstone, Bain, Carlyle, TPG. Best
+  for platform-ready growth assets ≥ $75M EBITDA.
+- **peer_sponsor** — New Mountain, Silversmith, Nordic, Welsh
+  Carson. Fallback if strategic path thin.
+- **ipo** — minimum $400M revenue AND $80M EBITDA AND ≥ 15%
+  organic growth for credibility.
+- **continuation_vehicle** — ICG, Pantheon, Lexington, Coller.
+  When GP conviction + named runway.
+- **industry_passive** — MPT, Sabra, Omega, Welltower, Ventas.
+  For real-estate-heavy mixes.
+
+Top + runner-up are named in the partner note. The point is not
+a single winner — banker books include multiple buyer types in
+round 2 for depth.
+
+---
+
+## 156. Add-on fit scorer (`add_on_fit_scorer.py`)
+
+**Partner statement:** "Banker just walked in a bolt-on. Does
+this specific target fit THIS platform?"
+
+Four scored dimensions (weighted):
+
+- **Strategic (30%)** — extends geography / service line /
+  scale. Low growth target flagged as platform CAGR dilution.
+- **Financial (30%)** — multiple arbitrage (platform mark −
+  target multiple); synergy % of target EBITDA; size (<$2M
+  EBITDA = team-bandwidth-cost > return).
+- **Integration (25%)** — ERP compatibility, physician
+  alignment, expected months, and whether the platform already
+  has ≥ 3 open integrations.
+- **Execution (15%)** — platform management bandwidth, capex
+  headroom, close timeline.
+
+Recommendation:
+
+- **proceed** — overall ≥ 70 AND no dimension < 40.
+- **re_evaluate** — overall 55-69; specific named concerns.
+- **pass** — overall < 55.
+
+Top 3 concerns named explicitly from across dimensions. Partner
+reads "proceed / re-evaluate / pass" + 3 bullets; everything else
+is supporting.
+
+---
+
+## 157. Concentration risk multi-dim (`concentration_risk_multidim.py`)
+
+**Partner statement:** "Show me the six concentration numbers
+side by side, and flag which ones are a problem."
+
+Six dimensions (ten metrics), same threshold logic:
+
+- **Customer** — top-1 + top-5.
+- **Site / location** — top-1 + top-5.
+- **Payer** — top-1.
+- **Provider** (physician / clinician) — top-1 + top-5.
+- **Service line / product** — top-1 EBITDA share.
+- **Geography** — top state + top MSA.
+
+Severity thresholds:
+
+- ≥ 50% → **high** ("underwriting constraint — re-underwrite
+  assuming 20% of that revenue walks").
+- 30-49% → **medium** (diligence flag; get contract terms,
+  escalator, renewal date).
+- 15-29% → **low** (noted but manageable).
+- < 15% → not flagged.
+
+Partner note:
+
+- ≥ 2 high → "structural issue; re-underwrite with each
+  concentrated dim stressed."
+- 1 high → "single-dim concentration; specific mitigation
+  required before IC."
+- Medium only → "standard diligence questions apply."
+- All low → "diversified across all six dimensions."
+
+---
+
+## 158. Post-close surprises log (`post_close_surprises_log.py`)
+
+**Partner statement:** "I track diligence miss rate
+religiously. If we miss 15%+ of post-close surprises, our
+process has a systematic gap — and the fix is in the template,
+not the individual deal."
+
+Each surprise logged with:
+
+- Category (operational / clinical / legal / financial /
+  regulatory / cultural / market).
+- Description.
+- Dollar impact on EBITDA (negative = hit).
+- Was it known at close (bool) + flagged severity + actual
+  severity post-close.
+
+Rolling analysis:
+
+- Overall miss rate (missed / total) + missed EBITDA bleed.
+- Per-category stats (miss rate, avg $ impact of missed items).
+- Worst category named.
+
+Partner commentary per category:
+
+- Miss rate ≥ 30% → "systematic gap — fix template before next
+  deal in this subsector."
+- ≥ 15% → "above tolerance; review template."
+- < 15% → "within norms."
+- Missed avg impact < -$2M → "bleed category — portfolio dollars
+  bleed here."
+
+This is the partner feedback loop. Deal-by-deal the numbers look
+small; portfolio-by-portfolio they tell you which category of
+diligence always burns you.
+
+---
+
+## 159. Regional wage inflation overlay (`regional_wage_inflation_overlay.py`)
+
+**Partner statement:** "A single wage-inflation rate is a fiction.
+NYC, SF, LA clinicians face different structural inflation than
+Tennessee or the Carolinas."
+
+Five-tier regional framework (partner-approximated 2026-2028):
+
+- **coastal_tier1** (NYC, SF, LA, Boston, Seattle, DC) — base
+  premium 1.30x, inflation 5.5%/yr.
+- **coastal_tier2** (Miami, San Diego, Philadelphia) — 1.15x,
+  4.5%.
+- **major_inland** (Chicago, Denver, Atlanta, Dallas) — 1.05x,
+  4.0%.
+- **mid_market** (Raleigh, Nashville, Minneapolis) — 0.95x, 3.5%.
+- **rural_tier3** (non-metro) — 0.85x, 2.8%.
+
+Takes site-level footprint, computes revenue-weighted inflation,
+and expresses the gap vs the model's single-rate assumption as
+a 3-year EBITDA drag.
+
+Partner note:
+
+- Drag ≥ 10% of EBITDA → "structural underwrite error; fix model
+  before IC."
+- 3-10% → "material but manageable; rebuild labor line with
+  regional split."
+- < 3% gap → "immaterial; note in underwrite."
+- Negative delta → "model is conservative; no adjustment."
+
+**Worked example:** a $20M EBITDA asset with 900 clinicians
+concentrated in NYC + SF under-models wage inflation by ~2.5pp.
+The resulting 3-year labor-cost drag is ~30% of entry EBITDA —
+structural, not incidental.
+
+---
+
+## 160. RAC audit exposure estimator (`rac_audit_exposure_estimator.py`)
+
+**Partner statement:** "Partners in healthcare PE are terrified of
+RAC and OIG audits because the dollars are disproportionate and
+the audits are retroactive. Give me a number."
+
+Base RAC hit rate 1.5% of 3-year Medicare FFS revenue. Adjusted
+by signals:
+
+- Historical denial rate ≥ 12% → +1.0pp; 8-12% → +0.3pp.
+- Claimed CMI uplift ≥ 10% → +1.5pp; 5-10% → +0.8pp.
+- No CDI program → +0.5pp.
+- Aggressive coding flags (from prior audits) → +0.5pp each, up to 5.
+- Open FCA exposure → +2.5pp.
+- Rate capped at 15%.
+
+Exposed revenue = Medicare FFS revenue × 3 (typical look-back).
+Expected loss: mid = exposed × rate; low = 50% of mid; high =
+200% of mid.
+
+Partner note:
+
+- Mid vs base EBITDA ≥ 30% → "IC-blocking; forensic billing
+  diligence non-negotiable; partner should not approve without
+  purchase-price adjustment."
+- 10-30% → "material; structure earn-out or indemnity for audit
+  window."
+- 3-10% → "modest; standard R&W with insurance."
+- < 3% → "immaterial."
+
+---
+
+## 161. IRR decay curve (`irr_decay_curve.py`)
+
+**Partner statement:** "Someone's suggesting we extend the hold.
+Does IRR still clear the hurdle next year?"
+
+Given projected EBITDA by year + exit multiple + entry equity +
+debt + hurdle IRR, returns a per-year exit MOIC / IRR table and
+identifies:
+
+- **IRR peak year** — usually earlier than MOIC peak.
+- **MOIC peak year** — usually later than IRR peak.
+- **Last year above hurdle** — where IRR still clears the
+  partner's minimum.
+
+Partner note:
+
+- Never clears hurdle → "thesis needs multiple expansion or
+  better EBITDA growth, not longer hold."
+- Clears throughout horizon → "trajectory supports extending if
+  needed."
+- Clears partially → "extending past year N destroys IRR even
+  if MOIC keeps growing; exit at year N unless DPI timing
+  dictates earlier."
+
+This is the math partner runs every time someone suggests
+"another year to let the thesis play out." Sometimes the answer
+is yes; often the math says no.
+
+---
+
+## 162. Competing deals ranker (`competing_deals_ranker.py`)
+
+**Partner statement:** "I have three deals going at once. Which
+wins the partnership's time and capital?"
+
+Composite score 0-100 per deal from 5 weighted components:
+
+- **Return (30%)** — base IRR × 250, capped.
+- **Quality (25%)** — 40% coherence + 30% pricing power + 30%
+  management.
+- **Downside (20%)** — bear MOIC: 1.0x=40, 2.0x=100, 0.5x=0.
+- **Fit (15%)** — +20 if fund PME boost; -15 per scorecard
+  fail (-40 if 2+).
+- **Timing (10%)** — time-sensitivity; execution burden drag.
+
+Partner note:
+
+- Gap ≥ 15 → "clear winner — partner's time goes here."
+- Gap 5-15 → "close enough that flipped downside or timing
+  could shift the call."
+- Gap < 5 → "effective tie; use execution-burden tiebreaker —
+  pick the one the ops-partner bench is ready to own."
+
+Per-deal commentary names specific drivers ("return is compelling,
+downside is protected, time-sensitive").
+
+---
+
+## 163. Medicaid state exposure map (`medicaid_state_exposure_map.py`)
+
+**Partner statement:** "Medicaid is state-by-state. National-rate
+overlays miss the leverage/exposure picture."
+
+Four risk tiers (partner-approximated 2026-2028):
+
+- **high_cut_risk (5% bear)** — non-expansion + budget pressure:
+  TX, FL, GA, TN, MS, AL, SC, MO, KS, WY.
+- **waiver_risk (4% bear)** — 1115 waiver docket: AR, KY, ND, MT.
+- **medium_cut_risk (2.5% bear)** — AZ, OH, IN, NC, IA, WI, OK,
+  LA, VA.
+- **low_cut_risk (1% bear)** — expansion states with backfill:
+  NY, CA, MA, WA, OR, MN, CO, VT, MD, NJ, CT, IL, RI, HI, NM,
+  NV, DE, PA, MI, NH.
+
+Bear EBITDA impact = Medicaid revenue × tier bear cut % ×
+contribution margin (default 0.45).
+
+Partner note:
+
+- High-risk states ≥ 50% of Medicaid revenue → "underwrite with
+  full state-risk bear drag."
+- 25-50% → "monitor state budget cycles."
+- < 25% → "manageable."
+- Concentrated in low-risk → "state risk is not a material
+  lever."
+
+Unknown states default to medium_cut_risk.
+
+**Worked example:** a deal with $100M Medicaid split 60% TX +
+40% NY has 54% of Medicaid in high-cut-risk states; the bear-
+case EBITDA drag is ~$1.55M. Same $100M in NY + CA would be
+$0.45M — one-third the risk.
+
+---
+
+## 164. Earn-out design advisor (`earnout_design_advisor.py`)
+
+**Partner statement:** "Earn-outs are for measurable disagreements
+in 12-36 months. Not every price gap deserves one."
+
+Driver classification:
+
+- **Good drivers** — `signed_commercial_contract`,
+  `ebitda_run_rate_milestone`, `bolton_close_count`,
+  `regulatory_licensure`, `site_expansion_count`. Measurable
+  outcomes that resolve the dispute.
+- **Bad drivers** — `generic_ebitda_threshold` (gameable),
+  `quality_metric` (subjective), `management_subjective`,
+  `market_share_claim`. Too easy to dispute.
+
+Recommendation logic:
+
+- Bad driver → **do NOT propose earn-out**; cut headline price
+  80% of gap instead, share upside through MIP.
+- Unknown driver → propose at 50% of gap; negotiate specific
+  measurable language.
+- Good driver:
+  - Seller flinching (high buyer skepticism, low seller
+    conviction) → 90% of gap deferred.
+  - Both confident but disagreeing → 60% of gap (classic
+    earn-out zone).
+  - Modest disagreement → 70% of gap.
+
+Structure notes:
+
+- Physician-owner deals add retention bonus component.
+- Binary outcomes (licensure, signed contracts) → cliff-vest,
+  not pro-rata.
+
+---
+
+## 165. Sponsor reputation tracker (`sponsor_reputation_tracker.py`)
+
+**Partner statement:** "Partners keep a mental file on other
+sponsors. When I see them bidding, I want to know if they
+over-pay, if they strip-mine, or if they're a clean
+counterparty."
+
+Five dimensions scored 0-100 per sponsor:
+
+- **pricing_discipline** — do they pay rational multiples?
+- **operating_value_add** — do they improve companies?
+- **exit_track_record** — do they generate clean LP returns?
+- **reputational_profile** — external regard.
+- **cultural_fit_with_management** — do CEOs enjoy working with
+  them?
+
+Assessment is context-specific:
+
+- **competing_bidder** — if pricing discipline < 65 → "expect
+  aggressive bidding, don't anchor"; if ≥ 80 → "if they pass,
+  listen."
+- **co_investor** — value-add ≥ 80 + mgmt fit ≥ 75 → "strong
+  partner"; value-add < 60 → "passive-capital; doesn't add to
+  the operating agenda."
+- **exit_buyer** — reputation ≥ 80 + overall ≥ 75 → "natural
+  exit-buyer candidate; quality counterparty."
+
+Inaugural 11-sponsor book (illustrative, partner-refreshed):
+
+- Mega-funds: KKR, Blackstone, Bain Capital, Carlyle, TPG.
+- Healthcare specialists: New Mountain, Welsh Carson,
+  Silversmith.
+- Mixed: Leonard Green (Prospect Medical cautionary tale),
+  Cerberus (Steward legacy), Apollo.
+
+---
+
+## 166. Debt capacity sizer (`debt_capacity_sizer.py`)
+
+**Partner statement:** "Model says 6.5x. Let's see what the
+min-of-three-constraints says."
+
+Three stacked constraints (debt = min):
+
+1. **Coverage** — stressed EBITDA / (debt × rate) ≥ coverage
+   hurdle (default 2.5x at 15% stress haircut).
+2. **FCF** — after-tax (EBITDA - maintenance capex) / (debt ×
+   rate) ≥ hurdle (default 1.15x).
+3. **Cycle discipline** — neutral subsector leverage ± phase
+   adjustment (early_expansion +0.5, mid 0, peak -0.75,
+   contraction +0.5), + 0.5x if covenant-lite available.
+
+Neutral leverage by subsector (partner-approximated):
+
+- Hospital 5.0x, safety_net_hospital 4.0x.
+- Specialty practice 6.0x, outpatient ASC 6.5x.
+- Home health 5.5x, DME 5.5x.
+- Physician staffing 4.5x.
+
+Partner note:
+
+- < 3.0x recommended → "thin — either seller's model is over-
+  levered or deal is less attractive than it looks."
+- Cycle binds → "discipline holds even though coverage / FCF
+  could support more."
+- FCF binds → "tight cash flow after capex + tax; consider
+  lower leverage or covenant-lite."
+- Coverage binds → "partner-prudent cap at stress hurdle."
+
+---
+
+## 167. Operating partner fit matrix (`operating_partner_fit_matrix.py`)
+
+**Partner statement:** "Who do I put on the board of this one?
+Not every ops partner fits every CEO or every archetype."
+
+Six ops-partner archetypes scored by deal profile:
+
+- **turnaround** — declining EBITDA / open ops issues / weak
+  mgmt score. Drives cost-out and operational rigor.
+- **scaler** — founder-led businesses scaling $50M → $200M;
+  systems, processes, team building.
+- **healthcare_specialist** — clinical / regulatory / RCM depth;
+  essential for payer-mix and coding work.
+- **mna_integrator** — integration PMO; essential when M&A
+  pipeline is active.
+- **exit_specialist** — hold year 3+; polishes systems, builds
+  banker story.
+- **founder_coach** — low-ego senior coach for first-time-with-
+  PE founder CEOs.
+
+Scoring uses deal archetype, CEO type, hold quarter, EBITDA
+trend, management score, clinical complexity, and M&A pipeline.
+
+Partner note:
+
+- Top pick with strong score → use as primary.
+- Close call (≤ 10 gap) → primary + advisory from runner-up.
+- Top score < 50 → "bench not purpose-built for this deal;
+  consider external recruitment."
+
+---
+
+## 168. Reverse diligence checklist (`reverse_diligence_checklist.py`)
+
+**Partner statement:** "If a buyer's QofE team arrived tomorrow,
+what would come out in the wash?" Partners run reverse diligence
+12-18 months before sale.
+
+Items grouped by category:
+
+- **kill_deal** — buyer walks. Open FCA, material litigation.
+  Close now or plan sale around them.
+- **price_haircut** — lets buyer reprice. Pro-forma ≥ 15%
+  addbacks, DAR ≥ 55, denial rate ≥ 10%, top-payer ≥ 40%,
+  incomplete integration ≥ 20%, CMS survey issues. Fix 9-12
+  months pre-sale.
+- **discovery_risk** — might or might not come out. Aggressive
+  coding history, contract renewal overhang. Fix if possible.
+- **housekeeping** — MIP vesting cleanup, data-room audit.
+  Tidy in last 6 months.
+
+Always-on: data-room dry-run 3-4 months pre-sale.
+
+Partner note:
+
+- ≥ 1 kill-deal → "sale cannot proceed; push sale date or
+  close now."
+- ≥ 3 haircut → "fix each; each fix is 2-3x ROI vs bid
+  reduction."
+- Clean book → "only housekeeping in last 6 months."
+
+---
+
+## 169. Management forecast reliability (`management_forecast_reliability.py`)
+
+**Partner statement:** "Before I believe this forecast, show me
+the last four forecasts you made."
+
+Analyzes prior forecast-vs-actual pairs and returns:
+
+- **Status per year** — beat (> +5%), at_plan (±5%), miss (< -5%).
+- **Reliability score 0-100** — starts 50; +15 per at-plan; +10
+  per beat; -20 per miss; -10 for high variance range; -15 for
+  3+ consecutive misses.
+- **Recommended haircut** on the current forecast based on miss
+  pattern.
+
+Partner note patterns:
+
+- Miss rate ≥ 50% → "do NOT underwrite to their base case;
+  haircut by X%."
+- Beat rate ≥ 75% and zero misses → "sandbagging (good buyer
+  signal) — underwrite at forecast, don't pay for upside."
+- Hit rate ≥ 60% → "reliable forecaster; base case is
+  believable."
+- Mixed high-variance → "don't chase the best year."
+
+---
+
+## 170. Working capital peg negotiator (`working_capital_peg_negotiator.py`)
+
+**Partner statement:** "The NWC peg is dollar-for-dollar of
+purchase price. Under-negotiate and the seller just moved $5M."
+
+Methodology selection:
+
+- Default: **trailing_12m_avg**.
+- Material one-time NWC items → **normalized_trailing_12m**
+  (strip out one-timers).
+- Seasonal business → **median_of_quarterly** (smooths
+  seasonality).
+
+Partner always adds **2% closing-period buffer** above the
+chosen methodology figure to account for NWC build between
+sign and close.
+
+Partner note:
+
+- Partner peg ≥ 10% above seller → "seller under-weighted
+  normalized WC; this is real price-paid money."
+- Seller peg > partner (unusual) → "seller building cushion
+  for adjustment at close; verify methodology."
+- Near-tie → "rounding band; not a material negotiation item."
+
+---
+
+## 171. Management rollover equity (`management_rollover_equity_designer.py`)
+
+**Partner statement:** "Rollover equity is the clearest signal
+of seller conviction. 2% rollover means they're taking the money
+and running; 25% means they believe the thesis."
+
+Target ranges (partner-approximated):
+
+- **Young founder (< 55), growth thesis:** 20-30%.
+- **Young founder, mature business:** 15-25%.
+- **Founder 55-65:** 10-20%.
+- **Founder ≥ 65 or retiring:** 5-10% (respect the exit).
+- **Sponsor-backed CEO joining newco:** 15-25%.
+- **Turnaround:** 5-15%.
+- **Distressed:** 3-8% (focus alignment on cash retention + MIP).
+
+Alignment grades:
+
+- Proposed ≥ upper target → **strong** ("clear conviction
+  signal").
+- Proposed in range → **adequate** ("partner comfort").
+- Proposed < lower target → **thin** ("skin-in-game reduced;
+  negotiate up or lean on MIP").
+- Distressed deal with thin rollover → "expected; focus
+  elsewhere."
+
+**Worked example:** a 45-year-old founder CEO getting $50M of
+proceeds proposing 15% rollover is thin (target 20-30%) — partner
+negotiates up or structures a larger MIP pool to fill the
+alignment gap.
+
+---
+
+## 172. Reference check framework (`reference_check_framework.py`)
+
+**Partner statement:** "Generic reference calls miss the signal.
+Who you call depends on what you're trying to verify, and what
+you ask them depends on the relationship."
+
+Role-specific relationship groups (must-call vs should-call):
+
+**CEO:**
+
+- **Board member (must)** — "describe a time the company was
+  off plan; how did the CEO respond?" "Would you back this CEO
+  in a new company?" Anything short of clear yes is a flag.
+- **Ex-direct report (must)** — "who are the top 3 people this
+  CEO has hired; where are they now?" "What would you change?"
+  Silence = scripted; specific critique = authentic.
+- **Peer CEO (should)** — "have you co-invested or would you?"
+  Highest-trust industry signal.
+- **Customer / payer (should)** — "when they made a commitment,
+  did they follow through?"
+
+**CFO:**
+
+- **Auditor (must)** — "describe a policy choice; escalations
+  above this CFO?" Auditors see the seam.
+- **Bank syndicate lead (must)** — "did CFO meet forecast in
+  covenant periods? Was the monthly package on time and
+  accurate?" Banks see the real trend before the board does.
+- **Ex-direct report (should)** — "did the CFO change their
+  mind based on analyst work?"
+- **CEO/CFO peer (should)** — "when you presented together, who
+  led?"
+
+**Other roles (COO / CMO / etc.):** ex-boss + ex-direct report
+with core questions ("would you rehire?", "how did they handle
+disagreement?").
+
+Each question ships with a **listen_for** note — what signal
+the partner is actually trying to pick up.
+
+---
+
+## 173. LOI term sheet review (`loi_term_sheet_review.py`)
+
+**Partner statement:** "Associates mark up everything. I know
+which 5 terms actually move outcomes."
+
+Partner-priority LOI terms (must-push vs should-push):
+
+- **exclusivity_window** — < 45 days must-push (buyer squeeze);
+  > 90 days should-push (giving up optionality).
+- **breakup_fee** — > 3% of PP is punitive; push to 1-2%.
+- **no_shop_clause** — absent → must-push; no partner signs
+  without it.
+- **financing_contingency** — hard money signing is should-push;
+  partner wants flex via reverse termination fee.
+- **rw_insurance_cap** — > 15% of EV is overpaying premium;
+  10-15% is market.
+- **mac_definition** — broad → must-push; partner wants walk-
+  away right.
+- **interim_covenants** — loose → must-push; seller can change
+  the asset between sign and close.
+- **retention_pool** — sized post-close is should-push; partner
+  wants sized at close with control.
+- **regulatory_approval** — hell-or-high-water commitments →
+  must-push-cap; open-ended divestiture kills economics.
+
+Partner note:
+
+- ≥ 4 must-push → "seller-friendly across board; rebuild term
+  sheet rather than redline."
+- 2-3 must-push → "standard negotiation; get partner on phone
+  with seller's sponsor counsel."
+- 0 must-push, 0 should-push → "within market bands; no
+  partner escalation."
+
+---
+
+## 174. Closing conditions list (`closing_conditions_list.py`)
+
+**Partner statement:** "Signing is a commitment. Close is a
+ceremony. The conditions list is where we earn our break
+rights — or lose them."
+
+Partners don't read closing-conditions lists line-by-line —
+they read for three things:
+
+1. Which conditions are *truly* in our control vs. a third
+   party (regulator, lender, landlord, payer)?
+2. Which conditions give us a *real* walk right vs. soft
+   bring-downs the seller can cure?
+3. Which conditions are time-bombs — items that could go
+   wrong specifically *because* of the sign-to-close delay?
+
+### Conditions enumerated
+
+For healthcare-services defaults, the module emits:
+
+- **hsr_antitrust_clearance** (regulatory, close, third-
+  party, high on > $400M, walk right)
+- **state_healthcare_regulatory** (CON + licensure transfers,
+  close, third-party, high, walk right)
+- **medicare_provider_number_transfer** (CHOW, close, third-
+  party, medium, no walk — bridge via tie-in agreement)
+- **payer_contract_consents** (close, third-party, medium,
+  no walk — chase top 5 60 days out)
+- **landlord_consents** (close, third-party, low, no walk)
+- **debt_financing_funded** (close, third-party, high, no
+  walk if commitment clean)
+- **rw_insurance_bound** (signing, buyer, low — bind at
+  sign, not close)
+- **key_employee_retention_signed** (both, seller, medium,
+  walk right if Key-15 drop)
+- **no_material_adverse_change** (close, seller, medium,
+  walk right — narrow MAC only)
+- **reps_true_at_closing** (close, seller, medium, walk
+  right configurable — MAE vs. material-accuracy standard)
+- **clean_title_no_liens** (close, seller, low, walk right)
+- **it_cyber_attestation** (close, seller, medium, no walk
+  — but disclosed breach reopens price)
+- **material_contracts_disclosed** (signing, seller, low)
+- **officers_secretary_certificates** (close, seller, low)
+
+### Partner-note escalation
+
+- ≥ 3 high-risk conditions → "set outside date with 60-day
+  cushion + reverse termination fee protection."
+- 1-2 high-risk → "standard closing calendar with weekly
+  condition tracker."
+- 0 high-risk, no third-party → "clean close; associates
+  can run close memo, partner reviews final."
+
+### Packet fields that trigger
+
+- `deal_size_m` → HSR risk tier
+- `sector` → toggles healthcare-specific items
+- `payer_consents_material`, `state_regulatory_required` →
+  adds third-party dependent conditions
+- `seller_breach_brings_walk` → controls bring-down walk
+  right (reflects MAE vs. material-accuracy clause)
+
+---
+
+## 175. Cross-pattern digest (`cross_pattern_digest.py`)
+
+**Partner statement:** "One trap is a negotiation. Two
+traps on the same axis is a pass."
+
+The brain already has three pattern libraries:
+
+- **historical_failure_library** — named, dated PE
+  disasters (Envision 2023, Steward REIT, U.S. Renal MA
+  cap, iVcare home-health).
+- **bear_book** — abstract templates (rollup integration
+  failure, carveout TSA sprawl, COVID tailwind fade).
+- **partner_traps_library** — seller-pitch traps
+  (fix denials in 12 months, MA will make it up).
+
+Each asks a different question. A partner doesn't read
+them in isolation — they *stack*. If all three fire on the
+same theme, the deal is structurally broken on that axis.
+
+### How cross-pattern-digest reasons
+
+1. **Unified context** — `PatternContext` carries both
+   `HeuristicContext` fields (for bear_book) and packet-
+   dict fields (for failures + traps). A single scan feeds
+   all three libraries.
+2. **Theme tagging** — each pattern is tagged with themes
+   (payer, denials, medicare, leverage, operator,
+   integration, regulatory, covid_tailwind, real_estate).
+3. **Compound-risk detection** — when ≥ 2 libraries fire
+   on the same theme, the theme is promoted to a
+   `CompoundRisk` with severity = sum of contributing
+   matches.
+4. **Library severity weights** — failures weight 1.0
+   (named historical blowup), bear 0.7, trap 0.5. Failure
+   severity also scales by the pattern's
+   `ebitda_destruction_pct`.
+
+### Recommendation ladder
+
+- **pass** — any theme lit across all 3 libraries.
+- **reprice** — 2+ compound risks OR total severity ≥ 1.5.
+- **diligence_more** — 1 compound risk OR severity ≥ 0.8.
+- **proceed_with_mitigants** — isolated hits, no compound.
+- **proceed** — no library hits.
+
+### Worked example
+
+A 2026 roll-up with $40M EBITDA, 6.5x leverage, 3.5-yr
+hold, 400 bps/yr margin expansion, and a seller promising
+12 → 5% denial reduction in 12 months:
+
+- Bear fires `rollup_integration_failure` + `high_leverage_thin_coverage`.
+- Trap fires `fix_denials_in_12_months` + `back_office_year_1_synergies`.
+- Themes stack: **integration** (bear + trap), **operator**
+  (bear + trap), **leverage** (bear), **denials** (trap).
+- Recommendation: `reprice` or `diligence_more` depending
+  on additional context.
+
+### Packet fields that trigger
+
+- `ebitda_m`, `leverage_multiple`, `hold_years`,
+  `margin_expansion_bps_per_yr`, `covenant_headroom_pct`
+- `payer_mix` (normalized; both fractions and percentages
+  accepted)
+- `packet_fields` dict for trap-specific inputs:
+  `current_denial_rate`, `target_denial_rate`,
+  `months_to_target`, `payer_contracts_renewing_next_12mo`,
+  `claimed_rate_growth_pct`, `medicare_advantage_pct`,
+  `regulatory_risk_material`
+
+---
+
+## 176. Thesis implications chain (`thesis_implications_chain.py`)
+
+**Partner statement:** "Tell me the chain. If denials come
+down, what else has to be true?"
+
+A seller's thesis is always a single headline claim. A
+partner's rebuttal is the *chain* of downstream implications
+that have to hold for the headline to be real. The seller
+owns the headline; the partner owns the chain.
+
+### Chains implemented
+
+1. **denial_reduction** — coder retention, no open coding
+   disputes, DAR compresses, EBITDA gain is recurring (not
+   cash release), covenant package clears the curve, exit
+   multiple applies to recurring Y5 EBITDA.
+2. **payer_mix_shift** — commercial payer capacity exists,
+   state doesn't retaliate via DSH pullback, CMI rises
+   with shift, bad-debt trend holds, phase-in modeled
+   (not day-1).
+3. **rollup_consolidation** — M&A pipeline signed (not
+   "universe"), integration playbook tested, debt
+   capacity scales, synergies net of integration cost,
+   exit multiple holds despite complexity, acquired-CEO
+   retention.
+4. **cost_basis_compression** — no union/licensure
+   triggers, contract labor target sustained, quality
+   metrics hold, local wage inflation doesn't reverse.
+5. **cmi_uplift** — CDI team FTE-sized, no audit
+   recoupment risk, phased uplift in bridge, sustainable
+   (not COVID surge).
+
+### Status model
+
+Each implication tagged **confirmed**, **not_addressed**,
+or **contradicted** against the packet.
+
+- Any **contradicted** link → "chain breaks here; headline
+  doesn't survive."
+- ≥ 2 high-risk **not_addressed** → "diligence these before
+  IC; this is where the thesis lives or dies."
+- All confirmed → "chain is tight; proceed."
+
+### Worked example — denial reduction
+
+Seller's claim: "Cut denials 700 bps in 12 months."
+
+Partner walks the chain:
+
+- Coder turnover 35%? → **contradicted** (high risk).
+- Open payer coding disputes? → **contradicted** if flagged.
+- DAR reduction trajectory? → **not_addressed** (medium).
+- Year 1 cash release share 55%? → **contradicted** (high):
+  the EBITDA gain isn't recurring.
+- Exit EBITDA basis? → **not_addressed** (medium).
+
+Partner note: "Chain breaks at link 4 — Year 1 is 55% cash
+release. The exit multiple only applies to recurring
+EBITDA; the headline is overstated by 2 turns."
+
+### Packet fields that trigger
+
+Each chain has its own `packet_field` hooks. Denial chain
+uses: `coder_turnover_annual_pct`, `open_payer_coding_disputes`,
+`dar_reduction_days_per_yr`, `year1_cash_release_share`,
+`y1_leverage_on_y1_ebitda`, `exit_ebitda_basis`. Others
+analogous — see module for full list.
+
+---
+
+## 177. Deal one-liner (`deal_one_liner.py`)
+
+**Partner statement:** "If I can't write the verdict in one
+sentence, I don't understand the deal yet."
+
+IC decks run 60 pages. Partners write a single sentence in
+the margin when they pick up the deck. That sentence is the
+synthesis: recommendation + the one reason that matters.
+
+### Synthesis precedence
+
+The brain already has three judgment layers. The one-liner
+picks the *dominant* signal using strict precedence:
+
+1. **Face implausibility** (high severity) — "math doesn't
+   work on face; pass before modeling."
+2. **Broken thesis chain** — "chain breaks at <specific link>."
+3. **All-three pattern compound** — "theme fires across all
+   libraries; rebuild or walk."
+4. **Unresolved thesis high-risk links** — "diligence these
+   before IC."
+5. **Compound pattern risk (≥2 libraries)** — "reprice or
+   mitigate."
+6. **Medium face findings** — "reprice pending specifics."
+7. **Tight chain** — "invest; downstream loops closed."
+8. **Single-library pattern hit** — "diligence_more."
+
+Face beats chain beats pattern. A pass-before-modeling
+finding dominates everything because the math gate dominates
+all other signal.
+
+### Worked example
+
+Inputs:
+- `face`: hospital with 22.5% EBITDA margin (implausible).
+- `thesis="denial_reduction"` with `year1_cash_release_share=0.55`.
+
+Without face: chain breaks → `pass — thesis 'denial_reduction' chain breaks at: EBITDA uplift is recurring, not cash release`.
+
+With face: face wins → `pass — hospital_margin_impossible: 22% EBITDA margin on a hospital`.
+
+### Packet fields that trigger
+
+- `OneLinerInputs.face` → any `FaceInputs` (subsector,
+  revenue, EBITDA, claimed IRR, etc.).
+- `OneLinerInputs.pattern_ctx` → any `PatternContext` fields
+  (same set that feeds cross_pattern_digest).
+- `OneLinerInputs.thesis` + `thesis_packet` → same fields
+  that feed walk_thesis_chain.
+
+### Why single-sentence discipline matters
+
+A partner who can't name the deciding issue in one sentence
+has not done the diligence. The one-liner enforces this:
+either you know the deal well enough to pick the dominant
+signal, or the verdict should be `diligence_more`.
+
+---
+
+## 178. Hold-period shock schedule (`hold_period_shock_schedule.py`)
+
+**Partner statement:** "I don't need the worst-case total.
+I need the worst *year*. The covenant trips on one year's
+EBITDA, not on the five-year NPV."
+
+Existing regulatory stress modules
+(`obbba_sequestration_stress`, `regulatory_stress`,
+`healthcare_regulatory_calendar`) compute point-in-time
+impact. What partners actually need during diligence is the
+**year-by-year trajectory** of EBITDA under realistic
+regulatory assumptions.
+
+### How it reasons
+
+1. **Probability-weighted shock severity** — each shock
+   impact is weighted by landing probability (OBBBA 70%,
+   sequestration 85%, site-neutral 50%, state Medicaid
+   55%).
+2. **Year-indexed landing schedule** — shocks land in
+   specific hold years (default: OBBBA Y0, sequestration
+   Y1, site-neutral Y2, state Medicaid Y3).
+3. **Permanence flag** — permanent cuts (OBBBA,
+   sequestration) stack; temporary shocks (not modeled in
+   default schedule) would dissipate.
+4. **Per-year EBITDA floor** = base − cumulative permanent
+   impact.
+5. **Per-year leverage** = initial debt / per-year EBITDA.
+6. **Covenant trip detection** — first year where
+   leverage exceeds max allowed.
+
+### Partner-note escalation
+
+- **Covenant trip detected** → "widen cov package or
+  re-price equity."
+- **Worst-year leverage ≥ 90% of ceiling** → "stress
+  schedule with higher probabilities."
+- **Cumulative erosion > 15% of base** → "bake into base
+  case, not bear."
+- Otherwise → "standard stress; proceed."
+
+### Worked example
+
+Hospital: $500M NPR, $75M EBITDA, 35% Medicare FFS, 15%
+Medicare Advantage, 10% HOPD, 5.5x leverage, 7.0x cov max.
+
+Year-by-year under default schedule:
+- 2026: OBBBA 3% cut → ~$1.8M EBITDA hit (prob-weighted).
+- 2027: +sequestration 2% → +$0.9M; cumulative $2.7M.
+- 2028: +site-neutral HOPD → +$0.6M; cumulative $3.3M.
+- 2029: +state Medicaid → +$0.9M; cumulative $4.2M.
+- 2030: no new shock; cumulative stays $4.2M.
+
+Worst-year leverage = $412.5M debt / ($75M − $4.2M) ≈
+5.83x, well under 7.0x → partner-note: "shocks contained;
+proceed on current thesis."
+
+### Packet fields that trigger
+
+- `hold_start_year`, `hold_years` — the window to project.
+- `stress.*` (RegulatoryStressInputs) — subsector, revenue,
+  EBITDA, Medicare FFS/MA, HOPD, ASC, contribution margin.
+- `leverage_multiple`, `covenant_max_leverage` — cov trip
+  detection.
+- `schedule` — custom landing schedule for deal-specific
+  probabilities.
+
+---
+
+## 179. QofE pre-screen (`qofe_prescreen.py`)
+
+**Partner statement:** "Sellers normalize aggressively.
+Good QofE strips back 20-30%. Know which add-backs will
+survive before you engage the firm."
+
+`qofe_tracker` handles status/progress on a QofE
+engagement. `qofe_prescreen` is the *pre*-QofE partner
+read: given the seller's adjustments schedule, what
+fraction will survive QofE, and what's the true EBITDA
+to underwrite against?
+
+### Partner-judgment survival rates
+
+Based on healthcare-services PE patterns:
+
+- `owner_comp_excess` — 85% survives.
+- `related_party_rent` — 70% if market; sale-leaseback
+  risk.
+- `nonrecurring_legal` — 60%; recurring is run-rate.
+- `covid_windfall` — 20%; stripped aggressively.
+- `systems_migration_onetime` — 50%; partners
+  question "one-time" framing.
+- `executive_severance` — 70%.
+- `deferred_maintenance_capex_as_opex` — 10%; walk
+  signal if material.
+- `pro_forma_acquisition` — 40%; TTM actuals required.
+- `management_fee_elim` — 90%; standard normalization.
+- `startup_losses` — 50%; vintage cohort support.
+- `litigation_settlement` — 60%.
+- `other` — 50% default.
+
+### Partner-note escalation
+
+- Haircut ≥ 20% → "re-price from adjusted EBITDA or pass."
+- Haircut 10-20% → "model off adjusted, not stated."
+- Haircut < 10% → "proceed; verify at QofE."
+- Deferred-maintenance material → "walk signal; seller recut
+  required."
+
+### Worked example
+
+Seller asserts $75M EBITDA with add-backs:
+
+- $10M covid windfall → $2M surviving, $8M haircut.
+- $3M deferred maintenance as opex → $0.3M surviving,
+  $2.7M haircut + walk signal.
+- $2M owner comp → $1.7M surviving, $0.3M haircut.
+
+QofE-adjusted EBITDA = $75 − $8 − $2.7 − $0.3 = $64M.
+
+Partner note: "Expected QofE haircut $11M (15%). Model
+off $64M, not $75M. Deferred-maintenance capex → walk
+signal; seller recut required."
+
+### Packet fields that trigger
+
+- `stated_ebitda_m` — seller's headline number.
+- `seller_add_backs` — list of SellerAddBack (category +
+  dollar amount).
+
+---
+
+## 180. Pre-IC chair brief (`pre_ic_chair_brief.py`)
+
+**Partner statement:** "Before IC I walk the chair through
+4 bullets: the thesis, where the math works, where it
+doesn't, and what would change my mind. If I can't get
+that on one page, the team isn't ready."
+
+Distinct from:
+
+- `deal_one_liner` — the single sentence (too short for
+  the chair).
+- `ic_memo` — the full 60-page IC deck (too long for 30
+  min before IC).
+- `ic_decision_synthesizer` — multi-dimensional breakdown
+  (useful but not a one-pager).
+
+The chair brief is exactly 4 bullets:
+
+1. **Thesis** — what we're buying and why, in plain
+   English.
+2. **Where the math works** — 2-3 numbers that anchor the
+   upside case.
+3. **Where the math doesn't work** — 2-3 numbers that
+   anchor the bear case.
+4. **What would change my mind** — 3 specific things that,
+   if resolved, flip the verdict.
+
+### Verdict inference
+
+If no explicit recommendation is provided:
+
+- Any **contradicted thesis link** → `pass`.
+- ≥ 2 **compound risks** → `reprice`.
+- In-band checks present AND no high-risk unresolved →
+  `invest`.
+- Otherwise → `diligence_more`.
+
+### Why 4 bullets exactly
+
+The chair doesn't have time for 5 bullets. Three isn't
+enough for the structure to work (you need thesis +
+bull + bear + change-my-mind, minimum). Four is the
+partner-brain default because it forces the team to
+collapse the case into a structure the chair can push
+back on bullet-by-bullet.
+
+### Packet fields that trigger
+
+- `deal_name`, `thesis_sentence`, `recurring_ebitda_m`,
+  `entry_multiple`, `target_moic`, `target_irr`,
+  `hold_years` — thesis bullet.
+- `in_band_count`, `math_works_numbers` — math-works
+  bullet.
+- `out_of_band_count`, `compound_risks`,
+  `contradicted_thesis_links` — math-breaks bullet.
+- `high_risk_unresolved_links`,
+  `change_my_mind_items` — change-my-mind bullet.
+
+---
+
+## 181. Seller math reverse-engineer (`seller_math_reverse.py`)
+
+**Partner statement:** "The seller isn't stupid. If they
+ask 16x, they believe something specific about margin,
+growth, and exit. I want to know what that is before I
+counter."
+
+Given our base case and seller's ask, solve for what the
+seller must be assuming on each of three variables
+(**holding the other two constant**):
+
+1. **Implied exit multiple** — seller's view of the exit
+   market.
+2. **Implied EBITDA growth** — seller's view of compound
+   growth.
+3. **Implied margin expansion** — seller's view of
+   operator leverage.
+
+Partner reads each implied assumption against peer
+benchmarks and picks the weakest to force seller to
+defend.
+
+### Interpretation thresholds
+
+- Implied exit > 16x → "cycle peak; counter off cycle-
+  average."
+- Implied growth > 10% → "double-digit is rare in
+  healthcare services; seller betting on market we don't
+  see."
+- Implied margin > 400 bps → "partner-reject; requires
+  operator heroics we'd own."
+
+### Partner note escalation
+
+- Ask premium > 15% → "Seller must assume ONE of (X multiple,
+  Y growth, Z margin). Pick the weakest and force seller to
+  defend it."
+- 5-15% → "Standard negotiation; pick one variable."
+- Below buyer's implied price → "Seller sees downside we
+  don't — diligence the gap."
+
+### Worked example
+
+Buyer base: $75M EBITDA, 11x exit, 5% growth, 100 bps
+margin, 5-yr hold, 2.5x MOIC target.
+
+- Buyer's implied price: $75 × (1.05)^5 × 1.01 × 11 / 2.5
+  ≈ $425M.
+- Seller asks $510M (20% premium).
+- Implied exit multiple (holding growth+margin): ~13.2x.
+- Implied growth (holding multiple+margin): ~8.5%/yr.
+- Implied margin (holding multiple+growth): ~2,100 bps.
+
+Partner note: "Seller must assume ONE of: 13.2x exit, 8.5%
+growth, or 2,100 bps margin expansion. Pick the weakest
+(the margin story is most indefensible) and force seller
+to specify which initiatives deliver it."
+
+### Packet fields that trigger
+
+- `buyer_base_ebitda_m`, `buyer_base_exit_multiple`,
+  `buyer_base_ebitda_growth_pct`,
+  `buyer_base_margin_expansion_bps`
+- `hold_years`, `target_moic`
+- `seller_ask_price_m`
+
+---
+
+## 182. Management-meeting questions (`management_meeting_questions.py`)
+
+**Partner statement:** "In the Monday management meeting,
+I don't ask 'tell me about the business.' I ask the CEO
+the three questions where their answer reveals whether the
+thesis survives. Different chair for CFO. Different for
+COO."
+
+Distinct from `reference_check_framework` (former-peer
+reference calls) and `diligence_checklist_live` (what's
+packet-vs-MI at framework level). This module generates
+the **actual questions** the partner brings to MM, tied to:
+
+- **Thesis** — which downstream chain links are still open?
+- **Pattern matches** — which traps / failures should we
+  probe?
+- **Packet gaps** — what's missing that mgmt can answer?
+
+### Roles and signature base questions
+
+- **CEO** — "If I asked you to cut a division tomorrow,
+  which one?" (strategic clarity). "Top 3 hires since
+  you took the role — where are they now?" (talent
+  retention).
+- **CFO** — "Last 8 quarters: how many times did you hit
+  forecast?" (track record → forward haircut). "Worst-
+  case covenant headroom if EBITDA falls 10%?"
+- **COO** — "Of your top 10 operators, how many own a
+  P&L line?" (distributed accountability).
+- **CMO** — "CMI trend + drivers." "Any open RAC/OIG
+  audits?"
+- **CCO** — "Churn rate on top 10 over 3 years."
+- **CIO** — "EHR migration timeline if asked tomorrow."
+
+### Conditional question layering
+
+- If `thesis == "denial_reduction"` + role == CFO → add
+  question on run-rate vs. one-time share of Y1 EBITDA.
+- If pattern `fix_denials_in_12_months` fires → COO
+  question on monthly program actuals.
+- If pattern `ceo_will_stay_through_close` fires → CEO
+  question on post-close personal commitment timing.
+- Packet gap `cmi_trend` → CMO question requesting
+  underlying data + 3-yr trend.
+
+### Partner-note escalation
+
+- ≥ 8 must-ask → "block 2 hours; gating session, not
+  meet-and-greet."
+- 4-7 must-ask → "standard MM scope."
+- < 4 must-ask → "consider splitting to follow-up call."
+
+### Packet fields that trigger
+
+- `thesis` — selects thesis-specific questions.
+- `pattern_matches` — list of pattern IDs.
+- `packet_gaps` — list of gap strings.
+- `roles` — which roles are attending MM.
+
+---
+
+## 183. Seller motivation decoder (`seller_motivation_decoder.py`)
+
+**Partner statement:** "Before I counter-price I want to
+know why they're at the table. A founder who needs
+liquidity negotiates differently from a sponsor at
+vintage end. Same price, different leverage."
+
+Healthcare-services sellers come to market for a finite
+set of reasons. Each carries a distinct **leverage
+profile** — the partner's position depends on **why** the
+seller is motivated to close by a specific date.
+
+### Motivations modeled (10)
+
+1. **founder_liquidity** — high urgency, high leverage,
+   medium price-sensitivity. Counter: rollover + earn-out.
+2. **tax_timing** — high urgency, medium leverage. Counter:
+   installment / earn-out structured to seller's tax
+   calendar.
+3. **family_liquidity** — high urgency, high leverage, low
+   price-sensitivity. Counter: clean cash at close.
+4. **sponsor_vintage_end** — high urgency, medium leverage,
+   low price-sensitivity. Counter: LP-scorecard sellers
+   hold price but accept R&W insurance.
+5. **covenant_trip_imminent** — high urgency, high
+   leverage, high price-sensitivity. Counter: distressed
+   framing.
+6. **failed_prior_process** — medium urgency, high
+   leverage, high price-sensitivity. Counter: aggressive
+   re-price; verify why prior buyers walked.
+7. **management_exit_wanted** — medium urgency, medium
+   leverage. Counter: CEO search pre-close.
+8. **strategic_fatigue** — medium urgency, medium leverage.
+   Counter: sell partnership story.
+9. **industry_trough_fear** — high urgency, **low**
+   leverage, **low** price-sensitivity. Counter: regulatory
+   diligence cold; walk if exposed.
+10. **activist_pressure** — medium urgency, medium
+    leverage. Counter: negotiate with parent IR, not
+    target mgmt.
+
+### Partner-note escalation
+
+- 3+ motivations fire → "layered story; negotiate against
+  highest-urgency."
+- Dominant motivation carries `buyer_leverage="high"` →
+  "counter below sticker + structural asks."
+- No signals → "ask the banker directly — 'why are they
+  selling now?'"
+
+### Worked example
+
+Signals detected:
+- `net_debt_gt_7x_ebitda`
+- `covenant_waiver_in_past_12_months`
+- `private_credit_lender_on_record`
+
+→ Dominant: `covenant_trip_imminent` (score 1.00).
+→ Partner note: "high leverage — counter below sticker +
+structural asks."
+→ Partner counter: "distressed framing. Offer meaningfully
+below sticker with fast close. Watch for unannounced
+liabilities."
+
+### Packet signals
+
+Each motivation carries its own signal list. See
+`packet_signals` attribute per `SellerMotivation`.
+
+---
+
+## 184. Covenant package designer (`covenant_package_designer.py`)
+
+**Partner statement:** "The covenant package is where the
+equity gets wiped out. A bad covenant trips on noise; a
+good one trips only when the thesis is actually broken."
+
+`covenant_monitor` tracks compliance post-close. This
+module is the *pre*-close partner advisory: given deal
+stress profile, what package do we negotiate for?
+
+### Four dimensions
+
+1. **Max leverage ratio** — headroom above base EBITDA.
+2. **Step-downs** — quarterly glide path.
+3. **Cure rights** — equity cures (4 of 8 quarters
+   standard).
+4. **Interest coverage floor** — often 1.25-1.75x.
+
+### Partner rule-of-thumb for max leverage
+
+Recommended = max of:
+- **(a)** base leverage + 1.0x cushion
+- **(b)** worst-year bear leverage + 0.5x cushion
+- **(c)** base leverage × (1 + 2 × EBITDA volatility)
+
+The binding constraint tells the partner what's driving
+tightness: if (a) binds, base leverage is the issue; if
+(b) binds, bear case is; if (c) binds, volatility is.
+
+### Step-down glide path
+
+Quarterly glide from recommended-max down to
+`max(base + 0.5, worst_year + 0.25)` at end of hold.
+
+### Partner verdict ladder
+
+- Seller ≥ recommended + 0.5x → `accept` (extra cushion).
+- Seller ∈ [recommended, recommended + 0.5x] → `accept`
+  (focus on cures + step-downs).
+- Seller ∈ [recommended − 0.3, recommended] → `negotiate`.
+- Seller < recommended − 0.3 → `walk` — covenant trips on
+  volatility alone.
+
+### Worked example
+
+Base EBITDA $75M, base leverage 5.5x, worst-year EBITDA
+$65M @ 6.3x, volatility 8%.
+
+- (a) 5.5 + 1.0 = 6.5x
+- (b) 6.3 + 0.5 = 6.8x  (binding)
+- (c) 5.5 × 1.16 = 6.38x
+
+Recommended: **6.8x** with 1.3x cushion.
+
+- Seller at 8.5x → accept.
+- Seller at 6.9x → accept with step-down focus.
+- Seller at 6.55x → negotiate up to 6.8x.
+- Seller at 6.0x → walk.
+
+### Packet fields that trigger
+
+- `base_ebitda_m`, `base_leverage`
+- `worst_year_ebitda_m`, `worst_year_leverage` (from
+  hold_period_shock_schedule)
+- `ebitda_volatility_pct`, `hold_years`
+- `seller_proposed_max_leverage`,
+  `seller_proposed_cure_quarters`
+- `base_interest_coverage`
+
+---
+
+## 185. Failure archetype library (`failure_archetype_library.py`)
+
+**Partner statement:** "This deal doesn't match any single
+blowup we've seen — but it matches the *shape* of three
+different ones. That's worse, not better."
+
+Sits between three existing layers:
+- `historical_failure_library` — named, dated incidents
+  (Envision 2023, Steward 2024, etc.).
+- `bear_book` — heuristic pattern templates.
+- `partner_traps_library` — seller-pitch traps.
+
+This module captures **shape-level failure archetypes** —
+structural profiles a senior partner recognizes in 30
+seconds from the one-pager.
+
+### 10 archetypes modeled
+
+1. **serial_add_on_overhire** — rollup hiring SG&A faster
+   than acquired EBITDA scales.
+2. **payer_shift_without_contract_renewal** — mix-shift
+   thesis with no top-5 payer contract opening.
+3. **site_neutral_hostage** — HOPD-heavy with site-neutral
+   finalization in hold.
+4. **specialty_practice_succession_gap** — founder-
+   dependent, no successor.
+5. **340b_dependent_tail** — material EBITDA from 340B
+   arbitrage.
+6. **ma_pass_through_over_reliance** — MA assumed to
+   offset FFS cuts without risk-contract capability.
+7. **rent_belowmarket_related_party** — seller real estate
+   at sub-market rent.
+8. **back_office_integration_optimism** — multi-EHR/ERP
+   with Y1 synergy in base case.
+9. **turnaround_without_operator** — turnaround thesis
+   with creator-team still in place.
+10. **covid_inflated_base** — pandemic-tailwind base year.
+
+Each archetype carries:
+- Shape description + structural failure reason.
+- Signal list (packet fields that flag it).
+- Historical examples (for pattern reinforcement).
+- Partner counter (named mitigation).
+
+### Partner-note escalation
+
+- 3+ archetypes fire → "compound risk beats additive risk."
+- 2 archetypes → "document mitigation per archetype in IC."
+- 1 archetype → "apply named counter or don't proceed."
+- 0 archetypes → "structural profile unremarkable; proceed
+  on merits."
+
+### Why this layer adds signal
+
+Archetype matching is how partners reach a **first
+impression** at intake. By the time a team has modeled,
+they're committed. Archetype library forces naming the
+shape before committing resources.
+
+---
+
+## 186. Subsector partner lens (`subsector_partner_lens.py`)
+
+**Partner statement:** "I don't evaluate a home-health
+deal like a hospital deal. Different intake questions,
+different ceiling risks, different exit-multiple drivers."
+
+Generic heuristics are subsector-agnostic. Real partners
+apply a subsector-specific lens that overrides generic
+rules. This module encodes the lens for **10 healthcare-
+services subsectors**.
+
+### Subsectors modeled
+
+hospital_general, specialty_physician_practice,
+behavioral_health, home_health, hospice,
+ambulatory_surgery_center, clinical_lab, dental_office,
+urgent_care, durable_medical_equipment.
+
+### Per-subsector data points
+
+- **first_question_on_intake** — the one question a partner
+  asks first.
+- **structural_ceiling_risk** — what caps upside.
+- **primary_tailwind / primary_headwind** — macro reads.
+- **reimbursement_reality** — FFS / risk / capped /
+  cash-pay.
+- **deal_killer_flags** — signals that trigger walk.
+- **key_exit_multiple_driver** — premium justification.
+- **typical_ebitda_margin_band** — peer band.
+- **typical_reimbursement_mix_note** — partner posture.
+- **partner_voice_summary** — one-line partner read.
+
+### Worked examples
+
+- **Hospital**: intake Q = "Payer mix and Medicare
+  trend?"; ceiling = reimbursement compression; margin
+  band 6-12%; partner summary: "hospitals are rate-takers
+  on 60%; ops matters less than reimbursement direction."
+
+- **Behavioral Health**: intake Q = "Capacity utilization
+  and staffing ratio?"; ceiling = clinician supply, not
+  demand; margin 12-20%; partner summary: "capacity /
+  staffing problem, not demand problem — underwrite the
+  staffing ramp."
+
+- **Hospice**: intake Q = "LOS and ever-hit-cap
+  history?"; ceiling = Medicare aggregate cap + OIG; margin
+  15-22%; partner summary: "cap discipline + audit history;
+  everything else secondary."
+
+- **DME**: intake Q = "Competitive-bid exposure and
+  product-line concentration?"; ceiling = CMS bid rounds;
+  margin 10-16%; partner summary: "Medicare compliance
+  business — audit clean + bid diversification = multiple."
+
+### Partner-note behavior
+
+- Subsector modeled + signals trigger deal-killer flag →
+  flagged with partner summary.
+- Subsector modeled + clean signals → lens applied with
+  partner summary.
+- Subsector not modeled → fallback generic heuristics note.
+
+---
+
+## 187. Exit-multiple compression scenarios (`exit_multiple_compression_scenarios.py`)
+
+**Partner statement:** "Entry multiples are at cycle-high.
+If exit reverts one turn, I lose the thesis. Two turns
+and I'm pitching a deal that never works. I want that
+math on my desk before I sign the LOI."
+
+`exit_math` computes EV / MOIC / IRR at point assumptions.
+This module stress-tests the **exit multiple** assumption
+specifically — the input partners chronically mis-estimate.
+
+### Compression ladder
+
+Default: **0, -1, -2, -3 turns** on exit multiple. Each
+scenario: exit EV, equity proceeds, MOIC, IRR.
+
+### The "can we still invest?" line
+
+`moic_comfort_threshold` (default 2.0x) is the partner's
+underwrite floor. Module identifies the compression turn
+at which MOIC first falls below that line. Margin of
+safety = most negative compression that still clears the
+line.
+
+### Partner-note ladder
+
+- **Base MOIC already < threshold** → "walk or cut entry
+  1-1.5x to restore."
+- **No break in compression ladder** → "thesis robust
+  to multiple-cycle mean reversion; strong MoS."
+- **Break at -1 turn** → "thesis assumes cycle holds;
+  do not sign unless we believe it."
+- **Break at -2 turn** → "thesis survives one turn —
+  typical partner comfort zone."
+- **Break at -3 turn** → "thesis survives two turns —
+  strong margin of safety."
+
+### Worked example
+
+Entry $75M × 11x = $825M EV; equity $400M; 6%/yr growth;
+5-yr hold; base exit 11x.
+
+- Base: exit EBITDA $100.4M × 11 = $1,104M → equity
+  $679M → MOIC 1.70x, IRR 11%.
+
+Base MOIC below 2.0x → partner: "walk or cut entry 1-1.5x."
+
+### Packet fields that trigger
+
+- `entry_ebitda_m`, `entry_multiple`, `equity_check_m`
+- `ebitda_growth_pct_per_yr`, `hold_years`
+- `base_exit_multiple`, `compression_turns` list
+- `debt_paydown_pct_per_yr` (optional)
+- `moic_comfort_threshold` (default 2.0x)
+
+---
+
+## 188. Pre-mortem simulator (`pre_mortem_simulator.py`)
+
+**Partner statement:** "Before I commit, I write the
+post-mortem. If I can picture the write-up, the deal has
+a named failure mode. That's when I either fix it or
+walk."
+
+`post_mortem.py` is a **look-back** template for exited
+deals. This module is the **look-forward** mirror:
+simulate the post-mortem that would be written in Year 5
+if the deal fails today.
+
+### Prospective hindsight
+
+Decision literature: imagining a failure forces concrete
+attribution. "The team failed" doesn't prevent anything.
+"In Y2, CFO missed 3 forecasts, entered covenant cure; in
+Y3, lender pushed sale" is testable and avoidable.
+
+### Dated attribution chain
+
+Module constructs events for Y1 / Y2 / Y3 / Y4 / Exit
+using:
+
+- Thesis contradicted / unresolved links.
+- Pattern matches (`fix_denials_in_12_months`, etc.).
+- Failure archetype matches (integration optimism,
+  turnaround-without-operator, MA over-reliance).
+- Worst-year leverage vs covenant.
+- Regulatory shock schedule worst year.
+- Management retention / rollover posture.
+
+Each year carries: **What happens**, **Root-cause signal**
+(what we should have seen), **Fix we missed** (the
+specific mitigation not demanded).
+
+### Strength ladder
+
+- ≥ 4 events constructable → **strong** → "do not close
+  without explicit mitigation on each."
+- 2-3 events → **moderate** → "document mitigation in IC
+  memo or don't proceed."
+- < 2 events → **thin** → "proceed on current thesis."
+
+### Exit narrative
+
+Severity-based:
+- 3+ failure modes stack → "sponsor process broke; sold
+  at 0.8x MOIC to distressed buyer at 5.5x."
+- 1-2 failure modes → "secondary to continuation
+  vehicle at 1.6x; hold extended 18 months."
+- 0 failure modes → no exit narrative.
+
+### Worked example
+
+Inputs:
+- Thesis denial_reduction, contradicted on cash-release.
+- Pattern fix_denials_in_12_months.
+- Worst-year leverage 7.3x vs 7.0x cov.
+- Archetype turnaround_without_operator.
+
+Pre-mortem reads: Y1 cash-release catch-up, Y2 cov cure,
+Y3 shocks, Y4 CEO transition — **strong**, partner:
+"do not close without explicit mitigation."
+
+### Packet fields that trigger
+
+`thesis`, `thesis_contradicted_links`,
+`thesis_unresolved_links`, `pattern_matches`,
+`failure_archetype_matches`, `worst_year_leverage`,
+`covenant_max_leverage`, `worst_shock_year`,
+`worst_shock_cumulative_m`, `base_ebitda_m`,
+`management_retained`, `management_rolled_equity`,
+`key_retention_signed`.
+
+---
+
+## 189. Pricing concession ladder (`pricing_concession_ladder.py`)
+
+**Partner statement:** "I never give price first. I give
+structure, reps, indemnity, earn-out, peg — and price
+last. Every concession costs something different; the
+cheapest move first."
+
+### Concession cost hierarchy (cheapest → most expensive)
+
+1. **earnout_structure** — low cost if we trust execution.
+2. **working_capital_peg** — trivial dollar cost.
+3. **interim_covenants** — free pre-close.
+4. **rw_insurance_mechanics** — carrier-priced.
+5. **reps_and_warranties_scope** — free if asset clean.
+6. **indemnity_cap_basket** — basis points + escrow.
+7. **rollover_equity_increase** — aligns incentives.
+8. **installment_structure** — high capital cost.
+9. **price_bump** — nuclear; give last, small,
+   reciprocated.
+
+### Motivation-aware sequencing
+
+- **family_liquidity** — earn-out resisted; price bump
+  pushed forward.
+- **sponsor_vintage_end** — R&W accepted R1; price held
+  hard.
+- **covenant_trip_imminent** — ladder collapses.
+- **high seller urgency** — every round compressed by 1.
+
+### Walk-away line
+
+Ladder terminates at buyer walk-away price. If current
+ask > walk-away after all concessions exhausted, partner
+walks.
+
+### Worked example
+
+Buyer base $800M, walk-away $850M, seller ask $900M:
+- Round 1: earnout + working-capital peg (low cost, low
+  pain).
+- Round 2: interim covenants + R&W mechanics.
+- Round 3: reps scope + indemnity basket + rollover.
+- Round 4: installment or small price bump, only
+  reciprocal.
+
+Partner note: "Ask $900M is $50M above walk-away $850M.
+Ladder delays walk; every concession must close that gap
+or save equivalent structure."
+
+### Packet fields that trigger
+
+- `buyer_walk_away_price_m`, `current_seller_ask_m`,
+  `buyer_base_offer_m`
+- `seller_motivation`, `seller_urgency`
+- `pattern_matches`, `already_conceded`
+
+---
+
+## 190. Partner briefing composer (`partner_briefing_composer.py`)
+
+**Partner statement:** "I don't read ten separate reports.
+I read one page that pulls from all of them. If the brain
+is smart, it can synthesize across what it already knows."
+
+Connective tissue: composes a **one-page partner
+briefing** from multiple judgment layers:
+
+- Subsector lens summary
+- Thesis chain health (confirmed / open / contradicted)
+- Pattern stack (compound risks named)
+- Failure archetype matches
+- Pre-mortem strength + exit outcome
+- Seller motivation
+- Negotiation posture (walk-away gap)
+
+### Opinionated synthesis
+
+The composer is **not** a concatenation — it picks the
+dominant signal and surfaces it first as the partner note:
+
+- Any `thesis_contradicted ≥ 1` → "chain is broken at a
+  named link; that dominates."
+- `pre_mortem_strength == "strong"` → "plausible Y1-Y5
+  failure; do not close without mitigation on each root-
+  cause signal."
+- ≥ 2 `compound_risks` → "re-price or structural
+  protection; do not proceed on merits."
+- `recommendation == "invest"` → "all judgment layers
+  green; this is the best deal in the pipeline."
+- Otherwise → "mixed signals; use concession ladder +
+  chair brief for next round."
+
+### Headline verdict translator
+
+- `pass` → "PASS — the math doesn't work or the thesis
+  chain is broken. Walk."
+- `reprice` → "REPRICE — deal survives only with price
+  or structural relief."
+- `diligence_more` → "DILIGENCE MORE — named open items
+  that flip the verdict."
+- `invest` → "INVEST — thesis tight, patterns contained.
+  This is the deal we want."
+- `proceed_with_mitigants` → "PROCEED WITH MITIGANTS —
+  named mitigation required; shape acceptable."
+
+### Why this sits above the other briefs
+
+- `deal_one_liner` is **one sentence** (margin note).
+- `pre_ic_chair_brief` is **4 bullets** (chair briefing).
+- `ic_memo` is **60 pages** (full IC deck).
+
+Partner briefing composer is **the one-page synthesis**
+between the one-liner and the IC deck — when the partner
+wants more than a sentence but less than the deck.
+
+### Packet fields that trigger
+
+- `deal_name`, `subsector`, `subsector_summary`
+- `recommendation`, `one_liner`
+- `thesis`, `thesis_confirmed`,
+  `thesis_not_addressed`, `thesis_contradicted`
+- `compound_risks`, `total_pattern_severity`
+- `pre_mortem_strength`, `pre_mortem_exit_outcome`
+- `seller_motivation`
+- `walk_away_price_m`, `current_seller_ask_m`
+- `failure_archetype_matches`
+
+---
+
+## 191. Banker narrative decoder (`banker_narrative_decoder.py`)
+
+**Partner statement:** "Every banker runs the same 8
+plays. Once you name the play, the counter writes
+itself."
+
+Sell-side bankers use a finite catalog of narrative
+tactics to shape the buyer's framing. This module
+catalogs 10 of them, each with tells and a partner
+counter.
+
+### 10 banker narratives
+
+1. **the_hook** — top-of-deck tagline overshadows diligence.
+2. **the_comp_deck** — curated transaction comps anchor price.
+3. **the_momentum_story** — artificial urgency ("closing
+   Friday").
+4. **the_scarcity_pitch** — "only 3 quality assets left."
+5. **the_payer_renegotiation_tease** — imminent rate lift.
+6. **the_synergy_promise** — 300 bps Y1 margin claim.
+7. **the_secondary_angle** — prior process price as anchor.
+8. **the_once_in_a_generation** — emotional framing when
+   numbers weak.
+9. **the_teaser_without_financials** — info control pre-NDA.
+10. **the_management_is_rockstar** — preempts operator-risk
+    pushback.
+
+### Partner counter library (samples)
+
+- **the_once_in_a_generation** → "Instant flag. If banker
+  needs to call it generational, numbers don't support
+  price."
+- **the_momentum_story** → "Ignore the timeline. 'We'll
+  work to your process but won't skip diligence.'"
+- **the_teaser_without_financials** → "Ask for top-line +
+  EBITDA pre-NDA. If banker refuses, decline NDA."
+- **the_synergy_promise** → "Model synergy ramp Y2-Y4 net
+  of integration cost."
+
+### Partner-note escalation
+
+- 3+ tactics detected → "name each play in the next call;
+  bankers stop running them once we name them."
+- 1-2 tactics → "apply the counter; re-ground in numbers."
+- 0 tactics → "banker unusually direct, or we haven't
+  read the deck yet."
+
+### Worked example
+
+CIM observations signal: `top_of_deck_cagr_30 + recurring_revenue_framing_prominent + comps_selected_to_support_premium + urgency_without_specifics + generational_language_used`.
+
+→ Matches: `the_hook`, `the_comp_deck`, `the_momentum_story`, `the_once_in_a_generation` (4 tactics).
+
+→ Partner note: "name each play in the next call."
+
+### Packet signals
+
+Each tactic carries its own `tells` list (packet-signal
+strings). See module for full signal list.
+
+---
+
+## 192. Bidder landscape reader (`bidder_landscape_reader.py`)
+
+**Partner statement:** "I don't just need to know the
+asset — I need to know who else wants it. A payer-backed
+strategic sets a different clearing price than four
+generalist sponsors."
+
+The process is half-decided by **who else is bidding**.
+Different profiles bring different cost of capital,
+different synergy scope, and different discipline.
+
+### 10 bidder profiles
+
+- **strategic_payer_adjacent** — +15% premium; drop.
+- **strategic_same_sector** — +10% premium; drop unless
+  scarce.
+- **strategic_crossover** — +5% premium; stay (often
+  walks in diligence).
+- **sponsor_healthcare_specialist** — flat; hold.
+- **sponsor_generalist** — +8% premium; stay (backup bid
+  when they re-price).
+- **sponsor_vintage_end** — +10% premium; drop.
+- **sponsor_first_fund** — +7% premium; stay.
+- **family_office** — +7% premium; hold (stable assets).
+- **continuation_vehicle** — 0%; stay (don't chase
+  inside price).
+- **foreign_buyer** — +12% premium; stay (CFIUS tail).
+
+### Clearing price math
+
+Expected clearing = `base_price × (1 + max_premium)` —
+the highest-premium bidder sets the market.
+
+### Partner posture ladder
+
+- Any high-premium (≥ 10%) price-posture bidder → `drop`.
+- Else if any stays → `stay` (be the backup bid).
+- Else → `hold` (win on structure).
+
+### Worked example
+
+Bidders: `strategic_payer_adjacent` (+15%) +
+`sponsor_healthcare_specialist` (0%). Our base $800M.
+
+- Expected clearing: $920M.
+- Posture: drop (payer-adjacent sets market).
+- Partner note: "drop unless we have a structural
+  answer."
+
+### Packet fields that trigger
+
+- `bidders_present` — list of bidder profile names.
+- `our_base_price_m` — our indicative value.
+
+---
+
+## 193. Signing-to-close risk register (`signing_to_close_risk_register.py`)
+
+**Partner statement:** "Signing is not closing. Between
+LOI and close, the asset can change materially — and
+every change costs me either price, structure, or the
+deal itself."
+
+Distinct from `closing_conditions_list.py` (what must be
+*satisfied* at close). This module is the **living
+watchlist** of events that can happen in the 60-120 day
+interim window.
+
+### 12 risk categories
+
+- **material_customer_loss** (medium freq, reprice trigger)
+- **key_employee_departure** (medium freq, walk right)
+- **quality_incident** (low freq, walk right)
+- **regulatory_rule_final** (medium freq, reprice trigger)
+- **financing_market_shift** (medium freq, hold)
+- **qofe_material_adjustment** (medium freq, reprice)
+- **it_cyber_disclosure** (low freq, walk right)
+- **interim_financial_miss** (high freq, reprice trigger)
+- **mac_triggered** (low freq, walk right)
+- **competitor_action** (medium freq, hold)
+- **litigation_surprise** (low freq, reprice trigger)
+- **environmental_physical** (low freq, reprice trigger)
+
+### Partner-note escalation
+
+- ≥ 2 walk-right risks → "demand bring-down
+  certifications + explicit walk-right triggers in PA."
+- 1 walk-right → "this is where the deal can die; ensure
+  PA walk-right explicit."
+- ≥ 3 reprice triggers → "build price-adjustment
+  mechanism into PA."
+- Any matches → "monitor during interim; document early
+  warning signals."
+- No matches → "standard interim-period discipline."
+
+### Typical EBITDA cost if realized
+
+- mac_triggered: 20%
+- quality_incident: 15%
+- key_employee_departure: 10%
+- it_cyber_disclosure: 10%
+- material_customer_loss: 8%
+- qofe_material_adjustment: 8%
+- interim_financial_miss: 6%
+- regulatory_rule_final: 5%
+- environmental_physical: 5%
+- litigation_surprise: 4%
+- financing_market_shift: 3%
+- competitor_action: 3%
+
+### Worked example
+
+Signals: `key_employee_retention_not_signed` +
+`qofe_not_complete_at_signing` +
+`aggressive_add_back_schedule`.
+
+→ Matches: key_employee_departure (walk_right),
+qofe_material_adjustment (reprice_trigger).
+
+→ Partner note: "1 walk-right risk flagged — ensure
+PA walk-right explicit on key-15 departure."
+
+### Packet signals
+
+Each risk carries its own `early_warning_signals` list
+(packet-signal strings the deal team monitors during
+interim).
+
+---
+
+## 194. Physician comp normalization check (`physician_comp_normalization_check.py`)
+
+**Partner statement:** "Every physician-practice deal
+has comp-normalization uplift in the pro-forma. Half of
+it is real; half is seller optimism. I want to see the
+specific adjustments and decide which survive."
+
+Distinct from `physician_compensation_benchmark.py` —
+that benchmarks current comp to MGMA; this module
+scrutinizes the **pro-forma EBITDA adjustments** driven
+by post-close comp normalization.
+
+### 5 adjustment categories + survival rates
+
+- `base_comp_normalization` — **60%** survives (MGMA
+  bands wide; churn risk if cut aggressive).
+- `ancillary_ownership` — **80%** (clear structural
+  change).
+- `related_party_rent_at_market` — **70%** (standard).
+- `related_party_rent_below_market` — **30%** (partner
+  rejects — can't cut below market to lower).
+- `retention_bonuses` — **50%** (blur with run-rate).
+- `management_fee_elim` — **90%** (standard).
+
+### Churn haircut — the operator-reality constraint
+
+If base-comp cut > 20%, partner applies a **physician
+churn haircut**: ~15% of physicians leave within 24
+months. Each departing physician takes 50% of their
+revenue contribution. Savings vanishes.
+
+Churn hit ≈ (physician_count × 0.15) × (stated_EBITDA /
+physician_count) × 0.50.
+
+### Verdict ladder
+
+- Aggregate haircut + churn ≥ 20% of stated EBITDA
+  (or churn flag + ≥ 10%) → **walk**.
+- 10-20% → **reprice** — model off adjusted EBITDA.
+- < 10% with no churn → **proceed_with_adjustments**.
+- No adjustments → **accept**.
+
+### Worked example
+
+Stated EBITDA $15M, proposes $8M base-comp + $3M
+retention adjustments; current $700K → $450K (36% cut).
+
+- Base-comp: $3.2M haircut (40% of $8M).
+- Retention: $1.5M haircut (50% of $3M).
+- Churn flag: yes (36% cut > 20%).
+- Churn hit on 20 physicians: 3 × $0.75M × 0.50 =
+  $1.1M.
+- Total hair + churn: $5.8M / $15M = 39%.
+- **Verdict: walk.**
+
+### Packet fields that trigger
+
+- `stated_ebitda_m`, `proposed_adjustments` (list of
+  `CompAdjustment` with category + dollar).
+- `physician_count`, `current_avg_comp_usd`,
+  `proposed_avg_comp_usd`.
+- `rent_cut_is_below_market` — flags below-market rent
+  adjustment category.
+
+---
+
+## 195. Deal source quality reader (`deal_source_quality_reader.py`)
+
+**Partner statement:** "A proprietary deal from a 10-
+year relationship is a different animal from a 20-bidder
+auction. Same asset, different process, different price,
+different diligence scope. Know the source before you
+set the team's mandate."
+
+### 8 source profiles
+
+- **proprietary_from_relationship** — -5% price, 12-week
+  process, lean in.
+- **limited_auction_invited** — +3% price, 8 weeks,
+  balanced.
+- **broad_auction** — +8% price, 5 weeks, caution; win
+  on structure.
+- **second_look_after_broken_process** — -8% price, 10
+  weeks, caution — investigate *why* prior buyers walked.
+- **distressed_forced_sale** — -15% price, 4 weeks, lean
+  in if asset clean.
+- **continuation_vehicle_inside** — 0% price (fairness-
+  opinion mark), 16 weeks, balanced.
+- **reverse_inquiry** — -3% price, 10 weeks, balanced —
+  ask why now.
+- **management_led_carveout** — -5% price, 14 weeks,
+  balanced — TSA complexity.
+
+### Partner-note escalation
+
+- **distressed** → "lean in on clean-liability; R&W
+  essential; speed is a real edge."
+- **second_look** → "spend first diligence week on why
+  prior buyers walked."
+- **broad_auction** → "win on structure or don't swing."
+- **proprietary** → "extended diligence available; don't
+  let relationship pressure override discipline."
+
+### Worked example
+
+Base market price $800M:
+- `distressed_forced_sale` → expected $680M (save $120M).
+- `broad_auction` → expected $864M (pay $64M more).
+- `proprietary_from_relationship` → expected $760M (save
+  $40M).
+
+Same asset, three very different starting positions.
+
+### Packet fields that trigger
+
+- `source` — source profile name.
+- `base_market_price_m` — anchor for expected-price math.
+
+---
+
+## 196. Thesis sharpness scorer (`thesis_sharpness_scorer.py`)
+
+**Partner statement:** "If I can't state the thesis in
+one sentence with a number and a date, I don't understand
+the deal. Diffuse theses don't get done — they get
+excused when the deal fails."
+
+Distinct from `thesis_coherence_check` (internal
+consistency), `thesis_validator` (packet validation),
+`thesis_implications_chain` (downstream links). This
+module scores *focus*.
+
+### 7 dimensions scored
+
+1. **one_sentence_statable** — fits in one sentence.
+2. **named_primary_lever** — the ONE primary lever.
+3. **quantified_uplift** — specific number (bps or pct).
+4. **geography_specific** — state/MSA named.
+5. **timeline_bounded** — hold + milestone cadence.
+6. **secondary_pillars_lte_2** — ≤ 2 secondary pillars.
+7. **anti_thesis_named** — explicit "what would make us
+   walk?"
+
+### Sharpness ladder
+
+- **7/7** = `razor` — IC-ready.
+- **5-6/7** = `sharp` — sharpen remaining dimensions.
+- **3-4/7** = `diffuse` — cannot advance to IC.
+- **0-2/7** = `incoherent` — back to drafting.
+
+### Razor example
+
+> "Consolidate fragmented GI practices in Texas via
+> platform-level commercial pricing lift of 400 bps;
+> hold 5 years with quarterly KPI cadence; walk if top-3
+> payers don't reopen contracts in year 1."
+
+Single sentence ✓, primary lever ✓, 400 bps ✓, Texas ✓,
+5 yr + quarterly ✓, 1 secondary ✓, anti-thesis ✓ = 7/7.
+
+### Diffuse example
+
+> "Opportunistic platform with multiple avenues of value
+> creation across pricing, operations, and geography."
+
+No lever, no number, no geography, 5 pillars, no anti-
+thesis = 0/7 = incoherent.
+
+### Why razor wins
+
+Partners see 100 decks/yr. The ones that close have
+ONE primary lever quantified with geography + timeline +
+anti-thesis. This module is the 60-second sharpness gate
+before team commits diligence dollars.
+
+### Packet fields that trigger
+
+`thesis_statement`, `primary_lever`,
+`quantified_uplift_bps`/`quantified_uplift_pct`,
+`geography_scope`, `hold_years`, `milestone_cadence`,
+`secondary_pillars`, `anti_thesis_pass_signal`.
+
+---
+
+## 197. Management bench depth check (`management_bench_depth_check.py`)
+
+**Partner statement:** "The CEO is always named. But
+what happens if the CFO walks at 6 months? If the COO
+is new? If no direct reports own a P&L? That's where the
+real key-person risk lives."
+
+### 7 dimensions scored
+
+1. **ceo_rollover_pct ≥ 15%** — skin in the game.
+2. **cfo_successor_identified** — bench visible.
+3. **coo_in_role ≥ 12 months** — past honeymoon.
+4. **≥ 3 P&L-owning direct reports** — distributed
+   accountability.
+5. **key_person_dependencies ≤ 2** — concentration risk.
+6. **≥ 1 board operating director** — independent ops
+   experience.
+7. **exec_retention_signed_at_close** — contracts vs.
+   handshake.
+
+### Tier ladder
+
+- **6-7/7** = `deep` — can absorb 1-2 departures
+  without thesis reset.
+- **4-5/7** = `adequate` — one departure manageable.
+- **2-3/7** = `thin` — single departure resets plan;
+  ship with operator-placement plan.
+- **0-1/7** = `critical` — every seat single-threaded;
+  restructure or walk.
+
+### Named key-person risks
+
+Each failed dimension emits a specific partner counter
+that feeds the 100-day plan + LOI retention-condition
+language:
+
+- CEO rollover < 15% → "rollover ≥ 15% or vesting-based
+  equity."
+- No CFO successor → "retention + controller-level #2
+  in 100-day plan."
+- < 3 P&L owners → "redesign org around P&L owners day
+  1; CEO shouldn't be only holder of plan."
+- Key-person deps > 2 → "sign retention + non-compete
+  at close for each; no best-efforts."
+- No retention contracts at close → "make retention
+  closing condition."
+
+### Why partners care
+
+Scar tissue: most deal-level blow-ups trace to a named
+seat failing in year 1-2. A "strong CEO" with thin
+bench is a one-shot roll. Bench depth turns the team
+into a system.
+
+### Packet fields
+
+`ceo_rollover_pct`, `cfo_successor_identified`,
+`coo_months_in_role`, `pnl_owning_direct_reports_count`,
+`key_person_dependencies`, `board_operating_director_count`,
+`exec_retention_signed_at_close`.
+
+---
+
+## 198. Named failure library V2 (`named_failure_library_v2.py`)
+
+**Partner statement:** "Every named blow-up teaches one
+specific lesson. The more you have catalogued, the
+faster you pattern-match."
+
+Extends `historical_failure_library` (10 named patterns)
+with 10 more, each capturing a named failure mode the
+partner has internalized as 'do not let this shape
+repeat.'
+
+### 10 additional patterns
+
+1. **ma_startup_unwind_2023** — MA plan enrollment
+   outpacing margin.
+2. **behavioral_staffing_collapse_2024** — clinician
+   supply ceiling.
+3. **pdgm_transition_fallout_2020** — home health
+   missing the coding shift.
+4. **nsa_platform_rate_shock_2022** — No Surprises Act
+   IDR reset.
+5. **ma_provider_risk_contract_2023** — global-risk MA
+   without actuarial chassis.
+6. **tele_health_hype_fade_2023** — virtual utilization
+   mean-reversion.
+7. **rcm_vendor_concentration_loss_2022** — top-customer
+   acquired away.
+8. **dental_dso_over_rollup_2021** — dentist attrition
+   vs acquisition pace.
+9. **strategic_acquisition_peak_2022** — strategic paid
+   peak, wrote down.
+10. **ma_benefit_lockout_decay_2018** — MA supplemental
+    benefit intermediary margin compressed by plan
+    insourcing.
+
+### Partner-lessons (samples)
+
+- `ma_startup_unwind_2023`: "MA plan underwriting is
+  bid-math driven — measure MLR by cohort vintage."
+- `behavioral_staffing_collapse_2024`: "In behavioral
+  health, supply is the ceiling, not demand."
+- `nsa_platform_rate_shock_2022`: "Regulatory shifts
+  that hand bargaining power to payers compound."
+- `ma_provider_risk_contract_2023`: "Taking MA risk
+  without actuarial chassis is a one-shot roll."
+- `tele_health_hype_fade_2023`: "COVID-driven
+  utilization is not secular."
+
+### Packet triggers (matcher functions)
+
+Each pattern has a matcher function reading the packet
+context for specific signal combinations. E.g.,
+`ma_startup_unwind_2023` fires when
+`ma_plan_platform=True` AND (`mlr_rising_trend=True` OR
+`enrollment_outpacing_margin=True`).
+
+### Worked example
+
+Packet signals: `behavioral_health_platform=True` +
+`clinician_vacancy_gt_15pct=True`.
+
+→ Pattern matched: `behavioral_staffing_collapse_2024`.
+→ Partner lesson: "In behavioral health, supply is the
+ceiling — underwrite therapist-hiring cadence
+explicitly."
+
+---
+
+## 199. Turnaround feasibility scorer (`turnaround_feasibility_scorer.py`)
+
+**Partner statement:** "Every turnaround thesis starts
+with hope. The ones that work have a specific operator,
+a placement budget, and the CEO who caused the problem
+already on the exit path. If any of those is missing,
+you're underwriting on faith."
+
+Complements `failure_archetype_library` which flags
+`turnaround_without_operator` as a failure shape. This
+module is the *feasibility gate*: when a turnaround
+thesis is asserted, does the team have the inputs?
+
+### 7 dimensions scored
+
+1. **external_operator_identified** — named CEO/COO
+   pre-close.
+2. **operator_placement_budget_reserved** — ≥ $5M.
+3. **ceo_on_exit_path** — incumbent has defined
+   transition.
+4. **sponsor_has_turnaround_track_record** — sector-
+   specific prior success.
+5. **hundred_day_plan_has_operator_milestones** — named
+   hires + owned outcomes.
+6. **labor_or_union_constraints_manageable** — no
+   binding block.
+7. **turnaround_duration_le_36_months** — realistic
+   timeline.
+
+### Tier ladder
+
+- **6-7/7** = `feasible` — proceed; inputs in place.
+- **4-5/7** = `qualified` — proceed only with named
+  mitigation on missing dimensions.
+- **2-3/7** = `high_risk` — re-price or walk.
+- **0-1/7** = `infeasible` — walk.
+
+### Operator-placement budget flag
+
+On deals where `current_ebitda_m ≥ $20M` AND
+`thesis_requires_turnaround=True` AND no budget
+reserved → module emits explicit flag: "$5M+ operator-
+placement budget is a closing-condition item, not a
+nice-to-have."
+
+### Worked example
+
+Inputs: thesis requires turnaround, external operator
+NOT identified, no placement budget, current CEO
+staying, no sponsor track record, 100-day plan silent
+on operator, 30-month target duration.
+
+Score: 1/7 → `infeasible`.
+
+Partner note: "walk. No input this thesis relies on is
+in place."
+
+### Packet fields that trigger
+
+- `thesis_requires_turnaround`
+- `external_operator_identified`
+- `operator_placement_budget_reserved`,
+  `operator_placement_budget_m`
+- `ceo_on_exit_path`
+- `sponsor_has_turnaround_track_record`
+- `hundred_day_plan_has_operator_milestones`
+- `labor_or_union_constraints_manageable`
+- `turnaround_duration_months`
+- `current_ebitda_m`
+
+---
+
+## 200. Packet data provenance check (`packet_data_provenance_check.py`)
+
+**Partner statement:** "When the seller says 'EBITDA is
+$75M,' what I hear is 'management's number is $75M.'
+When QofE says it, I hear '$75M, roughly.' When my team
+rebuilt it from GL, I hear '$75M.' Same number, three
+different confidences."
+
+### 7 provenance tiers (partner-judgment weights)
+
+- `seller_mgmt_unverified` — 0.40
+- `seller_banker_book` — 0.50
+- `qofe_preliminary` — 0.65
+- `qofe_complete` — 0.85
+- `third_party_diligence` — 0.90
+- `public_data` — 0.95
+- `partner_team_modeled` — 1.00
+
+### High-stakes fields requiring QofE-level provenance
+
+`reported_ebitda`, `recurring_vs_onetime_ebitda`,
+`working_capital_peg`, `debt_balance`, `payer_mix`,
+`top_customer_concentration`,
+`physician_productivity_rvu`, `cms_star_rating`,
+`open_audit_exposure`, `pending_litigation_exposure`.
+
+Any high-stakes field tagged below `qofe_complete`
+triggers a pre-IC verification requirement.
+
+### Partner-note escalation
+
+- **No fields tagged** → "tag at minimum EBITDA, WC,
+  payer-mix before IC."
+- **High-stakes unverified** → "must be QofE-verified
+  or third-party-verified before IC."
+- **Any below threshold** → "flag for diligence if
+  thesis-critical."
+- **All ≥ 85% weighted** → "partner-level discipline;
+  proceed to IC."
+
+### Worked example
+
+Fields:
+- `reported_ebitda` from `seller_mgmt_unverified`
+  (high-stakes, below threshold).
+- `payer_mix` from `seller_banker_book` (high-stakes,
+  below threshold).
+
+→ 2 high-stakes unverified → partner note: "must be
+QofE-verified or third-party-verified before IC."
+
+### Why this discipline matters
+
+Partners have been burned by closing on packets where
+the headline EBITDA came from management-only sources.
+Post-QofE, the number drops 10%+. This module is the
+pre-IC discipline: name what we've verified vs. what
+we've accepted on faith.
+
+### Packet fields that trigger
+
+- `fields` — list of `PacketField` (name + provenance
+  + optional thesis weight).
+- `confidence_threshold` — default 0.70; tighten for
+  high-volatility deals.
+
+---
+
+## 201. Physician-group friction scorer (`physician_group_friction_scorer.py`)
+
+**Partner statement:** "On a physician-practice deal,
+the thesis closes at LOI. The friction starts day 1 of
+integration. Knowing the friction list before we sign
+decides whether the 100-day plan is the first plan or
+the second."
+
+Distinct from `physician_compensation_benchmark`,
+`physician_comp_normalization_check`, and
+`management_bench_depth_check`. This module catalogs
+**post-close integration friction** in physician-group
+PE.
+
+### 10 friction points
+
+- **ancillary_ownership_unwind** — high prob, 8% EBITDA.
+- **rvu_target_resistance** — high prob, 5%.
+- **state_noncompete_gap** — medium prob, 15% (CA/ND/
+  CO/OK/VA).
+- **referral_source_loss** — medium prob, 12% (cohort
+  departures).
+- **cdi_documentation_pushback** — medium, 4%.
+- **financial_incentive_restructure** — high prob, 6%.
+- **supervisory_physician_gap** — low prob, 3%.
+- **stark_antikickback_exposure** — low prob, 10%.
+- **pms_ehr_change** — medium, 4%.
+- **clinical_protocol_standardization** — medium, 2%.
+
+### Expected-value math
+
+Each friction point has a probability weight (high 0.80,
+medium 0.50, low 0.25). Expected-value impact sums
+across all matched frictions as a single partner-level
+number.
+
+### Partner-note escalation
+
+- Expected impact ≥ 10% → "price it in + 100-day plan
+  must pre-empt each."
+- 5-10% → "named mitigation per friction point."
+- < 5% → "manageable; document mitigation but shape
+  clean."
+
+### Worked example — CA practice rollup
+
+Signals: ancillary ownership disclosed, state in
+non-compete gap list, high referral concentration,
+senior physicians 60+, aggressive RVU target.
+
+→ Matches: ancillary_unwind (high), state_noncompete
+(medium, 15%), referral_loss (medium, 12%),
+rvu_resistance (high).
+
+→ Expected impact: 0.80×0.08 + 0.50×0.15 + 0.50×0.12 +
+0.80×0.05 = ~20% → partner: price it in.
+
+### Packet signals
+
+Each friction point has its own `early_signals` list;
+see module for full signal names.
+
+---
+
+## 202. Diligence spend budget (`diligence_spend_budget.py`)
+
+**Partner statement:** "I don't run the same diligence
+on a $100M deal that I run on a $1B deal. I don't run
+the same diligence on a clean asset that I run on one
+matching three failure archetypes. The spend has to fit
+the shape."
+
+### 8 workstream allocations
+
+- **qofe** — 30% base; scaled by subsector + compound-
+  pattern-risk count.
+- **legal_corporate_tax** — 25% base; scaled by source
+  type (proprietary gets more scope).
+- **regulatory_healthcare_compliance** — 5% base; +30%
+  per regulatory overhang.
+- **clinical_quality** — 5% base; 1.8x on material
+  clinical risk.
+- **commercial_market** — 10% base; 1.75x when
+  commercial is primary lever.
+- **it_cyber** — 8% base; 2.0x on material cyber
+  exposure.
+- **insurance_rw** — 7% base; 1.2x on $500M+ deals.
+- **consultants_operators** — 10% base; 2.5x on
+  turnaround theses.
+
+### Size adjustment
+
+- $200M EV or less → 70 bps.
+- $200-500M → 50 bps baseline.
+- $500M-1B → 45 bps.
+- $1B+ → 35 bps (economies of scale).
+
+### Source-type adjustment (legal line)
+
+- broad_auction → 0.70x (compressed timeline).
+- proprietary_from_relationship → 1.25x (extended).
+- second_look → 1.40x (deep dig on prior breakage).
+- distressed → 0.80x (fast track).
+
+### Partner-note escalation
+
+- ≥ 80 bps of EV → "high — biggest line addresses the
+  identified risk axis."
+- ≤ 30 bps → "lean — clean deal, standard scope."
+- Otherwise → "standard, with biggest-line named."
+
+### Worked example
+
+$500M turnaround thesis with material cyber exposure +
+2 regulatory overhangs, limited-auction source:
+
+- qofe $0.75M × 1.0 → $0.75M
+- legal $0.625M × 1.0 → $0.625M
+- regulatory $0.125M × 1.60 → $0.20M
+- clinical $0.125M × 1.0 → $0.125M
+- commercial $0.25M × 1.0 → $0.25M
+- it_cyber $0.20M × 2.0 → $0.40M
+- insurance_rw $0.175M × 1.2 → $0.21M
+- consultants $0.25M × 2.5 → $0.625M
+
+Total ≈ $3.2M (64 bps) — consultants is biggest line
+because turnaround thesis drives it.
+
+### Packet fields that trigger
+
+`ev_m`, `subsector`, `source`,
+`compound_pattern_risk_count`, `regulatory_overhang_count`,
+`clinical_risk_material`, `cyber_exposure_material`,
+`turnaround_thesis`, `commercial_thesis`.
+
+---
+
+## 203. Bank syndicate readiness (`bank_syndicate_readiness_scorer.py`)
+
+**Partner statement:** "Equity thesis can work and the
+deal still dies because the debt package doesn't come
+together. I want the syndication risk on the page
+before LOI, not the week before close."
+
+Distinct from `bank_syndicate_picker` (lender selection),
+`debt_capacity_sizer` (how much), `refinancing_window`
+(post-close timing). This module is the **pre-LOI
+readiness gate**.
+
+### 8 readiness dimensions
+
+1. **commitment_letter_signed** — hard vs soft circle.
+2. **lead_lender_has_sector_dry_powder** — book capacity.
+3. **leverage_at_or_below_peer_average** — ≤ peer + 0.25x.
+4. **covenant_package_lender_friendly** — market-standard.
+5. **repeat_lender_relationship** — cycle speed.
+6. **rate_lock_or_hedged** — rate-move protection.
+7. **private_credit_or_bank_match** — capital-type fit.
+8. **market_rate_stable_at_signing** — ≤ 50 bps vol /60d.
+
+### Tier ladder
+
+- **6-8/8** = `ready` — close on timeline.
+- **4-5/8** = `conditional` — close with remediation.
+- **2-3/8** = `at_risk` — 30-60 day delay probable.
+- **0-1/8** = `unreadied` — re-pitch / restructure.
+
+### Named remediations
+
+Each failed dim emits a specific fix:
+
+- No commitment letter → "obtain signed before IC."
+- Leverage above peer → "reduce leverage or add equity."
+- Covenant not lender-friendly → "tighten cure / MAC /
+  leverage steps."
+- No rate lock → "pre-sign rate lock or SOFR cap."
+- Rate vol > 50 bps → "pre-sign market flex language."
+- Lead lender capped → "replace lead or widen
+  syndicate."
+
+### Partner-note behavior
+
+Single missing dimension is usually fixable. Three or
+more = re-think the capital structure, not just the
+lenders.
+
+### Packet fields
+
+`commitment_letter_signed`,
+`lead_lender_has_sector_dry_powder`,
+`proposed_leverage`, `peer_average_leverage`,
+`covenant_package_lender_friendly`,
+`repeat_lender_relationship`,
+`rate_lock_or_hedged`,
+`private_credit_or_bank_match`,
+`market_rate_volatility_bps_60d`.
+
+---
+
+## 204. Value creation attribution (`value_creation_attribution.py`)
+
+**Partner statement:** "I don't just want a 2.5x MOIC.
+I want to know what's driving it. Forty percent multiple
+expansion means I'm betting on the cycle, not the plan.
+I'll take 40% from EBITDA growth over 40% from multiple
+any day."
+
+Decomposes projected MOIC into 6 lever-source
+contributions; flags cycle-dependent and M&A-dependent
+returns.
+
+### 6 attribution sources
+
+1. **organic_ebitda_growth** — (Δ EBITDA less M&A + margin
+   contributions) × entry multiple.
+2. **margin_expansion** — margin-contributed EBITDA ×
+   entry multiple.
+3. **m_and_a_inorganic** — M&A-contributed EBITDA × entry
+   multiple.
+4. **multiple_expansion** — exit EBITDA × (exit mult −
+   entry mult).
+5. **deleveraging** — entry debt − exit debt.
+6. **tax_efficiency_other** — structural proceeds.
+
+### Partner flags
+
+- `multiple_expansion_share > 30%` → "cycle-dependent."
+- `m_and_a_share > 40%` → "roll-up thesis; price it."
+- `organic + margin < 20%` → "plan doesn't live in
+  execution."
+
+### Partner-note ladder
+
+- Multiple > 40% → "bet on the cycle, not the plan."
+- Operating (organic + margin) ≥ 50% → "operating
+  thesis — we control the outcome."
+- M&A > 40% → "roll-up — price accordingly."
+- Otherwise → "balanced attribution."
+
+### Worked example
+
+Entry: $75M × 11x = $825 EV; $420M debt; $405M equity.
+Exit: $110M × 11x = $1,210 EV; $420M debt; $790M equity.
+MOIC 1.95x.
+
+- Organic growth: $35M × 11 = $385M (~100% of gain).
+- Multiple expansion: 0.
+- Deleveraging: 0.
+
+→ Partner note: "operating thesis — we control the
+outcome."
+
+### Packet fields
+
+`entry_ebitda_m`, `entry_multiple`, `entry_debt_m`,
+`exit_ebitda_m`, `exit_multiple`, `exit_debt_m`,
+`m_and_a_contributed_ebitda_m`,
+`margin_expansion_contributed_ebitda_m`,
+`tax_efficiency_other_proceeds_m`.
+
+---
+
+## 205. Reimbursement cliff calendar 2026-2029 (`reimbursement_cliff_calendar_2026_2029.py`)
+
+**Partner statement:** "I shouldn't have to type the CMS
+rules into every deal I look at. The calendar is known;
+the question is which ones hit *this* deal's hold
+window."
+
+Complements `reimbursement_cliff` (user-supplied events)
+and `healthcare_regulatory_calendar` (general catalog).
+This module pre-seeds **12 specific events** keyed to
+subsector for 2026-2029.
+
+### 12 pre-seeded events
+
+- **obbba_medicare_cut_phase1** (2026, -300 bps) —
+  hospital, HH, hospice, ASC, lab, DME.
+- **obbba_medicare_cut_phase2** (2027, -200 bps) — same.
+- **sequestration_extension_2027** (2027, -200 bps).
+- **site_neutral_hopd_finalization** (2028, -2200 bps
+  on affected HOPD).
+- **pama_lab_cuts_round_4** (2026, -1500 bps) — lab
+  only.
+- **ma_benchmark_reset_2026** (2026, -150 bps).
+- **pdgm_behavioral_adjust_2027** (home health, -150).
+- **pdpm_snf_recalibration_2027** (-50 bps).
+- **hospice_cap_tightening_2028** (hospice, -80 bps).
+- **dme_competitive_bid_round_2028** (DME, -4000 bps on
+  SKUs).
+- **340b_manufacturer_restrictions_2026** (hospital /
+  lab, -700 bps).
+- **wage_index_rural_floor_2027** (rural hospital,
+  **+100 bps** — rare upside).
+
+### Subsector scan
+
+Given subsector + hold start year + hold years:
+- Returns events that fall inside hold and apply to
+  subsector.
+- Sums total bps in hold.
+- Partner-note escalates at -500 bps: "material
+  headwind; bake into base case, not bear."
+
+### Worked example — hospital, 2026-2030 hold
+
+Hits: OBBBA phase 1, OBBBA phase 2, sequestration 2027,
+site-neutral 2028, 340B restrictions 2026, rural wage
+floor 2027.
+
+Total: ~-1,780 bps on Medicare FFS share. Partner note:
+"material headwind — base case, not bear."
+
+### Packet fields
+
+- `subsector`, `hold_start_year`, `hold_years` — scan
+  inputs.
+
+---
+
+## 206. Platform vs. add-on classifier (`platform_vs_addon_classifier.py`)
+
+**Partner statement:** "Every seller pitches their
+company as a platform. Most are add-ons. Platforms
+trade at 12-15x; add-ons at 8-9x. If we misclassify at
+underwrite, we lose 2-4 turns of entry."
+
+Distinct from `add_on_fit_scorer` (scores a specific
+add-on for a platform). This module classifies the
+target itself.
+
+### 8 platform dimensions
+
+1. EBITDA ≥ $25M (scale threshold).
+2. Standalone back-office (EHR/PMS/RCM/HR/finance).
+3. ≥ 3 P&L lines under management.
+4. Geographic or specialty scale to absorb add-ons.
+5. Bankable standalone — syndicate would lend.
+6. Subsector brand / recognition.
+7. Integration capability proven.
+8. Board / governance ready for sponsor oversight.
+
+### Tier → multiple range
+
+- **7-8/8** = `platform` → 11-14x supported.
+- **4-6/8** = `hybrid` → 9-11x, platform-discount.
+- **≤ 3/8** = `add_on` → 7-9x; fold into existing
+  platform.
+
+### Why this matters
+
+The #1 healthcare-PE overpayment pattern is paying
+platform multiples for add-on-scale assets. This module
+is the pre-LOI classification gate: if the target
+scores < 7/8, partner walks from platform pricing.
+
+### Packet fields
+
+`ebitda_m`, `standalone_back_office`,
+`pnl_lines_under_mgmt`, `geographic_or_specialty_scale`,
+`bankable_standalone`, `subsector_brand_recognition`,
+`integration_capability_proven`,
+`board_governance_ready`.
+
+---
+
+## 207. Capex intensity stress (`capex_intensity_stress.py`)
+
+**Partner statement:** "Seller tells me EBITDA is $75M.
+Then QofE shows capex has been below peer for three
+years — they kicked the can. Now the $15M in deferred
+maintenance is mine. That's EBITDA on paper that never
+converts to cash."
+
+Distinct from `ebitda_quality` and `cash_conversion`.
+This module stresses the **capex** leg of the FCF
+bridge.
+
+### 6 capex components
+
+1. **baseline_peer_equivalent** — peer ratio × revenue
+   × horizon.
+2. **deferred_maintenance_catchup** — (peer ratio −
+   actual ratio) × revenue × years_below_peer + named
+   backlog.
+3. **new_sites_build** — pipeline capex beyond
+   maintenance.
+4. **it_ehr_modernization** — non-deferrable.
+5. **clinical_equipment_replacement** — 7-10 yr cycle.
+6. **compliance_cyber_capex** — regulatory-driven.
+
+### FCF-vs-EBITDA haircut
+
+= (cumulative capex / cumulative EBITDA) − peer-implied
+ratio. Above 15% = material stress.
+
+### Partner-note ladder
+
+- Haircut ≥ 15% → "price in; capex diligence workstream
+  required."
+- 8-15% → "model explicit."
+- Any deferred catchup → "closing-adjustment or retention
+  item."
+- Otherwise → "in-line with peer median."
+
+### Worked example
+
+Revenue $500M, EBITDA $75M, historical capex 2.5% vs
+peer 4%, 4 years below peer, $15M disclosed backlog.
+
+- Baseline (peer × 3 yr): $60M.
+- Deferred catchup: $500 × 1.5% × 4 = $30M + $15M
+  backlog = $45M.
+- Total 3-yr: $105M.
+- Haircut: $105M / $225M cumulative EBITDA = 46.7% vs
+  peer ~27% = 20% haircut.
+
+→ Partner: "price in; capex diligence workstream."
+
+### Packet fields
+
+`revenue_m`, `ebitda_m`, `historical_capex_pct_revenue`,
+`peer_median_capex_pct_revenue`, `years_below_peer`,
+`deferred_maintenance_backlog_m`,
+`new_sites_build_pipeline_m`,
+`it_ehr_modernization_needed_m`,
+`clinical_equipment_replacement_due_m`,
+`compliance_cyber_capex_m`, `forecast_horizon_years`.
+
+---
+
+## 208. Referral flow dependency scorer (`referral_flow_dependency_scorer.py`)
+
+**Partner statement:** "A physician practice isn't
+really selling patients — it's selling the referral
+network. If one referring doctor generates 12% of
+visits, that's a single-point-of-failure. Buy the
+practice, lose the doctor, lose the patients."
+
+Distinct from `customer_concentration_drilldown` (direct
+customers / payers) and `concentration_risk_multidim`
+(multi-dim summary). This module focuses on **upstream
+referral sources** — most relevant in specialty
+practices, ASCs, labs, hospice, home health.
+
+### 5 referral flags
+
+1. **top_1_concentration_gt_15pct** — single doc / source
+   sending ≥ 15%.
+2. **top_5_concentration_gt_50pct** — top-5 send majority.
+3. **top_referrer_age_60_plus** — retirement flight risk.
+4. **no_referring_network_contract** — can walk any day.
+5. **no_specialty_diversification** — correlated
+   departure risk.
+
+### Tier ladder
+
+- **0 flags** → `highly_diversified` — no gating.
+- **1-2 flags** → `moderately_concentrated` — retention +
+  relationship mgmt in 100-day plan.
+- **3+ flags** → `heavily_concentrated` — haircut
+  underwrite by expected EBITDA loss.
+- **top-1 ≥ 20% AND flight-risk** → `single_point_of_
+  failure` — partner walks or signed referring-physician
+  contract at close.
+
+### Departure probability heuristic
+
+- Top-1 ≥ 15% + age 60+ → 60% probability over 3-yr hold.
+- Top-1 ≥ 15% + no contract → 40%.
+- Top-1 ≥ 15% alone → 30%.
+- No contract alone → 25%.
+- No specialty diversification adds +5%.
+- Baseline 15%.
+
+### Expected EBITDA loss
+
+= `ebitda_m × top_1_pct × departure_probability ×
+margin_elasticity`.
+
+### Worked example — GI practice
+
+Top-1 doc 18% of volume, age 62, no signed contract,
+single-specialty, $20M EBITDA.
+
+Flags: top-1 15%+ ✓, top-5 50%+ (if concentrated), age
+60+ ✓, no contract ✓, no diversification ✓ = 4-5 flags.
+
+Prob: top-1 + age 60+ = 0.60, + no diversification +5% =
+0.65. Expected loss: $20M × 18% × 0.65 × 0.9 ≈ $2.1M
+EBITDA.
+
+→ Partner: "single_point_of_failure tier; walk or require
+signed contract + retention at close."
+
+### Packet fields
+
+`top_1_referrer_pct`, `top_5_referrer_pct`,
+`top_referrer_age_60_plus`,
+`no_referring_network_contract`,
+`diversification_across_specialties`, `ebitda_m`,
+`margin_elasticity`.
+
+---
+
+## 209. Day 1 action plan (`day_one_action_plan.py`)
+
+**Partner statement:** "The 100-day plan gets the
+press. The first 7 days get the value. If day 1 is
+chaos, the 100-day plan is already slipping."
+
+Distinct from `hundred_day_plan`,
+`management_first_sitdown`, `first_thirty_minutes`.
+This module catalogs **12 specific day-1-to-week-1
+actions**.
+
+### 12 day-1 actions
+
+1. **ceo_all_hands** (CEO, day 1) — risk: rumor fills
+   vacuum.
+2. **top_customer_communication** (CEO, day 1).
+3. **payer_relationship_call** (CEO, week 1).
+4. **banking_transition** (CFO, day 1).
+5. **board_reconstitution** (legal, day 1).
+6. **it_access_handoff** (ops, day 1).
+7. **compensation_confirmation** (CFO, day 1).
+8. **retention_activation** (legal, day 1).
+9. **insurance_policy_transition** (legal, week 1).
+10. **auditor_transition** (CFO, week 1).
+11. **operating_committee_kickoff** (sponsor, week 1).
+12. **regulatory_notice_filings** (legal, week 1) — CHOW
+    / licensure.
+
+### Escalation behavior
+
+Actions not marked `owned` or `done` land in an
+**escalation list** with their risk-if-delayed message.
+Partner-note escalates at ≥ 3 unowned: "silence in
+week 1 costs weeks in the 100-day plan."
+
+### Packet fields
+
+- `actions_done` — list of completed action names.
+- `actions_owned` — list of actions with a named owner.
+
+---
+
+## 210. Cash conversion drift detector (`cash_conversion_drift_detector.py`)
+
+**Partner statement:** "DSO rising three quarters in a
+row is a tell. By the time it shows up in EBITDA, we've
+missed the QofE window. I want the trendline flagged
+before it becomes a number."
+
+Distinct from `cash_conversion.py` (point-in-time
+computation). This module is **trend-based** — catches
+direction over 4-8 quarters and flags deteriorating
+working-capital signals before they hit the P&L.
+
+### 6 drift signals
+
+- **dso_days** (rising = bad) — threshold 1.0 day/qtr.
+- **dpo_days** (falling = bad) — 1.0 day/qtr.
+- **inventory_days** (rising = bad) — 1.0 day/qtr.
+- **initial_denial_rate** (rising = bad) — 1.0 %/qtr.
+- **claim_appeal_age** (rising = bad) — 2.0 days/qtr.
+- **collections_velocity** (falling = bad) — 1.0 %/qtr.
+
+### Tier ladder
+
+- **clean** — 0 deteriorating.
+- **noise** — 1.
+- **early_warning** — 2.
+- **working_capital_stress** — ≥ 3 → "bring-down QofE
+  period-over-period comparison at close; stress cov
+  package against trajectory."
+
+### Trend math
+
+Linear regression slope over last N quarters. Signal
+"deteriorating" if slope is in wrong direction **AND**
+magnitude > threshold.
+
+### Why partners care
+
+Working-capital stress shows up in cash before it shows
+up in EBITDA. Catching the trend pre-close allows the
+partner to demand period-over-period bring-down in QofE,
+tighten covenants, or walk.
+
+### Packet fields
+
+`dso_days_series`, `dpo_days_series`,
+`inventory_days_series`, `initial_denial_rate_series`,
+`claim_appeal_age_series`,
+`collections_velocity_series` — each a list of quarterly
+observations (minimum 3 for slope).
+
+---
+
+## 211. Archetype heuristic router (`archetype_heuristic_router.py`)
+
+**Partner statement:** "A payer-mix-shift thesis needs
+different heuristics than a roll-up. Loading every rule
+on every deal is noise. The brain should know which 10
+rules actually decide this archetype's fate."
+
+Distinct from `archetype_subrunners`. This module is the
+**meta-router** that tells the brain *which judgment
+layers* to prioritize per archetype.
+
+### 8 archetypes routed
+
+1. **payer_mix_shift** → payer_mix_shift chain + US Renal
+   MA + MA startup failure patterns + payer renegotiation
+   trap.
+2. **rollup_consolidation** → rollup chain + Envision
+   2023 + dental DSO 2021 + signed-LOI heuristics.
+3. **cmi_uplift** → cmi_uplift chain + PDGM fallout +
+   CDI-FTE heuristic.
+4. **outpatient_migration** → payer_mix_shift chain +
+   site-neutral-hostage archetype + Adeptus 2017.
+5. **cost_basis_compression** → cost chain + Steward
+   REIT + behavioral staffing collapse + union
+   constraints heuristic.
+6. **capacity_expansion** → rollup chain + Adeptus +
+   Prospect cashflow; per-site payback ≤ 36 mo.
+7. **back_office_consolidation** → cost chain + RCM
+   concentration loss + EHR count heuristic.
+8. **payer_renegotiation** → payer chain + Radiology
+   Partners + Team Health + earn-out-on-actual-rates.
+
+### Routing fields per archetype
+
+- `primary_thesis_chain` — which chain to walk.
+- `priority_failure_patterns` — named V1+V2 patterns.
+- `priority_traps` — most common partner traps.
+- `priority_shape_archetypes` — failure-shape matches.
+- `subsector_tags` — most exposed subsectors.
+- `specific_heuristics` — top 3-5 rules that decide the
+  archetype.
+- `partner_first_question` — the single question a
+  partner asks first.
+
+### Why partners care
+
+Archetype-specific routing is how partners reach an
+actionable first impression in 60 seconds. Without
+routing, every judgment layer fires on every deal —
+noise swamps signal.
+
+### Packet fields
+
+- `archetype` — named archetype from
+  `list_routed_archetypes()`.
+
+---
+
+## 212. Thesis-break price (`thesis_break_price_calculator.py`)
+
+**Partner statement:** "Every deal has a walk number.
+Below it the math works; above it doesn't. I want that
+number on the page before the first bid goes out."
+
+Distinct from `seller_math_reverse`,
+`exit_multiple_compression_scenarios`,
+`pricing_concession_ladder`. This module computes the
+partner's **walk-away price** given thesis risk signals.
+
+### 7 haircut layers
+
+- **pre_mortem_strong** → 10% haircut (`moderate` = 5%).
+- **thesis_chain_contradictions** → 4% per contradicted
+  link.
+- **compound_pattern_risks** → 3% per compound theme.
+- **failure_archetype_matches** → 2% per match.
+- **cycle_multiple_dependence** (> 30% from multiple) →
+  5%.
+- **referral_single_point_of_failure** → 4%.
+- **turnaround_without_operator** → 6%.
+
+### Cap
+
+Total haircut capped at 40% — beyond that partner walks
+entirely rather than re-pricing.
+
+### Partner-note ladder
+
+- ≥ 25% haircut → "if seller won't accept walk-away,
+  pass."
+- 10-25% → "LOI target, not ask-match."
+- < 10% → "modest negotiation room."
+
+### Worked example
+
+Base $800M + pre-mortem strong (10%) + 2 contradicted
+links (8%) + 2 compound risks (6%) + turnaround without
+operator (6%) = 30% haircut → walk-away $560M. Partner:
+"if seller won't accept $560M, pass."
+
+### Packet fields
+
+`base_price_m`, `pre_mortem_strength`,
+`thesis_contradicted_links_count`,
+`compound_pattern_risks_count`,
+`failure_archetype_matches_count`,
+`multiple_expansion_share_pct`,
+`referral_single_point_of_failure`,
+`turnaround_without_operator`.
+
+---
+
+## 213. IC memo header synthesizer (`ic_memo_header_synthesizer.py`)
+
+**Partner statement:** "Every IC memo has the same
+first page. Recommendation up top, thesis in one
+sentence, three things that work, three things that
+don't, three things that would change my mind. I should
+be able to pick up that page and know the deal in 60
+seconds."
+
+Distinct from `ic_memo`, `ic_decision_synthesizer`,
+`deal_one_liner`, `pre_ic_chair_brief`. This module
+produces the **standardized IC memo first page**.
+
+### Fixed-format 5 blocks
+
+1. **Recommendation** — invest / pass / diligence_more /
+   reprice / proceed_with_mitigants.
+2. **One-sentence thesis**.
+3. **What works** — 3 items max.
+4. **What doesn't** — 3 items max.
+5. **What would change my mind** — 3 items max.
+
+### The 3-item cap
+
+Partners complain when lists go past 3. "More than three
+is fuzzy thinking." The module hard-caps each block at
+3.
+
+### Recommendation rationale templates
+
+- `invest` → "deal we want."
+- `pass` → "walk."
+- `diligence_more` → "advance only with open items
+  closed."
+- `reprice` → "counter at walk-away."
+- `proceed_with_mitigants` → "named mitigation required."
+
+### Why this matters
+
+The first page of the IC memo is where the partner
+decides whether to read the next 60 pages. A clean
+header + 3 named things in each direction is the
+difference between "partner reads" and "partner flips
+past."
+
+### Packet fields
+
+`deal_name`, `recommendation`, `thesis_one_sentence`,
+`what_works_candidates`, `what_breaks_candidates`,
+`would_change_my_mind_candidates`.
+
+---
+
+## 214. Tax structure trap scanner (`tax_structure_trap_scanner.py`)
+
+**Partner statement:** "Tax drives after-tax IRR. I
+don't need to be a tax lawyer, but I need the top 10
+traps flagged before I sign. Every one of them costs
+100-300 bps of IRR if missed."
+
+Distinct from `tax_structuring` (high-level
+structure). This module is a **red-flag scanner** for
+10 specific tax-structure traps common in healthcare
+PE.
+
+### 10 traps with IRR-drag estimates
+
+1. **golden_parachute_280g_exposure** — 150 bps.
+2. **nol_382_limitation** — 200 bps.
+3. **sales_tax_nexus_services** — 100 bps.
+4. **r_and_d_credit_carryforward_risk** — 80 bps.
+5. **stock_option_acceleration** — 80 bps.
+6. **ubti_exposure_tax_exempt_lps** — 120 bps.
+7. **cod_income_seller_note** — 60 bps.
+8. **state_provider_tax** — 100 bps (CA / NY / OR / TX
+   / MI / WA).
+9. **section_263a_healthcare_r_and_d** — 50 bps.
+10. **unclaimed_hsa_balances** — 30 bps.
+
+### Partner-note escalation
+
+- ≥ 400 bps total → "retain tax counsel pre-LOI;
+  specific restructuring required before IC."
+- 150-400 bps → "tax-counsel review scoped in
+  diligence."
+- < 150 bps → "document in tax workstream."
+- 0 triggered → "proceed on standard tax scope."
+
+### Worked example
+
+Inputs: 2 execs with acceleration + no safe harbor,
+NOLs + ownership change, telehealth + gross-receipts
+nexus.
+
+Triggered: 280G (150) + NOL 382 (200) + sales nexus
+(100) = 450 bps → partner: "retain tax counsel pre-
+LOI."
+
+### Packet fields
+
+Per-trap signal booleans; see module for the full
+input surface.
+
+---
+
+## 215. Synergy sequencing scorer (`synergy_sequencing_scorer.py`)
+
+**Partner statement:** "Y1 is stabilization, not
+synergy. The seller's slides show $12M synergy in Y1 —
+I know that's not real. Back-office is Y2. Payer
+renegotiation is Y3. If their timing is wrong, their
+math is wrong."
+
+Distinct from `synergy_credibility_scorer` (is the
+synergy real?) and `synergy_modeler` (how big?). This
+module scores **timing**.
+
+### 10 synergy categories + typical landing windows
+
+- `purchasing_gpo_rebates` — Y1.
+- `ancillary_rationalization` — Y1-Y2.
+- `capex_rationalization` — Y1-Y2.
+- `shared_services_back_office` — Y2-Y3.
+- `real_estate_consolidation` — Y2-Y3.
+- `revenue_cycle_standardization` — Y2-Y3.
+- `physician_comp_normalization` — Y2-Y3.
+- `payer_contract_renegotiation` — Y3-Y4.
+- `it_ehr_consolidation` — Y3-Y4.
+- `cross_sell_upsell` — Y3-Y4.
+
+### Haircut math
+
+Each year earlier than the typical landing min-year →
+30% haircut. Later-than-typical is accepted (seller is
+being honest). Haircut capped at 90%.
+
+### Partner-note ladder
+
+- ≥ 30% aggregate haircut → "rebuild the synergy ramp
+  with realistic per-category landing."
+- 15-30% → "re-phase plan."
+- < 15% → "accept with adjustment."
+- 0% → "timing honest; proceed on face."
+
+### Worked example
+
+Seller claim: $10M payer renegotiation Y1 + $2M GPO
+rebates Y1 + $5M back-office Y1.
+
+- Payer reneg Y1 vs. typical Y3 → 60% haircut → $6M cut.
+- GPO rebates Y1 vs. typical Y1 → 0% cut.
+- Back-office Y1 vs. typical Y2 → 30% cut → $1.5M cut.
+
+Total haircut $7.5M / $17M claimed = 44% → "rebuild the
+ramp."
+
+### Packet fields
+
+- `claimed_synergies` — list of `ClaimedSynergy`
+  (category + $M + claimed year).
+
+---
+
+## 216. HSR antitrust scanner (`hsr_antitrust_healthcare_scanner.py`)
+
+**Partner statement:** "FTC's healthcare focus has
+teeth now. A full second request costs 6-9 months +
+$15M legal. A divestiture order costs the thesis. I
+want antitrust risk flagged before I sign."
+
+### Recent enforcement patterns modeled
+
+- Physician rollup "serial acquisition" theory (US
+  Anesthesia Partners case).
+- Hospital merger local-market challenges (federal +
+  state AG).
+- Payer-provider vertical integration.
+- FTC non-compete rule + physician retention.
+
+### 8 antitrust flags
+
+1. **local_market_hhi_gt_2500** — Section 7 trigger.
+2. **top_competitor_share_post_gt_30pct** — guidelines
+   presumptive concern.
+3. **sponsor_serial_acquisition_same_specialty** — USAP
+   theory.
+4. **payer_provider_vertical_integration** — heightened
+   scrutiny.
+5. **physician_noncompete_material** — non-compete rule
+   risk.
+6. **state_ag_active_review_jurisdiction** — CA/NY/WA/MA.
+7. **prior_ftc_action_in_sector** — agency already
+   informed.
+8. **deal_size_above_hsr_threshold** — $119.5M (2026).
+
+### Risk tier → close delay → divestiture probability
+
+- **very_high** (3+ structural flags) → +270 days / 70%
+  divestiture probability → "walk unless scale-back
+  works."
+- **high** (2 structural flags) → +150 days / 40%.
+- **medium** (1 structural or ≥ 3 any) → +60 days / 15%.
+- **low** → +30 days / 2%.
+
+### Worked example
+
+Physician rollup + sponsor with 5 same-specialty platforms
++ post-HHI 3000 + 45% share + payer-provider vertical
+components.
+
+→ 4 structural flags → `very_high` → +270 days delay,
+70% divestiture probability → "walk unless deal survives
+at scale-back."
+
+### Packet fields
+
+`local_market_hhi_post`, `top_competitor_share_post_pct`,
+`sponsor_platforms_in_same_specialty`,
+`payer_provider_vertical`,
+`physician_noncompete_material`,
+`operating_states`, `prior_ftc_action_in_sector`,
+`deal_size_m`.
+
+---
+
+## 217. Governance package designer (`governance_package_designer.py`)
+
+**Partner statement:** "The board seats are the first
+question. The reserved matters are the second. The
+rollover protections are the third. Get the first two
+right and I can live with the third. Get the third
+wrong and the rollover is a litigation seed."
+
+Distinct from `board_composition_analyzer` (scores a
+filled board) and `board_memo` (meeting format). This
+module **designs** the close-date governance package
+across 4 dimensions.
+
+### Board sizing by platform tier
+
+- Platform → 7 seats (3 sponsor / 3 independent / 1
+  management).
+- Hybrid → 6 (3 / 2 / 1).
+- Add-on → 5 (3 / 1 / 1).
+- Rollover ≥ 20% → add 1 management seat.
+
+### Committees
+
+Always: **audit**, **compensation**, **nominating**
+(all sponsor-chaired).
+Healthcare: **compliance** (independent-chaired —
+governance-best-practice + regulatory signal).
+
+### Reserved matters (7, sponsor consent required)
+
+- strategic_m_and_a (> $10M EV).
+- leverage_change (any).
+- ceo_or_cfo_hire (any).
+- annual_operating_plan (annual).
+- capital_raise (any).
+- related_party_transactions (> $250K).
+- regulatory_settlement (> $500K or reputational).
+
+### Rollover protections
+
+- **Any rollover** → tag-along + drag-along + preemption
+  + information rights.
+- **Rollover ≥ 20%** → + Y5 liquidity put at FMV.
+
+### Worked example
+
+Hospital platform, 15% rollover:
+- Board: 7 seats (3 sponsor, 3 indep, 1 mgmt).
+- Committees: audit + comp + compliance (indep-chaired) +
+  nominating.
+- 7 reserved matters.
+- Tag + drag + preemption + info rights.
+
+### Packet fields
+
+`platform_tier`, `sponsor_equity_pct`,
+`rollover_equity_pct`, `subsector`,
+`management_has_preexisting_equity`,
+`lp_pressure_level`.
+
+---
+
+## 218. Reps & warranties scope negotiator (`reps_warranties_scope_negotiator.py`)
+
+**Partner statement:** "The cap and deductible get the
+attention, but the scope decides what's covered in the
+first place."
+
+Distinct from `loi_term_sheet_review` (LOI-level R&W
+mechanics — cap, deductible, carveouts). This module
+recommends the **specific reps** to demand on a
+healthcare deal.
+
+### 14 reps across 3 categories
+
+**Fundamental** (4) — always must-have, uncapped seller
+indemnity, longer survival: organization, authority,
+capitalization, tax-basic.
+
+**Standard** (6) — R&W-insured above basket: financial
+statements, no conflicts, litigation, employee
+classification + wage-hour, IP ownership, IT systems +
+cyber.
+
+**Healthcare-specific** (6, when provider-asset) —
+seller indemnity; often carved from R&W: HIPAA, Stark/AKS
+safe-harbor compliance, facility + clinician licensure,
+OIG exclusion clean, CIA compliance, clinical quality +
+CMS survey.
+
+### Conditional elevations
+
+- `prior_cyber_incident_disclosed` → IT/cyber rep →
+  must-have + carve-out.
+- `key_employee_litigation_pending` → employee rep
+  must-have.
+- `material_regulatory_audit_history` → Stark/AKS, OIG,
+  CIA reps enhanced (longer survival + specific
+  indemnity cap).
+- No R&W insurance → standard reps shift to seller
+  indemnity, partner note escalates.
+
+### Packet fields
+
+`subsector`, `rw_insurance_in_place`,
+`asset_type_is_provider`,
+`material_regulatory_audit_history`,
+`key_employee_litigation_pending`,
+`prior_cyber_incident_disclosed`.
+
+---
+
+## 219. Specialty mix stress (`specialty_mix_stress_scorer.py`)
+
+**Partner statement:** "A practice doing 80% spine
+surgery with 4 surgeons is not a specialty practice —
+it's a single-service line. Lose 2 surgeons and the
+revenue is gone."
+
+The third concentration axis (alongside
+`referral_flow_dependency_scorer` upstream and
+`customer_concentration_drilldown` downstream) — **revenue
+mix within specialties / procedures**.
+
+### 5 flags
+
+1. **top_specialty_revenue_gt_60pct**
+2. **top_procedure_revenue_gt_35pct**
+3. **thin_physician_bench_in_top_specialty** — ≤ 3
+   physicians generate top-specialty revenue.
+4. **top_specialty_medicare_heavy** — commercial share
+   ≤ 30%.
+5. **ancillary_tied_to_top_specialty** — DI / lab /
+   surgery revenue depends on the specialty.
+
+### Tier ladder
+
+- **0-1 flags** → `well_diversified` — no gating.
+- **2 flags** → `moderately_concentrated` — 100-day
+  plan prioritizes specialty-leader retention.
+- **3 flags** → `heavily_concentrated` — haircut
+  underwrite + specialty-leader retention as closing
+  condition.
+- **4+ flags** → `single_service_line` — price as
+  add-on, not platform.
+
+### Concentration-risk EBITDA formula
+
+`ebitda × top_specialty_revenue_pct × risk_factor`
+where risk_factor = 0.45 (single-service), 0.30
+(heavy), 0.15 (moderate), 0 (diversified).
+
+### Worked example — spine-heavy orthopedics group
+
+Top specialty 80% / top procedure 45% / 3 surgeons /
+25% commercial / ancillary tied = 5/5 flags →
+`single_service_line` → "price as add-on."
+
+### Packet fields
+
+`top_specialty_revenue_pct`,
+`top_procedure_revenue_pct`,
+`n_physicians_generating_top_specialty_revenue`,
+`top_specialty_commercial_pct`,
+`ancillary_integration_tied_to_top_specialty`,
+`ebitda_m`.
+
+---
+
+## 220. Local market intensity (`local_market_intensity_scorer.py`)
+
+**Partner statement:** "HHI at the national level is
+noise. What matters is the MSA. If we're the 6th
+urgent-care operator in Phoenix, pricing is a race to
+the bottom. If we're the only GI practice in a 50-mile
+radius, I can underwrite growth."
+
+Distinct from `market_structure` (national HHI / CR3).
+This module measures **local-market intensity**.
+
+### 5 flag signals + 1 protective factor
+
+1. **direct_competitors_local_gte_3**
+2. **new_entrant_announced_12mo**
+3. **dominant_local_payer_gte_45pct** — price-taker
+   dynamic.
+4. **physician_labor_pool_shallow** — local wage
+   inflation risk.
+5. **consumer_retail_encroachment** — CVS/Amazon/Optum
+   commoditization.
+6. **state_con_protected** (protective) — reduces
+   effective flag count by 1.
+
+### Tier ladder (effective flags after CON adjustment)
+
+- **protected_local** (0-1 + CON state) → pricing power.
+- **balanced** (2) → peer-average growth, no gating.
+- **crowded** (3) → haircut projected growth.
+- **hypercompetitive** (4+) → price-taker; reprice or
+  walk.
+
+### Why local matters
+
+Healthcare services are local-delivered. A "national
+rollup" is a collection of MSA-level duopolies. Partners
+make the MSA-level call at underwrite, then aggregate.
+
+### Packet fields
+
+`direct_competitors_local`, `new_entrant_announced_12mo`,
+`dominant_payer_share_local`,
+`physician_labor_pool_shallow`,
+`consumer_retail_encroachment`, `state_con_protected`.
+
+---
+
+## 221. Multi-state regulatory complexity (`multi_state_regulatory_complexity_scorer.py`)
+
+**Partner statement:** "A deal operating in 5 states is
+not 5x the complexity — it's 12x. Each state has its
+own CON, licensure transfer, MSO rules, non-compete
+law, and provider tax."
+
+### 5 state-category lookups
+
+- **CON states** (33 states) — CON required for select
+  services creates filing-cycle friction.
+- **Non-compete void** (CA, ND, OK, MN, CO) —
+  physician retention via deferred-comp clawback only.
+- **MSO / CPOM** (CA, NY, NJ, IL, TX, MI, OH, PA, WA,
+  CO) — corporate practice of medicine states require
+  friendly-PC / MSO structure.
+- **Aggressive AGs** (CA, NY, WA, MA) — state-level
+  antitrust review on top of FTC.
+- **Provider tax** (CA, NY, OR, TX, MI, WA) — 2-4% of
+  revenue exposure.
+
+### Tier ladder
+
+- **simple** — ≤ 2 states, no category issues.
+- **moderate** — 3-4 states OR 1 issue-category with
+  ≥ 2 states.
+- **complex** — 5-7 states OR 2 issue-categories.
+- **very_complex** — 8+ states OR 3+ issue-categories
+  → "retain multi-state regulatory counsel pre-LOI."
+
+### Worked example
+
+CA + NY + TX:
+- Non-compete void: CA.
+- MSO states: CA, NY, TX.
+- Aggressive AG: CA, NY.
+- Provider tax: CA, NY, TX.
+- 4 categories with ≥ 2 state overlap → `very_complex`.
+
+### Packet fields
+
+`operating_states`, `service_line_triggers_con`,
+`asset_type_requires_mso`.
+
+---
+
+## 222. EBITDA quality bridge (`ebitda_quality_bridge_reconstructor.py`)
+
+**Partner statement:** "Seller says $75M EBITDA. By
+the time QofE is done, physician comp is normalized,
+COVID tailwind is stripped, and pro-forma acquisitions
+are haircut, the number I underwrite against is $58M.
+The difference isn't a spreadsheet error — it's the
+entire deal math."
+
+Connective tissue pulling from:
+- `qofe_prescreen` → add-back haircut.
+- `physician_comp_normalization_check` → comp
+  adjustments.
+- `recurring_vs_onetime_ebitda` → cash-release share.
+- `capex_intensity_stress` (referenced, separate FCF
+  leg).
+
+### Bridge sequence
+
+1. Stated EBITDA.
+2. **QofE add-back haircut** — non-surviving add-backs.
+3. **Physician comp normalization haircut** — walk-
+   through delta.
+4. **COVID / one-time strip** — structural one-time not
+   in QofE.
+5. **Cash-release strip** — when Y1 cash-release > 30%
+   of claimed gain, strip half.
+6. **Pro-forma acquisition haircut** — TTM-actualize.
+7. **Partner run-rate EBITDA** — the underwrite number.
+
+### EV impact
+
+Haircut × entry multiple = EV that wouldn't exist in
+partner's math but does in seller's.
+
+### Partner-note ladder
+
+- ≥ 20% haircut → "do not underwrite off stated EBITDA."
+- 10-20% → "material haircut; price at run-rate ×
+  exit mult."
+- < 10% with adjustments → "modest haircut; document."
+- 0% → "no adjustments; run-rate = stated."
+
+### Packet fields
+
+`stated_ebitda_m`, `qofe_haircut_m`,
+`physician_comp_normalization_haircut_m`,
+`covid_tailwind_strip_m`,
+`cash_release_share_in_y1_gain`,
+`y1_claimed_ebitda_gain_m`,
+`pro_forma_acquisition_haircut_m`,
+`entry_multiple`.
+
+---
+
+## 223. Exit alternative comparator (`exit_alternative_comparator.py`)
+
+**Partner statement:** "Every board meeting I ask the
+same question: if we had to decide today, sell / hold /
+recap / continuation vehicle — which one wins on risk-
+adjusted MOIC? The answer changes every year."
+
+### 5 alternatives modeled
+
+1. **sell_strategic_now** — current EV × strategic
+   premium (+10%), net advisory 1.5%. Time ≈ 3 months.
+2. **sell_sponsor_secondary** — PE-to-PE at -5% from
+   strategic. Time ≈ 6 months.
+3. **continuation_vehicle** — GP-led secondary at
+   fairness-opinion +3% premium. Time ≈ 12 months.
+4. **dividend_recap_and_hold** — lever to 6x, pay 40%
+   of equity as dividend, hold to planned exit.
+5. **hold_and_build** — ride thesis to planned exit.
+
+### Winning-alternative ranker
+
+Ranks by MOIC per year: `moic^(1/time_to_exit_yrs) - 1`
+approximates IRR. The right answer changes as:
+
+- Current EBITDA grows → hold increasingly dominates.
+- Strategic multiple premium widens → strategic wins.
+- LP fund-life clock pressures → continuation vehicle
+  wins on sponsor side.
+- Debt markets open → dividend recap becomes cheap.
+
+### Packet fields
+
+`entry_equity_m`, `entry_ebitda_m`, `entry_multiple`,
+`current_ebitda_m`, `current_multiple`, `current_debt_m`,
+`years_into_hold`, `planned_exit_year`,
+`planned_exit_ebitda_m`, `planned_exit_multiple`,
+`planned_exit_debt_m`, `strategic_premium_pct`,
+`secondary_mark_discount_pct`,
+`continuation_fairness_opinion_pct`,
+`advisory_fees_pct_of_ev`,
+`dividend_recap_leverage_multiple`,
+`dividend_recap_dividend_pct_of_equity`.
+
+---
+
+## 224. Clinical outcome leading indicators (`clinical_outcome_leading_indicator_scanner.py`)
+
+**Partner statement:** "Quality metrics hit
+reimbursement 18-24 months after they deteriorate.
+Readmission rates rising in 2026 means VBP cuts in
+2028. I want the trendline flagged now, not when the
+CMS penalty letter arrives."
+
+Distinct from `quality_metrics` (point-in-time → VBP
+dollar impact). This module is **trend-based** across
+6 clinical-quality indicators.
+
+### 6 indicators + deterioration direction + forward-hit
+
+- **readmission_rate_30d** (rising = bad) — 150 bps of
+  Medicare.
+- **hac_score_percentile** (rising = bad) — 100 bps.
+- **hcahps_top_box_pct** (falling = bad) — 75 bps.
+- **cms_star_rating** (falling = bad) — 200 bps.
+- **sentinel_event_frequency** (rising = bad) — 60 bps.
+- **physician_turnover_rate** (rising = bad) — 40 bps.
+
+### Output
+
+Per-indicator trend + deterioration flag + forward
+reimbursement hit. Aggregate capped at 500 bps of
+Medicare revenue.
+
+### Partner-note ladder
+
+- ≥ 3 deteriorating → "clinical-quality turnaround
+  required before exit — 18-mo clock running."
+- 2 → "diligence the two trendlines; quality-program
+  spending may be required."
+- 1 → "monitor; may be noise."
+- 0 → "proceed on current quality assumptions."
+
+### Packet fields
+
+`readmission_rate_30d_series`,
+`hac_score_percentile_series`,
+`hcahps_top_box_pct_series`,
+`cms_star_rating_series`,
+`sentinel_event_frequency_series`,
+`physician_turnover_rate_series`,
+`medicare_revenue_m`.
+
+---
+
+## 225. Integration velocity tracker (`integration_velocity_tracker.py`)
+
+**Partner statement:** "The 100-day plan matters only
+if we hit the milestones on schedule. At day 45, I
+want to know: are we ahead, behind, or off-track? One
+data point per milestone, one number for the plan."
+
+Distinct from plan-generators (`hundred_day_plan`,
+`one_hundred_day_plan_from_packet`) and multi-bolt-on
+scoreboard (`ma_integration_scoreboard`). This is the
+**single-deal velocity** tracker.
+
+### Milestone fields
+
+Each milestone carries `name`, `target_day` (from
+close), `actual_day` (None if incomplete),
+`is_critical_path`, `owner`, `status`.
+
+### Tier ladder
+
+- **on_pace** — ≥ 90% due-to-date complete, 0 critical-
+  path slips.
+- **behind** — 70-90% OR 1 critical slip.
+- **at_risk** — < 70% OR ≥ 2 critical slips; week-over-
+  week ops review.
+- **off_track** — < 50% OR ≥ 3 critical slips → ops-
+  committee escalation.
+
+### Escalation list
+
+Per-milestone escalations:
+- `[critical] <name> — due day X, current day Y, owner: Z`
+- `[at-risk] <name> — target day X, owner: Z`
+
+Unassigned owners flagged `owner: unassigned`.
+
+### Packet fields
+
+- `milestones` — list of `Milestone` objects.
+- `current_day` — days since close.
+
+---
+
+## 226. Insurance tail coverage designer (`insurance_tail_coverage_designer.py`)
+
+**Partner statement:** "Insurance tail coverage is one
+of those line items that gets skipped in diligence and
+then costs you a fortune when a claim lands 8 months
+post-close. I want D&O, cyber, pro-liability, and EPL
+tail math done before we sign."
+
+Distinct from `insurance_diligence` (reviews existing).
+This module **designs** the close-date tail package.
+
+### 5 tail policies
+
+- **D&O run-off** — 6 yr, limit ~5% EV, premium 2.5x
+  expiring annual.
+- **Cyber tail** — 3 yr, 2-4% EV limit (higher on prior
+  incident), premium 1.5-2.0x.
+- **Professional liability tail** — 7 yr (med-mal SoL),
+  5-8% EV, premium 2-3x.
+- **EPL run-off** — 3 yr, 1% EV, premium 1.5x.
+- **Environmental tail** — 5 yr, 2% EV when triggered by
+  material exposure + physical sites.
+
+### Partner-note escalation
+
+- ≥ $5M total tail premium → "material close cost;
+  negotiate cost-sharing with seller or escrow."
+- $2-5M → "budget into close-cost line; standard."
+- < $2M → "lean; standard close-cost basis."
+
+### Packet fields
+
+`ev_m`, `has_physical_real_estate`,
+`asset_type_is_provider`, `prior_cyber_incident`,
+`material_medmal_exposure`,
+`material_environmental_exposure`,
+`expiring_annual_premium_total_m`.
+
+---
+
+## 227. Data-room gap signal reader (`data_room_gap_signal_reader.py`)
+
+**Partner statement:** "The missing documents in a
+data room aren't gaps to close. They're telling you
+what the seller doesn't want you to see. A missing
+3-year GAAP means they've never been through a real
+diligence. A missing top-5 payer contract means the
+payer is on notice."
+
+Distinct from `data_room_tracker` (completeness score +
+gap list). This module **reads the gaps as signals**.
+
+### 8 gap-signal interpretations
+
+- **three_year_gaap_missing** — "never audited to PE
+  standard; expect restatement." 45-day delay.
+- **qofe_not_yet_engaged** — "not QofE-ready." 60-day
+  delay.
+- **top_5_payer_contracts_missing** — "payer on notice
+  or seller hiding concession." 30-day delay.
+- **cms_survey_deficiencies_missing** — "quality
+  compliance opacity." 21-day delay.
+- **physician_comp_schedule_missing** — "normalization
+  claims unsupported; haircut 40%." 14-day delay.
+- **it_cyber_incident_log_missing** — "breach history
+  uncertain; HIPAA opaque." 21-day delay.
+- **open_litigation_detail_missing** — "indemnity
+  sizing blind." 14-day delay.
+- **related_party_transaction_schedule_missing** —
+  "structural adjustment opacity." 14-day delay.
+
+### Partner-note escalation
+
+- ≥ 5 gaps → "seller not QofE-ready or not acting in
+  good faith — demand complete data room before LOI."
+- 3-4 gaps → "slow the process; demand specifics
+  before underwriting more hours."
+- 1-2 gaps → "standard follow-up request."
+
+### Why gaps tell more than completeness scores
+
+A completeness score treats all gaps equally. This
+module reads **what the gap means**: the absence of a
+specific document pattern-matches to seller posture.
+
+### Packet fields
+
+8 boolean flags for the specific missing documents;
+see module.
+
+---
+
+## 228. Fund-level vintage impact scorer (`fund_level_vintage_impact_scorer.py`)
+
+**Partner statement.** "Every deal is evaluated on its own IRR, but
+that's not how LPs grade us. They grade us on fund TVPI, DPI by year
+five, and where we rank in the vintage. A 22% IRR deal that soaks up
+15% of committed capital and doesn't return cash for seven years can
+still drag the fund below its vintage peer median. Size the deal
+against the fund, not itself."
+
+### Why it matters
+
+Deal-level IRR/MOIC is one lens. The partner-at-IC lens is also: "how
+does adding this deal change the *fund's* LP-facing story?" A
+capital-hungry deal with merely-median IRR can be fund-dilutive
+through concentration risk alone. This module translates deal
+assumptions into fund-level impact across 6 dimensions.
+
+### 6 dimensions
+
+1. **capital_concentration** — deal equity (net of coinvest) as % of
+   fund committed capital. > 15% = single-deal risk; 10-15% = platform
+   territory; 5-10% = balanced; < 5% = small.
+2. **dpi_timing_drag** — years to first distribution. > 6 yr =
+   drags DPI-by-year-5 below vintage median; 5-6 yr = slow; 3-5 yr =
+   on-pace; < 3 yr = fast-DPI LP-friendly.
+3. **tvpi_contribution** — capital weight × (MOIC − 1). > 0.15 =
+   accretive; 0.05-0.15 = modest; 0-0.05 = marginal; < 0 = dilutive.
+4. **vintage_peer_rank** — implied quartile of net IRR vs. vintage
+   peer median / top-quartile / top-decile thresholds (Cambridge /
+   Burgiss benchmarks).
+5. **pme_delta** — net IRR vs. healthcare public benchmark, in bps.
+   ≥ 500 = strong-PME; 200-500 = modest; 0-200 = at-PME (LP pushback
+   likely); < 0 = fails illiquidity-premium test.
+6. **reserve_consumption** — follow-on reserve as % of remaining dry
+   powder. > 30% = platform-bet (starves other platforms); 15-30% =
+   heavy; 5-15% = standard; < 5% = thin.
+
+### Verdict tiers
+
+- **fund_accretive** — ≥ 4 accretive signals and 0 dilutive. Deal
+  lifts fund TVPI and DPI timing is on-par. "Good for the fund, not
+  just good on its own."
+- **fund_neutral** — mixed signals. Deal hits vintage median but
+  doesn't move fund metrics materially. Size down or pass unless IC
+  loves thesis.
+- **fund_dilutive** — ≥ 3 dilutive signals. Deal drags fund metrics
+  even if deal IRR is respectable. "Right deal, wrong fund — pass or
+  restructure with heavy coinvest."
+
+### Worked example
+
+$800M fund, $70M check (8.75% weight), 3.0x MOIC, 26% gross IRR, 4.0yr
+DPI, $40M reserve → capital-balanced, on-pace DPI, +0.18 TVPI
+contribution, top-quartile vintage rank, +1000 bps PME, standard
+reserve → **fund_accretive**.
+
+Same fund, $160M check (20% weight), 1.8x MOIC, 13% gross IRR, 6.5yr
+DPI, $150M reserve (37.5%) → single-deal risk, DPI drag, dilutive
+TVPI, bottom-quartile, sub-PME, platform-bet reserve →
+**fund_dilutive** ("right deal, wrong fund").
+
+### Why net IRR proxies gross IRR minus 200 bps
+
+Coarse fees + carry drag standard the partner applies when glancing
+at vintage peer tables: gross IRR − 200 bps approximates post-fee LP
+IRR the LP sees on the quarterly statement. Good enough for
+quartile-band mapping; not a model output.
+
+### Packet fields
+
+`fund_committed_capital_m`, `fund_dry_powder_remaining_m`,
+`deal_equity_check_m`, `coinvest_committed_m`,
+`follow_on_reserved_m`, `expected_deal_gross_moic`,
+`expected_deal_gross_irr`, `years_to_first_distribution`,
+`hold_years`, `vintage_peer_median_net_irr`,
+`vintage_peer_top_quartile_net_irr`, `vintage_peer_top_decile_net_irr`,
+`healthcare_sector_benchmark_irr`.
+
+### Distinct from existing modules
+
+- `fund_model` — fund-level LBO math (how the fund lives).
+- `vintage_return_curve` — pacing curve (when capital returns).
+- This module — how *this specific deal* affects the fund's
+  LP-facing metrics vs. vintage peers; partner's fund-sizing lens.
+
+---
+
+## 229. LP quarterly update composer (`lp_quarterly_update_composer.py`)
+
+**Partner statement.** "The LP letter is the only document about a
+deal that every LP reads every quarter. It's not a pitch — they
+already committed. It's a credibility document. Write defensively and
+the LP reads between the lines; write plainly about what worked and
+what didn't and they trust you on the next fund."
+
+### Why it matters
+
+Raise-era narrative (`lp_pitch`) is not the quarterly letter. LPs
+hear from 20+ sponsors a quarter and calibrate on tone as much as
+numbers. The classic mistake: defensive prose ("continue to execute
+against our thesis," "market headwinds," "softness in volumes") when
+a mark has moved. LPs smell it, and LP memory is long. This module
+produces partner-voice prose with tone explicitly calibrated to
+mark movement.
+
+### Five-paragraph structure
+
+1. **Quarter-in-review** — one direct sentence on whether the mark
+   moved and why; no hedging. Includes one-time item disclosure
+   separately from recurring.
+2. **KPI-vs-thesis** — three thesis-aligned KPIs as
+   "actual vs. plan" with beat/miss labels, named against the
+   original one-liner thesis (not generic "growth").
+3. **What we did this quarter** — concrete operator actions (closed
+   2 bolt-ons, renegotiated top-3 payer) not "focused on execution."
+4. **Next quarter** — two specific deliverables the partner is
+   publicly underwriting ("report actuals against these in the Q+1
+   letter").
+5. **Risks** — named specifically (payer X, reg event Y, state
+   Medicaid shift Z) not generic.
+
+### Tone calibration by mark movement
+
+| Mark change | Tone tag | Opening frame |
+|---|---|---|
+| ≥ +10% | `measured_up` | "supported by TTM EBITDA, not multiple expansion; not revising exit case yet" |
+| −5% to +10% | `flat` | "block-and-tackle quarter; no re-rating events" |
+| −5% to −15% | `owned_miss` | "we own this call — exposure was in our model but we underweighted timing" |
+| < −15% | `thesis_stress` | "material mark; walking through whether original thesis still holds" |
+
+### Denial-rate direction handling
+
+KPI 3 is modeled as an improvement-direction metric (plan = −2.5%
+denial-rate reduction). Actual = −3.0% reads as *beat plan*, not miss.
+Sign-flipped interpretation is applied when plan is negative.
+
+### One-time vs recurring discipline
+
+Any `one_time_item_m` is called out in the opening paragraph with
+"recurring EBITDA excludes" — the partner never lets a one-time cash
+release quietly inflate trailing twelve. (Same religion the exit
+multiple applies.)
+
+### Partner-note meta-read
+
+- Material mark-down + 2 KPI misses → "next letter needs revised
+  thesis or explicit exit-timing shift; LPs notice two letters in a
+  row of 'focused on execution.'"
+- Mark-up quarter → "LP memory is long. Don't let next quarter's
+  letter be the soft one; pacing matters."
+
+### Packet fields
+
+`company_name`, `quarter_label`, `mark_change_pct`, `prior_mark_m`,
+`current_mark_m`, `original_thesis_one_liner`,
+`thesis_kpi_{1,2,3}_label/actual/underwritten`,
+`quarter_actions`, `next_quarter_commits`, `named_risks`,
+`reg_shock_this_quarter_m`/`description`,
+`one_time_item_m`/`description`.
+
+### Distinct from existing modules
+
+- `lp_pitch` — raise-era "we want your $250M" narrative.
+- `lp_side_letter_flags` — MFN / regulatory side-letter compliance.
+- `board_memo` — internal / board-level commentary.
+- This module — plain-spoken quarterly credibility document.
+
+---
+
+## 230. Change-my-mind diligence plan (`change_my_mind_diligence_plan.py`)
+
+**Partner statement.** "Tell me the three things I'd need to see to
+change my mind. Not abstract concerns — specific data I can get in
+diligence. If I can't tell you the source, the hypothesis is air. If
+I can't tell you the calendar days, I can't sequence the diligence.
+Every hypothesis that flips the call must have an owner, a source, a
+cost, and a date."
+
+### Why it matters
+
+`ic_decision_synthesizer` produces three flip-the-call signals — the
+abstract shape of what would change the recommendation. That's not a
+plan; it's a premise. The partner's actual next move after the first
+IC read is: for each flip signal, "what specifically do I ask, of
+whom, for how much, over how many days, and what answer confirms or
+denies." This module outputs that **ordered operational ask list**.
+
+### Per-hypothesis shape
+
+Each flip-hypothesis produces an item with:
+
+- `direction` — `flip_to_invest` or `flip_to_pass`.
+- `data_needed` — the specific document / number / interview output.
+- `source` — `management_meeting`, `qofe`, `payer_call`,
+  `site_visit`, `customer_call`, `legal_drop`, `third_party_specialist`,
+  or `data_room_pull`.
+- `cost_usd` — incremental out-of-pocket diligence cost.
+- `calendar_days` — time to close the hypothesis.
+- `likelihood_pct` — rough odds we get a usable answer in the window.
+- `evidence_test` — what answer confirms / denies.
+
+### Catalog coverage
+
+The module matches hypothesis text against 12 common healthcare-PE
+flip patterns:
+
+1. **Denial rate** → data-room pull, $0, 5d, 90%
+2. **Payer renegotiation** → payer call, $25k, 14d, 65%
+3. **EBITDA quality / QofE** → QofE engagement, $125k, 35d, 95%
+4. **CMS survey / 2567** → legal drop, $10k, 10d, 85%
+5. **Physician comp / productivity** → management meeting, $0, 7d, 70%
+6. **Culture / CEO** → references + site visit, $8k, 12d, 75%
+7. **Customer concentration** → customer calls, $15k, 10d, 60%
+8. **Cyber / HIPAA / breach** → legal drop + pen-test, $20k, 14d, 85%
+9. **Litigation** → legal drop + counsel opinion, $15k, 10d, 80%
+10. **Regulatory (OBBBA / site-neutral / Medicaid)** → policy
+    specialist, $25k, 14d, 70%
+11. **Integration / bolt-on pipeline** → management meeting, $0, 7d, 75%
+12. **Same-store growth** → data-room pull, $0, 7d, 85%
+
+Unknown hypotheses fall back to a structured management-meeting probe
+($0, 7d, 55%). Every hypothesis gets a closable plan; the partner is
+never left with "here's a concern, figure it out."
+
+### Sequencing
+
+`score = likelihood / (1 + cost/1000 + days/7)`, sorted descending.
+Cheapest, fastest, most-likely-to-answer items go first. The partner
+sequences diligence to knock out the easy flippers before spending
+on QofE or site visits — if they close, conviction is bought or
+saved.
+
+### Verdict tiers
+
+- **closable_in_2_weeks** — every hypothesis fits the window and
+  budget. Run the full plan before IC reconvenes.
+- **needs_4_weeks** — one or more hypotheses needs longer or exceeds
+  budget. Extend diligence or de-scope lowest-likelihood items.
+- **irreducible** — at least one hypothesis cannot be closed in the
+  window at any feasible spend. Partner must decide with open
+  question; build deal-structure protection (escrow, earn-out,
+  walk-right) around the irreducible item rather than try to
+  diligence past it.
+
+### Worked example
+
+Flip-to-invest list: "denial fix is real," "growth is organic," "QofE
+confirms EBITDA." 21-day window, $150k budget.
+
+Sequencing:
+1. Denial fix (data-room, $0, 5d, 90%)
+2. Growth organic (data-room, $0, 7d, 85%)
+3. QofE confirm ($125k, 35d, 95%) — **not closable in 21-day window**.
+
+Verdict: `needs_4_weeks`. Partner: "extend window for QofE or de-scope
+it and decide on the first two alone."
+
+### Packet fields
+
+`current_recommendation`, `flip_to_invest_hypotheses` (list of
+sentences), `flip_to_pass_hypotheses`, `diligence_window_days`,
+`diligence_budget_remaining_usd`.
+
+### Distinct from existing modules
+
+- `ic_decision_synthesizer` — produces the 3 flip-signals (abstract).
+- This module — translates each flip-signal into an **operational
+  ask** with source, cost, days, evidence-test; orders them for
+  sequencing.
+- `diligence_tracker` — tracks known diligence items through status;
+  this module *generates* the ask list from flip-hypotheses.
+
+---
+
+## 231. Roll-up arbitrage math (`rollup_arbitrage_math.py`)
+
+**Partner statement.** "Roll-ups are sold as synergy stories. The
+truth is the math is mostly multiple arbitrage — we buy the platform
+at 11x, tuck in at 5-6x, and the exit values both blocks at the higher
+multiple. If multiple arbitrage is more than half the MOIC, we're
+betting on the multiple, not the company."
+
+### Why it matters
+
+Every roll-up IC pitch blends three distinct return drivers into one
+deck page. Partner discipline: separate them. The 2x rule of thumb —
+"if you kill multiple expansion, does the deal still clear 2x?" — is
+exactly the `same_multiple_exit_moic` test.
+
+### Four-driver MOIC decomposition
+
+1. **Tuck-in arbitrage** — `Σ tuck_ebitda × (exit_multiple −
+   tuck_entry_multiple)`. Pure spread on acquired EBITDA.
+2. **Platform multiple expansion** — `platform_entry_ebitda ×
+   (exit_multiple − platform_entry_multiple)`. What the platform
+   earns just by getting re-rated.
+3. **EBITDA growth** — `max(0, exit_ebitda − total_entry_ebitda) ×
+   exit_multiple`. Dollars created after all acquisitions, valued at
+   the exit multiple.
+4. **Financial engineering** — `entry_debt − exit_debt`. Debt paydown
+   + amortization. Negative if relevered for dividend recap.
+
+Attribution is rescaled to close to actual MOIC dollars ($exit_equity
+− $entry_equity) for reporting.
+
+### Multiple-bet flag
+
+If `(arbitrage% + multiple_expansion%) > 50%` of MOIC, flag
+**multiple_bet_flag=True**. Partner note explicit: "this is a
+multiple bet, not an operating bet; stress against flat exit
+multiple before underwriting."
+
+### Partner-voice notes by driver
+
+- Multiple-bet dominant → "stress against flat exit multiple; do not
+  let the deal live or die on the multiple not compressing."
+- EBITDA-growth dominant (> 50%) → "earns its return operationally —
+  credible under multiple compression."
+- Financial-engineering dominant (> 40%) → "acceptable in stable-
+  cash-flow platform; dangerous if EBITDA is cyclical; debt-paydown
+  thesis needs its own stress."
+- Balanced (no single driver > 50%) → "proceed to standard
+  diligence."
+
+### Worked example
+
+Platform: $30M EBITDA @ 11x entry. Three tuck-ins at $10M each, 5x
+entry. Exit: $55M blended EBITDA, 13x exit multiple, debt from $100M
+→ $50M. Sponsor equity: $100M.
+
+- Blended entry multiple: ($330 + $150) / $60 = 8.0x
+- Exit EV: $55 × 13 = $715M; exit equity: $665M → base MOIC 6.65x
+- Same-multiple (8.0x) exit: $55 × 8 = $440M − $50 = $390M → 3.9x
+- Arbitrage share: ~45-55%, multiple-bet flag fires
+- Partner note: "stress against flat exit multiple."
+
+### Packet fields
+
+`platform_entry_ebitda_m`, `platform_entry_multiple`,
+`platform_entry_equity_m`, `platform_entry_debt_m`, `tuck_ins` (list
+of `TuckInDeal(name, entry_ebitda_m, entry_multiple,
+post_synergy_ebitda_m)`), `exit_year`, `exit_ebitda_m`,
+`exit_multiple`, `exit_debt_m`.
+
+### Distinct from existing modules
+
+- `deal_archetype` — identifies the archetype exists.
+- `synergy_modeler` — models synergy lines by category.
+- `exit_math` — general MOIC/IRR computation.
+- `value_creation_attribution` — 6-source MOIC decomposition at a
+  different granularity.
+- This module — roll-up-specific, separates tuck-in arbitrage from
+  platform expansion explicitly (the dollar-weighted share of each
+  turn of multiple delta against the right EBITDA block).
+
+---
+
+## 232. Physician retention stress model (`physician_retention_stress_model.py`)
+
+**Partner statement.** "In a physician-driven business, the EBITDA
+is the physicians. If we close the deal and the top 3 producers
+leave — because they didn't like our employment agreements, or they
+waited 90 days for the retention cliff, or they never bought in on
+the thesis — half the model goes with them. I need to know, before I
+write the check, what happens to EBITDA if 1, 2, 3, or 5 top earners
+walk. And I need the retention package priced against that stress,
+not against the average physician."
+
+### Why it matters
+
+Physician-practice MSOs (dental, derm, GI, orthopedic, ophthalmology,
+women's health) live and die by provider retention. Every post-close
+disappointment story in PE healthcare is some variant of "we lost
+the top producer and the model doesn't work without him." The stress
+test is reflexive: before IC votes, model top-N departure.
+
+### Stress-tier structure
+
+Four tiers run by default:
+
+| Tier | Physicians lost |
+|---|---|
+| `lose_top_1` | 1 |
+| `lose_top_2` | 2 |
+| `lose_top_3` | 3 |
+| `lose_top_5` | 5 |
+
+Each tier computes:
+
+- `revenue_lost_m` — sum of lost physicians' revenue
+- `ebitda_at_risk_m` — `Σ (revenue × portability × contributing_margin)`
+- `net_ebitda_trough_m` — baseline − ramp-period drag (includes
+  locum cost + replacement ramp + half-productive ramp-up)
+- `retention_package_needed_m` — sum of individual retention bonds
+  still unsigned
+- `replacement_cost_m` — locum × ramp_months + recruiting cost
+- `partner_verdict` — `walk` / `price_in` / `acceptable`
+
+### Retention bond sizing (per physician)
+
+Healthcare PE benchmarks:
+
+- **Non-owner, no outside options** → $0 (base + wRVU covers)
+- **Non-owner, outside options** → 0.3× annual comp, vesting 3 yr
+- **Owner rolling equity or cashing out, no outside options** → 1.0×
+  annual comp, vesting 3-4 yr
+- **Owner + outside options (hard case)** → 1.5× annual comp,
+  vesting 3 yr (knowing some will still bolt)
+
+Already-signed retention bonuses (`retention_bonus_signed_m` on the
+physician) reduce the unsigned balance.
+
+### Revenue portability
+
+Default `revenue_portability_pct=0.55` — a physician who leaves pulls
+55% of their book with them (referrals, loyalty, new practice). Wide
+variance by specialty:
+
+- Concierge / private specialty → 0.70-0.80
+- Hospital-employed → 0.20-0.30
+- MSO with strong platform brand → 0.30-0.45
+- Standard specialty practice → 0.50-0.60
+
+### Verdict thresholds
+
+Per tier:
+
+- `ebitda_at_risk / baseline > 30%` → **walk** — "business is over-
+  concentrated in provider talent; walk unless retention is pre-
+  signed."
+- `15-30%` → **price_in** — "price the retention package into the
+  deal; haircut purchase price if seller won't fund."
+- `< 15%` → **acceptable** — "standard retention package sufficient."
+
+Overall verdict = top-3-tier verdict (the one partners actually ask
+about).
+
+### Worked example
+
+5-physician practice. Top-3 revenue shares 75%. Top physician: owner
++ outside options, $4M revenue, 60% portability, $0.9M comp.
+
+- Dr. A unsigned retention bond: $0.9 × 1.5 = $1.35M
+- Top-1 EBITDA at risk: $4.0 × 0.60 × 0.40 = $0.96M on baseline ~$5.3M
+  → 18% → **price_in**
+- Top-3 EBITDA at risk: ~$1.8M / $5.3M → 34% → **walk**
+- Overall: walk unless retention is pre-signed as closing condition
+
+### Packet fields
+
+`physicians` (list of `Physician(name, annual_revenue_m,
+annual_comp_m, owner, outside_options, retention_bonus_signed_m,
+contributing_margin_pct, revenue_portability_pct)`),
+`replacement_ramp_months`, `locum_cost_m_per_month`,
+`recruiting_cost_per_replacement_m`, `deal_ev_m`.
+
+### Distinct from existing modules
+
+- `physician_compensation_benchmark` — MGMA wRVU/comp comparison.
+- `physician_comp_normalization_check` — validates comp add-back claim.
+- `physician_group_friction_scorer` — 10 post-close friction points.
+- This module — top-N departure stress with revenue portability,
+  replacement ramp, and per-physician retention-bond sizing by
+  profile.
+
+---
+
+## 233. Payer renegotiation timing model (`payer_renegotiation_timing_model.py`)
+
+**Partner statement.** "Every healthcare deck shows payer mix as a
+pie chart — 45% commercial, 30% Medicare, 20% Medicaid. That's the
+wrong picture. The right picture is a *calendar*: when does the BCBS
+contract expire? When is United's next evergreen cycle? If the top-3
+commercial contract expires in year 2 of the hold and the payer has
+been posting record MLR, the rate reset is coming and the exit buyer
+will model it against us. The 'payer renegotiation is coming' trap is
+the most expensive single pattern in healthcare PE."
+
+### Why it matters
+
+Payer-mix risk is static; payer-contract renewals are a calendar. The
+partner reflex is to re-plot payer mix as a timeline of events and
+then project: which renewal happens mid-hold, what rate change is
+expected, what is the quarterly EBITDA drag, and what does the exit
+buyer normalize to when they model this platform against their own
+comp set?
+
+This is the most specific operationalization of one of the three
+named traps: "the payer renegotiation is coming."
+
+### Four bargaining postures → rate-change bands
+
+| Posture | Rate change at renewal |
+|---|---|
+| `aggressive` — dominant payer, no network alt | −3.5% |
+| `firm` — large payer, MLR above target | −1.5% |
+| `neutral` — balanced market | +0.5% |
+| `soft` — provider is essential/rare specialty | +2.0% |
+
+Per-contract overrides (`override_rate_change_pct`) let partners
+seed their own intel. `already_repriced_locked_in=True` zeros out
+the contract's forward projection.
+
+### Projection
+
+Per quarter over the hold:
+
+1. Apply each contract's rate step on its renewal quarter, weighted
+   by payer-mix share → cumulative `rate_drift_pct`.
+2. NPR impact per quarter = `base_npr × drift × 0.25`.
+3. EBITDA impact per quarter = NPR impact × `contribution_margin_pct`.
+
+Output includes:
+
+- Per-contract `ContractForecast` (name, expiration, in-hold,
+  applied rate change).
+- Per-quarter `QuarterImpact` (year/quarter, rate drift, NPR$,
+  EBITDA$).
+- `total_npr_impact_m`, `total_ebitda_impact_m`,
+  `exit_year_normalized_rate_pct`.
+- `trap_flag` — fires when **all** conditions hold:
+  - top-3 concentration > 50%
+  - at least one contract renews in hold with negative rate change
+  - cumulative exit drift < −1%
+
+### Partner-note decision rules
+
+- Trap flag fired → "exit buyer will model normalized rates net of
+  renewals; bake into exit-case EBITDA or expect multiple
+  contraction."
+- Negative drift without trap → "manageable but price renewals into
+  exit assumption; do not leave the buyer to discover them."
+- Positive / zero drift → "confirm posture assumptions — if 'firm'
+  is actually 'aggressive,' the picture changes."
+
+### Worked example
+
+- $300M NPR, 30% contribution margin.
+- BCBS 40% mix, expires 2027-06-01 in a 5-yr hold from 2026-01-01,
+  `aggressive` posture → −3.5% × 40% = −1.4% drift.
+- United 25% mix, expires 2028-03-01, `firm` posture → −1.5% × 25%
+  = −0.4% additional.
+
+Cumulative exit drift: ~−1.8%; top-3 concentration = 65%. **trap
+flag fires.** Total EBITDA impact over hold: several million dollars
+of cumulative drag. Partner note: bake into exit case or face
+multiple contraction.
+
+### Packet fields
+
+`contracts` (list of `PayerContract(name, payer_mix_pct,
+expiration_date, posture, override_rate_change_pct,
+already_repriced_locked_in)`), `hold_start_date`, `hold_years`,
+`base_npr_m`, `contribution_margin_pct`.
+
+Exported as `PayerRenegotiationContract` from the package to avoid
+name collision with `contract_diligence.PayerContract`.
+
+### Distinct from existing modules
+
+- `payer_mix_risk` — static pie chart.
+- `contract_diligence` — generic contract review checklist.
+- `reimbursement_cliff_calendar_2026_2029` — regulatory (CMS / state)
+  rate events, not commercial payer contracts.
+- `reimbursement_bands` — market rate bands.
+- This module — commercial payer contract calendar with quarterly
+  EBITDA projection and named "payer renegotiation is coming" trap.
+
+---
+
+## 234. Medicare Advantage bridge trap (`medicare_advantage_bridge_trap.py`)
+
+**Partner statement.** "The 'Medicare Advantage will make it up' line
+is reflex narrative. Sellers use it to paper over FFS rate cuts,
+sponsors use it to justify growth assumptions in the exit case.
+Force the math: how many MA lives do you need at the PMPM you're
+actually contracted at to replace a 2% FFS rate cut? Usually a lot
+more than the CIM claims. Run the bridge."
+
+### Why it matters
+
+This is one of the three named healthcare-PE failure traps (alongside
+"the denial fix in 12 months" and "the payer renegotiation is
+coming"). The IC reflex is to point at MA growth as a buffer against
+FFS reimbursement pressure. The partner's check: does the contract
+math clear at a realistic net PMPM, net of cannibalization, and is
+the growth named in a contract or extrapolated in a deck?
+
+### Bridge math
+
+- **FFS annual loss** = `ffs_revenue × annual_rate_cut_pct`
+- **Net PMPM** = `claimed_pmpm × net_realization_pct` (if gross
+  reported); otherwise `claimed_pmpm`
+- **MA annual gain** = `(lives_added × (1 − cannibalization%)) ×
+  net_pmpm × 12`
+- **Cannibalization drag** = FFS revenue walked from the
+  cannibalized portion = `cannibalized_lives × ffs_pmpm_net × 12`
+- **Net MA gain** = MA gain − cannibalization drag
+- **Coverage ratio** = `net_ma_gain / ffs_loss`
+- **Required MA lives to close** = `ffs_loss_dollars / (net_pmpm × 12)`
+
+### Four sub-traps
+
+1. **`ma_growth_too_aggressive`** — `growth_rate > 20%` without a
+   named contract. "Not diligence-defensible."
+2. **`pmpm_gross_not_net`** — PMPM is reported gross. Typical net
+   realization is 55-75% of gross after cap-at-risk, MLR rebates,
+   STAR bonuses with withhold.
+3. **`ffs_cannibalization_ignored`** — `cannibalization_pct ≥ 30%`
+   but model doesn't net it out. MA lives that came from the existing
+   FFS panel aren't new margin — they're a mix shift, and the
+   gross-vs-net spread usually goes against you.
+4. **`ma_pmpm_below_ffs_net`** — net MA PMPM < FFS per-patient net.
+   Growing MA actually reduces per-patient economics. Partner's
+   immediate question: "then why is this a growth story?"
+
+### Verdict thresholds
+
+- Coverage ≥ 1.20 → **bridge_clears** — "verify the named MA contract
+  exists; cannibalization assumption is conservative."
+- 0.75 ≤ Coverage < 1.20 → **bridge_tight** — "any haircut to
+  growth, PMPM, or cannibalization makes it underwater."
+- Coverage < 0.75 → **bridge_underwater** — "this is the 'MA will
+  make it up' trap. Re-underwrite or walk."
+
+### Worked example
+
+Seller claims $200M FFS revenue facing 4% rate cut ($8M annual loss)
+covered by MA pipeline: 2,000 current lives growing 5% annually
+with $900 claimed PMPM, 50% cannibalization.
+
+- Annual new lives gross: 2,000 × 5% = 100
+- Annual net new lives: 100 × (1 − 0.50) = 50
+- Net PMPM (gross claimed): $900 × 0.65 = $585
+- MA gain: 50 × $585 × 12 = $0.35M
+- Cannibalization drag: 50 × $500 × 12 = $0.30M
+- Net MA gain: $0.05M vs. $8M FFS loss → coverage < 1%
+
+Verdict: **bridge_underwater**. Partner: "This is the MA trap. The
+math doesn't clear at any realistic cannibalization + net-PMPM
+assumption."
+
+### Packet fields
+
+`ffs_annual_revenue_m`, `ffs_annual_rate_cut_pct`, `ma_lives_current`,
+`ma_lives_growth_rate_annual`, `ma_pmpm_claimed`, `pmpm_is_gross`,
+`net_pmpm_realization_pct`, `ma_contract_is_named`,
+`ma_cannibalization_pct`, `ffs_pmpm_net`, `projection_years`.
+
+### Distinct from existing modules
+
+- `payer_mix_risk` — static concentration.
+- `payer_renegotiation_timing_model` — commercial contract calendar.
+- `reimbursement_cliff_calendar_2026_2029` — CMS / state reg events.
+- This module — forced math on the specific "MA will offset FFS"
+  narrative, with 4 named sub-traps for how the narrative usually
+  fails.
+
+---
+
+## 235. Denial fix pace detector (`denial_fix_pace_detector.py`)
+
+**Partner statement.** "Every RCM deck says we can take the
+initial-denial rate from 9% to 6% in 12 months. Five percent of
+them actually do. The rest find out that some denial categories drop
+in 90 days with front-end eligibility tools, and others — medical-
+necessity denials rooted in coding and documentation — take 18-24
+months if they move at all. Don't buy the 'denials down 300 bps in
+year one' story without knowing WHICH denial categories and what the
+trajectory is per category."
+
+### Why it matters
+
+Third of the three named healthcare-PE failure traps, alongside "the
+payer renegotiation is coming" and "Medicare Advantage will make it
+up." The model bridge often loads the denial-rate improvement into
+Year 1; the operator reality is that category-level pace varies by
+10× between front-end (eligibility, format validation) and back-end
+(medical-necessity, non-covered).
+
+### 8-category pace catalog (bps within-category per quarter)
+
+| Category | Q1 | Q2 | Q3 | Q4 | Yr2 |
+|---|---|---|---|---|---|
+| eligibility_verification | 30 | 20 | 10 | 10 | 20 |
+| prior_authorization | 10 | 25 | 25 | 20 | 25 |
+| timely_filing | 25 | 15 | 10 | 5 | 5 |
+| duplicate_claim | 20 | 20 | 10 | 5 | 5 |
+| coordination_of_benefits | 10 | 15 | 15 | 10 | 10 |
+| invalid_format | 40 | 10 | 0 | 0 | 0 |
+| medical_necessity | 0 | 5 | 10 | 15 | 50 |
+| non_covered_service | 0 | 0 | 5 | 5 | 10 |
+
+Headline bps contribution = within-category bps × category mix share.
+
+Each category carries a prescribed operator action (e.g., medical
+necessity → "CDI program + physician education + payer-specific
+medical policy library").
+
+### Named-ops-partner and IT-investment premiums
+
+- `named_ops_partner=True` → yr1 × 1.15 (front-end wins compound)
+- `it_platform_investment_m ≥ 3.0` → yr1 × 1.10 (additional;
+  stacks with ops partner)
+
+### Verdict thresholds
+
+- Implied Yr1 ≤ empirical Yr1 → **defensible** — plan holds.
+- Implied Yr1 within 25% above empirical → **stretch** — achievable
+  only with named ops partner + IT investment; price execution risk.
+- Implied Yr1 > 25% above empirical → **trap** — "we can fix denials
+  in 12 months" pattern. Re-underwrite without the excess denial-
+  fix dollars; medical-necessity category is especially slow.
+
+### Worked example
+
+Target: 9.5% → 6.5% over 1 year = 300 bps implied.
+
+Default mix (25% eligibility / 20% prior auth / 20% med necessity /
+etc.) gives achievable Yr1 ≈ 55-65 bps headline.
+
+Implied 300 bps vs. 55 bps achievable → **trap**. Partner: "re-
+underwrite without excess denial-fix; medical-necessity and non-
+covered denial categories take 18-24 months."
+
+Same target spread over 3 years (implied yr1 = 100 bps) still
+triggers trap; only a 40-50 bps yr1 target with a front-end-heavy
+mix reads defensible.
+
+### Packet fields
+
+`current_initial_denial_rate_pct`, `target_denial_rate_pct`,
+`target_years`, `category_mix_pct` (dict of 8 categories → share),
+`named_ops_partner`, `it_platform_investment_m`.
+
+### Distinct from existing modules
+
+- `rcm_ebitda_bridge` — 7-lever bridge math (outside
+  pe_intelligence).
+- `cash_conversion_drift_detector` — trend detector (past direction,
+  not future feasibility).
+- This module — **forward feasibility** of a claimed denial-fix
+  trajectory against category-level empirical pace bands. Closes the
+  loop on the third named failure trap.
+
+---
+
+## 236. Unrealistic-on-face sniff test (`unrealistic_on_face_check.py`)
+
+**Partner statement.** "I don't need to do the math to know something
+is wrong. A 400M NPR rural critical-access hospital projecting 28%
+IRR is a red flag on its face. A standalone SNF buying at 9× with
+85% Medicare is a red flag on its face. A dental DSO at 4× revenue
+with 25% contribution margin is a red flag on its face. The sniff
+test is what saves the team from spending three weeks modeling a
+deal that the senior partner could have passed on by reading the
+first page of the teaser."
+
+### Why it matters
+
+Runs **before** the math — teaser / CIM-level only. The checks are
+deliberately coarse; precision is not the point. Three weeks of
+associate hours on a face-wrong deal is worse than a false-positive
+sniff-test flag that a senior partner dismisses in 30 seconds.
+
+### 14-pattern canon
+
+1. `rural_critical_access_high_irr` — rural CAH + IRR > 20% (**kill**).
+2. `snf_high_medicare_high_multiple` — standalone SNF + Medicare
+   > 70% + EV/EBITDA > 7× (**kill**).
+3. `dental_dso_revenue_multiple` — dental at > 3× revenue (**kill**).
+4. `outsized_npr_for_ownership` — physician-owned > $500M NPR claiming
+   minority structure.
+5. `single_asset_high_leverage` — single-site/single-specialty +
+   leverage > 5×.
+6. `400_bps_margin_expansion_1yr` — claim of > 400 bps margin
+   expansion in year 1.
+7. `medicare_advantage_to_offset_ffs_cuts` — MA narrative without a
+   named MA contract.
+8. `payer_mix_below_35pct_commercial_exit_14x` — exit mult > 13×
+   with commercial mix < 35%.
+9. `standalone_diagnostics_pama_pricing` — standalone lab/imaging +
+   PAMA phase in hold.
+10. `non_scaled_home_health_high_margin` — < $40M home health with
+    > 20% margin.
+11. `rollup_platform_0_cio` — roll-up strategy without named CIO.
+12. `cpom_physician_group_unverified` — CPOM-strict state (CA / NY /
+    TX / others) without verified MSO/PC model.
+13. `non_profit_to_forprofit_flip_high_margin` — post-conversion
+    margin > 2× pre-conversion (one-time reclassification).
+14. `critical_access_24x7_unit_margin_improv` — CAH claiming > 300
+    bps margin improvement.
+
+### Recommendation tiers
+
+- **stop_work** — any kill-level pattern OR ≥ 3 patterns fire. Do
+  not spend more associate hours until senior-partner opinion.
+- **senior_partner_review** — 1-2 patterns fire. Escalate before
+  committing more diligence.
+- **proceed_with_diligence** — 0 patterns.
+
+### Worked example
+
+$400M NPR rural CAH projecting 28% sponsor IRR, 3-site roll-up no
+named CIO:
+- `rural_critical_access_high_irr` (kill) + `critical_access_24x7_unit_margin_improv`
+  if margin claim > 300bps + `rollup_platform_0_cio` → **stop_work**.
+- Partner: "do not fire up the financial model. This is the teaser
+  pattern; walk before the associate spends a week on the model."
+
+### Packet fields
+
+Flags for subsector identification (`is_rural_critical_access`,
+`is_standalone_snf`, `is_dental_dso`, `is_rollup_platform`,
+`is_cpom_strict_state`, etc.); headline economics
+(`projected_sponsor_irr`, `ev_to_ebitda_multiple`,
+`ev_to_revenue_multiple`, `leverage_turns`,
+`margin_expansion_1yr_bps`, `ebitda_margin_pct`); payer-mix
+(`commercial_mix_pct`, `medicare_mix_pct`); and feature flags
+(`ma_narrative_present`, `ma_contract_named`, `has_named_cio`,
+`mso_pc_model_verified`, `recently_converted_nonprofit`, etc.).
+
+### Distinct from existing modules
+
+- `reasonableness` — band checks on model outputs (post-math).
+- `heuristics` — post-model rules.
+- `red_flags` / `deal_smell_detectors` — structured red-flag catalog
+  post-packet.
+- This module — runs on teaser-level inputs; partner's 10-second
+  nose test. Saves three weeks of associate hours on face-wrong
+  deals.
+
+---
+
+## 237. Connect-the-dots packet reader (`connect_the_dots_packet_reader.py`)
+
+**Partner statement.** "The thing a senior partner does that a model
+doesn't: we connect dots. A denial rate change has coding
+implications, which have CMI implications, which change the Medicare
+bridge math. A payer-mix shift has case-mix implications, which have
+CMI implications, which have IP margin implications. A DSO jump has
+working-capital implications, which have covenant implications,
+which have dividend-recap-timing implications. The packet reports
+each number in isolation. The brain reads the chain."
+
+### Why it matters
+
+This is the crown-jewel module for the "connects dots across the
+packet" partner reflex. It traces packet-level signals through named
+causal chains and outputs the quantified impact at each step — so
+the partner's IC narrative is "if X moves Y bps, Z falls $A M" not
+just "here are six unrelated changes."
+
+### Six causal chains
+
+1. **denial_fix_to_cmi_to_medicare_bridge**
+   - Trigger: denial-rate change ≥ 50 bps + CMI propped by appeals.
+   - `denial_rate_drop → coding_accuracy_rises → cmi_reversal →
+     medicare_bridge_impact`.
+   - Quantified: 150 bps denial fix ≈ 2% CMI reversal × Medicare NPR.
+   - Partner: "Don't cheer the denial fix; the Medicare leg reverses."
+
+2. **payer_shift_to_case_mix_to_cmi_to_ip_margin**
+   - Trigger: commercial mix shift ≥ 2%.
+   - `payer_mix_shifts → case_mix_reweights → cmi_impact →
+     ip_margin_flows_through`.
+   - Quantified: 1% CMI shift ≈ 50 bps IP margin.
+   - Partner: "CMI is the transmission; don't model payer-mix in
+     isolation."
+
+3. **wage_step_to_physcomp_to_ebitda_to_addback_risk**
+   - Trigger: wage inflation ≥ 100 bps.
+   - `wage_inflation → physician_comp_pressure → ebitda_margin_hit →
+     addback_stress`.
+   - Quantified: wage bps × physician-comp share × NPR → EBITDA drag.
+   - Partner: "Comp-normalization add-back becomes stressed; QofE
+     will call it."
+
+4. **volume_decline_to_fixed_cost_to_covenant_headroom**
+   - Trigger: volume change ≤ −3%.
+   - `volume_decline → fixed_cost_deleverage → ebitda_margin_hit →
+     covenant_headroom`.
+   - Quantified: volume × fixed-cost share → bps margin drag →
+     covenant trip if remaining headroom < 10%.
+   - Partner: "Covenant trips in Q3; call the bank."
+
+5. **dso_rise_to_wc_to_fcf_to_div_recap_timing**
+   - Trigger: DSO change ≥ 5 days.
+   - `dso_change → wc_absorbs → fcf_compression → recap_timing`.
+   - Quantified: DSO days × NPR / 365 = WC drag; recap delays if
+     drag > $3M and a recap is planned.
+   - Partner: "Planned recap slips; rebuild the model or give up a
+     turn of leverage."
+
+6. **reg_event_to_service_line_to_volume_to_ebitda**
+   - Trigger: named upcoming reg event + exposed service line.
+   - `reg_event → service_line_exposure → volume_or_price_hit →
+     ebitda_flow_through`.
+   - Quantified: exposed service-line NPR × price cut × contribution
+     margin = EBITDA hit.
+   - Partner: "Price into bridge or exit multiple contracts."
+
+### Output shape
+
+Each fired chain returns:
+- `name` — canonical chain id.
+- `steps` — ordered list of `(step, effect_detail,
+  quantified_impact)`.
+- `partner_summary` — one-sentence cross-module narrative with
+  quantified impact.
+
+Report-level `headline`: "N dot-connect chain(s) active — packet
+signals are not independent."
+
+### Distinct from existing modules
+
+- `cross_module_connective_tissue` — composes module *outputs* into
+  summaries (module-level).
+- `thesis_implications_chain` — traces at the *thesis* level.
+- This module — traces at the *signal* level (packet-level inputs
+  → downstream financial impact chains). Operates on raw packet
+  signals, not module outputs.
+
+### Packet fields
+
+`PacketSignals` has 20+ fields across denial / coding
+(denial_rate_change_bps, cmi_propped_by_appeals, medicare_npr_m),
+payer mix (commercial_mix_change_pct, medicare_mix_change_pct),
+wage / comp (wage_inflation_bps, physician_comp_of_npr_pct,
+comp_normalization_addback_m), volume / margin (volume_change_pct,
+fixed_cost_share_pct, ebitda_base_m, covenant_headroom_pct),
+working capital (dso_change_days, wc_required_as_pct_of_npr, npr_m,
+planned_div_recap_year), reg events (upcoming_reg_event_name,
+service_line_exposed_pct_of_npr, service_line_price_cut_pct).
+
+### Worked example
+
+Packet signals: denial fix of −150 bps with CMI propped by appeals,
+commercial mix +4%, wage inflation +200 bps, DSO +10 days.
+
+Four chains fire. Partner's IC narrative (crossed-module):
+
+- "Denial fix of 150 bps reverses appeals-propped CMI by ~2%;
+  Medicare bridge loses $2.4M."
+- "Commercial mix +4% → CMI shift +1.6% → IP margin +80 bps."
+- "Wage inflation 200 bps → physician-comp drag 80 bps → $0.32M
+  EBITDA hit; comp-normalization add-back stressed."
+- "DSO +10 days → $8.2M WC drag → FCF hit; planned recap slips."
+
+Net: seller story is "4 things improving," partner reads the chain
+and sees net EBITDA flat with more stress points. This is the
+dot-connect the packet doesn't do on its own.
+
+---
+
+## 238. Healthcare thesis archetype recognizer (`healthcare_thesis_archetype_recognizer.py`)
+
+**Partner statement.** "There are seven healthcare deal shapes.
+Payer-mix shift. Back-office consolidation. Outpatient migration.
+CMI uplift. Roll-up platform. Cost-basis compression. Capacity
+expansion. Every deal I see fits one or two of these. Naming the
+archetype before I model tells me which levers matter, which risks
+are real, and which parts of the packet I should zoom in on."
+
+### Why it matters
+
+`deal_archetype` covers *sponsor-structure* archetypes
+(platform_rollup / take_private / carve_out / turnaround / …).
+`thesis_templates` provides generic narrative scaffolds. This module
+captures the third layer: **healthcare-specific thesis shapes** —
+the *why* of the deal. Naming the thesis archetype lets the partner
+apply the right lever stack and risk set without re-reading the CIM.
+
+### 7 archetypes
+
+1. **payer_mix_shift** — Medicare/Medicaid → commercial via in-
+   network / geographic expansion / service-line add.
+2. **back_office_consolidation** — RCM / billing / HR /
+   supply-chain centralization across ≥ 3 sites.
+3. **outpatient_migration** — IP → OP procedures (ASC/HOPD
+   arbitrage).
+4. **cmi_uplift** — CDI / physician documentation / coding to raise
+   case-mix index.
+5. **rollup_platform** — multi-site roll-up with named platform
+   services + bolt-on pipeline ≥ 2.
+6. **cost_basis_compression** — unit-economics improvement (labor,
+   supply, productivity) ≥ 100 bps planned.
+7. **capacity_expansion** — de novo sites / bed expansion / service
+   line addition.
+
+### Per-archetype output
+
+- **diagnostic_signals** — the packet patterns that indicated this
+  shape.
+- **confidence** — 0-1, driven by signal strength.
+- **lever_stack** — the operating levers to underwrite.
+- **named_risks** — the specific failure modes.
+- **partner_zoom** — the next piece of the packet to read.
+- **archetype_specific_sniff** — the most-common failure pattern.
+
+### Example per archetype
+
+**outpatient_migration:**
+- Named risks include "OBBBA site-neutral collapses the arbitrage"
+  — automatically links to the site-neutral regulatory stress.
+- Partner zoom: "Model OP arbitrage NET of site-neutral; if
+  arbitrage depends on payment asymmetry, it's at risk."
+- Sniff: "If OP arbitrage is assumed to persist through OBBBA
+  unchanged, it's the site-neutral trap."
+
+**cmi_uplift:**
+- Named risks include "RAC audit exposure on aggressive coding."
+- Sniff: "If CMI bridge depends on 50+ bps uplift in year 1, the
+  RAC will find it."
+
+**cost_basis_compression:**
+- Named risks: "labor reductions hit quality metrics."
+- Sniff: "200+ bps labor reduction in year 1 without a named ops
+  partner is a red flag — cost-basis is execution-heavy."
+
+### Worked example
+
+Signals: commercial mix shift +8%, 8 sites with $3M RCM + $2M IT
+investment, CDI program planned.
+
+Matches:
+- `payer_mix_shift` (confidence 0.80): lever stack includes
+  "in-network contracting," risk "payer doesn't grant favorable
+  terms."
+- `back_office_consolidation` (confidence 0.50): lever stack
+  "centralized RCM platform," risk "site resistance."
+- `cmi_uplift` (confidence 0.60): lever stack "CDI specialist
+  hires," risk "RAC audit exposure."
+
+Dominant: `payer_mix_shift`. Partner: "read the payer-mix section
+next; confirm the in-network strategy is named contracts not
+aspirations."
+
+### Packet fields
+
+Per-archetype signal fields on `HealthcareArchetypeSignals`:
+- `commercial_mix_change_planned_pct`, `network_expansion_planned`
+- `multi_site_count`, `centralized_rcm_investment_m`,
+  `it_platform_investment_planned_m`
+- `inpatient_to_outpatient_shift_planned`, `owns_asc_or_hopd`
+- `cdi_program_planned`, `coding_gap_vs_peers_bps`
+- `bolt_on_pipeline_count`, `platform_services_named`
+- `labor_cost_reduction_planned_bps`,
+  `supply_cost_reduction_planned_bps`,
+  `productivity_improvement_planned_pct`
+- `de_novo_count_planned`, `bed_expansion_planned_count`,
+  `service_line_addition_count`
+
+### Distinct from existing modules
+
+- `deal_archetype` — sponsor-structure archetypes.
+- `thesis_templates` — generic thesis narrative scaffolds.
+- `thesis_validator` / `thesis_sharpness_scorer` /
+  `thesis_coherence_check` — operate on a text thesis, not the
+  packet signals.
+- This module — pattern-matches packet signals to healthcare-
+  specific thesis shapes, each with a ready-to-use lever stack
+  and risk set.
+
+---
+
+## 239. Recurring EBITDA line-item scrubber (`recurring_ebitda_line_scrubber.py`)
+
+**Partner statement.** "The exit multiple only applies to recurring
+EBITDA. I can sell the platform at 12× TTM — on the recurring base.
+One-time items are cash; they get 1×, not 12×. Sellers know this and
+bury one-time items inside trailing twelve because they know the
+buyer will cap-rate the whole thing. Scrub the line items. Anything
+that doesn't happen again next year is 1×."
+
+### Why it matters
+
+The religious distinction between recurring and one-time EBITDA is
+what separates a real partner bid from buyer-seller framing.
+`ebitda_quality` / `ebitda_normalization` / `qofe_prescreen` handle
+quality assessment at the category level. This module operates at
+the **individual line item** level — takes a seller's itemized
+adjustment schedule and classifies each line into one of three
+categories:
+
+- **recurring** — exit multiple applies.
+- **one_time_cash** — 1× multiple; dollar-for-dollar to equity.
+- **questionable** — partner review required; 50% credit to
+  recurring as a working assumption until QofE.
+
+### 20-pattern catalog
+
+**One-time cash** (8 patterns): legal settlement receivable,
+insurance proceeds, gain on sale, CARES Act / provider relief, ERC
+(employee retention credit), one-time RAC settlement, litigation
+recovery, pandemic support / PPP forgiveness.
+
+**Questionable** (6 patterns): restructuring charge, management fee
+add-back, owner comp normalization, synergy / run-rate add-back,
+new-contract-annualized EBITDA, pro-forma bolt-on EBITDA.
+
+**Recurring** (4 patterns): stock comp add-back, operating-lease
+normalization, recurring professional fees, explicitly-recurring
+labels.
+
+Unknown patterns default to `questionable` — partner review.
+
+### Output
+
+Per-line `ScrubbedLine` (description, amount, category, reason) +
+aggregates:
+
+- `recurring_ebitda_m`, `one_time_cash_m`, `questionable_m`
+- `exit_multiple_applicable_ebitda_m` = recurring base
+- `implied_equity_seller_view_m` = stated × multiple (seller's pitch)
+- `implied_equity_partner_view_m` = recurring × multiple + one-time × 1
+- `exit_multiple_bleed_m` = seller view − partner view
+
+### Partner-note triggers
+
+- Bleed > 10% of seller view → "anchor the counter on recurring-only
+  × multiple + one-time × 1."
+- Questionable > 50% of recurring → "prioritize QofE on owner comp,
+  synergies, annualized contract items; re-run with QofE numbers."
+- Otherwise → "clean scrub."
+
+### Worked example
+
+Stated EBITDA $50M, exit multiple 12×. Seller's add-back items:
+$5M ERC + $3M legal settlement + $2M CARES Act provider relief (all
+one-time) + $4M owner comp normalization (questionable).
+
+- Recurring base: $50M − $14M adjustments = $36M + 0 recurring +
+  $2M (50% of questionable) = $38M.
+- Exit-applicable: $38M × 12 = $456M.
+- Seller view: $50M × 12 = $600M.
+- One-time $10M at 1× = $10M.
+- Partner view: $456 + $10 = $466M.
+- Bleed: $600 − $466 = $134M.
+
+Partner: "anchor counter on $466M implied, not $600M."
+
+### Packet fields
+
+`stated_ebitda_m`, `line_items` (list of `EBITDALineItem(description,
+amount_m, explicit_category)`), `exit_multiple`.
+
+### Distinct from existing modules
+
+- `ebitda_quality` / `ebitda_normalization` — quality assessment at
+  category level.
+- `qofe_prescreen` — 12-category add-back survival rates.
+- `ebitda_quality_bridge_reconstructor` — stated-to-run-rate bridge.
+- This module — **line-item level** classification with explicit
+  20-pattern catalog and exit-multiple-bleed math. Operates on a
+  specific adjustment schedule, not a summary.
+
+---
+
+## 240. Site-neutral / OBBBA specific-impact calculator (`site_neutral_specific_impact_calculator.py`)
+
+**Partner statement.** "Site-neutral isn't a vague risk. It's a
+specific set of codes, on a specific schedule, with a specific rate
+delta. OBBBA expanded the services that pay the same rate regardless
+of site — and the arbitrage between HOPD and freestanding is gone
+for those codes."
+
+### Why it matters
+
+Regulatory stress modules handle generic shocks (IPPS cuts,
+sequestration). Site-neutral is specific: service lines, effective
+years, pre-OBBBA HOPD premium. Model it concretely, not as a 1%
+stress.
+
+### 8 service-line bands
+
+| Service family | HOPD premium | Site-neutral by year |
+|---|---|---|
+| clinic_visit_E_M | 40-60% | 2022 (done) |
+| drug_admin | 25-40% | 2022 (done) |
+| imaging_diagnostic | 20-35% | 2025 (proposed) |
+| imaging_advanced | 30-50% | 2026 (likely) |
+| procedures_intermediate | 15-30% | 2027 (plausible) |
+| gi_endoscopy | 20-40% | 2027 (plausible) |
+| cardiac_diagnostic | 25-45% | 2028 (exposed) |
+| orthopedic_procedure | 30-55% | 2028 (exposed) |
+
+### Math
+
+Per service line:
+- `hopd_npr = service_npr × hopd_share_pct`
+- `annual_npr_risk = hopd_npr × premium / (1 + premium)` (rate
+  collapse removes the HOPD markup)
+- `annual_ebitda_risk = annual_npr_risk × contribution_margin_pct`
+- `cumulative = annual_ebitda_risk × years_affected` (in hold)
+
+`years_affected`:
+- If effective year ≤ hold start → `hold_years`
+- If effective year > hold end → 0
+- Otherwise → `hold_end − effective_year`
+
+`grandfathered=True` zeros out exposure (site-level grandfathering).
+
+### Partner verdict
+
+- > $20M cumulative → "bake into exit-case EBITDA; price in purchase
+  multiple now, not after LOI."
+- $5-20M → "include in base-case bridge; track CMS rulemaking."
+- < $5M → "monitor; does not re-price."
+
+### Worked example
+
+$40M imaging-advanced NPR with 70% HOPD share, 2026 hold start, 5-yr
+hold, 35% contribution margin:
+- HOPD NPR: $40M × 70% = $28M
+- Premium 40% → NPR risk: $28M × 40% / 140% = $8.0M annual
+- EBITDA risk: $8.0M × 35% = $2.8M annual
+- Years affected: 5 (2026 effective, full hold)
+- Cumulative: $2.8M × 5 = $14M
+
+Combined with $30M GI endoscopy at 80% HOPD share (2027 effective):
+- HOPD: $24M; premium 30% → $5.5M annual NPR risk
+- EBITDA: $1.9M annual × 4 years = $7.7M cumulative
+
+Total: ~$22M cumulative EBITDA exposure over hold → material →
+"bake into exit case."
+
+### Packet fields
+
+`service_lines` (list of `ServiceLineExposure(service_line, npr_m,
+hopd_share_pct, grandfathered)`), `hold_start_year`, `hold_years`,
+`contribution_margin_pct`.
+
+### Distinct from existing modules
+
+- `regulatory_stress` — generic rate shocks.
+- `regulatory_watch` — event calendar (binary exists or not).
+- `reimbursement_cliff_calendar_2026_2029` — broader CMS/state
+  calendar.
+- This module — narrow on OBBBA / site-neutral with named service-
+  line bands, HOPD premium assumptions, and a concrete dollar model.
+
+---
+
+## 241. Deal-to-historical-failure matcher (`deal_to_historical_failure_matcher.py`)
+
+**Partner statement.** "Every deal I see, I ask: what blow-up does
+this look like? Not for catastrophism — to pull the specific lesson
+that applies. The sponsor who thought MA risk was priced right in
+2023 didn't have a bad model; they had an under-updated pattern
+library. The partner reading the same deal last year would have
+said 'I've seen this movie, here's the reel.' That's pattern-
+matching."
+
+### Why it matters
+
+`failure_archetype_library` + `named_failure_library_v2` catalog
+20 named failures. But the partner reflex isn't to read the
+catalog; it's to *match current deal signals against it*. This
+module operationalizes that reflex — takes 30+ diagnostic signals
+from the current deal, runs them against each historical
+fingerprint, and returns top-3 matches with the specific lesson.
+
+### Matching method
+
+Each historical failure has a fingerprint: 2-7 signal conditions
+that were true for the failed deal.
+
+- `hits` = conditions that match on the current deal.
+- `coverage` = hits / len(conditions).
+- `specificity` = coverage × rarity_weight.
+
+Sort by specificity, return top-3.
+
+### 20 dated pattern fingerprints (2018-2024)
+
+- `ma_startup_unwind_2023` — MA risk contract + rapid enrollment
+  + FFS→MA cover narrative.
+- `behavioral_staffing_collapse_2024` — behavioral health +
+  clinician supply stretched.
+- `pdgm_transition_fallout_2020` — home health + hold spans PDGM.
+- `nsa_platform_rate_shock_2022` — OON billing heavy + NSA exposure.
+- `ma_provider_risk_contract_2023` — primary-care risk platform +
+  MA risk contract.
+- `tele_health_hype_fade_2023` — telehealth + valuation peak era.
+- `rcm_vendor_concentration_loss_2022` — RCM-as-service + top-
+  customer > 25%.
+- `dental_dso_over_rollup_2021` — dental DSO + aggressive bolt-on
+  + peak era.
+- `strategic_acquisition_peak_2022` — strategic peak acquirer +
+  peak era.
+- `ma_benefit_lockout_decay_2018` — MA benefit differentiation
+  assumption.
+- `rural_cah_high_irr_pattern` — rural hospital + high-IRR claim.
+- `aca_exchange_shock_2018` — ACA exchange dependent.
+- `state_medicaid_rebasing_2019` — state Medicaid cut.
+- `pama_lab_phase_in_2024` — standalone lab + PAMA phase in hold.
+- `over_leveraged_healthcare_2022` — leverage > 6× + covenant tight.
+- `denial_fix_overpromise_2020` — aggressive denial-fix claim.
+- `payer_renegotiation_miss_2021` — payer renegotiation in hold.
+- `cmi_rac_recapture_2019` — aggressive CMI/coding claim.
+- `owner_comp_qofe_haircut_2020` — large owner-comp add-back.
+- `single_producer_physician_walk_2021` — top-1 physician
+  concentration.
+
+### Output shape
+
+Per top-3 match:
+- `failure_name`, `year`, `hits`, `coverage`, `specificity_score`
+- `matched_conditions` — which specific signals fired
+- `lesson` — the one-sentence takeaway
+- `specific_application` — "here's how it applies to the current
+  deal"
+
+### Partner-note tiers
+
+- Top match specificity ≥ 0.9 → "strong match; treat as live
+  pattern."
+- Top match 0.5-0.9 → "partial match; review top-3 before IC."
+- Below 0.5 → "weak match; signals partially align."
+- No matches → "deal is novel or signal set is too sparse."
+
+### Packet fields
+
+`HistoricalDealSignals` — 30+ optional bool/float flags (MA risk,
+behavioral health, home health with PDGM hold, NSA exposure, primary
+care risk, telehealth, RCM-as-service + top customer %, dental DSO,
+bolt-on pace, valuation peak era, MA benefit assumption, rural
+hospital, ACA exchange, state Medicaid cut, standalone lab + PAMA
+phase, leverage turns + covenant tight, denial fix claim, payer
+renegotiation in hold, CMI aggressive claim, owner comp add-back
+size, single physician producer concentration, etc.).
+
+### Distinct from existing modules
+
+- `failure_archetype_library` / `named_failure_library_v2` — the
+  catalog.
+- `cross_pattern_digest` — integrates multiple pattern libraries at
+  the module-output level.
+- This module — fingerprint-matches current deal **signals** to
+  the historical catalog; returns the specific lesson to apply.
+
+---
+
+## 242. Exit-buyer view mirror (`exit_buyer_view_mirror.py`)
+
+**Partner statement.** "Best discipline I learned: when we're
+underwriting at entry, write the exit buyer's IC memo. Year 5,
+deal-team-of-the-buyer is reading our sale process. What's their
+thesis on us? What concerns do they raise? What's their counter? If
+I can't write the buyer's bull case in two sentences and bear case
+in two sentences, I don't actually have a clear exit. The exit isn't
+a multiple — it's another IC voting."
+
+### Why it matters
+
+`buyer_type_fit_analyzer` scores 8 buyer profiles for fit.
+`exit_planning` is a readiness checklist. `exit_alternative_comparator`
+compares 5 paths. This module is the **first-person mirror**: imagine
+you ARE the exit buyer's deal team and write THEIR IC memo on this
+asset.
+
+### Output
+
+- **buyer_bull_case_lines** — 1-4 partner-voice bullets
+- **buyer_bear_case_lines** — 1-6 partner-voice bullets
+- **buyer_likely_entry_multiple** — coarse multiple model
+- **buyer_diligence_focus_list** — what they'll dig into hardest
+- **multiple_gap** — our exit multiple − buyer's likely entry
+- **multiple_gap_dollar_m** — × asset_ebitda_at_exit
+
+### Buyer profile base multiples
+
+| Profile | Base | Notes |
+|---|---|---|
+| `sponsor` | 11.0 | Default median |
+| `strategic` | 13.0 | Synergy premium |
+| `continuation` | 11.5 | Same-sponsor recap |
+| `ipo` | 14.0 | Public-comp premium |
+
+Adjustments (each ±0.5 to ±1.0×):
+- EBITDA quality (QofE survival): high (≥85%) → +0.5; low (<65%) → −1.0
+- Total growth (organic + inorganic): ≥12% → +1.0; <5% → −0.5
+- Commercial mix: <35% → −1.0; ≥55% → +0.5
+- Top-5 concentration > 45% → −1.0
+- Leverage at exit > 5.5× → −0.5
+
+### Bull / bear synthesis
+
+**Bull triggers:** total growth ≥10%, commercial ≥50%, CMI ≥1.05×
+peer, EBITDA quality ≥85%.
+
+**Bear triggers:** top-5 concentration > 40%, Medicare > 40%,
+leverage > 5.0×, OBBBA not in run-rate, site-neutral arb > $10M
+remaining, EBITDA quality < 70%, growth < 6%.
+
+### Partner-note tiers
+
+- Multiple gap ≥ 1.5× → "either named bid at our number, or
+  re-underwrite exit case down."
+- 0.5× to 1.5× → "modest gap; defensible if platform attributes
+  strong; price sensitivity at exit."
+- ±0.5× → "exit aligned; clean."
+- Buyer mult > our exit → "under-monetizing; platform is stronger
+  than our exit case."
+
+### Worked example
+
+$60M EBITDA at exit, our assumption 14× = $840M EV. Inputs:
+EBITDA quality 0.50 (low), top-5 concentration 50%, commercial
+mix 30%.
+
+Buyer multiple: 11.0 base − 1.0 (low quality) − 1.0 (concentration)
+− 1.0 (low commercial) = 8.0×. Buyer EV = $480M.
+
+Multiple gap: 14 − 8 = 6×; gap = $360M. Partner: "either named
+strategic bid at our number, or re-underwrite exit case to 9-10×."
+
+### Packet fields
+
+`asset_npr_at_exit_m`, `asset_ebitda_at_exit_m`, `growth_rate_organic_pct`,
+`growth_rate_inorganic_pct`, `payer_mix_commercial_pct_at_exit`,
+`payer_mix_medicare_pct_at_exit`, `cmi_vs_peer`,
+`ebitda_quality_score`, `customer_concentration_top_5_pct`,
+`leverage_at_exit`, `obbba_already_in_run_rate`,
+`site_neutral_remaining_arbitrage_m`, `our_assumed_exit_multiple`,
+`our_assumed_irr`, `buyer_profile`.
+
+### Distinct from existing modules
+
+- `buyer_type_fit_analyzer` — scores 8 buyer profiles for fit.
+- `exit_planning` — readiness checklist.
+- `exit_alternative_comparator` — 5-path comparison.
+- This module — first-person buyer mirror with bull/bear/multiple
+  gap, drawn at the asset profile level.
+
+---
+
+## 243. Archetype outcome distribution predictor (`archetype_outcome_distribution_predictor.py`)
+
+**Partner statement.** "Before I look at the model's projected MOIC,
+I want to know what archetype this is and what the empirical
+distribution looks like for that shape. Back-office consolidation
+plays median 2.0x with a top quartile of 2.6x. If the deal team's
+model says 3.5x for a back-office play, that's not impossible — but
+it's the top decile, and the burden of proof is on us."
+
+### Why it matters
+
+Place the deal team's projected MOIC in the **empirical
+distribution for the archetype**, not in the abstract. Tells the
+partner whether the underwrite is "median sponsor return," "needs
+top-quartile execution," or "implausible without specific edge."
+
+### Per-archetype distribution
+
+| Archetype | Top dec | Top q | Median | Bot q | Bot dec | Hold | Fail % |
+|---|---|---|---|---|---|---|---|
+| payer_mix_shift | 3.4 | 2.7 | 1.9 | 1.3 | 0.7 | 5.5 | 20% |
+| back_office_consolidation | 3.2 | 2.6 | 2.0 | 1.4 | 0.8 | 5.0 | 15% |
+| outpatient_migration | 3.0 | 2.5 | 1.8 | 1.2 | 0.6 | 5.0 | 25% |
+| cmi_uplift | 3.5 | 2.8 | 1.9 | 1.1 | 0.5 | 5.0 | 30% |
+| rollup_platform | 4.0 | 3.0 | 2.2 | 1.4 | 0.8 | 6.0 | 20% |
+| cost_basis_compression | 2.8 | 2.4 | 1.9 | 1.4 | 1.0 | 4.5 | 10% |
+| capacity_expansion | 2.6 | 2.2 | 1.8 | 1.3 | 0.9 | 6.0 | 10% |
+
+Per-archetype `shape_note` carries the partner's reflexive read
+("narrow median, fat right tail" for payer_mix_shift; "wide
+distribution, RAC risk drags bottom tail" for cmi_uplift).
+
+### Verdict by percentile band
+
+- **top_decile** — "burden of proof is on us; what's the specific
+  edge?"
+- **top_quartile** — "plausible if execution edges align — name them."
+- **above_median** — "standard sponsor underwrite."
+- **below_median** — "deal team's own underwrite is sub-par; either
+  re-price or pass."
+- **bottom_quartile / bottom_decile** — "the archetype itself
+  doesn't justify the equity check. Pass."
+
+Plus IRR-out-of-range and hold-vs-median delta flags layered on.
+
+### Worked example
+
+Back-office consolidation play; deal team projects 3.5x MOIC, 18%
+IRR, 5-year hold.
+
+- Top decile = 3.2x → 3.5x is **top decile**.
+- IRR 18% is in 12-20% typical range → in_range.
+- Hold 5.0 = median → no flag.
+- Partner: "3.5x is top decile for back_office_consolidation —
+  burden of proof is on us. What's the specific execution edge that
+  puts this in the top 10% of this shape?"
+
+### Packet fields
+
+`archetype` (one of the 7 healthcare thesis archetype names),
+`deal_team_projected_moic`, `deal_team_projected_irr`,
+`deal_team_projected_hold_years`.
+
+### Distinct from existing modules
+
+- `vintage_return_curve` — pacing curve, not archetype-conditional.
+- `healthcare_thesis_archetype_recognizer` — names the archetype.
+- `competing_deals_ranker` — ranks deals against each other.
+- This module — empirical MOIC/IRR distribution conditional on the
+  archetype shape; tells partner where the underwrite sits in
+  realistic outcomes.
+
+---
+
+## 244. IC dialog simulator (`ic_dialog_simulator.py`)
+
+**Partner statement.** "When IC works, voices challenge each other.
+The skeptic raises a concern; the operating partner says 'we own
+that — here's how'; the LP-facing voice asks 'how does this read in
+the quarterly?'; the numbers-MD says 'the math doesn't support
+either side'; the chair synthesizes. A monolithic memo doesn't
+capture this. The dialog also surfaces: which concerns the team has
+actually answered, and which ones nobody on the team has a real
+response to."
+
+### Why it matters
+
+`partner_voice_variants` produces 5 separate voice paragraphs.
+That's monologic. The IC dialog is **dialogic** — voices respond to
+each other, and the chair surfaces what's been resolved, what's
+unresolved, and what's vote-blocking.
+
+### Three-round structure
+
+- **Round 1 — Opening:** each of 5 voices gives their first read
+  (skeptic / optimist / md_numbers / operating_partner / lp_facing).
+- **Round 2 — Challenge:** each voice picks one prior point and
+  reinforces or pushes back. Cross-voice dynamics surface where
+  the team has answers vs. where it doesn't.
+- **Round 3 — Chair synthesis:** sorts dialog into 3 buckets:
+  consensus / unresolved / vote-blocking.
+
+### Vote-blocking heuristics
+
+- QofE not clean
+- Leverage > 6.0× (firm comfort threshold)
+- Strong historical-failure match cited
+- Exit multiple > 12× with commercial mix < 30% (structural mismatch)
+
+### Unresolved heuristics
+
+- Target MOIC ≥ 3.0× → "burden of proof on us"
+- No named operator 100-day commitments → execution edge aspirational
+- Growth rate < 5% → "thesis depends on multiple expansion alone"
+
+### Consensus heuristics
+
+- QofE clean → "math base solid"
+- Strong management track record → "execution risk reduced"
+- Commercial mix ≥ 40% → "FFS protected"
+
+### Recommendation logic
+
+- Any vote-blocking item → "DILIGENCE MORE — vote-blocking items"
+- Multiple unresolved (no blocking) → "DILIGENCE MORE — unresolved
+  tensions need answers"
+- All consensus, no unresolved → "INVEST — consensus dialog"
+
+### Worked example
+
+QofE clean, strong management, commercial 0.50, leverage 4.0×,
+target 2.5×, named operator commitments. → 3 consensus, 0
+unresolved, 0 blocking → "INVEST — consensus dialog supports vote."
+
+Same deal but QofE not clean and leverage 6.5× → 2 vote-blocking
+(QofE + leverage) → "DILIGENCE MORE — vote-blocking items."
+
+### Packet fields
+
+`deal_name`, `subsector`, `recurring_ebitda_m`, `target_moic`,
+`entry_multiple`, `exit_multiple`, `top_risks`,
+`operator_owns_named`, `qofe_clean`, `payer_mix_commercial_pct`,
+`growth_rate`, `leverage_turns`,
+`management_track_record_strong`, `historical_failure_match_top`.
+
+### Distinct from existing modules
+
+- `partner_voice_variants` — 5 monologic voice paragraphs.
+- `ic_decision_synthesizer` — single recommendation + flip signals.
+- `pre_ic_chair_brief` — chair's 4-bullet pre-IC note.
+- This module — 3-round dialog with cross-voice dynamics; chair
+  outputs consensus / unresolved / vote-blocking.
+
+---
+
+## 245. 90-day post-close reality check (`post_close_90_day_reality_check.py`)
+
+**Partner statement.** "First board meeting post-close is 90 days
+in. By then I want to know: did the underwriting hold up? Are the
+leading indicators moving the way the model assumed? Three things
+have to be true at 90 days: financial trajectory on or ahead of
+underwrite, operator has named what's stuck and what's moving,
+flagged risks haven't materialized in unexpected ways."
+
+### Why it matters
+
+The 90-day mark is the partner's first real reality test on the
+underwrite. `quarterly_operating_review` has the QoR agenda;
+`hundred_day_plan` has the plan; `value_creation_tracker` runs
+long-term. This module is specifically the **first-quarter
+reality test** with per-item delta-vs-underwrite.
+
+### 6 reality-check categories
+
+| Category | On-track | At-risk | Off-track |
+|---|---|---|---|
+| revenue_trajectory | actual ≥ underwrite − 50bps | within 200bps | > 200bps below |
+| ebitda_margin | within 50bps | within 150bps | > 150bps below |
+| denial_rate_movement | within 5bps of plan | within 15bps | > 15bps behind |
+| physician_retention | 5/5 top-5 | 4/5 | ≤ 3/5 |
+| management_team_intact | full c-suite | 1 missing | ≥ 2 missing |
+| day1_actions_delivered | ≥ 85% | 65-85% | < 65% |
+
+### Aggregate verdict
+
+- **healthy_first_quarter** — ≥ 5 on-track. "Operator earned trust;
+  Q2 cadence standard."
+- **diary_warranted** — 1 off-track OR ≥ 2 at-risk. "Document for
+  next board; no intervention yet."
+- **acceleration_warranted** — 2 off-track. "Operator intervention
+  before Q2 board."
+- **thesis_at_risk** — 3+ off-track. "Escalate to IC; redo bear
+  case with Q1 actuals."
+
+### Per-category partner reads
+
+Each category emits a partner-voice sentence calibrated to the
+status — e.g., physician off-track triggers "this is the named
+risk materializing — re-run physician_retention_stress and escalate
+immediately."
+
+### Worked example
+
+Default (modest slip in revenue 7% vs 8%, EBITDA margin 17% vs
+18%, all else clean) → 4 on-track + 2 at-risk → **diary_warranted**.
+
+Same deal but 2 top-5 physicians left and 2 c-suite seats open →
+2 off-track + revenue/ebitda at-risk → **acceleration_warranted**.
+
+### Distinct from existing modules
+
+- `quarterly_operating_review` — 4-block QoR agenda (forward).
+- `hundred_day_plan` — the 100-day plan itself.
+- `value_creation_tracker` — long-term VCP execution.
+- `post_close_surprises_log` — running surprise diary.
+- This module — first-board reality test with per-item
+  delta-vs-underwrite + aggregate verdict.
+
+---
+
+## 246. Recurring NPR line-item scrubber (`recurring_npr_line_scrubber.py`)
+
+**Partner statement.** "Sellers stretch EBITDA with one-time
+add-backs, but they ALSO stretch revenue. Provider relief grants
+flow through NPR. DSH and UPL settlements show up as line items.
+The growth rate the seller pitches is on TOTAL NPR. The growth
+rate the partner cares about is on RECURRING NPR. Scrub the top
+line first, then talk about growth."
+
+### Why it matters
+
+`recurring_ebitda_line_scrubber` operates at EBITDA. This is the
+**top-line analog** — same religious recurring-vs-one-time
+discipline applied to NPR. The headline number that distorts is
+the **growth rate**, since seller's stated growth is on
+TTM-including-one-time but recurring growth is on the recurring
+base.
+
+### 15-pattern catalog
+
+**One-time NPR (8):**
+- DSH / UPL supplemental Medicaid payment
+- Provider relief grant (CARES / ARPA / state pandemic)
+- Medicare cost-report settlement (prior-period true-up)
+- RAC / audit recovery
+- State directed-payment program (episodic)
+- MU / MIPS legacy EHR incentive
+- 340B retroactive true-up
+- Behavioral / psychiatric state supplemental grant
+
+**Questionable NPR (4):**
+- Pro-forma annualized acquired revenue
+- VBC shared savings (program-dependent)
+- Quality / P4P bonus (program-dependent)
+- Risk pool distribution (timing-lumpy)
+
+**Recurring NPR (3):**
+- Core patient service revenue
+- Capitation / PMPM revenue
+- Recurring contracted payer payment
+
+Unknown patterns default to **questionable** — partner review.
+
+### Output
+
+- `recurring_npr_m`, `one_time_npr_m`, `questionable_npr_m`
+- `seller_growth_rate_pct` — on TTM (seller pitch)
+- `partner_growth_rate_pct` — on recurring (partner read)
+- `growth_rate_distortion_pct` — gap between the two
+
+### Partner-note triggers
+
+- Distortion > 5% → "anchor growth conversation on recurring base."
+- Distortion 1-5% → "modest distortion; surface in bridge."
+- Distortion < 1% → "top line scrub clean."
+
+### Worked example
+
+Stated TTM NPR $300M; prior year $280M. Line items include $20M
+DSH supplemental payment.
+
+- Seller growth: $300M / $280M = +7.1%
+- Recurring NPR: $300 − $20 = $280M
+- Partner growth: $280 / $280 = 0%
+- Distortion: 7.1% — material; "anchor growth conversation on
+  recurring base."
+
+### Packet fields
+
+`stated_ttm_npr_m`, `prior_year_npr_m`, `line_items` (list of
+`NPRLineItem(description, amount_m, explicit_category)`).
+
+### Distinct from existing modules
+
+- `recurring_ebitda_line_scrubber` — EBITDA level analog.
+- `ebitda_normalization` / `ebitda_quality` — broader.
+- This module — NPR / top-line level with healthcare-specific
+  one-time line catalog (DSH/UPL/provider-relief/MU/340B/etc.) and
+  growth-rate distortion math.
+
+---
+
+## 247. Physician specialty economic profiler (`physician_specialty_economic_profiler.py`)
+
+**Partner statement.** "Every specialty has a different economic
+shape. An orthopedic surgeon generates 4-6× revenue of a primary
+care physician at a similar share of comp. Dermatology runs 75%
+commercial; ENT runs 50/50. Cardiology lives off Medicare and the
+case mix is procedure-heavy. Knowing the specialty shape is partner
+reflex — when the seller's numbers diverge from the specialty's
+typical shape, that's where to dig."
+
+### Why it matters
+
+`physician_compensation_benchmark` benches comp/wRVU vs MGMA;
+`subsector_partner_lens` covers 10 business-level subsectors. This
+module is the **per-specialty economic shape**: revenue per
+physician, contribution margin band, typical payer mix, procedure
+concentration, named risks the partner applies on sight.
+
+### 12 specialties
+
+orthopedic_surgery / gastroenterology / dermatology / cardiology /
+medical_oncology / ob_gyn / urology / ent / ophthalmology / dental /
+behavioral / radiology.
+
+### Per-specialty profile fields
+
+- `typical_revenue_per_physician_m`
+- `typical_contribution_margin_pct`
+- `typical_commercial_mix_pct` / `typical_medicare_mix_pct`
+- `procedure_concentration_pct`
+- `payer_density_concern` — top concern from payer side
+- `regulatory_concern_top` — sniff-test reg concern
+- `named_risk_pattern` — partner reflex on this specialty
+- `roll_up_attractiveness` — high / medium / low
+
+### Highlights from the catalog
+
+- **orthopedic_surgery** — $2.4M / physician, 45% margin, 55%
+  commercial; named risk: "loss of top surgeon collapses revenue
+  concentration." Roll-up: high.
+- **gastroenterology** — $1.8M / physician, 65% procedure
+  concentration; named risk: "ASC ownership; loss of OON anesthesia
+  fees post-NSA." Roll-up: high.
+- **dermatology** — 75% commercial; named risk: "DSO model dilutes
+  physician ownership; high mid-level ratio drives scrutiny." Roll-
+  up: high.
+- **medical_oncology** — $3.0M / physician (drug-heavy), 30% margin,
+  55% Medicare; named risk: "EBITDA driven by drug margin, not
+  physician services — drug-pricing reform is existential."
+- **behavioral** — $0.6M / physician, 25% margin; named risk:
+  "clinician supply is binding constraint (see 2024 staffing
+  collapse)." Roll-up: low.
+- **radiology** — hospital-based group risk: "hospital can switch
+  contract mid-cycle; teleradiology commoditizes."
+
+### Divergence detection
+
+Per provided seller metric (revenue per physician, contribution
+margin, commercial mix), flag `above_typical` / `in_band` /
+`below_typical` at ±20% tolerance.
+
+When divergent: "Where the seller's number is above-typical, ask
+what's driving it; where below, ask what's missing." Standing risk
+always echoed regardless.
+
+### Worked example
+
+Seller pitches dermatology DSO with $1.8M revenue per physician and
+35% margin (vs. typical $1.2M / 50%).
+
+- Revenue per physician: above_typical (+50%) — investigate: is
+  this driven by mid-level leverage, Mohs surgery concentration,
+  or pathology-billed-by-derm?
+- Contribution margin: below_typical (−15 pts) — investigate: is
+  comp structure inflated to retain owner physicians?
+
+Partner: "DSO with above-typical revenue but below-typical margin
+suggests revenue is real but cost-side is heavy. Probe the comp
+structure and ancillary mix before pricing."
+
+### Packet fields
+
+`specialty` (one of 12), optional
+`seller_revenue_per_physician_m`,
+`seller_contribution_margin_pct`,
+`seller_commercial_mix_pct`.
+
+### Distinct from existing modules
+
+- `subsector_partner_lens` — 10 business-level subsectors.
+- `physician_compensation_benchmark` — comp/wRVU vs MGMA.
+- `physician_comp_normalization_check` — adjustment validation.
+- `physician_retention_stress_model` — retention scenarios.
+- This module — per-specialty economic shape with payer/reg/named-
+  risk patterns + divergence flags.
+
+---
+
+## 248. Management forecast haircut applier (`management_forecast_haircut_applier.py`)
+
+**Partner statement.** "Management always forecasts to the upside.
+The question isn't whether to haircut — it's how much, year by year.
+Year 1 is partly controllable, so haircut less. Years 2-3 are where
+ambition meets reality. Years 4-5 are where every forecast hockey-
+sticks. Once you have the management case, lay the haircut on top,
+run the IRR, and tell me where management's number actually leaves
+us."
+
+### Why it matters
+
+`management_forecast_reliability` SCORES history (forecast vs.
+actuals). This module APPLIES the haircut. Different jobs.
+
+### Per-tier per-year haircut (% of mgmt growth above year-0)
+
+| Tier | Y1 | Y2 | Y3 | Y4 | Y5 |
+|---|---|---|---|---|---|
+| high | 5% | 8% | 10% | 12% | 15% |
+| medium | 10% | 15% | 20% | 25% | 30% |
+| low | 20% | 30% | 35% | 40% | 45% |
+| very_low | 35% | 45% | 55% | 60% | 65% |
+
+Math:
+`partner_yN = year_0 + (mgmt_yN − year_0) × (1 − haircut_yN)`
+
+Beyond year 5, last-tier haircut extrapolates.
+
+### Output
+
+- `mgmt_moic` / `partner_moic` / `delta_moic`
+- `mgmt_irr` / `partner_irr` / `delta_irr`
+- `mgmt_exit_ev_m` / `partner_exit_ev_m`
+- year-by-year `partner_ebitda_m` next to mgmt's
+
+### Verdict tiers
+
+- delta_moic ≤ 0.20× → "haircut absorbable; mgmt forecast credible"
+- 0.20-0.50× → "material haircut; price into entry; counter at
+  partner_moic / mgmt_moic of seller's expected EV"
+- > 0.50× → "haircut breaks the underwrite; either tighten forecast
+  assumptions with mgmt or pass"
+
+### Worked example
+
+Mgmt forecast 50→55→62→70→78→87 ($M EBITDA), 5-yr hold, exit 12×,
+$80M debt at exit, $150M equity in.
+
+Reliability `medium` haircuts: 10/15/20/25/30%.
+
+- Mgmt year 5 EBITDA: $87M
+- Partner year 5: $50 + ($87−$50) × (1−0.30) = $50 + $25.9 = $75.9M
+- Mgmt exit equity: $87 × 12 − $80 = $964M; MOIC 6.43x
+- Partner exit equity: $75.9 × 12 − $80 = $830.8M; MOIC 5.54x
+- Delta: 0.89x → "breaks the underwrite — tighten or pass."
+
+### Packet fields
+
+`mgmt_ebitda_y0_m`, `mgmt_ebitda_forecast_m` (list of N years),
+`reliability_tier`, `entry_multiple`, `exit_multiple`,
+`entry_debt_m`, `exit_debt_m`, `sponsor_equity_in_m`.
+
+### Distinct from existing modules
+
+- `management_forecast_reliability` — scores forecast vs actuals.
+- `qofe_prescreen` — add-back survival.
+- `bear_case_generator` — generic bear case.
+- `archetype_outcome_distribution_predictor` — places MOIC in
+  archetype distribution.
+- This module — APPLIES tiered per-year haircut to mgmt forecast and
+  outputs the partner-implied MOIC/IRR delta.
+
+---
+
+## 249. VBC risk-share contract underwriter (`vbc_risk_share_underwriter.py`)
+
+**Partner statement.** "Value-based care contracts look like growth
+on the deck. The math is harder. We're taking medical-loss risk on
+a population we don't fully control. Move the corridor by 1pp and
+EBITDA moves a lot — sometimes from positive to negative. Before I
+underwrite a VBC contract, I want the MLR breakeven, the corridor
+sensitivity, and the stop-loss attachment in dollars."
+
+### Why it matters
+
+VBC / capitation / shared-risk contracts increasingly drive
+healthcare-PE EBITDA but are not modeled in the same way as
+fee-for-service. This module sizes a **single contract's EBITDA
+exposure** with corridor and stop-loss explicit.
+
+### Math
+
+- Revenue = `lives × PMPM × 12`
+- Medical expense = `revenue × actual_MLR`
+- Raw corridor gain = `revenue × (target_MLR − actual_MLR)`
+- If gain ≥ 0: capped at `revenue × upside_cap × upside_share`
+- If gain < 0: floored at `−revenue × downside_floor × downside_share`
+- EBITDA = corridor share − admin − stop-loss premium
+
+### Per-scenario output
+
+- **expected** — at expected_actual_MLR
+- **bear** — at expected + 5pp
+- **bull** — at expected − 5pp
+- **volatility band** = bull EBITDA − bear EBITDA
+
+### Breakeven MLR
+
+Closed-form within upside zone:
+`breakeven = target_MLR − (admin + stop_loss) / (revenue × upside_share)`
+
+### Verdict tiers
+
+- expected EBITDA > 2% of revenue → **profitable** — "verify
+  population risk adjustment and prior MLR trend."
+- 0 < EBITDA ≤ 2% revenue → **thin_margin** — "single bad cohort
+  wipes the year; negotiate higher PMPM or wider corridor."
+- EBITDA in band of half the volatility → **breakeven_zone**
+- Below → **loss_zone** — "renegotiate or do not assume EBITDA
+  contribution."
+
+### Worked example
+
+25,000 lives at $950 PMPM = $285M revenue. Target MLR 85%, expected
+78% (7pp upside). Corridor: 5pp upside cap × 50% upside share =
+$7.1M. Admin 5% = $14.25M. Stop-loss premium 25k × $20 × 12 = $6M.
+
+EBITDA = $7.1 − $14.25 − $6 = −$13M → **loss_zone**. Capped corridor
++ heavy admin make this contract not workable as structured —
+either reduce admin or widen the corridor.
+
+Same contract with 100% upside share + light admin (1%) + light
+stop-loss → EBITDA $13M → **profitable**.
+
+### Packet fields
+
+`contract_name`, `attributed_lives`, `contracted_pmpm`,
+`target_mlr_pct`, `expected_actual_mlr_pct`,
+`admin_load_pct_of_pmpm`, `upside_cap_mlr_delta_pct`,
+`downside_floor_mlr_delta_pct`, `upside_share_pct`,
+`downside_share_pct`, `individual_stop_loss_attachment_usd`,
+`individual_stop_loss_premium_pmpm`,
+`population_stop_loss_attachment_pct`,
+`population_stop_loss_premium_pmpm`.
+
+### Distinct from existing modules
+
+- `medicare_advantage_bridge_trap` — narrow on MA growth-vs-FFS
+  narrative.
+- `payer_mix_risk` — payer concentration, not contract economics.
+- This module — single-contract VBC underwrite with corridor,
+  stop-loss, and ±5pp MLR scenario math.
+
+---
+
+## 250. Archetype canonical bear writer (`archetype_canonical_bear_writer.py`)
+
+**Partner statement.** "Each archetype has its own canonical bear
+case. The payer-mix shift bear is 'commercial payer says no.' The
+back-office consolidation bear is 'sites refuse to migrate.' The
+CMI uplift bear is 'RAC audit recovers four years.' The bear case
+for an archetype isn't generic — it's specific to the way THAT
+shape fails. When you hand me a deal of archetype X, I should be
+able to recite its canonical bear in 30 seconds."
+
+### Why it matters
+
+`bear_case_generator` produces a generic bear from packet signals.
+This module is the **archetype-conditioned canonical bear** — for
+each of the 7 healthcare thesis archetypes, the bear that the
+archetype's *shape itself* implies, before any specific signal.
+
+### 7 canonical bears
+
+| Archetype | Canonical bear | Recovery |
+|---|---|---|
+| payer_mix_shift | commercial payer says no | hold-extension |
+| back_office_consolidation | sites refuse to migrate | recoverable |
+| outpatient_migration | site-neutral collapses arb | thesis-broken |
+| cmi_uplift | RAC recovers four years | thesis-broken |
+| rollup_platform | auction fatigue compresses bolt-on multiples | hold-extension |
+| cost_basis_compression | labor cuts hit quality, payer downgrades | recoverable |
+| capacity_expansion | de-novo ramp slips, carrying cost drag | hold-extension |
+
+### Per-archetype output
+
+- `bear_story` — 3-line partner-voice narrative
+- `named_breakage_point` — the specific event that triggers
+  ("payer refuses in year 2," "OIG includes DRG family in audit")
+- `expected_ebitda_hit_pct` — typical bear-case impact (15-30%)
+- `expected_ebitda_hit_m` — × base EBITDA
+- `recovery_posture` — recoverable / hold-extension / thesis-broken
+- `early_warning_indicator` — what to watch first ("payer
+  correspondence frequency drops," "Q1 site adoption < 50%")
+
+### Recovery posture meaning
+
+- **recoverable** — bear scenario can be recovered within hold if
+  operator addresses early
+- **hold-extension** — bear extends hold by 12-18 months; price
+  the time-value drag into entry
+- **thesis-broken** — bear is not recoverable within hold; the
+  archetype's central premise has failed
+
+### Worked example
+
+`rollup_platform`, $50M base EBITDA → bear: "Auction fatigue raises
+bolt-on multiples above 8x. Multiple arbitrage compresses.
+Integration debt accumulates — first 4 bolt-ons land, next 6
+stretch the team." Expected hit: 18% = $9M. Recovery: hold-
+extension. Early warning: "Bolt-on closing pace slips below 1 per
+quarter."
+
+`cmi_uplift`, $50M base → bear: "RAC audit retrospectively reviews
+3-4 years of CMI uplift. Reserve wipes out hold-period cash."
+Expected hit: 30% = $15M. Recovery: thesis-broken. Early warning:
+"Coder appeal-rate climbs without corresponding documentation
+improvements."
+
+### Packet fields
+
+`archetype` (one of 7), `base_ebitda_m`.
+
+### Distinct from existing modules
+
+- `bear_case_generator` — generic bear from signal set.
+- `archetype_subrunners` — archetype-specific heuristic packs.
+- `archetype_outcome_distribution_predictor` — MOIC band per
+  archetype.
+- `healthcare_thesis_archetype_recognizer` — names the archetype.
+- This module — for each archetype, the **canonical bear** with
+  named breakage point + EBITDA hit + recovery posture + early
+  warning indicator. Operationalizes the partner reflex "what does
+  the bear case for THIS shape look like?"
+
+### Milestone
+
+Module §250 of the partner-brain library.
+
+---
+
+## 251. VBC portfolio aggregator (`vbc_portfolio_aggregator.py`)
+
+**Partner statement.** "A single VBC contract is one risk. A
+portfolio of VBC contracts can either be diversified — population
+variability evens out across contracts — or concentrated. If 60%
+of VBC EBITDA comes from one contract, you don't have a VBC
+portfolio, you have one bet."
+
+### Why it matters
+
+`vbc_risk_share_underwriter` sizes one contract. This module
+aggregates many contracts into a portfolio view. The partner cares
+about (a) total VBC EBITDA contribution, (b) concentration of that
+contribution in a few contracts, (c) what happens if all contracts
+move bear simultaneously (correlated-MLR shock).
+
+### Output
+
+- `total_revenue_m`, `total_expected_ebitda_m`,
+  `total_bear_ebitda_m` (all contracts +5pp MLR),
+  `total_bull_ebitda_m`
+- per-contract `ContractContribution` (name, expected_ebitda_m,
+  contribution_share, bear_ebitda_m, single-contract verdict)
+- `top1_concentration_pct`, `top3_concentration_pct`
+- `portfolio_verdict` — `single_bet` / `concentrated` /
+  `diversified`
+
+### Verdict thresholds
+
+- top1 ≥ 50% → **single_bet** — "not a portfolio; renegotiate top
+  contract corridor or expand others."
+- top1 ≥ 30% OR top3 ≥ 75% → **concentrated** — "stress top
+  contracts harder; their bear cases drive the portfolio bear."
+- otherwise → **diversified** — "population variability across
+  contracts mutes single-contract MLR shocks."
+
+### Correlated-bear partner note
+
+When `total_bear_ebitda_m < 0` the note adds: "VBC portfolio
+becomes a drag in bear, not a contributor." This is the partner
+reminder that VBC is risk-bearing — diversification doesn't help
+if every contract bears the same population shock.
+
+### Worked example
+
+5 mid-sized contracts (~25k lives each, profitable parameters) →
+top1 ~22%, top3 ~58% → **diversified**.
+
+1 large (200k lives) + 2 small (10k each) → top1 ~85% → **single
+bet** — "renegotiate top contract corridor before treating VBC as
+diversified."
+
+### Packet fields
+
+`contracts` — list of `VBCContractInputs` (each contract spec).
+
+### Distinct from existing modules
+
+- `vbc_risk_share_underwriter` — single contract economics.
+- `payer_mix_risk` — payer concentration generally.
+- This module — portfolio-level aggregation with correlated-bear
+  scenario and concentration verdict.
+
+---
+
+## 252. Contract renewal cliff calendar (`contract_renewal_cliff_calendar.py`)
+
+**Partner statement.** "Stack every contract renewal — commercial
+payer, GPO, IT vendor, real-estate lease, key-employment agreement
+— by quarter. That's my diligence calendar. The cliff is the
+quarter with the most material dollars rolling over. Underwrite
+that quarter explicitly. The rest of the calendar is the warning
+system."
+
+### Why it matters
+
+`payer_renegotiation_timing_model` covers commercial payer
+contracts only. `reimbursement_cliff_calendar_2026_2029` covers
+regulatory rule events. This module unifies **all contract types**
+into one quarter-by-quarter calendar over the hold so the partner
+can see the cliff.
+
+### 8 contract types
+
+`commercial_payer`, `gpo_supply`, `it_vendor`,
+`real_estate_lease`, `key_employment`, `physician_employment`,
+`medical_director`, `risk_share_vbc`.
+
+### Output
+
+- per-quarter `QuarterStack` (year/quarter, count, $ annual value,
+  contracts list)
+- `total_renewals_in_hold`, `total_annual_value_in_hold_m`
+- `cliff_quarter_label` ("Y2Q3"), `cliff_quarter_value_m`
+- `type_concentration` — share of total $ value per contract type
+- `verdict` — balanced / lumpy / cliff_warning
+
+### Verdict thresholds
+
+- cliff > 40% of total → **cliff_warning** — "underwrite that
+  quarter explicitly; one bad outcome compounds."
+- 25-40% → **lumpy** — "manageable; pre-prep the cliff quarter."
+- < 25% → **balanced** — "standard cadence."
+
+### Worked example
+
+5 contracts: 2 commercial payer (BCBS $30M + United $20M) both
+Y2Q2; 1 lease $5M Y3Q1; 1 GPO $10M Y4Q1; 1 IT $5M Y3Q4. Total $70M
+in hold; cliff Y2Q2 = $50M (71%) → **cliff_warning**.
+
+Same total spread evenly: $14M per quarter across 5 quarters →
+**balanced**.
+
+### Packet fields
+
+`contracts` (list of `ContractRenewal(name, contract_type,
+expiration_date, annual_value_m, expected_rate_change_pct,
+notes)`), `hold_start_date`, `hold_years`.
+
+### Distinct from existing modules
+
+- `payer_renegotiation_timing_model` — only commercial payer.
+- `reimbursement_cliff_calendar_2026_2029` — regulatory only.
+- `contract_diligence` — generic per-contract review.
+- This module — multi-type renewal stack with cliff detection and
+  type-concentration breakdown.
+
+---
+
+## 253. LBO debt paydown trajectory (`lbo_debt_paydown_trajectory.py`)
+
+**Partner statement.** "Sponsors love to talk about de-leveraging
+through cash flow. The model shows 3.5× turning into 1.5× by exit.
+The model also shows year 1 FCF that doesn't cover the mandatory
+amort, year 2 FCF that barely does, and years 3-5 doing all the
+work. That's a back-loaded paydown thesis. If year 3 EBITDA misses,
+the de-leveraging story breaks and you're refinancing into a worse
+market."
+
+### Why it matters
+
+`debt_sizing` and `debt_capacity_sizer` set debt at entry.
+`covenant_monitor` watches current headroom. This module projects
+the **year-by-year paydown trajectory** through hold and flags
+back-loading.
+
+### Math per year
+
+- EBITDA = prior EBITDA × (1 + growth)
+- Interest = current debt × rate
+- D&A proxy = capex × 50% (rough, just for tax shield)
+- Cash tax = max(0, EBITDA − interest − D&A) × tax rate
+- Capex = EBITDA × capex %
+- ΔWC = ΔEBITDA × WC %
+- FCF = EBITDA − interest − cash tax − capex − ΔWC
+- Mandatory amort = entry debt × amort %/yr (1% default)
+- Discretionary paydown = max(0, FCF − amort) × cash sweep %
+- Year-end debt = max(0, debt − amort − discretionary)
+- Leverage = debt / EBITDA
+
+### Verdict
+
+- back-loaded share > 70% → **concerning_back_loaded** — "year 1-2
+  FCF doesn't move debt; refi risk if growth slips"
+- 60-70% → **back_loaded** — "acceptable if growth has high
+  confidence; price refi risk into IRR"
+- < 60% → **balanced**
+
+### Worked example
+
+$200M entry debt, $50M EBITDA, 6% growth, 8.5% interest rate, 5-yr
+hold:
+- Year 1: EBITDA $53M, interest $17M, capex $7.95M, FCF ~$23M; amort
+  $2M + discretionary ~$15.75M = $17.75M paydown; debt $182M, lev 3.4x
+- Year 5: EBITDA ~$67M, debt ~$110M, lev 1.6x
+- Back-loaded share ~50% → **balanced**
+
+Same with 30% growth and $20M entry EBITDA, $200M entry debt:
+- Year 1 FCF barely covers interest; paydown nearly zero
+- Year 5 EBITDA explodes — paydown back-loaded → **concerning**
+
+### Packet fields
+
+`entry_debt_m`, `entry_ebitda_m`, `annual_ebitda_growth_pct`,
+`interest_rate_pct`, `cash_tax_rate_pct`,
+`capex_as_pct_of_ebitda`, `delta_wc_as_pct_of_ebitda_growth`,
+`mandatory_amort_pct_per_year`, `cash_sweep_pct_of_excess_fcf`,
+`hold_years`.
+
+### Distinct from existing modules
+
+- `debt_sizing` / `debt_capacity_sizer` — sizing at entry.
+- `covenant_monitor` — current headroom only.
+- `dividend_recap_analyzer` — recap math.
+- This module — year-by-year FCF→paydown trajectory with
+  back-loaded flag.
+
+---
+
+## 254. WC seasonality detector (`working_capital_seasonality_detector.py`)
+
+**Partner statement.** "Healthcare WC has a Q1 deductible reset
+spike — patients haven't met deductible yet so the AR ages faster,
+DSO climbs, cash drags. By Q3 it normalizes. If a seller flags 'WC
+drag' in Q1 and your model carries that into trailing twelve, you're
+double-counting a seasonal swing as structural."
+
+### Why it matters
+
+`working_capital` and `working_capital_peer_band` benchmark
+point-in-time. `cash_conversion_drift_detector` checks trend
+generally. This module separates **seasonal** from **structural**
+WC movement using same-Q YoY comparison.
+
+### Healthcare seasonal baselines (DSO days)
+
+| Quarter | Baseline delta | Driver |
+|---|---|---|
+| Q1 | +8.0 | deductible reset |
+| Q2 | 0.0 | normalization |
+| Q3 | −2.0 | summer slowdown but cleaner cash |
+| Q4 | −4.0 | year-end Medicare claim push |
+
+### Verdict thresholds
+
+- abs(YoY drift) < 1.5 days → **seasonal** — "don't model the Q1
+  spike as structural"
+- 1.5-5 days → **mixed** — "diligence on a same-Q basis"
+- > +5 days → **structural_drag** — "collections deteriorating;
+  investigate denials, payer mix shift, or coding"
+- < −5 days → **structural_improvement** — "real RCM lift; counter
+  the seller's WC story with the trend"
+
+### Worked example
+
+5 quarters at Q1=58, Q2=50, Q3=48, Q4=46 in 2024 and same in 2025
+→ YoY drift = 0 → **seasonal** ("don't model Q1 spike as
+structural").
+
+Same shape but 2025 values uniformly +8 → YoY drift = +8 →
+**structural_drag** ("collections deteriorating; investigate").
+
+### Packet fields
+
+`observations` — list of `QuarterlyWCObservation(year, quarter,
+dso_days)`; `baseline_dso_days`.
+
+### Distinct from existing modules
+
+- `working_capital` — point-in-time WC math.
+- `working_capital_peer_band` — peer comparison.
+- `cash_conversion_drift_detector` — trend without seasonal
+  decomposition.
+- This module — separates seasonal swing from YoY same-Q drift to
+  distinguish healthcare-specific seasonality from structural drag.
+
+---
+
+## 255. C-suite team grader (`c_suite_team_grader.py`)
+
+**Partner statement.** "The deal is the team. CEO with PE
+experience, CFO who's seen a sale process, COO who runs the
+operating cadence, CMO if it's clinical-driven. Each seat gets
+graded against the work that has to happen in this hold."
+
+### Why it matters
+
+Generic management assessment doesn't tell the partner *which seat
+to coach vs. replace*. This module grades each C-suite seat
+individually and produces a per-seat verdict.
+
+### Grading rubric (per seat, 0-16 total)
+
+| Criterion | Score |
+|---|---|
+| Healthcare industry years (15+/10+/5+/2+/<2) | 4/3/2/1/0 |
+| PE-backed before (yes/no) | 4 / 0 |
+| Transaction experience (yes/no) | 4 / 0 |
+| Seat-specific competency (0-4) | as provided |
+
+Seat-specific competency:
+- CEO: vision/strategy clarity
+- CFO: capital markets / debt experience
+- COO: multi-site / integration experience
+- CMO: clinical quality outcomes
+
+### Letter grade & recommendation
+
+- 13-16 → **A** → accept
+- 10-12 → **B** → accept_with_coaching
+- 7-9 → **C** → coach_or_replace
+- < 7 → **D** → replace_at_close
+
+### Diagnostic lines (auto-generated per seat)
+
+- Healthcare years < 5 → "domain learning curve in year 1"
+- Not PE-backed before → "adjusting to board cadence + lender
+  covenants takes 6-12 months"
+- No transaction experience → "expect support need at refi, recap,
+  or exit"
+- Seat-specific ≤ 1 → "primary gap on this role"
+
+### Worked example
+
+Strong CEO: 20yrs healthcare (4) + PE-backed (4) + tx (4) + vision
+4 = 16 → **A** → accept.
+
+Weak CFO: 1yr healthcare (0) + no PE (0) + no tx (0) + spec 1 = 1 →
+**D** → replace_at_close.
+
+### Partner note
+
+- Any D → "plan to replace at close; bring named candidates to
+  closing-conditions list"
+- Any C → "operating-partner cadence + 6-month review window"
+- Composite A → "diligence focus shifts to bench depth and
+  succession"
+
+### Packet fields
+
+`seats` — list of `SeatExecutive(seat, name, years_in_healthcare,
+pe_backed_before, transaction_experience,
+seat_specific_score_0_4)`; `deal_archetype` (informs criticality).
+
+### Distinct from existing modules
+
+- `management_assessment` — generic team read.
+- `management_bench_depth_check` — bench breadth.
+- `management_first_sitdown` — IC-meeting framing.
+- `management_forecast_reliability` — forecast scoring.
+- This module — per-seat grading + per-seat verdict; identifies
+  WHICH seat to coach or replace.
+
+---
+
+## 256. Site-of-service revenue mix (`site_of_service_revenue_mix.py`)
+
+**Partner statement.** "Show me revenue split across inpatient /
+HOPD / ASC / physician office. The mix tells you the regulatory
+exposure (HOPD heavy = site-neutral risk), the margin profile (ASC
+= better margin per case), and the migration opportunity (IP
+procedures eligible for OP migration). The current mix is one
+number; the mix you can engineer over the hold is the lever."
+
+### Why it matters
+
+`site_neutral_specific_impact_calculator` quantifies the $-impact
+of a specific reg event on specific service lines. This module is
+the **broader composition view** — the actual current revenue
+distribution across the 4 site-of-service categories with margin /
+exposure / migration interpretation.
+
+### Per-site typical attributes
+
+| Site | Typical margin | Reg exposure |
+|---|---|---|
+| inpatient | 10% | low |
+| hopd | 18% | high (site-neutral) |
+| asc | 30% | medium |
+| physician_office | 22% | low |
+
+### Verdict on HOPD share
+
+- HOPD ≥ 50% → **high_reg_exposure** — "run
+  site_neutral_specific_impact_calculator on service lines; bake
+  into bridge"
+- 30-50% → **moderate_reg_exposure** — "track CMS rule cycle"
+- < 30% → **balanced** — "reg risk not binding constraint"
+
+### Add-on partner-note signals
+
+- IP migration opportunity > 0 → "model the margin uplift if
+  executed"
+- ASC share ≥ 30% → "ASC drives margin premium; protect physician
+  retention; ASC economics depend on owner alignment"
+
+### Worked example
+
+$200M NPR: $100M HOPD (50%) + $50M ASC (25%) + $50M IP (25%, $20M
+of which OP-eligible).
+
+- Weighted margin: 50% × 18% + 25% × 30% + 25% × 10% = 19%
+- HOPD share 50% → **high_reg_exposure**
+- ASC share 25% → no ASC-specific note
+- OP migration opportunity: $20M
+- Partner: "high HOPD exposure (run site-neutral calc); $20M IP
+  revenue eligible for OP migration"
+
+### Packet fields
+
+`lines` — list of `SiteRevenueLine(site_type, npr_m,
+eligible_for_op_migration)`.
+
+### Distinct from existing modules
+
+- `site_neutral_specific_impact_calculator` — reg $-impact only.
+- `outpatient_migration` archetype — narrative shape.
+- This module — actual current site-of-service composition with
+  margin / exposure / migration interpretation.
+
+---
+
+## 257. Payer watchlist by name (`payer_watchlist_by_name.py`)
+
+**Partner statement.** "Every major commercial payer has a posture
+— some are rate-aggressive, some still negotiate in good faith,
+some are geographically dominant and run providers. Knowing the
+named payer tells you what to expect at the renewal table."
+
+### Why it matters
+
+`payer_renegotiation_timing_model` uses generic posture bands.
+This module names **12 specific payers** the partner has a book on:
+per-payer posture + recent stance + partner read for deal
+exposure.
+
+### 12-payer book
+
+| Payer | Posture | MA exposure | Partner read lens |
+|---|---|---|---|
+| United Healthcare | aggressive | very_high | −3 to −6% at renewal; UNH is market tell |
+| Anthem / Elevance | firm | high | quality-led providers win rate upside |
+| Aetna / CVS | firm | high | watch vertical-integration site-routing |
+| Cigna | firm | medium | generally favorable; Evernorth lens |
+| Humana | firm | very_high | MA-first; risk-contract corridor focus |
+| BCBS (state plan) | firm | medium | state concentration is critical |
+| Centene | aggressive | medium | state Medicaid cycle risk |
+| Molina | aggressive | low | strict prior-auth / denial discipline |
+| Kaiser Permanente | closed | high | >20% non-CA is unusual, investigate |
+| HCSC | firm | medium | TX/IL concentration material |
+| Highmark | firm | medium | PA AHN routing pressure |
+| Independence Blue Cross | neutral | medium | Philly metro cooperative |
+
+### Aggressive-share aggregate
+
+- > 30% of mix in aggressive-posture payers → "expect material
+  rate pressure; bake −2 to −4% rate drift into exit case"
+- 15-30% → "modest but non-zero rate exposure; flag for renewal
+  calendar"
+- < 15% → "rate-cut risk is not the binding constraint"
+
+### Worked example
+
+Deal mix: 30% United + 10% Centene + 20% Cigna + 40% BCBS-TX.
+
+- Aggressive share: 40% (United + Centene) → "material rate
+  pressure; bake −2 to −4% into exit case"
+- Cigna note: "generally favorable"
+- BCBS-TX: verify HCSC concentration risk
+- United partner read: "UNH's posture is the market tell"
+
+### Packet fields
+
+`deal_mix` — list of `PayerInDealMix(payer_name, mix_share_pct)`.
+
+### Distinct from existing modules
+
+- `payer_renegotiation_timing_model` — posture bands (generic).
+- `payer_mix_risk` — concentration only.
+- `medicare_advantage_bridge_trap` — MA narrative.
+- This module — **named payer book** with per-payer partner read.
+
+---
+
+## 258. Banker-vs-partner pricing tension (`banker_partner_pricing_tension.py`)
+
+**Partner statement.** "Every process has a pricing tension. The
+banker says 12x is where it clears. Your math says 10.5x is where
+your IRR still clears. That 1.5-turn gap is the tension. If I can
+bridge it with operational upside, I'm in. If the bridge requires
+top-quartile execution to close, I'm out. The gap IS the partner
+conversation."
+
+### Why it matters
+
+`banker_narrative_decoder` reads pitch language. This module
+**quantifies the tension**: banker price − partner walk-away = gap,
+operational upside bridges some of it, residual dictates the
+decision.
+
+### Math
+
+- `banker_ev = ebitda × banker_multiple`
+- `partner_ev = ebitda × partner_walkaway_multiple`
+- `gap_turns = banker_multiple − partner_walkaway_multiple`
+- `gap_dollars = gap_turns × ebitda`
+- `residual = gap_turns − operational_upside_turns`
+
+### Verdict
+
+- gap ≤ 0 → **accept_pitch** — no tension; price at pitch
+- residual ≤ 0 → **bridgeable** — fully covered by operational
+  upside
+- residual ≤ 0.5 → **thin_bridge** — acceptable only with real
+  competitive pressure
+- residual > 0.5 → **walk** — no bridge the IC can defend
+
+### Partner-note augments
+
+- `top_quartile_execution_required=True` with thin_bridge →
+  "closing this gap requires top-quartile execution — not base case"
+- `competing_bidders_count ≤ 1` with walk → "low competitive
+  pressure means seller will come back after failed round"
+
+### Worked example
+
+$50M EBITDA, banker 12×, partner walk-away 10.5×, operational
+upside 1.5× → residual 0 → **bridgeable**. Partner: "move to
+confirmatory on the specific levers."
+
+Same but operational upside 1.0× → residual 0.5 → **thin_bridge**.
+If `top_quartile_execution_required=True` the note flags execution
+risk.
+
+Same but 13× banker / 10× walk / 1.0× upside / 1 bidder → residual
+2.0 → **walk**; note: "low competitive pressure means seller will
+come back."
+
+### Packet fields
+
+`ebitda_base_m`, `banker_suggested_multiple`,
+`partner_walkaway_multiple`, `operational_upside_turns`,
+`top_quartile_execution_required`, `competing_bidders_count`.
+
+### Distinct from existing modules
+
+- `banker_narrative_decoder` — pitch-language tactics.
+- `cycle_timing_pricing_check` — market-cycle sanity.
+- `pricing_concession_ladder` — concession moves.
+- This module — quantifies banker-vs-partner gap with bridge
+  feasibility and accept/bridgeable/thin/walk verdict.
+
+---
+
+## 259. State scope-of-practice exposure (`state_scope_of_practice_exposure.py`)
+
+**Partner statement.** "Physician deal footprint tells you most of
+the regulatory burden. NPs and PAs practicing full-scope in one
+state can't in another. CPOM-strict states force an MSO/PC structure
+that adds complexity and legal risk. Non-compete bans (CA, OK, MN,
+ND) make physician retention harder. Before I get to the tax
+structure, I want the state map — what can we legally do in each
+state this deal operates in?"
+
+### Why it matters
+
+`multi_state_regulatory_complexity_scorer` covers general multi-
+state complexity. This module is **scope-of-practice and structure-
+specific** — NP/PA authority, CPOM strictness, non-compete
+enforceability, MSO/PC model requirements.
+
+### Per-state axes (19 states in book)
+
+- **NP/PA scope:** full_practice / reduced / restricted
+- **CPOM:** strict / moderate / lenient
+- **Non-compete:** ban / narrow / enforceable / varies
+
+Selected state postures:
+
+| State | NP/PA | CPOM | Non-compete |
+|---|---|---|---|
+| CA | full_practice | strict | ban |
+| NY | full_practice | strict | varies |
+| TX | reduced | strict | narrow |
+| FL | reduced | lenient | enforceable |
+| IL | reduced | strict | narrow |
+| AZ | full_practice | lenient | enforceable |
+| ND | full_practice | lenient | ban |
+| MN | full_practice | moderate | ban |
+
+### Aggregate verdict
+
+- CPOM-strict ≥ 50% AND non-compete-ban ≥ 20% → **restrictive** —
+  "MSO/PC mandatory; retention equity-aligned, not legally bonded"
+- CPOM-strict/moderate ≥ 50% → **mso_pc_required** — "pre-validate
+  structure in R&W; state-specific counsel needed"
+- Non-compete-ban ≥ 30% → **retention_critical** — "lose the top
+  physician and lose the book; retention via rollover/earn-out/comp"
+- Known-states share < 50% → **heterogeneous** — "less-studied
+  jurisdictions; add state-specific counsel time"
+- Else → **friendly**
+
+### Per-state flags
+
+- CPOM-strict + physician-owned → "MSO/PC model required"
+- Non-compete ban → "retention requires economic alignment, not
+  legal bond"
+- NP/PA full-practice → "mid-level leverage feasible if specialty
+  allows"
+
+### Worked example
+
+CA 40% + NY 30% + ND 30%:
+- CPOM-strict share: 70% (CA + NY)
+- Non-compete-ban share: 70% (CA + ND)
+- Verdict: **restrictive**
+- Partner: "MSO/PC mandatory; equity-aligned retention"
+
+FL 50% + OH 25% + GA 25%:
+- CPOM-strict share: 0%
+- Non-compete-ban share: 0%
+- Verdict: **friendly** — "CPOM lenience and enforceable non-
+  competes support standard PE structure"
+
+### Packet fields
+
+`footprint` — list of `StateFootprint(state, share_of_npr_pct)`
+(aliased as `ScopeStateFootprint` in the public API to avoid
+collision with `geographic_reach_analyzer.StateFootprint`);
+`is_physician_owned`.
+
+### Distinct from existing modules
+
+- `multi_state_regulatory_complexity_scorer` — general complexity.
+- `medicaid_state_exposure_map` — Medicaid tier map.
+- `geographic_reach_analyzer` — site / revenue concentration.
+- This module — NP/PA scope + CPOM + non-compete + MSO/PC
+  structural posture per state.
+
+---
+
+## 260. State AG PE scrutiny tracker (`state_ag_pe_scrutiny_tracker.py`)
+
+**Partner statement.** "State AGs are the new HSR for healthcare
+PE. California AB 3129 now requires notice for material
+transactions. Oregon SB 951 bars MSO structures in some contexts.
+Illinois, Massachusetts, Minnesota, and New York have layered on.
+Each state has a review window; each has been willing to block or
+condition deals."
+
+### Why it matters
+
+`hsr_antitrust_healthcare_scanner` covers federal HSR / FTC / DOJ.
+This module covers the **state-level AG notification burden** that
+layers on top and can delay or block deals independently.
+
+### State book
+
+| State | Notice? | Window | Posture | Key law |
+|---|---|---|---|---|
+| CA | yes | 90d | active | AB 3129 |
+| OR | yes | 60d | ramping | SB 951 (bars MSO control) |
+| IL | yes | 30d | active | HB 2222 |
+| NY | yes | 30d | active | PHL §4550 |
+| MA | yes | 60d | active + recent blocks | HPC |
+| MN | yes | 30d | ramping | HF 4246 |
+| WA | yes | 60d | dormant | — |
+| NV | yes | 30d | ramping | AB 518 |
+| NJ | no | 0 | dormant | general AG jurisdiction |
+
+### Aggregate verdict
+
+- Max window ≥ 90d OR recent-block precedent → **high_state_ag_exposure**
+  — "build AG review into sign-to-close; consider state-specific
+  counsel"
+- Notice-required share > 30% → **moderate_state_ag_exposure** —
+  "file early; expect supplemental-info requests"
+- Notice-required share > 0% → **minor_state_ag_exposure** —
+  "standard filing path"
+- Otherwise → **no_state_ag_exposure**
+
+### Partner-note structural-risk flag
+
+When any state has `recent-block` in its partner read, the note
+explicitly adds "structural risk beyond timing delay."
+
+### Worked example
+
+CA 50% + MA 50% → max window 90d (CA AB 3129) + recent-block
+precedent (MA HPC) → **high_state_ag_exposure** → "build AG review
+into sign-to-close; recent AG-block precedent in footprint —
+structural risk beyond timing delay."
+
+TX 50% + FL 50% → no state AG notice laws → **no_state_ag_exposure**
+→ "standard deal timing applies."
+
+### Packet fields
+
+`footprint` — list of `AGStateFootprint(state, share_of_npr_pct)`.
+
+### Distinct from existing modules
+
+- `hsr_antitrust_healthcare_scanner` — federal HSR / FTC / DOJ.
+- `state_scope_of_practice_exposure` — NP/PA / CPOM / non-compete.
+- This module — state-level AG transaction-notification burden with
+  review windows and recent-block precedent.
+
+---
+
+## 261. Continuation vehicle readiness scorer (`continuation_vehicle_readiness_scorer.py`)
+
+**Partner statement.** "Not every asset is a continuation
+candidate. CV investors want a known asset with a clear remaining
+value-creation runway, management that wants to stay and re-up, and
+a GP that can actually commit additional capital. The worst CVs are
+the ones where the GP just couldn't find a buyer — LP advisory
+committees now see those a mile away."
+
+### Why it matters
+
+`exit_alternative_comparator` compares 5 exit paths. This module is
+**CV-specific** — scores the asset on what LP-side secondary
+investors actually probe before pricing a continuation vehicle.
+
+### 6 CV fit dimensions (0-4 each, 0-24 composite)
+
+1. **remaining_runway_years** — CV investors want 3-5 years of
+   visible upside; < 2 years reads as "couldn't find a buyer"
+2. **management_rollover_intent_pct** — ≥ 50% strong, < 25%
+   concerning
+3. **gp_reinvest_commitment_m** — GP cross-fund commitment size
+4. **strip_sale_price_validated** — market-tested fallback price
+5. **lp_advisory_committee_recent_approval** — AC playbook
+   precedent
+6. **third_party_lead_identified** — named lead (Goldman /
+   Lexington / Ardian / HarbourVest / AlpInvest)
+
+### Verdict
+
+- composite ≥ 18 AND existing MOIC ≥ 2.0 → **pursue_cv** — "pursue
+  with named lead and LP AC pre-alignment"
+- composite ≥ 12 → **conditional** — "CV viable with specific gaps
+  closed; prioritize strip-sale validation and management rollover"
+- otherwise → **pursue_sale** — "the pattern LP secondaries now
+  screen for is 'GP couldn't find a buyer'; run a real sale process"
+
+### Worked example
+
+Strong: 4.5yr runway + 60% mgmt rollover + $30M GP commitment +
+validated strip sale + recent AC approval + named lead →
+composite 23 → **pursue_cv**.
+
+Weak: 1.5yr runway + 10% rollover + $3M GP + no strip sale + no AC
+precedent + no lead → composite 3 → **pursue_sale** with "couldn't
+find a buyer" flag.
+
+### Packet fields
+
+`remaining_runway_years`, `management_rollover_intent_pct`,
+`gp_reinvest_commitment_m`, `strip_sale_price_validated`,
+`lp_ac_recent_similar_cv_approved`,
+`third_party_lead_identified`, `existing_moic`, `existing_irr`.
+
+### Distinct from existing modules
+
+- `exit_alternative_comparator` — compares 5 exit paths.
+- `exit_buyer_view_mirror` — buyer IC memo.
+- `exit_planning` — readiness checklist.
+- This module — CV-specific with 6 LP-secondary-investor dimensions
+  and "couldn't find a buyer" screen.
+
+---
+
+## 262. De novo site ramp economics (`de_novo_site_ramp_economics.py`)
+
+**Partner statement.** "De novo healthcare sites look great on a
+3-year pro-forma. Month by month, they bleed. Year 1: rent + labor
++ credentialing with 10-30% of revenue. Year 2: 50-70%. Year 3-4:
+at run-rate. If the model says breakeven at month 12, ask how. The
+credentialing cycle alone is 6-9 months with commercial payers."
+
+### Why it matters
+
+`capex_intensity_stress` captures capex drag. `capacity_expansion`
+archetype handles the narrative. This module projects
+**month-by-month economics** for a single de novo site so the
+partner can see the actual carrying-cost bleed to breakeven.
+
+### Default ramp curve (specialty practice)
+
+| Months | % of run-rate revenue |
+|---|---|
+| 0-3 | 15% (credentialing) |
+| 4-6 | 30% |
+| 7-12 | 50% |
+| 13-18 | 70% |
+| 19-24 | 85% |
+| 25+ | 100% |
+
+### Math per month
+
+- Revenue = `run_rate × ramp_pct`
+- Variable cost = `revenue × variable_pct`
+- Fixed cost = `monthly_fixed` (constant)
+- Contribution = Revenue − Variable − Fixed
+- Cumulative EBITDA starts at `−startup_capex`
+
+### Partner-note triggers
+
+- Breakeven ≤ month 12 → "aggressive; credentialing cycle alone is
+  6-9 months; verify plan includes payer credentialing pre-open"
+- Breakeven 13-24 → "typical 18-24mo range; carrying cost $N.NM"
+- Breakeven > 24 → "long ramp; re-verify assumed run-rate revenue
+  vs MSA peer sites"
+- Model assumption > 6mo earlier than empirical → "optimistic"
+- Model assumption > 3mo later → "conservative; verify why"
+
+### Worked example
+
+$0.40M/mo run-rate + $0.08M fixed + 45% variable + $0.30M startup
+capex:
+- Month 1 contribution: $0.060 − $0.027 − $0.08 = −$0.05M
+- Month 12 contribution: $0.200 − $0.090 − $0.08 = $0.03M
+- Month 18 contribution: $0.280 − $0.126 − $0.08 = $0.07M
+- Breakeven: around month 15-18 (cumulative turns positive)
+- Partner: "typical range; carrying cost ~$0.8M"
+
+$0.30M/mo with $0.12M fixed + 55% variable (thin-margin site):
+- Steady state contribution: $0.045M
+- Even at month 30+: cumulative still negative → "does not break
+  even in 36-month window; extend or rerun with higher run-rate"
+
+### Packet fields
+
+`run_rate_monthly_revenue_m`, `monthly_fixed_cost_m`,
+`variable_cost_pct_of_revenue`, `startup_capex_m`,
+`analysis_months`, `assumed_breakeven_month_in_model`.
+
+### Distinct from existing modules
+
+- `capex_intensity_stress` — capex drag.
+- `capacity_expansion` archetype — narrative.
+- This module — month-by-month P&L from open → breakeven →
+  run-rate with credentialing-cycle flag.
+
+---
+
+## 263. RCM vendor switching cost (`rcm_vendor_switching_cost_assessor.py`)
+
+**Partner statement.** "Every RCM conversion looks reasonable on
+the day-one plan. Then month 3 hits, denial rates spike, DSO blows
+out 12-18 days, and cash chokes. Conversion hurts for 6-9 months
+even when it goes well. If the deal's thesis requires a platform
+cut-over, I want the drag modeled."
+
+### Why it matters
+
+Back-office consolidation deals and RCM-led operational theses
+assume a platform conversion. `cash_conversion` is static.
+`working_capital_seasonality_detector` separates seasonality from
+structural drift. This module is **transition-specific**: 12-month
+DSO trajectory, WC drag, implementation cost, payback.
+
+### 12-month DSO delta patterns (days vs. pre-conversion)
+
+| Scenario | M1-4 peak | M12 |
+|---|---|---|
+| best_case | +13 | −5 (platform better) |
+| realistic | +18 | −3 |
+| bad_case | +26 | 0 (back to pre-) |
+
+### Math
+
+- DSO month = pre-DSO + pattern[month]
+- WC change = `delta_days × (monthly_NPR / 30)`
+- Cumulative WC drag = running sum
+- Payback months = `(implementation + max WC drag) / (annual_savings / 12)`
+
+### Partner-note triggers
+
+- bad_case → "factor the drag into cash-flow covenants"
+- realistic → implementation + max drag → specific payback
+- best_case → "base-case should assume realistic, not best-case"
+- payback > 24mo → "exceeds two years — verify savings or expand scope"
+
+### Worked example
+
+$300M NPR, 45-day pre-DSO, $15M → $10M annual cash cost, $4M
+implementation, realistic scenario:
+
+- Peak DSO: 63 days at month 4
+- Max cumulative WC drag: ~$11-12M
+- Annual savings: $5M → monthly $0.42M
+- Payback = ($4M + $12M) / $0.42M ≈ 38 months
+- Partner: "payback 38 months exceeds two years — verify savings"
+
+### Packet fields
+
+`npr_m`, `pre_conversion_dso_days`,
+`annual_cash_cost_pre_m`, `annual_cash_cost_post_m`,
+`implementation_cost_m`, `scenario` (best_case / realistic /
+bad_case).
+
+### Distinct from existing modules
+
+- `cash_conversion` — static FCF / EBITDA.
+- `working_capital_seasonality_detector` — seasonal vs. structural.
+- `back_office_consolidation` archetype — narrative.
+- This module — 12-month conversion-specific DSO and WC trajectory
+  with payback math.
+
+---
+
+## 264. Claims denial root-cause classifier (`claims_denial_root_cause_classifier.py`)
+
+**Partner statement.** "12% denial rate means nothing until you
+know the composition. If it's 9% eligibility + 2% prior-auth + 1%
+other, I'll take it — that's fixable with a front-end tool in 6
+months. If it's 6% medical-necessity + 3% non-covered + 1% COB +
+2% other, that's a different deal entirely. The category mix IS
+the thesis."
+
+### Why it matters
+
+`denial_fix_pace_detector` projects forward pace *given* a category
+mix. This module **classifies** the implied mix from observed
+packet signals so the partner can tell what kind of fix job the
+deal actually has.
+
+### 8 categories in 3 fix-difficulty bands
+
+**Easy (front-end):**
+- eligibility_verification
+- invalid_format
+- timely_filing
+- duplicate_claim
+
+**Moderate (mid-cycle):**
+- prior_authorization
+- coordination_of_benefits
+
+**Hard (back-end):**
+- medical_necessity
+- non_covered_service
+
+### Signal tilts
+
+- Walk-in share > 30% → +10 eligibility
+- Registration turnover > 30% → +5 eligibility
+- Commercial mix > 50% → +10 prior_auth
+- Sub-specialty procedure share > 40% → +8 prior_auth
+- No centralized auth team → +8 prior_auth
+- No CDI program → +10 medical_necessity
+- RAC history → +5 medical_necessity
+- Medicare-secondary share > 20% → +5 COB
+- Decentralized billing → +5 timely_filing + 5 dup
+
+Weights normalized to sum 1.0.
+
+### Verdict thresholds
+
+- hard ≥ 35% → **structural** — "18-24 months to move if CDI
+  introduced and physicians commit"
+- hard ≥ 20% → **hard** — "thesis must fund CDI + physician-
+  documentation coaching; not a 12-month fix"
+- easy ≥ 50% → **easy** — "front-end platform + training gets
+  material lift in 6 months"
+- else → **moderate** — "sequence: front-end first, PA next,
+  medical-necessity year 2+"
+
+### Worked example
+
+Walk-in 60%, registration turnover 50%, decentralized billing, CDI
+in place, RAC clean, commercial mix 20%, subspec 10% →
+eligibility + format + timely filing dominate → **easy** — "6-month
+lift with front-end platform."
+
+CDI absent, RAC history, subspec 50%, commercial 60% → medical-
+necessity + prior_auth dominate → **structural / hard** — "fund CDI
++ physician coaching; 18-24mo fix."
+
+### Packet fields
+
+`observed_denial_rate_pct`, `walk_in_volume_share`,
+`registration_staff_turnover_pct`, `commercial_payer_mix_share`,
+`subspecialty_procedure_share`, `centralized_auth_team`,
+`cdi_program_present`, `rac_audit_history`,
+`medicare_secondary_payer_share`, `decentralized_billing`.
+
+### Distinct from existing modules
+
+- `denial_fix_pace_detector` — forward projection given mix.
+- `cash_conversion_drift_detector` — trend.
+- `rcm_vendor_switching_cost_assessor` — transition drag.
+- This module — classifies observed signals into implied denial
+  root-cause mix.
+
+---
+
+## 265. Patient acquisition cost benchmark (`patient_acquisition_cost_benchmark.py`)
+
+**Partner statement.** "Healthcare growth stories often don't price
+the CAC. The deck says '+12% new patients per year' but doesn't
+show marketing / referral-management / admin cost per new patient.
+Per specialty there's a typical CAC and a typical LTV. If CAC is 2×
+the specialty norm, either marketing is inefficient or the market
+is saturated."
+
+### Why it matters
+
+`physician_specialty_economic_profiler` gives revenue per
+physician. This module is **per-specialty CAC and LTV** — so the
+partner can test whether the growth story's patient acquisition
+economics actually pencil out.
+
+### 8 specialty CAC / LTV norms
+
+| Specialty | CAC | Annual $/pt | Margin | Tenure (yr) |
+|---|---|---|---|---|
+| orthopedic_surgery | $350 | $8,000 | 45% | 2.5 |
+| gastroenterology | $250 | $4,500 | 42% | 4.0 |
+| dermatology | $400 | $1,800 | 50% | 3.0 |
+| cardiology | $200 | $6,500 | 40% | 5.0 |
+| ophthalmology | $300 | $3,500 | 45% | 4.0 |
+| dental | $350 | $1,200 | 30% | 5.0 |
+| behavioral | $500 | $2,400 | 25% | 1.5 |
+| primary_care | $180 | $1,500 | 25% | 6.0 |
+
+### Math
+
+- LTV = annual_revenue × contribution_margin × tenure_years
+- LTV / CAC ratio
+- Payback months = `CAC / (annual_revenue × margin / 12)`
+
+### Verdict
+
+- CAC ≤ 0.8× norm → **efficient** — "protect the channel; CAC goes
+  up when volume chases"
+- 0.8-1.2× → **acceptable** — "in-band"
+- 1.2-2.0× → **expensive** — "marketing inefficient or market
+  saturated"
+- > 2.0× → **unsustainable** — "negative unit economics"
+
+LTV/CAC < 3× adds flag: "below healthcare payback threshold;
+scrutinize tenure and margin assumptions."
+
+### Worked example
+
+Derm DSO at $600 observed CAC vs $400 norm → 1.5× → **expensive**.
+LTV: $1,800 × 50% × 3 = $2,700. LTV/CAC: 4.5× (acceptable). Partner:
+"expensive CAC but payback holds — probe whether CAC trend is
+rising further before pricing growth."
+
+### Packet fields
+
+`specialty` (one of 8), optional overrides for `observed_cac_usd`,
+`observed_annual_revenue_per_patient_usd`,
+`observed_contribution_margin_pct`, `observed_tenure_years`.
+
+### Distinct from existing modules
+
+- `physician_specialty_economic_profiler` — revenue / margin
+  per physician.
+- `growth_algorithm_diagnostic` — growth source composition.
+- `pricing_power_diagnostic` — pricing-side power.
+- This module — per-specialty CAC/LTV unit-economics benchmark.
+
+---
+
+## 266. EHR transition risk assessor (`ehr_transition_risk_assessor.py`)
+
+**Partner statement.** "EHR migrations are a different animal from
+RCM switching. Epic from Cerner is 18-24 months, $10-30M in capex,
+and physicians fight it every step. There's a 6-12 month
+productivity dip of 10-25% post-go-live. The model's 'savings'
+don't show up until year 2."
+
+### Why it matters
+
+`rcm_vendor_switching_cost_assessor` covers RCM platform
+transition (denial/DSO-focused). `technology_debt_assessor` covers
+general tech debt. This module is **EHR-migration-specific** with
+per-transition capex band + productivity dip + revenue cliff.
+
+### 5 transition profiles
+
+| Transition | Months | Capex $/bed | Prod dip | Dip months |
+|---|---|---|---|---|
+| cerner_to_epic | 24 | $70k | 18% | 9 |
+| meditech_to_epic | 22 | $80k | 20% | 10 |
+| legacy_to_athena | 9 | $15k | 8% | 4 |
+| legacy_to_nextgen | 10 | $12k | 10% | 5 |
+| epic_version_upgrade | 6 | $5k | 5% | 2 |
+
+### Math
+
+- Capex = beds × $/bed
+- Revenue dip = annual_rev × (dip_months / 12) × dip_pct
+- Total all-in = capex + revenue dip
+- Payback years = total all-in / annual post-savings
+
+### Verdict
+
+- dip ≥ 15% → **heavy** — "price migration into entry multiple"
+- 8-15% → **moderate** — "manageable drag"
+- < 8% → **light** — "standard project cadence"
+
+Payback > 5 years → "EHR migrations rarely pay back within a 5-year
+hold — verify savings assumption."
+
+### Worked example
+
+200-bed hospital, $300M revenue, Cerner → Epic with $5M/yr savings:
+- Capex: 200 × $70k = $14M
+- Revenue dip: $300 × (9/12) × 18% = $40.5M
+- Total all-in: $54.5M
+- Payback: 10.9 years → "rarely pay back within 5-year hold"
+
+### Packet fields
+
+`transition_type`, `beds_or_providers`, `annual_revenue_m`,
+`post_transition_annual_savings_m`.
+
+### Distinct from existing modules
+
+- `rcm_vendor_switching_cost_assessor` — RCM platform DSO/denial.
+- `technology_debt_assessor` — general tech debt.
+- This module — EHR-specific capex + productivity + revenue cliff
+  + payback years with per-transition profiles.
+
+---
+
+## 267. Healthcare cost-line decomposer (`cost_line_decomposer_healthcare.py`)
+
+**Partner statement.** "Show me costs broken into 7 lines — labor,
+supply, professional fees, rent, malpractice, utilities, admin.
+Each line has a peer band by subsector. If labor is 52% of NPR on
+a hospital, that's normal; on an ASC that's a problem. The
+decomposition tells me where the lever is before I underwrite the
+thesis."
+
+### Why it matters
+
+`labor_cost_analytics` is labor-only. This module is the **full
+7-line decomposition** with subsector-specific peer bands so the
+partner can see where the cost structure deviates and what lever
+is implied.
+
+### 7 cost lines × 4 subsectors
+
+| Line | Hospital | ASC | Physician practice | Post-acute |
+|---|---|---|---|---|
+| labor | 45-55% | 30-40% | 45-55% | 55-70% |
+| supply | 10-18% | 18-26% | 5-10% | 5-10% |
+| professional_fees | 3-7% | 2-5% | 2-4% | 2-4% |
+| rent_occupancy | 2-5% | 4-8% | 5-10% | 5-10% |
+| malpractice | 2-4% | 1-3% | 2-5% | 1.5-3% |
+| utilities | 1.5-2.5% | 1-2% | 1-2% | 2-3.5% |
+| admin_overhead | 5-9% | 4-7% | 6-10% | 5-8% |
+
+### Lever hints per line
+
+- **labor** — staffing model, productivity, contract labor mix
+- **supply** — GPO affiliation, SKU rationalization, physician pref cards
+- **professional_fees** — outsourced services renegotiation
+- **rent_occupancy** — lease renegotiation, related-party audit
+- **malpractice** — broker shop (claims history drives underwriting)
+- **utilities** — energy efficiency (small $ generally)
+- **admin_overhead** — shared services, role redundancy, consultant spend
+
+### Verdict
+
+- Above-band sum > 2% of NPR → material lever opportunity; build
+  100-day plan around top-2 lines
+- Below-band sum > 2% → under-investment concern; cost returning
+  in year 2-3 as mandatory spend
+- Otherwise → "no material lever"
+
+### Worked example
+
+$300M NPR hospital with 62% labor (vs. 45-55% band):
+- Above-band: $300M × (62%−55%) = $21M opportunity on labor
+- Partner: "biggest lever: labor $21M; build 100-day plan around
+  staffing model + contract labor mix."
+
+Same deal with 30% labor + 5% supply (both below bands) →
+"under-investment; cost coming back in year 2-3."
+
+### Packet fields
+
+`subsector` (hospital / asc / physician_practice / post_acute),
+`npr_m`, `observed_pct_by_line` (dict).
+
+### Distinct from existing modules
+
+- `labor_cost_analytics` — labor deep dive only.
+- `labor_shortage_cascade` — labor supply risk.
+- This module — 7-line full cost decomposition with subsector-
+  specific peer bands and above/below opportunity aggregation.
+
+---
+
+## 268. LP waterfall distribution modeler (`lp_waterfall_distribution_modeler.py`)
+
+**Partner statement.** "Every IC pitches a gross MOIC. LPs see
+net. Between the two sits the 8% preferred, the GP catch-up, and
+the 20% carry split. A 2.5x gross at 18% IRR often lands at 2.05x
+net; that's a big gap when you're pitching LPs on next fund."
+
+### Why it matters
+
+`fund_level_vintage_impact_scorer` covers fund-TVPI impact. This
+module does the **LP waterfall** arithmetic so partners can pitch
+net instead of gross.
+
+### Standard European waterfall (4 steps)
+
+1. **Return of capital** to LPs (all to LP)
+2. **LP preferred return** (8% annual compounded, all to LP)
+3. **GP catch-up** (100% to GP until catch-up = `carry% × (pref +
+   catchup)`)
+4. **80/20 split** on remaining
+
+Plus: **management fees** (1.5% × hold years by default) deducted
+from LP's net.
+
+### Output
+
+- `gross_moic` / `net_lp_moic` / `gross_irr` / `net_lp_irr`
+- `gp_carry_m` — total GP carry dollars
+- `gp_mgmt_fees_m` — total management fees collected
+- Per-step breakdown: amount, to-LP, to-GP
+
+### Partner-note triggers
+
+- Gap > 0.50× MOIC → "meaningful carry + fee drag; LP pitch must
+  lead with net"
+- 0.25-0.50× → "standard carry/fee structure"
+- < 0.25× → "thin gap — short hold or low gross return compresses
+  carry"
+
+### Worked example
+
+$100M committed, $250M proceeds, 5-yr hold, 8% pref, 20% carry,
+1.5% mgmt fee:
+
+- Step 1: $100M to LP (return of capital)
+- Step 2: Pref target = $100M × (1.08^5 − 1) = $47M to LP
+- Step 3: Catch-up = $47M × 0.20/0.80 = $11.75M to GP
+- Step 4: Remaining $91.25M → $73M LP + $18.25M GP
+- Mgmt fees: $100M × 1.5% × 5 = $7.5M
+- LP net: $220M − $7.5M = $212.5M → net MOIC 2.13×
+- Gross MOIC 2.50× → gap 0.37×
+
+Partner: "0.37× gap between gross and net — standard for 80/20
+carry + 1.5% mgmt; pitch on $212.5M net to LP."
+
+### Packet fields
+
+`committed_capital_m`, `total_proceeds_m`, `hold_years`,
+`preferred_return_pct`, `carry_pct`, `gp_catchup_pct`,
+`management_fee_pct_per_year`.
+
+### Distinct from existing modules
+
+- `fund_level_vintage_impact_scorer` — fund-TVPI impact.
+- `lp_pitch` — narrative.
+- `lp_quarterly_update_composer` — quarterly update.
+- This module — standard European waterfall with pref/catchup/carry/
+  mgmt-fee math and LP-net vs. gross gap partner note.
+
+---
+
+## 269. Exit buyer short list builder (`exit_buyer_short_list_builder.py`)
+
+**Partner statement.** "An exit thesis isn't a multiple — it's a
+named list of buyers. Who are the 5-10 strategic acquirers, sponsor
+platforms, or IPO comps? If you can't name them, the exit is
+hypothetical. I'll trade multiple points for a credible bidder
+list."
+
+### Why it matters
+
+`buyer_type_fit_analyzer` scores 8 buyer types abstractly.
+`exit_buyer_view_mirror` is first-person buyer IC. This module is
+the **named bidder list** — actual platforms and strategics with
+per-subsector catalog.
+
+### 7 subsectors × 4 named buyers each
+
+| Subsector | Representative buyers |
+|---|---|
+| dental_dso | Heartland, Aspen, Smile Brands, Pacific |
+| physician_practice_multi_specialty | OptumHealth, Amedisys/Humana, VillageMD, Oak Street |
+| asc | USPI, SCA, HCA, Surgery Partners |
+| behavioral | Acadia, UHS, LifeStance, Summit |
+| home_health | Amedisys, LHC, Encompass, Enhabit |
+| ophthalmology | EyeCare Partners, US Eye, AEG Vision, Acuity |
+| dermatology | Advanced Dermatology, Forefront, Epiphany, US Dermatology |
+
+Each buyer tagged with bucket (strategic / sponsor_platform /
+public_comp_ipo) and minimum target EV.
+
+### Size filter
+
+Buyer `fits_size = expected_exit_ev >= min_target_ev`. Buyers that
+don't fit size are kept in output but flagged.
+
+### Verdict
+
+- ≥ 5 fit-size named buyers → "credible bidder list"
+- 3-4 → "thin bidder field; downside is real"
+- ≤ 2 → "auction is thin; consider continuation vehicle or single-
+  bidder sale"
+
+### Worked example
+
+Dental DSO exit at $500M EV: Heartland ($100M min), Aspen ($150M),
+Smile Brands ($80M), Pacific ($60M) — all fit → **credible bidder
+list**.
+
+Same DSO at $30M exit: none of the sponsor platforms fit their own
+$60M+ minimum target → "auction is thin; CV alternative."
+
+### Packet fields
+
+`subsector`, `expected_exit_ev_m`.
+
+### Distinct from existing modules
+
+- `buyer_type_fit_analyzer` — 8 abstract buyer types.
+- `exit_buyer_view_mirror` — first-person buyer IC.
+- `exit_alternative_comparator` — 5 exit paths.
+- This module — per-subsector **named buyer list** with size filter
+  and credibility verdict.
+
+---
+
+## 270. CMS annual rule cycle tracker (`cms_rule_cycle_tracker.py`)
+
+**Partner statement.** "The CMS rule cycle is a calendar you can
+set your watch to. IPPS proposed April / final July. OPPS proposed
+July / final November. MPFS proposed July / final November. MA
+Advance Notice February / Rate Announcement April. Each rule
+touches specific service lines."
+
+### Why it matters
+
+`regulatory_watch` is a general event registry.
+`reimbursement_cliff_calendar_2026_2029` tracks named events. This
+module specifically maps the **4 major CMS rules** to their annual
+cycle dates + per-rule service-line mapping so the partner knows
+which rule cycle matters for this specific deal.
+
+### 4 major CMS rules
+
+| Rule | Proposed | Final | Effective | Service lines |
+|---|---|---|---|---|
+| IPPS | April | July/Aug | October | inpatient medicine / surgery |
+| OPPS | July | November | January | HOPD / ASC / outpatient surgery / infusion |
+| MPFS | July | November | January | physician office / E&M / telehealth |
+| MA Rates | Feb (Advance Notice) | April (Rate Announcement) | January | MA / risk contracts / capitation |
+
+### Cycle stages
+
+- `pre_cycle` — current month before proposed
+- `proposed_phase` — between proposed and final
+- `final_phase` — after final publication
+- `effective` — rule is live
+
+### Verdict
+
+- Top rule touching ≥ 30% of NPR → **priority rule for diligence
+  cycle; allocate counsel + specialist time**
+- Applicable rules > 0 but ≤ 30% top → **modest exposure**
+- No rules touch deal → **deal is not CMS-rate-driven**
+
+### Worked example
+
+ASC-heavy ambulatory surgery platform (50% ASC + 30% outpatient
+surgery) in July:
+- OPPS applies at 80% NPR share, cycle stage proposed_phase → top
+  rule
+- MPFS may also apply if E&M component present
+- Partner: "OPPS is priority rule this cycle; assign specialist to
+  July proposed rule on specific service lines touching this deal."
+
+### Packet fields
+
+`service_lines` — list of `ServiceLineProfile(service_line,
+share_of_npr_pct)`; `current_month`.
+
+### Distinct from existing modules
+
+- `regulatory_watch` — general event registry.
+- `reimbursement_cliff_calendar_2026_2029` — named events with
+  dollar impact.
+- `healthcare_regulatory_calendar` — broader event list.
+- This module — **annual cycle** of 4 CMS rules with per-rule
+  service-line mapping and current-cycle-stage detection.
+
+---
+
+## 271. Reprice calculator (`reprice_calculator.py`)
+
+**Partner statement.** "Diligence surfaces a $5M EBITDA haircut
+from QofE, a $2M lease concession, and a $3M one-time item sitting
+in stated EBITDA. How do we reprice the bid? The answer is math,
+not negotiation. If the multiple is 11x and run-rate drops $10M,
+that's $110M off the bid, possibly with a margin-of-safety
+haircut."
+
+### Why it matters
+
+`pricing_concession_ladder` covers negotiation moves.
+`thesis_break_price_calculator` computes walk-away. This module is
+the **post-diligence reprice math** — given specific findings,
+compute the new bid and the seller conversation.
+
+### Math
+
+- EBITDA findings × original_multiple = EV impact
+- Dollar findings (WC, indemnity, capex, regulatory) = 1:1 EV impact
+- Optional safety haircut % on original bid
+- New bid = original − raw reprice − safety haircut
+
+### Verdict thresholds
+
+- < 3% delta → **small_reprice** — "standard diligence adjustment"
+- 3-8% → **meaningful_reprice** — "seller will push back; lead
+  with biggest finding + QofE evidence"
+- 8-15% → **material_reprice** — "process may break; prepare for
+  walk scenario"
+- > 15% → **kill** — "seller won't take it; deal is effectively
+  dead"
+
+### Seller talking points (auto-generated)
+
+- Run-rate EBITDA change + EV impact
+- Dollar items + direct off-EV
+- Safety haircut justification
+- Revised bid with % delta
+
+### Worked example
+
+Original bid $500M at 11×. Findings: QofE haircut $5M (EBITDA),
+WC peg $2M, one-time removal $3M (EBITDA), indemnity $1M.
+
+- EBITDA hit: $5 + $3 = $8M × 11 = $88M
+- Dollar hit: $2 + $1 = $3M
+- Raw reprice: $91M
+- New bid: $409M
+- Delta: 18% → **kill**
+
+Partner: "At 18% reprice, seller walks before they take it — talk
+through whether we revise findings or walk."
+
+### Packet fields
+
+`original_bid_ev_m`, `original_multiple`, `findings` (list of
+`DiligenceFinding(category, name, dollar_impact_m, hit_ebitda)`),
+`safety_haircut_pct`.
+
+### Distinct from existing modules
+
+- `pricing_concession_ladder` — concession moves (buyer-side).
+- `thesis_break_price_calculator` — walk-away.
+- `banker_partner_pricing_tension` — banker gap.
+- This module — post-diligence reprice with explicit findings-to-EV
+  math and reprice-tier verdict.
+
+---
+
+## 272. Subsector EBITDA margin benchmark (`subsector_ebitda_margin_benchmark.py`)
+
+**Partner statement.** "Every subsector has a margin band.
+Hospital at 15% is fine; ASC at 15% is soft; dermatology at 15% is
+weak. When the deal's margin is outside the band, either the
+business is structurally different or the expense discipline is
+broken. Tell me which one, before I price it."
+
+### Why it matters
+
+`cost_line_decomposer_healthcare` covers 7-line cost decomposition.
+This module benchmarks the **headline EBITDA margin** against
+15 healthcare subsectors with partner-voice interpretation of
+above/below/in-band.
+
+### 15 subsector margin bands
+
+| Subsector | Low | High |
+|---|---|---|
+| hospital_acute | 8% | 14% |
+| ambulatory_surgery_center | 28% | 38% |
+| physician_practice_primary_care | 8% | 14% |
+| physician_practice_specialty | 15% | 25% |
+| dental_dso | 18% | 26% |
+| behavioral_outpatient | 12% | 20% |
+| behavioral_residential | 15% | 25% |
+| home_health | 10% | 16% |
+| hospice | 14% | 22% |
+| skilled_nursing_facility | 8% | 14% |
+| dialysis | 16% | 22% |
+| post_acute_ltach_irf | 10% | 17% |
+| dermatology_dso | 22% | 32% |
+| ophthalmology_platform | 25% | 35% |
+| urgent_care | 12% | 20% |
+
+### Verdict
+
+- above_band → "genuine operating edge OR one-time items / unusual
+  mix; QofE will surface it"
+- below_band → "business structurally different (payer mix, site
+  profile) OR expense discipline broken; latter = operating-lift
+  thesis"
+- in_band → "standard shape; growth and exit multiple are the levers"
+
+### Worked example
+
+ASC at 20% margin vs. 28-38% band → **below_band**: "either payer
+mix is Medicare-heavy (structural) or SG&A bloated (opportunity).
+Diligence the cost lines to find out which."
+
+Dermatology DSO at 38% vs. 22-32% band → **above_band**: "too
+high; probably one-time items or pathology attached, and QofE will
+surface it."
+
+### Packet fields
+
+`subsector` (one of 15), `observed_ebitda_margin_pct`.
+
+### Distinct from existing modules
+
+- `cost_line_decomposer_healthcare` — 7-line cost breakdown.
+- `margin_of_safety` — stress buffer.
+- `physician_specialty_economic_profiler` — per-specialty economic
+  shape including margin at physician level.
+- This module — headline EBITDA margin vs. subsector peer band with
+  above/below/in-band partner-voice verdict.
+
+---
+
+## 273. MA Star Rating revenue impact (`ma_star_rating_revenue_impact.py`)
+
+**Partner statement.** "A 4-star MA plan gets 5% QBP bonus plus
+rebates. Drop to 3.5 stars and you lose most of it. For MA-heavy
+deals the rating trajectory is the entire thesis. If HEDIS/CAHPS
+scores trended down in the prior year, we're underwriting a rating
+cliff, not growth."
+
+### Why it matters
+
+`medicare_advantage_bridge_trap` covers the "MA will make it up"
+narrative. `vbc_risk_share_underwriter` covers single contract
+economics. This module is specifically **MA Star Rating → QBP
+bonus + rebate** math with bear/bull half-star scenarios.
+
+### Star → economics table
+
+| Star | Bonus | Rebate capture | Note |
+|---|---|---|---|
+| 5.0 | 5% | 70% | top tier |
+| 4.5 | 5% | 70% | top tier |
+| 4.0 | 5% | 65% | bonus eligible |
+| 3.5 | 0% | 65% | bonus lost |
+| 3.0 | 0% | 50% | reduced rebate |
+| ≤ 2.5 | 0% | 50% | enrollment restricted |
+
+### Math
+
+- bonus_dollars = revenue × bonus_pct
+- rebate_pool = revenue × 15%
+- rebate_dollars = rebate_pool × rebate_pct
+- bear/bull delta = ebitda_contrib(bear/bull) −
+  ebitda_contrib(current)
+
+### Cliff risk
+
+- 4.0 boundary + HEDIS/CAHPS declining → **high** — "rating is
+  thesis; verify quality program"
+- 4.0 boundary, no decline → **medium** — "investments needed to
+  hold"
+- ≥ 4.5 → **low**
+- ≤ 3.0 → **high** — "restricted-enrollment zone; improvement
+  is capital-intensive multi-year"
+
+### Worked example
+
+$100M MA plan at 4.0 stars, HEDIS declining:
+- Bonus: 5% × $100M = $5M
+- Rebate pool: $100M × 15% = $15M; rebate: $15M × 65% = $9.75M
+- Half-star drop to 3.5: bonus → $0, rebate stays → EBITDA loses
+  ~$5M
+- Risk: **high** — "half-star drop wipes out $5M; star rating is
+  the thesis."
+
+### Packet fields
+
+`current_star_rating`, `ma_plan_revenue_m`,
+`ma_plan_ebitda_margin_pct`, `hedis_trend`, `cahps_trend`.
+
+### Distinct from existing modules
+
+- `medicare_advantage_bridge_trap` — narrative test.
+- `vbc_risk_share_underwriter` — single contract.
+- This module — MA Star Rating → QBP/rebate math with boundary
+  cliff risk.
+
+---
+
+## 274. Sponsor-vs-strategic exit comparator (`sponsor_vs_strategic_exit_comparator.py`)
+
+**Partner statement.** "Strategic says 12x but the process takes
+12 months with FTC / AG review that could block. Sponsor says
+10x, closes in 4 months, certainty is real. The question isn't
+headline multiple — it's risk-adjusted net-per-day-of-hold."
+
+### Why it matters
+
+`exit_alternative_comparator` surveys 5 paths; `buyer_type_fit_
+analyzer` profiles 8 buyer types. This module runs a **head-to-
+head** math comparison between sponsor-to-sponsor and strategic
+with certainty, earn-out, escrow, and time-value adjustments.
+
+### Math per path
+
+- headline_ev = ebitda × multiple
+- certain_portion = 1 − escrow − earn_out
+- certain_ev = headline × certain_portion
+- earn_out_ev = headline × earn_out × 50% (risk discount)
+- escrow_ev = headline × escrow × 80% (recovery assumed)
+- expected_net = (certain + earn_out + escrow) × close_probability
+- time_discount = expected_net / (1+r)^years
+
+### Verdict
+
+- `|delta| < 2%` → "effectively tied; pick certainty"
+- Sponsor wins → "certainty + faster close outweighs strategic
+  multiple premium"
+- Strategic wins → "premium is real; run strategic; keep sponsor
+  as backup"
+
+### Worked example
+
+Sponsor: $50M EBITDA × 10× = $500M; 4mo close; 90% certain;
+3% escrow; no earn-out
+- Certain: $500 × 97% = $485M
+- Escrow adj: $500 × 3% × 80% = $12M
+- Expected net: $497M × 90% = $447M
+- Time-disc (4mo, 10%): $447M / 1.033 = $433M
+
+Strategic: same $50M × 12× = $600M; 12mo close; 70% certain;
+8% escrow; 10% earn-out
+- Certain: $600 × 82% = $492M
+- Earn-out adj: $600 × 10% × 50% = $30M
+- Escrow adj: $600 × 8% × 80% = $38.4M
+- Expected net: $560M × 70% = $392M
+- Time-disc (12mo, 10%): $392M / 1.10 = $356M
+
+Sponsor wins by $77M → "certainty + faster close outweighs
+strategic multiple premium."
+
+### Packet fields
+
+Two `ExitPathInputs` — each with `ebitda_m`, `headline_multiple`,
+`months_to_close`, `probability_of_close_pct`, `seller_escrow_pct`,
+`earn_out_portion_of_price_pct`, `annual_discount_rate_pct`.
+
+### Distinct from existing modules
+
+- `exit_alternative_comparator` — 5-path survey.
+- `buyer_type_fit_analyzer` — 8 buyer profiles.
+- `exit_buyer_view_mirror` — buyer IC.
+- This module — head-to-head two-path math with certainty + time-
+  value adjustment.
+
+---
+
+## 275. Add-on integration sequencing planner (`add_on_integration_sequencing_planner.py`)
+
+**Partner statement.** "Every roll-up pitches 8-12 bolt-ons but
+the integration team can actually swallow 2-3 per year. Sequence
+them or the 4th one slips, the 5th slips more, and by bolt-on 7
+the team is underwater."
+
+### Why it matters
+
+`add_on_fit_scorer` scores individual fit. `rollup_arbitrage_math`
+does MOIC decomposition. This module **sequences** the pipeline:
+priority ranking + quarter assignment + capacity-saturation flag.
+
+### Priority score
+
+`score = (signed_bonus: +8 if pre-signed) + integration_ease_0_4 +
+strategic_priority_0_4`
+
+### Quarter assignment
+
+Fill quarters in priority order at
+`integration_capacity_per_quarter`. Bolt-ons beyond
+`hold_quarters` become `unplaced`.
+
+### Saturation flag
+
+Bolt-ons assigned to quarters > 2/3 of hold → saturation warning
+("back-loaded integrations risk the exit window").
+
+### Verdict
+
+- unplaced > 0 → "accelerate integration team or drop lowest-
+  priority tail"
+- saturation in back third → "back-loaded integrations risk exit
+  window"
+- all fit cleanly → "execute on priority order"
+
+### Worked example
+
+10 bolt-ons, capacity 1/quarter, 4-quarter hold:
+- 4 sequence → 6 unplaced → "won't fit; accelerate or drop tail"
+
+3 bolt-ons, 1 signed at low scores + 2 unsigned high scores:
+- Signed fires first (+8 bonus) regardless of scores
+- Partner: execute signed, then top-priority unsigned
+
+### Packet fields
+
+`bolt_ons` — list of `BoltOn(name, ebitda_m, integration_ease_0_4,
+strategic_priority_0_4, already_signed)`;
+`integration_capacity_per_quarter`; `hold_quarters`.
+
+### Distinct from existing modules
+
+- `add_on_fit_scorer` — per-deal fit score.
+- `rollup_arbitrage_math` — MOIC decomposition.
+- `ma_integration_scoreboard` — integration scoring.
+- This module — sequences across a pipeline by priority score with
+  quarter capacity constraint + saturation.
+
+---
+
+## 276. Service line growth × margin quadrant (`service_line_growth_margin_quadrant.py`)
+
+**Partner statement.** "For a multi-service-line deal, put each
+line on the growth × margin 2x2. Stars are high-growth
+high-margin (invest). Cash cows are low-growth high-margin
+(harvest). Question marks are high-growth low-margin (invest with
+caution). Dogs are low-growth low-margin (divest or starve). The
+portfolio conversation is which to feed and which to starve."
+
+### Why it matters
+
+`service_line_analysis` does concentration + HHI.
+`subsector_ebitda_margin_benchmark` benchmarks a single subsector's
+margin. This module is the **per-line 2x2 classifier** partners
+use to allocate management attention and capital across a
+multi-line portfolio.
+
+### Thresholds
+
+- growth ≥ 7% = high growth
+- margin ≥ 20% = high margin
+
+### Quadrants × action
+
+- **star** (high G, high M) → invest
+- **cash_cow** (low G, high M) → harvest
+- **question_mark** (high G, low M) → invest with caution
+- **dog** (low G, low M) → divest or starve
+
+### Portfolio verdict
+
+- Stars + cash cows ≥ 60% → "healthy mix"
+- Question marks ≥ 30% → "execution-dependent"
+- Dogs ≥ 30% → "portfolio drag"
+- Otherwise → "balanced; standard management attention"
+
+### Worked example
+
+Specialty practice with 4 lines at $50M revenue each:
+- Line A: +12% growth, 25% margin → star ($50M)
+- Line B: +3% growth, 25% margin → cash_cow ($50M)
+- Line C: +15% growth, 12% margin → question_mark ($50M)
+- Line D: +2% growth, 10% margin → dog ($50M)
+
+Stars+cows = 50% of revenue → balanced. Partner: "feed A, harvest
+B, watch C's margin, starve or divest D."
+
+### Packet fields
+
+`service_lines` — list of `ServiceLine(name, revenue_m,
+growth_rate_pct, ebitda_margin_pct)` (aliased
+`QuadrantServiceLine` at package level).
+
+### Distinct from existing modules
+
+- `service_line_analysis` — concentration / HHI.
+- `subsector_ebitda_margin_benchmark` — headline margin band.
+- This module — per-line 2x2 classifier with revenue-weighted
+  portfolio verdict.
+
+---
+
+## 277. CON state exposure assessor (`con_state_exposure_assessor.py`)
+
+**Partner statement.** "CON states protect incumbents but block
+expansion. If the deal is already the dominant operator in a CON
+state, the moat is real; if we're trying to build de novos in a
+CON state, every site needs a board application and a 12-18 month
+hearing."
+
+### Why it matters
+
+`state_scope_of_practice_exposure` covers CPOM + non-compete.
+`multi_state_regulatory_complexity_scorer` is generic. This module
+is CON-specific and crucially **distinguishes protection from
+barrier** — same law, opposite effect depending on whether the
+deal is incumbent or entrant.
+
+### 29-state catalog × 4 service lines
+
+Per-state CON strictness for hospital / ASC / home_health /
+hospice:
+
+| Region | Examples | Profile |
+|---|---|---|
+| Strict CON | AL, NC, NY, VA, WV, MS, MD, HI, KY | Most lines CON-regulated |
+| Moderate | FL, OH, IL, MI, MA, WA | Some lines, some thresholds |
+| Non-CON | TX, CA, AZ, CO, PA, KS, NM, ID, UT, WY | Generally deregulated |
+
+### Exposure classification
+
+- CON line + incumbent → **protection** (moat)
+- CON line + entrant → **barrier** (12-18mo hearing per site)
+- No CON on line → **neutral**
+
+### Aggregate verdict
+
+- Protection ≥ 50% → **incumbent_moat** — "durable moat; protect
+  via CON board relationships"
+- Barrier ≥ 30% → **expansion_blocked** — "price regulatory
+  friction into timeline + capex"
+- Both > 0 → **mixed** — "per-state strategy needed"
+- Otherwise → **neutral**
+
+### Worked example
+
+Deal with 80% NPR in NC hospitals as existing operator: 80%
+protection → **incumbent_moat** → "durable moat against entrants."
+
+Same deal as **entrant** building de novos: 80% barrier →
+**expansion_blocked** → "each site needs 12-18 month hearing;
+price friction into timeline."
+
+### Packet fields
+
+`footprint` — list of `CONStateExposure(state,
+share_of_npr_pct, is_incumbent, primary_line)`.
+
+### Distinct from existing modules
+
+- `state_scope_of_practice_exposure` — CPOM + non-compete.
+- `multi_state_regulatory_complexity_scorer` — general complexity.
+- This module — CON-specific with protection/barrier flip on
+  incumbent/entrant role.
+
+---
+
+## 278. Change log
+
+- **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
+  margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
+  realizability table, 19 heuristics covering VALUATION, OPERATIONS,
+  STRUCTURE, PAYER, and DATA categories.
+- **2026-04-17** — Added 10 red-flag detectors in `red_flags.py`:
+  single-payer concentration, contract labor, service-line
+  concentration, 340B dependency, COVID unwind, rate-cliff,
+  EHR migration, prior regulatory action, quality rating,
+  debt maturity. Added three worked IC examples (Medicare-heavy
+  11.5x, clean commercial mid-market, crisis scenario).
+- **2026-04-17** — Added `valuation_checks.py` (WACC, EV walk, TV
+  share, terminal growth, interest coverage, equity concentration),
+  `scenario_stress.py` (5 mechanical partner stresses),
+  `ic_memo.py` (markdown/html/text IC-memo renderers),
+  `sector_benchmarks.py` (peer p25/p50/p75 by subsector), and
+  `deal_archetype.py` (10 deal-pattern classifier with playbooks).
+- **2026-04-17** — Added `bear_book.py` (8 historical-failure pattern
+  detectors), `exit_readiness.py` (12-dimension pre-exit checklist
+  with 0-100 score), and `payer_math.py` (blended rate growth, revenue
+  projection, VBC lives × PMPM math, standard payer scenarios).
+- **2026-04-17** — Added `regulatory_watch.py` (15 national/state
+  regulatory items with deal-level filtering) and `lp_pitch.py`
+  (LP-facing one-pager in Markdown + HTML with softened language).
+- **2026-04-17** — Added `hundred_day_plan.py` (4-workstream post-
+  close action plan generator driven by the heuristic hits).
+- **2026-04-17** — Added `ic_voting.py` (role-weighted IC vote
+  aggregator with veto + dissent tracking) and `diligence_tracker.py`
+  (workstream-scoped diligence board with IC-ready check and
+  auto-seed from a PartnerReview).
+- **2026-04-17** — Added `comparative_analytics.py` (portfolio
+  concentration, deal-vs-book, ranking, correlation risk).
+  Full inventory: 19 modules, 291+ unit tests.
+- **2026-04-17** — Added `workbench_integration.py` (single-call
+  bundle + compact API payload), `value_creation_tracker.py`
+  (monthly lever tracker with partner rollup), and `exit_math.py`
+  (waterfall + preferred + catch-up + reverse MOIC→EBITDA math).
+  Full inventory: 22 modules, 314+ unit tests.
+- **2026-04-17** — Added `deal_comparables.py` (illustrative comp
+  registry + filtering + percentile placement). Full inventory:
+  23 modules, 325 pe_intelligence unit tests, 3448 total tests
+  passing project-wide.
+- **2026-04-17** — Added `debt_sizing.py`, `management_assessment.py`,
+  `thesis_validator.py`, `synergy_modeler.py`, `working_capital.py`,
+  `fund_model.py`. Full inventory: 29 modules, 386 pe_intelligence
+  unit tests.
+- **2026-04-17** — Added `regulatory_stress.py` (quantifies $ EBITDA
+  impact of CMS/Medicaid/340B/site-neutral/SNF-VBP shocks). Full
+  inventory: 30 modules, 395 pe_intelligence unit tests.
+- **2026-04-17** — Added `cash_conversion.py` (FCF/EBITDA by
+  subsector) and `lp_side_letter_flags.py` (LP conformance screen).
+  Full inventory: 32 modules, 415 pe_intelligence unit tests.
+- **2026-04-17** — Added `pipeline_tracker.py` (sourcing-funnel
+  stats + stale-deal detection) and `operational_kpi_cascade.py`
+  (rank KPIs by $ EBITDA impact, segregate cash vs recurring).
+  Full inventory: 34 modules, 431 pe_intelligence unit tests.
+  Full project suite 3552 passed.
+- **2026-04-17** — Added `commercial_due_diligence.py` (TAM/share/
+  growth/competitive checks), `icr_gate.py` (IC-Ready consolidator),
+  `cohort_tracker.py` (vintage-cohort benchmarks), and
+  `partner_discussion.py` (autogen Q&A). Full inventory: 38 modules,
+  466 pe_intelligence unit tests.
+- **2026-04-17** — Added `kpi_alert_rules.py` (threshold-based alerts
+  for monthly ops reviews) and `recon.py` (reconcile review + plan
+  + board for coherence). Full inventory: 40 modules, 479
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `capital_plan.py` (capex structuring +
+  intensity validation by subsector) and `auditor_view.py` (full
+  decision audit trail). Full inventory: 42 modules, 491
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `thesis_templates.py` (6 prebuilt
+  narrative scaffolds). Full inventory: 43 modules, 498
+  pe_intelligence unit tests. Full project suite **3632 passed**.
+- **2026-04-17** — Added 6 concept-named modules: `regime_classifier.py`,
+  `market_structure.py` (HHI/CR3/CR5), `stress_test.py` (scenario
+  grid), `operating_posture.py`, `white_space.py`, and
+  `investability_scorer.py`. All wired into `partner_review.py` so
+  every `PartnerReview` now carries regime / market / stress /
+  posture / white space / investability outputs. Full inventory:
+  49 modules, 558 pe_intelligence unit tests.
+- **2026-04-17** — Deepened coverage: `extra_heuristics.py`
+  (8 more rules), `extra_bands.py` (capex / occupancy / RVU / CMI /
+  LOS), `narrative_styles.py` (5 voices), `memo_formats.py` (5
+  renderers), `extra_archetypes.py` (8 specialized patterns). Full
+  inventory: 54 modules, 610 pe_intelligence unit tests. Full
+  project suite **3715 passed**.
+- **2026-04-17** — Added `extra_red_flags.py` (10 more deal-killer
+  detectors). Full inventory: 55 modules, 622 pe_intelligence
+  unit tests.
+- **2026-04-17** — Added `scenario_narrative.py`,
+  `deal_comparison.py`, `priority_scoring.py`, `board_memo.py`.
+  Full inventory: 59 modules, 648 pe_intelligence unit tests.
+- **2026-04-17** — Added `contract_diligence.py`,
+  `service_line_analysis.py`, `quality_metrics.py`,
+  `labor_cost_analytics.py`. Full inventory: 63 modules, 679
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `analyst_cheatsheet.py`,
+  `reimbursement_bands.py`, `ebitda_quality.py`. Full inventory:
+  66 modules, 702 pe_intelligence unit tests.
+- **2026-04-17** — Added `covenant_monitor.py` (live covenant
+  tracking + break-EBITDA math). Full inventory: 67 modules, 713
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `liquidity_monitor.py`, `ma_pipeline.py`,
+  `esg_screen.py`. Full inventory: 70 modules, 733
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `deepdive_heuristics.py` (10 mature-
+  diligence rules) and `master_bundle.py` (one-call all-artifacts
+  aggregator). Full inventory: 72 modules, 748 pe_intelligence
+  unit tests.
+- **2026-04-17** — Added `tax_structuring.py` (step-up, 163(j),
+  QSBS, state drag) and `insurance_diligence.py` (PL / cyber /
+  SIR / claims / tail-policy). Full inventory: 74 modules, 767
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `portfolio_dashboard.py`,
+  `integration_readiness.py`, `management_comp.py`. Full
+  inventory: 77 modules, 791 pe_intelligence unit tests.
+- **2026-04-17** — Added `red_team_review.py` and
+  `data_room_tracker.py`. Full inventory: 79 modules, 805
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `workstream_tracker.py`. Full inventory:
+  80 modules, 812 pe_intelligence unit tests.
+- **2026-04-17** — Added `negotiation_position.py`. Full inventory:
+  81 modules, 820 pe_intelligence unit tests.
+- **2026-04-17** — Added `loi_drafter.py`. Full inventory: 82
+  modules, 827 pe_intelligence unit tests.
+- **2026-04-17** — Added `post_mortem.py`, `cycle_timing.py`,
+  `exit_planning.py`. Full inventory: 85 modules, 850
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `benchmark_bands.py` and
+  `payer_mix_risk.py`. Full inventory: 87 modules, 865
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `peer_discovery.py`. Full inventory: 88
+  modules, 871 pe_intelligence unit tests.
+- **2026-04-17** — Added `reimbursement_cliff.py`,
+  `scenario_comparison.py`, `vintage_return_curve.py`. Full
+  inventory: 91 modules, 890 pe_intelligence unit tests.
+- **2026-04-17** — Added `coinvest_sizing.py` (§94) — fund
+  commitment + concentration cap + LP demand coverage. Full
+  inventory: 92 modules, 900 pe_intelligence unit tests.
+- **2026-04-17** — Added `sensitivity_grid.py` (§95) — one-variable
+  MOIC / IRR sweeps + tornado. Full inventory: 93 modules, 915
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `capital_structure_tradeoff.py` (§96) —
+  leverage sweep with coverage + default-risk + status. Full
+  inventory: 94 modules, 924 pe_intelligence unit tests.
+- **2026-04-17** — Added `refinancing_window.py` (§97) — per-tranche
+  refi/wait/hold recommendations + maturity wall aggregation. Full
+  inventory: 95 modules, 934 pe_intelligence unit tests.
+- **2026-04-17** — Added `dividend_recap_analyzer.py` (§98) —
+  feasibility gates + DPI uplift + blockers. Full inventory: 96
+  modules, 942 pe_intelligence unit tests.
+- **2026-04-17** — Added `carve_out_risks.py` (§99) — TSA, CoC,
+  IT separation, payer re-credentialing, employee retention. Full
+  inventory: 97 modules, 952 pe_intelligence unit tests.
+- **2026-04-17** — Added `secondary_sale_valuation.py` (§100) —
+  LP-led discount and GP-led continuation pricing. Full inventory:
+  98 modules, 962 pe_intelligence unit tests.
+- **2026-04-17** — Added `lbo_stress_scenarios.py` (§101) — 7-scenario
+  library + covenant-breach + months-to-default. Full inventory:
+  99 modules, 974 pe_intelligence unit tests.
+- **2026-04-17** — Added `physician_compensation_benchmark.py` (§102)
+  — 9-specialty MGMA medians + comp/wRVU + base-mix checks. Full
+  inventory: 100 modules, 984 pe_intelligence unit tests.
+- **2026-04-17** — Added `ebitda_normalization.py` (§103) — seller
+  bridge haircut + partner-prudent Adj EBITDA. Full inventory:
+  101 modules, 995 pe_intelligence unit tests.
+- **2026-04-17** — Added `staffing_pipeline_analyzer.py` (§104) —
+  4Q headcount + attrition + lost revenue for healthcare services.
+  Full inventory: 102 modules, 1,006 pe_intelligence unit tests.
+- **2026-04-17** — Added `ma_integration_scoreboard.py` (§105) —
+  6-dimension per-bolt-on health + revenue-weighted platform
+  score. Full inventory: 103 modules, 1,017 pe_intelligence unit
+  tests.
+- **2026-04-17** — Added `customer_concentration_drilldown.py` (§106)
+  — top-N + HHI + churn probability + revenue-at-risk + cross-sell.
+  Full inventory: 104 modules, 1,028 pe_intelligence unit tests.
+- **2026-04-17** — Added `geographic_reach_analyzer.py` (§107) —
+  state HHI + CPOM exposure + density + expansion whitespace.
+  Full inventory: 105 modules, 1,040 pe_intelligence unit tests.
+- **2026-04-17** — Added `growth_algorithm_diagnostic.py` (§108) —
+  price/volume/mix/acquisition decomposition + quality score.
+  Full inventory: 106 modules, 1,050 pe_intelligence unit tests.
+- **2026-04-17** — Added `technology_debt_assessor.py` (§109) —
+  8-area severity + cost + risk score. Full inventory: 107 modules,
+  1,061 pe_intelligence unit tests.
+- **2026-04-17** — Added `roic_decomposition.py` (§110) —
+  DuPont margin/turnover + 5-subsector peer bands. Full
+  inventory: 108 modules, 1,070 pe_intelligence unit tests.
+- **2026-04-17** — Added `working_capital_peer_band.py` (§111) —
+  DSO/DPO/DIO per-subsector bands + CCC + cash release. Full
+  inventory: 109 modules, 1,080 pe_intelligence unit tests.
+- **2026-04-17** — Added `hold_period_optimizer.py` (§112) — IRR
+  vs MOIC peak-year tradeoff. Full inventory: 110 modules, 1,089
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `pricing_power_diagnostic.py` (§113) —
+  6-dim weighted score + base-case rate guidance. Full inventory:
+  111 modules, 1,097 pe_intelligence unit tests.
+- **2026-04-17** — Added `portfolio_rollup_viewer.py` (§114) —
+  fund-level aggregation + top movers + sub-sector / vintage /
+  stage cuts. Full inventory: 112 modules, 1,108 pe_intelligence
+  unit tests.
+- **2026-04-17** — Added `bank_syndicate_picker.py` (§115) —
+  21-lender universe + size/sector/covenant scoring + tiered picks.
+  Full inventory: 113 modules, 1,118 pe_intelligence unit tests.
+- **2026-04-17** — Added `exit_channel_selector.py` (§116) —
+  strategic/sponsor/ipo/continuation scoring + timing + multiples.
+  Full inventory: 114 modules, 1,128 pe_intelligence unit tests.
+- **2026-04-17** — Added `mgmt_incentive_sizer.py` (§117) —
+  MIP pool % by deal type + layer allocation + LTIP + vesting.
+  Full inventory: 115 modules, 1,140 pe_intelligence unit tests.
+- **2026-04-17** — Added `qofe_tracker.py` (§118) — QofE status
+  + adjustments supported/unsupported + NWC-vs-peg + critical-path.
+  Full inventory: 116 modules, 1,150 pe_intelligence unit tests.
+- **2026-04-17** — Added `board_composition_analyzer.py` (§119).
+  Full inventory: 117 modules, 1,158 pe_intelligence unit tests.
+- **2026-04-17** — Added `historical_failure_library.py` (§120) —
+  10 named/dated healthcare-PE failures with packet matchers.
+  Full inventory: 118 modules, 1,173 pe_intelligence unit tests.
+- **2026-04-17** — Added `partner_voice_memo.py` (§121) —
+  recommendation-first IC memo; three-things-that-would-change-my-mind;
+  hard rules (2+ deal-killers / 2+ historical matches → PASS).
+  Full inventory: 119 modules, 1,184 pe_intelligence unit tests.
+- **2026-04-17** — Added `recurring_vs_onetime_ebitda.py` (§122)
+  — exit multiple applies only to recurring; one-time at 1x.
+  Worked 50M example showing $110M overstatement trap. Full
+  inventory: 120 modules, 1,195 pe_intelligence unit tests.
+- **2026-04-17** — Added `obbba_sequestration_stress.py` (§123) —
+  4 named regulatory shocks with specific $ EBITDA impacts.
+  Full inventory: 121 modules, 1,204 pe_intelligence unit tests.
+- **2026-04-17** — Added `archetype_subrunners.py` (§124) —
+  7 archetype-specific heuristic packs (payer_mix_shift, roll_up,
+  cmi_uplift, outpatient_migration, back_office_consolidation,
+  cost_basis_compression, capacity_expansion) each with
+  partner-voice warnings. Full inventory: 122 modules, 1,219
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `unrealistic_on_its_face.py` (§125) —
+  7 partner-reflex "red flag on sight" detectors, encoding the
+  canonical $400M rural-CAH-at-28%-IRR example. Full inventory:
+  123 modules, 1,231 pe_intelligence unit tests.
+- **2026-04-17** — Added `partner_voice_variants.py` (§126) — 5
+  IC narrators (skeptic/optimist/md_numbers/operating_partner/
+  lp_facing) producing the same deal from five perspectives.
+  Full inventory: 124 modules, 1,241 pe_intelligence unit tests.
+- **2026-04-17** — Added `cross_module_connective_tissue.py`
+  (§127) — named insights emitted when signals from multiple
+  modules co-occur; first module where reasoning IS the product.
+  Full inventory: 125 modules, 1,253 pe_intelligence unit tests.
+- **2026-04-17** — Added `diligence_checklist_live.py` (§128) —
+  30-item canonical list with packet/MI/third-party source tags
+  and answered/needs/stale/missing status per item. Full
+  inventory: 126 modules, 1,263 pe_intelligence unit tests.
+- **2026-04-17** — Added `partner_traps_library.py` (§129) — 10
+  named thesis traps including the three user-cited: fix-denials-
+  in-12-months, payer-renegotiation-coming, MA-will-make-it-up.
+  Full inventory: 127 modules, 1,277 pe_intelligence unit tests.
+- **2026-04-17** — Added `first_thirty_minutes.py` (§130) —
+  packet-derived landmine/opening/probe questions for the first
+  30 minutes of an MI. Full inventory: 128 modules, 1,291
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `thesis_coherence_check.py` (§131) —
+  flags internal contradictions across thesis pillars (e.g.
+  volume+margin+no labor; roll-up+no integration spend). Full
+  inventory: 129 modules, 1,302 pe_intelligence unit tests.
+- **2026-04-17** — Added `margin_of_safety.py` (§132) —
+  binary-search breakeven deltas per lever against hurdle MOIC,
+  plus combined-shock test. Full inventory: 130 modules, 1,311
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `management_vs_packet_gap.py` (§133) —
+  classifies mgmt-vs-packet differences as minor/material/
+  contradicted with partner-voice interpretation. Full inventory:
+  131 modules, 1,319 pe_intelligence unit tests.
+- **2026-04-17** — Added `rcm_lever_cascade.py` (§134) — the
+  user's canonical cross-module example (denial → coding → CMI
+  → Medicare bridge → working capital) with specific $ EBITDA
+  and cash impacts per step. Full inventory: 132 modules, 1,329
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `bear_case_generator.py` (§135) —
+  deal-specific bear drivers + story + probability-weighted MOIC.
+  Full inventory: 133 modules, 1,342 pe_intelligence unit tests.
+- **2026-04-17** — Added `payer_mix_shift_cascade.py` (§136) —
+  mix shift → rate → revenue → EBITDA → multiple uplift with
+  credibility score penalizing aggressive pace + thin contract
+  pipeline. Full inventory: 134 modules, 1,352 pe_intelligence
+  unit tests.
+- **2026-04-17** — Added `labor_shortage_cascade.py` (§137) —
+  turnover → agency premium → margin → quality/volume →
+  covenant pressure with breach flag. Full inventory: 135
+  modules, 1,361 pe_intelligence unit tests.
+- **2026-04-17** — Added `exit_story_generator.py` (§138) —
+  sell-side banker's exit pitch composed at entry; subsector
+  multiple ranges; likely-buyer list. Full inventory: 136
+  modules, 1,371 pe_intelligence unit tests.
+- **2026-04-17** — Added `partner_scorecard.py` (§139) — 7
+  binary must-haves (scale / team / market / unit econ /
+  balance sheet / exit path / thesis integrity); any one fails
+  = pass. Full inventory: 137 modules, 1,382 pe_intelligence
+  unit tests.
+- **2026-04-17** — Added `cycle_timing_pricing_check.py` (§140)
+  — peak-multiple × peak-EBITDA double-count detector with
+  subsector cycle averages and haircut recommendation. Full
+  inventory: 138 modules, 1,391 pe_intelligence unit tests.
+- **2026-04-17** — Added `one_hundred_day_plan_from_packet.py`
+  (§141) — auto-derive 100-day actions from packet signals; 14
+  conditional rules + 2 always-on; cap at 15. Full inventory:
+  139 modules, 1,406 pe_intelligence unit tests.
+- **2026-04-17** — Added `outpatient_migration_cascade.py` (§142)
+  — 4th canonical cascade (IP→OP → rate differential → margin
+  swap → capacity unlock → site-neutral regulatory risk). Full
+  inventory: 140 modules, 1,414 pe_intelligence unit tests.
+- **2026-04-17** — Added `quality_of_diligence_scorer.py` (§143)
+  — partner audits own team's work across 6 dimensions; IC-ready
+  requires every dim ≥ 80% (floor, not average). Full inventory:
+  141 modules, 1,424 pe_intelligence unit tests.
+- **2026-04-17** — Added `management_first_sitdown.py` (§144) —
+  post-LOI agenda generator: thesis + risks + outcomes blocks
+  with probe-if-canned notes per question. Full inventory: 142
+  modules, 1,434 pe_intelligence unit tests.
+- **2026-04-17** — Added `ic_decision_synthesizer.py` (§145) —
+  crown-jewel cross-module synthesizer: one recommendation + 3
+  reasons + 3 flip-the-call signals + chair opening line. Full
+  inventory: 143 modules, 1,447 pe_intelligence unit tests.
+- **2026-04-17** — Added `healthcare_regulatory_calendar.py`
+  (§146) — 12 named 2026-2028 regulatory events with subsector +
+  $ impact; events-for-deal selector by hold period. Full
+  inventory: 144 modules, 1,459 pe_intelligence unit tests.
+- **2026-04-17** — Added `deal_smell_detectors.py` (§147) — 9
+  partner-reflex "smells like X" patterns from combined signals.
+  Full inventory: 145 modules, 1,472 pe_intelligence unit tests.
+- **2026-04-17** — Added `letter_to_seller.py` (§148) —
+  banker-reply composer (pass/invest/diligence-more variants).
+  Full inventory: 146 modules, 1,480 pe_intelligence unit tests.
+- **2026-04-17** — Added `synergy_credibility_scorer.py` (§149)
+  — category × timing × evidence credibility scoring with
+  partner-prudent realization %. Full inventory: 147 modules,
+  1,491 pe_intelligence unit tests.
+- **2026-04-17** — Added `process_stopwatch.py` (§150) — read
+  banker process timing (tight close, bidder collapse,
+  relaunch, walks, reprice, silence). Full inventory: 148
+  modules, 1,502 pe_intelligence unit tests.
+- **2026-04-17** — Added `red_flag_escalation_triage.py` (§151)
+  — partner-immediate vs partner-this-week vs associate vs info
+  triage by category + severity. Full inventory: 149 modules,
+  1,513 pe_intelligence unit tests.
+- **2026-04-17** — Added `quarterly_operating_review.py` (§152)
+  — post-close QoR 4-block agenda (numbers/thesis/people/
+  forward) with partner-focus per block. Full inventory: 150
+  modules, 1,524 pe_intelligence unit tests.
+- **2026-04-17** — Added `value_creation_plan_generator.py`
+  (§153) — 3-year VCP with 8 conditional initiatives, owners,
+  dependencies, and execution risks. Full inventory: 151
+  modules, 1,535 pe_intelligence unit tests.
+- **2026-04-17** — Added `exit_timing_signal_tracker.py` (§154)
+  — 7-signal exit readiness tracker (start_rfp / dry_run /
+  wait). Full inventory: 152 modules, 1,545 pe_intelligence
+  unit tests.
+- **2026-04-17** — Added `buyer_type_fit_analyzer.py` (§155) —
+  8 buyer types (health system / payer-led / specialty
+  consolidator / larger sponsor / peer / IPO / continuation /
+  REIT) scored + named targets. Full inventory: 153 modules,
+  1,556 pe_intelligence unit tests.
+- **2026-04-17** — Added `add_on_fit_scorer.py` (§156) —
+  specific bolt-on fit (strategic/financial/integration/
+  execution) + proceed/re-evaluate/pass rec. Full inventory:
+  154 modules, 1,567 pe_intelligence unit tests.
+- **2026-04-17** — Added `concentration_risk_multidim.py`
+  (§157) — 6-dim concentration scan (customer / site / payer /
+  provider / service line / geography); 30/50% thresholds. Full
+  inventory: 155 modules, 1,577 pe_intelligence unit tests.
+- **2026-04-17** — Added `post_close_surprises_log.py` (§158) —
+  diligence miss-rate tracker; portfolio-level feedback loop.
+  Full inventory: 156 modules, 1,586 pe_intelligence unit tests.
+- **2026-04-17** — Added `regional_wage_inflation_overlay.py`
+  (§159) — 5-tier regional premium + inflation overlay; flags
+  model single-rate assumption vs weighted actual. Full
+  inventory: 157 modules, 1,596 pe_intelligence unit tests.
+- **2026-04-17** — Added `rac_audit_exposure_estimator.py`
+  (§160) — Medicare FFS audit exposure $ with signal-adjusted
+  hit rate; IC-blocking threshold. Full inventory: 158 modules,
+  1,606 pe_intelligence unit tests.
+- **2026-04-17** — Added `irr_decay_curve.py` (§161) — per-year
+  MOIC/IRR and last-year-above-hurdle; the math partner runs
+  when someone suggests extending the hold. Full inventory: 159
+  modules, 1,614 pe_intelligence unit tests.
+- **2026-04-17** — Added `competing_deals_ranker.py` (§162) —
+  rank competing deals across return / quality / downside / fit
+  / timing with if-I-can-only-do-one recommendation. Full
+  inventory: 160 modules, 1,625 pe_intelligence unit tests.
+- **2026-04-17** — Added `medicaid_state_exposure_map.py` (§163)
+  — 4-tier state risk overlay with bear-case $ impact per state.
+  Full inventory: 161 modules, 1,636 pe_intelligence unit tests.
+- **2026-04-17** — Added `earnout_design_advisor.py` (§164) —
+  when/how to structure earn-out by driver quality + seller-
+  conviction × buyer-skepticism. Full inventory: 162 modules,
+  1,646 pe_intelligence unit tests.
+- **2026-04-17** — Added `sponsor_reputation_tracker.py` (§165)
+  — 11-sponsor reputation book with 5 dimensions + context-
+  specific commentary (competing_bidder / co_investor /
+  exit_buyer). Full inventory: 163 modules, 1,657
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `debt_capacity_sizer.py` (§166) — debt
+  = min(coverage, FCF, cycle-discipline) with named binding
+  constraint. Full inventory: 164 modules, 1,667
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `operating_partner_fit_matrix.py`
+  (§167) — 6-archetype ops partner fit (turnaround / scaler /
+  healthcare / M&A / exit / founder coach). Full inventory: 165
+  modules, 1,677 pe_intelligence unit tests.
+- **2026-04-17** — Added `reverse_diligence_checklist.py` (§168)
+  — pre-sale seller-side disclosure items by severity: kill-
+  deal / price-haircut / discovery-risk / housekeeping. Full
+  inventory: 166 modules, 1,689 pe_intelligence unit tests.
+- **2026-04-17** — Added `management_forecast_reliability.py`
+  (§169) — analyze prior forecasts-vs-actuals; reliability
+  score + haircut recommendation. Full inventory: 167 modules,
+  1,698 pe_intelligence unit tests.
+- **2026-04-17** — Added `working_capital_peg_negotiator.py`
+  (§170) — counter-peg with methodology by profile + 2%
+  closing buffer. Full inventory: 168 modules, 1,708
+  pe_intelligence unit tests.
+- **2026-04-17** — Added `management_rollover_equity_designer.py`
+  (§171) — target rollover % by CEO profile; alignment
+  grade; strong/adequate/thin. Full inventory: 169 modules,
+  1,717 pe_intelligence unit tests.
+- **2026-04-17** — Added `reference_check_framework.py` (§172)
+  — structured CEO/CFO reference-call plan by relationship type
+  with listen-for notes per question. Full inventory: 170
+  modules, 1,727 pe_intelligence unit tests.
