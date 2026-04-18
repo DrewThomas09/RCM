@@ -3720,6 +3720,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             mid = path[len("/deal/"):-len("/white-space")]
             deal_id = urllib.parse.unquote(mid).strip("/")
             return self._route_white_space(deal_id)
+        if path.startswith("/deal/") and path.endswith("/stress"):
+            mid = path[len("/deal/"):-len("/stress")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            return self._route_stress(deal_id)
         if path.startswith("/deal/"):
             deal_id = urllib.parse.unquote(path[len("/deal/"):]).strip("/")
             if not deal_id:
@@ -7150,6 +7154,28 @@ class RCMHandler(BaseHTTPRequestHandler):
                 current_user=username,
             ))
         return self._send_html(render_white_space(
+            review, deal_id,
+            deal_name=meta.get("deal_name", ""),
+            current_user=username,
+        ))
+
+    def _route_stress(self, deal_id: str) -> None:
+        """GET /deal/<id>/stress — scenario stress grid."""
+        if not deal_id:
+            self.send_error(HTTPStatus.BAD_REQUEST, "deal id required")
+            return
+        from .ui.chartis.stress_page import render_stress
+        username = self._chartis_username()
+        review, err, meta = self._build_partner_review_context(deal_id)
+        if err:
+            return self._send_html(render_stress(
+                None, deal_id,
+                deal_name=meta.get("deal_name", ""),
+                error=err,
+                missing_fields=meta.get("missing_fields"),
+                current_user=username,
+            ))
+        return self._send_html(render_stress(
             review, deal_id,
             deal_name=meta.get("deal_name", ""),
             current_user=username,

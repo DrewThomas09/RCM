@@ -339,6 +339,11 @@ def render_deal_dashboard(
             "Geographic / segment / channel adjacencies with scores",
             accent=PALETTE["brand_accent"],
         ),
+        _model_tile(
+            "STR", f"/deal/{did}/stress", "Stress Grid",
+            "Scenario stress grid: rate / volume / multiple / lever shocks",
+            accent=PALETTE["warning"],
+        ),
     ]
 
     model_grid = (
