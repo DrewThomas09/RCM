@@ -4357,7 +4357,43 @@ the partner is actually trying to pick up.
 
 ---
 
-## 173. Change log
+## 173. LOI term sheet review (`loi_term_sheet_review.py`)
+
+**Partner statement:** "Associates mark up everything. I know
+which 5 terms actually move outcomes."
+
+Partner-priority LOI terms (must-push vs should-push):
+
+- **exclusivity_window** — < 45 days must-push (buyer squeeze);
+  > 90 days should-push (giving up optionality).
+- **breakup_fee** — > 3% of PP is punitive; push to 1-2%.
+- **no_shop_clause** — absent → must-push; no partner signs
+  without it.
+- **financing_contingency** — hard money signing is should-push;
+  partner wants flex via reverse termination fee.
+- **rw_insurance_cap** — > 15% of EV is overpaying premium;
+  10-15% is market.
+- **mac_definition** — broad → must-push; partner wants walk-
+  away right.
+- **interim_covenants** — loose → must-push; seller can change
+  the asset between sign and close.
+- **retention_pool** — sized post-close is should-push; partner
+  wants sized at close with control.
+- **regulatory_approval** — hell-or-high-water commitments →
+  must-push-cap; open-ended divestiture kills economics.
+
+Partner note:
+
+- ≥ 4 must-push → "seller-friendly across board; rebuild term
+  sheet rather than redline."
+- 2-3 must-push → "standard negotiation; get partner on phone
+  with seller's sponsor counsel."
+- 0 must-push, 0 should-push → "within market bands; no
+  partner escalation."
+
+---
+
+## 174. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
