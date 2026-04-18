@@ -7457,7 +7457,56 @@ approximates IRR. The right answer changes as:
 
 ---
 
-## 224. Change log
+## 224. Clinical outcome leading indicators (`clinical_outcome_leading_indicator_scanner.py`)
+
+**Partner statement:** "Quality metrics hit
+reimbursement 18-24 months after they deteriorate.
+Readmission rates rising in 2026 means VBP cuts in
+2028. I want the trendline flagged now, not when the
+CMS penalty letter arrives."
+
+Distinct from `quality_metrics` (point-in-time → VBP
+dollar impact). This module is **trend-based** across
+6 clinical-quality indicators.
+
+### 6 indicators + deterioration direction + forward-hit
+
+- **readmission_rate_30d** (rising = bad) — 150 bps of
+  Medicare.
+- **hac_score_percentile** (rising = bad) — 100 bps.
+- **hcahps_top_box_pct** (falling = bad) — 75 bps.
+- **cms_star_rating** (falling = bad) — 200 bps.
+- **sentinel_event_frequency** (rising = bad) — 60 bps.
+- **physician_turnover_rate** (rising = bad) — 40 bps.
+
+### Output
+
+Per-indicator trend + deterioration flag + forward
+reimbursement hit. Aggregate capped at 500 bps of
+Medicare revenue.
+
+### Partner-note ladder
+
+- ≥ 3 deteriorating → "clinical-quality turnaround
+  required before exit — 18-mo clock running."
+- 2 → "diligence the two trendlines; quality-program
+  spending may be required."
+- 1 → "monitor; may be noise."
+- 0 → "proceed on current quality assumptions."
+
+### Packet fields
+
+`readmission_rate_30d_series`,
+`hac_score_percentile_series`,
+`hcahps_top_box_pct_series`,
+`cms_star_rating_series`,
+`sentinel_event_frequency_series`,
+`physician_turnover_rate_series`,
+`medicare_revenue_m`.
+
+---
+
+## 225. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
