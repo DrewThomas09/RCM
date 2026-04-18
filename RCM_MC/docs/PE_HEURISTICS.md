@@ -9479,7 +9479,82 @@ structure and ancillary mix before pricing."
 
 ---
 
-## 248. Change log
+## 248. Management forecast haircut applier (`management_forecast_haircut_applier.py`)
+
+**Partner statement.** "Management always forecasts to the upside.
+The question isn't whether to haircut — it's how much, year by year.
+Year 1 is partly controllable, so haircut less. Years 2-3 are where
+ambition meets reality. Years 4-5 are where every forecast hockey-
+sticks. Once you have the management case, lay the haircut on top,
+run the IRR, and tell me where management's number actually leaves
+us."
+
+### Why it matters
+
+`management_forecast_reliability` SCORES history (forecast vs.
+actuals). This module APPLIES the haircut. Different jobs.
+
+### Per-tier per-year haircut (% of mgmt growth above year-0)
+
+| Tier | Y1 | Y2 | Y3 | Y4 | Y5 |
+|---|---|---|---|---|---|
+| high | 5% | 8% | 10% | 12% | 15% |
+| medium | 10% | 15% | 20% | 25% | 30% |
+| low | 20% | 30% | 35% | 40% | 45% |
+| very_low | 35% | 45% | 55% | 60% | 65% |
+
+Math:
+`partner_yN = year_0 + (mgmt_yN − year_0) × (1 − haircut_yN)`
+
+Beyond year 5, last-tier haircut extrapolates.
+
+### Output
+
+- `mgmt_moic` / `partner_moic` / `delta_moic`
+- `mgmt_irr` / `partner_irr` / `delta_irr`
+- `mgmt_exit_ev_m` / `partner_exit_ev_m`
+- year-by-year `partner_ebitda_m` next to mgmt's
+
+### Verdict tiers
+
+- delta_moic ≤ 0.20× → "haircut absorbable; mgmt forecast credible"
+- 0.20-0.50× → "material haircut; price into entry; counter at
+  partner_moic / mgmt_moic of seller's expected EV"
+- > 0.50× → "haircut breaks the underwrite; either tighten forecast
+  assumptions with mgmt or pass"
+
+### Worked example
+
+Mgmt forecast 50→55→62→70→78→87 ($M EBITDA), 5-yr hold, exit 12×,
+$80M debt at exit, $150M equity in.
+
+Reliability `medium` haircuts: 10/15/20/25/30%.
+
+- Mgmt year 5 EBITDA: $87M
+- Partner year 5: $50 + ($87−$50) × (1−0.30) = $50 + $25.9 = $75.9M
+- Mgmt exit equity: $87 × 12 − $80 = $964M; MOIC 6.43x
+- Partner exit equity: $75.9 × 12 − $80 = $830.8M; MOIC 5.54x
+- Delta: 0.89x → "breaks the underwrite — tighten or pass."
+
+### Packet fields
+
+`mgmt_ebitda_y0_m`, `mgmt_ebitda_forecast_m` (list of N years),
+`reliability_tier`, `entry_multiple`, `exit_multiple`,
+`entry_debt_m`, `exit_debt_m`, `sponsor_equity_in_m`.
+
+### Distinct from existing modules
+
+- `management_forecast_reliability` — scores forecast vs actuals.
+- `qofe_prescreen` — add-back survival.
+- `bear_case_generator` — generic bear case.
+- `archetype_outcome_distribution_predictor` — places MOIC in
+  archetype distribution.
+- This module — APPLIES tiered per-year haircut to mgmt forecast and
+  outputs the partner-implied MOIC/IRR delta.
+
+---
+
+## 249. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
