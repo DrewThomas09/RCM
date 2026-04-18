@@ -1431,7 +1431,7 @@ from .physician_retention_stress_model import (
 )
 from .payer_renegotiation_timing_model import (
     ContractForecast,
-    PayerContract,
+    PayerContract as PayerRenegotiationContract,
     PayerRenegotiationInputs,
     PayerRenegotiationReport,
     QuarterImpact,
@@ -2937,7 +2937,7 @@ __all__ = [
     "render_retention_stress_markdown",
     "run_retention_stress",
     "ContractForecast",
-    "PayerContract",
+    "PayerRenegotiationContract",
     "PayerRenegotiationInputs",
     "PayerRenegotiationReport",
     "QuarterImpact",

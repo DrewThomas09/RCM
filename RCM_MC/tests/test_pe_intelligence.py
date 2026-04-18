@@ -26942,14 +26942,14 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_contract_expiring_in_hold_is_flagged(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r = project_payer_renegotiations(
             PayerRenegotiationInputs(
                 contracts=[
-                    PayerContract(
+                    PayerRenegotiationContract(
                         "BCBS", payer_mix_pct=0.30,
                         expiration_date=date(2028, 6, 1),
                         posture="firm",
@@ -26965,14 +26965,14 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_contract_expiring_before_hold_not_in_window(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r = project_payer_renegotiations(
             PayerRenegotiationInputs(
                 contracts=[
-                    PayerContract(
+                    PayerRenegotiationContract(
                         "past", payer_mix_pct=0.30,
                         expiration_date=date(2025, 6, 1),
                     ),
@@ -26987,13 +26987,13 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_aggressive_posture_worst_rate_change(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r_agg = project_payer_renegotiations(
             PayerRenegotiationInputs(
-                contracts=[PayerContract(
+                contracts=[PayerRenegotiationContract(
                     "p", payer_mix_pct=0.4,
                     expiration_date=date(2027, 6, 1),
                     posture="aggressive",
@@ -27002,7 +27002,7 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
         )
         r_soft = project_payer_renegotiations(
             PayerRenegotiationInputs(
-                contracts=[PayerContract(
+                contracts=[PayerRenegotiationContract(
                     "p", payer_mix_pct=0.4,
                     expiration_date=date(2027, 6, 1),
                     posture="soft",
@@ -27017,13 +27017,13 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_override_rate_change_wins(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r = project_payer_renegotiations(
             PayerRenegotiationInputs(
-                contracts=[PayerContract(
+                contracts=[PayerRenegotiationContract(
                     "override", payer_mix_pct=0.30,
                     expiration_date=date(2027, 6, 1),
                     posture="aggressive",
@@ -27039,13 +27039,13 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_already_repriced_zero_applied(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r = project_payer_renegotiations(
             PayerRenegotiationInputs(
-                contracts=[PayerContract(
+                contracts=[PayerRenegotiationContract(
                     "locked", payer_mix_pct=0.30,
                     expiration_date=date(2027, 6, 1),
                     posture="aggressive",
@@ -27061,19 +27061,19 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_concentrated_aggressive_triggers_trap(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r = project_payer_renegotiations(
             PayerRenegotiationInputs(
                 contracts=[
-                    PayerContract(
+                    PayerRenegotiationContract(
                         "BCBS", payer_mix_pct=0.40,
                         expiration_date=date(2027, 6, 1),
                         posture="aggressive",
                     ),
-                    PayerContract(
+                    PayerRenegotiationContract(
                         "United", payer_mix_pct=0.25,
                         expiration_date=date(2028, 3, 1),
                         posture="firm",
@@ -27092,14 +27092,14 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_diversified_no_trap(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r = project_payer_renegotiations(
             PayerRenegotiationInputs(
                 contracts=[
-                    PayerContract(
+                    PayerRenegotiationContract(
                         f"p{i}", payer_mix_pct=0.10,
                         expiration_date=date(2028, 3, 1),
                         posture="firm",
@@ -27113,14 +27113,14 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_quarterly_impact_cumulative(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r = project_payer_renegotiations(
             PayerRenegotiationInputs(
                 contracts=[
-                    PayerContract(
+                    PayerRenegotiationContract(
                         "BCBS", payer_mix_pct=0.30,
                         expiration_date=date(2027, 6, 1),
                         posture="firm",
@@ -27135,12 +27135,12 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_ebitda_impact_scales_with_margin(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         base = PayerRenegotiationInputs(
-            contracts=[PayerContract(
+            contracts=[PayerRenegotiationContract(
                 "p", payer_mix_pct=0.30,
                 expiration_date=date(2027, 6, 1),
                 posture="aggressive",
@@ -27158,13 +27158,13 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_exit_year_drift_negative_with_aggressive(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r = project_payer_renegotiations(
             PayerRenegotiationInputs(
-                contracts=[PayerContract(
+                contracts=[PayerRenegotiationContract(
                     "p", payer_mix_pct=0.40,
                     expiration_date=date(2027, 6, 1),
                     posture="aggressive",
@@ -27178,7 +27178,7 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
     def test_markdown_renders(self) -> None:
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
             render_payer_renegotiation_markdown,
@@ -27186,7 +27186,7 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
         md = render_payer_renegotiation_markdown(
             project_payer_renegotiations(
                 PayerRenegotiationInputs(
-                    contracts=[PayerContract(
+                    contracts=[PayerRenegotiationContract(
                         "BCBS",
                         payer_mix_pct=0.30,
                         expiration_date=date(2027, 6, 1),
@@ -27202,13 +27202,13 @@ class TestPayerRenegotiationTimingModel(unittest.TestCase):
         import json
         from datetime import date
         from rcm_mc.pe_intelligence import (
-            PayerContract,
+            PayerRenegotiationContract,
             PayerRenegotiationInputs,
             project_payer_renegotiations,
         )
         r = project_payer_renegotiations(
             PayerRenegotiationInputs(
-                contracts=[PayerContract(
+                contracts=[PayerRenegotiationContract(
                     "BCBS", payer_mix_pct=0.30,
                     expiration_date=date(2027, 6, 1),
                 )],
