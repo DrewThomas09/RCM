@@ -10342,7 +10342,75 @@ collision with `geographic_reach_analyzer.StateFootprint`);
 
 ---
 
-## 260. Change log
+## 260. State AG PE scrutiny tracker (`state_ag_pe_scrutiny_tracker.py`)
+
+**Partner statement.** "State AGs are the new HSR for healthcare
+PE. California AB 3129 now requires notice for material
+transactions. Oregon SB 951 bars MSO structures in some contexts.
+Illinois, Massachusetts, Minnesota, and New York have layered on.
+Each state has a review window; each has been willing to block or
+condition deals."
+
+### Why it matters
+
+`hsr_antitrust_healthcare_scanner` covers federal HSR / FTC / DOJ.
+This module covers the **state-level AG notification burden** that
+layers on top and can delay or block deals independently.
+
+### State book
+
+| State | Notice? | Window | Posture | Key law |
+|---|---|---|---|---|
+| CA | yes | 90d | active | AB 3129 |
+| OR | yes | 60d | ramping | SB 951 (bars MSO control) |
+| IL | yes | 30d | active | HB 2222 |
+| NY | yes | 30d | active | PHL §4550 |
+| MA | yes | 60d | active + recent blocks | HPC |
+| MN | yes | 30d | ramping | HF 4246 |
+| WA | yes | 60d | dormant | — |
+| NV | yes | 30d | ramping | AB 518 |
+| NJ | no | 0 | dormant | general AG jurisdiction |
+
+### Aggregate verdict
+
+- Max window ≥ 90d OR recent-block precedent → **high_state_ag_exposure**
+  — "build AG review into sign-to-close; consider state-specific
+  counsel"
+- Notice-required share > 30% → **moderate_state_ag_exposure** —
+  "file early; expect supplemental-info requests"
+- Notice-required share > 0% → **minor_state_ag_exposure** —
+  "standard filing path"
+- Otherwise → **no_state_ag_exposure**
+
+### Partner-note structural-risk flag
+
+When any state has `recent-block` in its partner read, the note
+explicitly adds "structural risk beyond timing delay."
+
+### Worked example
+
+CA 50% + MA 50% → max window 90d (CA AB 3129) + recent-block
+precedent (MA HPC) → **high_state_ag_exposure** → "build AG review
+into sign-to-close; recent AG-block precedent in footprint —
+structural risk beyond timing delay."
+
+TX 50% + FL 50% → no state AG notice laws → **no_state_ag_exposure**
+→ "standard deal timing applies."
+
+### Packet fields
+
+`footprint` — list of `AGStateFootprint(state, share_of_npr_pct)`.
+
+### Distinct from existing modules
+
+- `hsr_antitrust_healthcare_scanner` — federal HSR / FTC / DOJ.
+- `state_scope_of_practice_exposure` — NP/PA / CPOM / non-compete.
+- This module — state-level AG transaction-notification burden with
+  review windows and recent-block precedent.
+
+---
+
+## 261. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
