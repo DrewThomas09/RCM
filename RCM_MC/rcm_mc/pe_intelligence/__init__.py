@@ -936,6 +936,14 @@ from .sponsor_reputation_tracker import (
     list_sponsors,
     render_sponsor_assessment_markdown,
 )
+from .debt_capacity_sizer import (
+    CYCLE_ADJUST as DEBT_CYCLE_ADJUST,
+    DebtSizingInputs,
+    DebtSizingReport,
+    NEUTRAL_LEVERAGE,
+    render_debt_sizing_markdown,
+    size_debt_capacity,
+)
 from .memo_formats import (
     render_all_formats as render_all_memo_formats,
     render_deck_bullets,
@@ -2075,4 +2083,10 @@ __all__ = [
     "assess_sponsor",
     "list_sponsors",
     "render_sponsor_assessment_markdown",
+    "DEBT_CYCLE_ADJUST",
+    "DebtSizingInputs",
+    "DebtSizingReport",
+    "NEUTRAL_LEVERAGE",
+    "render_debt_sizing_markdown",
+    "size_debt_capacity",
 ]

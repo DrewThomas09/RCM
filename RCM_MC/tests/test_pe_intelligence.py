@@ -16274,5 +16274,118 @@ class TestSponsorReputationTracker(unittest.TestCase):
         json.dumps(a.to_dict())
 
 
+# ── Debt capacity sizer ────────────────────────────────────
+
+from rcm_mc.pe_intelligence import (
+    DEBT_CYCLE_ADJUST,
+    DebtSizingInputs,
+    DebtSizingReport,
+    NEUTRAL_LEVERAGE,
+    render_debt_sizing_markdown,
+    size_debt_capacity,
+)
+
+
+class TestDebtCapacitySizer(unittest.TestCase):
+
+    def test_peak_cycle_tightens_leverage(self) -> None:
+        peak = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=50.0,
+            maintenance_capex_m=5.0,
+            cycle_phase="peak",
+            subsector="specialty_practice",
+        ))
+        mid = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=50.0,
+            maintenance_capex_m=5.0,
+            cycle_phase="mid_expansion",
+            subsector="specialty_practice",
+        ))
+        self.assertLess(peak.cycle_cap_x, mid.cycle_cap_x)
+
+    def test_covenant_lite_adds_headroom(self) -> None:
+        tight = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=50.0,
+            maintenance_capex_m=5.0,
+            covenant_lite_available=False,
+        ))
+        loose = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=50.0,
+            maintenance_capex_m=5.0,
+            covenant_lite_available=True,
+        ))
+        self.assertGreater(loose.cycle_cap_x, tight.cycle_cap_x)
+
+    def test_thin_cashflow_binds_fcf(self) -> None:
+        r = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=50.0,
+            maintenance_capex_m=35.0,     # heavy capex eats cash
+            effective_tax_rate=0.25,
+            cycle_phase="mid_expansion",
+            subsector="hospital",
+        ))
+        self.assertEqual(r.binding_constraint, "fcf")
+
+    def test_thin_recurring_triggers_warning(self) -> None:
+        r = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=10.0,
+            maintenance_capex_m=8.0,
+            subsector="hospital",
+            cycle_phase="peak",
+        ))
+        self.assertLess(r.recommended_leverage_x, 3.0)
+        self.assertIn("thin", r.partner_note.lower())
+
+    def test_recommended_debt_equals_leverage_times_ebitda(self) -> None:
+        r = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=50.0,
+            maintenance_capex_m=5.0,
+        ))
+        # Both fields are rounded to 2dp separately, so expect
+        # small drift.
+        self.assertLess(
+            abs(r.recommended_debt_m - r.recommended_leverage_x * 50.0),
+            1.0,
+        )
+
+    def test_unknown_subsector_defaults(self) -> None:
+        r = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=50.0,
+            subsector="unknown",
+        ))
+        self.assertIsInstance(r, DebtSizingReport)
+
+    def test_covenant_stress_coverage_tracks(self) -> None:
+        r = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=50.0,
+            maintenance_capex_m=5.0,
+            coverage_hurdle=2.5,
+        ))
+        # At binding coverage, stressed coverage ≥ hurdle.
+        if r.binding_constraint == "coverage":
+            self.assertGreaterEqual(r.covenant_stress_coverage, 2.4)
+
+    def test_neutral_library_sensible(self) -> None:
+        self.assertGreater(NEUTRAL_LEVERAGE["outpatient_asc"],
+                            NEUTRAL_LEVERAGE["hospital"])
+
+    def test_markdown_renders(self) -> None:
+        md = render_debt_sizing_markdown(size_debt_capacity(
+            DebtSizingInputs(
+                recurring_ebitda_m=50.0,
+                maintenance_capex_m=5.0,
+            )))
+        self.assertIn("# Debt capacity sizer", md)
+        self.assertIn("Recommended leverage", md)
+
+    def test_json(self) -> None:
+        import json
+        r = size_debt_capacity(DebtSizingInputs(
+            recurring_ebitda_m=50.0,
+            maintenance_capex_m=5.0,
+        ))
+        json.dumps(r.to_dict())
+
+
 if __name__ == "__main__":
     unittest.main()
