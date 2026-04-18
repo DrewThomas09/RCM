@@ -3994,7 +3994,35 @@ is yes; often the math says no.
 
 ---
 
-## 162. Change log
+## 162. Competing deals ranker (`competing_deals_ranker.py`)
+
+**Partner statement:** "I have three deals going at once. Which
+wins the partnership's time and capital?"
+
+Composite score 0-100 per deal from 5 weighted components:
+
+- **Return (30%)** — base IRR × 250, capped.
+- **Quality (25%)** — 40% coherence + 30% pricing power + 30%
+  management.
+- **Downside (20%)** — bear MOIC: 1.0x=40, 2.0x=100, 0.5x=0.
+- **Fit (15%)** — +20 if fund PME boost; -15 per scorecard
+  fail (-40 if 2+).
+- **Timing (10%)** — time-sensitivity; execution burden drag.
+
+Partner note:
+
+- Gap ≥ 15 → "clear winner — partner's time goes here."
+- Gap 5-15 → "close enough that flipped downside or timing
+  could shift the call."
+- Gap < 5 → "effective tie; use execution-burden tiebreaker —
+  pick the one the ops-partner bench is ready to own."
+
+Per-deal commentary names specific drivers ("return is compelling,
+downside is protected, time-sensitive").
+
+---
+
+## 163. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
@@ -4378,3 +4406,7 @@ is yes; often the math says no.
   MOIC/IRR and last-year-above-hurdle; the math partner runs
   when someone suggests extending the hold. Full inventory: 159
   modules, 1,614 pe_intelligence unit tests.
+- **2026-04-17** — Added `competing_deals_ranker.py` (§162) —
+  rank competing deals across return / quality / downside / fit
+  / timing with if-I-can-only-do-one recommendation. Full
+  inventory: 160 modules, 1,625 pe_intelligence unit tests.
