@@ -7998,7 +7998,117 @@ post_synergy_ebitda_m)`), `exit_year`, `exit_ebitda_m`,
 
 ---
 
-## 232. Change log
+## 232. Physician retention stress model (`physician_retention_stress_model.py`)
+
+**Partner statement.** "In a physician-driven business, the EBITDA
+is the physicians. If we close the deal and the top 3 producers
+leave — because they didn't like our employment agreements, or they
+waited 90 days for the retention cliff, or they never bought in on
+the thesis — half the model goes with them. I need to know, before I
+write the check, what happens to EBITDA if 1, 2, 3, or 5 top earners
+walk. And I need the retention package priced against that stress,
+not against the average physician."
+
+### Why it matters
+
+Physician-practice MSOs (dental, derm, GI, orthopedic, ophthalmology,
+women's health) live and die by provider retention. Every post-close
+disappointment story in PE healthcare is some variant of "we lost
+the top producer and the model doesn't work without him." The stress
+test is reflexive: before IC votes, model top-N departure.
+
+### Stress-tier structure
+
+Four tiers run by default:
+
+| Tier | Physicians lost |
+|---|---|
+| `lose_top_1` | 1 |
+| `lose_top_2` | 2 |
+| `lose_top_3` | 3 |
+| `lose_top_5` | 5 |
+
+Each tier computes:
+
+- `revenue_lost_m` — sum of lost physicians' revenue
+- `ebitda_at_risk_m` — `Σ (revenue × portability × contributing_margin)`
+- `net_ebitda_trough_m` — baseline − ramp-period drag (includes
+  locum cost + replacement ramp + half-productive ramp-up)
+- `retention_package_needed_m` — sum of individual retention bonds
+  still unsigned
+- `replacement_cost_m` — locum × ramp_months + recruiting cost
+- `partner_verdict` — `walk` / `price_in` / `acceptable`
+
+### Retention bond sizing (per physician)
+
+Healthcare PE benchmarks:
+
+- **Non-owner, no outside options** → $0 (base + wRVU covers)
+- **Non-owner, outside options** → 0.3× annual comp, vesting 3 yr
+- **Owner rolling equity or cashing out, no outside options** → 1.0×
+  annual comp, vesting 3-4 yr
+- **Owner + outside options (hard case)** → 1.5× annual comp,
+  vesting 3 yr (knowing some will still bolt)
+
+Already-signed retention bonuses (`retention_bonus_signed_m` on the
+physician) reduce the unsigned balance.
+
+### Revenue portability
+
+Default `revenue_portability_pct=0.55` — a physician who leaves pulls
+55% of their book with them (referrals, loyalty, new practice). Wide
+variance by specialty:
+
+- Concierge / private specialty → 0.70-0.80
+- Hospital-employed → 0.20-0.30
+- MSO with strong platform brand → 0.30-0.45
+- Standard specialty practice → 0.50-0.60
+
+### Verdict thresholds
+
+Per tier:
+
+- `ebitda_at_risk / baseline > 30%` → **walk** — "business is over-
+  concentrated in provider talent; walk unless retention is pre-
+  signed."
+- `15-30%` → **price_in** — "price the retention package into the
+  deal; haircut purchase price if seller won't fund."
+- `< 15%` → **acceptable** — "standard retention package sufficient."
+
+Overall verdict = top-3-tier verdict (the one partners actually ask
+about).
+
+### Worked example
+
+5-physician practice. Top-3 revenue shares 75%. Top physician: owner
++ outside options, $4M revenue, 60% portability, $0.9M comp.
+
+- Dr. A unsigned retention bond: $0.9 × 1.5 = $1.35M
+- Top-1 EBITDA at risk: $4.0 × 0.60 × 0.40 = $0.96M on baseline ~$5.3M
+  → 18% → **price_in**
+- Top-3 EBITDA at risk: ~$1.8M / $5.3M → 34% → **walk**
+- Overall: walk unless retention is pre-signed as closing condition
+
+### Packet fields
+
+`physicians` (list of `Physician(name, annual_revenue_m,
+annual_comp_m, owner, outside_options, retention_bonus_signed_m,
+contributing_margin_pct, revenue_portability_pct)`),
+`replacement_ramp_months`, `locum_cost_m_per_month`,
+`recruiting_cost_per_replacement_m`, `deal_ev_m`.
+
+### Distinct from existing modules
+
+- `physician_compensation_benchmark` — MGMA wRVU/comp comparison.
+- `physician_comp_normalization_check` — validates comp add-back claim.
+- `physician_group_friction_scorer` — 10 post-close friction points.
+- This module — top-N departure stress with revenue portability,
+  replacement ramp, and per-physician retention-bond sizing by
+  profile.
+
+---
+
+## 233. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
