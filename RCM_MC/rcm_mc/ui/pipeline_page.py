@@ -10,7 +10,7 @@ import json
 import sqlite3
 from typing import Any, Dict, List, Optional
 
-from .shell_v2 import shell_v2
+from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
 
@@ -270,7 +270,7 @@ def render_pipeline(db_path: str) -> str:
         f'{pipeline_table}{nav}'
     )
 
-    return shell_v2(
+    return chartis_shell(
         body, "Deal Pipeline",
         active_nav="/pipeline",
         subtitle=f"{total} hospitals | {active} active | {len(searches)} saved searches",
