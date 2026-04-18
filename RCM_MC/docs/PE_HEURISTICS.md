@@ -7506,7 +7506,50 @@ Medicare revenue.
 
 ---
 
-## 225. Change log
+## 225. Integration velocity tracker (`integration_velocity_tracker.py`)
+
+**Partner statement:** "The 100-day plan matters only
+if we hit the milestones on schedule. At day 45, I
+want to know: are we ahead, behind, or off-track? One
+data point per milestone, one number for the plan."
+
+Distinct from plan-generators (`hundred_day_plan`,
+`one_hundred_day_plan_from_packet`) and multi-bolt-on
+scoreboard (`ma_integration_scoreboard`). This is the
+**single-deal velocity** tracker.
+
+### Milestone fields
+
+Each milestone carries `name`, `target_day` (from
+close), `actual_day` (None if incomplete),
+`is_critical_path`, `owner`, `status`.
+
+### Tier ladder
+
+- **on_pace** — ≥ 90% due-to-date complete, 0 critical-
+  path slips.
+- **behind** — 70-90% OR 1 critical slip.
+- **at_risk** — < 70% OR ≥ 2 critical slips; week-over-
+  week ops review.
+- **off_track** — < 50% OR ≥ 3 critical slips → ops-
+  committee escalation.
+
+### Escalation list
+
+Per-milestone escalations:
+- `[critical] <name> — due day X, current day Y, owner: Z`
+- `[at-risk] <name> — target day X, owner: Z`
+
+Unassigned owners flagged `owner: unassigned`.
+
+### Packet fields
+
+- `milestones` — list of `Milestone` objects.
+- `current_day` — days since close.
+
+---
+
+## 226. Change log
 
 - **2026-04-17** — Initial codification. 25-cell IRR matrix, 7-type
   margin bands, 5-regime exit-multiple ceilings, 7-lever × 3-timeframe
