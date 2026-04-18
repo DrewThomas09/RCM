@@ -187,6 +187,7 @@ NAV_ITEMS = [
     {"label": "Payer Concentration", "href": "/payer-concentration", "icon": "chart"},
     {"label": "Roll-Up Economics", "href": "/rollup-economics", "icon": "chart"},
     {"label": "CIN Analyzer", "href": "/cin-analyzer", "icon": "chart"},
+    {"label": "Base Rates", "href": "/base-rates", "icon": "grid"},
     {"label": "Data Admin", "href": "/admin/data-sources", "icon": "gear"},
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},

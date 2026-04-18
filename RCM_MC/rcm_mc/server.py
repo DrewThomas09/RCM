@@ -1869,6 +1869,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.cin_analyzer_page import render_cin_analyzer
             return self._send_html(render_cin_analyzer(_qp))
+        if path == "/base-rates":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.base_rates_page import render_base_rates
+            return self._send_html(render_base_rates(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
