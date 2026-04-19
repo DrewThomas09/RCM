@@ -789,6 +789,7 @@ _PALETTE_ENTRIES = [
     ("REF", "Module Index",             "/module-index"),
     ("REF", "News",                     "/news"),
     ("REF", "Settings",                 "/settings"),
+    ("REF", "AI Assistant (Claude)",    "/settings/ai"),
 ]
 
 

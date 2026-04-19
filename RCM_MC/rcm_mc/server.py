@@ -3350,8 +3350,29 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .integrations.pms.base import PMSConnector  # noqa: F401
             from .integrations.pms.epic import EpicConnector  # noqa: F401
             from .auth.rbac import Role  # noqa: F401
+            # AI Assistant status — key present vs. not; drives the
+            # subtitle on the card so operators can tell at a glance.
+            _ai_on = bool(os.environ.get("ANTHROPIC_API_KEY"))
+            _ai_badge = (
+                '<span class="cad-badge cad-badge-green" '
+                'style="margin-left:8px;">CONNECTED</span>'
+                if _ai_on else
+                '<span class="cad-badge cad-badge-muted" '
+                'style="margin-left:8px;">NOT CONFIGURED</span>'
+            )
+            _ai_sub = (
+                "Claude-backed IC memos, document QA, multi-turn chat. "
+                "Key found — click to see call volume, cost, model."
+                if _ai_on else
+                "Claude-backed memos, Q&A, chat — not yet configured. "
+                "Click to connect via ANTHROPIC_API_KEY."
+            )
             body = (
                 '<div class="cad-kpi-grid">'
+                '<a href="/settings/ai" class="cad-card" '
+                'style="text-decoration:none;color:inherit;">'
+                f'<h3>AI Assistant (Claude){_ai_badge}</h3>'
+                f'<div class="cad-muted">{_ai_sub}</div></a>'
                 '<a href="/settings/custom-kpis" class="cad-card" '
                 'style="text-decoration:none;color:inherit;">'
                 '<h3>Custom KPIs</h3>'
@@ -8994,12 +9015,15 @@ class RCMHandler(BaseHTTPRequestHandler):
         })
 
     def _route_settings_subpage(self, path: str) -> None:
-        """GET /settings/custom-kpis | /settings/automations | /settings/integrations."""
+        """GET /settings/custom-kpis | /settings/automations | /settings/integrations | /settings/ai."""
         from .ui.settings_pages import (
             render_custom_kpis_page, render_automations_page,
             render_integrations_page,
         )
         store = PortfolioStore(self.config.db_path)
+        if path == "/settings/ai":
+            from .ui.settings_ai_page import render_ai_settings
+            return self._send_html(render_ai_settings(store))
         renderers = {
             "/settings/custom-kpis": render_custom_kpis_page,
             "/settings/automations": render_automations_page,
