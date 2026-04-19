@@ -185,7 +185,7 @@ def render_sponsor_track_record(
 
     kpis = (
         ck_kpi_block("Sponsors Tracked", str(total_sponsors), f"min {2} deals")
-        + ck_kpi_block("Deals Counted", str(total_deals), "across 655-deal corpus")
+        + ck_kpi_block("Deals Counted", f"{total_deals:,}", "across full corpus")
         + ck_kpi_block("Realized", str(realized),
                         f"{realized/total_deals*100:.0f}% of tracked" if total_deals else "—")
         + ck_kpi_block("Overall Median MOIC",

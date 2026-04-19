@@ -153,12 +153,14 @@ def render_deals_library(
 
     deals = _get_all_seed_deals()
     rows = _build_rows(deals)
+    n_deals = len(deals)
     explainer = render_page_explainer(
         what=(
-            "Browsable 655-deal healthcare-PE corpus — name, sponsor, "
-            "entry year, sector, EV / EBITDA multiple, realized MOIC "
-            "and IRR, hold period, commercial-payer %, vintage regime, "
-            "and data grade per row."
+            f"Browsable {n_deals:,}-deal healthcare-PE corpus — name, "
+            "sponsor, entry year, sector, EV / EBITDA multiple, "
+            "realized MOIC and IRR, hold period, commercial-payer %, "
+            "vintage regime, and data grade per row. See the provenance "
+            "footer for which rows are real vs. synthetic."
         ),
         scale=(
             "Data grade A–D reflects row completeness: A = all core "

@@ -184,6 +184,34 @@ body.analysis-workbench {{
 .analysis-workbench .wb-tab-panel {{ display: none; padding: 14px 16px; }}
 .analysis-workbench .wb-tab-panel.active {{ display: block; }}
 
+/* Empty state — shown at top of Overview when coverage ~= 0 */
+.analysis-workbench .wb-empty-state {{
+  background: var(--wb-panel);
+  border: 1px solid var(--wb-border);
+  border-left: 3px solid var(--wb-accent);
+  border-radius: 3px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}}
+.analysis-workbench .wb-empty-title {{
+  font-size: 14px; font-weight: 600;
+  color: var(--wb-text); margin-bottom: 6px;
+}}
+.analysis-workbench .wb-empty-body {{
+  font-size: 12px; color: var(--wb-text-dim);
+  line-height: 1.55; margin-bottom: 10px;
+}}
+.analysis-workbench .wb-empty-actions {{
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 10px;
+}}
+.analysis-workbench .wb-empty-footnote {{
+  font-size: 10.5px;
+  line-height: 1.5;
+  padding-top: 8px;
+  border-top: 1px solid var(--wb-border);
+}}
+
 /* Cards / panels */
 .analysis-workbench .wb-card {{
   background: var(--wb-panel);
@@ -779,8 +807,37 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
     )
     radial_label = f'<div class="radial-label">{int(cov_pct*100)}%</div>'
 
+    # Empty-state hero: when observed coverage is effectively zero
+    # (brand-new deal, no CSV uploaded, HCRIS not pulled), the rest
+    # of the page renders with all placeholders and grade D. Surface
+    # a clear call-to-action banner above the tabs so partners know
+    # what to do next instead of staring at em-dashes.
+    empty_state_banner = ""
+    if cov_pct < 0.05:
+        deal_id_esc = _esc(packet.deal_id)
+        empty_state_banner = f"""
+    <div class="wb-empty-state">
+      <div class="wb-empty-title">No observed data on this deal yet</div>
+      <div class="wb-empty-body">
+        Every downstream view (DCF, LBO, bridge, scenarios) needs at
+        least revenue, EBITDA, and payer mix to produce real numbers
+        rather than defaults. Three ways to populate:
+      </div>
+      <div class="wb-empty-actions">
+        <a class="wb-btn wb-btn-primary" href="/deal/{deal_id_esc}/edit">Enter data manually</a>
+        <a class="wb-btn" href="/deal/{deal_id_esc}/upload">Upload CSV / YAML</a>
+        <a class="wb-btn" href="/api/deals/{deal_id_esc}/hcris-prefill">Pull HCRIS by CCN</a>
+      </div>
+      <div class="wb-empty-footnote dim">
+        Until then, numbers on this page fall back to registry defaults
+        (industry P50). Treat as illustrative, not diligence-grade.
+      </div>
+    </div>
+"""
+
     return f"""
     <div class="wb-tab-panel active" data-panel="overview">
+      {empty_state_banner}
       <div class="wb-grid">
         <div>
           <div class="wb-card">

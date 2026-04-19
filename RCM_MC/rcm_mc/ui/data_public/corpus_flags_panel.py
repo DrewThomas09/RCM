@@ -182,15 +182,25 @@ def render_corpus_flags_panel(deal: Dict[str, Any]) -> str:
     else:
         flags_html = '<div class="ckf-ok">No corpus red flags detected. Entry characteristics are within normal ranges.</div>'
 
+    # Pull live corpus size from the provenance loader rather than
+    # hardcoding. Real-mode users see 55; synthetic-mode sees 1,705;
+    # default all-mode sees the full corpus. Matches whatever mode
+    # the panel's caller loaded for.
+    try:
+        from rcm_mc.data_public.corpus_loader import corpus_counts
+        _counts = corpus_counts()
+        _total = _counts.get("all", 0)
+    except Exception:
+        _total = 0
     body_html = (
         f'<div class="ckf-body">'
         f'<div style="font-size:9px;color:#334155;margin-bottom:6px;letter-spacing:0.08em;">'
         f'CORPUS RED FLAGS — {_html.escape(str(deal_name)).upper()} — '
         f'{summary["total_flags"]} flag{"s" if summary["total_flags"] != 1 else ""} '
-        f'from {615} realized corpus deals'
+        f'from {_total:,} realized corpus deals'
         f'</div>'
         f'{flags_html}'
-        f'<div class="ckf-meta">Source: SeekingChartis corpus · {615} deals · '
+        f'<div class="ckf-meta">Source: SeekingChartis corpus · {_total:,} deals · '
         f'corpus-OLS calibration · flags are indicative, not dispositive</div>'
         f'</div>'
     )
