@@ -1344,6 +1344,54 @@ def _rewrite_dashboard_links(html_doc: str) -> str:
     )
 
 
+def _sanitize_profile_margins(profile: Dict[str, Any]) -> Dict[str, Any]:
+    """Clamp implausibly-high EBITDA margins on a deal profile.
+
+    Hospital EBITDA margins realistically land in [-15%, +15%]. When
+    HCRIS ``operating_expenses`` is missing a component (overhead
+    allocation not rolled up in the source worksheet), the raw margin
+    calculation produces values like 88% that compound into 60x MOIC
+    on downstream DCF / LBO projections.
+
+    Clamps in-place: preserves the raw value under
+    ``ebitda_margin_raw_hcris`` and flips ``ebitda_margin_clamped``
+    to True so downstream views can annotate the adjustment. A no-op
+    if the margin is already in the realistic band or absent.
+    """
+    try:
+        raw = profile.get("ebitda_margin")
+        if raw is None:
+            return profile
+        raw_f = float(raw)
+    except (TypeError, ValueError):
+        return profile
+
+    CEIL = 0.15
+    FLOOR = -0.20
+    if raw_f > CEIL:
+        profile["ebitda_margin_raw_hcris"] = round(raw_f, 4)
+        profile["ebitda_margin"] = 0.08
+        profile["ebitda_margin_clamped"] = True
+    elif raw_f < FLOOR:
+        profile["ebitda_margin_raw_hcris"] = round(raw_f, 4)
+        profile["ebitda_margin"] = -0.05
+        profile["ebitda_margin_clamped"] = True
+    else:
+        profile.setdefault("ebitda_margin_clamped", False)
+
+    # Keep ebitda and current_ebitda consistent with the (possibly
+    # clamped) margin so downstream DCF / LBO don't project off
+    # inconsistent revenue-vs-EBITDA inputs.
+    if profile.get("ebitda_margin_clamped") and profile.get("net_revenue"):
+        try:
+            new_ebitda = float(profile["net_revenue"]) * float(profile["ebitda_margin"])
+            profile["ebitda"] = round(new_ebitda, 0)
+            profile["current_ebitda"] = round(new_ebitda, 0)
+        except (TypeError, ValueError):
+            pass
+    return profile
+
+
 class RCMHandler(BaseHTTPRequestHandler):
     """Main request handler. Lightweight dispatch on ``path``."""
 
@@ -4692,7 +4740,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         return self._send_html(render_hospital_stats(ccn, hcris_df))
 
     def _load_deal_profile(self, deal_id: str) -> Dict[str, Any]:
-        """Load deal profile from the database, falling back to HCRIS for CCNs."""
+        """Load deal profile from the database, falling back to HCRIS for CCNs.
+
+        Every profile goes through ``_sanitize_profile_margins`` before
+        returning, so stored data with implausible EBITDA margins (a
+        common HCRIS data-quality artifact — opex missing an overhead
+        allocation) gets clamped to a realistic hospital range before
+        downstream DCF / LBO / bridge see it.
+        """
         import json as _ldj
         store = PortfolioStore(self.config.db_path)
         # Try deals table first
@@ -4712,7 +4767,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                         pass
                 profile["deal_id"] = deal_id
                 profile["name"] = row["name"] or deal_id
-                return profile
+                return _sanitize_profile_margins(profile)
         except Exception:
             pass
         # Fallback: check if deal_id is a hospital CCN in HCRIS
@@ -4742,7 +4797,25 @@ class RCMHandler(BaseHTTPRequestHandler):
                 days = _sf(h.get("total_patient_days"))
                 bda = _sf(h.get("bed_days_available"))
 
-                margin = max(-1, min(1, (rev - opex) / rev)) if rev > 1e5 else 0
+                # Raw HCRIS (rev - opex)/rev. Hospital EBITDA margins
+                # realistically land in [-15%, +15%]. When the raw
+                # calculation exits that band, HCRIS operating_expenses
+                # is almost always missing a component (overhead
+                # allocation not rolled up in the source worksheet).
+                # Clamp with a flag so downstream views (DCF / LBO /
+                # bridge) project plausible numbers instead of 88%
+                # margins that then compound into 60x MOIC.
+                margin_raw = (rev - opex) / rev if rev > 1e5 else 0.0
+                if margin_raw > 0.15:
+                    margin = 0.08           # industry median fallback
+                    margin_clamped = True
+                elif margin_raw < -0.20:
+                    margin = -0.05
+                    margin_clamped = True
+                else:
+                    margin = margin_raw
+                    margin_clamped = False
+                ebitda_computed = (rev * margin) if margin_clamped else (rev - opex)
                 occ = days / bda if bda > 0 else 0
                 n2g = rev / gross if gross > 0 else 0.3
                 comm = max(0, 1 - mc - md)
@@ -4760,7 +4833,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "operating_expenses": opex,
                     "gross_patient_revenue": gross,
                     "ebitda_margin": round(margin, 4),
-                    "ebitda": round(rev - opex, 0) if rev > 1e5 else 0,
+                    "ebitda_margin_raw_hcris": round(margin_raw, 4),
+                    "ebitda_margin_clamped": margin_clamped,
+                    "ebitda": round(ebitda_computed, 0) if rev > 1e5 else 0,
+                    "current_ebitda": round(ebitda_computed, 0) if rev > 1e5 else 0,
                     "medicare_pct": round(mc, 3),
                     "medicaid_pct": round(md, 3),
                     "commercial_pct": round(comm, 3),
@@ -4786,7 +4862,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                         profile[clean_key] = round(predicted, 4)
                 except Exception:
                     pass
-                return profile
+                return _sanitize_profile_margins(profile)
         except Exception:
             pass
         return {}

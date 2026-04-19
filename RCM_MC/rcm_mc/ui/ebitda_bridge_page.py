@@ -420,7 +420,18 @@ def render_ebitda_bridge(
             "EBITDA Bridge",
         )
 
+    # Raw HCRIS (rev - opex). Clamp implausibly-high margins (>15%)
+    # because a wide HCRIS cohort has operating_expenses missing an
+    # overhead allocation, which produces 80%+ "margins" that then
+    # project 100%+ by Year 3 on the bridge. Realistic hospital
+    # EBITDA margins sit in [-15%, +15%]; outside that, fall back to
+    # the industry median 8%.
     current_ebitda = rev - opex
+    _raw_margin = (current_ebitda / rev) if rev > 0 else 0
+    if _raw_margin > 0.15:
+        current_ebitda = rev * 0.08
+    elif _raw_margin < -0.20:
+        current_ebitda = rev * -0.05
     if current_ebitda < -rev:
         current_ebitda = rev * 0.08
 

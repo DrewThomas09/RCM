@@ -827,13 +827,17 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
         rather than defaults. Three ways to populate:
       </div>
       <div class="wb-empty-actions">
-        <a class="wb-btn wb-btn-primary" href="/deal/{deal_id_esc}/edit">Enter data manually</a>
-        <a class="wb-btn" href="/deal/{deal_id_esc}/upload">Upload CSV / YAML</a>
-        <a class="wb-btn" href="/api/deals/{deal_id_esc}/hcris-prefill">Pull HCRIS by CCN</a>
+        <a class="wb-btn wb-btn-primary" href="/new-deal">New-deal wizard</a>
+        <a class="wb-btn" href="/upload">Upload CSV / YAML</a>
+        <a class="wb-btn" href="/deal/{deal_id_esc}">Deal dashboard</a>
       </div>
       <div class="wb-empty-footnote dim">
-        Until then, numbers on this page fall back to registry defaults
-        (industry P50). Treat as illustrative, not diligence-grade.
+        To pull HCRIS cost-report data for this hospital, run
+        <code>rcm-mc data refresh hcris</code> from the command line
+        — an in-app one-click HCRIS pull doesn't exist yet. Until
+        data is populated, numbers on this page fall back to registry
+        defaults (industry P50). Treat as illustrative, not
+        diligence-grade.
       </div>
     </div>
 """
