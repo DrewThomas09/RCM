@@ -76,9 +76,12 @@ _WORKBENCH_CSS = f"""
 }}
 
 * {{ box-sizing: border-box; }}
-body.analysis-workbench {{
-  margin: 0; padding: 0;
-  background: var(--wb-bg);
+/* Scoped typography + color for the workbench only (body styling
+   comes from the chartis shell). Previously lived on
+   ``body.analysis-workbench`` but the wrapper div uses the
+   ``analysis-workbench`` class, and body has no class — so these
+   rules never applied. Re-scoped to the wrapper div. */
+.analysis-workbench {{
   color: var(--wb-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter,
                Helvetica, Arial, sans-serif;
@@ -2378,7 +2381,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         f'{_esc(explain_data)}</script>'
     )
     shell_body = (
-        f'<div class="analysis-workbench-scope">{header}{nav}{body_inner}'
+        f'<div class="analysis-workbench">{header}{nav}{body_inner}'
         f'{explain_panel}</div>'
     )
     return chartis_shell(

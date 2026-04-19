@@ -66,6 +66,7 @@ _CORPUS_NAV = [
     # ANALYTICS — the scored / brain views. Partner-facing analysis.
     {"label": "ANALYTICS", "separator": True},
     {"label": "PE Intelligence Hub", "href": "/pe-intelligence",       "icon": "◈"},
+    {"label": "Market",              "href": "/market-data/map",       "icon": "▦"},
     {"label": "Deal Screening",      "href": "/deal-screening",        "icon": "◉"},
     {"label": "Portfolio Analytics", "href": "/portfolio-analytics",   "icon": "◈"},
     {"label": "Sponsor Track Record","href": "/sponsor-track-record",  "icon": "▤"},
