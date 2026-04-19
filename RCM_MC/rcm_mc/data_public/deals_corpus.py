@@ -364,6 +364,11 @@ _SEED_DEALS: List[Dict[str, Any]] = [
         "realized_moic": 4.2,
         "realized_irr": 0.61,
         "payer_mix": {"medicare": 0.22, "medicaid": 0.41, "commercial": 0.33, "self_pay": 0.04},
+        "plausibility_note": "IRR 61% is real-but-extreme — Waud Capital's "
+                             "Acadia IPO was a high-conviction behavioral-"
+                             "health consolidation bet that returned ~4x on "
+                             "a 3-year hold. The outlier is documented rather "
+                             "than mistagged.",
         "notes": "Behavioral health roll-up; IPO 2011; expanded to 200+ facilities; "
                  "subsequent DOJ/state regulatory scrutiny on billing practices.",
     },
