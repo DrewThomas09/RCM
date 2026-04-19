@@ -350,6 +350,47 @@ a:hover {{ text-decoration: underline; }}
   color: var(--ck-text-faint);
   white-space: nowrap;
 }}
+/* Top-bar Search button — visible entry point into the Cmd+K
+   palette. Previously the palette was keyboard-only; partners who
+   didn't know the shortcut had no way to discover it. */
+.ck-bar-search {{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 12px;
+  padding: 3px 8px;
+  background: var(--ck-panel);
+  border: 1px solid var(--ck-border);
+  border-radius: 3px;
+  color: var(--ck-text-dim);
+  font-family: var(--ck-mono);
+  font-size: 10px;
+  cursor: pointer;
+  min-width: 140px;
+  transition: border-color 0.1s, color 0.1s;
+}}
+.ck-bar-search:hover {{
+  border-color: var(--ck-accent);
+  color: var(--ck-text);
+}}
+.ck-bar-search-icon {{
+  font-size: 12px;
+  color: var(--ck-text-faint);
+}}
+.ck-bar-search-text {{
+  flex: 1;
+  text-align: left;
+  letter-spacing: 0.04em;
+}}
+.ck-bar-search-kbd {{
+  font-size: 9px;
+  color: var(--ck-text-faint);
+  background: var(--ck-panel-alt);
+  border: 1px solid var(--ck-border-dim);
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}}
 
 /* Layout */
 .ck-layout {{
@@ -455,6 +496,37 @@ a:hover {{ text-decoration: underline; }}
   border: 1px solid var(--ck-border);
   padding: 1px 5px;
   border-radius: 2px;
+}}
+
+/* Related-views strip — lateral navigation at the bottom of a page. */
+.ck-related {{
+  margin: 22px 0 10px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--ck-border-dim);
+  font-family: var(--ck-mono);
+  font-size: 11px;
+  color: var(--ck-text-faint);
+  letter-spacing: 0.04em;
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}}
+.ck-related-label {{
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--ck-text-faint);
+  font-size: 9px;
+  text-transform: uppercase;
+}}
+.ck-related-link {{
+  color: var(--ck-accent);
+  text-decoration: none;
+  transition: color 0.1s;
+}}
+.ck-related-link:hover {{
+  color: var(--ck-text);
+  text-decoration: underline;
 }}
 
 /* Panel */
@@ -1361,6 +1433,10 @@ _KEEP_FEATURES_JS = """
     var a=e.target.closest('.ck-palette-item');if(a)close();
   });
   bd.addEventListener('click',function(e){if(e.target===bd)close();});
+  // Top-bar Search button — click opens the palette so non-keyboard
+  // users can discover it.
+  var searchBtn=document.getElementById('ck-bar-search');
+  if(searchBtn){searchBtn.addEventListener('click',open);}
 })();
 """
 
@@ -1660,6 +1736,29 @@ def ck_section_header(title: str, subtitle: str = "", count: Optional[int] = Non
     )
 
 
+def ck_related_views(items: List[tuple], label: str = "Related views") -> str:
+    """Small compact row of cross-links shown at the bottom of a page.
+
+    items: list of (label, href) tuples.
+
+    Purpose: make lateral movement between related pages obvious so
+    partners don't have to hunt for them in the sidebar. Sits above
+    the data-provenance footer with a thin top border.
+    """
+    if not items:
+        return ""
+    links = " · ".join(
+        f'<a href="{href}" class="ck-related-link">{_html.escape(lbl)}</a>'
+        for (lbl, href) in items
+    )
+    return (
+        f'<div class="ck-related">'
+        f'<span class="ck-related-label">{_html.escape(label)}</span>'
+        f'{links}'
+        f'</div>'
+    )
+
+
 # ---------------------------------------------------------------------------
 # Nav builder
 # ---------------------------------------------------------------------------
@@ -1729,6 +1828,13 @@ def chartis_shell(
   <span class="ck-bar-logo">Seeking Chartis</span>
   <span class="ck-bar-section">Corpus Intelligence</span>
   <span class="ck-bar-title">{_html.escape(title)}</span>
+  <button class="ck-bar-search" id="ck-bar-search"
+          aria-label="Open command palette (Cmd+K)"
+          title="Jump to any page or deal — Cmd+K / Ctrl+K">
+    <span class="ck-bar-search-icon">⌕</span>
+    <span class="ck-bar-search-text">Search</span>
+    <span class="ck-bar-search-kbd">⌘K</span>
+  </button>
   <span class="ck-bar-time">{now}</span>
   {_alert_bell_html()}
 </div>

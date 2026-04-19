@@ -217,11 +217,21 @@ def render_deals_library(
   <input type="text" name="q" value="{_html.escape(search)}" placeholder="deal name, sponsor..." class="ck-input" data-search-target="#deals-tbl">
 </form>"""
 
+    from rcm_mc.ui._chartis_kit import ck_related_views
+
     kpis = _kpi_bar(deals, rows)
     section = ck_section_header("DEAL CORPUS", "all healthcare PE transactions", len(rows))
     table = ck_table(rows, _COLUMNS, caption="", sortable=True, id="deals-tbl")
+    related = ck_related_views([
+        ("Sponsor Track Record",  "/sponsor-track-record"),
+        ("Sector Intel",          "/sector-intel"),
+        ("Base Rates",            "/base-rates"),
+        ("Payer Intelligence",    "/payer-intelligence"),
+        ("Vintage Cohorts",       "/vintage-cohorts"),
+        ("Deal Screening",        "/deal-screening"),
+    ])
 
-    body = explainer + kpis + filter_bar + section + table
+    body = explainer + kpis + filter_bar + section + table + related
 
     return chartis_shell(
         body,

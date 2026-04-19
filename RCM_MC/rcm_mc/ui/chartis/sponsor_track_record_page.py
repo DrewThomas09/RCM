@@ -284,6 +284,15 @@ def render_sponsor_track_record(
         page_key="sponsor-track-record",
     )
 
+    from .._chartis_kit import ck_related_views
+    related = ck_related_views([
+        ("Sponsor Heatmap",   "/sponsor-heatmap"),
+        ("Deals Library",     "/library"),
+        ("Vintage Cohorts",   "/vintage-cohorts"),
+        ("Sector Intel",      "/sector-intel"),
+        ("Corpus Backtest",   "/corpus-backtest"),
+    ])
+
     body = (
         explainer
         + intro
@@ -296,6 +305,7 @@ def render_sponsor_track_record(
             count=total_sponsors,
         )
         + table
+        + related
     )
 
     return chartis_shell(
