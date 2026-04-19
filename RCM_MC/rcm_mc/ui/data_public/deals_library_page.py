@@ -145,6 +145,7 @@ def render_deals_library(
     search: str = "",
     sort_by: str = "entry_year",
     sort_dir: str = "desc",
+    moic_bucket: str = "",
 ) -> str:
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_table, ck_section_header,
@@ -187,6 +188,16 @@ def render_deals_library(
         rows = [r for r in rows if r["sector"] == sector_filter]
     if regime_filter:
         rows = [r for r in rows if r["regime"] == regime_filter]
+    # MOIC bucket: fast chip filters for partners looking for winners
+    # / losses / mid-performers without setting numeric ranges manually.
+    if moic_bucket == "home_run":
+        rows = [r for r in rows if (r.get("moic") or 0) >= 3.0]
+    elif moic_bucket == "solid":
+        rows = [r for r in rows if 1.5 <= (r.get("moic") or 0) < 3.0]
+    elif moic_bucket == "loss":
+        rows = [r for r in rows if 0 < (r.get("moic") or 0) < 1.0]
+    elif moic_bucket == "realized":
+        rows = [r for r in rows if r.get("moic") is not None]
 
     # Sort
     _SORT_KEY = {
@@ -207,8 +218,40 @@ def render_deals_library(
         for r in all_regimes
     )
 
+    # Quick-filter chips — one-click MOIC bucket shortcuts. Preserves
+    # existing sector/regime/search filters via hidden form inputs so
+    # chips stack with other filters rather than clearing them.
+    def _chip(label: str, bucket: str, desc: str = "") -> str:
+        active = bucket == moic_bucket
+        # Build URL preserving other filters
+        params = []
+        if sector_filter:
+            params.append(f"sector={_html.escape(sector_filter)}")
+        if regime_filter:
+            params.append(f"regime={_html.escape(regime_filter)}")
+        if search:
+            params.append(f"q={_html.escape(search)}")
+        if bucket:
+            params.append(f"moic_bucket={bucket}")
+        href = "/library" + (f"?{'&'.join(params)}" if params else "")
+        cls = "ck-chip ck-chip-active" if active else "ck-chip"
+        title = f' title="{_html.escape(desc)}"' if desc else ""
+        return f'<a href="{href}" class="{cls}"{title}>{_html.escape(label)}</a>'
+
+    chip_bar = (
+        '<div class="ck-chip-bar" style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">'
+        '<span class="ck-filter-label" style="margin-right:4px;">Quick filter</span>'
+        + _chip("All",        "",          "Show every deal")
+        + _chip("Realized",   "realized",  "Deals with a known MOIC")
+        + _chip("Home runs",  "home_run",  "Realized MOIC ≥ 3.0×")
+        + _chip("Solid",      "solid",     "Realized MOIC 1.5× – 3.0×")
+        + _chip("Losses",     "loss",      "Realized MOIC < 1.0×")
+        + '</div>'
+    )
+
     filter_bar = f"""
 <form method="get" action="/library" class="ck-filters" style="margin-bottom:10px;">
+  <input type="hidden" name="moic_bucket" value="{_html.escape(moic_bucket)}">
   <span class="ck-filter-label">Sector</span>
   <select name="sector" class="ck-sel" onchange="this.form.submit()">{sec_opts}</select>
   <span class="ck-filter-label">Regime</span>
@@ -231,7 +274,7 @@ def render_deals_library(
         ("Deal Screening",        "/deal-screening"),
     ])
 
-    body = explainer + kpis + filter_bar + section + table + related
+    body = explainer + kpis + chip_bar + filter_bar + section + table + related
 
     return chartis_shell(
         body,

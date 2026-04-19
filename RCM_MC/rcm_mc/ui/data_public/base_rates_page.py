@@ -292,4 +292,12 @@ def render_base_rates(params: dict = None) -> str:
         source="data_public/base_rates.py (corpus percentile engine).",
         page_key="base-rates",
     )
-    return chartis_shell(explainer + body, "Base Rates", active_nav="/base-rates")
+    from rcm_mc.ui._chartis_kit import ck_related_views
+    related = ck_related_views([
+        ("Deals Library",        "/library"),
+        ("Sector Intel",         "/sector-intel"),
+        ("Vintage Cohorts",      "/vintage-cohorts"),
+        ("Sponsor Track Record", "/sponsor-track-record"),
+        ("Portfolio Analytics",  "/portfolio-analytics"),
+    ])
+    return chartis_shell(explainer + body + related, "Base Rates", active_nav="/base-rates")

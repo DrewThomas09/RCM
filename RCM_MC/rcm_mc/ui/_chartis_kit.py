@@ -498,6 +498,35 @@ a:hover {{ text-decoration: underline; }}
   border-radius: 2px;
 }}
 
+/* Quick-filter chips — one-click filter shortcuts. Used by
+   /library and other list pages. Chips preserve URL state so they
+   stack with existing filters rather than clearing them. */
+.ck-chip {{
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: var(--ck-panel);
+  border: 1px solid var(--ck-border);
+  border-radius: 12px;
+  color: var(--ck-text-dim);
+  font-family: var(--ck-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: all 0.1s;
+  white-space: nowrap;
+}}
+.ck-chip:hover {{
+  border-color: var(--ck-accent);
+  color: var(--ck-text);
+}}
+.ck-chip-active {{
+  background: var(--ck-accent);
+  border-color: var(--ck-accent);
+  color: #fff;
+  font-weight: 600;
+}}
+
 /* Related-views strip — lateral navigation at the bottom of a page. */
 .ck-related {{
   margin: 22px 0 10px;

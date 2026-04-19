@@ -402,8 +402,17 @@ def render_corpus_backtest(
 
     body = explainer + _disambig_banner() + kpi_strip + body_blocks
 
+    from .._chartis_kit import ck_related_views
+    related = ck_related_views([
+        ("Deals Library",        "/library"),
+        ("Portfolio Analytics",  "/portfolio-analytics"),
+        ("Sector Intel",         "/sector-intel"),
+        ("Vintage Cohorts",      "/vintage-cohorts"),
+        ("Sponsor Track Record", "/sponsor-track-record"),
+    ])
+
     return chartis_shell(
-        body,
+        body + related,
         title="Corpus Backtest",
         active_nav="/corpus-backtest",
         subtitle=(

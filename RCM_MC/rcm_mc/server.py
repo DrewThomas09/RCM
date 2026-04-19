@@ -2972,15 +2972,20 @@ class RCMHandler(BaseHTTPRequestHandler):
                 store=store, current_user=self._chartis_username(),
             ))
         if path == "/library":
-            # /library now surfaces the 655-deal corpus (previously at
-            # /deals-library). The methodology hub moved to /methodology.
+            # /library surfaces the deal corpus. Methodology hub → /methodology.
             _qs = urllib.parse.parse_qs(parsed.query)
             sector = _qs.get("sector", [""])[0]
             regime = _qs.get("regime", [""])[0]
             q = _qs.get("q", [""])[0]
+            moic_bucket = _qs.get("moic_bucket", [""])[0]
             from .ui.data_public.deals_library_page import render_deals_library
             return self._send_html(
-                render_deals_library(sector_filter=sector, regime_filter=regime, search=q)
+                render_deals_library(
+                    sector_filter=sector,
+                    regime_filter=regime,
+                    search=q,
+                    moic_bucket=moic_bucket,
+                )
             )
         # Screener API
         if path == "/api/screener/run":
