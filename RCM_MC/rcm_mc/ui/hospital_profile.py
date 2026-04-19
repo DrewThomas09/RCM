@@ -87,7 +87,22 @@ def render_hospital_profile(
         f'<div class="cad-grade-val" style="color:{grade_color};">{score_val}</div>'
         f'<div class="cad-grade-label" style="color:{grade_color};">{grade}</div>'
         f'<div class="cad-grade-sub">SeekingChartis Score</div>'
-        f'</div></div></div>'
+        f'</div>'
+        # Primary CTA: jump to the analysis workbench for this CCN.
+        # Partners who land here from the market map or a screen
+        # result want one obvious next step — opening the workbench.
+        # Previously buried deep in the "Actions" card.
+        f'<div style="display:flex;flex-direction:column;gap:6px;'
+        f'margin-left:16px;">'
+        f'<a href="/analysis/{ccn}" class="cad-btn cad-btn-primary" '
+        f'style="text-decoration:none;white-space:nowrap;font-weight:600;'
+        f'padding:8px 16px;font-size:12px;letter-spacing:0.04em;">'
+        f'Open Analysis Workbench →</a>'
+        f'<div style="font-family:var(--cad-mono);font-size:9px;'
+        f'color:{PALETTE["text_muted"]};letter-spacing:0.08em;'
+        f'text-transform:uppercase;text-align:center;">'
+        f'7-tab Bloomberg view</div></div>'
+        f'</div></div>'
     )
 
     # Additional metrics from HCRIS
@@ -290,6 +305,7 @@ def render_hospital_profile(
             (f"/scenarios/{ccn}", "Scenarios"),
         ])
         + _group("AI", "Deep Analysis", [
+            (f"/analysis/{ccn}", "Analysis Workbench"),
             (f"/ml-insights/hospital/{ccn}", "ML Analysis"),
             (f"/hospital/{ccn}/demand", "Demand"),
             (f"/hospital/{ccn}/history", "3-Year History"),
