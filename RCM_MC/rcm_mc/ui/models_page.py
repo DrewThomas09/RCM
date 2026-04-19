@@ -13,38 +13,56 @@ from .brand import PALETTE
 
 
 def _model_nav(deal_id: str, active: str = "") -> str:
-    """Shared Bloomberg-style model ribbon — section codes + amber active state."""
+    """Shared model ribbon — three logical groups rather than a flat
+    19-link strip that nobody could scan.
+
+    Pre-Phase-W2: 19 links in one row (PRF MEM BRG CI SCN AI DCF LBO
+    FIN MKT DEN RET LVR WFL PLY TRD PRED MEM2). Partners couldn't find
+    anything. Many routes duplicated (BRG and LVR, MEM and MEM2) or
+    pointed at pages superseded by the /analysis workbench tabs.
+
+    Post: three groups on one row —
+      Workbench — the comprehensive view (back-link to /analysis)
+      Models    — deep-dive on specific calculations (DCF/LBO/Bridge/3-Stmt)
+      Context   — peer + market + playbook (IC Memo / Market / Playbook)
+
+    Every route still served by the router; the dropped links live in
+    the Cmd+K palette. This function controls only what the horizontal
+    ribbon shows. Eight links total.
+    """
     did = html.escape(deal_id)
-    # (code, label, href, key)
-    groups = [
-        ("PRF", "Profile", f"/hospital/{did}", "profile"),
-        ("MEM", "IC Memo", f"/ic-memo/{did}", "ic_memo"),
-        ("BRG", "Bridge", f"/ebitda-bridge/{did}", "ebitda_bridge"),
-        ("CI", "Comp Intel", f"/competitive-intel/{did}", "comp_intel"),
-        ("SCN", "Scenarios", f"/scenarios/{did}", "scenarios"),
-        ("AI", "ML", f"/ml-insights/hospital/{did}", "ml"),
-        ("DCF", "DCF", f"/models/dcf/{did}", "dcf"),
-        ("LBO", "LBO", f"/models/lbo/{did}", "lbo"),
-        ("FIN", "3-Stmt", f"/models/financials/{did}", "financials"),
-        ("MKT", "Market", f"/models/market/{did}", "market"),
-        ("DEN", "Denial", f"/models/denial/{did}", "denial"),
-        ("RET", "Returns", f"/models/returns/{did}", "returns"),
-        ("LVR", "Levers", f"/models/bridge/{did}", "bridge"),
-        ("WFL", "Waterfall", f"/models/waterfall/{did}", "waterfall"),
-        ("PLY", "Playbook", f"/models/playbook/{did}", "playbook"),
-        ("TRD", "Trends", f"/models/trends/{did}", "trends"),
-        ("PRED", "Predicted", f"/models/predicted/{did}", "predicted"),
-        ("MEM2", "Memo", f"/models/memo/{did}", "memo"),
+    # Three groups, separated by a thin divider in the rendered nav.
+    workbench = [
+        ("WB", "Workbench", f"/analysis/{did}", "workbench"),
     ]
-    items = []
-    for code, label, href, key in groups:
-        is_active = " active" if key == active else ""
-        items.append(
-            f'<a href="{href}" class="cad-modelnav-item{is_active}">'
-            f'<span class="cad-modelnav-code">{code}</span>'
-            f'<span class="cad-modelnav-label">{html.escape(label)}</span>'
-            f'</a>'
-        )
+    models = [
+        ("DCF", "DCF",      f"/models/dcf/{did}",        "dcf"),
+        ("LBO", "LBO",      f"/models/lbo/{did}",        "lbo"),
+        ("BRG", "Bridge",   f"/models/bridge/{did}",     "bridge"),
+        ("FIN", "3-Stmt",   f"/models/financials/{did}", "financials"),
+    ]
+    context = [
+        ("MKT", "Market",   f"/models/market/{did}",     "market"),
+        ("PLY", "Playbook", f"/models/playbook/{did}",   "playbook"),
+        ("MEM", "IC Memo",  f"/ic-memo/{did}",           "ic_memo"),
+    ]
+
+    def _items_html(group, first_starts_group=False):
+        out = []
+        for i, (code, label, href, key) in enumerate(group):
+            classes = "cad-modelnav-item"
+            if key == active:
+                classes += " active"
+            if first_starts_group and i == 0:
+                classes += " new-group"
+            out.append(
+                f'<a href="{href}" class="{classes}">'
+                f'<span class="cad-modelnav-code">{code}</span>'
+                f'<span class="cad-modelnav-label">{html.escape(label)}</span>'
+                f'</a>'
+            )
+        return "".join(out)
+
     return (
         f'<style>'
         f'.cad-modelnav{{display:flex;flex-wrap:wrap;gap:0;margin-bottom:14px;'
@@ -56,10 +74,12 @@ def _model_nav(deal_id: str, active: str = "") -> str:
         f'font-family:var(--cad-mono);font-size:10px;font-weight:700;'
         f'letter-spacing:0.14em;text-transform:uppercase;}}'
         f'.cad-modelnav-dash:hover{{color:{PALETTE["accent_amber"]};}}'
-        f'.cad-modelnav-item{{display:flex;align-items:center;gap:6px;padding:6px 10px;'
+        f'.cad-modelnav-item{{display:flex;align-items:center;gap:6px;padding:6px 12px;'
         f'text-decoration:none;color:{PALETTE["text_secondary"]};'
         f'border-right:1px solid {PALETTE["border"]};'
         f'transition:background 0.1s,color 0.1s;}}'
+        f'.cad-modelnav-item.new-group{{'
+        f'border-left:2px solid {PALETTE["accent_amber"]};margin-left:-1px;}}'
         f'.cad-modelnav-item:hover{{background:{PALETTE["bg_tertiary"]};color:{PALETTE["text_primary"]};}}'
         f'.cad-modelnav-item.active{{background:{PALETTE["bg_tertiary"]};'
         f'color:{PALETTE["accent_amber"]};'
@@ -74,7 +94,9 @@ def _model_nav(deal_id: str, active: str = "") -> str:
         f'</style>'
         f'<div class="cad-modelnav">'
         f'<a href="/deal/{did}" class="cad-modelnav-dash">&larr; Dashboard</a>'
-        f'{"".join(items)}'
+        f'{_items_html(workbench)}'
+        f'{_items_html(models, first_starts_group=True)}'
+        f'{_items_html(context, first_starts_group=True)}'
         f'</div>'
     )
 
