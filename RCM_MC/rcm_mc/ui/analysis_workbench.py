@@ -119,7 +119,23 @@ body.analysis-workbench {{
 }}
 .analysis-workbench .wb-breadcrumb a:hover {{ color: var(--wb-text); }}
 .analysis-workbench .wb-action-bar {{
-  margin-left: auto; display: flex; gap: 6px;
+  margin-left: auto; display: flex; gap: 10px; align-items: center;
+  flex-wrap: wrap;
+}}
+.analysis-workbench .wb-action-group {{
+  display: flex; gap: 4px; align-items: center;
+}}
+.analysis-workbench .wb-action-group + .wb-action-group {{
+  border-left: 1px solid var(--wb-border); padding-left: 10px;
+}}
+.analysis-workbench .wb-action-group-secondary .wb-btn {{
+  font-size: 11px;
+}}
+.analysis-workbench .wb-action-group-destructive .wb-btn {{
+  font-size: 11px;
+}}
+.analysis-workbench .wb-meta {{
+  font-size: 11px;
 }}
 .analysis-workbench .wb-btn {{
   background: var(--wb-panel-alt);
@@ -132,6 +148,20 @@ body.analysis-workbench {{
 .analysis-workbench .wb-btn:hover {{ background: var(--wb-border); }}
 .analysis-workbench .wb-btn-primary {{
   background: var(--wb-accent); border-color: var(--wb-accent);
+}}
+.analysis-workbench .wb-btn-muted {{
+  background: transparent; color: var(--wb-text-dim);
+  border-color: var(--wb-border);
+}}
+.analysis-workbench .wb-btn-muted:hover {{
+  color: var(--wb-text); background: var(--wb-panel-alt);
+}}
+.analysis-workbench .wb-btn-danger {{
+  background: transparent; color: #ef4444;
+  border-color: var(--wb-border);
+}}
+.analysis-workbench .wb-btn-danger:hover {{
+  background: rgba(239, 68, 68, 0.1); border-color: #ef4444;
 }}
 
 /* Tab nav */
@@ -611,33 +641,42 @@ def _render_header(packet: DealAnalysisPacket) -> str:
         <a href="/home">home</a> &nbsp;›&nbsp;
         <a href="/analysis">analysis</a> &nbsp;›&nbsp;
         <a href="/deal/{_esc(packet.deal_id)}">{_esc(packet.deal_name or packet.deal_id)}</a>
-        &nbsp;›&nbsp; analysis
       </div>
       <div class="wb-header-row">
         <div class="wb-deal-name">{_esc(packet.deal_name or packet.deal_id)}</div>
         <span class="wb-badge {grade_class}">completeness: {grade}</span>
-        <span class="dim">coverage {cov}</span>
-        <span class="dim">as-of {_esc(as_of)}</span>
-        <span class="dim">{_esc(freshness)}</span>
+        <span class="dim wb-meta">coverage {cov}</span>
+        <span class="dim wb-meta">as-of {_esc(as_of)}</span>
+        <span class="dim wb-meta">{_esc(freshness)}</span>
         <div class="wb-action-bar">
-          <form method="POST" action="/api/analysis/{_esc(packet.deal_id)}/rebuild" style="display:inline;">
-            <button class="wb-btn wb-btn-primary" type="submit">Rebuild</button>
-          </form>
-          <a class="wb-btn wb-btn-primary" href="/models/dcf/{_esc(packet.deal_id)}">DCF</a>
-          <a class="wb-btn wb-btn-primary" href="/models/lbo/{_esc(packet.deal_id)}">LBO</a>
-          <a class="wb-btn" href="/models/financials/{_esc(packet.deal_id)}">Financials</a>
-          <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}">JSON</a>
-          <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}/diligence-questions">Diligence CSV</a>
-          <a class="wb-btn" href="/api/deals/{_esc(packet.deal_id)}/package">Download ZIP</a>
+          <!-- Primary: rebuild the packet + jump to models -->
+          <div class="wb-action-group">
+            <form method="POST" action="/api/analysis/{_esc(packet.deal_id)}/rebuild" style="display:inline;">
+              <button class="wb-btn wb-btn-primary" type="submit">Rebuild</button>
+            </form>
+            <a class="wb-btn wb-btn-primary" href="/models/dcf/{_esc(packet.deal_id)}">DCF</a>
+            <a class="wb-btn wb-btn-primary" href="/models/lbo/{_esc(packet.deal_id)}">LBO</a>
+            <a class="wb-btn" href="/models/bridge/{_esc(packet.deal_id)}">Bridge</a>
+            <a class="wb-btn" href="/models/financials/{_esc(packet.deal_id)}">3-Stmt</a>
+          </div>
+          <!-- Exports: JSON / Diligence / ZIP, grouped and muted -->
+          <div class="wb-action-group wb-action-group-secondary">
+            <a class="wb-btn wb-btn-muted" href="/api/analysis/{_esc(packet.deal_id)}">JSON</a>
+            <a class="wb-btn wb-btn-muted" href="/api/analysis/{_esc(packet.deal_id)}/diligence-questions">Diligence CSV</a>
+            <a class="wb-btn wb-btn-muted" href="/api/deals/{_esc(packet.deal_id)}/package">Download ZIP</a>
+          </div>
           <span style="flex:1;"></span>
-          <form method="POST" action="/api/deals/{_esc(packet.deal_id)}/archive" style="display:inline;">
-            <button class="wb-btn" type="submit"
-                    onclick="return confirm('Archive this deal? It will be hidden from the dashboard.');"
-                    style="color:#f59e0b;" aria-label="Archive this deal">Archive</button>
-          </form>
-          <button class="wb-btn" type="button"
-                  onclick="if(confirm('Permanently delete this deal and ALL associated data? This cannot be undone.')){{fetch('/api/deals/{_esc(packet.deal_id)}',{{method:'DELETE'}}).then(r=>r.json()).then(d=>{{if(d.deleted){{if(window.rcmToast)rcmToast('Deal deleted','success');setTimeout(function(){{window.location='/';}},500);}}}}).catch(function(){{if(window.rcmToast)rcmToast('Delete failed','error');}});}}"
-                  style="color:#ef4444;" aria-label="Permanently delete this deal">Delete</button>
+          <!-- Destructive: sits far right, visually de-emphasized -->
+          <div class="wb-action-group wb-action-group-destructive">
+            <form method="POST" action="/api/deals/{_esc(packet.deal_id)}/archive" style="display:inline;">
+              <button class="wb-btn wb-btn-danger" type="submit"
+                      onclick="return confirm('Archive this deal? It will be hidden from the dashboard.');"
+                      aria-label="Archive this deal">Archive</button>
+            </form>
+            <button class="wb-btn wb-btn-danger" type="button"
+                    onclick="if(confirm('Permanently delete this deal and ALL associated data? This cannot be undone.')){{fetch('/api/deals/{_esc(packet.deal_id)}',{{method:'DELETE'}}).then(r=>r.json()).then(d=>{{if(d.deleted){{if(window.rcmToast)rcmToast('Deal deleted','success');setTimeout(function(){{window.location='/';}},500);}}}}).catch(function(){{if(window.rcmToast)rcmToast('Delete failed','error');}});}}"
+                    aria-label="Permanently delete this deal">Delete</button>
+          </div>
           <span class="dim" style="font-size:0.7rem;margin-left:8px;" title="Press ? for keyboard shortcuts">⌨ ?=help</span>
         </div>
       </div>
