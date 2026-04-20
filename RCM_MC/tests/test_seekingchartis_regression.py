@@ -100,7 +100,7 @@ class TestMigratedPages(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Run History", body)
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("cad-topbar", body)
+                self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:
@@ -118,7 +118,7 @@ class TestMigratedPages(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Calibration", body)
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("cad-topbar", body)
+                self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:
@@ -136,7 +136,7 @@ class TestMigratedPages(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Scenario Explorer", body)
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("cad-topbar", body)
+                self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:
@@ -154,7 +154,7 @@ class TestMigratedPages(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Deal Sourcing", body)
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("cad-topbar", body)
+                self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:

@@ -25,10 +25,16 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 # ── Cost table (per-1K tokens, approximate) ──────────────────────────
+# Current Claude 4 lineup. Legacy ids kept as aliases so historical
+# llm_calls rows still map to a cost band.
 _COST_PER_1K: dict[str, tuple[float, float]] = {
-    "claude-haiku-4-5": (0.0008, 0.004),
-    "claude-sonnet-4-20250514": (0.003, 0.015),
-    "claude-opus-4-20250514": (0.015, 0.075),
+    "claude-opus-4-7":           (0.015,  0.075),
+    "claude-sonnet-4-6":         (0.003,  0.015),
+    "claude-haiku-4-5-20251001": (0.0008, 0.004),
+    # Legacy aliases.
+    "claude-haiku-4-5":          (0.0008, 0.004),
+    "claude-sonnet-4-20250514":  (0.003,  0.015),
+    "claude-opus-4-20250514":    (0.015,  0.075),
 }
 
 _FALLBACK_MODEL = "fallback"
@@ -150,11 +156,17 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         *,
-        model: str = "claude-haiku-4-5",
+        model: str = "claude-haiku-4-5-20251001",
         max_tokens: int = 2000,
         temperature: float = 0.0,
     ) -> LLMResponse:
-        """Send a completion request. Returns a fallback when the key is absent."""
+        """Send a completion request. Returns a fallback when the key is absent.
+
+        Default model is Claude Haiku 4.5 — cheap + fast enough for
+        fact-checking and short memo sections. Callers that need deeper
+        reasoning (IC memo drafting, complex Q&A) should pass
+        ``model="claude-sonnet-4-6"`` or ``"claude-opus-4-7"``.
+        """
         if not self._api_key:
             return LLMResponse(
                 text="[LLM not configured]",

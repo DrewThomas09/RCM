@@ -54,7 +54,7 @@ class TestRenderVintagePerf(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.vintage_perf_page import render_vintage_perf
         html = render_vintage_perf()
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
         self.assertGreater(len(html), 20_000)
 
     def test_heatmap_present(self):

@@ -420,7 +420,18 @@ def render_ebitda_bridge(
             "EBITDA Bridge",
         )
 
+    # Raw HCRIS (rev - opex). Clamp implausibly-high margins (>15%)
+    # because a wide HCRIS cohort has operating_expenses missing an
+    # overhead allocation, which produces 80%+ "margins" that then
+    # project 100%+ by Year 3 on the bridge. Realistic hospital
+    # EBITDA margins sit in [-15%, +15%]; outside that, fall back to
+    # the industry median 8%.
     current_ebitda = rev - opex
+    _raw_margin = (current_ebitda / rev) if rev > 0 else 0
+    if _raw_margin > 0.15:
+        current_ebitda = rev * 0.08
+    elif _raw_margin < -0.20:
+        current_ebitda = rev * -0.05
     if current_ebitda < -rev:
         current_ebitda = rev * 0.08
 
@@ -780,13 +791,18 @@ def render_ebitda_bridge(
         rcm_this = total_uplift * ramp_pct
         cum_rcm = rcm_this  # annual run-rate, not cumulative
         total_yr = entry_ebitda * (1 + organic_growth) ** yr + rcm_this
+        # Revenue must grow at the same organic rate as EBITDA, otherwise
+        # the margin column looks like EBITDA outgrows the business
+        # itself (previously hit 101% by Year 3 on St. Luke's inputs).
+        rev_yr = rev * (1 + organic_growth) ** yr if rev else 0
+        margin_yr = (total_yr / rev_yr) if rev_yr > 0 else 0
         year_rows += (
             f'<tr>'
             f'<td class="num">Year {yr}</td>'
             f'<td class="num">{_fm(entry_ebitda * (1 + organic_growth) ** yr)}</td>'
             f'<td class="num" style="color:var(--cad-pos);">+{_fm(rcm_this)}</td>'
             f'<td class="num" style="font-weight:600;">{_fm(total_yr)}</td>'
-            f'<td class="num">{total_yr / rev:.1%}</td>'
+            f'<td class="num">{margin_yr:.1%}</td>'
             f'</tr>'
         )
 

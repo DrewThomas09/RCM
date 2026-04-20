@@ -51,7 +51,7 @@ class TestLPQuarterlyReport(unittest.TestCase):
         store, path = _tmp_store()
         try:
             html = generate_lp_quarterly_html(store, quarter="2026-Q1")
-            self.assertIn("<!DOCTYPE html>", html)
+            self.assertIn("<!doctype html>", html.lower())
             self.assertIn("LP Quarterly Report", html)
         finally:
             os.unlink(path)
@@ -91,8 +91,9 @@ class TestMobileCSS(unittest.TestCase):
         self.assertIn("max-width: 768px", _WORKBENCH_CSS)
 
     def test_ui_kit_has_mobile_breakpoint(self):
-        from rcm_mc.ui._ui_kit import BASE_CSS
-        self.assertIn("max-width: 768px", BASE_CSS)
+        # BASE_CSS was the legacy shell's inline styles; mobile CSS now lives in the workbench.
+        from rcm_mc.ui.analysis_workbench import _WORKBENCH_CSS
+        self.assertIn("max-width: 768px", _WORKBENCH_CSS)
 
     def test_viewport_meta_in_workbench(self):
         from rcm_mc.ui.analysis_workbench import render_workbench

@@ -65,6 +65,45 @@ class TestDCF(unittest.TestCase):
         result = build_dcf_from_deal({"net_revenue": 400e6, "current_ebitda": 50e6})
         self.assertGreater(result.enterprise_value, 0)
 
+    def test_dcf_projection_exposes_fcf_under_ui_key(self):
+        """Regression: the DCF UI renders projections with p.get('free_cash_flow').
+
+        The model's internal field name is ``fcf``; callers in
+        ``ui/models_page.py`` read ``free_cash_flow`` and ``pv_fcf``.
+        The serialized projection dict must expose both keys so the
+        table renders real numbers rather than em-dashes.
+        """
+        result = build_dcf(revenue_base=400e6, ebitda_margin_base=0.12)
+        result_dict = result.to_dict()
+        proj_dicts = result_dict["projections"]
+        self.assertEqual(len(proj_dicts), 5)
+        for p in proj_dicts:
+            self.assertIn("free_cash_flow", p,
+                          "UI projection dict must expose 'free_cash_flow'")
+            self.assertIsInstance(p["free_cash_flow"], (int, float))
+            # Legacy 'fcf' key is preserved for any downstream consumers
+            # that use the short name.
+            self.assertIn("fcf", p)
+            self.assertEqual(p["free_cash_flow"], p["fcf"])
+
+    def test_dcf_projection_exposes_pv_fcf_per_year(self):
+        """Regression: the DCF UI renders a PV(FCF) column per year.
+
+        The aggregate ``pv_cash_flows`` was computed once in
+        ``build_dcf`` and the per-year discounted cash flow was never
+        persisted on the projection row. Sum of per-year ``pv_fcf``
+        must equal the aggregate ``pv_cash_flows`` to within rounding.
+        """
+        result = build_dcf(revenue_base=400e6, ebitda_margin_base=0.12,
+                           wacc=0.10)
+        proj_dicts = result.to_dict()["projections"]
+        for p in proj_dicts:
+            self.assertIn("pv_fcf", p,
+                          "UI projection dict must expose 'pv_fcf'")
+            self.assertIsInstance(p["pv_fcf"], (int, float))
+        total_pv = sum(p["pv_fcf"] for p in proj_dicts)
+        self.assertAlmostEqual(total_pv, result.pv_cash_flows, places=0)
+
     def test_dcf_api(self):
         tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         tf.close()
@@ -105,6 +144,42 @@ class TestLBO(unittest.TestCase):
         su = result.sources_and_uses
         self.assertAlmostEqual(su.total_sources, su.total_uses, places=0)
 
+    def test_lbo_entry_and_exit_are_consistent_on_revenue_override(self):
+        """Regression: MOIC=64x / IRR=130% was the visible symptom.
+
+        When build_lbo is called with revenue_base overridden but not
+        entry_ebitda, the projection loop uses the new revenue × margin
+        while the entry capitalization still uses the default
+        entry_ebitda of $50M. That mismatch balloons MOIC by ~30x.
+        """
+        result = build_lbo(revenue_base=8_944_000_000, ebitda_margin_base=0.12)
+        a = result.assumptions
+        expected_entry_ebitda = a.revenue_base * a.ebitda_margin_base
+        self.assertAlmostEqual(
+            a.entry_ebitda, expected_entry_ebitda, delta=1.0,
+            msg=("entry_ebitda must be consistent with revenue_base × "
+                 "ebitda_margin_base; mismatch produces absurd MOIC"),
+        )
+        self.assertLess(result.returns.moic, 10.0,
+                        f"MOIC {result.returns.moic:.2f}x is implausible "
+                        f"for a 5-yr LBO with 4% rev growth")
+        self.assertGreater(result.returns.moic, 0.5)
+
+    def test_lbo_from_deal_honors_margin(self):
+        """Regression: server called build_lbo(ebitda_margin=...) but
+        the dataclass field is ebitda_margin_base. The mismatched kwarg
+        was silently dropped. build_lbo_from_deal must honour the
+        profile's margin so callers don't stumble on kwarg drift.
+        """
+        result = build_lbo_from_deal({
+            "net_revenue": 400_000_000,
+            "ebitda_margin": 0.15,
+        })
+        self.assertAlmostEqual(
+            result.assumptions.ebitda_margin_base, 0.15, places=3,
+            msg="build_lbo_from_deal must honour the profile's margin",
+        )
+
     def test_lbo_api(self):
         tf = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         tf.close()
@@ -125,6 +200,22 @@ class TestLBO(unittest.TestCase):
                 server.shutdown(); server.server_close()
         finally:
             os.unlink(tf.name)
+
+    def test_lbo_fmt_pct_handles_large_irr(self):
+        """Regression: _fmt_pct auto-detected fraction vs. already-%
+        using abs(v) < 1, so an IRR of 1.3022 (= 130.2%) rendered as
+        '1.3%'. Partners mis-read that as a broken deal.
+
+        The IRR field on LBOReturns is a fraction (0.22 = 22%). The
+        formatter must treat it as a fraction regardless of magnitude
+        when an explicit ``is_fraction=True`` signal is passed.
+        """
+        from rcm_mc.ui.models_page import _fmt_pct
+        self.assertEqual(_fmt_pct(0.22, is_fraction=True), "22.0%")
+        self.assertEqual(_fmt_pct(1.3022, is_fraction=True), "130.2%")
+        # Legacy auto-detect path preserved for assumptions like
+        # WACC=0.10 — still rendered as 10.0%.
+        self.assertEqual(_fmt_pct(0.10), "10.0%")
 
 
 class TestRegression(unittest.TestCase):

@@ -56,7 +56,7 @@ class TestRenderCsv(unittest.TestCase):
                 ],
             )
             doc = render_csv(path, title="Peers")
-            self.assertIn("<!DOCTYPE html>", doc)
+            self.assertIn("<!doctype html>", doc)
             self.assertIn("Peers", doc)
             # Money column formatted
             self.assertIn("$6.38B", doc)

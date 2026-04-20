@@ -44,10 +44,16 @@ class DCFYear:
     capex: float
     delta_nwc: float
     fcf: float
+    pv_fcf: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
-        return {k: round(v, 2) if isinstance(v, float) else v
-                for k, v in asdict(self).items()}
+        d = {k: round(v, 2) if isinstance(v, float) else v
+             for k, v in asdict(self).items()}
+        # UI templates (ui/models_page.py) read "free_cash_flow", not
+        # "fcf" — expose both so existing callers that use the short
+        # name keep working. Cheaper than renaming every reference.
+        d["free_cash_flow"] = d["fcf"]
+        return d
 
 
 @dataclass
@@ -129,12 +135,15 @@ def build_dcf(
         prev_revenue = revenue
         prev_nwc = nwc
 
+    # Populate per-year present value so the UI can render a PV(FCF)
+    # column. Aggregate pv_cash_flows below is the sum of these.
+    for y in projections:
+        y.pv_fcf = y.fcf / (1 + a.wacc) ** y.year
+
     last_fcf = projections[-1].fcf
     terminal_value = last_fcf * (1 + a.terminal_growth) / (a.wacc - a.terminal_growth)
 
-    pv_cfs = sum(
-        y.fcf / (1 + a.wacc) ** y.year for y in projections
-    )
+    pv_cfs = sum(y.pv_fcf for y in projections)
     pv_tv = terminal_value / (1 + a.wacc) ** n
     ev = pv_cfs + pv_tv
 

@@ -49,7 +49,7 @@ def _percentile(vals: List[float], p: float) -> float:
 def _moic_html(v: Optional[float]) -> str:
     if v is None:
         return '<span style="color:var(--ck-text-faint)">—</span>'
-    color = "#ef4444" if v < 1.0 else ("#22c55e" if v >= 2.5 else "#e2e8f0")
+    color = "#b5321e" if v < 1.0 else ("#22c55e" if v >= 2.5 else "#1a2332")
     weight = "600" if v < 1.0 or v >= 2.5 else "400"
     return (
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
@@ -76,7 +76,7 @@ def _ev_html(v: Optional[float]) -> str:
 
 def _sim_badge(score: float) -> str:
     pct = int(score * 100)
-    color = "#22c55e" if pct >= 70 else ("#f59e0b" if pct >= 40 else "#64748b")
+    color = "#22c55e" if pct >= 70 else ("#b8732a" if pct >= 40 else "#7a8699")
     return (
         f'<span style="font-family:var(--ck-mono);font-size:9.5px;'
         f'color:{color};font-variant-numeric:tabular-nums">{pct}%</span>'
@@ -101,12 +101,12 @@ def _payer_bars(pm: Optional[Dict[str, float]]) -> str:
     sx = sp / total * w
     return (
         f'<svg width="{w}" height="8" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">'
-        f'<rect x="0" y="1" width="{cx:.1f}" height="6" fill="#3b82f6"/>'
+        f'<rect x="0" y="1" width="{cx:.1f}" height="6" fill="#2fb3ad"/>'
         f'<rect x="{cx:.1f}" y="1" width="{mx:.1f}" height="6" fill="#22c55e"/>'
-        f'<rect x="{cx+mx:.1f}" y="1" width="{ax:.1f}" height="6" fill="#f59e0b"/>'
+        f'<rect x="{cx+mx:.1f}" y="1" width="{ax:.1f}" height="6" fill="#b8732a"/>'
         f'<rect x="{cx+mx+ax:.1f}" y="1" width="{sx:.1f}" height="6" fill="#475569"/>'
         f'</svg>'
-        f'<span style="font-family:var(--ck-mono);font-size:8.5px;color:#64748b;margin-left:3px;">'
+        f'<span style="font-family:var(--ck-mono);font-size:8.5px;color:#7a8699;margin-left:3px;">'
         f'{comm*100:.0f}%C</span>'
     )
 
@@ -143,7 +143,7 @@ def _peer_stats_panel(comps: List[Dict[str, Any]], target: Optional[Dict[str, An
         ("Peer P25 MOIC", _moic_html(p25)),
         ("Peer P50 MOIC", _moic_html(p50)),
         ("Peer P75 MOIC", _moic_html(p75)),
-        ("Peer Loss Rate", f'<span style="font-family:var(--ck-mono);color:#ef4444">{loss*100:.1f}%</span>'),
+        ("Peer Loss Rate", f'<span style="font-family:var(--ck-mono);color:#b5321e">{loss*100:.1f}%</span>'),
         ("Peer 3×+ Rate", f'<span style="font-family:var(--ck-mono);color:#22c55e">{homerun*100:.1f}%</span>'),
         ("Peer Avg Multiple", _num_html(mult_p50, 1, "×") if mult_p50 else "—"),
     ]
@@ -152,7 +152,7 @@ def _peer_stats_panel(comps: List[Dict[str, Any]], target: Optional[Dict[str, An
         cells.append(("Target MOIC Percentile", f'<span style="font-family:var(--ck-mono)">{percentile_rank:.0f}th</span>'))
 
     cells_html = "".join(
-        f'<div style="padding:8px 12px;border-right:1px solid #1e293b;">'
+        f'<div style="padding:8px 12px;border-right:1px solid #d6cfc3;">'
         f'<div style="font-size:8.5px;color:#475569;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px;">{_html.escape(k)}</div>'
         f'<div style="font-size:13px;">{v}</div>'
         f'</div>'
@@ -193,7 +193,7 @@ def _comps_table(comps: List[Dict[str, Any]], show_similarity: bool = True) -> s
 
     rows_html = []
     for i, c in enumerate(comps):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
         ev = c.get("ev_mm")
         eb = c.get("ebitda_at_entry_mm") or c.get("ebitda_mm")
         multiple = float(ev) / float(eb) if ev and eb and float(eb) > 0 else None

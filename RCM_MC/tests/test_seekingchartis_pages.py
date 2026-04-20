@@ -51,7 +51,7 @@ class TestNewsPage(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("News &amp; Research", body)
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("cad-topbar", body)
+                self.assertIn("ck-topbar", body)
                 self.assertIn("CMS Finalizes", body)
                 self.assertIn("Diligence Impact", body)
             finally:
@@ -91,7 +91,7 @@ class TestMarketDataPage(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Market Data", body)
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("cad-topbar", body)
+                self.assertIn("ck-topbar", body)
                 self.assertIn("State Market Heatmap", body)
                 self.assertIn("HCRIS", body)
             finally:
@@ -164,7 +164,7 @@ class TestLibraryPage(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Library", body)
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("cad-topbar", body)
+                self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:
@@ -180,13 +180,10 @@ class TestLibraryPage(unittest.TestCase):
                     f"http://127.0.0.1:{port}/library",
                 ) as r:
                     body = r.read().decode()
-                self.assertIn("Valuation Models", body)
-                self.assertIn("Market Intelligence", body)
-                self.assertIn("Quantitative Tools", body)
-                self.assertIn("Data Sources", body)
-                self.assertIn("DCF Model", body)
-                self.assertIn("LBO Model", body)
-                self.assertIn("Monte Carlo", body)
+                # /library is now the 655-deal healthcare-PE corpus browser
+                self.assertIn("SeekingChartis", body)
+                self.assertIn("deals", body)
+                self.assertIn("sector", body.lower())
             finally:
                 server.shutdown(); server.server_close()
         finally:

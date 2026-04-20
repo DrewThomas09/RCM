@@ -28,8 +28,8 @@ class TestGlobalNav(unittest.TestCase):
     def test_shell_contains_nav(self):
         html = shell("<p>test</p>", "Test Page")
         self.assertIn("Main navigation", html)
-        self.assertIn("/screen", html)
-        self.assertIn("/api/docs", html)
+        self.assertIn("/pipeline", html)
+        self.assertIn("/library", html)
         self.assertIn("SeekingChartis", html)
 
     def test_nav_links_accessible(self):

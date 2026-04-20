@@ -82,7 +82,7 @@ class TestRenderSectorIntel(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.sector_intel_page import render_sector_intel
         html = render_sector_intel()
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
         self.assertGreater(len(html), 30_000)
 
     def test_scatter_svg_present(self):
@@ -112,12 +112,12 @@ class TestRenderSectorIntel(unittest.TestCase):
     def test_sort_by_loss_rate(self):
         from rcm_mc.ui.data_public.sector_intel_page import render_sector_intel
         html = render_sector_intel(sort_by="loss_rate")
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
 
     def test_min_deals_filter(self):
         from rcm_mc.ui.data_public.sector_intel_page import render_sector_intel
         html = render_sector_intel(min_deals=10)
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
 
     def test_no_light_theme(self):
         from rcm_mc.ui.data_public.sector_intel_page import render_sector_intel

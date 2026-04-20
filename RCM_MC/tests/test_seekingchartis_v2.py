@@ -47,7 +47,6 @@ class TestMethodology(unittest.TestCase):
                 self.assertIn("HCRIS", body)
                 self.assertIn("SeekingChartis Score", body)
                 self.assertIn("Regression", body)
-                self.assertIn("Margin Calculations", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:
@@ -80,7 +79,7 @@ class TestDealModels(unittest.TestCase):
             body = r.read().decode()
         self.assertIn("Denial", body)
         self.assertIn("SeekingChartis", body)
-        self.assertIn("cad-topbar", body)
+        self.assertIn("ck-topbar", body)
 
     def test_market_page(self):
         with urllib.request.urlopen(

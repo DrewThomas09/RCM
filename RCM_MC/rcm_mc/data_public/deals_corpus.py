@@ -7,6 +7,17 @@ Schema columns mirror the canonical normalized form:
     deal_name, year, buyer, seller, EV, EBITDA_at_entry,
     hold_years, realized_MOIC, realized_IRR, payer_mix, notes
 
+Provenance (added Phase B of the Demo_Real sprint):
+    Every deal loaded via ``load_corpus_deals`` (see
+    ``rcm_mc.data_public.corpus_loader``) carries an injected
+    ``provenance`` field — either "real" or "synthetic" — derived
+    from the group-level registry at
+    ``rcm_mc.data_public.corpus_provenance``. The registry is the
+    single source of truth; rows here do not carry a per-row
+    provenance value. See ``corpus_provenance.py`` for the
+    classification standard and the spot-check that placed each
+    group in the registry.
+
 Why a separate SQLite file (not the main PortfolioStore)?
     The corpus is read-mostly, append-occasionally, and may be shared across
     multiple platform instances as a static reference dataset.  Keeping it
@@ -353,6 +364,11 @@ _SEED_DEALS: List[Dict[str, Any]] = [
         "realized_moic": 4.2,
         "realized_irr": 0.61,
         "payer_mix": {"medicare": 0.22, "medicaid": 0.41, "commercial": 0.33, "self_pay": 0.04},
+        "plausibility_note": "IRR 61% is real-but-extreme — Waud Capital's "
+                             "Acadia IPO was a high-conviction behavioral-"
+                             "health consolidation bet that returned ~4x on "
+                             "a 3-year hold. The outlier is documented rather "
+                             "than mistagged.",
         "notes": "Behavioral health roll-up; IPO 2011; expanded to 200+ facilities; "
                  "subsequent DOJ/state regulatory scrutiny on billing practices.",
     },
@@ -667,6 +683,17 @@ class DealsCorpus:
 
     def upsert(self, deal: Dict[str, Any]) -> int:
         """Insert or replace a deal keyed by source_id. Returns deal_id."""
+        # Normalise field aliases from newer seed file schemas:
+        #   company_name → deal_name, moic → realized_moic, irr → realized_irr
+        #   ebitda_mm → ebitda_at_entry_mm; auto-generate source_id when absent.
+        deal_name = deal.get("deal_name") or deal.get("company_name", "")
+        source_id = deal.get("source_id") or (
+            f"auto_{deal_name[:20].replace(' ', '_').lower()}_{deal.get('year', 0)}"
+        )
+        realized_moic = deal.get("realized_moic") or deal.get("moic")
+        realized_irr = deal.get("realized_irr") or deal.get("irr")
+        ebitda = deal.get("ebitda_at_entry_mm") or deal.get("ebitda_mm")
+
         payer_mix = deal.get("payer_mix")
         if isinstance(payer_mix, dict):
             payer_mix = json.dumps(payer_mix)
@@ -696,17 +723,17 @@ class DealsCorpus:
                     ingested_at        = excluded.ingested_at
                 """,
                 (
-                    deal["source_id"],
+                    source_id,
                     deal.get("source", "seed"),
-                    deal["deal_name"],
+                    deal_name,
                     deal.get("year"),
                     deal.get("buyer"),
                     deal.get("seller"),
                     deal.get("ev_mm"),
-                    deal.get("ebitda_at_entry_mm"),
+                    ebitda,
                     deal.get("hold_years"),
-                    deal.get("realized_moic"),
-                    deal.get("realized_irr"),
+                    realized_moic,
+                    realized_irr,
                     payer_mix,
                     deal.get("notes"),
                     _utcnow(),
@@ -717,7 +744,7 @@ class DealsCorpus:
                 return cur.lastrowid
             row = con.execute(
                 "SELECT deal_id FROM public_deals WHERE source_id = ?",
-                (deal["source_id"],),
+                (source_id,),
             ).fetchone()
             return row["deal_id"] if row else -1
 

@@ -55,7 +55,7 @@ class TestModelPages(unittest.TestCase):
         self.assertIn("DCF", body)
         self.assertIn("Enterprise Value", body)
         self.assertIn("SeekingChartis", body)
-        self.assertIn("cad-topbar", body)
+        self.assertIn("ck-topbar", body)
 
     def test_lbo_page(self):
         with urllib.request.urlopen(
@@ -74,7 +74,7 @@ class TestModelPages(unittest.TestCase):
             body = r.read().decode()
         self.assertIn("Financials", body)
         self.assertIn("SeekingChartis", body)
-        self.assertIn("cad-topbar", body)
+        self.assertIn("ck-topbar", body)
 
     def test_dcf_has_projections(self):
         with urllib.request.urlopen(

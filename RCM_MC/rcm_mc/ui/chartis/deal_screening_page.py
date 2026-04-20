@@ -381,8 +381,17 @@ def render_deal_screening(
         )
     )
 
+    from .._chartis_kit import ck_related_views
+    related = ck_related_views([
+        ("Deals Library",        "/library"),
+        ("Deal Search",          "/deal-search"),
+        ("Portfolio Analytics",  "/portfolio-analytics"),
+        ("Sponsor Track Record", "/sponsor-track-record"),
+        ("Sector Intel",         "/sector-intel"),
+    ])
+
     return chartis_shell(
-        body,
+        body + related,
         title="Deal Screening",
         active_nav="/deal-screening",
         subtitle=f"{counts.get('PASS',0)} pass · {counts.get('WATCH',0)} watch · "

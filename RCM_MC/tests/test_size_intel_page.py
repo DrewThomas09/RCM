@@ -54,7 +54,7 @@ class TestRenderSizeIntel(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.size_intel_page import render_size_intel
         html = render_size_intel()
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
         self.assertGreater(len(html), 25_000)
 
     def test_scatter_present(self):

@@ -349,8 +349,17 @@ def render_payer_intelligence(
         + regime_panel
     )
 
+    from .._chartis_kit import ck_related_views
+    related = ck_related_views([
+        ("Payer Intel (summary)", "/payer-intel"),
+        ("Deals Library",         "/library"),
+        ("Deal Screening",        "/deal-screening"),
+        ("Portfolio Analytics",   "/portfolio-analytics"),
+        ("RCM Benchmarks",        "/rcm-benchmarks"),
+    ])
+
     return chartis_shell(
-        body,
+        body + related,
         title="Payer Intelligence",
         active_nav="/payer-intelligence",
         subtitle=f"{len(corpus)} corpus deals · {len(pi.regime_stats)} regimes · "

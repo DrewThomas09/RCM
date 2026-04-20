@@ -47,7 +47,7 @@ class TestQuickImport(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("Import Deals", body)
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("cad-topbar", body)
+                self.assertIn("ck-topbar", body)
                 self.assertIn("deal_id", body)
                 self.assertIn("denial_rate", body)
                 self.assertIn("Bulk Import", body)
@@ -141,7 +141,7 @@ class TestAllPagesShellV2(unittest.TestCase):
                         ) as r:
                             self.assertEqual(r.status, 200)
                             body = r.read().decode()
-                            self.assertIn("cad-topbar", body,
+                            self.assertIn("ck-topbar", body,
                                           f"{path} missing cad-topbar")
                             self.assertIn("SeekingChartis", body,
                                           f"{path} missing SeekingChartis")

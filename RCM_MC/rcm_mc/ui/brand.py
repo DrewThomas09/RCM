@@ -23,15 +23,15 @@ LOGO_SVG = (
     '<path d="M10 12C10 12 13 14 16 14C19 14 22 12 22 12" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
     '<path d="M10 18C10 18 13 20 16 20C19 20 22 18 22 18" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
     '<path d="M12 2L20 2" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
-    '<circle cx="10" cy="3" r="1.5" fill="#3b82f6"/>'
-    '<circle cx="22" cy="3" r="1.5" fill="#3b82f6"/>'
+    '<circle cx="10" cy="3" r="1.5" fill="#2fb3ad"/>'
+    '<circle cx="22" cy="3" r="1.5" fill="#2fb3ad"/>'
     '</svg>'
 )
 
 WORDMARK_SVG = (
     '<svg viewBox="0 0 200 24" width="200" height="24" xmlns="http://www.w3.org/2000/svg">'
     '<text x="0" y="18" font-family="Source Serif Pro, Georgia, serif" '
-    'font-size="20" font-weight="600" fill="#e2e8f0" letter-spacing="0.5">SeekingChartis</text>'
+    'font-size="20" font-weight="600" fill="#1a2332" letter-spacing="0.5">SeekingChartis</text>'
     '</svg>'
 )
 
@@ -51,15 +51,15 @@ PALETTE = {
     "brand_accent": "#2d6ba4",
     "accent_amber": "#e8a33d",
     "positive": "#22c55e",
-    "negative": "#ef4444",
-    "warning": "#f59e0b",
+    "negative": "#b5321e",
+    "warning": "#b8732a",
     "neutral": "#5b6abf",
-    "critical": "#dc2626",
+    "critical": "#8a1e0e",
     "high": "#ea580c",
     "medium": "#ca8a04",
-    "low": "#64748b",
+    "low": "#7a8699",
     "ticker_up": "#22c55e",
-    "ticker_down": "#ef4444",
+    "ticker_down": "#b5321e",
     "ticker_flat": "#9aa7b8",
 }
 

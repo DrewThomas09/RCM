@@ -1344,6 +1344,54 @@ def _rewrite_dashboard_links(html_doc: str) -> str:
     )
 
 
+def _sanitize_profile_margins(profile: Dict[str, Any]) -> Dict[str, Any]:
+    """Clamp implausibly-high EBITDA margins on a deal profile.
+
+    Hospital EBITDA margins realistically land in [-15%, +15%]. When
+    HCRIS ``operating_expenses`` is missing a component (overhead
+    allocation not rolled up in the source worksheet), the raw margin
+    calculation produces values like 88% that compound into 60x MOIC
+    on downstream DCF / LBO projections.
+
+    Clamps in-place: preserves the raw value under
+    ``ebitda_margin_raw_hcris`` and flips ``ebitda_margin_clamped``
+    to True so downstream views can annotate the adjustment. A no-op
+    if the margin is already in the realistic band or absent.
+    """
+    try:
+        raw = profile.get("ebitda_margin")
+        if raw is None:
+            return profile
+        raw_f = float(raw)
+    except (TypeError, ValueError):
+        return profile
+
+    CEIL = 0.15
+    FLOOR = -0.20
+    if raw_f > CEIL:
+        profile["ebitda_margin_raw_hcris"] = round(raw_f, 4)
+        profile["ebitda_margin"] = 0.08
+        profile["ebitda_margin_clamped"] = True
+    elif raw_f < FLOOR:
+        profile["ebitda_margin_raw_hcris"] = round(raw_f, 4)
+        profile["ebitda_margin"] = -0.05
+        profile["ebitda_margin_clamped"] = True
+    else:
+        profile.setdefault("ebitda_margin_clamped", False)
+
+    # Keep ebitda and current_ebitda consistent with the (possibly
+    # clamped) margin so downstream DCF / LBO don't project off
+    # inconsistent revenue-vs-EBITDA inputs.
+    if profile.get("ebitda_margin_clamped") and profile.get("net_revenue"):
+        try:
+            new_ebitda = float(profile["net_revenue"]) * float(profile["ebitda_margin"])
+            profile["ebitda"] = round(new_ebitda, 0)
+            profile["current_ebitda"] = round(new_ebitda, 0)
+        except (TypeError, ValueError):
+            pass
+    return profile
+
+
 class RCMHandler(BaseHTTPRequestHandler):
     """Main request handler. Lightweight dispatch on ``path``."""
 
@@ -1756,6 +1804,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def _route_static(self, filename: str) -> None:
+        """Serve a file from ``rcm_mc/ui/static/``. Path-traversal safe."""
+        import pathlib
+        static_dir = pathlib.Path(__file__).parent / "ui" / "static"
+        target = (static_dir / filename).resolve()
+        if not str(target).startswith(str(static_dir.resolve())):
+            self.send_error(HTTPStatus.FORBIDDEN)
+            return
+        self._send_file(str(target))
 
     # ── Route matching ──
 
@@ -2924,15 +2982,20 @@ class RCMHandler(BaseHTTPRequestHandler):
                 store=store, current_user=self._chartis_username(),
             ))
         if path == "/library":
-            # /library now surfaces the 655-deal corpus (previously at
-            # /deals-library). The methodology hub moved to /methodology.
+            # /library surfaces the deal corpus. Methodology hub → /methodology.
             _qs = urllib.parse.parse_qs(parsed.query)
             sector = _qs.get("sector", [""])[0]
             regime = _qs.get("regime", [""])[0]
             q = _qs.get("q", [""])[0]
+            moic_bucket = _qs.get("moic_bucket", [""])[0]
             from .ui.data_public.deals_library_page import render_deals_library
             return self._send_html(
-                render_deals_library(sector_filter=sector, regime_filter=regime, search=q)
+                render_deals_library(
+                    sector_filter=sector,
+                    regime_filter=regime,
+                    search=q,
+                    moic_bucket=moic_bucket,
+                )
             )
         # Screener API
         if path == "/api/screener/run":
@@ -3297,8 +3360,29 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .integrations.pms.base import PMSConnector  # noqa: F401
             from .integrations.pms.epic import EpicConnector  # noqa: F401
             from .auth.rbac import Role  # noqa: F401
+            # AI Assistant status — key present vs. not; drives the
+            # subtitle on the card so operators can tell at a glance.
+            _ai_on = bool(os.environ.get("ANTHROPIC_API_KEY"))
+            _ai_badge = (
+                '<span class="cad-badge cad-badge-green" '
+                'style="margin-left:8px;">CONNECTED</span>'
+                if _ai_on else
+                '<span class="cad-badge cad-badge-muted" '
+                'style="margin-left:8px;">NOT CONFIGURED</span>'
+            )
+            _ai_sub = (
+                "Claude-backed IC memos, document QA, multi-turn chat. "
+                "Key found — click to see call volume, cost, model."
+                if _ai_on else
+                "Claude-backed memos, Q&A, chat — not yet configured. "
+                "Click to connect via ANTHROPIC_API_KEY."
+            )
             body = (
                 '<div class="cad-kpi-grid">'
+                '<a href="/settings/ai" class="cad-card" '
+                'style="text-decoration:none;color:inherit;">'
+                f'<h3>AI Assistant (Claude){_ai_badge}</h3>'
+                f'<div class="cad-muted">{_ai_sub}</div></a>'
                 '<a href="/settings/custom-kpis" class="cad-card" '
                 'style="text-decoration:none;color:inherit;">'
                 '<h3>Custom KPIs</h3>'
@@ -3799,6 +3883,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_analysis_workbench(deal_id)
         if path == "/exports/lp-update":
             return self._route_exports_lp_update()
+        if path.startswith("/static/"):
+            return self._route_static(path[len("/static/"):])
         if path.startswith("/outputs/"):
             sub = urllib.parse.unquote(path[len("/outputs/"):])
             return self._route_output(sub)
@@ -4692,7 +4778,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         return self._send_html(render_hospital_stats(ccn, hcris_df))
 
     def _load_deal_profile(self, deal_id: str) -> Dict[str, Any]:
-        """Load deal profile from the database, falling back to HCRIS for CCNs."""
+        """Load deal profile from the database, falling back to HCRIS for CCNs.
+
+        Every profile goes through ``_sanitize_profile_margins`` before
+        returning, so stored data with implausible EBITDA margins (a
+        common HCRIS data-quality artifact — opex missing an overhead
+        allocation) gets clamped to a realistic hospital range before
+        downstream DCF / LBO / bridge see it.
+        """
         import json as _ldj
         store = PortfolioStore(self.config.db_path)
         # Try deals table first
@@ -4712,7 +4805,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                         pass
                 profile["deal_id"] = deal_id
                 profile["name"] = row["name"] or deal_id
-                return profile
+                return _sanitize_profile_margins(profile)
         except Exception:
             pass
         # Fallback: check if deal_id is a hospital CCN in HCRIS
@@ -4742,7 +4835,25 @@ class RCMHandler(BaseHTTPRequestHandler):
                 days = _sf(h.get("total_patient_days"))
                 bda = _sf(h.get("bed_days_available"))
 
-                margin = max(-1, min(1, (rev - opex) / rev)) if rev > 1e5 else 0
+                # Raw HCRIS (rev - opex)/rev. Hospital EBITDA margins
+                # realistically land in [-15%, +15%]. When the raw
+                # calculation exits that band, HCRIS operating_expenses
+                # is almost always missing a component (overhead
+                # allocation not rolled up in the source worksheet).
+                # Clamp with a flag so downstream views (DCF / LBO /
+                # bridge) project plausible numbers instead of 88%
+                # margins that then compound into 60x MOIC.
+                margin_raw = (rev - opex) / rev if rev > 1e5 else 0.0
+                if margin_raw > 0.15:
+                    margin = 0.08           # industry median fallback
+                    margin_clamped = True
+                elif margin_raw < -0.20:
+                    margin = -0.05
+                    margin_clamped = True
+                else:
+                    margin = margin_raw
+                    margin_clamped = False
+                ebitda_computed = (rev * margin) if margin_clamped else (rev - opex)
                 occ = days / bda if bda > 0 else 0
                 n2g = rev / gross if gross > 0 else 0.3
                 comm = max(0, 1 - mc - md)
@@ -4760,7 +4871,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "operating_expenses": opex,
                     "gross_patient_revenue": gross,
                     "ebitda_margin": round(margin, 4),
-                    "ebitda": round(rev - opex, 0) if rev > 1e5 else 0,
+                    "ebitda_margin_raw_hcris": round(margin_raw, 4),
+                    "ebitda_margin_clamped": margin_clamped,
+                    "ebitda": round(ebitda_computed, 0) if rev > 1e5 else 0,
+                    "current_ebitda": round(ebitda_computed, 0) if rev > 1e5 else 0,
                     "medicare_pct": round(mc, 3),
                     "medicaid_pct": round(md, 3),
                     "commercial_pct": round(comm, 3),
@@ -4786,7 +4900,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                         profile[clean_key] = round(predicted, 4)
                 except Exception:
                     pass
-                return profile
+                return _sanitize_profile_margins(profile)
         except Exception:
             pass
         return {}
@@ -4810,16 +4924,19 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_model_lbo(self, deal_id: str) -> None:
         """GET /models/lbo/<deal_id> — browser-rendered LBO model."""
-        from .finance.lbo_model import build_lbo
+        from .finance.lbo_model import build_lbo_from_deal
         from .ui.models_page import render_lbo_page
         profile = self._load_deal_profile(deal_id)
         if not profile:
             return self._error_page("Deal Not Found", f"No deal or hospital found for ID '{html.escape(deal_id)}'. Try searching from the home page.")
         try:
-            lbo_rev = float(profile.get("net_revenue", 200e6))
-            lbo_margin = float(profile.get("ebitda_margin", 0.12))
-            lbo_margin = max(0.03, min(0.25, lbo_margin))
-            result = build_lbo(revenue_base=lbo_rev, ebitda_margin=lbo_margin)
+            # Use build_lbo_from_deal: it normalizes the profile's
+            # revenue / margin into consistent entry_ebitda. The prior
+            # direct build_lbo(revenue_base=, ebitda_margin=) call
+            # silently dropped the margin override (wrong kwarg name —
+            # the field is ebitda_margin_base) and left entry_ebitda
+            # at its default, producing absurd MOIC.
+            result = build_lbo_from_deal(profile)
             lbo_dict = result.to_dict()
         except Exception as exc:
             lbo_dict = {"error": str(exc), "returns": {}, "sources_and_uses": {},
@@ -8910,12 +9027,15 @@ class RCMHandler(BaseHTTPRequestHandler):
         })
 
     def _route_settings_subpage(self, path: str) -> None:
-        """GET /settings/custom-kpis | /settings/automations | /settings/integrations."""
+        """GET /settings/custom-kpis | /settings/automations | /settings/integrations | /settings/ai."""
         from .ui.settings_pages import (
             render_custom_kpis_page, render_automations_page,
             render_integrations_page,
         )
         store = PortfolioStore(self.config.db_path)
+        if path == "/settings/ai":
+            from .ui.settings_ai_page import render_ai_settings
+            return self._send_html(render_ai_settings(store))
         renderers = {
             "/settings/custom-kpis": render_custom_kpis_page,
             "/settings/automations": render_automations_page,

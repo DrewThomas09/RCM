@@ -53,8 +53,8 @@ class TestHomePage(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("cad-topbar", body)
-                self.assertIn("cad-nav", body)
+                self.assertIn("ck-topbar", body)
+                self.assertIn("ck-nav", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:
@@ -91,7 +91,7 @@ class TestHomePage(unittest.TestCase):
                     f"http://127.0.0.1:{port}/home",
                 ) as r:
                     body = r.read().decode()
-                self.assertIn("Getting Started", body)
+                self.assertIn("/new-deal", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:

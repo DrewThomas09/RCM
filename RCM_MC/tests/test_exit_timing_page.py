@@ -8,7 +8,7 @@ class TestRenderExitTiming(unittest.TestCase):
     def test_renders_html(self):
         from rcm_mc.ui.data_public.exit_timing_page import render_exit_timing
         html = render_exit_timing()
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
         self.assertGreater(len(html), 30_000)
 
     def test_contains_svgs(self):

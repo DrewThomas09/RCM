@@ -163,13 +163,13 @@ def _sparkline_svg(p25: Optional[float], p50: Optional[float], p75: Optional[flo
         f'<svg width="{width}" height="{height}" style="vertical-align:middle;overflow:visible">'
         # Box (IQR)
         f'<rect x="{x25}" y="{mid_y-4}" width="{max(1,x75-x25)}" height="8" '
-        f'fill="none" stroke="#3b82f6" stroke-width="1"/>'
+        f'fill="none" stroke="#2fb3ad" stroke-width="1"/>'
         # Median line
         f'<line x1="{x50}" y1="{mid_y-5}" x2="{x50}" y2="{mid_y+5}" '
-        f'stroke="#10b981" stroke-width="1.5"/>'
+        f'stroke="#0a8a5f" stroke-width="1.5"/>'
         # 1.0x breakeven marker
         f'<line x1="{scale(1.0)}" y1="{mid_y-7}" x2="{scale(1.0)}" y2="{mid_y+7}" '
-        f'stroke="#ef4444" stroke-width="0.75" stroke-dasharray="2,2" opacity="0.6"/>'
+        f'stroke="#b5321e" stroke-width="0.75" stroke-dasharray="2,2" opacity="0.6"/>'
         f'</svg>'
     )
 
@@ -222,7 +222,7 @@ def _rates_table(rows: List[Dict[str, Any]], group_label: str) -> str:
 
     tbody_rows = []
     for i, r in enumerate(rows):
-        stripe = ' style="background:#0f172a"' if i % 2 == 0 else ""
+        stripe = ' style="background:#faf7f0"' if i % 2 == 0 else ""
         spark = _sparkline_svg(r["moic_p25"], r["moic_p50"], r["moic_p75"])
         tbody_rows.append(f"""
 <tr{stripe}>

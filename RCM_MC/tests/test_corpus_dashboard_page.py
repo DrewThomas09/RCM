@@ -8,7 +8,7 @@ class TestRenderCorpusDashboard(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
         html = render_corpus_dashboard()
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
         self.assertGreater(len(html), 20_000)
 
     def test_kpi_bar_present(self):
@@ -46,10 +46,12 @@ class TestRenderCorpusDashboard(unittest.TestCase):
         html = render_corpus_dashboard()
         self.assertIn("/corpus-dashboard", html)
 
-    def test_no_light_theme(self):
+    def test_editorial_theme(self):
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
         html = render_corpus_dashboard()
-        self.assertNotIn("background:#ffffff", html.lower())
+        # New editorial theme: CSS tokens linked, not legacy dark terminal
+        self.assertIn("chartis_tokens.css", html)
+        self.assertNotIn("0a0e17", html.lower())
 
     def test_quality_summary(self):
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard

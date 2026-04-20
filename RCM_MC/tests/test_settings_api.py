@@ -196,8 +196,9 @@ class TestSettingsPage(unittest.TestCase):
 
     def test_nav_has_settings_and_map(self):
         html = shell("<p>test</p>", "Test")
-        self.assertIn("/settings", html)
-        self.assertIn("/market-data/map", html)
+        # v2 shell: horizontal top-nav with core editorial sections
+        self.assertIn("ck-topbar", html)
+        self.assertIn("/home", html)
 
 
 if __name__ == "__main__":

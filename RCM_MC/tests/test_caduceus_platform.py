@@ -58,7 +58,7 @@ class TestHospitalProfile(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("SOUTHEAST HEALTH", body)
                 self.assertIn("SeekingChartis Score", body)
-                self.assertIn("cad-topbar", body)
+                self.assertIn("ck-topbar", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:

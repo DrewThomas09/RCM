@@ -83,7 +83,7 @@ class TestLargePortfolio(unittest.TestCase):
         t0 = time.time()
         html = r.render_lp_update_html(packets)
         elapsed = time.time() - t0
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertIn("10</span>", html)   # deal count
         self.assertLess(elapsed, 2.0, f"LP render took {elapsed:.2f}s")
 
