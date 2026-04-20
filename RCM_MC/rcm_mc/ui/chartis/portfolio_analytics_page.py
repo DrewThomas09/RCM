@@ -496,17 +496,8 @@ def render_portfolio_analytics(
         + outlier_panel
     )
 
-    from .._chartis_kit import ck_related_views
-    related = ck_related_views([
-        ("Deals Library",        "/library"),
-        ("Sponsor Track Record", "/sponsor-track-record"),
-        ("Vintage Cohorts",      "/vintage-cohorts"),
-        ("Sector Intel",         "/sector-intel"),
-        ("Deal Screening",       "/deal-screening"),
-    ])
-
     return chartis_shell(
-        body + related,
+        body,
         title="Portfolio Analytics",
         active_nav="/portfolio-analytics",
         subtitle=f"{sc.get('total_deals',0)} deals · "

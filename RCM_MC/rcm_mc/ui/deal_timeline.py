@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 # ── Event model ────────────────────────────────────────────────────
 
 _EVENT_COLORS = {
-    "analysis": "#2fb3ad",
-    "alert": "#b8732a",
-    "export": "#0a8a5f",
-    "note": "#465366",
+    "analysis": "#3b82f6",
+    "alert": "#f59e0b",
+    "export": "#10b981",
+    "note": "#94a3b8",
     "override": "#8b5cf6",
     "mc_run": "#14b8a6",
-    "other": "#7a8699",
+    "other": "#64748b",
 }
 
 
@@ -228,13 +228,13 @@ def render_timeline(
         )
 
     css = """
-    .tl-card { background:#ffffff; border:1px solid #d6cfc3;
+    .tl-card { background:#111827; border:1px solid #1e293b;
       padding:12px 14px; margin-bottom:8px; border-radius:4px; }
-    .tl-meta { color:#7a8699; font-size:11px; margin-bottom:4px; }
+    .tl-meta { color:#64748b; font-size:11px; margin-bottom:4px; }
     .tl-title { font-weight:600; font-size:13px; }
     .tl-badge { color:#fff; font-size:10px; padding:1px 6px;
       border-radius:2px; text-transform:uppercase; letter-spacing:.04em; }
-    .tl-detail { color:#465366; font-size:12px; margin-top:4px; }
+    .tl-detail { color:#94a3b8; font-size:12px; margin-top:4px; }
     """
     body = f"""
     <h2>{_esc(deal_name)} — Activity Timeline ({len(events)} events)</h2>

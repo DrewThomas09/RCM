@@ -357,7 +357,8 @@ def render_pe_intelligence_hub(
         f'<span style="color:{P["accent"]};">Partner Review</span> '
         f'from the deal dashboard — that page links into every drill-down '
         f'below. Need historical comps first? Browse '
-        f'<a href="/library" style="color:{P["accent"]};">the corpus</a>.'
+        f'<a href="/library" style="color:{P["accent"]};">the corpus</a> '
+        f'(655 deals).'
         f'</div></div>'
     )
 

@@ -91,8 +91,8 @@ def _hold_histogram(
         return pad_l + _pct(xv, lo, hi) * pw
 
     axes = (
-        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#d6cfc3" stroke-width="1"/>'
-        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#d6cfc3" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
     )
 
     # Median + P25/P75 verticals
@@ -102,18 +102,18 @@ def _hold_histogram(
         p75 = _percentile(hold_vals, 75)
         overlays = (
             f'<line x1="{tx(p25):.1f}" y1="{pad_t}" x2="{tx(p25):.1f}" y2="{pad_t+ph}" '
-            f'stroke="#7a8699" stroke-width="0.8" stroke-dasharray="3,3"/>'
+            f'stroke="#64748b" stroke-width="0.8" stroke-dasharray="3,3"/>'
             f'<line x1="{tx(p50):.1f}" y1="{pad_t}" x2="{tx(p50):.1f}" y2="{pad_t+ph}" '
-            f'stroke="#b8732a" stroke-width="1.2" stroke-dasharray="4,3"/>'
-            f'<text x="{tx(p50)+2:.1f}" y="{pad_t+9}" font-size="7" fill="#b8732a">P50={p50:.1f}yr</text>'
+            f'stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4,3"/>'
+            f'<text x="{tx(p50)+2:.1f}" y="{pad_t+9}" font-size="7" fill="#f59e0b">P50={p50:.1f}yr</text>'
             f'<line x1="{tx(p75):.1f}" y1="{pad_t}" x2="{tx(p75):.1f}" y2="{pad_t+ph}" '
-            f'stroke="#7a8699" stroke-width="0.8" stroke-dasharray="3,3"/>'
+            f'stroke="#64748b" stroke-width="0.8" stroke-dasharray="3,3"/>'
         )
     else:
         overlays = ""
 
     ticks = "".join(
-        f'<text x="{tx(xv):.1f}" y="{pad_t+ph+13}" font-size="7.5" fill="#7a8699" text-anchor="middle">{xv:.0f}yr</text>'
+        f'<text x="{tx(xv):.1f}" y="{pad_t+ph+13}" font-size="7.5" fill="#64748b" text-anchor="middle">{xv:.0f}yr</text>'
         for xv in range(0, int(hi) + 1, 2)
     )
     n_lbl = f'<text x="{pad_l+3}" y="{pad_t+9}" font-size="7.5" fill="#475569">n={len(hold_vals)}</text>'
@@ -146,7 +146,7 @@ def _hold_moic_scatter(
         return pad_t + (1.0 - _pct(y, y_lo, y_hi)) * ph
 
     dots = "".join(
-        f'<circle cx="{tx(x):.1f}" cy="{ty(y):.1f}" r="2.2" fill="#2fb3ad" fill-opacity="0.6"/>'
+        f'<circle cx="{tx(x):.1f}" cy="{ty(y):.1f}" r="2.2" fill="#3b82f6" fill-opacity="0.6"/>'
         for x, y in pts
         if x_lo <= x <= x_hi and y_lo <= y <= y_hi
     )
@@ -166,31 +166,31 @@ def _hold_moic_scatter(
         trend_line = (
             f'<line x1="{tx(x_lo):.1f}" y1="{ty(y1):.1f}" '
             f'x2="{tx(x_hi):.1f}" y2="{ty(y2):.1f}" '
-            f'stroke="#b8732a" stroke-width="1.2" stroke-dasharray="4,3"/>'
+            f'stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4,3"/>'
         )
 
     axes = (
-        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#d6cfc3" stroke-width="1"/>'
-        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#d6cfc3" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
     )
 
     be_y = ty(1.0)
     be_line = (
         f'<line x1="{pad_l}" y1="{be_y:.1f}" x2="{pad_l+pw}" y2="{be_y:.1f}" '
-        f'stroke="#b5321e" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.4"/>'
+        f'stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.4"/>'
     )
 
     x_ticks = "".join(
-        f'<text x="{tx(xv):.1f}" y="{pad_t+ph+13}" font-size="7.5" fill="#7a8699" text-anchor="middle">{xv:.0f}yr</text>'
+        f'<text x="{tx(xv):.1f}" y="{pad_t+ph+13}" font-size="7.5" fill="#64748b" text-anchor="middle">{xv:.0f}yr</text>'
         for xv in [1, 3, 5, 7, 9, 11]
     )
     y_ticks = "".join(
-        f'<text x="{pad_l-4}" y="{ty(yv)+3:.1f}" font-size="7.5" fill="#7a8699" text-anchor="end">{yv:.0f}x</text>'
+        f'<text x="{pad_l-4}" y="{ty(yv)+3:.1f}" font-size="7.5" fill="#64748b" text-anchor="end">{yv:.0f}x</text>'
         for yv in [0, 1, 2, 3, 4, 5, 6]
     )
     labels = (
-        f'<text x="{pad_l+pw/2:.1f}" y="{height-2}" font-size="8" fill="#465366" text-anchor="middle">Hold Years</text>'
-        f'<text x="8" y="{pad_t+ph/2:.1f}" font-size="8" fill="#465366" text-anchor="middle" '
+        f'<text x="{pad_l+pw/2:.1f}" y="{height-2}" font-size="8" fill="#94a3b8" text-anchor="middle">Hold Years</text>'
+        f'<text x="8" y="{pad_t+ph/2:.1f}" font-size="8" fill="#94a3b8" text-anchor="middle" '
         f'transform="rotate(-90,8,{pad_t+ph/2:.1f})">MOIC</text>'
     )
     n_lbl = f'<text x="{pad_l+4}" y="{pad_t+9}" font-size="7.5" fill="#475569">n={len(pts)}</text>'
@@ -301,7 +301,7 @@ def _kpi_bar(stats: Dict[str, Any]) -> str:
     def moic_html(v):
         if v is None:
             return '<span class="faint">—</span>'
-        color = "#22c55e" if v >= 2.5 else ("#b8732a" if v >= 1.5 else "#b5321e")
+        color = "#22c55e" if v >= 2.5 else ("#f59e0b" if v >= 1.5 else "#ef4444")
         return f'<span class="mn" style="color:{color}">{v:.2f}×</span>'
 
     return (
@@ -355,8 +355,8 @@ def _hold_distribution_panel(stats: Dict[str, Any]) -> str:
 def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
     tbody = []
     for i, r in enumerate(rows):
-        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
-        moic_color = "#22c55e" if (r["moic_p50"] or 0) >= 2.5 else ("#b8732a" if (r["moic_p50"] or 0) >= 1.5 else "#b5321e")
+        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        moic_color = "#22c55e" if (r["moic_p50"] or 0) >= 2.5 else ("#f59e0b" if (r["moic_p50"] or 0) >= 1.5 else "#ef4444")
         moic_html = (
             f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{moic_color}">'
             f'{r["moic_p50"]:.2f}×</span>'
@@ -367,7 +367,7 @@ def _sector_table_panel(rows: List[Dict[str, Any]]) -> str:
   <td class="dim" style="font-size:11px;">{_html.escape(r['sector'])}</td>
   <td class="mono dim" style="text-align:right;">{r['n']}</td>
   <td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;">{r['hold_p25']:.1f}yr</td>
-  <td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;color:#b8732a;font-weight:600;">{r['hold_p50']:.1f}yr</td>
+  <td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;color:#f59e0b;font-weight:600;">{r['hold_p50']:.1f}yr</td>
   <td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;">{r['hold_p75']:.1f}yr</td>
   <td style="text-align:right;">{moic_html}</td>
 </tr>""")
@@ -414,14 +414,14 @@ def _vintage_panel(vintage_data: Dict[int, Dict[str, Any]]) -> str:
         bx = pad_l + i * (pw / len(years))
         bh = pct * ph
         by = pad_t + ph - bh
-        color = "#22c55e" if pct >= 0.80 else ("#b8732a" if pct >= 0.50 else "#2fb3ad")
+        color = "#22c55e" if pct >= 0.80 else ("#f59e0b" if pct >= 0.50 else "#3b82f6")
         bars.append(
             f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" '
             f'fill="{color}" opacity="0.75"/>'
         )
         bars.append(
             f'<text x="{bx + bar_w/2:.1f}" y="{pad_t+ph+14}" font-size="7" '
-            f'fill="#7a8699" text-anchor="middle">{str(yr)[2:]}</text>'
+            f'fill="#64748b" text-anchor="middle">{str(yr)[2:]}</text>'
         )
 
     # 80% line
@@ -432,11 +432,11 @@ def _vintage_panel(vintage_data: Dict[int, Dict[str, Any]]) -> str:
         f'<text x="{pad_l+pw+2}" y="{line_y+3:.1f}" font-size="7" fill="#22c55e" opacity="0.7">80%</text>'
     )
     axes = (
-        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#d6cfc3" stroke-width="1"/>'
-        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#d6cfc3" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
     )
     y_ticks = "".join(
-        f'<text x="{pad_l-4}" y="{pad_t+ph-pv*ph+3:.1f}" font-size="7.5" fill="#7a8699" text-anchor="end">{pv*100:.0f}%</text>'
+        f'<text x="{pad_l-4}" y="{pad_t+ph-pv*ph+3:.1f}" font-size="7.5" fill="#64748b" text-anchor="end">{pv*100:.0f}%</text>'
         for pv in [0.25, 0.50, 0.75, 1.0]
     )
 

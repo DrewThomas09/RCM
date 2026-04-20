@@ -348,17 +348,8 @@ def render_rcm_benchmarks(
         + segments_panel
     )
 
-    from .._chartis_kit import ck_related_views
-    related = ck_related_views([
-        ("Payer Intelligence",   "/payer-intelligence"),
-        ("Market Data",          "/market-data/map"),
-        ("Deal Search",          "/deal-search"),
-        ("Portfolio Analytics",  "/portfolio-analytics"),
-        ("Sector Intel",         "/sector-intel"),
-    ])
-
     return chartis_shell(
-        body + related,
+        body,
         title="RCM Benchmarks",
         active_nav="/rcm-benchmarks",
         subtitle=f"{n_segments} segments · {len(_METRICS)} metrics · HFMA / Advisory Board priors",

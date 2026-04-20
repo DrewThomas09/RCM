@@ -49,8 +49,8 @@ def _hhi_signal(hhi: float) -> str:
     if hhi < 0.15:
         return "#22c55e", "Low"
     if hhi < 0.25:
-        return "#b8732a", "Moderate"
-    return "#b5321e", "High"
+        return "#f59e0b", "Moderate"
+    return "#ef4444", "High"
 
 
 def _hhi_bar(hhi: float, label: str, width: int = 200) -> str:
@@ -59,13 +59,13 @@ def _hhi_bar(hhi: float, label: str, width: int = 200) -> str:
     color, level = _hhi_signal(hhi)
     return (
         f'<div style="margin:6px 0;">'
-        f'<div style="font-size:9px;color:#7a8699;margin-bottom:2px;font-family:var(--ck-mono)">'
+        f'<div style="font-size:9px;color:#64748b;margin-bottom:2px;font-family:var(--ck-mono)">'
         f'{_html.escape(label)}</div>'
         f'<div style="display:flex;align-items:center;gap:8px;">'
         f'<svg width="{width}" height="10" xmlns="http://www.w3.org/2000/svg">'
-        f'<rect x="0" y="1" width="{width}" height="8" rx="1" fill="#d6cfc3"/>'
+        f'<rect x="0" y="1" width="{width}" height="8" rx="1" fill="#1e293b"/>'
         f'<rect x="0" y="1" width="{filled}" height="8" rx="1" fill="{color}"/>'
-        f'<line x1="{int(0.25*width)}" y1="0" x2="{int(0.25*width)}" y2="10" stroke="#d6cfc3" stroke-width="1"/>'
+        f'<line x1="{int(0.25*width)}" y1="0" x2="{int(0.25*width)}" y2="10" stroke="#334155" stroke-width="1"/>'
         f'<line x1="{int(0.15*width)}" y1="0" x2="{int(0.15*width)}" y2="10" stroke="#22c55e" stroke-width="0.8" stroke-dasharray="2,2"/>'
         f'</svg>'
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;font-size:10px;color:{color}">'
@@ -119,14 +119,14 @@ def _sector_weight_panel(composition: Any) -> str:
     for sector, weight in items:
         w_pct = weight * 100
         filled = int(weight * 200)
-        color = "#2fb3ad" if w_pct <= 20 else ("#b8732a" if w_pct <= 35 else "#b5321e")
+        color = "#3b82f6" if w_pct <= 20 else ("#f59e0b" if w_pct <= 35 else "#ef4444")
         bars.append(
             f'<div style="margin:4px 0;display:flex;align-items:center;gap:8px;">'
-            f'<div style="width:160px;font-size:10px;color:#465366;text-align:right;'
+            f'<div style="width:160px;font-size:10px;color:#94a3b8;text-align:right;'
             f'font-family:var(--ck-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
             f'{_html.escape(sector[:22])}</div>'
             f'<svg width="200" height="10" xmlns="http://www.w3.org/2000/svg">'
-            f'<rect x="0" y="1" width="200" height="8" rx="1" fill="#d6cfc3"/>'
+            f'<rect x="0" y="1" width="200" height="8" rx="1" fill="#1e293b"/>'
             f'<rect x="0" y="1" width="{filled}" height="8" rx="1" fill="{color}"/>'
             f'</svg>'
             f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
@@ -150,7 +150,7 @@ def _optimal_weights_panel(optimal: Dict[str, float]) -> str:
     items = sorted(optimal.items(), key=lambda x: -x[1])[:15]
     rows = []
     for i, (sector, w) in enumerate(items):
-        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
+        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
         rows.append(
             f'<tr{stripe}><td class="dim" style="font-size:10.5px;">{_html.escape(sector[:30])}</td>'
             f'<td class="mono" style="text-align:right;font-variant-numeric:tabular-nums;">{w*100:.1f}%</td></tr>'
@@ -226,7 +226,7 @@ def render_portfolio_optimizer(sectors: Optional[List[str]] = None) -> str:
     all_sectors = sorted({d.get("sector") for d in corpus if d.get("sector")})
     selected_set = set(sectors or [])
     checkboxes = "".join(
-        f'<label style="display:inline-block;margin:3px 8px 3px 0;font-size:10px;color:#465366;cursor:pointer;">'
+        f'<label style="display:inline-block;margin:3px 8px 3px 0;font-size:10px;color:#94a3b8;cursor:pointer;">'
         f'<input type="checkbox" name="sector" value="{_html.escape(s)}" '
         f'{"checked" if s in selected_set else ""} style="margin-right:3px;">'
         f'{_html.escape(s[:22])}</label>'
@@ -236,10 +236,10 @@ def render_portfolio_optimizer(sectors: Optional[List[str]] = None) -> str:
 <div class="ck-panel">
   <div class="ck-panel-title">Portfolio Composition</div>
   <form method="get" action="/portfolio-optimizer" style="padding:12px 16px;">
-    <div style="font-size:9.5px;color:#7a8699;margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase;">
+    <div style="font-size:9.5px;color:#64748b;margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase;">
       Select Sectors (sample 2 top deals per sector)
     </div>
-    <div style="max-height:120px;overflow-y:auto;border:1px solid #d6cfc3;padding:8px;border-radius:3px;">
+    <div style="max-height:120px;overflow-y:auto;border:1px solid #1e293b;padding:8px;border-radius:3px;">
       {checkboxes}
     </div>
     <div style="margin-top:10px;">

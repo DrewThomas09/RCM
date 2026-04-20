@@ -12,7 +12,7 @@ def _hhi_gauge(hhi: float, w: int = 120, h: int = 24) -> str:
     """Horizontal bar gauge for HHI (0–10000)."""
     pct = min(1.0, hhi / 10000)
     bar_w = int(pct * (w - 2))
-    col = P["positive"] if hhi < 1000 else (P["warning"] if hhi < 1800 else (P["negative"] if hhi < 2500 else "#8a1e0e"))
+    col = P["positive"] if hhi < 1000 else (P["warning"] if hhi < 1800 else (P["negative"] if hhi < 2500 else "#dc2626"))
     label_col = P["text"] if pct < 0.7 else P["panel"]
     return (
         f'<svg width="{w}" height="{h}">'
@@ -28,7 +28,7 @@ def _interp_badge(interp: str) -> str:
         "Competitive": P["positive"],
         "Moderate": P["warning"],
         "Concentrated": P["negative"],
-        "Highly Concentrated": "#8a1e0e",
+        "Highly Concentrated": "#dc2626",
     }
     col = cols.get(interp, P["text_dim"])
     return (

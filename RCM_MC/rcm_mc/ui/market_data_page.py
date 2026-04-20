@@ -396,17 +396,8 @@ def render_market_data(
         f'{data_source}'
     )
 
-    from rcm_mc.ui._chartis_kit import ck_related_views
-    related = ck_related_views([
-        ("Deal Screening",        "/deal-screening"),
-        ("Portfolio Analytics",   "/portfolio-analytics"),
-        ("RCM Benchmarks",        "/rcm-benchmarks"),
-        ("Hospital Screener",     "/screen"),
-        ("Deals Library",         "/library"),
-    ])
-
     return chartis_shell(
-        body + related, "Market Data",
+        body, "Market Data",
         active_nav="/market-data/map",
         subtitle=f"National hospital market intelligence — 50 states + DC" + (
             f" + {len(territory_stats)} US territories" if territory_stats else ""

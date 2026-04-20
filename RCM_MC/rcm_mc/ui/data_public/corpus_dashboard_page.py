@@ -38,9 +38,9 @@ def _pct(vals: List[float], p: float) -> float:
 
 def _moic_color(m: float) -> str:
     if m >= 3.0: return "#22c55e"
-    if m >= 2.0: return "#2fb3ad"
-    if m >= 1.5: return "#b8732a"
-    return "#b5321e"
+    if m >= 2.0: return "#3b82f6"
+    if m >= 1.5: return "#f59e0b"
+    return "#ef4444"
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ def _mini_moic_hist(moics: List[float], width: int = 140, height: int = 50) -> s
         bh = max(0, int(cnt / max_n * (height - 8)))
         bx = 2 + i * bar_w
         by = height - 4 - bh
-        color = "#22c55e" if i >= 2 else ("#b8732a" if i == 1 else "#b5321e")
+        color = "#22c55e" if i >= 2 else ("#f59e0b" if i == 1 else "#ef4444")
         elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-1)}" height="{bh}" fill="{color}" opacity="0.8"/>')
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
@@ -85,15 +85,15 @@ def _mini_sparkline(ys: List[float], width: int = 120, height: int = 30) -> str:
     pts = " ".join(f"{int(2+i*step)},{py(v)}" for i, v in enumerate(ys))
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
-        f'<polyline points="{pts}" fill="none" stroke="#2fb3ad" stroke-width="1.5"/>'
+        f'<polyline points="{pts}" fill="none" stroke="#3b82f6" stroke-width="1.5"/>'
         f'</svg>'
     )
 
 
-def _nav_tile(title: str, href: str, subtitle: str, value: str, value_color: str = "#1a2332", svg: str = "") -> str:
+def _nav_tile(title: str, href: str, subtitle: str, value: str, value_color: str = "#e2e8f0", svg: str = "") -> str:
     return f"""
-<a href="{_html.escape(href)}" style="display:block;text-decoration:none;border:1px solid #d6cfc3;padding:12px;background:#ffffff;border-radius:2px;">
-  <div style="font-size:9px;color:#7a8699;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">{_html.escape(title)}</div>
+<a href="{_html.escape(href)}" style="display:block;text-decoration:none;border:1px solid #1e293b;padding:12px;background:#111827;border-radius:2px;">
+  <div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">{_html.escape(title)}</div>
   <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-variant-numeric:tabular-nums;color:{value_color};line-height:1.1;">{value}</div>
   <div style="font-size:9px;color:#475569;margin-top:2px;">{_html.escape(subtitle)}</div>
   {f'<div style="margin-top:6px;">{svg}</div>' if svg else ''}
@@ -150,7 +150,7 @@ def render_corpus_dashboard() -> str:
         + ck_kpi_block("Corpus Deals", f'<span class="mn">{n:,}</span>', "in analysis")
         + ck_kpi_block("P50 MOIC", f'<span class="mn" style="color:{_moic_color(moic_p50)}">{moic_p50:.2f}x</span>', f"P25: {_pct(moics,25):.2f}x · P75: {_pct(moics,75):.2f}x")
         + ck_kpi_block("P50 IRR", f'<span class="mn">{irr_p50*100:.1f}%</span>', "realized median")
-        + ck_kpi_block("Loss Rate", f'<span class="mn" style="color:{"#b5321e" if loss_rate>0.15 else "#b8732a"}">{loss_rate*100:.1f}%</span>', "MOIC < 1.0×")
+        + ck_kpi_block("Loss Rate", f'<span class="mn" style="color:{"#ef4444" if loss_rate>0.15 else "#f59e0b"}">{loss_rate*100:.1f}%</span>', "MOIC < 1.0×")
         + ck_kpi_block("Avg Hold", f'<span class="mn">{hold_avg:.1f}y</span>', "years to exit")
         + ck_kpi_block("Avg Quality", f'<span class="mn">{avg_quality:.1f}/100</span>', f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C+D:{tier_counts.get('C',0)+tier_counts.get('D',0)}")
         + '</div>'
@@ -188,69 +188,69 @@ def render_corpus_dashboard() -> str:
   {_nav_tile("Sector Intelligence", "/sector-intel",
     f"{n_with_sector} tagged · {n_sectors} sectors",
     f"{top_sectors[0].moic_p50:.2f}x" if top_sectors else "—",
-    _moic_color(top_sectors[0].moic_p50) if top_sectors else "#1a2332",
+    _moic_color(top_sectors[0].moic_p50) if top_sectors else "#e2e8f0",
     "")}
   {_nav_tile("Vintage Performance", "/vintage-perf",
     f"{yr_range} · {len(vintage_stats)} vintages",
     f"{_pct(vintage_p50s,50):.2f}x" if vintage_p50s else "—",
-    _moic_color(_pct(vintage_p50s,50)) if vintage_p50s else "#1a2332",
+    _moic_color(_pct(vintage_p50s,50)) if vintage_p50s else "#e2e8f0",
     vintage_svg)}
   {_nav_tile("Deal Size Intelligence", "/size-intel",
     f"P50 EV ${size_profile.ev_p50:.0f}M · {len(size_profile.buckets)} buckets",
     f"${size_profile.ev_p50:.0f}M",
-    "#2fb3ad",
+    "#3b82f6",
     "")}
   {_nav_tile("Payer Intelligence", "/payer-intel",
     f"commercial/medicare/medicaid/self-pay",
     f"{n} deals",
-    "#465366",
+    "#94a3b8",
     "")}
   {_nav_tile("Leverage Intelligence", "/leverage-intel",
     "capital structure by bucket",
     f"{n} deals",
-    "#465366",
+    "#94a3b8",
     "")}
   {_nav_tile("Deal Quality", "/deal-quality",
     f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C:{tier_counts.get('C',0)} D:{tier_counts.get('D',0)}",
     f"{avg_quality:.0f}/100",
-    "#22c55e" if avg_quality >= 70 else "#b8732a",
+    "#22c55e" if avg_quality >= 70 else "#f59e0b",
     "")}
   {_nav_tile("Underwriting", "/underwriting",
     "LBO model · sensitivity table",
     "LBO",
-    "#7a8699",
+    "#64748b",
     "")}
   {_nav_tile("Portfolio Optimizer", "/portfolio-optimizer",
     "HHI · sector weights vs optimal",
     "HHI",
-    "#7a8699",
+    "#64748b",
     "")}
   {_nav_tile("Backtester", "/backtest",
     "OLS calibration · R² · MAE",
     "OLS",
-    "#7a8699",
+    "#64748b",
     "")}
   {_nav_tile("Comparables", "/comparables",
     "similarity-weighted peer set",
     "Peers",
-    "#7a8699",
+    "#64748b",
     "")}
   {_nav_tile("Risk Matrix", "/risk-matrix",
     "entry risk vs realized MOIC",
     "Risk",
-    "#7a8699",
+    "#64748b",
     "")}
   {_nav_tile("Sponsor League", "/sponsor-league",
     "sponsor consistency scores",
     "SPO",
-    "#7a8699",
+    "#64748b",
     "")}
 </div>"""
 
     # Top sectors table
     top_sector_rows = []
     for i, s in enumerate(sector_stats[:15]):
-        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
+        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
         mc = _moic_color(s.moic_p50)
         top_sector_rows.append(f"""<tr{stripe}>
   <td style="padding:4px 8px;font-size:10px;">{_html.escape(s.sector[:30].replace('_',' '))}</td>
@@ -258,7 +258,7 @@ def render_corpus_dashboard() -> str:
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc}">{s.moic_p50:.2f}x</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.irr_p50*100:.1f}%</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#b5321e' if s.loss_rate>0.2 else '#b8732a' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.0f}%</td>
+      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.0f}%</td>
 </tr>""")
 
     sector_table = f"""
@@ -267,31 +267,31 @@ def render_corpus_dashboard() -> str:
   <div class="ck-table-wrap">
     <table class="ck-table" style="width:100%;">
       <thead><tr>
-        <th style="padding:5px 8px;color:#7a8699;">Sector</th>
-        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Deals</th>
-        <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 MOIC</th>
-        <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 IRR</th>
-        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Loss %</th>
+        <th style="padding:5px 8px;color:#64748b;">Sector</th>
+        <th style="padding:5px 8px;color:#64748b;text-align:right;">Deals</th>
+        <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 MOIC</th>
+        <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 IRR</th>
+        <th style="padding:5px 8px;color:#64748b;text-align:right;">Loss %</th>
       </tr></thead>
       <tbody>{''.join(top_sector_rows)}</tbody>
     </table>
   </div>
   <div style="padding:0 16px 8px;font-size:9px;color:#475569;">
-    <a href="/sector-intel" style="color:#2fb3ad;text-decoration:none;">→ Full sector intelligence</a>
+    <a href="/sector-intel" style="color:#3b82f6;text-decoration:none;">→ Full sector intelligence</a>
   </div>
 </div>"""
 
     # Vintage mini table
     vintage_rows = []
     for i, s in enumerate(vintage_stats[-10:]):  # last 10 vintages
-        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
+        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
         mc = _moic_color(s.moic_p50)
         vintage_rows.append(f"""<tr{stripe}>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;">{s.year}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.n_deals}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc}">{s.moic_p50:.2f}x</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#b5321e' if s.loss_rate>0.2 else '#b8732a' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.0f}%</td>
+      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.0f}%</td>
 </tr>""")
 
     vintage_table = f"""
@@ -300,16 +300,16 @@ def render_corpus_dashboard() -> str:
   <div class="ck-table-wrap">
     <table class="ck-table" style="width:100%;">
       <thead><tr>
-        <th style="padding:5px 8px;color:#7a8699;">Year</th>
-        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Deals</th>
-        <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 MOIC</th>
-        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Loss %</th>
+        <th style="padding:5px 8px;color:#64748b;">Year</th>
+        <th style="padding:5px 8px;color:#64748b;text-align:right;">Deals</th>
+        <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 MOIC</th>
+        <th style="padding:5px 8px;color:#64748b;text-align:right;">Loss %</th>
       </tr></thead>
       <tbody>{''.join(vintage_rows)}</tbody>
     </table>
   </div>
   <div style="padding:0 16px 8px;font-size:9px;color:#475569;">
-    <a href="/vintage-perf" style="color:#2fb3ad;text-decoration:none;">→ Full vintage analysis</a>
+    <a href="/vintage-perf" style="color:#3b82f6;text-decoration:none;">→ Full vintage analysis</a>
   </div>
 </div>"""
 

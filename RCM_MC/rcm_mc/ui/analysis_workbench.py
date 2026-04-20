@@ -5,8 +5,8 @@ entire :class:`DealAnalysisPacket` across six tabs: Overview, RCM
 Profile, EBITDA Bridge, Monte Carlo, Risk & Diligence, Provenance.
 
 Design constraints from the spec:
-- Dark theme — ``#f5f1ea`` background, ``#ffffff`` panels, ``#d6cfc3``
-  borders. ``#1a2332`` text, ``#465366`` muted.
+- Dark theme — ``#0a0e17`` background, ``#111827`` panels, ``#1e293b``
+  borders. ``#e2e8f0`` text, ``#94a3b8`` muted.
 - JetBrains Mono for numeric cells; inter-system default for body.
 - No border-radius > 4px. Dense padding (6px/10px on table cells).
 - Zero external dependencies — no charts library, no framework, just
@@ -40,22 +40,22 @@ from ..analysis.packet import (
 
 # Exposed so tests can assert specific tokens are in the output.
 PALETTE = {
-    "bg":         "#f5f1ea",
-    "panel":      "#ffffff",
-    "panel_alt":  "#ece6db",
-    "border":     "#d6cfc3",
-    "text":       "#1a2332",
-    "text_dim":   "#465366",
-    "text_faint": "#7a8699",
-    "positive":   "#0a8a5f",
-    "negative":   "#b5321e",
-    "warning":    "#b8732a",
-    "neutral":    "#7a8699",
-    "accent":     "#2fb3ad",
-    "critical":   "#8a1e0e",
-    "high":       "#b8732a",
-    "medium":     "#b8732a",
-    "low":        "#7a8699",
+    "bg":         "#0a0e17",
+    "panel":      "#111827",
+    "panel_alt":  "#0f172a",
+    "border":     "#1e293b",
+    "text":       "#e2e8f0",
+    "text_dim":   "#94a3b8",
+    "text_faint": "#64748b",
+    "positive":   "#10b981",
+    "negative":   "#ef4444",
+    "warning":    "#f59e0b",
+    "neutral":    "#6366f1",
+    "accent":     "#3b82f6",
+    "critical":   "#dc2626",
+    "high":       "#f59e0b",
+    "medium":     "#eab308",
+    "low":        "#64748b",
 }
 
 
@@ -76,12 +76,9 @@ _WORKBENCH_CSS = f"""
 }}
 
 * {{ box-sizing: border-box; }}
-/* Scoped typography + color for the workbench only (body styling
-   comes from the chartis shell). Previously lived on
-   ``body.analysis-workbench`` but the wrapper div uses the
-   ``analysis-workbench`` class, and body has no class — so these
-   rules never applied. Re-scoped to the wrapper div. */
-.analysis-workbench {{
+body.analysis-workbench {{
+  margin: 0; padding: 0;
+  background: var(--wb-bg);
   color: var(--wb-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter,
                Helvetica, Arial, sans-serif;
@@ -122,23 +119,7 @@ _WORKBENCH_CSS = f"""
 }}
 .analysis-workbench .wb-breadcrumb a:hover {{ color: var(--wb-text); }}
 .analysis-workbench .wb-action-bar {{
-  margin-left: auto; display: flex; gap: 10px; align-items: center;
-  flex-wrap: wrap;
-}}
-.analysis-workbench .wb-action-group {{
-  display: flex; gap: 4px; align-items: center;
-}}
-.analysis-workbench .wb-action-group + .wb-action-group {{
-  border-left: 1px solid var(--wb-border); padding-left: 10px;
-}}
-.analysis-workbench .wb-action-group-secondary .wb-btn {{
-  font-size: 11px;
-}}
-.analysis-workbench .wb-action-group-destructive .wb-btn {{
-  font-size: 11px;
-}}
-.analysis-workbench .wb-meta {{
-  font-size: 11px;
+  margin-left: auto; display: flex; gap: 6px;
 }}
 .analysis-workbench .wb-btn {{
   background: var(--wb-panel-alt);
@@ -151,20 +132,6 @@ _WORKBENCH_CSS = f"""
 .analysis-workbench .wb-btn:hover {{ background: var(--wb-border); }}
 .analysis-workbench .wb-btn-primary {{
   background: var(--wb-accent); border-color: var(--wb-accent);
-}}
-.analysis-workbench .wb-btn-muted {{
-  background: transparent; color: var(--wb-text-dim);
-  border-color: var(--wb-border);
-}}
-.analysis-workbench .wb-btn-muted:hover {{
-  color: var(--wb-text); background: var(--wb-panel-alt);
-}}
-.analysis-workbench .wb-btn-danger {{
-  background: transparent; color: #b5321e;
-  border-color: var(--wb-border);
-}}
-.analysis-workbench .wb-btn-danger:hover {{
-  background: rgba(239, 68, 68, 0.1); border-color: #b5321e;
 }}
 
 /* Tab nav */
@@ -186,34 +153,6 @@ _WORKBENCH_CSS = f"""
 }}
 .analysis-workbench .wb-tab-panel {{ display: none; padding: 14px 16px; }}
 .analysis-workbench .wb-tab-panel.active {{ display: block; }}
-
-/* Empty state — shown at top of Overview when coverage ~= 0 */
-.analysis-workbench .wb-empty-state {{
-  background: var(--wb-panel);
-  border: 1px solid var(--wb-border);
-  border-left: 3px solid var(--wb-accent);
-  border-radius: 3px;
-  padding: 16px 20px;
-  margin-bottom: 14px;
-}}
-.analysis-workbench .wb-empty-title {{
-  font-size: 14px; font-weight: 600;
-  color: var(--wb-text); margin-bottom: 6px;
-}}
-.analysis-workbench .wb-empty-body {{
-  font-size: 12px; color: var(--wb-text-dim);
-  line-height: 1.55; margin-bottom: 10px;
-}}
-.analysis-workbench .wb-empty-actions {{
-  display: flex; gap: 8px; flex-wrap: wrap;
-  margin-bottom: 10px;
-}}
-.analysis-workbench .wb-empty-footnote {{
-  font-size: 10.5px;
-  line-height: 1.5;
-  padding-top: 8px;
-  border-top: 1px solid var(--wb-border);
-}}
 
 /* Cards / panels */
 .analysis-workbench .wb-card {{
@@ -672,42 +611,33 @@ def _render_header(packet: DealAnalysisPacket) -> str:
         <a href="/home">home</a> &nbsp;›&nbsp;
         <a href="/analysis">analysis</a> &nbsp;›&nbsp;
         <a href="/deal/{_esc(packet.deal_id)}">{_esc(packet.deal_name or packet.deal_id)}</a>
+        &nbsp;›&nbsp; analysis
       </div>
       <div class="wb-header-row">
         <div class="wb-deal-name">{_esc(packet.deal_name or packet.deal_id)}</div>
         <span class="wb-badge {grade_class}">completeness: {grade}</span>
-        <span class="dim wb-meta">coverage {cov}</span>
-        <span class="dim wb-meta">as-of {_esc(as_of)}</span>
-        <span class="dim wb-meta">{_esc(freshness)}</span>
+        <span class="dim">coverage {cov}</span>
+        <span class="dim">as-of {_esc(as_of)}</span>
+        <span class="dim">{_esc(freshness)}</span>
         <div class="wb-action-bar">
-          <!-- Primary: rebuild the packet + jump to models -->
-          <div class="wb-action-group">
-            <form method="POST" action="/api/analysis/{_esc(packet.deal_id)}/rebuild" style="display:inline;">
-              <button class="wb-btn wb-btn-primary" type="submit">Rebuild</button>
-            </form>
-            <a class="wb-btn wb-btn-primary" href="/models/dcf/{_esc(packet.deal_id)}">DCF</a>
-            <a class="wb-btn wb-btn-primary" href="/models/lbo/{_esc(packet.deal_id)}">LBO</a>
-            <a class="wb-btn" href="/models/bridge/{_esc(packet.deal_id)}">Bridge</a>
-            <a class="wb-btn" href="/models/financials/{_esc(packet.deal_id)}">3-Stmt</a>
-          </div>
-          <!-- Exports: JSON / Diligence / ZIP, grouped and muted -->
-          <div class="wb-action-group wb-action-group-secondary">
-            <a class="wb-btn wb-btn-muted" href="/api/analysis/{_esc(packet.deal_id)}">JSON</a>
-            <a class="wb-btn wb-btn-muted" href="/api/analysis/{_esc(packet.deal_id)}/diligence-questions">Diligence CSV</a>
-            <a class="wb-btn wb-btn-muted" href="/api/deals/{_esc(packet.deal_id)}/package">Download ZIP</a>
-          </div>
+          <form method="POST" action="/api/analysis/{_esc(packet.deal_id)}/rebuild" style="display:inline;">
+            <button class="wb-btn wb-btn-primary" type="submit">Rebuild</button>
+          </form>
+          <a class="wb-btn wb-btn-primary" href="/models/dcf/{_esc(packet.deal_id)}">DCF</a>
+          <a class="wb-btn wb-btn-primary" href="/models/lbo/{_esc(packet.deal_id)}">LBO</a>
+          <a class="wb-btn" href="/models/financials/{_esc(packet.deal_id)}">Financials</a>
+          <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}">JSON</a>
+          <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}/diligence-questions">Diligence CSV</a>
+          <a class="wb-btn" href="/api/deals/{_esc(packet.deal_id)}/package">Download ZIP</a>
           <span style="flex:1;"></span>
-          <!-- Destructive: sits far right, visually de-emphasized -->
-          <div class="wb-action-group wb-action-group-destructive">
-            <form method="POST" action="/api/deals/{_esc(packet.deal_id)}/archive" style="display:inline;">
-              <button class="wb-btn wb-btn-danger" type="submit"
-                      onclick="return confirm('Archive this deal? It will be hidden from the dashboard.');"
-                      aria-label="Archive this deal">Archive</button>
-            </form>
-            <button class="wb-btn wb-btn-danger" type="button"
-                    onclick="if(confirm('Permanently delete this deal and ALL associated data? This cannot be undone.')){{fetch('/api/deals/{_esc(packet.deal_id)}',{{method:'DELETE'}}).then(r=>r.json()).then(d=>{{if(d.deleted){{if(window.rcmToast)rcmToast('Deal deleted','success');setTimeout(function(){{window.location='/';}},500);}}}}).catch(function(){{if(window.rcmToast)rcmToast('Delete failed','error');}});}}"
-                    aria-label="Permanently delete this deal">Delete</button>
-          </div>
+          <form method="POST" action="/api/deals/{_esc(packet.deal_id)}/archive" style="display:inline;">
+            <button class="wb-btn" type="submit"
+                    onclick="return confirm('Archive this deal? It will be hidden from the dashboard.');"
+                    style="color:#f59e0b;" aria-label="Archive this deal">Archive</button>
+          </form>
+          <button class="wb-btn" type="button"
+                  onclick="if(confirm('Permanently delete this deal and ALL associated data? This cannot be undone.')){{fetch('/api/deals/{_esc(packet.deal_id)}',{{method:'DELETE'}}).then(r=>r.json()).then(d=>{{if(d.deleted){{if(window.rcmToast)rcmToast('Deal deleted','success');setTimeout(function(){{window.location='/';}},500);}}}}).catch(function(){{if(window.rcmToast)rcmToast('Delete failed','error');}});}}"
+                  style="color:#ef4444;" aria-label="Permanently delete this deal">Delete</button>
           <span class="dim" style="font-size:0.7rem;margin-left:8px;" title="Press ? for keyboard shortcuts">⌨ ?=help</span>
         </div>
       </div>
@@ -810,41 +740,8 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
     )
     radial_label = f'<div class="radial-label">{int(cov_pct*100)}%</div>'
 
-    # Empty-state hero: when observed coverage is effectively zero
-    # (brand-new deal, no CSV uploaded, HCRIS not pulled), the rest
-    # of the page renders with all placeholders and grade D. Surface
-    # a clear call-to-action banner above the tabs so partners know
-    # what to do next instead of staring at em-dashes.
-    empty_state_banner = ""
-    if cov_pct < 0.05:
-        deal_id_esc = _esc(packet.deal_id)
-        empty_state_banner = f"""
-    <div class="wb-empty-state">
-      <div class="wb-empty-title">No observed data on this deal yet</div>
-      <div class="wb-empty-body">
-        Every downstream view (DCF, LBO, bridge, scenarios) needs at
-        least revenue, EBITDA, and payer mix to produce real numbers
-        rather than defaults. Three ways to populate:
-      </div>
-      <div class="wb-empty-actions">
-        <a class="wb-btn wb-btn-primary" href="/new-deal">New-deal wizard</a>
-        <a class="wb-btn" href="/upload">Upload CSV / YAML</a>
-        <a class="wb-btn" href="/deal/{deal_id_esc}">Deal dashboard</a>
-      </div>
-      <div class="wb-empty-footnote dim">
-        To pull HCRIS cost-report data for this hospital, run
-        <code>rcm-mc data refresh hcris</code> from the command line
-        — an in-app one-click HCRIS pull doesn't exist yet. Until
-        data is populated, numbers on this page fall back to registry
-        defaults (industry P50). Treat as illustrative, not
-        diligence-grade.
-      </div>
-    </div>
-"""
-
     return f"""
     <div class="wb-tab-panel active" data-panel="overview">
-      {empty_state_banner}
       <div class="wb-grid">
         <div>
           <div class="wb-card">
@@ -964,7 +861,7 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
 
     if not actions:
         actions.append(
-            '<div style="color:#0a8a5f;">✓ <strong>Looking good</strong> '
+            '<div style="color:#10b981;">✓ <strong>Looking good</strong> '
             '— completeness, risks, and simulation are all in order.</div>'
         )
 
@@ -2325,9 +2222,9 @@ _EXPLAIN_JS = r"""
     titleEl.textContent = d.display_name || metric;
     var pct = d.percentile != null ? (d.percentile*100).toFixed(0)+'th' : '—';
     var barPct = d.percentile != null ? Math.round(d.percentile*100) : 50;
-    var barColor = barPct > 70 ? '#0a8a5f' : (barPct < 30 ? '#b5321e' : '#b8732a');
+    var barColor = barPct > 70 ? '#10b981' : (barPct < 30 ? '#ef4444' : '#f59e0b');
     bodyEl.innerHTML =
-      '<div class="ep-section"><div class="ep-label">Source</div><span style="background:#d6cfc3;padding:2px 8px;border-radius:3px;font-size:11px;">'+d.source+'</span></div>'+
+      '<div class="ep-section"><div class="ep-label">Source</div><span style="background:#1e293b;padding:2px 8px;border-radius:3px;font-size:11px;">'+d.source+'</span></div>'+
       '<div class="ep-section"><div class="ep-label">Current value</div><div class="num" style="font-size:18px;">'+d.value.toFixed(2)+'</div></div>'+
       '<div class="ep-section"><div class="ep-label">Benchmark P50</div><div>'+(d.benchmark_p50!=null?d.benchmark_p50.toFixed(1):'—')+'</div>'+
       '<div class="ep-label" style="margin-top:6px;">Percentile rank: '+pct+'</div>'+
@@ -2385,7 +2282,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         f'{_esc(explain_data)}</script>'
     )
     shell_body = (
-        f'<div class="analysis-workbench">{header}{nav}{body_inner}'
+        f'<div class="analysis-workbench-scope">{header}{nav}{body_inner}'
         f'{explain_panel}</div>'
     )
     return chartis_shell(

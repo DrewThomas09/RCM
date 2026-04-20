@@ -277,9 +277,9 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
         score_bar = _score_bar(total_score)
         flag_items = "".join(
             f'<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid {P["border_dim"]}">'
-            f'<div style="font-size:14px;color:{"#0a8a5f" if not f["triggered"] else "#b5321e"};margin-top:1px">{"●" if f["triggered"] else "○"}</div>'
+            f'<div style="font-size:14px;color:{"#10b981" if not f["triggered"] else "#ef4444"};margin-top:1px">{"●" if f["triggered"] else "○"}</div>'
             f'<div style="flex:1">'
-            f'<div style="font-size:11px;font-weight:600;color:{"#b5321e" if f["triggered"] else P["text_dim"]};font-family:{_SANS}">{html.escape(f["label"])} <span style="font-size:9px;color:{P["text_faint"]}">[{f["weight"]}pts]</span></div>'
+            f'<div style="font-size:11px;font-weight:600;color:{"#ef4444" if f["triggered"] else P["text_dim"]};font-family:{_SANS}">{html.escape(f["label"])} <span style="font-size:9px;color:{P["text_faint"]}">[{f["weight"]}pts]</span></div>'
             f'<div style="font-size:10px;color:{P["text_faint"]};font-family:{_SANS};margin-top:2px">{html.escape(f["desc"])}</div>'
             f'</div>'
             f'</div>'

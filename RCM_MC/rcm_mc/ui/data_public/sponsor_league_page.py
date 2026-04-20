@@ -28,29 +28,29 @@ def _moic_color(v: Optional[float]) -> str:
     if v is None:
         return "var(--ck-text-faint)"
     if v < 1.0:
-        return "#b5321e"
+        return "#ef4444"
     if v >= 2.5:
         return "#22c55e"
     if v >= 1.5:
-        return "#1a2332"
-    return "#b8732a"
+        return "#e2e8f0"
+    return "#f59e0b"
 
 
 def _loss_color(v: float) -> str:
     if v >= 0.30:
-        return "#b5321e"
+        return "#ef4444"
     if v >= 0.15:
-        return "#b8732a"
+        return "#f59e0b"
     return "#22c55e"
 
 
 def _consistency_bar(score: float, width: int = 60) -> str:
     """Inline SVG consistency score bar."""
     filled = int(score / 100 * width)
-    bar_color = "#22c55e" if score >= 70 else ("#b8732a" if score >= 45 else "#b5321e")
+    bar_color = "#22c55e" if score >= 70 else ("#f59e0b" if score >= 45 else "#ef4444")
     return (
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">'
-        f'<rect x="0" y="1" width="{width}" height="6" rx="1" fill="#d6cfc3"/>'
+        f'<rect x="0" y="1" width="{width}" height="6" rx="1" fill="#1e293b"/>'
         f'<rect x="0" y="1" width="{filled}" height="6" rx="1" fill="{bar_color}"/>'
         f'</svg>'
         f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
@@ -89,8 +89,8 @@ def _sector_pills(sectors: List[str]) -> str:
     pills = []
     for s in sectors[:3]:
         pills.append(
-            f'<span style="display:inline-block;background:#ece6db;border:1px solid #d6cfc3;'
-            f'border-radius:2px;padding:1px 5px;font-size:8.5px;color:#7a8699;margin:1px;">'
+            f'<span style="display:inline-block;background:#0f172a;border:1px solid #1e293b;'
+            f'border-radius:2px;padding:1px 5px;font-size:8.5px;color:#64748b;margin:1px;">'
             f'{_html.escape(s[:20])}</span>'
         )
     if len(sectors) > 3:
@@ -117,8 +117,8 @@ def _sparkline_moics(moics: List[float], width: int = 60, height: int = 14) -> s
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg" '
         f'style="display:inline-block;vertical-align:middle;">'
         f'<line x1="0" y1="{breakeven_y}" x2="{width}" y2="{breakeven_y}" '
-        f'stroke="#b5321e" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.5"/>'
-        f'<polyline points="{polyline}" fill="none" stroke="#2fb3ad" stroke-width="1.2" opacity="0.8"/>'
+        f'stroke="#ef4444" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.5"/>'
+        f'<polyline points="{polyline}" fill="none" stroke="#3b82f6" stroke-width="1.2" opacity="0.8"/>'
         f'</svg>'
     )
 
@@ -154,7 +154,7 @@ def _build_table(records: List[Any]) -> str:
 
     rows_html = []
     for i, rec in enumerate(records):
-        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
+        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
 
         # Get realized moics for sparkline
         moics = sorted([

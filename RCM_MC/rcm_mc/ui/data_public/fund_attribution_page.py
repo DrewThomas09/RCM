@@ -28,7 +28,7 @@ def _waterfall_svg(components, fund_moic: float) -> str:
     n_bars = len(components) + 2    # Start + components + End
     bar_w = (inner_w - (n_bars - 1) * 8) / n_bars
 
-    colors = [P["accent"], "#14b8a6", "#a78bfa", "#b8732a", "#f97316"]
+    colors = [P["accent"], "#14b8a6", "#a78bfa", "#f59e0b", "#f97316"]
 
     # Build running values
     running = 1.0
