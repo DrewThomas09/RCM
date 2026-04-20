@@ -32,15 +32,15 @@ def _mini_bar(pct: float, color: str, width: int = 80) -> str:
     filled = max(0, min(width, int(pct * width)))
     return (
         f'<svg width="{width}" height="8" xmlns="http://www.w3.org/2000/svg">'
-        f'<rect x="0" y="0" width="{width}" height="8" rx="1" fill="#1e293b"/>'
+        f'<rect x="0" y="0" width="{width}" height="8" rx="1" fill="#d6cfc3"/>'
         f'<rect x="0" y="0" width="{filled}" height="8" rx="1" fill="{color}"/>'
         f'</svg>'
     )
 
 
 def _tier_badge(tier: str) -> str:
-    colors = {"A": "#22c55e", "B": "#3b82f6", "C": "#f59e0b", "D": "#ef4444"}
-    c = colors.get(tier, "#64748b")
+    colors = {"A": "#22c55e", "B": "#2fb3ad", "C": "#b8732a", "D": "#b5321e"}
+    c = colors.get(tier, "#7a8699")
     return (
         f'<span style="display:inline-block;padding:1px 6px;border:1px solid {c};'
         f'color:{c};font-family:var(--ck-mono);font-size:9.5px;border-radius:2px;">'
@@ -50,13 +50,13 @@ def _tier_badge(tier: str) -> str:
 
 def _severity_badge(severity: str) -> str:
     if severity == "error":
-        return '<span style="color:#ef4444;font-size:8.5px;font-family:var(--ck-mono);">ERR</span>'
-    return '<span style="color:#f59e0b;font-size:8.5px;font-family:var(--ck-mono);">WRN</span>'
+        return '<span style="color:#b5321e;font-size:8.5px;font-family:var(--ck-mono);">ERR</span>'
+    return '<span style="color:#b8732a;font-size:8.5px;font-family:var(--ck-mono);">WRN</span>'
 
 
 def _tier_distribution_svg(tier_counts: Dict[str, int], total: int) -> str:
     """Horizontal stacked bar of tier distribution."""
-    tiers = [("A", "#22c55e"), ("B", "#3b82f6"), ("C", "#f59e0b"), ("D", "#ef4444")]
+    tiers = [("A", "#22c55e"), ("B", "#2fb3ad"), ("C", "#b8732a"), ("D", "#b5321e")]
     W, H = 400, 24
     segments = []
     x = 0
@@ -69,7 +69,7 @@ def _tier_distribution_svg(tier_counts: Dict[str, int], total: int) -> str:
                 lx = x + w // 2
                 segments.append(
                     f'<text x="{lx}" y="15" text-anchor="middle" '
-                    f'font-family="JetBrains Mono,monospace" font-size="9" fill="#0a0e17">'
+                    f'font-family="JetBrains Mono,monospace" font-size="9" fill="#f5f1ea">'
                     f'{tier}:{count}</text>'
                 )
         x += w
@@ -93,20 +93,20 @@ def _quality_histogram_svg(scores: List[float], width: int = 400, height: int = 
         bh = max(1, int(cnt / max_b * (height - 20)))
         bx = 10 + i * bar_w
         by = height - 10 - bh
-        color = "#22c55e" if i >= 7 else ("#3b82f6" if i >= 5 else ("#f59e0b" if i >= 3 else "#ef4444"))
+        color = "#22c55e" if i >= 7 else ("#2fb3ad" if i >= 5 else ("#b8732a" if i >= 3 else "#b5321e"))
         bars.append(f'<rect x="{bx}" y="{by}" width="{bar_w-2}" height="{bh}" fill="{color}"/>')
         label = f'{i*10}'
         bars.append(
             f'<text x="{bx + bar_w//2 - 2}" y="{height-1}" '
-            f'font-family="JetBrains Mono,monospace" font-size="7" fill="#64748b">{label}</text>'
+            f'font-family="JetBrains Mono,monospace" font-size="7" fill="#7a8699">{label}</text>'
         )
     # median line
     if scores:
         med = sorted(scores)[len(scores) // 2]
         mx = int(10 + med / 100 * (width - 20))
-        bars.append(f'<line x1="{mx}" y1="0" x2="{mx}" y2="{height-10}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>')
+        bars.append(f'<line x1="{mx}" y1="0" x2="{mx}" y2="{height-10}" stroke="#465366" stroke-width="1" stroke-dasharray="3,3"/>')
         bars.append(
-            f'<text x="{mx+2}" y="10" font-family="JetBrains Mono,monospace" font-size="7" fill="#94a3b8">med={med:.0f}</text>'
+            f'<text x="{mx+2}" y="10" font-family="JetBrains Mono,monospace" font-size="7" fill="#465366">med={med:.0f}</text>'
         )
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
@@ -163,8 +163,8 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
         + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', "in corpus")
         + ck_kpi_block("Avg Quality", f'<span class="mn">{avg_q:.1f}</span>', "out of 100")
         + ck_kpi_block("Tier A", f'<span class="mn" style="color:#22c55e">{tier_counts.get("A",0)}</span>', f'{100*tier_counts.get("A",0)/total:.0f}% of corpus')
-        + ck_kpi_block("Tier B", f'<span class="mn" style="color:#3b82f6">{tier_counts.get("B",0)}</span>', f'{100*tier_counts.get("B",0)/total:.0f}% of corpus')
-        + ck_kpi_block("Flagged", f'<span class="mn" style="color:#f59e0b">{n_flagged}</span>', f"{n_errors} errors total")
+        + ck_kpi_block("Tier B", f'<span class="mn" style="color:#2fb3ad">{tier_counts.get("B",0)}</span>', f'{100*tier_counts.get("B",0)/total:.0f}% of corpus')
+        + ck_kpi_block("Flagged", f'<span class="mn" style="color:#b8732a">{n_flagged}</span>', f"{n_errors} errors total")
         + '</div>'
     )
 
@@ -179,7 +179,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     <div>
       <div class="ck-section-label" style="margin-bottom:6px;">Tier Breakdown</div>
       {dist_svg}
-      <div style="margin-top:8px;font-size:9px;color:#64748b;">
+      <div style="margin-top:8px;font-size:9px;color:#7a8699;">
         A≥75 · B≥55 · C≥35 · D&lt;35 &nbsp;|&nbsp; composite = 55% completeness + 45% credibility
       </div>
     </div>
@@ -193,8 +193,8 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     # Filter bar
     tiers_nav = "".join(
         f'<a href="/deal-quality?tier={t}&sort_by={sort_by}" style="display:inline-block;margin:2px 4px;'
-        f'padding:2px 8px;border:1px solid {"#22c55e" if t=="A" else "#3b82f6" if t=="B" else "#f59e0b" if t=="C" else "#ef4444"};'
-        f'color:{"#22c55e" if t=="A" else "#3b82f6" if t=="B" else "#f59e0b" if t=="C" else "#ef4444"};'
+        f'padding:2px 8px;border:1px solid {"#22c55e" if t=="A" else "#2fb3ad" if t=="B" else "#b8732a" if t=="C" else "#b5321e"};'
+        f'color:{"#22c55e" if t=="A" else "#2fb3ad" if t=="B" else "#b8732a" if t=="C" else "#b5321e"};'
         f'font-family:var(--ck-mono);font-size:10px;border-radius:2px;text-decoration:none;">'
         f'Tier {t} ({tier_counts.get(t,0)})</a>'
         for t in ("A", "B", "C", "D")
@@ -204,19 +204,19 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
   <div class="ck-panel-title">Filter &amp; Sort</div>
   <div style="padding:8px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
     <div>
-      <span style="font-size:9px;color:#64748b;margin-right:6px;text-transform:uppercase;letter-spacing:0.08em;">Tier</span>
-      <a href="/deal-quality?sort_by={sort_by}" style="margin-right:4px;font-size:10px;color:#94a3b8;text-decoration:none;">All</a>
+      <span style="font-size:9px;color:#7a8699;margin-right:6px;text-transform:uppercase;letter-spacing:0.08em;">Tier</span>
+      <a href="/deal-quality?sort_by={sort_by}" style="margin-right:4px;font-size:10px;color:#465366;text-decoration:none;">All</a>
       {tiers_nav}
     </div>
     <div>
-      <span style="font-size:9px;color:#64748b;margin-right:6px;text-transform:uppercase;letter-spacing:0.08em;">Sort</span>
+      <span style="font-size:9px;color:#7a8699;margin-right:6px;text-transform:uppercase;letter-spacing:0.08em;">Sort</span>
       {"".join(
         f'<a href="/deal-quality?tier={tier_filter}&sort_by={s}" style="margin-right:6px;font-size:10px;'
-        f'color:{"#3b82f6" if s==sort_by else "#94a3b8"};text-decoration:none;">{s.replace("_"," ")}</a>'
+        f'color:{"#2fb3ad" if s==sort_by else "#465366"};text-decoration:none;">{s.replace("_"," ")}</a>'
         for s in ("quality_score", "completeness", "credibility", "tier", "deal_name")
       )}
     </div>
-    <div style="font-size:9.5px;color:#64748b;">
+    <div style="font-size:9.5px;color:#7a8699;">
       Showing {len(page_scores)} of {len(scores)} deals
       {"· p."+str(page)+"/"+str(total_pages) if total_pages > 1 else ""}
     </div>
@@ -226,7 +226,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     # Table
     def _col_header(label: str, key: str) -> str:
         active = sort_by == key
-        color = "#e2e8f0" if active else "#64748b"
+        color = "#1a2332" if active else "#7a8699"
         return (
             f'<th style="padding:5px 8px;text-align:left;cursor:pointer;color:{color};">'
             f'<a href="/deal-quality?tier={tier_filter}&sort_by={key}" '
@@ -235,46 +235,46 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
 
     rows = []
     for i, s in enumerate(page_scores):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
         flag_html = ""
         if s.flags:
             flag_parts = []
             for fl in s.flags[:3]:
                 flag_parts.append(
                     f'{_severity_badge(fl.severity)} '
-                    f'<span style="font-size:9px;color:#94a3b8;">{_html.escape(fl.message[:60])}</span>'
+                    f'<span style="font-size:9px;color:#465366;">{_html.escape(fl.message[:60])}</span>'
                 )
             flag_html = "<br>".join(flag_parts)
             if len(s.flags) > 3:
-                flag_html += f'<br><span style="font-size:9px;color:#64748b;">+{len(s.flags)-3} more</span>'
+                flag_html += f'<br><span style="font-size:9px;color:#7a8699;">+{len(s.flags)-3} more</span>'
 
         missing_html = ""
         if s.missing_fields:
             mf = s.missing_fields[:5]
             missing_html = (
-                '<span style="font-size:8.5px;color:#64748b;font-family:var(--ck-mono);">'
+                '<span style="font-size:8.5px;color:#7a8699;font-family:var(--ck-mono);">'
                 + ", ".join(mf)
                 + ("…" if len(s.missing_fields) > 5 else "")
                 + "</span>"
             )
 
         rows.append(f"""<tr{stripe}>
-  <td style="padding:5px 8px;font-size:9.5px;color:#94a3b8;font-family:var(--ck-mono);">{_html.escape(s.source_id)}</td>
+  <td style="padding:5px 8px;font-size:9.5px;color:#465366;font-family:var(--ck-mono);">{_html.escape(s.source_id)}</td>
   <td style="padding:5px 8px;font-size:10px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
     <span title="{_html.escape(s.deal_name)}">{_html.escape(s.deal_name[:38])}</span>
   </td>
   <td style="padding:5px 8px;text-align:center;">{_tier_badge(s.tier)}</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#22c55e' if s.quality_score>=75 else '#3b82f6' if s.quality_score>=55 else '#f59e0b' if s.quality_score>=35 else '#ef4444'};">
+      color:{'#22c55e' if s.quality_score>=75 else '#2fb3ad' if s.quality_score>=55 else '#b8732a' if s.quality_score>=35 else '#b5321e'};">
     {s.quality_score:.1f}
   </td>
   <td style="padding:5px 8px;">
-    {_mini_bar(s.completeness_pct, '#3b82f6')}
-    <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.completeness_pct*100:.0f}%</span>
+    {_mini_bar(s.completeness_pct, '#2fb3ad')}
+    <span style="font-family:var(--ck-mono);font-size:9px;color:#465366;margin-left:4px;">{s.completeness_pct*100:.0f}%</span>
   </td>
   <td style="padding:5px 8px;">
-    {_mini_bar(s.credibility_pct, '#22c55e' if s.credibility_pct>=0.9 else '#f59e0b' if s.credibility_pct>=0.7 else '#ef4444')}
-    <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.credibility_pct*100:.0f}%</span>
+    {_mini_bar(s.credibility_pct, '#22c55e' if s.credibility_pct>=0.9 else '#b8732a' if s.credibility_pct>=0.7 else '#b5321e')}
+    <span style="font-family:var(--ck-mono);font-size:9px;color:#465366;margin-left:4px;">{s.credibility_pct*100:.0f}%</span>
   </td>
   <td style="padding:5px 8px;font-size:9px;">{flag_html or '<span style="color:#475569;">—</span>'}</td>
   <td style="padding:5px 8px;">{missing_html or '<span style="font-size:9px;color:#475569;">—</span>'}</td>
@@ -285,16 +285,16 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
   <div class="ck-panel-title">Per-Deal Quality Scores — {len(page_scores)} of {len(scores)}</div>
   <div class="ck-table-wrap" style="max-height:600px;overflow-y:auto;">
     <table class="ck-table" style="width:100%;table-layout:fixed;">
-      <thead style="position:sticky;top:0;background:#111827;z-index:2;">
+      <thead style="position:sticky;top:0;background:#ece6db;z-index:2;">
         <tr>
           {_col_header("ID", "source_id")}
-          <th style="padding:5px 8px;text-align:left;color:#64748b;width:220px;">Deal</th>
+          <th style="padding:5px 8px;text-align:left;color:#7a8699;width:220px;">Deal</th>
           {_col_header("Tier", "tier")}
           {_col_header("Score", "quality_score")}
           {_col_header("Completeness", "completeness")}
           {_col_header("Credibility", "credibility")}
-          <th style="padding:5px 8px;text-align:left;color:#64748b;width:200px;">Flags</th>
-          <th style="padding:5px 8px;text-align:left;color:#64748b;">Missing Fields</th>
+          <th style="padding:5px 8px;text-align:left;color:#7a8699;width:200px;">Flags</th>
+          <th style="padding:5px 8px;text-align:left;color:#7a8699;">Missing Fields</th>
         </tr>
       </thead>
       <tbody>{''.join(rows)}</tbody>
@@ -307,7 +307,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     if total_pages > 1:
         parts = []
         for p in range(1, total_pages + 1):
-            color = "#3b82f6" if p == page else "#64748b"
+            color = "#2fb3ad" if p == page else "#7a8699"
             parts.append(
                 f'<a href="/deal-quality?tier={tier_filter}&sort_by={sort_by}&page={p}" '
                 f'style="margin:0 3px;font-family:var(--ck-mono);font-size:10px;color:{color};text-decoration:none;">{p}</a>'

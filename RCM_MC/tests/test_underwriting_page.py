@@ -8,7 +8,7 @@ class TestRenderUnderwriting(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.underwriting_page import render_underwriting
         html = render_underwriting()
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
         self.assertGreater(len(html), 15_000)
 
     def test_renders_with_params(self):
@@ -52,7 +52,7 @@ class TestRenderUnderwriting(unittest.TestCase):
         # 25× entry multiple — should produce low MOIC
         html = render_underwriting(entry_ev=500.0, entry_ebitda=20.0, equity_pct=40.0,
                                     ebitda_cagr=5.0, hold_years=5.0, exit_multiple=8.0)
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
 
     def test_corpus_benchmark_panel(self):
         from rcm_mc.ui.data_public.underwriting_page import _corpus_benchmark_panel, _load_corpus

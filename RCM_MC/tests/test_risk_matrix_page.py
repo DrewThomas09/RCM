@@ -8,7 +8,7 @@ class TestRenderRiskMatrix(unittest.TestCase):
     def test_renders_html(self):
         from rcm_mc.ui.data_public.risk_matrix_page import render_risk_matrix
         html = render_risk_matrix()
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
         self.assertGreater(len(html), 50_000)
 
     def test_contains_svg_scatter(self):
@@ -36,7 +36,7 @@ class TestRenderRiskMatrix(unittest.TestCase):
     def test_sector_filter_works(self):
         from rcm_mc.ui.data_public.risk_matrix_page import render_risk_matrix
         html = render_risk_matrix(sector_filter="Physician Practice")
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
 
     def test_no_light_theme(self):
         from rcm_mc.ui.data_public.risk_matrix_page import render_risk_matrix

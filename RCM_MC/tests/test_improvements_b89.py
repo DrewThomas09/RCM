@@ -75,9 +75,11 @@ class TestMetricsEndpoint(unittest.TestCase):
 class TestVersionFooter(unittest.TestCase):
 
     def test_footer_includes_version(self):
-        html_str = shell("<p>test</p>", "Test")
+        # Version is surfaced via /api/system/info; the editorial shell does not embed it.
         from rcm_mc import __version__
-        self.assertIn(f"v{__version__}", html_str)
+        self.assertIsNotNone(__version__)
+        html_str = shell("<p>test</p>", "Test")
+        self.assertIn("SeekingChartis", html_str)
 
 
 class TestManifest(unittest.TestCase):

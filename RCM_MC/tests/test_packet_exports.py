@@ -326,7 +326,7 @@ class TestLPUpdate(unittest.TestCase):
         r = PacketRenderer()
         html = r.render_lp_update_html([])
         self.assertIn("0</span>", html)
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_lp_update_flags_critical_risks_count(self):
         r = PacketRenderer()

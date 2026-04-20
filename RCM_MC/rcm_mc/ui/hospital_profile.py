@@ -37,10 +37,10 @@ def render_hospital_profile(
     grade = score.grade if hasattr(score, "grade") else "—"
     score_val = score.score if hasattr(score, "score") else 0
     grade_color = {
-        "A+": "#10b981", "A": "#10b981", "A-": "#10b981",
-        "B+": "#3b82f6", "B": "#3b82f6", "B-": "#3b82f6",
-        "C+": "#f59e0b", "C": "#f59e0b", "C-": "#f59e0b",
-    }.get(grade, "#ef4444")
+        "A+": "#0a8a5f", "A": "#0a8a5f", "A-": "#0a8a5f",
+        "B+": "#2fb3ad", "B": "#2fb3ad", "B-": "#2fb3ad",
+        "C+": "#b8732a", "C": "#b8732a", "C-": "#b8732a",
+    }.get(grade, "#b5321e")
 
     # Identity strip (Bloomberg security header)
     ident = (

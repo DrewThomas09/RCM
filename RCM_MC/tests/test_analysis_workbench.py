@@ -194,7 +194,7 @@ def _minimal_packet() -> DealAnalysisPacket:
 class TestRenderRegimes(unittest.TestCase):
     def test_full_packet_renders(self):
         html = render_workbench(_full_packet())
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         # Deal name in header.
         self.assertIn("Acme Health", html)
         # All six tab labels present.
@@ -245,7 +245,7 @@ class TestRenderRegimes(unittest.TestCase):
 
     def test_minimal_packet_renders_without_error(self):
         html = render_workbench(_minimal_packet())
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         # Bridge tab should surface a "not available" empty state
         # rather than crash.
         self.assertIn("no revenue baseline", html)
@@ -254,7 +254,7 @@ class TestRenderRegimes(unittest.TestCase):
     def test_empty_packet_renders(self):
         packet = DealAnalysisPacket(deal_id="empty", deal_name="")
         html = render_workbench(packet)
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         # Falls back to deal_id when name is blank.
         self.assertIn("empty", html)
 

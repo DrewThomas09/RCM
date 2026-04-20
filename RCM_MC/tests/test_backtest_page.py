@@ -215,7 +215,7 @@ class TestRenderBacktest(unittest.TestCase):
     def test_renders_html(self):
         from rcm_mc.ui.data_public.backtest_page import render_backtest
         html = render_backtest()
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
         self.assertGreater(len(html), 50_000)
 
     def test_contains_svgs(self):

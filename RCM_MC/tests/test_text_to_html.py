@@ -56,7 +56,7 @@ class TestColorize(unittest.TestCase):
 class TestTextToHtml(unittest.TestCase):
     def test_full_document_structure(self):
         doc = text_to_html("hello", title="Test")
-        self.assertIn("<!DOCTYPE html>", doc)
+        self.assertIn("<!doctype html>", doc)
         self.assertIn("Test", doc)
         self.assertIn("<pre>", doc)
         self.assertIn("hello", doc)

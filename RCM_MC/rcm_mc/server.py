@@ -1805,6 +1805,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _route_static(self, filename: str) -> None:
+        """Serve a file from ``rcm_mc/ui/static/``. Path-traversal safe."""
+        import pathlib
+        static_dir = pathlib.Path(__file__).parent / "ui" / "static"
+        target = (static_dir / filename).resolve()
+        if not str(target).startswith(str(static_dir.resolve())):
+            self.send_error(HTTPStatus.FORBIDDEN)
+            return
+        self._send_file(str(target))
+
     # ── Route matching ──
 
     def do_GET(self) -> None:
@@ -3873,6 +3883,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_analysis_workbench(deal_id)
         if path == "/exports/lp-update":
             return self._route_exports_lp_update()
+        if path.startswith("/static/"):
+            return self._route_static(path[len("/static/"):])
         if path.startswith("/outputs/"):
             sub = urllib.parse.unquote(path[len("/outputs/"):])
             return self._route_output(sub)

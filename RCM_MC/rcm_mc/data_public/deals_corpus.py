@@ -683,6 +683,17 @@ class DealsCorpus:
 
     def upsert(self, deal: Dict[str, Any]) -> int:
         """Insert or replace a deal keyed by source_id. Returns deal_id."""
+        # Normalise field aliases from newer seed file schemas:
+        #   company_name → deal_name, moic → realized_moic, irr → realized_irr
+        #   ebitda_mm → ebitda_at_entry_mm; auto-generate source_id when absent.
+        deal_name = deal.get("deal_name") or deal.get("company_name", "")
+        source_id = deal.get("source_id") or (
+            f"auto_{deal_name[:20].replace(' ', '_').lower()}_{deal.get('year', 0)}"
+        )
+        realized_moic = deal.get("realized_moic") or deal.get("moic")
+        realized_irr = deal.get("realized_irr") or deal.get("irr")
+        ebitda = deal.get("ebitda_at_entry_mm") or deal.get("ebitda_mm")
+
         payer_mix = deal.get("payer_mix")
         if isinstance(payer_mix, dict):
             payer_mix = json.dumps(payer_mix)
@@ -712,17 +723,17 @@ class DealsCorpus:
                     ingested_at        = excluded.ingested_at
                 """,
                 (
-                    deal["source_id"],
+                    source_id,
                     deal.get("source", "seed"),
-                    deal["deal_name"],
+                    deal_name,
                     deal.get("year"),
                     deal.get("buyer"),
                     deal.get("seller"),
                     deal.get("ev_mm"),
-                    deal.get("ebitda_at_entry_mm"),
+                    ebitda,
                     deal.get("hold_years"),
-                    deal.get("realized_moic"),
-                    deal.get("realized_irr"),
+                    realized_moic,
+                    realized_irr,
                     payer_mix,
                     deal.get("notes"),
                     _utcnow(),
@@ -733,7 +744,7 @@ class DealsCorpus:
                 return cur.lastrowid
             row = con.execute(
                 "SELECT deal_id FROM public_deals WHERE source_id = ?",
-                (deal["source_id"],),
+                (source_id,),
             ).fetchone()
             return row["deal_id"] if row else -1
 

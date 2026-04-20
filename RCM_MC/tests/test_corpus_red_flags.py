@@ -243,7 +243,7 @@ class TestCorpusFlagsPanel(unittest.TestCase):
         from rcm_mc.ui.data_public.corpus_flags_panel import render_corpus_flags_panel
         panel = render_corpus_flags_panel(_deal())
         self.assertIn("#0b0f18", panel)  # dark background
-        self.assertIn("#1e293b", panel)  # border color
+        self.assertIn("#d6cfc3", panel)  # border color
 
 
 if __name__ == "__main__":

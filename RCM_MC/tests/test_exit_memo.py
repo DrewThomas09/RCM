@@ -69,7 +69,7 @@ class TestBuildExitMemo(unittest.TestCase):
             for section in ("Deal facts", "Track record", "Current pace", "Risk factors"):
                 self.assertIn(section, text)
             # Well-formed HTML
-            self.assertIn("<!DOCTYPE html>", text)
+            self.assertIn("<!doctype html>", text.lower())
             self.assertIn("</html>", text)
 
     def test_entry_underwrite_fields_rendered(self):

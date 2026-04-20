@@ -122,7 +122,7 @@ def _status_badge(status: str) -> str:
 def _source_table(sources: List[Dict[str, Any]]) -> str:
     rows_html = []
     for i, src in enumerate(sources):
-        stripe = ' style="background:#0f172a"' if i % 2 == 0 else ""
+        stripe = ' style="background:#faf7f0"' if i % 2 == 0 else ""
         name_html = f'<strong style="font-family:var(--ck-mono);font-size:11.5px;">{_html.escape(src["name"])}</strong>'
         desc_html = f'<div style="color:var(--ck-text-dim);font-size:11px;margin-top:3px;white-space:normal;">{_html.escape(src["description"])}</div>'
         cols_html = f'<div style="font-family:var(--ck-mono);font-size:9.5px;color:var(--ck-text-faint);margin-top:4px;">{_html.escape(src["key_cols"])}</div>'
@@ -168,13 +168,13 @@ def _api_client_docs() -> str:
   <div class="ck-panel-title">CMS API Client — Quick Reference</div>
   <div style="padding:14px 16px;">
     <div class="ck-section-label" style="margin-bottom:8px;">Python Usage</div>
-    <pre style="background:#0a0e17;border:1px solid #1e293b;border-radius:3px;padding:12px 14px;
-                font-family:var(--ck-mono);font-size:11px;color:#e2e8f0;overflow-x:auto;
+    <pre style="background:#f5f1ea;border:1px solid #d6cfc3;border-radius:3px;padding:12px 14px;
+                font-family:var(--ck-mono);font-size:11px;color:#1a2332;overflow-x:auto;
                 white-space:pre;line-height:1.6;">
-<span style="color:#94a3b8"># rcm_mc/data_public/cms_api_client.py</span>
+<span style="color:#465366"># rcm_mc/data_public/cms_api_client.py</span>
 from rcm_mc.data_public.cms_api_client import fetch_pages, fetch_provider_utilization
 
-<span style="color:#94a3b8"># Low-level: fetch raw paginated JSON</span>
+<span style="color:#465366"># Low-level: fetch raw paginated JSON</span>
 rows = fetch_pages(
     "https://data.cms.gov/data-api/v1/dataset/9552/data",
     limit=5000,
@@ -182,17 +182,17 @@ rows = fetch_pages(
     retry_count=3,
 )
 
-<span style="color:#94a3b8"># High-level: physician utilization with normalization</span>
+<span style="color:#465366"># High-level: physician utilization with normalization</span>
 providers = fetch_provider_utilization(
     state="TX",
     specialty="Cardiology",
     year=2022,
     max_pages=5,
 )
-<span style="color:#94a3b8"># → List[Dict] with: npi, provider_name, state, specialty,
+<span style="color:#465366"># → List[Dict] with: npi, provider_name, state, specialty,
 #   total_services, total_beneficiaries, total_payment</span>
 
-<span style="color:#94a3b8"># Winsorize heavy-tailed payment columns</span>
+<span style="color:#465366"># Winsorize heavy-tailed payment columns</span>
 from rcm_mc.data_public.cms_api_client import winsorize_column
 clean = winsorize_column([col for col in payments], upper_quantile=0.95)
     </pre>
@@ -202,11 +202,11 @@ clean = winsorize_column([col for col in payments], upper_quantile=0.95)
         <thead><tr><th style="width:220px">Function</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td class="mono">fetch_pages(endpoint, ...)</td><td class="dim">Raw paginated fetch with retry. Returns List[Dict].</td></tr>
-          <tr style="background:#0f172a"><td class="mono">fetch_provider_utilization(state, specialty, year, ...)</td><td class="dim">Physician utilization, filtered and normalized.</td></tr>
+          <tr style="background:#faf7f0"><td class="mono">fetch_provider_utilization(state, specialty, year, ...)</td><td class="dim">Physician utilization, filtered and normalized.</td></tr>
           <tr><td class="mono">fetch_geographic_variation(state, ...)</td><td class="dim">Geographic variation dataset for regional benchmarking.</td></tr>
-          <tr style="background:#0f172a"><td class="mono">normalize_row(row)</td><td class="dim">Map CMS column names → internal canonical names.</td></tr>
+          <tr style="background:#faf7f0"><td class="mono">normalize_row(row)</td><td class="dim">Map CMS column names → internal canonical names.</td></tr>
           <tr><td class="mono">winsorize_column(values, upper_quantile)</td><td class="dim">Clip heavy tails for comparability analysis.</td></tr>
-          <tr style="background:#0f172a"><td class="mono">safe_float(value, default)</td><td class="dim">Null-safe numeric coercion from CMS string fields.</td></tr>
+          <tr style="background:#faf7f0"><td class="mono">safe_float(value, default)</td><td class="dim">Null-safe numeric coercion from CMS string fields.</td></tr>
         </tbody>
       </table>
     </div>

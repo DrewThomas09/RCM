@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 
 _SEVERITY_COLOR = {
-    "critical": "#dc2626",
+    "critical": "#8a1e0e",
     "high": "#ea580c",
     "medium": "#ca8a04",
     "low": "#475569",
@@ -44,7 +44,7 @@ _PANEL_CSS = """
   position: fixed;
   bottom: 0; left: 0; right: 0; z-index: 9000;
   background: #0b0f18;
-  border-top: 1px solid #1e293b;
+  border-top: 1px solid #d6cfc3;
   font-family: 'JetBrains Mono', 'SF Mono', monospace;
   font-size: 11px;
   max-height: 42px;
@@ -55,22 +55,22 @@ _PANEL_CSS = """
 .ckf-header {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 16px; cursor: pointer;
-  background: #0b0f18; border-bottom: 1px solid #1e293b;
+  background: #0b0f18; border-bottom: 1px solid #d6cfc3;
   position: sticky; top: 0; z-index: 1;
 }
-.ckf-header:hover { background: #111827; }
+.ckf-header:hover { background: #ffffff; }
 .ckf-title {
   font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
-  color: #64748b; font-weight: 600;
+  color: #7a8699; font-weight: 600;
 }
 .ckf-badge {
   display: inline-block; padding: 1px 6px; border-radius: 2px;
   font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em;
 }
-.ckf-badge-critical { background: rgba(220,38,38,0.15); color: #dc2626; }
+.ckf-badge-critical { background: rgba(220,38,38,0.15); color: #8a1e0e; }
 .ckf-badge-high     { background: rgba(234,88,12,0.15);  color: #ea580c; }
 .ckf-badge-medium   { background: rgba(202,138,4,0.15);  color: #ca8a04; }
-.ckf-badge-low      { background: rgba(71,85,105,0.15);  color: #94a3b8; }
+.ckf-badge-low      { background: rgba(71,85,105,0.15);  color: #465366; }
 .ckf-badge-ok       { background: rgba(34,197,94,0.12);  color: #22c55e; }
 .ckf-body { padding: 10px 16px 14px; }
 .ckf-grid {
@@ -78,9 +78,9 @@ _PANEL_CSS = """
   margin-top: 8px;
 }
 .ckf-flag {
-  background: var(--flag-bg, #111827);
-  border: 1px solid var(--flag-border, #1e293b);
-  border-left: 3px solid var(--flag-color, #334155);
+  background: var(--flag-bg, #ffffff);
+  border: 1px solid var(--flag-border, #d6cfc3);
+  border-left: 3px solid var(--flag-color, #d6cfc3);
   padding: 8px 10px; border-radius: 0 3px 3px 0;
 }
 .ckf-flag-cat {
@@ -88,11 +88,11 @@ _PANEL_CSS = """
   color: #475569; margin-bottom: 3px;
 }
 .ckf-flag-headline {
-  font-size: 11px; color: #e2e8f0; line-height: 1.4; margin-bottom: 4px;
+  font-size: 11px; color: #1a2332; line-height: 1.4; margin-bottom: 4px;
   font-weight: 500;
 }
 .ckf-flag-detail {
-  font-size: 10px; color: #64748b; line-height: 1.5;
+  font-size: 10px; color: #7a8699; line-height: 1.5;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-variant-numeric: normal; white-space: normal;
 }
@@ -103,9 +103,9 @@ _PANEL_CSS = """
 }
 .ckf-ok { color: #22c55e; font-size: 11px; padding: 8px 0; }
 .ckf-meta {
-  font-size: 9px; color: #334155; margin-top: 10px; letter-spacing: 0.08em;
+  font-size: 9px; color: #d6cfc3; margin-top: 10px; letter-spacing: 0.08em;
 }
-.ckf-toggle { margin-left: auto; color: #334155; font-size: 14px; }
+.ckf-toggle { margin-left: auto; color: #d6cfc3; font-size: 14px; }
 .ckf-summary { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
 </style>
 """
@@ -194,7 +194,7 @@ def render_corpus_flags_panel(deal: Dict[str, Any]) -> str:
         _total = 0
     body_html = (
         f'<div class="ckf-body">'
-        f'<div style="font-size:9px;color:#334155;margin-bottom:6px;letter-spacing:0.08em;">'
+        f'<div style="font-size:9px;color:#d6cfc3;margin-bottom:6px;letter-spacing:0.08em;">'
         f'CORPUS RED FLAGS — {_html.escape(str(deal_name)).upper()} — '
         f'{summary["total_flags"]} flag{"s" if summary["total_flags"] != 1 else ""} '
         f'from {_total:,} realized corpus deals'

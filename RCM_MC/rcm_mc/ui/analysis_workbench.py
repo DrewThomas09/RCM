@@ -5,8 +5,8 @@ entire :class:`DealAnalysisPacket` across six tabs: Overview, RCM
 Profile, EBITDA Bridge, Monte Carlo, Risk & Diligence, Provenance.
 
 Design constraints from the spec:
-- Dark theme — ``#0a0e17`` background, ``#111827`` panels, ``#1e293b``
-  borders. ``#e2e8f0`` text, ``#94a3b8`` muted.
+- Dark theme — ``#f5f1ea`` background, ``#ffffff`` panels, ``#d6cfc3``
+  borders. ``#1a2332`` text, ``#465366`` muted.
 - JetBrains Mono for numeric cells; inter-system default for body.
 - No border-radius > 4px. Dense padding (6px/10px on table cells).
 - Zero external dependencies — no charts library, no framework, just
@@ -40,22 +40,22 @@ from ..analysis.packet import (
 
 # Exposed so tests can assert specific tokens are in the output.
 PALETTE = {
-    "bg":         "#0a0e17",
-    "panel":      "#111827",
-    "panel_alt":  "#0f172a",
-    "border":     "#1e293b",
-    "text":       "#e2e8f0",
-    "text_dim":   "#94a3b8",
-    "text_faint": "#64748b",
-    "positive":   "#10b981",
-    "negative":   "#ef4444",
-    "warning":    "#f59e0b",
-    "neutral":    "#6366f1",
-    "accent":     "#3b82f6",
-    "critical":   "#dc2626",
-    "high":       "#f59e0b",
-    "medium":     "#eab308",
-    "low":        "#64748b",
+    "bg":         "#f5f1ea",
+    "panel":      "#ffffff",
+    "panel_alt":  "#ece6db",
+    "border":     "#d6cfc3",
+    "text":       "#1a2332",
+    "text_dim":   "#465366",
+    "text_faint": "#7a8699",
+    "positive":   "#0a8a5f",
+    "negative":   "#b5321e",
+    "warning":    "#b8732a",
+    "neutral":    "#7a8699",
+    "accent":     "#2fb3ad",
+    "critical":   "#8a1e0e",
+    "high":       "#b8732a",
+    "medium":     "#b8732a",
+    "low":        "#7a8699",
 }
 
 
@@ -160,11 +160,11 @@ _WORKBENCH_CSS = f"""
   color: var(--wb-text); background: var(--wb-panel-alt);
 }}
 .analysis-workbench .wb-btn-danger {{
-  background: transparent; color: #ef4444;
+  background: transparent; color: #b5321e;
   border-color: var(--wb-border);
 }}
 .analysis-workbench .wb-btn-danger:hover {{
-  background: rgba(239, 68, 68, 0.1); border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1); border-color: #b5321e;
 }}
 
 /* Tab nav */
@@ -964,7 +964,7 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
 
     if not actions:
         actions.append(
-            '<div style="color:#10b981;">✓ <strong>Looking good</strong> '
+            '<div style="color:#0a8a5f;">✓ <strong>Looking good</strong> '
             '— completeness, risks, and simulation are all in order.</div>'
         )
 
@@ -2325,9 +2325,9 @@ _EXPLAIN_JS = r"""
     titleEl.textContent = d.display_name || metric;
     var pct = d.percentile != null ? (d.percentile*100).toFixed(0)+'th' : '—';
     var barPct = d.percentile != null ? Math.round(d.percentile*100) : 50;
-    var barColor = barPct > 70 ? '#10b981' : (barPct < 30 ? '#ef4444' : '#f59e0b');
+    var barColor = barPct > 70 ? '#0a8a5f' : (barPct < 30 ? '#b5321e' : '#b8732a');
     bodyEl.innerHTML =
-      '<div class="ep-section"><div class="ep-label">Source</div><span style="background:#1e293b;padding:2px 8px;border-radius:3px;font-size:11px;">'+d.source+'</span></div>'+
+      '<div class="ep-section"><div class="ep-label">Source</div><span style="background:#d6cfc3;padding:2px 8px;border-radius:3px;font-size:11px;">'+d.source+'</span></div>'+
       '<div class="ep-section"><div class="ep-label">Current value</div><div class="num" style="font-size:18px;">'+d.value.toFixed(2)+'</div></div>'+
       '<div class="ep-section"><div class="ep-label">Benchmark P50</div><div>'+(d.benchmark_p50!=null?d.benchmark_p50.toFixed(1):'—')+'</div>'+
       '<div class="ep-label" style="margin-top:6px;">Percentile rank: '+pct+'</div>'+

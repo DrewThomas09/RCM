@@ -92,43 +92,43 @@ def _needs_attention(cards: List[Dict[str, Any]]) -> List[Dict[str, str]]:
 # ── Renderer ───────────────────────────────────────────────────────
 
 _DASHBOARD_CSS = """
-body.dashboard-v2 { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
+body.dashboard-v2 { margin:0; padding:0; background:#f5f1ea; color:#1a2332;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   font-size: 14px; line-height: 1.5; }
 .dash-wrap { max-width:1100px; margin:0 auto; padding:24px 20px; }
 .dash-strip { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;
   margin-bottom:20px; }
-.dash-card { background:#111827; border:1px solid #1e293b;
+.dash-card { background:#ffffff; border:1px solid #d6cfc3;
   padding:14px 16px; border-radius:4px; }
 .dash-card .big { font-size:28px; font-weight:700;
   font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums; }
-.dash-card .label { font-size:11px; color:#94a3b8;
+.dash-card .label { font-size:11px; color:#465366;
   text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
-.dash-attention { background:#111827; border:1px solid #1e293b;
+.dash-attention { background:#ffffff; border:1px solid #d6cfc3;
   padding:16px; border-radius:4px; margin-bottom:20px; }
 .dash-attention-title { font-weight:600; margin-bottom:10px; }
-.dash-attention-item { padding:6px 0; border-bottom:1px solid #1e293b;
+.dash-attention-item { padding:6px 0; border-bottom:1px solid #d6cfc3;
   display:flex; align-items:center; gap:10px; font-size:13px; }
-.dash-attention-item a { color:#3b82f6; text-decoration:none; }
+.dash-attention-item a { color:var(--sc-teal-ink,#0f5e5a); text-decoration:none; }
 .dash-deals { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
   gap:12px; }
-.deal-card { background:#111827; border:1px solid #1e293b;
+.deal-card { background:#ffffff; border:1px solid #d6cfc3;
   padding:14px 16px; border-radius:4px; transition:border-color 0.15s; }
-.deal-card:hover { border-color:#3b82f6; }
+.deal-card:hover { border-color:#2fb3ad; }
 .deal-card-name { font-weight:600; font-size:14px; margin-bottom:6px; }
-.deal-card-meta { font-size:12px; color:#94a3b8; }
+.deal-card-meta { font-size:12px; color:#465366; }
 .deal-card-grade { display:inline-block; padding:1px 6px; border-radius:2px;
   font-weight:600; font-size:11px; }
-.grade-A { background:#10b981; color:#fff; }
-.grade-B { background:#3b82f6; color:#fff; }
-.grade-C { background:#f59e0b; color:#fff; }
-.grade-D { background:#ef4444; color:#fff; }
+.grade-A { background:#0a8a5f; color:#fff; }
+.grade-B { background:#2fb3ad; color:#fff; }
+.grade-C { background:#b8732a; color:#fff; }
+.grade-D { background:#b5321e; color:#fff; }
 .dash-actions { display:flex; gap:8px; margin-bottom:20px; }
-.dash-actions a { background:#1f4e78; color:#fff; padding:8px 16px;
+.dash-actions a { background:#0b2341; color:#fff; padding:8px 16px;
   border-radius:3px; text-decoration:none; font-weight:600; font-size:13px; }
-.dash-actions a:hover { background:#2563eb; }
-.dash-empty { text-align:center; padding:40px; color:#94a3b8; }
-.dash-empty a { color:#3b82f6; }
+.dash-actions a:hover { background:#132e53; }
+.dash-empty { text-align:center; padding:40px; color:#465366; }
+.dash-empty a { color:#0f5e5a; }
 """
 
 
@@ -149,7 +149,7 @@ def render_dashboard_v2(store: Any) -> str:
         <div class="label">Active Deals</div></div>
       <div class="dash-card"><div class="big">{_fmt_money(total_opp)}</div>
         <div class="label">Total EBITDA Opportunity</div></div>
-      <div class="dash-card"><div class="big" style="color:#ef4444;">{critical_count}</div>
+      <div class="dash-card"><div class="big" style="color:#b5321e;">{critical_count}</div>
         <div class="label">Critical Risks</div></div>
       <div class="dash-card"><div class="big">{len(attention)}</div>
         <div class="label">Needs Attention</div></div>
@@ -191,7 +191,7 @@ def render_dashboard_v2(store: Any) -> str:
             f' <span class="deal-card-grade grade-{c["grade"]}">{c["grade"]}</span></div>'
             f'<div class="deal-card-meta">'
             f'EBITDA: {_fmt_money(c.get("ebitda_opportunity") or 0)}'
-            + (f' · <span style="color:#ef4444;">{_esc(c["top_risk"][:40])}</span>'
+            + (f' · <span style="color:#b5321e;">{_esc(c["top_risk"][:40])}</span>'
                if c.get("top_risk") else "")
             + '</div></a>'
             for c in sorted(

@@ -17,16 +17,16 @@ from rcm_mc.ui._chartis_kit import (
 def _r_color(r: float) -> str:
     """Diverging color: red for high positive, blue for high negative, gray for ~0."""
     if r >= 0.7:
-        return "#dc2626"
+        return "#8a1e0e"
     if r >= 0.4:
-        return "#f59e0b"
+        return "#b8732a"
     if r >= 0.1:
-        return "#94a3b8"
+        return "#465366"
     if r >= -0.1:
-        return "#64748b"
+        return "#7a8699"
     if r >= -0.4:
         return "#60a5fa"
-    return "#3b82f6"
+    return "#2fb3ad"
 
 
 def _r_bg(r: float) -> str:
@@ -75,7 +75,7 @@ def _heatmap_table(
         for j, col_sec in enumerate(secs):
             if i == j:
                 cells.append(
-                    f'<td style="background:#1e293b;text-align:center;'
+                    f'<td style="background:#d6cfc3;text-align:center;'
                     f'font-size:9px;padding:2px 4px;color:{P["text_faint"]}" title="{_html.escape(row_sec)}">—</td>'
                 )
             else:
@@ -160,7 +160,7 @@ def _time_series_svg(
         return int(mt + H - (v - min_v) / (max_v - min_v) * H)
 
     SERIES_COLORS = [
-        "#3b82f6", "#10b981", "#f59e0b", "#ef4444",
+        "#2fb3ad", "#0a8a5f", "#b8732a", "#b5321e",
         "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16",
     ]
 

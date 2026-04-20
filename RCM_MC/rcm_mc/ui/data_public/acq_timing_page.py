@@ -13,14 +13,14 @@ from rcm_mc.ui._chartis_kit import (
 )
 
 CYCLE_COLORS = {
-    "Peak":       "#ef4444",
-    "ZIRP Peak":  "#dc2626",
-    "Trough":     "#10b981",
-    "Recovery":   "#3b82f6",
-    "Mid-Cycle":  "#94a3b8",
-    "Expansion":  "#f59e0b",
+    "Peak":       "#b5321e",
+    "ZIRP Peak":  "#8a1e0e",
+    "Trough":     "#0a8a5f",
+    "Recovery":   "#2fb3ad",
+    "Mid-Cycle":  "#465366",
+    "Expansion":  "#b8732a",
     "Late Cycle": "#f97316",
-    "Neutral":    "#64748b",
+    "Neutral":    "#7a8699",
 }
 
 

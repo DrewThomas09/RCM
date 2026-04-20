@@ -43,7 +43,7 @@ def _category_bar_svg(by_category: dict) -> str:
         other_n = len(items) - critical_n - high_n
 
         x_off = pad_l
-        for n, color in [(critical_n, "#ef4444"), (high_n, "#ea580c"), (other_n, "#f59e0b")]:
+        for n, color in [(critical_n, "#b5321e"), (high_n, "#ea580c"), (other_n, "#b8732a")]:
             if n > 0:
                 bw = (n / max_count) * chart_w * 0.6
                 lines.append(f'<rect x="{x_off:.1f}" y="{y}" width="{bw:.1f}" height="{bar_h}" '

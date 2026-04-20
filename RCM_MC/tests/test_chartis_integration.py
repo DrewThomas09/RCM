@@ -96,7 +96,7 @@ class TestChartisLandingRoutes(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
             status, body = _fetch(srv.url("/home"))
             self.assertEqual(status, 200)
-            self.assertIn("Seeking Chartis", body)
+            self.assertIn("SeekingChartis", body)
             self.assertIn("Home", body)
             # Panel titles that are always present even with zero deals.
             self.assertIn("Pipeline Funnel", body)

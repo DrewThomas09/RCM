@@ -26,9 +26,9 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 def _moic_color(m: float) -> str:
     if m >= 3.0: return "#22c55e"
-    if m >= 2.0: return "#3b82f6"
-    if m >= 1.5: return "#f59e0b"
-    return "#ef4444"
+    if m >= 2.0: return "#2fb3ad"
+    if m >= 1.5: return "#b8732a"
+    return "#b5321e"
 
 
 def _log_scale_scatter(points: List[Tuple[float, float, str]], width: int = 500, height: int = 260) -> str:
@@ -56,13 +56,13 @@ def _log_scale_scatter(points: List[Tuple[float, float, str]], width: int = 500,
         gx = sx(ev_tick)
         if gx < margin["l"] or gx > margin["l"] + W:
             continue
-        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#1e293b" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#d6cfc3" stroke-width="0.8"/>')
         label = f"${ev_tick}M" if ev_tick < 1000 else f"${ev_tick//1000}B"
         elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#475569">{label}</text>')
     for m in (1.0, 2.0, 3.0, 4.0):
         if m > max_moic: break
         gy = sy(m)
-        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#1e293b" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#d6cfc3" stroke-width="0.8"/>')
         elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
 
     for ev, moic, name in points:
@@ -70,8 +70,8 @@ def _log_scale_scatter(points: List[Tuple[float, float, str]], width: int = 500,
         color = _moic_color(moic)
         elements.append(f'<circle cx="{cx}" cy="{cy}" r="2.5" fill="{color}" opacity="0.7"><title>{_html.escape(name[:40])} · ${ev:.0f}M · {moic:.2f}x</title></circle>')
 
-    elements.append(f'<text x="{margin["l"]+W//2}" y="{height-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">EV (log scale)</text>')
-    elements.append(f'<text x="9" y="{margin["t"]+H//2}" text-anchor="middle" transform="rotate(-90,9,{margin["t"]+H//2})" font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">MOIC</text>')
+    elements.append(f'<text x="{margin["l"]+W//2}" y="{height-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">EV (log scale)</text>')
+    elements.append(f'<text x="9" y="{margin["t"]+H//2}" text-anchor="middle" transform="rotate(-90,9,{margin["t"]+H//2})" font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">MOIC</text>')
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
@@ -92,12 +92,12 @@ def _ev_histogram(evs: List[float], width: int = 480, height: int = 90) -> str:
         bh = max(0, int(cnt / max_n * (height - 20)))
         bx = 10 + i * bar_w
         by = height - 12 - bh
-        color = "#475569" if lo < 100 else ("#3b82f6" if lo < 300 else ("#f59e0b" if lo < 1000 else "#ef4444"))
+        color = "#475569" if lo < 100 else ("#2fb3ad" if lo < 300 else ("#b8732a" if lo < 1000 else "#b5321e"))
         elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-2)}" height="{bh}" fill="{color}" opacity="0.8"/>')
         label = f"${int(lo)}M" if lo < 1000 else f"${int(lo)//1000}B"
         elements.append(f'<text x="{bx+bar_w//2}" y="{height-1}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="6.5" fill="#475569">{label}</text>')
         if bh > 0:
-            elements.append(f'<text x="{bx+bar_w//2}" y="{by-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#94a3b8">{cnt}</text>')
+            elements.append(f'<text x="{bx+bar_w//2}" y="{by-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#465366">{cnt}</text>')
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
@@ -122,7 +122,7 @@ def render_size_intel() -> str:
         + ck_kpi_block("EV P50", f'<span class="mn">${profile.ev_p50:.0f}M</span>', "median deal size")
         + ck_kpi_block("EV P75", f'<span class="mn">${profile.ev_p75:.0f}M</span>', "75th percentile")
         + ck_kpi_block("Size↔MOIC Corr",
-                       f'<span class="mn" style="color:{"#22c55e" if corr>0.1 else "#ef4444" if corr<-0.1 else "#f59e0b"}">{corr:+.2f}</span>',
+                       f'<span class="mn" style="color:{"#22c55e" if corr>0.1 else "#b5321e" if corr<-0.1 else "#b8732a"}">{corr:+.2f}</span>',
                        "Spearman ρ")
         + (ck_kpi_block("Best Size Bucket", f'<span class="mn">{_html.escape(best_bucket.label)}</span>', f'P50 {best_bucket.moic_p50:.2f}x') if best_bucket else "")
         + '</div>'
@@ -157,7 +157,7 @@ def render_size_intel() -> str:
     # Size bucket table
     bucket_rows = []
     for i, b in enumerate(profile.buckets):
-        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
+        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
         mc = _moic_color(b.moic_p50)
         optimal_badge = f'<span style="margin-left:4px;font-size:8px;color:#22c55e;font-family:var(--ck-mono);">★</span>' if best_bucket and b.label == best_bucket.label else ""
         hi_label = f"${b.ev_range[1]:.0f}M" if b.ev_range[1] < 1000 else ("$1B+" if b.ev_range[1] < 1e6 else "—")
@@ -167,16 +167,16 @@ def render_size_intel() -> str:
     <span style="display:inline-block;width:8px;height:8px;background:{b.color};border-radius:1px;margin-right:4px;vertical-align:middle;"></span>
     <span style="font-size:10.5px;">{_html.escape(b.label)}{optimal_badge}</span>
   </td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-size:9.5px;color:#64748b;">{lo_label}–{hi_label}</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-size:9.5px;color:#7a8699;">{lo_label}–{hi_label}</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.n_deals}</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">${b.avg_ev_mm:.0f}M</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{b.moic_p25:.2f}x</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#7a8699;">${b.avg_ev_mm:.0f}M</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#7a8699;">{b.moic_p25:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc};font-weight:500;">{b.moic_p50:.2f}x</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{b.moic_p75:.2f}x</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#7a8699;">{b.moic_p75:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.avg_hold:.1f}y</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if b.loss_rate>0.2 else '#f59e0b' if b.loss_rate>0.1 else '#22c55e'};">{b.loss_rate*100:.1f}%</td>
+      color:{'#b5321e' if b.loss_rate>0.2 else '#b8732a' if b.loss_rate>0.1 else '#22c55e'};">{b.loss_rate*100:.1f}%</td>
 </tr>""")
 
     bucket_table = f"""
@@ -186,16 +186,16 @@ def render_size_intel() -> str:
     <table class="ck-table" style="width:100%;">
       <thead>
         <tr>
-          <th style="padding:5px 8px;color:#64748b;">Bucket</th>
-          <th style="padding:5px 8px;color:#64748b;">EV Range</th>
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">Deals</th>
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">Avg EV</th>
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">P25 MOIC</th>
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 MOIC</th>
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">P75 MOIC</th>
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 IRR</th>
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">Avg Hold</th>
-          <th style="padding:5px 8px;color:#64748b;text-align:right;">Loss %</th>
+          <th style="padding:5px 8px;color:#7a8699;">Bucket</th>
+          <th style="padding:5px 8px;color:#7a8699;">EV Range</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">Deals</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">Avg EV</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">P25 MOIC</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 MOIC</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">P75 MOIC</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 IRR</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">Avg Hold</th>
+          <th style="padding:5px 8px;color:#7a8699;text-align:right;">Loss %</th>
         </tr>
       </thead>
       <tbody>{''.join(bucket_rows)}</tbody>

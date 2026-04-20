@@ -73,7 +73,7 @@ class TestPortfolioMap(unittest.TestCase):
              "ebitda_opportunity": 5e6, "stage": "hold"},
         ]
         html = render_portfolio_map(deals)
-        self.assertIn("#10b981", html)  # hold color
+        self.assertIn("#0a8a5f", html)  # hold color
 
     def test_legend_present(self):
         deals = [

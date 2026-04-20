@@ -20,14 +20,14 @@ _TOP_METRICS = [
 ]
 
 _PALETTE = {
-    "good": "#10b981",
-    "neutral": "#f59e0b",
-    "bad": "#ef4444",
-    "bg": "#0a0e17",
-    "panel": "#111827",
-    "border": "#1e293b",
-    "text": "#e2e8f0",
-    "dim": "#94a3b8",
+    "good": "#0a8a5f",
+    "neutral": "#b8732a",
+    "bad": "#b5321e",
+    "bg": "#f5f1ea",
+    "panel": "#ffffff",
+    "border": "#d6cfc3",
+    "text": "#1a2332",
+    "dim": "#465366",
 }
 
 _LOWER_IS_BETTER = frozenset({
@@ -125,7 +125,7 @@ def render_heatmap(
             )
         grade = (p.completeness.grade if p.completeness else "—")
         grade_color = {
-            "A": _PALETTE["good"], "B": "#3b82f6",
+            "A": _PALETTE["good"], "B": "#2fb3ad",
             "C": _PALETTE["neutral"], "D": _PALETTE["bad"],
         }.get(grade, _PALETTE["dim"])
         rows_html.append(
@@ -140,11 +140,11 @@ def render_heatmap(
     css = """
     .heatmap-table { width:100%; border-collapse:collapse; font-size:12px;
       font-family:"JetBrains Mono",monospace; }
-    .heatmap-table th { background:#111827; color:#94a3b8; padding:6px 8px;
+    .heatmap-table th { background:#ffffff; color:#465366; padding:6px 8px;
       text-align:center; text-transform:uppercase; font-size:10px;
-      letter-spacing:.04em; border-bottom:1px solid #1e293b; }
+      letter-spacing:.04em; border-bottom:1px solid #d6cfc3; }
     .heatmap-table td { padding:6px 8px; text-align:center;
-      border-bottom:1px solid #1e293b; }
+      border-bottom:1px solid #d6cfc3; }
     .heatmap-table td:first-child { text-align:left; }
     """
     table = (

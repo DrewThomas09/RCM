@@ -174,7 +174,7 @@ class TestLLMClientCaching(unittest.TestCase):
         """Second call with same prompt must not hit the API."""
         # Pre-seed cache
         phash = _prompt_hash("system", "user")
-        resp = LLMResponse(text="from cache", model="claude-haiku-4-5",
+        resp = LLMResponse(text="from cache", model="claude-haiku-4-5-20251001",
                            input_tokens=5, output_tokens=10)
         _save_cache(self._store, phash, resp)
 

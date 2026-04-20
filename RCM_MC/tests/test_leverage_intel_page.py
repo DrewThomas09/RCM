@@ -76,7 +76,7 @@ class TestRenderLeverageIntel(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.leverage_intel_page import render_leverage_intel
         html = render_leverage_intel()
-        self.assertIn("<!DOCTYPE html>", html)
+        self.assertIn("<!doctype html>", html)
         self.assertGreater(len(html), 20_000)
 
     def test_histogram_present(self):

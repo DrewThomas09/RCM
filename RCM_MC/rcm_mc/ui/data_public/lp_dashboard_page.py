@@ -131,7 +131,7 @@ def _sector_bar_svg(exposures) -> str:
     for i, s in enumerate(top):
         bw = int(s.pct_of_portfolio / max_pct * inner_w) if max_pct else 0
         y = pad_t + i * row_h
-        color = P["accent"] if i % 2 == 0 else P["brand"] if hasattr(P, "brand") else "#2563eb"
+        color = P["accent"] if i % 2 == 0 else P["brand"] if hasattr(P, "brand") else "#132e53"
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bar_h - 2}" fill="{P["text_dim"]}" font-size="9" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(s.sector[:22])}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw}" height="{bar_h}" fill="{P["accent"]}" opacity="0.75"/>'

@@ -167,7 +167,7 @@ class TestAllNavItemsRender(unittest.TestCase):
                             body = r.read().decode()
                             self.assertIn("SeekingChartis", body,
                                           f"{path} missing SeekingChartis branding")
-                self.assertIn("cad-topbar", body,
+                self.assertIn("ck-topbar", body,
                                           f"{path} missing topbar")
             finally:
                 server.shutdown(); server.server_close()
