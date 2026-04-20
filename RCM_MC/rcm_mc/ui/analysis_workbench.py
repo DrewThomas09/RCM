@@ -599,6 +599,93 @@ _WORKBENCH_CSS = f"""
   a {{ color: black !important; text-decoration: underline; }}
   a[href]:after {{ content: " (" attr(href) ")"; font-size: 0.8em; color: #666; }}
 }}
+
+/* ── Analyst Override / Assumptions tab ── */
+.analysis-workbench .ov-banner {{
+  background: rgba(47,179,173,0.08);
+  border: 1px solid var(--wb-accent);
+  border-radius: 3px;
+  padding: 8px 12px; margin-bottom: 10px;
+  font-size: 12px; color: var(--wb-text);
+}}
+.analysis-workbench .ov-section {{
+  margin-bottom: 14px;
+}}
+.analysis-workbench .ov-section-title {{
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--wb-text-dim); margin-bottom: 6px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--wb-border);
+}}
+.analysis-workbench .ov-row {{
+  display: grid; grid-template-columns: 200px 1fr 90px 90px 1fr;
+  gap: 6px; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid var(--wb-panel-alt);
+  font-size: 12px;
+}}
+.analysis-workbench .ov-row-head {{
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--wb-text-faint);
+  border-bottom: 1px solid var(--wb-border) !important;
+}}
+.analysis-workbench .ov-key {{
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  color: var(--wb-text);
+}}
+.analysis-workbench .ov-model-val {{
+  color: var(--wb-text-dim); font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}}
+.analysis-workbench .ov-active-val {{
+  color: var(--wb-accent); font-family: "JetBrains Mono", monospace;
+  font-size: 11px; font-weight: 600;
+}}
+.analysis-workbench .ov-badge-a {{
+  display: inline-block; background: rgba(47,179,173,0.15);
+  color: var(--wb-accent); border-radius: 3px;
+  padding: 1px 6px; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.05em;
+}}
+.analysis-workbench .ov-input {{
+  width: 90px; padding: 4px 6px; border: 1px solid var(--wb-border);
+  border-radius: 3px; font-size: 12px; background: var(--wb-panel);
+  color: var(--wb-text); font-family: "JetBrains Mono", monospace;
+}}
+.analysis-workbench .ov-input:focus {{
+  border-color: var(--wb-accent); outline: none;
+}}
+.analysis-workbench .ov-reason {{
+  width: 100%; padding: 4px 6px; border: 1px solid var(--wb-border);
+  border-radius: 3px; font-size: 11px; background: var(--wb-panel);
+  color: var(--wb-text);
+}}
+.analysis-workbench .ov-feedback {{
+  font-size: 11px; padding: 2px 0; min-height: 16px;
+}}
+.analysis-workbench .ov-feedback.ok {{ color: var(--wb-positive); }}
+.analysis-workbench .ov-feedback.err {{ color: var(--wb-negative); }}
+.analysis-workbench .ov-add-form {{
+  margin-top: 10px; padding: 10px;
+  background: var(--wb-panel-alt); border-radius: 3px;
+  display: grid; grid-template-columns: 200px 110px 1fr 80px; gap: 6px;
+  align-items: end;
+}}
+.analysis-workbench .ov-add-form label {{
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--wb-text-dim);
+  display: block; margin-bottom: 3px;
+}}
+.analysis-workbench .ov-add-input {{
+  width: 100%; padding: 4px 6px; border: 1px solid var(--wb-border);
+  border-radius: 3px; font-size: 12px; background: var(--wb-panel);
+  color: var(--wb-text); font-family: "JetBrains Mono", monospace;
+}}
+.analysis-workbench .ov-bridge-banner {{
+  background: rgba(47,179,173,0.07);
+  border-left: 3px solid var(--wb-accent);
+  padding: 6px 10px; margin-bottom: 10px;
+  font-size: 11px; color: var(--wb-text-dim);
+}}
 """
 
 
@@ -715,15 +802,17 @@ def _render_header(packet: DealAnalysisPacket) -> str:
     """
 
 
-def _render_tab_nav() -> str:
+def _render_tab_nav(override_count: int = 0) -> str:
+    ov_label = f"Assumptions ({override_count})" if override_count else "Assumptions"
     tabs = [
-        ("overview",   "Overview"),
-        ("profile",    "RCM Profile"),
-        ("bridge",     "EBITDA Bridge"),
-        ("mc",         "Monte Carlo"),
-        ("scenarios",  "Scenarios"),
-        ("risk",       "Risk & Diligence"),
-        ("provenance", "Provenance"),
+        ("overview",     "Overview"),
+        ("profile",      "RCM Profile"),
+        ("bridge",       "EBITDA Bridge"),
+        ("mc",           "Monte Carlo"),
+        ("scenarios",    "Scenarios"),
+        ("risk",         "Risk & Diligence"),
+        ("provenance",   "Provenance"),
+        ("assumptions",  ov_label),
     ]
     buttons = "\n".join(
         f'<button class="wb-tab{" active" if i == 0 else ""}" data-tab="{k}">{v}</button>'
@@ -1268,8 +1357,25 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
         "assumptions": assumptions_payload,
     })
 
+    bridge_overrides = {
+        k: v for k, v in (packet.analyst_overrides or {}).items()
+        if k.startswith("bridge.")
+    }
+    override_banner = ""
+    if bridge_overrides:
+        keys = ", ".join(
+            f'<span class="ov-badge-a">A</span> {_esc(k.removeprefix("bridge."))}'
+            f" = {_esc(str(v))}"
+            for k, v in bridge_overrides.items()
+        )
+        override_banner = (
+            f'<div class="ov-bridge-banner">Analyst overrides active on this bridge: '
+            f'{keys}. &nbsp;<a href="#" data-tab-goto="assumptions">Edit in Assumptions →</a></div>'
+        )
+
     return f"""
     <div class="wb-tab-panel" data-panel="bridge">
+      {override_banner}
       <div class="wb-grid-5050">
         <div class="wb-card">
           <div class="wb-card-title">Target sliders</div>
@@ -2062,6 +2168,182 @@ def _render_provenance(packet: DealAnalysisPacket) -> str:
     """
 
 
+# ── Analyst Override / Assumptions tab ──────────────────────────────
+
+# Bridge fields shown explicitly (most IC-critical).
+_BRIDGE_FIELDS = [
+    ("exit_multiple",            "Exit multiple",          "x",    6.0, 20.0,  0.5),
+    ("cost_of_capital",          "Cost of capital",        "%",    5.0, 20.0,  0.5),
+    ("collection_realization",   "Collection realization", "%",   50.0, 100.0, 1.0),
+    ("denial_overturn_rate",     "Denial overturn rate",   "%",    0.0,  80.0, 1.0),
+    ("net_revenue",              "Net revenue ($)",        "$",    0.0,   0.0, 0.0),
+    ("claims_volume",            "Claims volume",          "#",    0.0,   0.0, 0.0),
+    ("implementation_ramp",      "Implementation ramp",   "mos",  6.0,  36.0, 1.0),
+    ("evaluation_month",         "Evaluation month",       "mo",   1.0,  60.0, 1.0),
+]
+
+_RAMP_FAMILIES = [
+    "denial_management",
+    "ar_collections",
+    "cdi_coding",
+    "payer_renegotiation",
+    "cost_optimization",
+]
+
+_RAMP_FIELDS = [
+    ("months_to_25_pct",  "25% ramp"),
+    ("months_to_75_pct",  "75% ramp"),
+    ("months_to_full",    "Full ramp"),
+]
+
+_PAYER_KEYS = [
+    ("commercial_share",          "Commercial"),
+    ("medicare_ffs_share",        "Medicare FFS"),
+    ("medicare_advantage_share",  "Medicare Advantage"),
+    ("medicaid_share",            "Medicaid"),
+    ("self_pay_share",            "Self-pay"),
+    ("managed_government_share",  "Managed Government"),
+]
+
+
+def _ov_row(key: str, label: str, unit: str,
+            overrides: Dict[str, Any]) -> str:
+    full_key = key
+    val = overrides.get(full_key)
+    active_cell = (
+        f'<span class="ov-active-val">{_esc(str(val))}</span> '
+        f'<span class="ov-badge-a">A</span>'
+        if val is not None else '<span class="ov-model-val dim">model default</span>'
+    )
+    clear_btn = (
+        f'<button class="wb-btn wb-btn-danger ov-clear-btn" '
+        f'data-ov-key="{_esc(full_key)}">Clear</button>'
+        if val is not None else ""
+    )
+    return (
+        f'<div class="ov-row" data-ov-row="{_esc(full_key)}">'
+        f'<div class="ov-key">{_esc(full_key)}</div>'
+        f'<div class="dim" style="font-size:11px;">{_esc(label)}</div>'
+        f'<div>{active_cell}</div>'
+        f'<div>{clear_btn}</div>'
+        f'<div>'
+        f'<input class="ov-input" type="text" placeholder="{_esc(unit or "value")}" '
+        f'data-ov-key="{_esc(full_key)}">'
+        f'</div>'
+        f'</div>'
+    )
+
+
+def _render_assumptions(packet: DealAnalysisPacket) -> str:
+    overrides: Dict[str, Any] = dict(packet.analyst_overrides or {})
+    deal_id = _esc(packet.deal_id or "")
+    n_ov = len(overrides)
+
+    banner = ""
+    if n_ov:
+        banner = (
+            f'<div class="ov-banner">'
+            f'<strong>{n_ov} analyst override{"s" if n_ov != 1 else ""} active.</strong> '
+            f'Rebuild the analysis packet for overrides to take effect: '
+            f'<a href="/api/analysis/{deal_id}" class="wb-btn" style="padding:2px 8px;">'
+            f'Rebuild →</a></div>'
+        )
+
+    # ── Bridge assumptions ────────────────────────────────────────
+    hdr = (
+        '<div class="ov-row ov-row-head">'
+        '<div>Key</div><div>Field</div><div>Active value</div><div></div><div>Set new value</div>'
+        '</div>'
+    )
+    bridge_rows = hdr + "".join(
+        _ov_row(f"bridge.{k}", label, unit, overrides)
+        for k, label, unit, *_ in _BRIDGE_FIELDS
+    )
+
+    # ── Ramp curves ───────────────────────────────────────────────
+    ramp_rows = hdr
+    for fam in _RAMP_FAMILIES:
+        for fld, flabel in _RAMP_FIELDS:
+            key = f"ramp.{fam}.{fld}"
+            ramp_rows += _ov_row(key, f"{fam} · {flabel}", "months", overrides)
+
+    # ── Payer mix ─────────────────────────────────────────────────
+    payer_rows = hdr + "".join(
+        _ov_row(f"payer_mix.{k}", label, "0.0–1.0", overrides)
+        for k, label in _PAYER_KEYS
+    )
+
+    # ── Metric targets ────────────────────────────────────────────
+    target_keys = sorted(k for k in overrides if k.startswith("metric_target."))
+    mt_rows = hdr + "".join(
+        _ov_row(k, k.removeprefix("metric_target."), "target", overrides)
+        for k in target_keys
+    )
+    mt_add = (
+        '<div class="ov-add-form" id="ov-mt-add-form">'
+        '<div><label>Metric key</label>'
+        '<input class="ov-add-input" id="ov-mt-key" type="text" '
+        'placeholder="e.g. denial_rate"></div>'
+        '<div><label>Target value</label>'
+        '<input class="ov-add-input" id="ov-mt-val" type="number" step="any"></div>'
+        '<div><label>Reason (optional)</label>'
+        '<input class="ov-add-input" id="ov-mt-reason" type="text"></div>'
+        '<div><label>&nbsp;</label>'
+        '<button class="wb-btn wb-btn-primary" id="ov-mt-add-btn">Add target</button></div>'
+        '</div>'
+        '<div class="ov-feedback" id="ov-mt-feedback"></div>'
+    )
+
+    # ── Custom / raw add ──────────────────────────────────────────
+    raw_add = (
+        '<div class="ov-add-form" id="ov-raw-add-form">'
+        '<div><label>Override key</label>'
+        '<input class="ov-add-input" id="ov-raw-key" type="text" '
+        'placeholder="e.g. payer_mix.commercial_share"></div>'
+        '<div><label>Value</label>'
+        '<input class="ov-add-input" id="ov-raw-val" type="text"></div>'
+        '<div><label>Reason (optional)</label>'
+        '<input class="ov-add-input" id="ov-raw-reason" type="text"></div>'
+        '<div><label>&nbsp;</label>'
+        '<button class="wb-btn wb-btn-primary" id="ov-raw-add-btn">Set</button></div>'
+        '</div>'
+        '<div class="ov-feedback" id="ov-raw-feedback"></div>'
+    )
+
+    return f"""
+    <div class="wb-tab-panel" data-panel="assumptions" data-deal-id="{deal_id}">
+      {banner}
+      <div class="wb-card ov-section">
+        <div class="ov-section-title">Bridge assumptions</div>
+        <div class="ov-feedback" id="ov-bridge-feedback"></div>
+        {bridge_rows}
+        <div style="margin-top:6px;font-size:11px;color:var(--wb-text-faint);">
+          Edit a value then press Enter or Tab to commit.
+        </div>
+      </div>
+      <div class="wb-card ov-section">
+        <div class="ov-section-title">Ramp curves (months)</div>
+        <div class="ov-feedback" id="ov-ramp-feedback"></div>
+        {ramp_rows}
+      </div>
+      <div class="wb-card ov-section">
+        <div class="ov-section-title">Payer mix (share 0–1)</div>
+        <div class="ov-feedback" id="ov-payer-feedback"></div>
+        {payer_rows}
+      </div>
+      <div class="wb-card ov-section">
+        <div class="ov-section-title">Metric targets</div>
+        {mt_rows}
+        {mt_add}
+      </div>
+      <div class="wb-card ov-section">
+        <div class="ov-section-title">Custom override (any valid key)</div>
+        {raw_add}
+      </div>
+    </div>
+    """
+
+
 # ── JavaScript ───────────────────────────────────────────────────────
 
 _WORKBENCH_JS = r"""
@@ -2352,6 +2634,140 @@ _EXPLAIN_JS = r"""
 """
 
 
+_OVERRIDE_JS = r"""
+(function(){
+  var panel = document.querySelector('.wb-tab-panel[data-panel="assumptions"]');
+  if (!panel) return;
+  var dealId = panel.dataset.dealId;
+  if (!dealId) return;
+
+  function csrfToken() {
+    var m = document.cookie.match(/(?:^|;\s*)rcm_csrf=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  function setFeedback(el, msg, ok) {
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'ov-feedback ' + (ok ? 'ok' : 'err');
+    setTimeout(function(){ el.textContent = ''; el.className = 'ov-feedback'; }, 4000);
+  }
+
+  function ovPut(key, value, reason, feedbackEl, onSuccess) {
+    fetch('/api/deals/' + encodeURIComponent(dealId) + '/overrides/' + encodeURIComponent(key), {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken()},
+      body: JSON.stringify({value: value, reason: reason || ''})
+    })
+    .then(function(r){ return r.ok ? r.json() : r.text().then(function(t){ throw t; }); })
+    .then(function(){ setFeedback(feedbackEl, 'Saved. Rebuild packet to apply.', true); if(onSuccess) onSuccess(); })
+    .catch(function(e){ setFeedback(feedbackEl, 'Error: ' + e, false); });
+  }
+
+  function ovDelete(key, feedbackEl, onSuccess) {
+    fetch('/api/deals/' + encodeURIComponent(dealId) + '/overrides/' + encodeURIComponent(key), {
+      method: 'DELETE',
+      headers: {'X-CSRF-Token': csrfToken()}
+    })
+    .then(function(r){ return r.ok ? r.json() : r.text().then(function(t){ throw t; }); })
+    .then(function(){ setFeedback(feedbackEl, 'Cleared. Rebuild packet to apply.', true); if(onSuccess) onSuccess(); })
+    .catch(function(e){ setFeedback(feedbackEl, 'Error: ' + e, false); });
+  }
+
+  // Commit inline input on Enter or blur
+  function nearestFeedback(row) {
+    var sec = row.closest('.ov-section');
+    return sec ? sec.querySelector('.ov-feedback') : null;
+  }
+
+  panel.querySelectorAll('input.ov-input[data-ov-key]').forEach(function(inp) {
+    function commit() {
+      var v = inp.value.trim();
+      if (!v) return;
+      var key = inp.dataset.ovKey;
+      var fb = nearestFeedback(inp);
+      var parsed = isNaN(Number(v)) ? v : Number(v);
+      ovPut(key, parsed, '', fb, function() {
+        inp.value = '';
+        // Update the active-val cell in the same row
+        var row = panel.querySelector('[data-ov-row="' + CSS.escape(key) + '"]');
+        if (row) {
+          var cell = row.children[2];
+          if (cell) cell.innerHTML = '<span class="ov-active-val">' + parsed + '</span> <span class="ov-badge-a">A</span>';
+          // Show clear button
+          var clearCell = row.children[3];
+          if (clearCell && !clearCell.querySelector('.ov-clear-btn')) {
+            var btn = document.createElement('button');
+            btn.className = 'wb-btn wb-btn-danger ov-clear-btn';
+            btn.dataset.ovKey = key;
+            btn.textContent = 'Clear';
+            clearCell.appendChild(btn);
+          }
+        }
+      });
+    }
+    inp.addEventListener('keydown', function(e){ if(e.key === 'Enter') { e.preventDefault(); commit(); } });
+    inp.addEventListener('blur', commit);
+  });
+
+  // Clear buttons (delegated — new ones are injected above)
+  panel.addEventListener('click', function(e) {
+    var btn = e.target.closest('.ov-clear-btn');
+    if (!btn) return;
+    var key = btn.dataset.ovKey;
+    var fb = nearestFeedback(btn);
+    ovDelete(key, fb, function() {
+      var row = panel.querySelector('[data-ov-row="' + CSS.escape(key) + '"]');
+      if (row) {
+        row.children[2].innerHTML = '<span class="ov-model-val dim">model default</span>';
+        row.children[3].innerHTML = '';
+      }
+    });
+  });
+
+  // Metric target add
+  var mtBtn = document.getElementById('ov-mt-add-btn');
+  if (mtBtn) mtBtn.addEventListener('click', function() {
+    var k = document.getElementById('ov-mt-key').value.trim();
+    var v = document.getElementById('ov-mt-val').value.trim();
+    var r = document.getElementById('ov-mt-reason').value.trim();
+    var fb = document.getElementById('ov-mt-feedback');
+    if (!k || !v) { setFeedback(fb, 'Key and value required.', false); return; }
+    var parsed = isNaN(Number(v)) ? v : Number(v);
+    ovPut('metric_target.' + k, parsed, r, fb, function() {
+      document.getElementById('ov-mt-key').value = '';
+      document.getElementById('ov-mt-val').value = '';
+    });
+  });
+
+  // Raw / custom override add
+  var rawBtn = document.getElementById('ov-raw-add-btn');
+  if (rawBtn) rawBtn.addEventListener('click', function() {
+    var k = document.getElementById('ov-raw-key').value.trim();
+    var v = document.getElementById('ov-raw-val').value.trim();
+    var r = document.getElementById('ov-raw-reason').value.trim();
+    var fb = document.getElementById('ov-raw-feedback');
+    if (!k || !v) { setFeedback(fb, 'Key and value required.', false); return; }
+    var parsed = isNaN(Number(v)) ? v : Number(v);
+    ovPut(k, parsed, r, fb, function() {
+      document.getElementById('ov-raw-key').value = '';
+      document.getElementById('ov-raw-val').value = '';
+    });
+  });
+
+  // "Edit in Assumptions →" links on the Bridge tab
+  document.querySelectorAll('[data-tab-goto]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      var target = a.dataset.tabGoto;
+      var btn = document.querySelector('.analysis-workbench .wb-tab[data-tab="' + target + '"]');
+      if (btn) btn.click();
+    });
+  });
+})();
+"""
+
+
 def render_workbench(packet: DealAnalysisPacket) -> str:
     """Produce the full ``<!doctype html>`` document for
     ``/analysis/<deal_id>``. One call, one packet, one rendered page.
@@ -2362,8 +2778,9 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
     and _EXPLAIN_JS go through extra_js.
     """
     from ._chartis_kit import chartis_shell
+    override_count = len(packet.analyst_overrides or {})
     header = _render_header(packet)
-    nav = _render_tab_nav()
+    nav = _render_tab_nav(override_count)
     body_inner = (
         _render_overview(packet)
         + _render_rcm_profile(packet)
@@ -2372,6 +2789,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         + _render_scenarios(packet)
         + _render_risk_diligence(packet)
         + _render_provenance(packet)
+        + _render_assumptions(packet)
     )
     # Prompt 32: build the explain-panel data blob + the empty panel div.
     explain_data = _build_explain_data(packet)
@@ -2392,5 +2810,5 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         shell_body,
         f"{packet.deal_name or packet.deal_id} — Analysis Workbench",
         extra_css=_WORKBENCH_CSS,
-        extra_js=_WORKBENCH_JS + _EXPLAIN_JS,
+        extra_js=_WORKBENCH_JS + _EXPLAIN_JS + _OVERRIDE_JS,
     )
