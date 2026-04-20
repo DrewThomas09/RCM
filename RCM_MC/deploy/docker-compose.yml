@@ -8,11 +8,14 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - rcm-data:/data
+      - /data/rcm:/data
     environment:
       - RCM_MC_DB=/data/rcm_mc.db
+      - RCM_MC_AUTH=${RCM_MC_AUTH:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
-
-volumes:
-  rcm-data:
-    driver: local
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
