@@ -47,7 +47,7 @@ same hour:
    to 5%, A/R days from 55 to 38, and CMI up 0.05, what is the
    EBITDA delta? What enterprise value does that translate to at a
    12× exit?"
-2. **An honest confidence interval.** Not a point estimate — a
+2. **An honest confidence interval.** Not a point estimate, but a
    distribution. What is the P10 / P50 / P90 MOIC under the
    two-source Monte Carlo (prediction uncertainty × execution
    uncertainty)?
