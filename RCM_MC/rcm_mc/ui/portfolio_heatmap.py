@@ -11,6 +11,7 @@ import html
 from typing import Any, Dict, List, Optional
 
 from ..analysis.packet import DealAnalysisPacket
+from .brand import PALETTE as _BRAND_PALETTE
 
 
 _TOP_METRICS = [
@@ -19,15 +20,21 @@ _TOP_METRICS = [
     "case_mix_index",
 ]
 
+# Phase 7 of the UI v2 editorial rework: the local _PALETTE was
+# rewired to pull from rcm_mc.ui.brand.PALETTE so the heatmap's
+# good/neutral/bad/bg/panel/border/text/dim colours flip with the
+# CHARTIS_UI_V2 flag. The local key names are preserved so every
+# _PALETTE["good"] reference in the renderer below keeps working
+# unchanged.
 _PALETTE = {
-    "good": "#10b981",
-    "neutral": "#f59e0b",
-    "bad": "#ef4444",
-    "bg": "#0a0e17",
-    "panel": "#111827",
-    "border": "#1e293b",
-    "text": "#e2e8f0",
-    "dim": "#94a3b8",
+    "good":    _BRAND_PALETTE["positive"],
+    "neutral": _BRAND_PALETTE["warning"],
+    "bad":     _BRAND_PALETTE["negative"],
+    "bg":      _BRAND_PALETTE["bg"],
+    "panel":   _BRAND_PALETTE["panel"],
+    "border":  _BRAND_PALETTE["border"],
+    "text":    _BRAND_PALETTE["text"],
+    "dim":     _BRAND_PALETTE["text_dim"],
 }
 
 _LOWER_IS_BETTER = frozenset({

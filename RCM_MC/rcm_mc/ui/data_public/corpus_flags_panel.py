@@ -14,12 +14,17 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
+from ..brand import PALETTE as _BRAND_PALETTE
 
+# Phase 7: severity colours pull from the flag-aware central palette
+# so the red-flag drawer flips with CHARTIS_UI_V2. Key names
+# preserved so every _SEVERITY_COLOR["critical"] reference below is
+# unchanged.
 _SEVERITY_COLOR = {
-    "critical": "#dc2626",
-    "high": "#ea580c",
-    "medium": "#ca8a04",
-    "low": "#475569",
+    "critical": _BRAND_PALETTE["critical"],
+    "high":     _BRAND_PALETTE["high"],
+    "medium":   _BRAND_PALETTE["medium"],
+    "low":      _BRAND_PALETTE["low"],
 }
 
 _SEVERITY_BG = {
