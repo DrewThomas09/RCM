@@ -897,3 +897,127 @@ The roadmap's remaining three legitimate improvements (contract
 re-pricer, drift-aware conformal, parameterizable Betas) slot in
 after Phase 3 ships — each is a self-contained session.
 
+---
+
+# Session 6 — 2026-04-23 (Contract Re-Pricing Engine)
+
+Addresses the second critique from the external review: the
+hardcoded `_PAYER_REVENUE_LEVERAGE` defaults
+(Commercial 1.00 / MA 0.80 / Medicare FFS 0.75 / Managed Gov
+0.55 / Medicaid 0.50 / Self-Pay 0.40) are reasonable defaults but
+bad answers on any specific deal. When an analyst has structured
+contract data for the target, the bridge should re-price against
+it instead of the generic table. Defaults stay as a fallback.
+
+## What shipped
+
+### 1. Contract re-pricer module
+[`rcm_mc/diligence/benchmarks/contract_repricer.py`](rcm_mc/diligence/benchmarks/contract_repricer.py):
+
+- `ContractRate` — one (payer, CPT) rule. Supports flat-fee
+  (`allowed_amount_usd`), percent-of-charge (`allowed_pct_of_charge`),
+  carve-outs (`is_carve_out`), withholds (`withhold_pct`), and
+  stop-loss outliers (`stop_loss_threshold_usd` +
+  `stop_loss_rate_pct_of_charge`). Validates mutually-exclusive
+  fields at construction.
+- `ContractSchedule` — collection + schedule-level fallbacks
+  (`default_carve_out_rate_pct`). O(1) lookup by normalised
+  (payer_upper, cpt_upper) key.
+- `reprice_claim(claim, schedule)` — per-claim; six reason codes
+  (`matched` / `carve_out` / `stop_loss_applied` /
+  `withhold_applied` / `no_contract` / `missing_data`).
+- `reprice_claims(claims, schedule)` — full driver producing a
+  `RepricingReport` with per-claim results + per-payer-class
+  roll-ups. Unmatched claims explicitly excluded from the payer
+  roll-up so they don't corrupt the derived leverage (observed ==
+  repriced → tautological 1.0).
+- `payer_leverage_for_bridge(report)` — one-liner that produces a
+  `Dict[str, float]` in the v2 bridge's PayerClass vocabulary
+  (lowercase strings: `commercial` / `medicare_ffs` /
+  `medicare_advantage` / `medicaid` / `self_pay` /
+  `managed_government`). Drops directly into
+  `BridgeAssumptions.payer_revenue_leverage` — **no v2 bridge
+  math changes**; the existing `_get_payer_leverage(pc, override)`
+  hook already honours this override.
+
+### 2. CCD ↔ bridge PayerClass vocabulary mapping
+`CCD_TO_BRIDGE_PAYER_CLASS` constant:
+- `COMMERCIAL` → `commercial`
+- `MEDICARE` → `medicare_ffs` (default when the CCD can't distinguish)
+- `MEDICARE_ADVANTAGE` → `medicare_advantage`
+- `MEDICAID` → `medicaid`
+- `SELF_PAY` → `self_pay`
+- `TRICARE` → `managed_government`
+- `WORKERS_COMP` → `managed_government`
+
+The two enums have overlapping but distinct vocabularies (CCD lumps
+Medicare; bridge splits FFS vs Advantage). Mapping is partner-
+inspectable via the constant.
+
+### 3. 25 tests
+[`tests/test_contract_repricer.py`](tests/test_contract_repricer.py):
+
+- Validation: flat-fee OK, pct-of-charge OK, both set → raises,
+  neither set without carve-out → raises, invalid withhold →
+  raises.
+- Per-claim paths: every reason code gets a targeted test —
+  matched, pct-of-charge, carve-out, stop-loss applied + not-
+  applied, withhold applied, no-contract, missing-data.
+- Vocabulary: MEDICARE → medicare_ffs, TRICARE →
+  managed_government, MEDICARE_ADVANTAGE passes through,
+  WORKERS_COMP → managed_government.
+- Roll-ups: total claims accounted, per-payer totals match
+  hand-computed values, unmatched claims excluded from roll-up.
+- Derived leverage: baseline Commercial is 1.0; keys match bridge
+  vocabulary exactly; missing baseline → recovery-ratio fallback.
+- JSON shape: `to_dict()` includes all expected keys.
+
+## What was deliberately NOT built (per the critique's own framing)
+
+- **No PDF contract parsing / NLP on legal text.** The dataclass
+  surface IS the contract. Analyst uploads structured data or
+  types rates in. "Software doesn't read contracts; lawyers do."
+- **No v2 bridge math changes.** The existing `payer_revenue_leverage`
+  override hook already exists; we just produce a well-formed
+  override value.
+- **No DRG outlier calculations beyond simple stop-loss.**
+- **No capitation / PMPM / shared-savings contract primitives.**
+  Future session if partners bring a specific deal-shape that
+  needs them.
+
+## Regressions
+
+- Contract re-pricer + prior diligence + packet + ridge + v2 bridge
+  suite: **245 passed in 1.13s** (220 prior + 25 new)
+- v2 bridge's own test suite (`test_rcm_ebitda_bridge.py`):
+  29 passed — zero regression from the payer-leverage hook being
+  exercised with new input source
+- Baseline chartis: 66 passed, 16 pre-existing failures unchanged
+
+## Next session entry point
+
+The roadmap's two remaining critique-driven sessions are both
+small and self-contained:
+
+- **Session N+3** — Drift-aware conformal widening (~50 lines).
+  Extend `ml/conformal.py` to accept a `temporal_context` arg
+  from `scan_for_discontinuities`. When a regulatory
+  discontinuity falls inside the training window, widen the
+  conformal margin (or drop the prediction's confidence). Your
+  coverage guarantees are only honest when exchangeability holds;
+  when it doesn't, widen rather than lie.
+- **Session N+4** — Parameterizable execution Betas. Accept per-
+  lever-family Beta(α, β) parameters from a
+  `DealExecutionReadiness` input. Defaults to current constants;
+  analyst tightens / loosens with justification captured in
+  provenance.
+
+Either is a clean next step. Drift-aware conformal is the smaller
+and more-honest improvement; execution Betas take slightly more
+shaping but address the "EHR architecture + clearinghouse health
++ coder availability" concern head-on.
+
+Phase 3 root-cause also remains queued as the architectural
+headline; the cash waterfall + contract re-pricer are both
+upstream inputs ready for it when that session opens.
+
