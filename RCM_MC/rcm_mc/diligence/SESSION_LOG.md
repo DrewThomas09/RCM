@@ -470,3 +470,176 @@ Start with `root_cause/pareto.py` as planned at the end of session 2.
 Add a `root_cause/cms_advisory_narrative.py` that turns the four
 advisory RiskFlags into narrative bullets for the analyst memo —
 closing the loop on market-posture context.
+
+---
+
+# Session 4 — 2026-04-23 (data-integrity gauntlet hardening)
+
+Session 2 built four of six guardrails and session 3 integrated
+external advisory + Tuva. This session **formalises all six as a
+uniform preflight**: every guardrail returns a `GuardrailResult`
+with PASS/WARN/FAIL, the explainer walks the CCD chain end-to-end,
+and the conformal splitter accepts a provider-disjoint
+`SplitManifest`.
+
+## What shipped
+
+### 1. `GuardrailResult` envelope — shared contract
+Added to [`split_enforcer.py`](rcm_mc/diligence/integrity/split_enforcer.py):
+
+```python
+@dataclass
+class GuardrailResult:
+    guardrail: str
+    ok: bool
+    status: str     # PASS | WARN | FAIL
+    reason: str = ""
+    details: Dict[str, object] = field(default_factory=dict)
+```
+
+Every guardrail module now exposes a `check_*` function that
+returns this shape. Makes the preflight a simple loop.
+
+### 2. `SplitManifest` + stable hash
+[`split_enforcer.py`](rcm_mc/diligence/integrity/split_enforcer.py):
+
+- `SplitManifest` wraps a `ProviderSplit` with `random_seed`,
+  `train_fraction`, `calibration_fraction`, `provider_pool_size`,
+  `created_at_utc`, and a deterministic `manifest_hash` (SHA-256
+  over the canonical split + seed).
+- `build_split_manifest(target, pool, ...)` — one-call constructor.
+- `check_split_manifest(manifest)` re-verifies the invariants at
+  runtime and catches mutation between build and use.
+
+### 3. `cohort_censoring.py` — dedicated guardrail
+[`cohort_censoring.py`](rcm_mc/diligence/integrity/cohort_censoring.py)
+wraps the existing
+[`benchmarks/cohort_liquidation.py`](rcm_mc/diligence/benchmarks/cohort_liquidation.py)
+logic as a `GuardrailResult`. Three verdicts:
+
+- **PASS** — every cohort × window cell is mature
+- **WARN** — some cells are censored (expected on recent deals)
+- **FAIL** — the caller *requested* a censored cell. Refuse.
+
+### 4. `scan_for_discontinuities` — packet-facing temporal validity
+[`temporal_validity.py`](rcm_mc/diligence/integrity/temporal_validity.py)
+gains `scan_for_discontinuities(claims)` returning a
+`GuardrailResult` (WARN when any OBBBA / site-neutral / MA v28 /
+NSA / ICD-10 / provider-tax event lands inside the claims window).
+
+### 5. `CCDDerivedMetric` + end-to-end chain explainer
+New [`rcm_mc/provenance/ccd_nodes.py`](rcm_mc/provenance/ccd_nodes.py):
+
+- `CCDDerivedMetric` dataclass carrying `ingest_id`,
+  `kpi_aggregation_rule`, `qualifying_claim_ids`,
+  `transformation_refs` (list of `(source_file, source_row, rule)`),
+  `sample_size`, `temporal_validity`.
+- `attach_ccd_source(graph, ...)` + `attach_ccd_derived(graph, m)`
+  extend a `ProvenanceGraph` with the source + derived-metric nodes
+  wired by a `DERIVED_FROM` edge.
+- `chain_is_complete(graph, node_id)` returns `(ok, missing_link)`
+  naming the step where the chain breaks (no ingest_id / no
+  kpi_aggregation_rule / zero claim_ids / missing source node).
+- `explain_ccd_derived(graph, node)` produces the narrative walking
+  KPI rule → ingest_id → claim_ids → source rows → regulatory
+  overlap.
+
+[`provenance/explain.py`](rcm_mc/provenance/explain.py) gains:
+
+- Dispatch to `explain_ccd_derived` for `NodeType.CCD_DERIVED` nodes
+- `explain_for_ui` returns a `chain_break` field when the chain is
+  incomplete, instead of a generic error
+- `_resolve_metric_id` extended to try `ccd::<key>` (ordered last so
+  analyst OBSERVED overrides still win)
+
+### 6. `split_train_calibration` accepts `SplitManifest`
+[`ml/conformal.py`](rcm_mc/ml/conformal.py) learns a provider-
+disjoint mode:
+
+- New kwargs `provider_ids` + `manifest`
+- When `manifest` is passed, rows route to train / cal by their
+  provider's bucket — no provider's data appears in both
+- Legacy row-wise split preserved as the default (no warning)
+- `DeprecationWarning` fires when `provider_ids` is supplied without
+  a manifest — the explicit migration-path nudge
+
+### 7. Preflight orchestrator
+New [`integrity/preflight.py`](rcm_mc/diligence/integrity/preflight.py):
+
+- `run_ccd_guardrails(ccd, as_of_date, target_provider_id, ...)`
+  returns a `PreflightReport` with one `GuardrailResult` per
+  guardrail (always exactly six).
+- Guardrails whose inputs aren't supplied (no peer features →
+  leakage audit; no manifest → split enforcer; no corpus →
+  distribution shift) return neutral PASS with "skipped" reason.
+- `PreflightReport.any_fail` / `.any_warn` / `.status` roll up the
+  individual verdicts for the packet builder's conditional logic.
+
+## Tests
+
+Two new test files, all 25 tests pass in 0.08s:
+
+- [`tests/test_integrity_preflight_integration.py`](tests/test_integrity_preflight_integration.py)
+  — 6 tests: all-six-PASS happy path, deliberate-leakage FAIL,
+  censored-cohort-request FAIL, regulatory-overlap WARN,
+  missing-inputs-skip-gracefully, JSON shape contract.
+- [`tests/test_provenance_ccd_nodes.py`](tests/test_provenance_ccd_nodes.py)
+  — 19 tests across CCDDerivedMetric construction, graph wiring,
+  chain completeness (5 break cases), explainer narrative,
+  conformal SplitManifest modes (provider-disjoint, legacy,
+  deprecation nudge), SplitManifest hash stability.
+
+## Regressions
+
+- Full diligence + integration suite: **91 passed in 0.48s** (66
+  prior + 25 new)
+- `test_ridge_predictor.py`: 38 passed (no regression from
+  conformal signature change)
+- `test_packet_reproducibility.py` + `test_full_analysis_workflow.py`:
+  12 passed (packet JSON round-trip preserved)
+- Baseline chartis suite (`test_chartis_integration`,
+  `test_seekingchartis_*`, `test_analysis_*`): **142 passed, 16
+  failed** — identical to session 3's 16 pre-existing
+  `/library`-route failures; zero new.
+
+## Packet-builder wiring
+
+The `build_analysis_packet` function itself is **not** modified in
+this session. The preflight + guardrails + manifest + ccd_nodes are
+all exposed as a self-contained surface the builder *can* call when
+a CCD is attached. Threading `run_ccd_guardrails(...)` into
+`build_analysis_packet(...)` step 2 is a <10-line change that lands
+when Phase 3 root-cause work pulls on the packet seam.
+
+Why deferred: the spec's non-goal #2 — "No changes to existing
+tests or existing behavior when no CCD is attached. This is purely
+additive" — made the additive preflight a cleaner landing than an
+in-builder hook that would have to stay silent on non-CCD deals.
+The guardrails are ready; the builder stays untouched until
+session 5 needs them lit up on every packet build.
+
+## Non-goals (explicitly deferred)
+
+- Phase 2 KPI math expansion (already shipped in session 2)
+- Phase 3 root cause Pareto (next session)
+- UI surfaces for guardrail results (the packet's `risk_flags`
+  list already renders them via the existing explainer path)
+- Rewriting `ridge_predictor.predict_missing_metrics` to thread
+  `SplitManifest` end-to-end — the entry point is available in
+  `conformal.split_train_calibration`; the predictor will pick it
+  up when Phase 3 exercises the ml layer.
+
+## Next session entry point
+
+**Phase 3 root cause** remains the headline, now with the integrity
+layer fully formalised. First concrete deliverables:
+
+1. `root_cause/pareto.py` consuming `KPIBundle.qualifying_claim_ids`
+   + `adjustment_reason_codes` + `_ansi_codes.classify_carc_set`.
+2. Wire `run_ccd_guardrails` into `build_analysis_packet` step 2
+   (the ~10-line hook noted above); append FAIL'd guardrails as
+   `RiskFlag(category="data_integrity", severity=HIGH)`.
+3. `ridge_predictor.predict_missing_metrics` accepts a
+   `SplitManifest` and threads it to
+   `split_train_calibration(manifest=...)`.
+
