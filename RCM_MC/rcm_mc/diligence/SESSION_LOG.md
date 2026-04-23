@@ -748,3 +748,152 @@ Phase 3 root-cause remains the headline. The three items listed at
 the end of session 4's entry-point section still stand; item 2
 (the hook) is now struck through. Items 1 and 3 remain.
 
+---
+
+# Session 5 — 2026-04-23 (Cash Waterfall / Quality of Revenue output)
+
+The single highest-value gap surfaced by the external critique: a
+cohorted, per-payer-class cash waterfall that walks gross charges
+all the way down to realized cash and flags divergence from
+management-reported revenue. Industry-standard QoR output; the
+diligence team's headline artefact for a CFO conversation.
+
+## What shipped
+
+### 1. Cash Waterfall module
+[`rcm_mc/diligence/benchmarks/cash_waterfall.py`](rcm_mc/diligence/benchmarks/cash_waterfall.py):
+
+- `WaterfallStep` dataclass with ``name``, ``label``,
+  ``amount_usd``, ``running_balance_usd``, and ``claim_ids``
+  (provenance drill-through to canonical claims).
+- `WaterfallCohort` dataclass — one (cohort_month, payer_class)
+  cascade with per-step detail + QoR divergence fields.
+- `CashWaterfallReport` with all-payer cohorts + per-payer-class
+  slices + top-line roll-ups.
+- `compute_cash_waterfall(claims, as_of_date=..., ...)` — the
+  driver.
+
+Cascade steps (in order):
+
+1. **Gross Charges** — sum of ``charge_amount``
+2. **Contractual Adjustments** — ``charge − allowed``
+3. **Front-End Leakage** — CARC FRONT_END denials (26/27/31/35/96/109/140/204)
+4. **Initial Denials (gross)** — CLINICAL/CODING/PAYER_BEHAVIOR denials
+5. **Appeals Recovered (add-back)** — ``status=PAID`` rows with
+   denial-category CARCs (indicates reversed denial)
+6. **Bad Debt** — open balances on non-denied claims aged ≥ 180d
+7. **Realized Cash** — sum of ``paid_amount``
+
+Closes the cascade: running balance after step 6 should equal
+realized cash; any drift is surfaced through the QoR divergence
+flag.
+
+### 2. Censoring invariant (honors the gauntlet)
+Cohorts whose age < ``realization_window_days`` (default **120**)
+return `status=INSUFFICIENT_DATA`, no steps, no numeric fields, a
+human-readable reason string. Never estimated, never interpolated.
+The spec's non-negotiable.
+
+### 3. Quality-of-Revenue divergence flag
+When the caller passes
+``management_reported_revenue_by_cohort_month={"2024-02": 5_000.0}``,
+every MATURE cohort computes:
+
+- `qor_divergence_usd` = `realized_cash - management_revenue`
+- `qor_divergence_pct` = signed fraction
+- `qor_flag` = True when `|pct| >= 5%` (threshold tunable)
+
+Roll-ups aggregate across all mature cohorts for a partner-level
+`total_qor_flag`.
+
+### 4. Hand-computable truth fixture
+[`tests/fixtures/kpi_truth/hospital_06_waterfall_truth/`](tests/fixtures/kpi_truth/hospital_06_waterfall_truth/) —
+10 claims, every cascade step hand-computable:
+
+|          |            |
+|----------|-----------|
+| Gross charges               | $10,000 |
+| Contractual adjustments     |  $2,000 |
+| Front-end leakage (CARC 27) |  $1,600 |
+| Initial denials (CARC 50)   |  $1,600 |
+| Appeals recovered           |      $0 |
+| Bad debt (aged open bal.)   |    $600 |
+| Realized cash               |  $4,200 |
+| Realization rate            |   42.0% |
+
+`expected.json` locks these values plus a QoR scenario
+(management=$5,000 → −16% divergence → flag fires).
+
+### 5. 15 regression tests
+[`tests/test_cash_waterfall.py`](tests/test_cash_waterfall.py):
+
+- Truth lock: every step amount matches expected.json to 2 dp.
+- Running balance walks down through the full cascade.
+- Front-end and initial denials never double-count claim_ids.
+- Bad-debt bucket catches only aged open balances.
+- Censoring: cohort age < window → INSUFFICIENT_DATA with no
+  numeric fields. Custom window respected.
+- QoR: flag fires on ≥5% divergence, stays quiet on smaller ones,
+  no fields populated when management_revenue absent.
+- Provenance: every non-zero step carries its claim_ids.
+- Roll-ups: totals match sum over mature cohorts; JSON round-trip
+  shape preserved.
+- Per-payer-class: slice totals never exceed all-payers total.
+
+### 6. Benchmarks UI — 4th section
+[`rcm_mc/ui/diligence_benchmarks.py`](rcm_mc/ui/diligence_benchmarks.py):
+
+- `_cash_waterfall_section(report)` renders as the fourth block
+  after KPI scorecard / cohort liquidation / denial Pareto.
+- Top-line realization-rate display with a red QoR divergence
+  badge when the cascade-vs-management delta crosses threshold.
+- Per-cohort cascade table: every step visible with running
+  balance; appeals row colour-coded as add-back; realized cash
+  colour-coded positive.
+- Drill-through link to `/diligence/root-cause` (Phase 3) for
+  per-claim_id exploration.
+
+### 7. `_pages.render_benchmarks_page` delegate
+[`rcm_mc/diligence/_pages.py`](rcm_mc/diligence/_pages.py) forwards
+the optional `cash_waterfall=` kwarg so HTTP callers with a
+waterfall report can light the fourth section; callers without one
+skip it silently.
+
+## What was deliberately NOT built (per spec non-goals)
+
+- **No cash-to-accrual engine.** The waterfall is a claims-side
+  view of realization, not a replacement for management's GL.
+- **No payer contract parsing.** Contract re-pricing is session
+  N+2 per the roadmap; it expects structured contract data from
+  the analyst, not PDF NLP.
+- **No drift-aware conformal widening.** Session N+3.
+- **No parameterizable execution Betas.** Session N+4.
+- **No Phase 3 root-cause drill-through UI.** The waterfall page
+  links to `/diligence/root-cause` but the target page is still
+  the placeholder stub from session 1 until Phase 3 ships.
+
+## Regressions
+
+- Cash waterfall + prior diligence + packet + ridge suite:
+  **191 passed in 1.00s** (176 prior + 15 new)
+- Baseline chartis suite: **66 passed, 16 pre-existing failures
+  unchanged**
+
+## Next session entry point
+
+**Phase 3 root cause** is still the headline, and now has the
+cash waterfall as an upstream source alongside KPI bundle +
+cohort liquidation + denial Pareto. First concrete deliverable
+for session 6:
+
+- `root_cause/pareto.py` consuming the waterfall + KPI bundle's
+  `qualifying_claim_ids` + `adjustment_reason_codes`; produces a
+  ranked list of driver-categories per off-benchmark KPI. Every
+  entry links back to claim_ids so the drill-through UI resolves.
+- The three items from session 4's entry point still stand
+  (session 4.1 closed item 2; items 1 and 3 remain).
+
+The roadmap's remaining three legitimate improvements (contract
+re-pricer, drift-aware conformal, parameterizable Betas) slot in
+after Phase 3 ships — each is a self-contained session.
+

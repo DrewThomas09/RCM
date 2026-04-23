@@ -36,17 +36,24 @@ def render_ingest_page() -> str:
                         subtitle="Phase 1 of 4 · Canonical Claims Dataset")
 
 
-def render_benchmarks_page(bundle=None, cohort_report=None) -> str:
+def render_benchmarks_page(
+    bundle=None, cohort_report=None, cash_waterfall=None,
+) -> str:
     """Delegates to the real renderer in ``rcm_mc.ui.diligence_benchmarks``.
 
     When ``bundle`` is None (no CCD attached yet), the real renderer
     returns the placeholder variant, so callers don't need to branch.
     The legacy stub that lived here in session 1 is replaced — the
     full implementation now lives in the ui module so KPI data can
-    drive the page.
+    drive the page. ``cash_waterfall`` opts in the Phase 2 Quality-
+    of-Revenue section; absent, that section is skipped silently.
     """
     from ..ui.diligence_benchmarks import render_benchmarks_page as _render
-    return _render(bundle=bundle, cohort_report=cohort_report)
+    return _render(
+        bundle=bundle,
+        cohort_report=cohort_report,
+        cash_waterfall=cash_waterfall,
+    )
 
 
 def render_root_cause_page() -> str:

@@ -351,12 +351,147 @@ def build_hospital_05(root: Path) -> None:
 
 # ── Driver ──────────────────────────────────────────────────────────
 
+# ═══════════════════════════════════════════════════════════════════
+# hospital_06 — "waterfall truth"
+# ═══════════════════════════════════════════════════════════════════
+#
+# A hand-computable cash-waterfall fixture that exercises every step
+# of the cascade (gross, contractual, front-end, initial denials,
+# bad debt, realized cash). All claims in the same DOS month so the
+# cohort math is trivially verifiable.
+#
+# 10 claims at charge=$1000, allowed=$800:
+#   5 paid in full            → paid=$800 each, status=paid    (realized cash = $4000)
+#   2 front-end denied        → CARC 27 (coverage terminated)  (front-end leakage = $1600)
+#   2 clinical denied         → CARC 50 (medical necessity)    (initial denials = $1600)
+#   1 paid low + aged         → paid=$200, DOS 2024-02-01      (bad debt = $600)
+#
+# Expected waterfall at as_of=2025-01-01 (cohort age ≈ 11 months,
+# well past the 120-day window):
+#   gross_charges           =  10 * $1000 = $10,000
+#   contractual_adjustments =  10 * $200  = $ 2,000
+#   front_end_leakage       =  2  * $800  = $ 1,600
+#   initial_denials_gross   =  2  * $800  = $ 1,600
+#   appeals_recovered       =           0 = $     0
+#   bad_debt                =  1  * ($800 - $200) = $   600
+#   realized_cash           =  5*$800 + 1*$200 = $ 4,200
+# Realization rate = 42%
+
+def build_hospital_06(root: Path) -> None:
+    rows = []
+    # Shared DOS window centred on 2024-02-01 so everything sits in
+    # one cohort. All claims are comfortably mature at as_of=2025-01-01.
+    base_dos = date(2024, 2, 1)
+
+    # 5 paid in full
+    for i in range(5):
+        dos = base_dos + timedelta(days=i)
+        rows.append({
+            "claim_id": f"H6-P{i:03d}",
+            "patient_id": f"P-{i:03d}",
+            "date_of_service": dos.isoformat(),
+            "submit_date": (dos + timedelta(days=3)).isoformat(),
+            "paid_date": (dos + timedelta(days=25)).isoformat(),
+            "cpt_code": "99213",
+            "payer": "Medicare",
+            "charge_amount": 1000.00,
+            "allowed_amount": 800.00,
+            "paid_amount": 800.00,
+            "status": "paid",
+            "adjustment_reason_codes": "",
+        })
+    # 2 front-end denied (CARC 27 = expenses after coverage terminated)
+    for i in range(2):
+        dos = base_dos + timedelta(days=5 + i)
+        rows.append({
+            "claim_id": f"H6-F{i:03d}",
+            "patient_id": f"P-F{i:03d}",
+            "date_of_service": dos.isoformat(),
+            "submit_date": (dos + timedelta(days=3)).isoformat(),
+            "paid_date": "",
+            "cpt_code": "99213",
+            "payer": "Medicare",
+            "charge_amount": 1000.00,
+            "allowed_amount": 800.00,
+            "paid_amount": 0.00,
+            "status": "denied",
+            "adjustment_reason_codes": "27",
+        })
+    # 2 clinical denied (CARC 50 = medical necessity)
+    for i in range(2):
+        dos = base_dos + timedelta(days=7 + i)
+        rows.append({
+            "claim_id": f"H6-C{i:03d}",
+            "patient_id": f"P-C{i:03d}",
+            "date_of_service": dos.isoformat(),
+            "submit_date": (dos + timedelta(days=3)).isoformat(),
+            "paid_date": "",
+            "cpt_code": "99214",
+            "payer": "Medicare",
+            "charge_amount": 1000.00,
+            "allowed_amount": 800.00,
+            "paid_amount": 0.00,
+            "status": "denied",
+            "adjustment_reason_codes": "50",
+        })
+    # 1 bad-debt: paid $200, allowed $800, DOS old enough to age into
+    # the bad_debt bucket (>= 180 days at as_of 2025-01-01).
+    rows.append({
+        "claim_id": "H6-B000",
+        "patient_id": "P-B000",
+        "date_of_service": "2024-02-01",
+        "submit_date": "2024-02-04",
+        "paid_date": "2024-02-28",
+        "cpt_code": "99213",
+        "payer": "Medicare",
+        "charge_amount": 1000.00,
+        "allowed_amount": 800.00,
+        "paid_amount": 200.00,
+        "status": "paid",
+        "adjustment_reason_codes": "",
+    })
+    _write_claims(root / "hospital_06_waterfall_truth" / "claims.csv", rows)
+
+    expected = {
+        "hospital": "hospital_06_waterfall_truth",
+        "description": (
+            "10 claims hand-computed for every cash-waterfall step: "
+            "5 paid, 2 front-end denied (CARC 27), 2 clinical denied "
+            "(CARC 50), 1 aged bad-debt row."
+        ),
+        "as_of_date": "2025-01-01",
+        "provider_id": "H6",
+        "claims_count": 10,
+        "expected_waterfall": {
+            "gross_charges":           10_000.0,
+            "contractual_adjustments":  2_000.0,
+            "front_end_leakage":        1_600.0,
+            "initial_denials_gross":    1_600.0,
+            "appeals_recovered":             0.0,
+            "bad_debt":                   600.0,
+            "realized_cash":            4_200.0,
+            "realization_rate":         0.42,
+        },
+        "management_reported_revenue_for_qor_test": {
+            # Artificial: management claims $5,000 but waterfall shows
+            # $4,200 — an -$800 / -16% QoR divergence, crossing the
+            # 5% threshold and flagging the cohort.
+            "cohort_month": "2024-02",
+            "management_reported_revenue_usd": 5_000.0,
+            "expected_qor_divergence_usd": -800.0,
+            "expected_qor_flag": True,
+        },
+    }
+    _write_expected(root / "hospital_06_waterfall_truth" / "expected.json", expected)
+
+
 BUILDERS = {
     "hospital_01_clean_acute": build_hospital_01,
     "hospital_02_denial_heavy": build_hospital_02,
     "hospital_03_censoring": build_hospital_03,
     "hospital_04_mixed_payer": build_hospital_04,
     "hospital_05_dental_dso": build_hospital_05,
+    "hospital_06_waterfall_truth": build_hospital_06,
 }
 
 

@@ -14,6 +14,16 @@ Public surface:
 from __future__ import annotations
 
 from ._ansi_codes import DenialCategory, classify_carc, classify_carc_set
+from .cash_waterfall import (
+    DEFAULT_BAD_DEBT_AGE_DAYS,
+    DEFAULT_QOR_DIVERGENCE_THRESHOLD,
+    DEFAULT_REALIZATION_WINDOW_DAYS,
+    WATERFALL_STEPS,
+    CashWaterfallReport,
+    WaterfallCohort,
+    WaterfallStep,
+    compute_cash_waterfall,
+)
 from .cohort_liquidation import (
     CohortCell,
     CohortLiquidationReport,
@@ -29,16 +39,24 @@ from .kpi_engine import (
 )
 
 __all__ = [
+    "CashWaterfallReport",
     "CohortCell",
     "CohortLiquidationReport",
     "CohortStatus",
+    "DEFAULT_BAD_DEBT_AGE_DAYS",
+    "DEFAULT_QOR_DIVERGENCE_THRESHOLD",
+    "DEFAULT_REALIZATION_WINDOW_DAYS",
     "DEFAULT_WINDOWS",
     "DenialCategory",
     "DenialStratRow",
     "KPIBundle",
     "KPIResult",
+    "WATERFALL_STEPS",
+    "WaterfallCohort",
+    "WaterfallStep",
     "classify_carc",
     "classify_carc_set",
+    "compute_cash_waterfall",
     "compute_cohort_liquidation",
     "compute_kpis",
 ]

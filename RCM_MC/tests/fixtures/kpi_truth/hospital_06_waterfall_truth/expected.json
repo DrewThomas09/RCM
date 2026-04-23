@@ -1,0 +1,23 @@
+{
+  "as_of_date": "2025-01-01",
+  "claims_count": 10,
+  "description": "10 claims hand-computed for every cash-waterfall step: 5 paid, 2 front-end denied (CARC 27), 2 clinical denied (CARC 50), 1 aged bad-debt row.",
+  "expected_waterfall": {
+    "appeals_recovered": 0.0,
+    "bad_debt": 600.0,
+    "contractual_adjustments": 2000.0,
+    "front_end_leakage": 1600.0,
+    "gross_charges": 10000.0,
+    "initial_denials_gross": 1600.0,
+    "realization_rate": 0.42,
+    "realized_cash": 4200.0
+  },
+  "hospital": "hospital_06_waterfall_truth",
+  "management_reported_revenue_for_qor_test": {
+    "cohort_month": "2024-02",
+    "expected_qor_divergence_usd": -800.0,
+    "expected_qor_flag": true,
+    "management_reported_revenue_usd": 5000.0
+  },
+  "provider_id": "H6"
+}
