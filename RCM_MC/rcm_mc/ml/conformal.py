@@ -25,7 +25,7 @@ References:
 from __future__ import annotations
 
 import math
-from typing import Any, Protocol, Tuple
+from typing import Any, Optional, Protocol, Sequence, Tuple
 
 import numpy as np
 
@@ -184,15 +184,65 @@ def split_train_calibration(
     *,
     cal_fraction: float = 0.30,
     random_state: int = 0,
+    provider_ids: Optional[Sequence[str]] = None,
+    manifest: Optional[Any] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Deterministic train/cal split. ``cal_fraction`` rounded so the
     calibration set has at least 2 points whenever ``len(X) >= 4``.
+
+    **Provider-disjoint mode (preferred).** When ``manifest`` is a
+    :class:`~rcm_mc.diligence.integrity.split_enforcer.SplitManifest`,
+    ``provider_ids`` (one per row of ``X``) is used to partition rows
+    by bucket so no provider's data appears in both train and
+    calibration. This is the valid regime for conformal coverage
+    claims on CCD-derived training data.
+
+    **Row-wise mode (legacy).** When ``manifest`` is None, falls back
+    to the pre-session-4 row-wise random split. A deprecation warning
+    fires the first time a CCD-touching caller hits this path (the
+    warning is driven by ``provider_ids is not None`` — if you're
+    passing provider ids but no manifest, you're on the upgrade path).
     """
     X = np.asarray(X, dtype=float)
     y = np.asarray(y, dtype=float)
     n = len(X)
     if n == 0:
         return X, y, X, y
+
+    # Provider-disjoint path — requires both provider_ids + manifest.
+    if manifest is not None:
+        if provider_ids is None or len(provider_ids) != n:
+            raise ValueError(
+                "split_train_calibration: provider_ids must be provided "
+                "(one per row) when manifest is passed. "
+                f"Got X with {n} rows, provider_ids with "
+                f"{0 if provider_ids is None else len(provider_ids)}."
+            )
+        train_set = manifest.split.train
+        cal_set = manifest.split.calibration
+        train_mask = np.array(
+            [str(p) in train_set for p in provider_ids], dtype=bool,
+        )
+        cal_mask = np.array(
+            [str(p) in cal_set for p in provider_ids], dtype=bool,
+        )
+        # A row whose provider is in neither bucket (e.g. the target)
+        # legitimately has no role in train/cal and is dropped.
+        return X[train_mask], y[train_mask], X[cal_mask], y[cal_mask]
+
+    # Legacy row-wise split. Emit a deprecation warning when the caller
+    # passed provider_ids (intent to upgrade) but didn't thread a
+    # manifest — that's the migration case where the shim matters.
+    if provider_ids is not None:
+        import warnings as _warnings
+        _warnings.warn(
+            "split_train_calibration called with provider_ids but without a "
+            "SplitManifest; falling back to row-wise split. Conformal "
+            "coverage claims on CCD-derived training data are invalid "
+            "without a provider-disjoint manifest. See "
+            "rcm_mc.diligence.integrity.split_enforcer.build_split_manifest.",
+            DeprecationWarning, stacklevel=2,
+        )
     rng = np.random.default_rng(int(random_state))
     idx = rng.permutation(n)
     n_cal = max(1, int(round(n * float(cal_fraction))))
