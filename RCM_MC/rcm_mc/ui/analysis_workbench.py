@@ -39,24 +39,13 @@ from ..analysis.packet import (
 # ── Palette & CSS ────────────────────────────────────────────────────
 
 # Exposed so tests can assert specific tokens are in the output.
-PALETTE = {
-    "bg":         "#0a0e17",
-    "panel":      "#111827",
-    "panel_alt":  "#0f172a",
-    "border":     "#1e293b",
-    "text":       "#e2e8f0",
-    "text_dim":   "#94a3b8",
-    "text_faint": "#64748b",
-    "positive":   "#10b981",
-    "negative":   "#ef4444",
-    "warning":    "#f59e0b",
-    "neutral":    "#6366f1",
-    "accent":     "#3b82f6",
-    "critical":   "#dc2626",
-    "high":       "#f59e0b",
-    "medium":     "#eab308",
-    "low":        "#64748b",
-}
+# Phase 3 of the UI v2 editorial rework: the local PALETTE dict was
+# replaced with an import from the flag-aware central palette.
+# Same key names resolve to legacy dark values when CHARTIS_UI_V2=0
+# and to editorial navy/teal/parchment when CHARTIS_UI_V2=1. Every
+# ``PALETTE['panel']`` / ``PALETTE['accent']`` / etc. reference in
+# the ~2k-line renderer below flips with the flag unchanged.
+from .brand import PALETTE  # noqa: F401  (used by _WORKBENCH_CSS below)
 
 
 _WORKBENCH_CSS = f"""

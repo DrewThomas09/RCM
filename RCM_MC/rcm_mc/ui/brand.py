@@ -76,6 +76,16 @@ _PALETTE_LEGACY: Dict[str, str] = {
     "ticker_up": "#22c55e",
     "ticker_down": "#ef4444",
     "ticker_flat": "#9aa7b8",
+    # Secondary vocabulary — same values, aliased to the key names
+    # that analysis_workbench, deal pages, and portfolio pages use.
+    # Consolidating here so the flag flips every page simultaneously.
+    "panel":      "#111827",
+    "panel_alt":  "#0f172a",
+    "text":       "#e2e8f0",
+    "text_dim":   "#94a3b8",
+    "text_faint": "#64748b",
+    "accent":     "#3b82f6",
+    "accent_bright": "#66c8c3",
 }
 
 
@@ -123,6 +133,16 @@ _PALETTE_V2: Dict[str, str] = {
     "ticker_up":      "#0a8a5f",
     "ticker_down":    "#b5321e",
     "ticker_flat":    "#7a8699",
+    # Secondary vocabulary — maps workbench / deal-page keys onto
+    # editorial tokens so the same hex-free renderer flips with
+    # the flag.
+    "panel":         "#ffffff",   # white panels (was dark #111827)
+    "panel_alt":     "#ece6db",   # bone tint     (was very dark #0f172a)
+    "text":          "#1a2332",   # near-ink      (was light #e2e8f0)
+    "text_dim":      "#465366",   # (was #94a3b8)
+    "text_faint":    "#7a8699",   # (was #64748b)
+    "accent":        "#0f5e5a",   # dark teal link (was blue #3b82f6)
+    "accent_bright": "#2fb3ad",   # bright teal (was #66c8c3 — same family)
 }
 
 
