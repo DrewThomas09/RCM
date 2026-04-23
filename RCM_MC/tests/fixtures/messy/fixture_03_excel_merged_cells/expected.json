@@ -1,0 +1,15 @@
+{
+  "canonical_claim_count": 5,
+  "description": "Excel with junk headers, merged payer cells, trailing total row.",
+  "distinct_source_systems": [
+    "claims"
+  ],
+  "fixture": "fixture_03_excel_merged_cells",
+  "must_not_include_source_rows": [
+    "Grand Total"
+  ],
+  "payer_canonical_counts": {
+    "Aetna": 4,
+    "Cigna": 1
+  }
+}

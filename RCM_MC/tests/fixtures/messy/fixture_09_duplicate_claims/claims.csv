@@ -1,0 +1,7 @@
+claim_id,patient_id,date_of_service,cpt_code,payer,charge_amount,paid_amount
+R-000-0,P-9001,2024-05-05,99213,Medicare,150.0,0
+R-000-1,P-9001,2024-05-05,99213,Medicare,150.0,0
+R-000-2,P-9001,2024-05-05,99213,Medicare,150.0,120.0
+R-001-0,P-9002,2024-05-06,99214,Medicare,220.0,0
+R-001-1,P-9002,2024-05-06,99214,Medicare,220.0,0
+R-001-2,P-9002,2024-05-06,99214,Medicare,220.0,180.0

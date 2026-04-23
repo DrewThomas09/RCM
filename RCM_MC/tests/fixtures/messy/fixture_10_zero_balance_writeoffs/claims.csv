@@ -1,0 +1,5 @@
+claim_id,patient_id,date_of_service,cpt_code,payer,charge_amount,allowed_amount,paid_amount,adjustment_amount,adjustment_reason_codes
+Z-001,P-1001,2024-07-01,99213,Aetna,150.0,150.0,120.0,0.0,
+Z-002,P-1002,2024-07-02,99213,Aetna,150.0,150.0,90.0,30.0,CO-45
+Z-003,P-1003,2024-07-03,99214,Aetna,220.0,180.0,0.0,180.0,CO-45;OA-23
+Z-004,P-1004,2024-07-04,99214,Aetna,220.0,0.0,0.0,0.0,CO-50

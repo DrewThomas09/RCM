@@ -1,0 +1,5 @@
+claim_id,patient_id,date_of_service,cpt_code,payer,charge_amount,paid_amount
+E-001,P-7001,2024-01-15,99213,Aetna,150.00,120.00
+E-002,P-7002,2024-01-16,99213,Blue Cross,150.00,120.00
+E-003,P-7003,2024-01-17,99214,Cigna ‘Plus’ — Gold,220.00,180.00
+E-004,P-7004,2024-01-18,99214,Humana,220.00,180.00

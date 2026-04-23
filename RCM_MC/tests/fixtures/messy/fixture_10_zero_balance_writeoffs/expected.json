@@ -1,0 +1,16 @@
+{
+  "canonical_claim_count": 4,
+  "description": "ZBA write-off must preserve original charge + allowed AND record adjustment.",
+  "fixture": "fixture_10_zero_balance_writeoffs",
+  "must_have_transformation_rules": [
+    "zba_writeoff:preserve"
+  ],
+  "zba_row_must_preserve": {
+    "adjustment_amount": 180.0,
+    "adjustment_reason_codes_min_length": 2,
+    "allowed_amount": 180.0,
+    "charge_amount": 220.0,
+    "claim_id": "Z-003",
+    "paid_amount": 0.0
+  }
+}

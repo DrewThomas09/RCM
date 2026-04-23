@@ -1,0 +1,9 @@
+{
+  "canonical_claim_count": 4,
+  "description": "Mixed UTF-8 and windows-1252 in the same file.",
+  "fixture": "fixture_07_encoding_chaos",
+  "reader_encoding_in": [
+    "windows-1252",
+    "mixed"
+  ]
+}

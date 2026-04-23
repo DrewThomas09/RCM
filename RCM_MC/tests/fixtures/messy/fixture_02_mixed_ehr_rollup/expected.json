@@ -1,0 +1,16 @@
+{
+  "canonical_claim_count": 30,
+  "description": "Three EHRs (Epic, Cerner, Athena) express the same 10 claims.",
+  "distinct_source_systems": [
+    "athena",
+    "cerner",
+    "epic"
+  ],
+  "fixture": "fixture_02_mixed_ehr_rollup",
+  "logical_claim_count_after_rollup": 10,
+  "must_have_transformation_rules": [
+    "multi_ehr_rollup",
+    "payer_resolve:exact"
+  ],
+  "must_not_have_severity_error": true
+}
