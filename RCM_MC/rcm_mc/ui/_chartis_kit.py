@@ -55,11 +55,23 @@ _SANS = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-se
 # ---------------------------------------------------------------------------
 
 _CORPUS_NAV = [
-    # PLATFORM — day-to-day operator entries.
+    # RCM DILIGENCE — the analyst's front door. New top-level workspace
+    # organised around the four-phase RCM Diligence Playbook. Placed
+    # first because it's where the analyst lives during a 3-week
+    # sprint; everything else is downstream context.
+    {"label": "RCM DILIGENCE", "separator": True},
+    {"label": "Ingestion",       "href": "/diligence/ingest",     "icon": "▤"},
+    {"label": "Benchmarks",      "href": "/diligence/benchmarks", "icon": "▦"},
+    {"label": "Root Cause",      "href": "/diligence/root-cause", "icon": "▥"},
+    {"label": "Value Creation",  "href": "/diligence/value",      "icon": "◈"},
+
+    # PLATFORM — day-to-day operator entries. Alerts removed from nav
+    # — portfolio-ops concept the analyst doesn't need. The alerts/
+    # package and tables stay intact; a portfolio-ops user can re-
+    # expose them via a non-default route if needed.
     {"label": "PLATFORM", "separator": True},
     {"label": "Home",        "href": "/home",    "icon": "◎"},
     {"label": "Dashboard",   "href": "/",        "icon": "◈"},
-    {"label": "Alerts",      "href": "/alerts",  "icon": "◉"},
     {"label": "Import Deal", "href": "/import",  "icon": "▣"},
     {"label": "Audit",       "href": "/audit",   "icon": "▥"},
 
@@ -755,15 +767,12 @@ def _kb_help_html() -> str:
 
 
 def _alert_bell_html() -> str:
-    """Topbar bell icon with a count pill populated by the polling JS."""
-    return (
-        f'<a href="/alerts" class="ck-bar-bell" title="Active alerts" '
-        f'aria-label="Active alerts">'
-        f'<span class="ck-bar-bell-icon">&#128276;</span>'
-        f'<span class="ck-bar-bell-count" id="ck-alert-count" '
-        f'aria-live="polite" style="display:none;"></span>'
-        f'</a>'
-    )
+    """Topbar bell — returns empty string now that alerts are hidden
+    from the analyst UI. The function is retained (rather than its
+    call site deleted) so the surrounding shell layout doesn't need
+    to be touched. A portfolio-ops variant can re-enable by flipping
+    this to return the bell markup."""
+    return ""
 
 
 # CSS for the four ported features. Kept in a separate constant so it's
