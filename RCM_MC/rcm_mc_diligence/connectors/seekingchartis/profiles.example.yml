@@ -1,0 +1,11 @@
+# Example profile for local development. The pipeline *generates* a
+# profiles.yml per-run under <run_dir>/dbt_profiles/, so you do not
+# need to copy this file to ~/.dbt/ for the CLI to work. Keep as
+# documentation of the profile shape a human would write.
+seekingchartis:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: /tmp/seekingchartis-diligence.duckdb
+      threads: 1
