@@ -26,9 +26,11 @@ packet's audit trail.
 """
 from __future__ import annotations
 
+from .cohort_censoring import CensoringCheck, check_cohort_censoring
 from .distribution_shift import (
     DistributionScore,
     DistributionShiftReport,
+    check_distribution_shift,
     classify_shift,
     score_distribution,
 )
@@ -37,31 +39,49 @@ from .leakage_audit import (
     LeakageError,
     LeakageFinding,
     audit_features,
+    check_leakage,
 )
+from .preflight import PreflightReport, run_ccd_guardrails
 from .split_enforcer import (
+    GuardrailResult,
     ProviderSplit,
+    SplitManifest,
     SplitViolation,
     assert_provider_disjoint,
+    build_split_manifest,
+    check_split_manifest,
     make_three_way_split,
 )
 from .temporal_validity import (
     TemporalValidity,
     check_regulatory_overlap,
+    scan_for_discontinuities,
 )
 
 __all__ = [
+    "CensoringCheck",
     "DistributionScore",
     "DistributionShiftReport",
     "FeatureSource",
+    "GuardrailResult",
     "LeakageError",
     "LeakageFinding",
+    "PreflightReport",
     "ProviderSplit",
+    "SplitManifest",
     "SplitViolation",
     "TemporalValidity",
     "assert_provider_disjoint",
     "audit_features",
+    "build_split_manifest",
+    "check_cohort_censoring",
+    "check_distribution_shift",
+    "check_leakage",
     "check_regulatory_overlap",
+    "check_split_manifest",
     "classify_shift",
     "make_three_way_split",
+    "run_ccd_guardrails",
+    "scan_for_discontinuities",
     "score_distribution",
 ]
