@@ -1842,6 +1842,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/home" or path == "/caduceus" or path == "/seekingchartis":
             return self._route_seekingchartis_home()
         if path == "/" or path == "/index.html":
+            # Phase 13 of the UI v2 editorial rework: when
+            # CHARTIS_UI_V2=1, the public marketing landing renders at
+            # "/". Under the legacy flag (default), "/" continues to
+            # serve the signed-in dashboard so existing partners see
+            # no change. A signed-in user hitting "/" on the v2 marketing
+            # page can click "Open Platform" to reach /home.
+            from .ui._chartis_kit import UI_V2_ENABLED
+            if UI_V2_ENABLED:
+                from .ui.chartis.marketing_page import render_marketing_page
+                return self._send_html(render_marketing_page())
             return self._route_dashboard()
         if path == "/portfolio/regression":
             return self._route_regression_page()
