@@ -202,3 +202,88 @@ def feature_from_target(
         provider_ids=(target_provider_id,),
         description=f"{feature_name} derived from target hospital's own data",
     )
+
+
+# ── Structured-result wrapper ─────────────────────────────────────
+
+def check_leakage(
+    *,
+    target_provider_id: str,
+    features: Iterable[FeatureSource],
+    deal_specific_datasets: Optional[Set[str]] = None,
+    allow_temporal_self: bool = True,
+) -> "GuardrailResult":
+    """Packet-facing leakage check. Returns a
+    :class:`GuardrailResult`:
+
+    - **PASS**: no deal-specific feature names the target as a source.
+    - **PASS** with a note if the only self-references are *temporal*
+      (hospital X's prior-period data predicting its current-period
+      data — legitimate when clearly temporal).
+    - **FAIL**: peer-comparable-style cross-hospital leakage.
+
+    ``allow_temporal_self`` controls whether a feature whose
+    ``description`` hints at temporality (``"prior_period"`` /
+    ``"lag_"`` / ``"temporal"``) is exempt. Default True per spec.
+    """
+    from .split_enforcer import GuardrailResult
+
+    feature_list = list(features)
+    temporal_exempt: List[str] = []
+    try:
+        audit_features(
+            target_provider_id=target_provider_id,
+            features=feature_list,
+            deal_specific_datasets=deal_specific_datasets,
+        )
+    except LeakageError as exc:
+        # Partition findings into "temporal" vs "cross-hospital peer".
+        peer_findings: List[LeakageFinding] = []
+        for f in exc.findings:
+            desc = (f.description or "").lower()
+            if allow_temporal_self and (
+                "prior_period" in desc
+                or "lag_" in desc
+                or "temporal" in desc
+                or "hospital's own" in desc and "prior" in desc
+            ):
+                temporal_exempt.append(f.feature_name)
+                continue
+            peer_findings.append(f)
+        if peer_findings:
+            return GuardrailResult(
+                guardrail="leakage_audit", ok=False, status="FAIL",
+                reason=(
+                    f"{len(peer_findings)} feature(s) leak the target into "
+                    f"peer comparables: "
+                    + "; ".join(f.chain() for f in peer_findings[:3])
+                    + (" …" if len(peer_findings) > 3 else "")
+                ),
+                details={
+                    "leaked_features": [
+                        {"feature": f.feature_name,
+                         "dataset": f.dataset,
+                         "leaked_provider": f.leaked_provider_id,
+                         "description": f.description}
+                        for f in peer_findings
+                    ],
+                    "temporal_self_features": temporal_exempt,
+                },
+            )
+        # Only temporal self-references remained: PASS with note.
+        return GuardrailResult(
+            guardrail="leakage_audit", ok=True, status="PASS",
+            reason=(
+                f"{len(temporal_exempt)} temporal self-feature(s) allowed "
+                f"(target's prior-period data feeding target's current "
+                f"prediction is legitimate); no peer-comparable leakage."
+            ),
+            details={"temporal_self_features": temporal_exempt},
+        )
+    return GuardrailResult(
+        guardrail="leakage_audit", ok=True, status="PASS",
+        reason=(
+            f"{len(feature_list)} feature(s) audited; no deal-specific "
+            f"feature names the target as a source."
+        ),
+    )
