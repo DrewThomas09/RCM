@@ -62,3 +62,13 @@ anomalies.json
 .env
 .env.local
 *.pem
+
+# dbt — vendored-package caches and per-run target artefacts. Tuva's
+# dbt_packages/ is ~150k lines of Apache 2.0 content installed via
+# `dbt deps`; the source lives in the sibling ChartisDrewIntel-main/
+# folder and does not need to live inside rcm_mc_diligence/.
+dbt_packages/
+dbt_target/
+dbt_logs/
+dbt_profiles/
+package-lock.yml

@@ -1851,6 +1851,21 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/import":
             from .ui.quick_import import render_quick_import
             return self._send_html(render_quick_import())
+        # RCM Diligence workspace — Phase 1 ingest is live; Phases 2–4
+        # render placeholder tabs until their implementations land.
+        # Load lazily to avoid import cost on every request.
+        if path == "/diligence/ingest":
+            from .diligence._pages import render_ingest_page
+            return self._send_html(render_ingest_page())
+        if path == "/diligence/benchmarks":
+            from .diligence._pages import render_benchmarks_page
+            return self._send_html(render_benchmarks_page())
+        if path == "/diligence/root-cause":
+            from .diligence._pages import render_root_cause_page
+            return self._send_html(render_root_cause_page())
+        if path == "/diligence/value":
+            from .diligence._pages import render_value_page
+            return self._send_html(render_value_page())
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
