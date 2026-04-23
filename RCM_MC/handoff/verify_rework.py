@@ -35,17 +35,29 @@ FORBIDDEN_HEX = [
     r"#ffab00",
 ]
 
-# Pages that are expected to be fully migrated. Expand as you work.
+# Pages that are expected to be fully migrated. Expanded per-phase
+# as the UI v2 rework progresses. An entry here means the page
+# doesn't import from ``_chartis_kit_legacy`` (the shim module
+# that Phase 15 deletes). Because brand.PALETTE is flag-aware (see
+# Phase 2), any page that imports PALETTE from brand inherits the
+# correct editorial palette when CHARTIS_UI_V2=1 without code
+# changes. The forbidden-hex scan catches pages that bypass the
+# centralized palette with hardcoded dark-theme literals.
 TIER_1 = [
-    "home_page.py",
-    "pipeline_page.py",
+    # Phase 2
+    "home_v2.py",
+    # Phase 3
     "analysis_workbench.py",
+    # Phase 4 — gates 3/4/5
     "ic_memo_page.py",
     "ebitda_bridge_page.py",
-    "portfolio_analytics_page.py",
-    "payer_intelligence_page.py",
-    "pe_intelligence_hub_page.py",
-    "corpus_backtest_page.py",
+    "pipeline_page.py",
+    # Phase 5 — gates 6-10
+    "chartis/portfolio_analytics_page.py",
+    "chartis/payer_intelligence_page.py",
+    "chartis/pe_intelligence_hub_page.py",
+    "chartis/corpus_backtest_page.py",
+    "deal_dashboard.py",
 ]
 
 
