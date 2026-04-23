@@ -1865,17 +1865,27 @@ class RCMHandler(BaseHTTPRequestHandler):
         # render placeholder tabs until their implementations land.
         # Load lazily to avoid import cost on every request.
         if path == "/diligence/ingest":
+            # Phase 14: ?dataset=<fixture_name> drives the live CCD
+            # ingest + transformation-log preview.
             from .diligence._pages import render_ingest_page
-            return self._send_html(render_ingest_page())
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            return self._send_html(render_ingest_page(dataset=ds))
         if path == "/diligence/benchmarks":
             from .diligence._pages import render_benchmarks_page
-            return self._send_html(render_benchmarks_page())
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            return self._send_html(render_benchmarks_page(dataset=ds))
         if path == "/diligence/root-cause":
             from .diligence._pages import render_root_cause_page
-            return self._send_html(render_root_cause_page())
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            return self._send_html(render_root_cause_page(dataset=ds))
         if path == "/diligence/value":
             from .diligence._pages import render_value_page
-            return self._send_html(render_value_page())
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            return self._send_html(render_value_page(dataset=ds))
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
