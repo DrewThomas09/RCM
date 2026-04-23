@@ -334,6 +334,129 @@ _CSS_INLINE_FALLBACK = """
     .ck-panel { box-shadow:none; break-inside:avoid; page-break-inside:avoid; }
     .ck-main { max-width:none; padding:0; }
   }
+
+  /* ── Legacy cad-* compat layer ──────────────────────────────────
+     Existing page renderers reference Bloomberg-style .cad-* class
+     names. Rather than migrate every page's class names (40+ pages,
+     heavy churn), this compat block redefines the same names with
+     editorial-palette values. Pages keep working; the visual flips
+     with the CHARTIS_UI_V2 flag. */
+  .cad-main { padding: var(--sc-s-7) var(--sc-s-6); max-width:1440px; margin:0 auto; }
+  .cad-card {
+    background: var(--sc-panel); border:1px solid var(--sc-rule);
+    border-radius:2px; padding: var(--sc-s-5) var(--sc-s-6);
+    margin-bottom: var(--sc-s-5); box-shadow: var(--sc-shadow-1);
+  }
+  .cad-card h1 { font-family: var(--sc-serif); font-weight:500; font-size:24px;
+                 color: var(--sc-navy); margin-bottom: var(--sc-s-3); letter-spacing:-0.005em; }
+  .cad-card h2 { font-family: var(--sc-serif); font-weight:500; font-size:18px;
+                 color: var(--sc-navy); margin-bottom: var(--sc-s-3); letter-spacing:-0.005em; }
+  .cad-card p  { font-size:13px; color: var(--sc-text); line-height:1.55; }
+  .cad-h1 { font-family: var(--sc-serif); font-weight:500; font-size:28px;
+            color: var(--sc-navy); letter-spacing:-0.01em; }
+
+  .cad-text       { color: var(--sc-text); }
+  .cad-text-dim   { color: var(--sc-text-dim); }
+  .cad-text-muted { color: var(--sc-text-faint); }
+  .cad-link       { color: var(--sc-teal-ink); text-decoration:none; }
+  .cad-link:hover { color: var(--sc-navy); }
+  .cad-mono       { font-family: var(--sc-mono); font-variant-numeric: tabular-nums; }
+  .cad-accent     { color: var(--sc-teal-ink); }
+  .cad-amber      { color: var(--sc-warning); }
+  .cad-pos        { color: var(--sc-positive); }
+  .cad-neg        { color: var(--sc-negative); }
+  .cad-warn       { color: var(--sc-warning); }
+  .cad-bg         { background: var(--sc-bg); }
+  .cad-border     { border-color: var(--sc-rule); }
+  .cad-border-lt  { border-color: var(--sc-rule-2); }
+
+  .cad-kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0; background: var(--sc-panel); border:1px solid var(--sc-rule);
+    border-radius:2px; margin-top: var(--sc-s-3);
+  }
+  .cad-kpi {
+    padding: var(--sc-s-4) var(--sc-s-5);
+    border-right: 1px solid var(--sc-rule); border-top: 3px solid var(--sc-teal);
+  }
+  .cad-kpi:last-child { border-right: 0; }
+  .cad-kpi-label {
+    font-family: var(--sc-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--sc-text-faint); margin-bottom: 8px;
+  }
+  .cad-kpi-value {
+    font-family: var(--sc-serif); font-size: 28px; font-weight: 500;
+    color: var(--sc-navy); letter-spacing: -0.01em; line-height: 1;
+  }
+  .cad-kpi-delta {
+    font-family: var(--sc-mono); font-size: 11px; margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .cad-badge {
+    display: inline-flex; align-items: center; padding: 2px 8px;
+    font-family: var(--sc-sans); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border: 1px solid currentColor; border-radius: 2px;
+  }
+  .cad-badge-blue   { color: var(--sc-teal-ink); }
+  .cad-badge-green  { color: var(--sc-positive); }
+  .cad-badge-amber  { color: var(--sc-warning); }
+  .cad-badge-red    { color: var(--sc-negative); }
+  .cad-badge-muted  { color: var(--sc-text-faint); }
+  .cad-section-code {
+    font-family: var(--sc-mono); font-size: 10px;
+    color: var(--sc-text-faint); letter-spacing: 0.14em;
+  }
+
+  .cad-btn {
+    display: inline-block; padding: 6px 12px;
+    font-family: var(--sc-sans); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.04em; color: var(--sc-navy);
+    background: var(--sc-bone); border: 1px solid var(--sc-rule);
+    border-radius: 2px; text-decoration: none; cursor: pointer;
+  }
+  .cad-btn:hover { background: var(--sc-rule); }
+  .cad-btn-primary {
+    color: var(--sc-on-navy); background: var(--sc-navy);
+    border-color: var(--sc-navy);
+  }
+  .cad-btn-primary:hover { background: var(--sc-navy-2); color: var(--sc-on-navy); }
+
+  .cad-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    margin-top: var(--sc-s-3);
+  }
+  .cad-table thead th {
+    background: var(--sc-bone); color: var(--sc-text-dim);
+    font-family: var(--sc-sans); font-weight: 600; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--sc-rule);
+  }
+  .cad-table tbody td { padding: 8px 12px; border-bottom: 1px solid var(--sc-rule); }
+  .cad-table .num { font-family: var(--sc-mono); font-variant-numeric: tabular-nums;
+                    text-align: right; }
+
+  .cad-input, .cad-field {
+    padding: 8px 12px; border: 1px solid var(--sc-rule);
+    font-family: var(--sc-sans); font-size: 13px;
+    background: var(--sc-panel); color: var(--sc-text);
+    border-radius: 2px; width: 100%;
+  }
+  .cad-input:focus, .cad-field:focus {
+    outline: none; border-color: var(--sc-teal); box-shadow: 0 0 0 2px rgba(47, 179, 173, 0.15);
+  }
+
+  .cad-status-item { display: flex; gap: 6px; font-size: 11px; font-family: var(--sc-mono); }
+  .cad-status-key  { color: var(--sc-text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+  .cad-status-val  { color: var(--sc-text); font-weight: 600; }
+  .cad-deal-ident  { font-family: var(--sc-mono); font-size: 11px; color: var(--sc-text-dim); letter-spacing: 0.08em; }
+  .cad-ticker-id   { font-family: var(--sc-mono); font-size: 10px; letter-spacing: 0.14em; color: var(--sc-text-faint); }
+
+  /* Generic .mn wrapper used by ck_fmt_num / ck_fmt_pct */
+  .mn { font-family: var(--sc-mono); font-variant-numeric: tabular-nums; }
 </style>
 """
 

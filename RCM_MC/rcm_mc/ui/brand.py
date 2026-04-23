@@ -2,9 +2,21 @@
 
 Healthcare PE diligence platform. Every page, export, and audit trail
 references this module for brand consistency.
+
+As of Phase 2 of the UI v2 editorial rework, ``PALETTE`` is
+**flag-aware**: the same key names resolve to the legacy dark
+Bloomberg palette when ``CHARTIS_UI_V2=0`` (default) and to the
+editorial navy/teal/parchment palette when ``CHARTIS_UI_V2=1``.
+This means every existing page renderer that references
+``PALETTE["text_primary"]`` etc. flips with the flag without a
+per-page migration.
+
+The mapping is an explicit alias table below so partners can see
+exactly which editorial token replaces which legacy token.
 """
 from __future__ import annotations
 
+import os
 from typing import Any, Dict
 
 
@@ -35,7 +47,10 @@ WORDMARK_SVG = (
     '</svg>'
 )
 
-PALETTE = {
+
+# ── Legacy palette (CHARTIS_UI_V2=0) ────────────────────────────────
+
+_PALETTE_LEGACY: Dict[str, str] = {
     # Bloomberg Terminal-inspired professional dark — near-black base,
     # high-contrast data, amber accent for status, blue for links.
     "bg": "#05070b",
@@ -62,6 +77,70 @@ PALETTE = {
     "ticker_down": "#ef4444",
     "ticker_flat": "#9aa7b8",
 }
+
+
+# ── Editorial palette (CHARTIS_UI_V2=1) ─────────────────────────────
+#
+# Same key names; values mirror the v2 kit's editorial tokens so
+# existing page renderers that do ``PALETTE["text_primary"]`` etc.
+# pick up navy/teal/parchment without branching on the flag.
+#
+# The alias map is intentional and reviewable — every legacy key
+# points at a specific editorial equivalent. When the two palettes
+# disagree on a key's semantic (e.g., dark-theme text_primary is
+# light text on black vs. editorial text_primary is dark text on
+# parchment), the editorial value is correct for the editorial
+# surface. No page branches on this; the kit's ``chartis_shell``
+# emits the correct background, so text-on-background contrast
+# stays legible.
+
+_PALETTE_V2: Dict[str, str] = {
+    # Surfaces — flip completely: dark → parchment/white
+    "bg":           "#f5f1ea",   # parchment
+    "bg_secondary": "#ece6db",   # bone tint
+    "bg_tertiary":  "#ffffff",   # white panels
+    "border":       "#d6cfc3",   # hairline on parchment
+    "border_light": "#c5bdae",
+    # Text — dark text on light now
+    "text_primary":   "#1a2332",   # near-ink
+    "text_secondary": "#465366",
+    "text_muted":     "#7a8699",
+    "text_link":      "#0f5e5a",   # dark teal
+    # Brand — navy + teal
+    "brand_primary":  "#0b2341",   # navy
+    "brand_accent":   "#2fb3ad",   # teal
+    "accent_amber":   "#b8732a",   # editorial warning tone replaces amber
+    # Status — desaturated / print-friendly
+    "positive":       "#0a8a5f",
+    "negative":       "#b5321e",
+    "warning":        "#b8732a",
+    "neutral":        "#1d3c69",   # navy_3
+    "critical":       "#8a1e0e",
+    "high":           "#b5321e",
+    "medium":         "#b8732a",
+    "low":            "#7a8699",
+    # Tickers
+    "ticker_up":      "#0a8a5f",
+    "ticker_down":    "#b5321e",
+    "ticker_flat":    "#7a8699",
+}
+
+
+def _active_palette() -> Dict[str, str]:
+    """Return the palette matching ``CHARTIS_UI_V2``. Resolved at
+    import time by default; callers that need per-request flipping
+    can read this function directly."""
+    flag = os.environ.get("CHARTIS_UI_V2", "0") != "0"
+    return dict(_PALETTE_V2 if flag else _PALETTE_LEGACY)
+
+
+# Resolved once at import time. Pages that do
+# ``from rcm_mc.ui.brand import PALETTE`` receive whichever palette
+# matches the env at process start. This matches existing behaviour
+# (PALETTE has always been a module-level dict) and avoids making
+# every page re-resolve per request.
+PALETTE: Dict[str, str] = _active_palette()
+
 
 TYPOGRAPHY = {
     "font_serif": "Georgia, 'Times New Roman', serif",
