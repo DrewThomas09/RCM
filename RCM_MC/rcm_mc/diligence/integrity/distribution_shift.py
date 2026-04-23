@@ -239,6 +239,48 @@ def _safe_std(arr: np.ndarray) -> float:
 
 # ── Feature extraction from a CCD ──────────────────────────────────
 
+def check_distribution_shift(
+    new_features: Mapping[str, Sequence[float]],
+    corpus_features: Mapping[str, Sequence[float]],
+    *,
+    min_samples: int = 30,
+) -> "GuardrailResult":
+    """Packet-facing wrapper around :func:`score_distribution`.
+
+    Returns PASS when IN_DISTRIBUTION, WARN when DRIFTING, and FAIL
+    when OUT_OF_DISTRIBUTION. The verdict (and the worst-feature
+    name) is embedded in the ``details`` dict so the packet's memo
+    generator can quote it verbatim.
+    """
+    from .split_enforcer import GuardrailResult
+
+    report = score_distribution(
+        new_features, corpus_features, min_samples=min_samples,
+    )
+    mapping = {
+        DistributionScore.IN_DISTRIBUTION:
+            ("PASS", True,
+             "feature distribution matches the brain's training corpus."),
+        DistributionScore.DRIFTING:
+            ("WARN", True,
+             "feature distribution is drifting from the brain's training corpus."),
+        DistributionScore.OUT_OF_DISTRIBUTION:
+            ("FAIL", False,
+             "target's feature distribution sits outside the brain's "
+             "training corpus; partner memo reliability reduced."),
+    }
+    status, ok, reason = mapping[report.overall]
+    return GuardrailResult(
+        guardrail="distribution_shift", ok=ok, status=status,
+        reason=reason + (
+            f" worst feature: {report.worst_feature!r} "
+            f"(PSI={report.worst_psi:.3f})"
+            if report.worst_feature else ""
+        ),
+        details={"report": report.to_dict()},
+    )
+
+
 def features_from_ccd(ccd: Any) -> Dict[str, List[float]]:
     """Pull comparable-level features from a :class:`CanonicalClaimsDataset`.
 

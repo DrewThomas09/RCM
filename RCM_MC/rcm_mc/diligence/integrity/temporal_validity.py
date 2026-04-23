@@ -160,3 +160,62 @@ def span_too_short_for_cohort(
     """
     available = (as_of_date - cohort_dos_month).days
     return available < window_days
+
+
+def scan_for_discontinuities(
+    claims: Sequence[Any],
+    *,
+    events: Optional[Sequence[Tuple[str, date, str]]] = None,
+) -> "GuardrailResult":
+    """Packet-facing scan. Returns a :class:`GuardrailResult`:
+
+    - **PASS**: claims span no regulatory event.
+    - **WARN**: at least one event landed inside the window
+      (historical KPIs are not clean predictors — partner should
+      see the flag but we don't block).
+    - **FAIL**: reserved for malformed input (empty / all-None dates).
+
+    Accepts either a list of ``CanonicalClaim`` or anything with a
+    ``.service_date_from``/``.service_date_to``/``.submit_date``/
+    ``.paid_date`` attribute. Used by the packet pre-flight so every
+    CCD-derived metric gets a date-range stamp the UI can surface.
+    """
+    # Local import: keep this module independent of split_enforcer at
+    # import time (both modules live under integrity/; circular-
+    # import risk is nil but the deferred import keeps temporal_validity
+    # usable even if split_enforcer hasn't been loaded).
+    from .split_enforcer import GuardrailResult
+
+    dates: List[date] = []
+    for c in claims or ():
+        for attr in ("service_date_from", "service_date_to",
+                     "submit_date", "paid_date"):
+            v = getattr(c, attr, None)
+            if isinstance(v, date):
+                dates.append(v)
+    if not dates:
+        return GuardrailResult(
+            guardrail="temporal_validity", ok=False, status="FAIL",
+            reason="no valid claim dates in input; temporal window unknown",
+        )
+
+    tv = check_regulatory_overlap(dates, events=events)
+    if tv.overlapping_events:
+        return GuardrailResult(
+            guardrail="temporal_validity", ok=True, status="WARN",
+            reason=(
+                f"{len(tv.overlapping_events)} regulatory event(s) took "
+                f"effect inside the claims window "
+                f"[{tv.claims_date_min} → {tv.claims_date_max}]; "
+                f"historical KPIs are not a clean forward predictor."
+            ),
+            details={"temporal_validity": tv.to_dict()},
+        )
+    return GuardrailResult(
+        guardrail="temporal_validity", ok=True, status="PASS",
+        reason=(
+            f"claims window [{tv.claims_date_min} → {tv.claims_date_max}] "
+            f"spans no known regulatory discontinuity."
+        ),
+        details={"temporal_validity": tv.to_dict()},
+    )
