@@ -1,0 +1,18 @@
+{
+  "as_of_date": "2025-01-01",
+  "claims_count": 40,
+  "description": "40 self-pay dental claims \u2014 proxy for DSO distribution shift.",
+  "expected_distribution_shift_vs_acute_corpus": "OUT_OF_DISTRIBUTION",
+  "expected_kpis": {
+    "days_in_ar": {
+      "sample_size": 40,
+      "value": 1.0
+    },
+    "first_pass_denial_rate": {
+      "sample_size": 40,
+      "value": 0.0
+    }
+  },
+  "hospital": "hospital_05_dental_dso",
+  "provider_id": "H5"
+}

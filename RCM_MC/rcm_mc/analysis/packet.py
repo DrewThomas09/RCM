@@ -48,9 +48,13 @@ class MetricSource(str, Enum):
     """Provenance source for a single metric value in the merged profile.
 
     Ordering (high → low confidence):
-      OBSERVED > EXTRACTED > AUTO_POPULATED > PREDICTED > BENCHMARK.
+      OBSERVED > CCD > EXTRACTED > AUTO_POPULATED > PREDICTED > BENCHMARK.
 
     - ``OBSERVED``: analyst entered directly, or Phase-2 actuals import.
+      Also used for explicit overrides (analyst typed a number).
+    - ``CCD``: derived by :mod:`rcm_mc.diligence.benchmarks.kpi_engine`
+      from an uploaded Canonical Claims Dataset. Deal-specific,
+      row-traceable via the CCD's transformation log.
     - ``EXTRACTED``: parsed from a seller file via the document reader
       (Prompt 25). Roughly partner-tier because they came out of the
       seller's own system, but column-mapping can misfire — the
@@ -63,6 +67,7 @@ class MetricSource(str, Enum):
       hospital-specific signal.
     """
     OBSERVED = "OBSERVED"
+    CCD = "CCD"
     EXTRACTED = "EXTRACTED"
     AUTO_POPULATED = "AUTO_POPULATED"
     PREDICTED = "PREDICTED"
@@ -194,10 +199,16 @@ class HospitalProfile:
 @dataclass
 class ObservedMetric:
     value: float
-    source: str = "USER_INPUT"   # USER_INPUT | HCRIS | IRS990 | ...
+    source: str = "USER_INPUT"   # USER_INPUT | HCRIS | IRS990 | CCD | …
     source_detail: str = ""
     as_of_date: Optional[date] = None
     quality_flags: List[str] = field(default_factory=list)
+    # Confidence weighting fed into the merge precedence. 1.0 for
+    # analyst overrides + CCD-derived (row-traceable), 0.7 for partner
+    # YAML, variable for PREDICTED (set by the conformal margin). The
+    # default preserves backwards compatibility with callers that
+    # construct ObservedMetric positionally — the field is new.
+    confidence: float = 1.0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -206,6 +217,7 @@ class ObservedMetric:
             "source_detail": self.source_detail,
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date else None,
             "quality_flags": list(self.quality_flags),
+            "confidence": _json_safe(self.confidence),
         }
 
     @classmethod
@@ -216,6 +228,7 @@ class ObservedMetric:
             source_detail=str(d.get("source_detail") or ""),
             as_of_date=_parse_date(d.get("as_of_date")),
             quality_flags=list(d.get("quality_flags") or []),
+            confidence=float(d.get("confidence") if d.get("confidence") is not None else 1.0),
         )
 
 
