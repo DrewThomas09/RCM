@@ -41,7 +41,12 @@ from .leakage_audit import (
     audit_features,
     check_leakage,
 )
-from .preflight import PreflightReport, run_ccd_guardrails
+from .preflight import (
+    GuardrailViolation,
+    PreflightReport,
+    run_ccd_guardrails,
+    to_integrity_checks,
+)
 from .split_enforcer import (
     GuardrailResult,
     ProviderSplit,
@@ -64,6 +69,7 @@ __all__ = [
     "DistributionShiftReport",
     "FeatureSource",
     "GuardrailResult",
+    "GuardrailViolation",
     "LeakageError",
     "LeakageFinding",
     "PreflightReport",
@@ -84,4 +90,5 @@ __all__ = [
     "run_ccd_guardrails",
     "scan_for_discontinuities",
     "score_distribution",
+    "to_integrity_checks",
 ]

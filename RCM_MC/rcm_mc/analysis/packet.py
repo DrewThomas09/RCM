@@ -961,7 +961,43 @@ SECTION_NAMES = (
     "diligence_questions",
     "exports",
     "v2_simulation",
+    "integrity_checks",
 )
+
+
+# ── Integrity checks (session 4 gauntlet wire-in) ────────────────────
+
+@dataclass
+class IntegrityCheck:
+    """One guardrail's verdict, serialised onto the packet.
+
+    Mirrors ``rcm_mc.diligence.integrity.split_enforcer.GuardrailResult``
+    exactly, but lives in ``analysis/`` so ``packet.py`` has no
+    ``diligence/`` import. The
+    :func:`rcm_mc.diligence.integrity.preflight.to_integrity_checks`
+    converter handles the boundary.
+
+    Present on every packet (default empty list); populated only when
+    ``build_analysis_packet`` was passed a ``ccd=...`` argument.
+    """
+    guardrail: str
+    ok: bool
+    status: str        # "PASS" | "WARN" | "FAIL"
+    reason: str = ""
+    details: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return _json_safe(asdict(self))
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "IntegrityCheck":
+        return cls(
+            guardrail=str(d.get("guardrail") or ""),
+            ok=bool(d.get("ok", False)),
+            status=str(d.get("status") or "PASS"),
+            reason=str(d.get("reason") or ""),
+            details=dict(d.get("details") or {}),
+        )
 
 
 @dataclass
@@ -1048,6 +1084,14 @@ class DealAnalysisPacket:
     # the analyst didn't upload multi-period history.
     metric_forecasts: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
+    # ── Phase-4 additive sections (Session 4 — integrity gauntlet) ──
+    # Preflight results for the six data-integrity guardrails. Empty
+    # list when no CCD was attached to the build (existing behaviour
+    # unchanged). Populated by ``build_analysis_packet`` step 2 when
+    # ``ccd=...`` is supplied. See
+    # :func:`rcm_mc.diligence.integrity.preflight.run_ccd_guardrails`.
+    integrity_checks: List[IntegrityCheck] = field(default_factory=list)
+
     # ── Helpers ──
 
     def section(self, name: str) -> Any:
@@ -1080,6 +1124,7 @@ class DealAnalysisPacket:
             "risk_flags": [r.to_dict() for r in self.risk_flags],
             "provenance": self.provenance.to_dict(),
             "diligence_questions": [q.to_dict() for q in self.diligence_questions],
+            "integrity_checks": [c.to_dict() for c in self.integrity_checks],
             "exports": dict(self.exports),
             "reimbursement_profile": (dict(self.reimbursement_profile)
                                        if self.reimbursement_profile else None),
@@ -1149,6 +1194,8 @@ class DealAnalysisPacket:
             provenance=ProvenanceSnapshot.from_dict(d.get("provenance") or {}),
             diligence_questions=[DiligenceQuestion.from_dict(q)
                                  for q in (d.get("diligence_questions") or [])],
+            integrity_checks=[IntegrityCheck.from_dict(c)
+                              for c in (d.get("integrity_checks") or [])],
             exports=dict(d.get("exports") or {}),
             reimbursement_profile=(dict(d["reimbursement_profile"])
                                     if d.get("reimbursement_profile") else None),

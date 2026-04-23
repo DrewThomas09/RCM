@@ -643,3 +643,108 @@ layer fully formalised. First concrete deliverables:
    `SplitManifest` and threads it to
    `split_train_calibration(manifest=...)`.
 
+---
+
+# Session 4.1 — same day, closing the "callable but not invoked" gap
+
+Session 4 shipped the gauntlet but left the packet-builder hook as
+deferred work — a defensible reading of the spec's "additive-only"
+non-goal, but a decision that would have left the guardrails
+callable yet silent on every CCD-attached path until someone
+remembered to wire them. A targeted follow-up landed the hook inside
+the same context window.
+
+## What shipped
+
+### 1. `IntegrityCheck` dataclass on the packet
+[`rcm_mc/analysis/packet.py`](rcm_mc/analysis/packet.py):
+
+- `IntegrityCheck` dataclass mirroring `GuardrailResult`'s shape
+  (guardrail / ok / status / reason / details) — lives in
+  `analysis/` so `packet.py` stays free of a `diligence/` import.
+- `DealAnalysisPacket.integrity_checks: List[IntegrityCheck]`
+  with `default_factory=list`. Empty list on every pre-session-5
+  packet (new field, additive default, JSON round-trip tolerates
+  missing).
+- `SECTION_NAMES` tuple extended with `"integrity_checks"`.
+
+### 2. `GuardrailViolation` + `to_integrity_checks` converter
+[`rcm_mc/diligence/integrity/preflight.py`](rcm_mc/diligence/integrity/preflight.py):
+
+- `GuardrailViolation(Exception)` — raised with a list of results;
+  exposes `.failed` (shorthand) and `.results` (full context). The
+  exception message names each failed guardrail so an analyst who
+  sees it knows exactly which check blocked the build.
+- `to_integrity_checks(results)` — lazy-imports
+  `analysis.packet.IntegrityCheck` and converts. Keeps
+  `preflight.py` free of an `analysis/` dependency at load time.
+
+### 3. Packet-builder hook
+[`rcm_mc/analysis/packet_builder.py`](rcm_mc/analysis/packet_builder.py):
+
+```python
+# step 1c — runs between profile build and observed_metrics
+if ccd is not None:
+    from ..diligence.integrity.preflight import (
+        GuardrailViolation, run_ccd_guardrails, to_integrity_checks,
+    )
+    preflight_report = run_ccd_guardrails(
+        ccd, as_of_date=(as_of or date.today()),
+        target_provider_id=...,
+    )
+    integrity_checks = to_integrity_checks(preflight_report.results)
+    if preflight_report.any_fail:
+        raise GuardrailViolation(preflight_report.results)
+```
+
+- New `ccd: Optional[Any] = None` kwarg on `build_analysis_packet`.
+  Default `None` means every existing caller takes the no-op path.
+- FAIL on any guardrail raises **before** step 2 runs — a packet
+  built on integrity-violating CCD data never wastes CPU on
+  downstream sections, and never reaches IC.
+- Lazy import of the preflight module inside the ``if`` branch —
+  partners who never attach a CCD pay no import cost.
+
+### 4. Test coverage
+[`tests/test_packet_builder_guardrail_hook.py`](tests/test_packet_builder_guardrail_hook.py)
+— 6 tests proving:
+
+- `ccd=None` path: preflight is **not** invoked (via mock
+  assertion); `packet.integrity_checks == []`; JSON round-trip
+  preserves the empty list.
+- `ccd=<real>` path: exactly 6 guardrails run; each
+  `IntegrityCheck` has a valid status.
+- Clean fixture produces no FAILs.
+- Regulatory-overlap fixture produces a WARN on `temporal_validity`
+  but does NOT raise (WARN ≠ FAIL).
+- A mocked-FAIL preflight raises `GuardrailViolation`; the
+  exception names the failed guardrail.
+
+## Regressions
+
+- 176 packet + diligence + integration + ridge tests pass in 1.01s
+- Baseline chartis suite: 66 passed, 16 pre-existing failures
+  unchanged
+
+## Why land it now rather than defer
+
+Quoting the conversation that drove this decision:
+
+> A guardrail that exists but isn't invoked is worse than no
+> guardrail, because it creates the illusion of safety. Six months
+> from now, a session adds a caller that uses CCD data and forgets
+> to call the preflight, and the guardrails silently don't run on
+> that path.
+
+The spec's "additive-only" non-goal was about *no behavioural
+change on existing paths*, not about *no new code paths*. The hook
+introduces a new branch that only activates when a caller passes
+`ccd=...` — a state no current test sets. The contract is honoured
+exactly. Session 5 opens with the gauntlet already lit.
+
+## Next session entry point (unchanged)
+
+Phase 3 root-cause remains the headline. The three items listed at
+the end of session 4's entry-point section still stand; item 2
+(the hook) is now struck through. Items 1 and 3 remain.
+

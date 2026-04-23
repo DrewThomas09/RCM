@@ -1103,6 +1103,7 @@ def build_analysis_packet(
     financials: Optional[Dict[str, float]] = None,
     historical_values: Optional[Dict[str, Any]] = None,
     conflict_sources: Optional[Dict[str, Any]] = None,
+    ccd: Optional[Any] = None,
 ) -> DealAnalysisPacket:
     """Build a fully-populated :class:`DealAnalysisPacket` for one deal.
 
@@ -1194,6 +1195,33 @@ def build_analysis_packet(
         if target_metrics:
             merged_targets.update(target_metrics)
         target_metrics = merged_targets
+
+    # 1c. Data-integrity preflight (session 4 gauntlet wire-in).
+    # Fires only when a CCD is attached; existing callers that don't
+    # pass ``ccd=...`` take the ``integrity_checks = []`` default
+    # and see no behaviour change. When a CCD IS attached, all six
+    # guardrails run; a FAIL on any guardrail raises
+    # ``GuardrailViolation`` before we commit CPU to the rest of the
+    # build — a packet built on integrity-violating CCD data must
+    # never reach IC.
+    integrity_checks: List[Any] = []
+    if ccd is not None:
+        from ..diligence.integrity.preflight import (
+            GuardrailViolation, run_ccd_guardrails, to_integrity_checks,
+        )
+        target_provider_id = (
+            str(getattr(profile, "provider_id", "") or "")
+            or str(deal_row.get("provider_id") or "")
+            or str(deal_id)
+        )
+        preflight_report = run_ccd_guardrails(
+            ccd,
+            as_of_date=(as_of or date.today()),
+            target_provider_id=target_provider_id,
+        )
+        integrity_checks = to_integrity_checks(preflight_report.results)
+        if preflight_report.any_fail:
+            raise GuardrailViolation(preflight_report.results)
 
     # 2. Observed metrics
     observed = _build_observed(observed_override, deal_row)
@@ -1421,5 +1449,6 @@ def build_analysis_packet(
                             if analyst_overrides_raw else None),
         regulatory_context=regulatory_context_dict,
         metric_forecasts=metric_forecasts,
+        integrity_checks=integrity_checks,
     )
     return packet

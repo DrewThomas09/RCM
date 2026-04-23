@@ -35,6 +35,35 @@ from .split_enforcer import GuardrailResult, SplitManifest, check_split_manifest
 from .temporal_validity import scan_for_discontinuities
 
 
+# ── Exception: raised by packet_builder on any FAIL'd guardrail ────
+
+class GuardrailViolation(Exception):
+    """Raised by ``build_analysis_packet`` when at least one guardrail
+    returns ``ok=False`` during a CCD-attached build.
+
+    Fails loud by design: a packet built from CCD data that violates
+    a data-integrity guardrail (target leakage, censored-cohort
+    fabrication, OOD distribution, broken provenance chain) should
+    never reach an IC memo. Partners see this exception with the full
+    list of failed guardrails; an analyst who sees it knows exactly
+    which check blocked the build and why.
+
+    Attributes:
+        results: every ``GuardrailResult`` produced by the preflight
+            (both PASS and FAIL) so the caller can render the full
+            context, not just the failures.
+        failed: shorthand for ``[r for r in results if not r.ok]``.
+    """
+    def __init__(self, results: Iterable[GuardrailResult]):
+        self.results: List[GuardrailResult] = list(results)
+        self.failed: List[GuardrailResult] = [r for r in self.results if not r.ok]
+        names = ", ".join(r.guardrail for r in self.failed)
+        super().__init__(
+            f"{len(self.failed)} guardrail(s) FAILED during CCD-attached "
+            f"packet build: {names}"
+        )
+
+
 @dataclass
 class PreflightReport:
     """Envelope holding one :class:`GuardrailResult` per guardrail run.
@@ -159,3 +188,30 @@ def run_ccd_guardrails(
     ))
 
     return report
+
+
+# ── Boundary converter: GuardrailResult → IntegrityCheck ────────────
+
+def to_integrity_checks(
+    results: Iterable[GuardrailResult],
+) -> List[Any]:
+    """Convert ``GuardrailResult`` instances into the packet-side
+    ``IntegrityCheck`` type.
+
+    Lazy import of ``rcm_mc.analysis.packet.IntegrityCheck`` keeps
+    this module free of an ``analysis/`` dependency at load time —
+    partners who use the preflight without the packet never import
+    packet.py.
+    """
+    from ...analysis.packet import IntegrityCheck
+
+    return [
+        IntegrityCheck(
+            guardrail=r.guardrail,
+            ok=r.ok,
+            status=r.status,
+            reason=r.reason,
+            details=dict(r.details or {}),
+        )
+        for r in results
+    ]
