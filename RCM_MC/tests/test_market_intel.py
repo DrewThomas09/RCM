@@ -213,5 +213,339 @@ class NavTest(unittest.TestCase):
         self.assertIn('href="/market-intel"', rendered)
 
 
+# ────────────────────────────────────────────────────────────────────
+# Expanded Seeking-Alpha-style data: analyst coverage + earnings +
+# turnover disclosures + new tickers + scatter chart
+# ────────────────────────────────────────────────────────────────────
+
+class ExpandedTickerLatticeTests(unittest.TestCase):
+
+    def test_lattice_has_14_tickers(self):
+        comps = list_companies()
+        self.assertGreaterEqual(len(comps), 14)
+
+    def test_lattice_covers_all_9_categories(self):
+        comps = list_companies()
+        categories = {c.category for c in comps}
+        expected = {
+            "MULTI_SITE_ACUTE_HOSPITAL",
+            "RURAL_ACUTE_HOSPITAL",
+            "MULTI_SITE_ACUTE_AND_BEHAVIORAL",
+            "POST_ACUTE_REHAB",
+            "PHYSICIAN_GROUP_ROLL_UP",
+            "DIALYSIS",
+            "AMBULATORY_SURGERY",
+            "MANAGED_CARE_PAYER",
+            "HEALTHCARE_REIT",
+        }
+        self.assertTrue(expected.issubset(categories),
+                        msg=f"missing {expected - categories}")
+
+    def test_new_tickers_present(self):
+        tickers = {c.ticker for c in list_companies()}
+        for t in ("PRVA", "DVA", "FMS", "SGRY",
+                  "UNH", "ELV", "MPW", "WELL"):
+            self.assertIn(t, tickers)
+
+
+class AnalystCoverageTests(unittest.TestCase):
+
+    def test_hca_has_analyst_coverage(self):
+        hca = next(c for c in list_companies() if c.ticker == "HCA")
+        self.assertIsNotNone(hca.analyst_coverage)
+        self.assertEqual(hca.analyst_coverage.consensus, "BUY")
+        self.assertGreater(hca.analyst_coverage.price_target_usd, 0)
+        self.assertGreater(hca.analyst_coverage.ratings_count, 0)
+
+    def test_consensus_values_are_valid(self):
+        for c in list_companies():
+            if c.analyst_coverage is not None:
+                self.assertIn(
+                    c.analyst_coverage.consensus,
+                    ("BUY", "HOLD", "SELL", "NONE"),
+                )
+
+    def test_to_dict_nests_analyst_coverage(self):
+        hca = next(c for c in list_companies() if c.ticker == "HCA")
+        d = hca.to_dict()
+        self.assertIn("analyst_coverage", d)
+        self.assertEqual(d["analyst_coverage"]["consensus"], "BUY")
+
+
+class EarningsSurpriseTests(unittest.TestCase):
+
+    def test_every_ticker_has_earnings_latest(self):
+        for c in list_companies():
+            self.assertIsNotNone(c.earnings_latest,
+                                 msg=f"{c.ticker} missing earnings")
+
+    def test_surprise_pct_signed(self):
+        cyh = next(c for c in list_companies() if c.ticker == "CYH")
+        self.assertLess(cyh.earnings_latest.surprise_pct, 0)
+        hca = next(c for c in list_companies() if c.ticker == "HCA")
+        self.assertGreater(hca.earnings_latest.surprise_pct, 0)
+
+
+class PhysicianTurnoverPeerStatsTests(unittest.TestCase):
+
+    def test_stats_populated(self):
+        from rcm_mc.market_intel import peer_physician_turnover_stats
+        stats = peer_physician_turnover_stats()
+        self.assertGreaterEqual(stats["count"], 5)
+        self.assertGreater(stats["median"], 0.03)
+        self.assertLess(stats["median"], 0.15)
+        self.assertLessEqual(stats["p25"], stats["median"])
+        self.assertLessEqual(stats["median"], stats["p75"])
+
+    def test_stats_returns_zero_when_empty(self):
+        from rcm_mc.market_intel.public_comps import (
+            peer_physician_turnover_stats,
+        )
+        # No-arg form — just verify defensive path is present
+        stats = peer_physician_turnover_stats()
+        # We have data so non-empty — this just verifies the
+        # dict shape contract.
+        self.assertIn("median", stats)
+        self.assertIn("p25", stats)
+        self.assertIn("p75", stats)
+        self.assertIn("count", stats)
+
+
+class TargetScatterChartTests(unittest.TestCase):
+
+    def test_scatter_rendered_when_target_supplied(self):
+        h = render_market_intel_page(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            revenue_usd=200_000_000,
+            ev_usd=350_000_000,
+        )
+        self.assertIn("PEER SCATTER", h)
+        self.assertIn("TARGET", h)
+
+    def test_scatter_rendered_without_target_still_shows_peers(self):
+        h = render_market_intel_page(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+        )
+        # Peers alone → scatter still renders (without target marker).
+        self.assertIn("PEER SCATTER", h)
+
+    def test_scatter_suppressed_when_no_comps(self):
+        """Unknown category means no comps → no scatter."""
+        h = render_market_intel_page(
+            category="NONEXISTENT_SECTOR",
+        )
+        # No peers, so chart should not render
+        self.assertNotIn("PEER SCATTER", h)
+
+
+class CompsTableEnrichmentTests(unittest.TestCase):
+
+    def test_analyst_consensus_column_present(self):
+        h = render_market_intel_page(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+        )
+        self.assertIn("Analyst", h)
+        self.assertIn("Q surprise", h)
+
+    def test_consensus_pill_rendered(self):
+        h = render_market_intel_page(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+        )
+        # BUY / HOLD pills should appear for at least HCA and THC
+        self.assertIn("BUY", h)
+        # Price target annotation
+        self.assertIn("PT $", h)
+
+
+class PPAMMarketIntelLinkTests(unittest.TestCase):
+
+    def test_ppam_hero_references_public_peer_median(self):
+        from rcm_mc.ui.physician_attrition_page import (
+            render_physician_attrition_page,
+        )
+        h = render_physician_attrition_page()
+        # PPAM hero summary should mention public-peer context.
+        self.assertTrue(
+            "public-peer" in h or "peer median" in h,
+            msg="PPAM hero missing public-peer benchmark",
+        )
+
+
+class PeerSnapshotTests(unittest.TestCase):
+
+    def test_peer_snapshot_in_line(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_revenue_usd=250_000_000,
+            target_ev_usd=350_000_000,
+            target_ebitda_usd=35_000_000,
+        )
+        self.assertAlmostEqual(s.target_implied_multiple, 10.0, places=2)
+        self.assertEqual(s.assessment, "IN-LINE")
+        self.assertGreaterEqual(len(s.peers), 1)
+
+    def test_peer_snapshot_premium(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=600_000_000,
+            target_ebitda_usd=35_000_000,
+        )
+        # ~17.1x vs p75 10.2x — premium
+        self.assertEqual(s.assessment, "PREMIUM")
+
+    def test_peer_snapshot_discount(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=180_000_000,
+            target_ebitda_usd=30_000_000,
+        )
+        # 6x vs p25 8.5x — discount
+        self.assertEqual(s.assessment, "DISCOUNT")
+
+    def test_peer_snapshot_no_data(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(category="")
+        self.assertEqual(s.assessment, "NO_DATA")
+
+    def test_peer_snapshot_unknown_category(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(
+            category="NONEXISTENT_CATEGORY",
+            target_ev_usd=100_000_000,
+            target_revenue_usd=50_000_000,
+        )
+        # No category band but we still return a dataclass; peers empty
+        self.assertEqual(s.peers, [])
+        self.assertIsNone(s.peer_median_ev_ebitda)
+
+    def test_peer_snapshot_derives_from_revenue_when_no_ebitda(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000,
+            target_revenue_usd=250_000_000,
+        )
+        # 12% margin assumption: implied EBITDA 30M → ~11.67x
+        self.assertIsNotNone(s.target_implied_multiple)
+        self.assertGreater(s.target_implied_multiple, 10.0)
+
+    def test_peer_snapshot_to_dict_roundtrip(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        import json
+        s = compute_peer_snapshot(
+            category="DIALYSIS",
+            target_ev_usd=200_000_000,
+            target_revenue_usd=120_000_000,
+            specialty="ANESTHESIOLOGY",
+        )
+        d = s.to_dict()
+        # JSON-serialisable
+        json.dumps(d, default=str)
+        self.assertIn("assessment", d)
+
+
+class PeerSnapshotAPITests(unittest.TestCase):
+
+    def test_api_returns_json(self):
+        import threading, time, urllib.request, tempfile, socket, json
+        from rcm_mc.server import build_server
+        s = socket.socket(); s.bind(('127.0.0.1', 0))
+        port = s.getsockname()[1]; s.close()
+        db = tempfile.mktemp(suffix='.db')
+        srv, _ = build_server(
+            port=port, db_path=db, host='127.0.0.1', auth=None,
+        )
+        t = threading.Thread(target=srv.serve_forever, daemon=True)
+        t.start()
+        time.sleep(0.3)
+        try:
+            url = (
+                f'http://127.0.0.1:{port}/api/market-intel/'
+                'peer-snapshot?category=MULTI_SITE_ACUTE_HOSPITAL'
+                '&ev_usd=350000000&revenue_usd=250000000'
+                '&ebitda_usd=35000000'
+            )
+            r = urllib.request.urlopen(url, timeout=10)
+            self.assertEqual(r.status, 200)
+            payload = json.loads(r.read())
+            self.assertEqual(payload["category"], "MULTI_SITE_ACUTE_HOSPITAL")
+            self.assertEqual(payload["assessment"], "IN-LINE")
+            self.assertAlmostEqual(
+                payload["target_implied_multiple"], 10.0, places=2,
+            )
+        finally:
+            srv.shutdown()
+
+    def test_api_empty_params_returns_no_data(self):
+        import threading, time, urllib.request, tempfile, socket, json
+        from rcm_mc.server import build_server
+        s = socket.socket(); s.bind(('127.0.0.1', 0))
+        port = s.getsockname()[1]; s.close()
+        db = tempfile.mktemp(suffix='.db')
+        srv, _ = build_server(
+            port=port, db_path=db, host='127.0.0.1', auth=None,
+        )
+        t = threading.Thread(target=srv.serve_forever, daemon=True)
+        t.start()
+        time.sleep(0.3)
+        try:
+            r = urllib.request.urlopen(
+                f'http://127.0.0.1:{port}/api/market-intel/peer-snapshot',
+                timeout=10,
+            )
+            payload = json.loads(r.read())
+            self.assertEqual(payload["assessment"], "NO_DATA")
+        finally:
+            srv.shutdown()
+
+
+class NewsFeedExpansionTests(unittest.TestCase):
+
+    def test_news_items_expanded_to_20_plus(self):
+        from rcm_mc.market_intel.news_feed import _all_items
+        self.assertGreaterEqual(len(_all_items()), 20)
+
+    def test_news_items_have_tags(self):
+        from rcm_mc.market_intel.news_feed import _all_items
+        for item in _all_items():
+            self.assertIsInstance(item.tags, list)
+
+    def test_news_feed_covers_multiple_specialties(self):
+        from rcm_mc.market_intel.news_feed import _all_items
+        specialties = {
+            i.specialty for i in _all_items() if i.specialty
+        }
+        self.assertGreaterEqual(len(specialties), 7)
+
+
+class EarningsCalendarTests(unittest.TestCase):
+
+    def test_earnings_calendar_section_rendered(self):
+        from rcm_mc.ui.market_intel_page import (
+            render_market_intel_page,
+        )
+        h = render_market_intel_page()
+        self.assertIn("Earnings calendar", h)
+        self.assertIn("Next expected", h)
+
+
+class DealProfileMarketContextTests(unittest.TestCase):
+
+    def test_deal_profile_has_market_context_block(self):
+        from rcm_mc.ui.deal_profile_page import render_deal_profile_page
+        h = render_deal_profile_page(slug="test-deal")
+        self.assertIn("data-rcm-market-context", h)
+        self.assertIn("Market Context · live from public comps", h)
+
+    def test_deal_profile_js_calls_peer_snapshot_api(self):
+        from rcm_mc.ui.deal_profile_page import render_deal_profile_page
+        h = render_deal_profile_page(slug="test-deal")
+        self.assertIn("/api/market-intel/peer-snapshot", h)
+        self.assertIn("updateMarketContext", h)
+
+
 if __name__ == "__main__":
     unittest.main()

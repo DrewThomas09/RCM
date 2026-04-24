@@ -139,12 +139,21 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     )
 
 
+_MOIC_BUCKETS = {
+    "lt1":   ("MOIC < 1.0x",  lambda m: m is not None and m < 1.0),
+    "1to2":  ("1.0x – 2.0x",  lambda m: m is not None and 1.0 <= m < 2.0),
+    "2to3":  ("2.0x – 3.0x",  lambda m: m is not None and 2.0 <= m < 3.0),
+    "gte3":  ("3.0x+",         lambda m: m is not None and m >= 3.0),
+}
+
+
 def render_deals_library(
     sector_filter: str = "",
     regime_filter: str = "",
     search: str = "",
     sort_by: str = "entry_year",
     sort_dir: str = "desc",
+    moic_bucket: str = "",
 ) -> str:
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_table, ck_section_header,
@@ -185,6 +194,10 @@ def render_deals_library(
         rows = [r for r in rows if r["sector"] == sector_filter]
     if regime_filter:
         rows = [r for r in rows if r["regime"] == regime_filter]
+    bucket_entry = _MOIC_BUCKETS.get(moic_bucket)
+    if bucket_entry is not None:
+        _, _pred = bucket_entry
+        rows = [r for r in rows if _pred(r.get("moic"))]
 
     # Sort
     _SORT_KEY = {
@@ -204,6 +217,10 @@ def render_deals_library(
         f'<option value="{r}" {"selected" if r==regime_filter else ""}>{r.title()}</option>'
         for r in all_regimes
     )
+    moic_opts = '<option value="">All MOIC</option>' + "".join(
+        f'<option value="{key}" {"selected" if key==moic_bucket else ""}>{label}</option>'
+        for key, (label, _pred) in _MOIC_BUCKETS.items()
+    )
 
     filter_bar = f"""
 <form method="get" action="/library" class="ck-filters" style="margin-bottom:10px;">
@@ -211,6 +228,8 @@ def render_deals_library(
   <select name="sector" class="ck-sel" onchange="this.form.submit()">{sec_opts}</select>
   <span class="ck-filter-label">Regime</span>
   <select name="regime" class="ck-sel" onchange="this.form.submit()">{reg_opts}</select>
+  <span class="ck-filter-label">MOIC</span>
+  <select name="moic_bucket" class="ck-sel" onchange="this.form.submit()">{moic_opts}</select>
   <span class="ck-filter-label">Search</span>
   <input type="text" name="q" value="{_html.escape(search)}" placeholder="deal name, sponsor..." class="ck-input" data-search-target="#deals-tbl">
 </form>"""

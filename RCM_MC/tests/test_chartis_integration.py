@@ -103,6 +103,15 @@ class TestChartisLandingRoutes(unittest.TestCase):
             self.assertIn("PE Intelligence Highlights", body)
             self.assertIn("Corpus Insights", body)
 
+    def test_home_seeded_deal_surfaces_healthcare_highlights(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed_with_pe_math(tmp, "homecase")
+            with _ServerHarness(tmp) as srv:
+                status, body = _fetch(srv.url("/home"))
+                self.assertEqual(status, 200)
+                self.assertIn("homecase", body)
+                self.assertIn("PE Intelligence Highlights", body)
+
     def test_pe_intelligence_hub_renders(self):
         with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
             status, body = _fetch(srv.url("/pe-intelligence"))
@@ -110,6 +119,7 @@ class TestChartisLandingRoutes(unittest.TestCase):
             self.assertIn("PE Intelligence", body)
             self.assertIn("SEVEN PARTNER REFLEXES", body)
             self.assertIn("Archetype Library", body)
+            self.assertIn("Claude", body)
 
     def test_library_serves_deals_corpus(self):
         with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
@@ -167,6 +177,8 @@ class TestChartisPerDealRoutes(unittest.TestCase):
                 self.assertEqual(status, 200)
                 self.assertIn("testdeal", body)
                 self.assertIn("Red Flags", body)
+                self.assertIn("Supplemental Healthcare Signals", body)
+                self.assertIn("Claude Look", body)
 
     def test_red_flags_handles_missing_deal_without_500(self):
         with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
@@ -256,7 +268,13 @@ class TestChartisPhase2BRoutes(unittest.TestCase):
         self._assert_seeded(
             "ic-packet",
             expect_title="IC Packet",
-            expect_substrings=("IC-READY PACKET", "IC Memo"),
+            expect_substrings=(
+                "SUPPLEMENTAL REVIEW SIGNALS",
+                "Supplemental Healthcare Checks",
+                "Claude Look",
+                "IC-READY PACKET",
+                "IC Memo",
+            ),
         )
 
     def test_ic_packet_handles_missing_deal(self):

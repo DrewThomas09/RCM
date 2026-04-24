@@ -281,6 +281,40 @@ def _render_comparison(
         f'<div class="rcm-compare-grid">{col(left, "Left")}{col(right, "Right")}</div>'
     )
 
+    # Plain-English delta narrative — compare the two headline metrics
+    # and tell the partner which fixture looks stronger.
+    l_paid = float(left["ccd_summary"].get("total_paid_usd", 0) or 0)
+    r_paid = float(right["ccd_summary"].get("total_paid_usd", 0) or 0)
+    l_oon = float(left["ccd_summary"].get("oon_share", 0) or 0)
+    r_oon = float(right["ccd_summary"].get("oon_share", 0) or 0)
+    if l_paid == 0 and r_paid == 0:
+        delta_narrative = "Both fixtures have zero paid amounts — check source data."
+    else:
+        paid_delta_pct = (
+            (l_paid - r_paid) / max(r_paid, 1) * 100
+        ) if r_paid > 0 else 0
+        oon_delta_pp = (l_oon - r_oon) * 100
+        bits: List[str] = []
+        if abs(paid_delta_pct) >= 5:
+            bigger = left["name"] if l_paid > r_paid else right["name"]
+            bits.append(
+                f"{html.escape(bigger)} collects "
+                f"{abs(paid_delta_pct):.0f}% more revenue"
+            )
+        if abs(oon_delta_pp) >= 2:
+            more_oon = left["name"] if l_oon > r_oon else right["name"]
+            bits.append(
+                f"{html.escape(more_oon)} has {abs(oon_delta_pp):.1f} "
+                f"pp more OON exposure (NSA risk)"
+            )
+        if not bits:
+            delta_narrative = (
+                "Both fixtures are materially similar — no single "
+                "driver shifts the relative attractiveness."
+            )
+        else:
+            delta_narrative = "; ".join(bits) + "."
+
     hero = (
         f'<div data-rcm-title style="padding:24px 0 12px 0;">'
         f'<div style="font-size:11px;color:{P["text_faint"]};letter-spacing:1.5px;'
@@ -289,7 +323,23 @@ def _render_comparison(
         f'<div style="font-size:22px;color:{P["text"]};font-weight:600;">'
         f'{html.escape(left["name"])} <span style="color:{P["text_dim"]};'
         f'margin:0 10px;">vs</span> {html.escape(right["name"])}</div>'
-        f'<div style="font-size:11px;color:{P["text_faint"]};margin-top:4px;">'
+        f'<div style="background:{P["panel_alt"]};border-left:3px solid '
+        f'{P["accent"]};padding:10px 14px;margin-top:12px;font-size:12px;'
+        f'color:{P["text_dim"]};line-height:1.6;max-width:880px;'
+        f'border-radius:0 3px 3px 0;">'
+        f'<strong style="color:{P["text"]};">What this shows: </strong>'
+        f'{delta_narrative}</div>'
+        f'<div style="background:{P["panel_alt"]};border-left:3px solid '
+        f'{P["accent"]};padding:10px 14px;margin-top:8px;font-size:12px;'
+        f'color:{P["text_dim"]};line-height:1.6;max-width:880px;'
+        f'border-radius:0 3px 3px 0;">'
+        f'<strong style="color:{P["text"]};">How to read: </strong>'
+        f'Green/red badges next to each metric show the delta — green '
+        f'means the left fixture is favorable on that metric, red '
+        f'means unfavorable. "Higher is better" differs by metric '
+        f'(e.g., total paid = higher better; OON share = lower better).'
+        f'</div>'
+        f'<div style="font-size:11px;color:{P["text_faint"]};margin-top:8px;">'
         f'Press <kbd style="padding:1px 6px;background:{P["panel_alt"]};'
         f'border:1px solid {P["border"]};border-radius:2px;font-family:inherit;">b</kbd> '
         f'to bookmark this comparison · '

@@ -486,16 +486,40 @@ def _render_hero(
     lever: CounterfactualLever,
     download_url: str,
 ) -> str:
-    # Hero color reflects overall posture.
-    if cf_set.critical_findings_addressed == 0 and not cf_set.items:
+    # Hero color + partner-speak summary keyed off posture.
+    n_items = len(cf_set.items)
+    crit = cf_set.critical_findings_addressed
+    bridge_usd = lever.ebitda_impact_usd or 0.0
+
+    if crit == 0 and n_items == 0:
         primary_color = P["positive"]
-    elif cf_set.critical_findings_addressed <= 2:
+        summary = (
+            "No RED or CRITICAL findings across the risk modules. "
+            "The Counterfactual Advisor has nothing structural to "
+            "recommend — proceed to the Deal MC + IC Packet without "
+            "offer-shape modifications."
+        )
+    elif crit <= 2 and n_items <= 4:
         primary_color = P["warning"]
+        summary = (
+            f"{crit} critical-level finding{'s' if crit != 1 else ''} addressed "
+            f"plus {n_items - crit} non-critical. Every lever below is "
+            f"what partners would change in the bid to flip the finding. "
+            f"Quote the largest lever in the IC walkaway section as "
+            f"your 'what would change our mind' anchor."
+        )
     else:
         primary_color = P["negative"]
+        summary = (
+            f"⚠ {crit} CRITICAL-level findings + {n_items - crit} "
+            f"RED — this deal requires materially different structure "
+            f"to underwrite cleanly. Total bridge-lever EBITDA impact "
+            f"${bridge_usd:,.0f} across the listed counterfactuals. "
+            f"Read each card before proceeding to Deal MC."
+        )
+
     bridge_dollar_str = (
-        f'${lever.ebitda_impact_usd:,.0f}'
-        if lever.ebitda_impact_usd > 0 else "—"
+        f'${bridge_usd:,.0f}' if bridge_usd > 0 else "—"
     )
     return (
         f'<div class="cf-hero">'
@@ -507,21 +531,34 @@ def _render_hero(
         f'    <a href="{html.escape(download_url)}" target="_blank" '
         f'class="cf-download">Download JSON</a>'
         f'  </div>'
+        f'  <div style="background:{P["panel_alt"]};'
+        f'border-left:3px solid {primary_color};padding:10px 14px;'
+        f'margin-top:12px;font-size:12px;color:{P["text_dim"]};'
+        f'line-height:1.6;max-width:880px;'
+        f'border-radius:0 3px 3px 0;">'
+        f'<strong style="color:{P["text"]};">What this shows: </strong>'
+        f'{html.escape(summary)}</div>'
         f'  <div class="cf-stats">'
         f'    <div class="cf-stat">'
         f'      <div class="cf-stat-label">Counterfactuals</div>'
         f'      <div class="cf-stat-value" style="color:{primary_color};">'
-        f'{len(cf_set.items)}</div>'
+        f'{n_items}</div>'
+        f'      <div style="font-size:10px;color:{P["text_faint"]};'
+        f'margin-top:2px;">offer-shape levers</div>'
         f'    </div>'
         f'    <div class="cf-stat">'
         f'      <div class="cf-stat-label">Critical addressed</div>'
         f'      <div class="cf-stat-value" style="color:{primary_color};">'
-        f'{cf_set.critical_findings_addressed}</div>'
+        f'{crit}</div>'
+        f'      <div style="font-size:10px;color:{P["text_faint"]};'
+        f'margin-top:2px;">RED/CRITICAL findings flipped</div>'
         f'    </div>'
         f'    <div class="cf-stat">'
         f'      <div class="cf-stat-label">Bridge lever (EBITDA)</div>'
         f'      <div class="cf-stat-value cf-dollar" style="color:{P["positive"]};">'
         f'{bridge_dollar_str}</div>'
+        f'      <div style="font-size:10px;color:{P["text_faint"]};'
+        f'margin-top:2px;">aggregate counterfactual $ impact</div>'
         f'    </div>'
         f'  </div>'
         f'</div>'
@@ -576,11 +613,31 @@ def _render_counterfactuals(cf_set: CounterfactualSet) -> str:
             'full panel view.</div>'
             '</div>'
         )
+    # Plain-English explanation for each feasibility band.
+    _FEASIBILITY_EXPLAINER = {
+        "HIGH": (
+            "Partners have unilateral control — clean-sheet lever "
+            "they can quote in the bid without counterparty consent."
+        ),
+        "MEDIUM": (
+            "Requires seller agreement but precedented — most sellers "
+            "will concede this to close."
+        ),
+        "LOW": (
+            "Requires material concession from a third party (REIT "
+            "landlord, major payer, state AG) — assume the bid fails "
+            "unless you have pre-signaled alignment."
+        ),
+    }
+
     rows: List[str] = []
     for cf in cf_set.items:
         orig_color = _SEVERITY_COLOR.get(cf.original_band, P["text"])
         target_color = _SEVERITY_COLOR.get(cf.target_band, P["text"])
         feas_color = _feasibility_color(cf.feasibility)
+        feas_explainer = _FEASIBILITY_EXPLAINER.get(
+            cf.feasibility, "",
+        )
         if cf.estimated_dollar_impact_usd > 0:
             dollar_html = (
                 f'<div class="cf-savings-value">'
@@ -588,6 +645,10 @@ def _render_counterfactuals(cf_set: CounterfactualSet) -> str:
             )
         else:
             dollar_html = '<div class="cf-savings-qual">qualitative</div>'
+        feas_tooltip = (
+            f' title="{html.escape(feas_explainer)}"'
+            if feas_explainer else ""
+        )
         rows.append(
             f'<div class="cf-card" style="border-left-color:{target_color};">'
             f'  <div class="cf-card-head">'
@@ -600,7 +661,8 @@ def _render_counterfactuals(cf_set: CounterfactualSet) -> str:
             f'        <span class="cf-arrow">→</span>'
             f'        <span class="cf-pill" style="color:{target_color};">'
             f'{html.escape(cf.target_band)}</span>'
-            f'        <span class="cf-feasibility" style="color:{feas_color};">'
+            f'        <span class="cf-feasibility" style="color:{feas_color};"'
+            f'{feas_tooltip}>'
             f'feasibility {html.escape(cf.feasibility)}</span>'
             f'      </div>'
             f'    </div>'
@@ -613,7 +675,18 @@ def _render_counterfactuals(cf_set: CounterfactualSet) -> str:
             f'  <div class="cf-implication">'
             f'<span class="cf-implication-label">Deal structure:</span>'
             f'{html.escape(cf.deal_structure_implication)}</div>'
-            f'</div>'
+            + (
+                f'<div style="margin-top:10px;padding:8px 12px;'
+                f'background:{P["panel_alt"]};border-left:2px solid '
+                f'{feas_color};border-radius:0 3px 3px 0;'
+                f'font-size:11px;color:{P["text_dim"]};line-height:1.55;">'
+                f'<strong style="color:{feas_color};font-size:9px;'
+                f'letter-spacing:1.2px;text-transform:uppercase;'
+                f'margin-right:4px;">Feasibility {html.escape(cf.feasibility)}:</strong>'
+                f'{html.escape(feas_explainer)}</div>'
+                if feas_explainer else ""
+            )
+            + f'</div>'
         )
     return (
         f'<div class="cf-section-head">Counterfactuals</div>'

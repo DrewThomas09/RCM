@@ -594,6 +594,97 @@ def for_site_neutral(
     )
 
 
+# ── Physician Attrition (P-PAM) ───────────────────────────────────
+
+def for_physician_attrition(
+    report: Any,
+) -> Optional[Counterfactual]:
+    """Translate an :class:`AttritionReport` into a retention-bond /
+    earn-out counterfactual.
+
+    The lever is the total suggested retention-bond sizing across the
+    CRITICAL + HIGH providers; the dollar impact is the protected
+    EBITDA-at-risk (i.e., the savings achieved by binding those
+    providers through the earn-out horizon).
+
+    Returns None when no HIGH/CRITICAL providers exist — there is
+    nothing structural to recommend.
+    """
+    if report is None:
+        return None
+    # Duck-type: count bands, sum bond, protected EBITDA
+    crit = int(getattr(report, "critical_count", 0) or 0)
+    high = int(getattr(report, "high_count", 0) or 0)
+    if crit == 0 and high == 0:
+        return None
+
+    scores = list(getattr(report, "scores", []) or [])
+    focus = [
+        s for s in scores
+        if getattr(s, "band", None) is not None and
+        str(getattr(s.band, "value", s.band)).upper() in ("CRITICAL", "HIGH")
+    ]
+    if not focus:
+        return None
+
+    total_bond = 0.0
+    provider_names: List[str] = []
+    for s in focus:
+        rec = getattr(s, "recommendation", None)
+        if rec is None:
+            continue
+        bond = getattr(rec, "suggested_bond_usd", None) or 0.0
+        total_bond += float(bond)
+        pid = getattr(s, "provider_id", None)
+        if pid:
+            provider_names.append(str(pid))
+
+    bridge = getattr(report, "bridge_input", None)
+    protected_ebitda = float(
+        getattr(bridge, "ebitda_at_risk_usd", 0.0) or 0.0,
+    )
+
+    original_band = "CRITICAL" if crit else "HIGH"
+    target_band = "MEDIUM" if crit else "LOW"
+    feasibility = "HIGH" if crit <= 2 and high <= 5 else "MEDIUM"
+
+    # Partner-facing change description + narrative
+    names_preview = ", ".join(provider_names[:5])
+    if len(provider_names) > 5:
+        names_preview += f", + {len(provider_names) - 5} more"
+    change_desc = (
+        f"Structure {crit + high} retention bonds totaling "
+        f"${total_bond:,.0f} across the HIGH/CRITICAL flight-risk "
+        f"providers ({names_preview}). CRITICAL providers bonded "
+        f"3y at 40% of total comp; HIGH providers 2y at 25% — "
+        f"held in escrow with release tied to continued employment."
+    )
+    narrative = (
+        "Retention bonds convert the physician-attrition driver from "
+        "a variable Deal MC input into a contractually-bounded one. "
+        "Expected EBITDA-at-risk drops from the model's projection "
+        "to near-zero for the bonded cohort over the earn-out "
+        "horizon."
+    )
+    structure = (
+        f"Hold ${total_bond:,.0f} in escrow at close; tie {crit + high} "
+        "individual providers to retention milestones in the "
+        "PSA / APA. Walkaway if seller refuses to carry the escrow."
+    )
+
+    return Counterfactual(
+        module="PHYSICIAN_ATTRITION",
+        original_band=original_band,
+        target_band=target_band,
+        lever="RETENTION_BONDS",
+        change_description=change_desc,
+        estimated_dollar_impact_usd=protected_ebitda,
+        feasibility=feasibility,
+        narrative=narrative,
+        deal_structure_implication=structure,
+    )
+
+
 # ── Orchestration ─────────────────────────────────────────────────
 
 def advise_all(
@@ -605,6 +696,7 @@ def advise_all(
     antitrust: Optional[AntitrustExposure] = None,
     cyber: Optional[Any] = None,
     site_neutral: Optional[SiteNeutralExposure] = None,
+    physician_attrition: Optional[Any] = None,
 ) -> CounterfactualSet:
     """Accumulate counterfactuals across every supplied module."""
     items: List[Counterfactual] = []
@@ -616,6 +708,7 @@ def advise_all(
         (for_antitrust, antitrust),
         (for_cyber, cyber),
         (for_site_neutral, site_neutral),
+        (for_physician_attrition, physician_attrition),
     ):
         if arg is None:
             continue

@@ -283,7 +283,7 @@ def _pe_highlights(store: Any, db_path: str) -> str:
     except Exception as exc:
         return _empty(f"PE intelligence unavailable: {exc!r}")
 
-    verdicts: List[Tuple[str, str, str, int, str]] = []
+    verdicts: List[Tuple[str, str, str, int, int, str]] = []
     for r in rows[:15]:
         did = str(r.get("deal_id") or "")
         name = str(r.get("name") or did)
@@ -294,17 +294,20 @@ def _pe_highlights(store: Any, db_path: str) -> str:
             rv = partner_review(pkt)
             rec = str(rv.narrative.recommendation or "—")
             crit = sum(1 for h in rv.heuristic_hits if h.severity == "CRITICAL")
+            hc = getattr(rv, "healthcare_checks", None) or {}
+            hc_sev = hc.get("severity_counts") or {}
+            hc_hi = int(hc_sev.get("CRITICAL", 0)) + int(hc_sev.get("HIGH", 0))
             headline = rv.narrative.headline or ""
-            verdicts.append((did, name, rec, crit, headline[:140]))
+            verdicts.append((did, name, rec, crit, hc_hi, headline[:140]))
         except Exception:
             continue
     if not verdicts:
         return _empty("No partner reviews yet — open a deal to build one.")
     # Rank: critical flags first, then PASS recs, then PROCEED.
     priority = {"PASS": 0, "PROCEED_WITH_CAVEATS": 1, "PROCEED": 2, "STRONG_PROCEED": 3}
-    verdicts.sort(key=lambda t: (-t[3], priority.get(t[2], 9)))
+    verdicts.sort(key=lambda t: (-t[3], -t[4], priority.get(t[2], 9)))
     out = []
-    for did, name, rec, crit, headline in verdicts[:3]:
+    for did, name, rec, crit, hc_hi, headline in verdicts[:3]:
         col = {
             "PASS": P["negative"],
             "PROCEED_WITH_CAVEATS": P["warning"],
@@ -326,6 +329,12 @@ def _pe_highlights(store: Any, db_path: str) -> str:
                 f'font-size:9px;margin-top:1px;">'
                 f'{crit} critical flag{"s" if crit != 1 else ""}</div>'
                 if crit else ""
+            )
+            + (
+                f'<div style="color:{P["warning"]};font-family:var(--ck-mono);'
+                f'font-size:9px;margin-top:1px;">'
+                f'{hc_hi} high-risk healthcare signal{"s" if hc_hi != 1 else ""}</div>'
+                if hc_hi else ""
             )
             + (
                 f'<div style="color:{P["text_dim"]};margin-top:2px;">'
@@ -478,6 +487,126 @@ def _kpi_strip(store: Any, db_path: str) -> str:
     return f'<div class="ck-kpi-grid">{tiles}</div>'
 
 
+def _try_the_tool_quickstart() -> str:
+    """Empty-portfolio quick-start block — four demo fixtures with
+    one-click "Run Full Pipeline" CTAs. Rendered only when the
+    portfolio is empty (first-time visitor).
+
+    The natural first action for a first-time analyst isn't to
+    import their own deal (they don't have one yet) — it's to try
+    the tool against a known fixture and see what the product does.
+    """
+    fixtures = [
+        ("hospital_01_clean_acute", "Clean acute baseline",
+         "Healthy reference hospital",
+         "Baseline profile — denial rate ~4%, A/R ~42 days. "
+         "Run this first to see a clean output.",
+         "BASELINE", "#10B981"),
+        ("hospital_02_denial_heavy", "Denial-heavy outpatient",
+         "High audit-recovery opportunity",
+         "Denial rate ~20%, systematic-misses drive the bridge. "
+         "Shows denial prediction + counterfactual in action.",
+         "OPPORTUNITY", "#F59E0B"),
+        ("hospital_07_waterfall_concordant", "QoR concordant",
+         "Low-divergence reference",
+         "Management revenue agrees with claims-side accrual within "
+         "IMMATERIAL threshold — clean QoE target.",
+         "CLEAN QoR", "#10B981"),
+        ("hospital_08_waterfall_critical", "QoR critical divergence",
+         "7% revenue overstatement — walkaway candidate",
+         "Management revenue overstates claims-side accrual by ~7%. "
+         "Triggers CRITICAL QoR + IC walkaway memo.",
+         "CRITICAL", "#EF4444"),
+    ]
+    base_qs = (
+        "&deal_name=Demo+Target&specialty=HOSPITAL&states=TX"
+        "&landlord=Medical+Properties+Trust&lease_term_years=20"
+        "&lease_escalator_pct=0.035&ebitdar_coverage=1.3"
+        "&annual_rent_usd=30000000&revenue_year0_usd=250000000"
+        "&ebitda_year0_usd=35000000&enterprise_value_usd=350000000"
+        "&equity_check_usd=150000000&debt_usd=200000000"
+        "&entry_multiple=10.0&market_category=MULTI_SITE_ACUTE_HOSPITAL"
+        "&oon_revenue_share=0.08&ehr_vendor=EPIC&n_runs=1000"
+    )
+    cards: List[str] = []
+    for fx_id, name, tagline, desc, badge, color in fixtures:
+        pipeline_url = f'/diligence/thesis-pipeline?dataset={fx_id}{base_qs}'
+        bench_url = f'/diligence/benchmarks?dataset={fx_id}'
+        cards.append(
+            f'<div style="background:#111827;border:1px solid #1e293b;'
+            f'border-radius:4px;padding:16px 18px;display:flex;'
+            f'flex-direction:column;gap:10px;'
+            f'transition:border-color 140ms ease;" '
+            f'onmouseover="this.style.borderColor=\'{color}\'" '
+            f'onmouseout="this.style.borderColor=\'#1e293b\'">'
+            f'<div style="display:inline-block;width:fit-content;'
+            f'font-size:10px;letter-spacing:1.4px;text-transform:uppercase;'
+            f'font-weight:700;color:{color};border:1px solid {color};'
+            f'padding:2px 8px;border-radius:3px;">{_html.escape(badge)}</div>'
+            f'<div>'
+            f'<div style="font-size:15px;color:#e2e8f0;font-weight:600;'
+            f'line-height:1.25;">{_html.escape(name)}</div>'
+            f'<div style="font-size:11px;color:#94a3b8;margin-top:2px;'
+            f'font-style:italic;">{_html.escape(tagline)}</div>'
+            f'</div>'
+            f'<div style="font-size:11.5px;color:#94a3b8;line-height:1.55;'
+            f'flex-grow:1;">{_html.escape(desc)}</div>'
+            f'<div style="display:flex;gap:8px;margin-top:4px;">'
+            f'<a href="{_html.escape(pipeline_url)}" '
+            f'style="padding:7px 14px;background:#f59e0b;color:#0a0e17;'
+            f'border:0;font-size:10px;letter-spacing:1.3px;'
+            f'text-transform:uppercase;font-weight:700;text-decoration:none;'
+            f'border-radius:3px;">▶ Run Pipeline</a>'
+            f'<a href="{_html.escape(bench_url)}" '
+            f'style="padding:7px 14px;background:transparent;color:#3b82f6;'
+            f'border:1px solid #1e293b;font-size:10px;letter-spacing:1.3px;'
+            f'text-transform:uppercase;font-weight:600;text-decoration:none;'
+            f'border-radius:3px;">Benchmarks Only</a>'
+            f'</div>'
+            f'</div>'
+        )
+    return (
+        f'<div style="background:#111827;border:1px solid #f59e0b;'
+        f'border-radius:4px;padding:18px 22px;margin-bottom:18px;'
+        f'position:relative;overflow:hidden;">'
+        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
+        f'background:linear-gradient(90deg,#f59e0b,#10b981);"></div>'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;margin-bottom:6px;">'
+        f'<div style="display:flex;align-items:center;gap:10px;">'
+        f'<h2 style="margin:0;font-size:15px;color:#e2e8f0;">Try the tool</h2>'
+        f'<span style="font-size:10px;letter-spacing:1.4px;'
+        f'text-transform:uppercase;font-weight:700;color:#64748b;">QSX</span>'
+        f'</div>'
+        f'<span style="font-size:10.5px;letter-spacing:1px;'
+        f'text-transform:uppercase;color:#64748b;">'
+        f'no portfolio data yet</span></div>'
+        f'<div style="font-size:13px;color:#94a3b8;line-height:1.6;'
+        f'max-width:880px;margin-bottom:14px;">'
+        f'Your portfolio is empty. Run the full diligence chain against '
+        f'one of four demo hospitals to see what the tool produces. '
+        f'<strong style="color:#e2e8f0;">▶ Run Pipeline</strong> executes '
+        f'bankruptcy scan → CCD ingest → HFMA benchmarks → denial '
+        f'prediction → physician attrition → counterfactual → Steward → '
+        f'cyber → deal autopsy → Deal MC and emits every headline '
+        f'number in ~120ms.</div>'
+        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));'
+        f'gap:12px;">{"".join(cards)}</div>'
+        f'</div>'
+    )
+
+
+def _portfolio_is_empty(store: Any) -> bool:
+    """Cheap check: return True when the partner has no deals yet."""
+    if store is None:
+        return True
+    try:
+        deals = store.list_deals()
+    except Exception:  # noqa: BLE001
+        return True
+    return len(deals) == 0
+
+
 def render_home(store: Any, db_path: str, current_user: Optional[str] = None) -> str:
     """Render the seven-panel home landing page."""
     explainer = render_page_explainer(
@@ -490,6 +619,12 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         page_key="home",
     )
     kpi = _kpi_strip(store, db_path)
+    # Empty-portfolio quick-start — only shown when there are no
+    # deals.  First-time visitors need a visible "try the tool" path
+    # rather than an empty dashboard.
+    quickstart = (
+        _try_the_tool_quickstart() if _portfolio_is_empty(store) else ""
+    )
     panels = (
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">'
         f'{_panel("Pipeline Funnel", _pipeline_funnel(store), code="FNL")}'
@@ -506,7 +641,7 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         if current_user else "Partner landing — pipeline, alerts, PE brain verdicts"
     )
     return chartis_shell(
-        explainer + kpi + panels,
+        explainer + kpi + quickstart + panels,
         title="Home",
         active_nav="/home",
         subtitle=subtitle,

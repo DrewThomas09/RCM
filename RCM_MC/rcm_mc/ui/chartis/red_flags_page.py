@@ -40,6 +40,15 @@ _VERDICT_COLORS = {
     "UNKNOWN": P["text_faint"],
 }
 
+_CLAUDE_STATUS_COLORS = {
+    "confirmed": P["positive"],
+    "needs_attention": P["warning"],
+    "insufficient_support": P["negative"],
+    "not_configured": P["text_faint"],
+    "call_failed": P["negative"],
+    "failed": P["negative"],
+}
+
 
 def _header_links(deal_id: str) -> str:
     did = _html.escape(deal_id)
@@ -150,6 +159,58 @@ def _kpi_strip(review: Any) -> str:
         + ck_kpi_block("Total Hits", str(total_hits), "across all severities")
     )
     return f'<div class="ck-kpi-grid">{tiles}</div>'
+
+
+def _healthcare_signal_card(review: Any) -> str:
+    checks = getattr(review, "healthcare_checks", None) or {}
+    sev = checks.get("severity_counts") or {}
+    total_hits = int(checks.get("total_hits") or 0)
+    summary = str(checks.get("summary") or "No supplemental healthcare checks available.")
+    focus_areas = list(checks.get("focus_areas") or [])
+    focus = ", ".join(
+        f'{str(area.get("category", "OTHER"))}:{int(area.get("count", 0))}'
+        for area in focus_areas[:4]
+    ) or "none"
+    return (
+        f'<div class="ck-panel">'
+        f'<div class="ck-panel-title">Supplemental Healthcare Signals '
+        f'<span style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.12em;color:{P["text_faint"]};margin-left:8px;">'
+        f'HCX · {total_hits}</span></div>'
+        f'<div style="padding:12px 14px;">'
+        f'<div class="ck-kpi-grid" style="margin-bottom:10px;">'
+        f'{ck_kpi_block("Supplemental Hits", str(total_hits), "additive")}'
+        f'{ck_kpi_block("Critical", str(sev.get("CRITICAL", 0)), "extra checks")}'
+        f'{ck_kpi_block("High", str(sev.get("HIGH", 0)), "extra checks")}'
+        f'{ck_kpi_block("Medium", str(sev.get("MEDIUM", 0)), "extra checks")}'
+        f'</div>'
+        f'<p style="color:{P["text_dim"]};font-size:11.5px;line-height:1.55;'
+        f'margin:0 0 8px;">{_html.escape(summary)}</p>'
+        f'<div style="font-family:var(--ck-mono);font-size:10px;color:{P["text_faint"]};">'
+        f'Focus areas: {_html.escape(focus)}</div>'
+        f'</div></div>'
+    )
+
+
+def _claude_status_card(review: Any) -> str:
+    claude = getattr(review, "claude_review", None) or {}
+    status = str(claude.get("status") or "not_configured")
+    color = _CLAUDE_STATUS_COLORS.get(status, P["text_faint"])
+    status_label = status.replace("_", " ").upper()
+    summary = str(claude.get("summary") or "Claude review not available.")
+    return (
+        f'<div class="ck-panel">'
+        f'<div class="ck-panel-title">Claude Look '
+        f'<span style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.12em;color:{P["text_faint"]};margin-left:8px;">'
+        f'CLD</span></div>'
+        f'<div style="padding:12px 14px;">'
+        f'<span class="ck-sig" style="color:{color};border:1px solid {color};'
+        f'background:rgba(255,255,255,0.02);">{_html.escape(status_label)}</span>'
+        f'<p style="color:{P["text_dim"]};font-size:11.5px;line-height:1.55;'
+        f'margin:10px 0 0;">{_html.escape(summary)}</p>'
+        f'</div></div>'
+    )
 
 
 def _hit_row(hit: Any) -> str:
@@ -379,6 +440,12 @@ def render_red_flags(
         + _header_links(deal_id)
         + _severity_banner(review)
         + _kpi_strip(review)
+        + ck_section_header(
+            "ADDITIONAL SIGNALS",
+            "supplemental healthcare checks and Claude confirmation",
+        )
+        + _healthcare_signal_card(review)
+        + _claude_status_card(review)
         + ck_section_header(
             "FINDINGS", "sorted by severity",
             count=len(review.heuristic_hits or []),

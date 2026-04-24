@@ -47,6 +47,10 @@ from ..diligence.physician_comp import (
     Provider, check_stark_redline, ingest_providers,
     recommend_earnout_structure, simulate_productivity_drift,
 )
+from ..diligence.physician_attrition import (
+    analyze_roster as analyze_attrition_roster,
+    FlightRiskBand,
+)
 from ..diligence.quality import project_vbp_hrrp
 from ..diligence.real_estate import (
     LeaseLine, LeaseSchedule, StewardRiskTier,
@@ -179,7 +183,11 @@ def _badge(label: str, sev: str) -> str:
     )
 
 
-def _panel(title: str, body: str, *, badge: Optional[str] = None) -> str:
+def _panel(
+    title: str, body: str, *,
+    badge: Optional[str] = None,
+    explanation: Optional[str] = None,
+) -> str:
     head = (
         f'<div style="display:flex;justify-content:space-between;'
         f'align-items:center;margin-bottom:8px;">'
@@ -188,11 +196,90 @@ def _panel(title: str, body: str, *, badge: Optional[str] = None) -> str:
         f'{html.escape(title)}</div>'
         f'{badge or ""}</div>'
     )
+    footer = ""
+    if explanation:
+        footer = (
+            f'<div style="margin-top:10px;padding:8px 10px;'
+            f'background:{P["panel_alt"]};border-left:2px solid '
+            f'{P["accent"]};font-size:11px;color:{P["text_dim"]};'
+            f'line-height:1.55;border-radius:0 3px 3px 0;">'
+            f'<strong style="color:{P["text"]};font-size:9px;'
+            f'text-transform:uppercase;letter-spacing:1.2px;'
+            f'margin-right:4px;">What this shows:</strong>'
+            f'{explanation}</div>'
+        )
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
         f'border-radius:4px;padding:14px 16px;margin-bottom:12px;">'
-        f'{head}{body}</div>'
+        f'{head}{body}{footer}</div>'
     )
+
+
+# Peer-context lookup tables — what a band means in partner-speak.
+_TIER_EXPLAINER = {
+    # Steward tier (real estate)
+    "TIER_1_STEWARD_REPLAY": (
+        "EBITDAR coverage + escalator profile mirrors the Steward 2016 "
+        "entry signature. This is the highest-risk real-estate band in "
+        "the library — partners should walk unless the sale-leaseback is "
+        "dissolvable or the escalator is capped."
+    ),
+    "TIER_2_LEASE_STRESS": (
+        "Lease economics are meaningfully stressed vs. the peer "
+        "acute-hospital median. Cap the escalator or exit the sale-"
+        "leaseback as a condition of offer."
+    ),
+    "TIER_3_ELEVATED": (
+        "Elevated real-estate risk but not a thesis breaker. Model a "
+        "5% escalator shock in Deal MC to size the downside."
+    ),
+    "TIER_4_STANDARD": (
+        "Real-estate profile is in-line with peer norms — neither a "
+        "lever nor a risk. The bridge should assume no RE-driven "
+        "uplift or downside."
+    ),
+    # Regulatory
+    "RED": (
+        "Regulatory composite is RED — exposure materially impacts "
+        "the thesis. Counterfactual Advisor should already be "
+        "quoting the offer-shape modification that flips this "
+        "finding. If not, add it as a walkaway condition."
+    ),
+    "YELLOW": (
+        "Regulatory composite is YELLOW — manageable but needs to "
+        "show up in the 100-day plan. Not a walkaway; is a diligence "
+        "question for the seller."
+    ),
+    "GREEN": (
+        "Regulatory composite is GREEN — no material exposure in the "
+        "target's footprint. No bridge adjustment needed."
+    ),
+    # Cyber
+    "CRITICAL": (
+        "Cyber posture is CRITICAL — a Change-Healthcare-class "
+        "incident would exceed typical bridge reserves. Add a cyber "
+        "BI loss line to the bridge at the modeled dollar exposure."
+    ),
+    "HIGH": (
+        "Elevated findings — typically means Stark overlap or comp "
+        "above FMV on the top 10% of providers. Earnout design "
+        "should include Stark-compliance reps."
+    ),
+    "LOW": (
+        "Findings are below the action threshold. Comp structure is "
+        "defensible without restructuring."
+    ),
+    "UNKNOWN": (
+        "Panel not yet populated — supply inputs on Deal Profile to "
+        "run this diligence engine."
+    ),
+}
+
+
+def _explain_for(band_or_tier: str) -> Optional[str]:
+    """Return a plain-English explanation for a band label, or None
+    if we don't have a mapping. Never fabricates — absence is OK."""
+    return _TIER_EXPLAINER.get((band_or_tier or "").upper())
 
 
 def _not_supplied(reason: str) -> str:
@@ -202,8 +289,30 @@ def _not_supplied(reason: str) -> str:
     )
 
 
-def _kv_row(label: str, value: str, color: Optional[str] = None) -> str:
+def _kv_row(
+    label: str, value: str,
+    color: Optional[str] = None,
+    *,
+    peer: Optional[str] = None,
+) -> str:
+    """One metric row inside a workbench panel.
+
+    Optional ``peer`` — rendered as a small right-aligned subline
+    like Benchmarks KPI cards (e.g., "peer median 1.30x"). Keep it
+    short; this row is shown in a two-column grid.
+    """
     c = color or P["text"]
+    if peer:
+        return (
+            f'<div style="display:flex;justify-content:space-between;'
+            f'align-items:baseline;font-size:11px;margin:2px 0;">'
+            f'<span style="color:{P["text_dim"]};">{html.escape(label)}</span>'
+            f'<span style="text-align:right;">'
+            f'<span class="mono" style="color:{c};">{html.escape(value)}</span>'
+            f'<span style="font-size:9.5px;color:{P["text_faint"]};'
+            f'display:block;">{html.escape(peer)}</span>'
+            f'</span></div>'
+        )
     return (
         f'<div style="display:flex;justify-content:space-between;'
         f'font-size:11px;margin:2px 0;">'
@@ -240,9 +349,32 @@ def _panel_bankruptcy_survivor(inp: WorkbenchInput) -> str:
         + f'<div style="margin-top:8px;"><a href="/screening/bankruptcy-survivor" '
           f'style="color:{P["accent"]};font-size:11px;">Open full scan →</a></div>'
     )
+    # Partner-speak explainer keyed off verdict.
+    scan_explainer = {
+        "CRITICAL": (
+            "≥3 of the 12 named bankruptcy patterns matched. This is the "
+            "same signature that preceded Steward, Envision, and Hahnemann. "
+            "Typically a walkaway unless the critical patterns are mitigable."
+        ),
+        "RED": (
+            "1–2 critical patterns matched. Bridge reserves must cover the "
+            "RED patterns; offer-shape modifications should be drafted "
+            "before IC."
+        ),
+        "YELLOW": (
+            "Non-critical patterns matched. Include in 100-day plan; not a "
+            "walkaway."
+        ),
+        "GREEN": (
+            "None of the 12 named failure patterns match. Pre-NDA screen "
+            "clears — proceed to full diligence."
+        ),
+    }.get(scan.verdict.value.upper(),
+          "Verdict pending — supply more scan inputs on Deal Profile.")
     return _panel(
         "Bankruptcy-Survivor Scan", body,
         badge=_badge("SCAN", scan.verdict.value),
+        explanation=scan_explainer,
     )
 
 
@@ -323,12 +455,25 @@ def _panel_regulatory(inp: WorkbenchInput) -> str:
     if not rows:
         body = _not_supplied("no regulatory inputs provided")
     else:
+        # Peer context on the $ at risk — typical PE healthcare deal
+        # has $0-15M reg exposure; >$50M is a walkaway band.
+        if dollars <= 0:
+            dollars_peer = "within peer norm"
+        elif dollars <= 15_000_000:
+            dollars_peer = "peer norm ≤ $15M"
+        elif dollars <= 50_000_000:
+            dollars_peer = "above peer norm (> $15M)"
+        else:
+            dollars_peer = "thesis-breaking (> $50M)"
         body = "".join(rows) + _kv_row(
             "Total $ at risk", f"${dollars:,.0f}",
+            peer=dollars_peer,
         )
+    reg_band_final = band if rows else "UNKNOWN"
     return _panel(
         "Regulatory Exposure (G)", body,
-        badge=_badge("REG", band if rows else "UNKNOWN"),
+        badge=_badge("REG", reg_band_final),
+        explanation=_explain_for(reg_band_final),
     )
 
 
@@ -372,24 +517,47 @@ def _panel_real_estate(inp: WorkbenchInput) -> str:
             "Rent PV (10y)", f"${wf.total_rent_pv_usd:,.0f}",
         ))
         if wf.portfolio_rent_pct_revenue is not None:
+            # Acute-hospital peer median rent / revenue is ~3%;
+            # MPT tenants cluster 8-12%.
+            rent_pct = wf.portfolio_rent_pct_revenue
+            if rent_pct <= 0.05:
+                rent_color, rent_peer = P["positive"], "peer median ~3%"
+            elif rent_pct <= 0.08:
+                rent_color, rent_peer = P["warning"], "peer median ~3%"
+            else:
+                rent_color, rent_peer = P["negative"], "peer median ~3% (MPT tenants 8-12%)"
             rows.append(_kv_row(
                 "Rent % revenue",
-                f"{wf.portfolio_rent_pct_revenue*100:.1f}%",
+                f"{rent_pct*100:.1f}%",
+                rent_color,
+                peer=rent_peer,
             ))
         if wf.ebitdar_coverage is not None:
+            # HFMA healthy coverage is ≥1.5x; stressed <1.2x.
+            cov = wf.ebitdar_coverage
+            if cov >= 1.5:
+                cov_color, cov_peer = P["positive"], "peer median ≥1.5x"
+            elif cov >= 1.2:
+                cov_color, cov_peer = P["warning"], "peer median ≥1.5x"
+            else:
+                cov_color, cov_peer = P["negative"], "peer median ≥1.5x (Steward sub-1.2x)"
             rows.append(_kv_row(
-                "EBITDAR coverage", f"{wf.ebitdar_coverage:.2f}x",
+                "EBITDAR coverage",
+                f"{cov:.2f}x",
+                cov_color,
+                peer=cov_peer,
             ))
     return _panel(
         "Real Estate (H)", "".join(rows),
         badge=_badge("RE", steward.tier.value),
+        explanation=_explain_for(steward.tier.value),
     )
 
 
 def _panel_physician_comp(inp: WorkbenchInput) -> str:
     if not inp.providers:
         return _panel(
-            "Physician Comp (J)",
+            "Physician Comp + Attrition (J)",
             _not_supplied("no provider roster"),
             badge=_badge("COMP", "UNKNOWN"),
         )
@@ -398,7 +566,35 @@ def _panel_physician_comp(inp: WorkbenchInput) -> str:
     earnout = recommend_earnout_structure(inp.providers)
     crit = sum(1 for f in findings if f.severity == "CRITICAL")
     high = sum(1 for f in findings if f.severity == "HIGH")
-    sev = "CRITICAL" if crit else ("HIGH" if high else "LOW")
+
+    # P-PAM — run the flight-risk model against the same roster.
+    # Years-at-facility / ages / productivity slopes not provided here
+    # (the workbench doesn't currently carry them); the analyzer
+    # handles missing metadata gracefully with neutral priors.
+    try:
+        attrition = analyze_attrition_roster(inp.providers)
+    except Exception:  # noqa: BLE001
+        attrition = None
+
+    # Combined severity — whichever is higher between comp severity
+    # (Stark) and attrition severity (CRITICAL providers present).
+    comp_sev = "CRITICAL" if crit else ("HIGH" if high else "LOW")
+    if attrition is not None and attrition.critical_count > 0:
+        attrition_sev = "CRITICAL"
+    elif attrition is not None and attrition.high_count >= 2:
+        attrition_sev = "HIGH"
+    elif attrition is not None and attrition.high_count >= 1:
+        attrition_sev = "MEDIUM"
+    else:
+        attrition_sev = "LOW"
+    # Pick the worst
+    sev_order = {"CRITICAL": 3, "HIGH": 2, "MEDIUM": 1, "LOW": 0}
+    sev = (
+        attrition_sev
+        if sev_order[attrition_sev] > sev_order[comp_sev]
+        else comp_sev
+    )
+
     rows = [
         _kv_row("Providers", str(len(inp.providers))),
         _kv_row("Total comp", f"${metrics.total_comp_usd:,.0f}"),
@@ -413,9 +609,56 @@ def _panel_physician_comp(inp: WorkbenchInput) -> str:
         _kv_row("Recommended earnout",
                 earnout.recommended_structure),
     ]
+
+    # Append attrition summary rows.
+    if attrition is not None:
+        att_color = (
+            P["negative"] if attrition.critical_count
+            else P["warning"] if attrition.high_count
+            else P["positive"]
+        )
+        rows.append(_kv_row(
+            "Flight-risk bands",
+            f"{attrition.critical_count} crit · "
+            f"{attrition.high_count} high · "
+            f"{attrition.medium_count} med · "
+            f"{attrition.low_count} low",
+            att_color,
+        ))
+        if attrition.bridge_input is not None:
+            b = attrition.bridge_input
+            rows.append(_kv_row(
+                "EBITDA at risk (18mo)",
+                f"${b.ebitda_at_risk_usd:,.0f}",
+                att_color,
+                peer=f"{b.confidence} confidence · "
+                     f"{b.realization_probability*100:.0f}% realization",
+            ))
+            rows.append(
+                f'<div style="margin-top:6px;"><a href="/diligence/physician-attrition" '
+                f'style="color:{P["accent"]};font-size:11px;">'
+                f'Open Physician Attrition page →</a></div>'
+            )
+
+    # Layer attrition into the explanation when CRITICAL/HIGH providers
+    # exist — partners should see the structural recommendation.
+    comp_explain = _explain_for(sev)
+    attr_explain = ""
+    if attrition is not None and attrition.critical_count > 0:
+        attr_explain = (
+            f" · {attrition.critical_count} CRITICAL flight-risk "
+            f"providers — cannot close without retention bonds on "
+            f"the named CRITICAL set."
+        )
+    elif attrition is not None and attrition.high_count > 0:
+        attr_explain = (
+            f" · {attrition.high_count} HIGH flight-risk providers — "
+            f"earn-out must include retention milestones."
+        )
     return _panel(
-        "Physician Comp (J)", "".join(rows),
+        "Physician Comp + Attrition (J)", "".join(rows),
         badge=_badge("COMP", sev),
+        explanation=(comp_explain or "") + attr_explain,
     )
 
 
@@ -464,9 +707,13 @@ def _panel_cyber(inp: WorkbenchInput) -> str:
             "CyberScore",
             f"{score.score} / 100",
             _SEVERITY_COLOR.get(score.band, P["text"]),
+            peer="healthy ≥75 · at-risk ≤50",
         ),
-        _kv_row("Bridge reserve",
-                f"{cyber_bridge_reserve_pct(score.band)*100:.1f}% of revenue"),
+        _kv_row(
+            "Bridge reserve",
+            f"{cyber_bridge_reserve_pct(score.band)*100:.1f}% of revenue",
+            peer="peer norm 0.5% · stressed 3-5%",
+        ),
     ]
     if bi:
         rows.append(_kv_row(
@@ -477,9 +724,27 @@ def _panel_cyber(inp: WorkbenchInput) -> str:
             "BA cascade findings",
             f"{len(ba_findings)} ({score.ba_critical_count} critical)",
         ))
+    cyber_explainer = {
+        "RED": (
+            "Cyber posture is RED. Change-Healthcare-class exposure "
+            "— model the BI loss as a bridge reserve line, not a "
+            "background risk. A single 30-day incident can exceed the "
+            "entire year's EBITDA."
+        ),
+        "YELLOW": (
+            "Cyber posture is YELLOW. Reserve ~2% of revenue in the "
+            "bridge for BI tail; include BA cascade findings in the "
+            "100-day plan."
+        ),
+        "GREEN": (
+            "Cyber posture is GREEN. No material reserve needed beyond "
+            "the standard 0.5% operational-risk line."
+        ),
+    }.get(score.band.upper(), _explain_for(score.band))
     return _panel(
         "Cyber Posture (K)", "".join(rows),
         badge=_badge("CYBER", score.band),
+        explanation=cyber_explainer,
     )
 
 
@@ -496,12 +761,27 @@ def _panel_ma_dynamics(inp: WorkbenchInput) -> str:
         rows.append(_kv_row(
             "Risk score delta",
             f"{v28.aggregate_risk_score_reduction_pct*100:.2f}%",
+            peer="CMS aggregate forecast −3.12%",
         ))
+        # Peer context for revenue impact — as % of total MA revenue
+        # a typical V28-exposed target hits a 2-4% compression.
+        rev_impact = v28.aggregate_revenue_impact_usd
+        total_ma = inp.total_ma_revenue_usd or 1.0
+        pct_impact = abs(rev_impact) / total_ma if total_ma > 0 else 0.0
+        if pct_impact <= 0.01:
+            rev_peer = "< 1% — immaterial"
+        elif pct_impact <= 0.03:
+            rev_peer = "1-3% · peer norm"
+        elif pct_impact <= 0.05:
+            rev_peer = "3-5% · above peer norm"
+        else:
+            rev_peer = "> 5% · thesis-level hit"
         rows.append(_kv_row(
             "Revenue impact",
             f"${v28.aggregate_revenue_impact_usd:,.0f}",
             P["negative"]
                 if v28.aggregate_revenue_impact_usd < 0 else P["text"],
+            peer=rev_peer,
         ))
         band = "YELLOW" if v28.aggregate_revenue_impact_usd < 0 else "GREEN"
     if (inp.hcc_capture_rate is not None
@@ -535,9 +815,26 @@ def _panel_ma_dynamics(inp: WorkbenchInput) -> str:
             _not_supplied("no MA inputs"),
             badge=_badge("MA", "UNKNOWN"),
         )
+    ma_explainer = {
+        "RED": (
+            "Coding intensity is CRITICAL. CMS V28 recalibration + "
+            "add-only retrospective audits together cut ~3-5% of "
+            "MA revenue. Model this as a bridge headwind in Deal MC."
+        ),
+        "YELLOW": (
+            "V28 revenue compression is in-line with CMS aggregate "
+            "forecast (≈3.12%). Factor into bridge as a known "
+            "headwind but not a thesis killer."
+        ),
+        "GREEN": (
+            "No material V28 exposure — target's Medicare mix is "
+            "low or coding already conservative."
+        ),
+    }.get(band, _explain_for(band))
     return _panel(
         "MA Dynamics (L)", "".join(rows),
         badge=_badge("MA", band),
+        explanation=ma_explainer,
     )
 
 
@@ -921,10 +1218,24 @@ def render_risk_workbench(inp: WorkbenchInput) -> str:
         f'  <div style="font-size:22px;color:{P["text"]};font-weight:600;'
         f'margin-bottom:4px;">{html.escape(inp.target_name)}</div>'
         f'  <div style="font-size:12px;color:{P["text_dim"]};max-width:760px;'
-        f'line-height:1.5;">Live panels for the 9 Tier-1/2/3 diligence '
+        f'line-height:1.55;">Live panels for the 9 Tier-1/2/3 diligence '
         f'subpackages (Prompts G-O). Each panel runs its engine against '
         f'the supplied inputs; panels without inputs render '
         f'<em>not supplied</em> rather than fabricating numbers.</div>'
+        f'  <div style="background:{P["panel_alt"]};border-left:3px solid '
+        f'{P["accent"]};padding:10px 14px;margin-top:14px;font-size:12px;'
+        f'color:{P["text_dim"]};line-height:1.6;max-width:880px;'
+        f'border-radius:0 3px 3px 0;">'
+        f'<strong style="color:{P["text"]};">How to read these panels: </strong>'
+        f'Each panel shows the target\'s standing in one of the nine '
+        f'diligence subpackages plus a <em>what this shows</em> '
+        f'explanation of what the band means in partner-speak. '
+        f'<span style="color:{P["positive"]};">GREEN</span> = in-line with peer norms; '
+        f'<span style="color:{P["warning"]};">YELLOW</span> = manageable but watch; '
+        f'<span style="color:{P["negative"]};">RED</span> / '
+        f'<span style="color:{P["critical"]};">CRITICAL</span> = thesis-breaking without '
+        f'offer-shape modification. Counterfactual Advisor at the bottom '
+        f'quantifies every RED/CRITICAL lever.</div>'
         f'</div>'
     )
     body = (

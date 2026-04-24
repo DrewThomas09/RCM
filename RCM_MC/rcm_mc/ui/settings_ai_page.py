@@ -86,6 +86,10 @@ def _call_stats(store: Any) -> Dict[str, Any]:
 
 def _features_card() -> str:
     items = [
+        ("Partner review confirmation",
+         "/deal/&lt;id&gt;/partner-review",
+         "Runs a cached Claude second-pass over the PE verdict so the UI "
+         "can show a concise confirm / watch-items summary."),
         ("IC Memo drafting",
          "/api/deals/&lt;id&gt;/memo?llm=1",
          "Generates the memo narrative sections with fact-checking "

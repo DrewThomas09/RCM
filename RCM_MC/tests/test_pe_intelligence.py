@@ -750,8 +750,29 @@ class TestPartnerReviewFromPacket(unittest.TestCase):
         d = review.to_dict()
         for key in ("deal_id", "reasonableness_checks", "heuristic_hits",
                     "narrative", "severity_counts", "band_counts",
-                    "recommendation", "has_critical_flag", "is_fundable"):
+                    "recommendation", "has_critical_flag", "is_fundable",
+                    "healthcare_checks", "claude_review"):
             self.assertIn(key, d)
+
+    def test_review_surfaces_additive_healthcare_checks(self) -> None:
+        packet = _make_packet_dict(
+            quality_profile={"physician_retention": 0.78},
+        )
+        review = partner_review(packet)
+        hc = review.healthcare_checks or {}
+        ids = {h["id"] for h in hc.get("hits", [])}
+        self.assertIn("physician_turnover_high", ids)
+        core_ids = {h.id for h in review.heuristic_hits}
+        self.assertNotIn("physician_turnover_high", core_ids)
+
+    def test_review_derives_denial_spike_from_series(self) -> None:
+        packet = _make_packet_dict(
+            operations_profile={"initial_denial_rate_series": [0.05, 0.08]},
+        )
+        review = partner_review(packet)
+        hc = review.healthcare_checks or {}
+        ids = {h["id"] for h in hc.get("hits", [])}
+        self.assertIn("payer_denial_spike", ids)
 
     def test_real_packet_instance_also_works(self) -> None:
         """If a real DealAnalysisPacket import path is available, we
@@ -2739,8 +2760,18 @@ class TestWorkbenchIntegration(unittest.TestCase):
                     "bull_case", "bear_case", "key_questions",
                     "severity_counts", "band_counts",
                     "heuristic_hits", "reasonableness_checks",
-                    "is_fundable", "has_critical_flag"):
+                    "is_fundable", "has_critical_flag",
+                    "healthcare_checks", "claude_review"):
             self.assertIn(key, payload)
+
+    def test_api_payload_includes_healthcare_checks(self) -> None:
+        packet = _make_packet_dict(
+            quality_profile={"physician_retention": 0.78},
+        )
+        payload = build_api_payload(packet)
+        hc = payload["healthcare_checks"] or {}
+        ids = {h["id"] for h in hc.get("hits", [])}
+        self.assertIn("physician_turnover_high", ids)
 
     def test_archetype_summary_returns_ranked(self) -> None:
         packet = _make_packet_dict()

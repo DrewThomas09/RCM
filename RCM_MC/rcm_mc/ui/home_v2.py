@@ -92,6 +92,173 @@ def _fmt(val: Any, dp: int = 1, scale: float = 1.0) -> str:
         return "—"
 
 
+def _quickstart_block() -> str:
+    """Empty-state quick-start — shown when no deals are in portfolio.
+
+    A first-time visitor needs a visible "try the tool" path.
+    Four pre-seeded fixture cards with one-click Run Pipeline CTAs
+    and partner-speak characterization of what each fixture tests.
+    """
+    fixtures = [
+        {
+            "id": "hospital_01_clean_acute",
+            "name": "Clean acute baseline",
+            "tagline": "Healthy reference hospital",
+            "description": (
+                "Baseline acute-care profile — denial rate ~4%, "
+                "A/R ~42 days, peer-norm operating metrics. Run "
+                "this first to see what the tool outputs against "
+                "a well-run target."
+            ),
+            "badge": "BASELINE",
+            "badge_tone": "positive",
+        },
+        {
+            "id": "hospital_02_denial_heavy",
+            "name": "Denial-heavy outpatient",
+            "tagline": "High audit-recovery opportunity",
+            "description": (
+                "Denial rate ~20%, systematic-misses drive the "
+                "EBITDA bridge. Typical roll-up target profile — "
+                "shows denial prediction + counterfactual advisor "
+                "in action."
+            ),
+            "badge": "OPPORTUNITY",
+            "badge_tone": "warning",
+        },
+        {
+            "id": "hospital_07_waterfall_concordant",
+            "name": "QoR concordant",
+            "tagline": "Quality-of-Revenue low-divergence",
+            "description": (
+                "Management revenue and claims-side accrual waterfall "
+                "agree within IMMATERIAL threshold — clean QoE target. "
+                "Good reference for a no-surprise QoR deliverable."
+            ),
+            "badge": "CLEAN QoR",
+            "badge_tone": "positive",
+        },
+        {
+            "id": "hospital_08_waterfall_critical",
+            "name": "QoR critical divergence",
+            "tagline": "7% revenue divergence — walkaway candidate",
+            "description": (
+                "Management revenue overstates claims-side accrual "
+                "by ~7%. Triggers CRITICAL QoR finding + IC Packet "
+                "walkaway memo. Shows the tool catching a revenue "
+                "miss that spreadsheets miss."
+            ),
+            "badge": "CRITICAL",
+            "badge_tone": "negative",
+        },
+    ]
+    tone_colors = {
+        "positive": PALETTE["positive"],
+        "warning": PALETTE["accent_amber"],
+        "negative": PALETTE["negative"],
+    }
+    # Default deal structure so the pipeline output has meaningful
+    # Deal MC numbers — acute-hospital typical.
+    base_qs = (
+        "&deal_name=Demo+Target"
+        "&specialty=HOSPITAL"
+        "&states=TX"
+        "&landlord=Medical+Properties+Trust"
+        "&lease_term_years=20"
+        "&lease_escalator_pct=0.035"
+        "&ebitdar_coverage=1.3"
+        "&annual_rent_usd=30000000"
+        "&revenue_year0_usd=250000000"
+        "&ebitda_year0_usd=35000000"
+        "&enterprise_value_usd=350000000"
+        "&equity_check_usd=150000000"
+        "&debt_usd=200000000"
+        "&entry_multiple=10.0"
+        "&market_category=MULTI_SITE_ACUTE_HOSPITAL"
+        "&oon_revenue_share=0.08"
+        "&ehr_vendor=EPIC"
+        "&n_runs=1000"
+    )
+    cards = []
+    for fx in fixtures:
+        tone_color = tone_colors.get(fx["badge_tone"], PALETTE["text_muted"])
+        pipeline_url = (
+            f'/diligence/thesis-pipeline?dataset={fx["id"]}{base_qs}'
+        )
+        profile_url = f'/diligence/benchmarks?dataset={fx["id"]}'
+        cards.append(
+            f'<div style="background:{PALETTE["bg_secondary"]};'
+            f'border:1px solid {PALETTE["border"]};border-radius:4px;'
+            f'padding:16px 18px;display:flex;flex-direction:column;'
+            f'gap:10px;transition:border-color 140ms ease;" '
+            f'onmouseover="this.style.borderColor=\'{tone_color}\'" '
+            f'onmouseout="this.style.borderColor=\'{PALETTE["border"]}\'">'
+            f'<div style="display:flex;justify-content:space-between;'
+            f'align-items:baseline;gap:10px;">'
+            f'<div style="font-size:10px;letter-spacing:1.4px;'
+            f'text-transform:uppercase;font-weight:700;color:{tone_color};'
+            f'border:1px solid {tone_color};padding:2px 8px;border-radius:3px;">'
+            f'{html.escape(fx["badge"])}</div>'
+            f'</div>'
+            f'<div>'
+            f'<div style="font-size:15px;color:{PALETTE["text_primary"]};'
+            f'font-weight:600;line-height:1.25;">'
+            f'{html.escape(fx["name"])}</div>'
+            f'<div style="font-size:11px;color:{PALETTE["text_muted"]};'
+            f'margin-top:2px;font-style:italic;">'
+            f'{html.escape(fx["tagline"])}</div>'
+            f'</div>'
+            f'<div style="font-size:11.5px;color:{PALETTE["text_muted"]};'
+            f'line-height:1.55;flex-grow:1;">'
+            f'{html.escape(fx["description"])}</div>'
+            f'<div style="display:flex;gap:8px;margin-top:4px;">'
+            f'<a href="{html.escape(pipeline_url)}" '
+            f'style="display:inline-block;padding:7px 14px;'
+            f'background:{PALETTE["accent_amber"]};color:{PALETTE["bg"]};'
+            f'border:0;font-size:10px;letter-spacing:1.3px;'
+            f'text-transform:uppercase;font-weight:700;text-decoration:none;'
+            f'border-radius:3px;">▶ Run Pipeline</a>'
+            f'<a href="{html.escape(profile_url)}" '
+            f'style="display:inline-block;padding:7px 14px;'
+            f'background:transparent;color:{PALETTE["text_link"]};'
+            f'border:1px solid {PALETTE["border"]};font-size:10px;'
+            f'letter-spacing:1.3px;text-transform:uppercase;'
+            f'font-weight:600;text-decoration:none;border-radius:3px;">'
+            f'Benchmarks Only</a>'
+            f'</div>'
+            f'</div>'
+        )
+    return (
+        f'<div class="cad-card" style="border:1px solid '
+        f'{PALETTE["accent_amber"]};position:relative;overflow:hidden;">'
+        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
+        f'background:linear-gradient(90deg,{PALETTE["accent_amber"]},'
+        f'{PALETTE["positive"]});"></div>'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;margin-bottom:6px;">'
+        f'<div style="display:flex;align-items:center;gap:10px;">'
+        f'<h2 style="margin:0;">Try the tool</h2>'
+        f'<span class="cad-section-code">QSX</span></div>'
+        f'<span style="font-size:10.5px;font-family:var(--cad-mono);'
+        f'letter-spacing:0.06em;text-transform:uppercase;'
+        f'color:{PALETTE["text_muted"]};">no portfolio data yet</span>'
+        f'</div>'
+        f'<div style="font-size:13px;color:{PALETTE["text_muted"]};'
+        f'line-height:1.6;max-width:880px;margin-bottom:14px;">'
+        f'Your portfolio is empty. Run the full diligence chain against '
+        f'one of four demo hospitals to see what the tool produces. '
+        f'<strong style="color:{PALETTE["text_primary"]};">'
+        f'▶ Run Pipeline</strong> executes bankruptcy scan → CCD ingest '
+        f'→ HFMA benchmarks → denial prediction → physician attrition → '
+        f'counterfactual → Steward → cyber → deal autopsy → Deal MC '
+        f'and emits every headline number in ~120ms.'
+        f'</div>'
+        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));'
+        f'gap:12px;">{"".join(cards)}</div>'
+        f'</div>'
+    )
+
+
 def render_home(
     market_pulse: Any,
     insights: List[Dict[str, Any]],
@@ -279,7 +446,16 @@ def render_home(
         f'{tile_html}</div>'
     )
 
-    body = f'{pulse_section}{portfolio_summary}{insights_section}{deals_section}{freshness_section}{links_section}'
+    # Empty-state quick-start block — shown only when the portfolio
+    # is empty.  Points a first-time user at the demo fixtures so
+    # they can run the pipeline and see real output immediately.
+    quickstart = _quickstart_block() if deals.empty else ""
+
+    body = (
+        f'{quickstart}{pulse_section}{portfolio_summary}'
+        f'{insights_section}{deals_section}'
+        f'{freshness_section}{links_section}'
+    )
 
     return chartis_shell(
         body, "Home",

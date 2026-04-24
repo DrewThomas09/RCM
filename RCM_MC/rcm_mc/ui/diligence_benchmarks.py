@@ -138,25 +138,88 @@ def _placeholder_page() -> str:
 def _hero(bundle: KPIBundle) -> str:
     # Primary number: Days in A/R (the one metric every CFO reads first).
     dar = bundle.days_in_ar
+    band = _BENCHMARKS.get("days_in_ar", {})
+    peer_median = band.get("median")
     if dar.value is not None:
         primary_num = f"{dar.value:,.1f}"
         primary_unit = "days"
+        color = _colour_for(dar.value, band)
+        band_label = _band_label(dar.value, band)
+        if peer_median is not None:
+            delta = dar.value - peer_median
+            delta_txt = (
+                f'{delta:+.1f} days vs HFMA peer median '
+                f'{peer_median:.0f}d'
+            )
+            if delta < 0:
+                summary = (
+                    f"Claims are converting to cash faster than the "
+                    f"HFMA acute-hospital peer median ({peer_median:.0f} days). "
+                    f"This target's working capital efficiency is "
+                    f"above average — fewer dollars tied up in unpaid "
+                    f"claims than comparable hospitals."
+                )
+            elif delta > 10:
+                summary = (
+                    f"Days in A/R is {delta:.0f} days slower than the "
+                    f"HFMA acute-hospital peer median ({peer_median:.0f} days). "
+                    f"Every 10 days of elevated A/R is roughly 2.7% of "
+                    f"annual revenue sitting in working capital — an "
+                    f"EBITDA-bridge opportunity when modeled at the "
+                    f"cost-of-capital rate."
+                )
+            else:
+                summary = (
+                    f"Days in A/R is within the HFMA acute-hospital "
+                    f"peer median range ({peer_median:.0f}d ± 10). "
+                    f"Working capital is neither a strength nor a bridge "
+                    f"lever — look elsewhere (denials, Medicare mix) "
+                    f"for upside."
+                )
+        else:
+            delta_txt = ""
+            summary = ""
     else:
         primary_num = "—"
         primary_unit = "insufficient data"
+        color = P["text_faint"]
+        band_label = "Insufficient data"
+        delta_txt = ""
+        summary = (
+            "The CCD does not contain enough submit-date / paid-date "
+            "pairs to compute days-in-A/R. Typically occurs when claim "
+            "lifecycle fields weren't extracted from the source EMR."
+        )
+
+    summary_html = (
+        f'<div style="background:{P["panel_alt"]};border-left:3px solid '
+        f'{P["accent"]};padding:10px 14px;margin-top:14px;'
+        f'font-size:12.5px;color:{P["text_dim"]};line-height:1.6;'
+        f'max-width:760px;border-radius:0 3px 3px 0;">'
+        f'<strong style="color:{P["text"]};">What this shows: </strong>'
+        f'{html.escape(summary)}</div>'
+    ) if summary else ""
+
     return (
         f'<div style="padding:32px 0 16px 0;">'
         f'  <div style="font-size:10px;color:{P["text_faint"]};letter-spacing:1px;'
-        f'text-transform:uppercase;margin-bottom:12px;">Primary KPI</div>'
-        f'  <div style="display:flex;align-items:baseline;gap:12px;">'
-        f'    <div style="font-size:56px;color:{P["text"]};font-weight:300;'
-        f'font-family:\'JetBrains Mono\',monospace;font-variant-numeric:tabular-nums;">'
+        f'text-transform:uppercase;margin-bottom:12px;">Primary KPI · Days in A/R</div>'
+        f'  <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">'
+        f'    <div style="font-size:56px;color:{color};font-weight:300;'
+        f'font-family:\'JetBrains Mono\',monospace;font-variant-numeric:tabular-nums;line-height:1;">'
         f'{primary_num}</div>'
-        f'    <div style="font-size:14px;color:{P["text_dim"]};">{primary_unit} · {html.escape(dar.citation)}</div>'
+        f'    <div style="font-size:14px;color:{P["text_dim"]};">'
+        f'{primary_unit} · {html.escape(dar.citation)}</div>'
         f'  </div>'
-        f'  <div style="font-size:12px;color:{P["text_faint"]};margin-top:4px;">'
-        f'  n={dar.sample_size} · {html.escape(dar.reason or "")}'
+        f'  <div style="font-size:11px;color:{color};margin-top:6px;font-weight:600;">'
+        f'{html.escape(band_label)}'
+        + (f' · <span style="color:{P["text_faint"]};font-weight:400;">'
+           f'{html.escape(delta_txt)}</span>' if delta_txt else '')
+        + f'</div>'
+        f'  <div style="font-size:11px;color:{P["text_faint"]};margin-top:3px;">'
+        f'  n={dar.sample_size} claims · {html.escape(dar.reason or "")}'
         f'  </div>'
+        f'{summary_html}'
         f'</div>'
     )
 
@@ -182,26 +245,67 @@ def _kpi_scorecard(bundle: KPIBundle) -> str:
 def _kpi_card(key: str, kpi: KPIResult) -> str:
     band = _BENCHMARKS.get(key, {})
     label = band.get("label", kpi.name)
+    unit = band.get("unit", kpi.unit)
+    peer_median = band.get("median")
+    better = band.get("better", "lower")
     if kpi.value is None:
         value_str = "—"
         color = P["text_faint"]
         band_label = "Insufficient data"
         reason = kpi.reason or ""
+        peer_line = ""
     else:
         value_str = _format_value(kpi.value, kpi.unit)
         color = _colour_for(kpi.value, band)
         band_label = _band_label(kpi.value, band)
-        reason = f"n={kpi.sample_size}"
+        reason = f"n={kpi.sample_size} claims"
+        # Peer-median delta line.  Shows signed delta in native unit
+        # with an arrow indicating whether that sign means good/bad.
+        if peer_median is not None:
+            delta = kpi.value - peer_median
+            if unit == "pct":
+                delta_txt = f"{delta*100:+.1f} pp"
+                peer_txt = f"peer median {peer_median*100:.1f}%"
+            elif unit == "days":
+                delta_txt = f"{delta:+.0f}d"
+                peer_txt = f"peer median {peer_median:.0f}d"
+            elif unit == "ratio":
+                delta_txt = f"{delta:+.3f}"
+                peer_txt = f"peer median {peer_median:.3f}"
+            else:
+                delta_txt = f"{delta:+.2f}"
+                peer_txt = f"peer median {peer_median:.2f}"
+            # Arrow: upward triangle if above median, downward if below.
+            # Color the arrow by whether delta is favorable.
+            if delta > 0:
+                arrow = "▲"
+                favorable = (better == "higher")
+            elif delta < 0:
+                arrow = "▼"
+                favorable = (better == "lower")
+            else:
+                arrow = "●"
+                favorable = True
+            arrow_color = P["positive"] if favorable else P["negative"]
+            peer_line = (
+                f'<div style="font-size:10px;margin-top:3px;'
+                f'color:{P["text_faint"]};">'
+                f'<span style="color:{arrow_color};">{arrow}</span> '
+                f'{html.escape(delta_txt)} vs {html.escape(peer_txt)}</div>'
+            )
+        else:
+            peer_line = ""
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
         f'border-radius:4px;padding:14px 16px;">'
         f'  <div style="font-size:10px;color:{P["text_faint"]};letter-spacing:.5px;'
         f'text-transform:uppercase;margin-bottom:10px;">{html.escape(label)}</div>'
         f'  <div style="font-family:\'JetBrains Mono\',monospace;'
-        f'font-variant-numeric:tabular-nums;font-size:26px;color:{color};">'
-        f'{value_str}</div>'
-        f'  <div style="font-size:10px;color:{P["text_dim"]};margin-top:6px;">'
-        f'{html.escape(band_label)}</div>'
+        f'font-variant-numeric:tabular-nums;font-size:26px;color:{color};'
+        f'line-height:1;">{value_str}</div>'
+        f'  <div style="font-size:10px;color:{color};margin-top:6px;'
+        f'font-weight:600;">{html.escape(band_label)}</div>'
+        f'  {peer_line}'
         f'  <div style="font-size:10px;color:{P["text_faint"]};margin-top:4px;">'
         f'{html.escape(reason)}</div>'
         f'</div>'

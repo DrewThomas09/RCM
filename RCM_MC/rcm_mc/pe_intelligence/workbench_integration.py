@@ -161,4 +161,6 @@ def build_api_payload(packet: Any) -> Dict[str, Any]:
         "context_summary": dict(review.context_summary),
         "has_critical_flag": review.has_critical_flag(),
         "is_fundable": review.is_fundable(),
+        "healthcare_checks": dict(review.healthcare_checks or {}),
+        "claude_review": (dict(review.claude_review) if review.claude_review else None),
     }

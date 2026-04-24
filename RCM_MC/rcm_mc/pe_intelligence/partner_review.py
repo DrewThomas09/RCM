@@ -26,12 +26,12 @@ from typing import Any, Dict, List, Optional
 from .heuristics import (
     HeuristicContext,
     HeuristicHit,
-    run_heuristics,
     SEV_CRITICAL,
     SEV_HIGH,
     SEV_MEDIUM,
     SEV_LOW,
 )
+from .extra_red_flags import EXTRA_RED_FLAG_FIELDS, run_extra_red_flags
 from .red_flags import RED_FLAG_FIELDS, run_all_rules
 from .narrative import (
     NarrativeBlock,
@@ -49,6 +49,34 @@ from .reasonableness import (
     VERDICT_STRETCH,
     VERDICT_UNKNOWN,
     run_reasonableness_checks,
+)
+
+_SIGNAL_FIELDS = tuple(dict.fromkeys(RED_FLAG_FIELDS + EXTRA_RED_FLAG_FIELDS))
+_SIGNAL_FIELD_ALIASES: Dict[str, tuple[str, ...]] = {
+    "physician_retention_pct": ("physician_retention",),
+    "unfilled_rn_positions_pct": ("rn_vacancy_pct", "nurse_vacancy_pct"),
+    "bad_debt_growth_yoy_pct": ("bad_debt_growth_pct",),
+    "open_cms_inspection": ("open_regulatory_inspection",),
+    "top_payer_churn_risk": ("top_payer_churn",),
+}
+_SIGNAL_PRIORITY_SECTIONS = (
+    "profile",
+    "observed_metrics",
+    "rcm_profile",
+    "quality_profile",
+    "quality_metrics",
+    "labor_analytics",
+    "labor_profile",
+    "financial_profile",
+    "working_capital",
+    "regulatory_profile",
+    "operations_profile",
+    "ops_profile",
+    "it_profile",
+    "lease_profile",
+    "value_bridge_result",
+    "enterprise_value_summary",
+    "completeness",
 )
 
 
@@ -73,6 +101,8 @@ class PartnerReview:
     stress_scenarios: Optional[Dict[str, Any]] = None
     white_space: Optional[Dict[str, Any]] = None
     investability: Optional[Dict[str, Any]] = None
+    healthcare_checks: Optional[Dict[str, Any]] = None
+    claude_review: Optional[Dict[str, Any]] = None
 
     def has_critical_flag(self) -> bool:
         return any(h.severity == SEV_CRITICAL for h in self.heuristic_hits)
@@ -117,6 +147,8 @@ class PartnerReview:
             "stress_scenarios": dict(self.stress_scenarios) if self.stress_scenarios else None,
             "white_space": dict(self.white_space) if self.white_space else None,
             "investability": dict(self.investability) if self.investability else None,
+            "healthcare_checks": dict(self.healthcare_checks) if self.healthcare_checks else None,
+            "claude_review": dict(self.claude_review) if self.claude_review else None,
         }
 
 
@@ -144,6 +176,108 @@ def _to_dict(obj: Any) -> Dict[str, Any]:
     if hasattr(obj, "__dict__"):
         return {k: v for k, v in obj.__dict__.items() if not k.startswith("_")}
     return {}
+
+
+def _unwrap_field_value(value: Any) -> Any:
+    """Normalize metric-ish wrappers into a plain scalar when possible."""
+    if value is None:
+        return None
+    if isinstance(value, dict) and value.get("value") is not None:
+        return value.get("value")
+    raw = getattr(value, "value", None)
+    if raw is not None:
+        return raw
+    return value
+
+
+def _direct_field_value(obj: Any, field_name: str) -> Any:
+    if obj is None:
+        return None
+    if isinstance(obj, dict):
+        if field_name in obj:
+            return _unwrap_field_value(obj.get(field_name))
+        return None
+    try:
+        value = getattr(obj, field_name, None)
+    except Exception:
+        return None
+    return _unwrap_field_value(value)
+
+
+def _iter_packet_children(obj: Any) -> List[Any]:
+    if obj is None or isinstance(obj, (str, bytes, int, float, bool)):
+        return []
+    if isinstance(obj, dict):
+        return list(obj.values())
+    if isinstance(obj, (list, tuple, set)):
+        return list(obj)
+    if hasattr(obj, "__dict__"):
+        return [
+            v for k, v in vars(obj).items()
+            if not str(k).startswith("_")
+        ]
+    return []
+
+
+def _find_packet_value(obj: Any, field_name: str, *, max_depth: int = 6) -> Any:
+    """Recursively search a packet-like object for a field.
+
+    This lets additive healthcare checks find signals even when the packet
+    producer stores them outside the historical ``profile`` / ``observed``
+    sections.
+    """
+    seen: set[int] = set()
+
+    def _walk(cur: Any, depth: int) -> Any:
+        if cur is None or depth > max_depth:
+            return None
+        if isinstance(cur, (str, bytes, int, float, bool)):
+            return None
+        oid = id(cur)
+        if oid in seen:
+            return None
+        seen.add(oid)
+
+        direct = _direct_field_value(cur, field_name)
+        if direct is not None:
+            return direct
+
+        for child in _iter_packet_children(cur):
+            found = _walk(child, depth + 1)
+            if found is not None:
+                return found
+        return None
+
+    return _walk(obj, 0)
+
+
+def _derive_denial_qoq_delta_bps(packet: Any) -> Optional[float]:
+    series = (
+        _find_packet_value(packet, "initial_denial_rate_series")
+        or _find_packet_value(packet, "denial_rate_series")
+    )
+    if not isinstance(series, (list, tuple)) or len(series) < 2:
+        return None
+    latest = _pct(series[-1])
+    prior = _pct(series[-2])
+    if latest is None or prior is None:
+        return None
+    return (latest - prior) * 10_000.0
+
+
+def _lookup_signal_value(packet: Any, field_name: str) -> Any:
+    candidates = (field_name,) + _SIGNAL_FIELD_ALIASES.get(field_name, ())
+    for name in candidates:
+        for section_name in _SIGNAL_PRIORITY_SECTIONS:
+            found = _direct_field_value(_packet_section(packet, section_name), name)
+            if found is not None:
+                return found
+        found = _find_packet_value(packet, name)
+        if found is not None:
+            return found
+    if field_name == "denial_rate_qoq_delta_bps":
+        return _derive_denial_qoq_delta_bps(packet)
+    return None
 
 
 def _get_metric_value(metrics: Any, key: str) -> Optional[float]:
@@ -469,20 +603,10 @@ def _extract_context(packet: Any) -> HeuristicContext:
 
     # Red-flag fields: pulled from profile or observed (duck-typed).
     red_flag_values: Dict[str, Any] = {}
-    for field_name in RED_FLAG_FIELDS:
-        for source in (profile, observed, vb, ev):
-            if source is None:
-                continue
-            val = None
-            if isinstance(source, dict):
-                val = source.get(field_name)
-                if isinstance(val, dict):
-                    val = val.get("value")
-            else:
-                val = getattr(source, field_name, None)
-            if val is not None:
-                red_flag_values[field_name] = val
-                break
+    for field_name in _SIGNAL_FIELDS:
+        val = _lookup_signal_value(packet, field_name)
+        if val is not None:
+            red_flag_values[field_name] = val
 
     ctx_obj = HeuristicContext(
         payer_mix=_payer_mix(profile),
@@ -551,6 +675,45 @@ def _context_summary(ctx: HeuristicContext) -> Dict[str, Any]:
     }
 
 
+def _build_healthcare_checks(ctx: HeuristicContext) -> Dict[str, Any]:
+    """Run additive healthcare-specific checks without altering core verdicts."""
+    hits = run_extra_red_flags(ctx)
+    sev_counts = {SEV_CRITICAL: 0, SEV_HIGH: 0, SEV_MEDIUM: 0, SEV_LOW: 0}
+    category_counts: Dict[str, int] = {}
+    for hit in hits:
+        if hit.severity in sev_counts:
+            sev_counts[hit.severity] += 1
+        cat = str(hit.category or "OTHER")
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+
+    focus_areas = [
+        {"category": cat, "count": count}
+        for cat, count in sorted(
+            category_counts.items(),
+            key=lambda item: (-item[1], item[0]),
+        )
+    ]
+    if hits:
+        categories = ", ".join(cat.lower() for cat in category_counts.keys())
+        summary = (
+            f"{len(hits)} supplemental healthcare checks fired across "
+            f"{categories}."
+        )
+    else:
+        summary = (
+            "No supplemental healthcare checks fired from the packet fields "
+            "currently populated."
+        )
+    return {
+        "summary": summary,
+        "total_hits": len(hits),
+        "severity_counts": sev_counts,
+        "category_counts": category_counts,
+        "focus_areas": focus_areas,
+        "hits": [h.to_dict() for h in hits],
+    }
+
+
 # ── Entry point ──────────────────────────────────────────────────────
 
 def partner_review(packet: Any) -> PartnerReview:
@@ -597,6 +760,7 @@ def partner_review(packet: Any) -> PartnerReview:
         heuristic_hits=hits,
         narrative=narrative,
     )
+    review.healthcare_checks = _build_healthcare_checks(ctx)
     _enrich_secondary_analytics(review, ctx, packet=packet)
     return review
 
@@ -646,6 +810,7 @@ def partner_review_from_context(ctx: HeuristicContext, *, deal_id: str = "",
         heuristic_hits=hits,
         narrative=narrative,
     )
+    review.healthcare_checks = _build_healthcare_checks(ctx)
     _enrich_secondary_analytics(review, ctx, packet=None)
     return review
 

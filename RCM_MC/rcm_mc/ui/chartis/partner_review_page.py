@@ -56,6 +56,15 @@ _SEV_COLORS = {
     "LOW": P["text_dim"],
 }
 
+_CLAUDE_STATUS_COLORS = {
+    "confirmed": P["positive"],
+    "needs_attention": P["warning"],
+    "insufficient_support": P["negative"],
+    "not_configured": P["text_faint"],
+    "call_failed": P["negative"],
+    "failed": P["negative"],
+}
+
 
 def _panel(title: str, body: str, *, code: str = "") -> str:
     code_html = (
@@ -273,24 +282,35 @@ def _bands_table(review: Any) -> str:
     )
 
 
-def _hits_table(review: Any, *, severities: Optional[List[str]] = None) -> str:
-    hits = list(review.heuristic_hits or [])
+def _hit_attr(hit: Any, field: str, default: Any = None) -> Any:
+    if isinstance(hit, dict):
+        return hit.get(field, default)
+    return getattr(hit, field, default)
+
+
+def _hits_table(
+    review: Any = None,
+    *,
+    severities: Optional[List[str]] = None,
+    hits: Optional[List[Any]] = None,
+) -> str:
+    hits = list(hits if hits is not None else (review.heuristic_hits or []))
     if severities:
-        hits = [h for h in hits if str(getattr(h, "severity", "")) in severities]
+        hits = [h for h in hits if str(_hit_attr(h, "severity", "")) in severities]
     if not hits:
         return _empty_paragraph("No heuristic hits at the requested severities.")
     order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
-    hits_sorted = sorted(hits, key=lambda h: order.get(str(h.severity), 9))
+    hits_sorted = sorted(hits, key=lambda h: order.get(str(_hit_attr(h, "severity")), 9))
     rows = []
     for h in hits_sorted:
-        sev = str(getattr(h, "severity", "LOW"))
+        sev = str(_hit_attr(h, "severity", "LOW"))
         col = _SEV_COLORS.get(sev, P["text_dim"])
-        title = _html.escape(str(getattr(h, "title", "—")))
-        finding = _html.escape(str(getattr(h, "finding", "") or ""))
-        voice = _html.escape(str(getattr(h, "partner_voice", "") or ""))
-        category = _html.escape(str(getattr(h, "category", "") or ""))
-        remediation = _html.escape(str(getattr(h, "remediation", "") or ""))
-        trigger = getattr(h, "trigger_metrics", None) or []
+        title = _html.escape(str(_hit_attr(h, "title", "—")))
+        finding = _html.escape(str(_hit_attr(h, "finding", "") or ""))
+        voice = _html.escape(str(_hit_attr(h, "partner_voice", "") or ""))
+        category = _html.escape(str(_hit_attr(h, "category", "") or ""))
+        remediation = _html.escape(str(_hit_attr(h, "remediation", "") or ""))
+        trigger = _hit_attr(h, "trigger_metrics", None) or []
         trig_str = _html.escape(", ".join(str(t) for t in trigger))
         rows.append(
             f'<tr>'
@@ -320,6 +340,91 @@ def _hits_table(review: Any, *, severities: Optional[List[str]] = None) -> str:
         f'<th style="width:90px;">Severity</th><th style="width:120px;">Category</th>'
         f'<th>Title</th><th>Finding</th><th>Triggered By</th>'
         f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
+    )
+
+
+def _healthcare_checks_panel(review: Any) -> str:
+    checks = getattr(review, "healthcare_checks", None) or {}
+    sev = checks.get("severity_counts") or {}
+    focus_areas = list(checks.get("focus_areas") or [])
+    hits = list(checks.get("hits") or [])
+    total_hits = int(checks.get("total_hits") or len(hits))
+
+    kpis = (
+        ck_kpi_block("Supplemental Hits", str(total_hits), "additive")
+        + ck_kpi_block("Critical", str(sev.get("CRITICAL", 0)), "extra checks")
+        + ck_kpi_block("High", str(sev.get("HIGH", 0)), "extra checks")
+        + ck_kpi_block("Medium", str(sev.get("MEDIUM", 0)), "extra checks")
+    )
+    chips = "".join(
+        f'<span class="ck-sig" style="margin-right:6px;margin-bottom:6px;">'
+        f'{_html.escape(str(area.get("category", "OTHER")))} '
+        f'{int(area.get("count", 0))}</span>'
+        for area in focus_areas[:6]
+    )
+    header = (
+        f'<p style="color:{P["text_dim"]};font-size:11.5px;line-height:1.55;'
+        f'margin:0 0 10px;">'
+        f'{_html.escape(str(checks.get("summary") or "No supplemental checks available."))} '
+        f'These checks are additive and do not override the core verdict.</p>'
+    )
+    chips_block = (
+        f'<div style="margin:0 0 12px;">{chips}</div>' if chips else ""
+    )
+    return (
+        header
+        + f'<div class="ck-kpi-grid" style="margin-bottom:12px;">{kpis}</div>'
+        + chips_block
+        + _hits_table(hits=hits)
+    )
+
+
+def _claude_review_panel(review: Any) -> str:
+    claude = getattr(review, "claude_review", None) or {}
+    status = str(claude.get("status") or "not_configured")
+    color = _CLAUDE_STATUS_COLORS.get(status, P["text_faint"])
+    status_label = status.replace("_", " ").upper()
+    summary = str(claude.get("summary") or "Claude review not available.").strip()
+    model = str(claude.get("model") or "fallback")
+    latency = claude.get("latency_ms")
+    cost = claude.get("cost_usd_estimate")
+    confirmed = [str(x) for x in list(claude.get("confirmed_points") or []) if str(x).strip()]
+    concerns = [str(x) for x in list(claude.get("concerns") or []) if str(x).strip()]
+
+    meta_bits = [model]
+    if isinstance(latency, (int, float)) and latency > 0:
+        meta_bits.append(f"{latency:.0f} ms")
+    if isinstance(cost, (int, float)) and cost > 0:
+        meta_bits.append(f"${cost:.4f}")
+    meta = " · ".join(meta_bits)
+
+    def _bullet_list(items: List[str], label: str, tone: str) -> str:
+        if not items:
+            return ""
+        lis = "".join(
+            f'<li style="padding:4px 0;color:{P["text"]};font-size:11.5px;line-height:1.5;">'
+            f'{_html.escape(item)}</li>'
+            for item in items[:4]
+        )
+        return (
+            f'<div style="margin-top:10px;">'
+            f'<div style="font-family:var(--ck-mono);font-size:9px;letter-spacing:0.12em;'
+            f'color:{tone};margin-bottom:4px;">{_html.escape(label)}</div>'
+            f'<ul style="margin:0;padding-left:18px;">{lis}</ul>'
+            f'</div>'
+        )
+
+    return (
+        f'<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;">'
+        f'<span class="ck-sig" style="color:{color};border:1px solid {color};'
+        f'background:rgba(255,255,255,0.02);">{_html.escape(status_label)}</span>'
+        f'<span style="color:{P["text_faint"]};font-family:var(--ck-mono);font-size:10px;">'
+        f'{_html.escape(meta)}</span>'
+        f'</div>'
+        f'<p style="color:{P["text_dim"]};font-size:11.5px;line-height:1.6;margin:10px 0 0;">'
+        f'{_html.escape(summary)}</p>'
+        + _bullet_list(confirmed, "CONFIRMED POINTS", P["positive"])
+        + _bullet_list(concerns, "WATCH ITEMS", P["warning"])
     )
 
 
@@ -508,6 +613,16 @@ def render_partner_review(
         _change_my_mind(review),
         code="FLP",
     )
+    healthcare_section = _panel(
+        "Supplemental Healthcare Checks",
+        _healthcare_checks_panel(review),
+        code="HCX",
+    )
+    claude_section = _panel(
+        "Claude Look",
+        _claude_review_panel(review),
+        code="CLD",
+    )
     bands_section = _panel(
         f"Reasonableness Bands ({len(review.reasonableness_checks or [])})",
         _bands_table(review),
@@ -574,6 +689,8 @@ def render_partner_review(
         + kpi_strip
         + narrative_section
         + change_section
+        + healthcare_section
+        + claude_section
         + bands_section
         + crit_section
         + other_section

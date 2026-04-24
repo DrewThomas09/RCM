@@ -34,8 +34,8 @@ from __future__ import annotations
 
 from .advisor import (
     Counterfactual, CounterfactualSet, advise_all, for_antitrust,
-    for_cpom, for_cyber, for_nsa, for_site_neutral, for_steward,
-    for_team,
+    for_cpom, for_cyber, for_nsa, for_physician_attrition,
+    for_site_neutral, for_steward, for_team,
 )
 from .bridge_integration import (
     CounterfactualLever, counterfactual_bridge_lever,
@@ -54,6 +54,7 @@ __all__ = [
     "for_cpom",
     "for_cyber",
     "for_nsa",
+    "for_physician_attrition",
     "for_site_neutral",
     "for_steward",
     "for_team",

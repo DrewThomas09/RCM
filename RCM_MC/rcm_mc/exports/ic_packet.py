@@ -616,6 +616,483 @@ def _counterfactual_section(cfs: Optional[Any]) -> str:
     )
 
 
+def _management_scorecard_section(
+    mgmt_report: Optional[Any],
+) -> str:
+    """Render the Management Scorecard section for the IC Packet.
+
+    Quietly suppressed when aggregate score is high AND no red
+    flags — partners don't need a "management looks fine" section.
+    """
+    if mgmt_report is None:
+        return ""
+    scores = list(getattr(mgmt_report, "scores", []) or [])
+    if not scores:
+        return ""
+    aggregate = int(getattr(mgmt_report, "aggregate_overall", 0) or 0)
+    red_flags = int(getattr(mgmt_report, "red_flag_count", 0) or 0)
+    critical = int(getattr(mgmt_report, "critical_flag_count", 0) or 0)
+    # Always render when there are red flags or aggregate < 70.
+    # Otherwise print the high-confidence all-clear.
+    if red_flags == 0 and aggregate >= 75:
+        narrative = (
+            f'<p class="hedge">Team aggregate {aggregate}/100 with '
+            f'no red flags. Management is a thesis enabler — no '
+            f'haircut required.</p>'
+        )
+        return '<h2>Management Scorecard</h2>' + narrative
+
+    headline = (
+        f'<p><strong>Team aggregate:</strong> {aggregate}/100 · '
+        f'<strong>Red flags:</strong> {red_flags} '
+        f'({critical} CRITICAL)</p>'
+    )
+    haircut = getattr(mgmt_report, "bridge_haircut", None)
+    haircut_html = ""
+    if haircut is not None and getattr(
+        haircut, "recommended_haircut_pct", 0.0,
+    ) > 0.01:
+        pct = float(haircut.recommended_haircut_pct or 0.0)
+        dollar = float(
+            getattr(haircut, "dollar_adjustment_usd", 0.0) or 0.0,
+        )
+        conf = str(getattr(haircut, "confidence", "MEDIUM"))
+        dollar_text = (
+            f' (≈ ${dollar:,.0f} EBITDA)' if dollar > 0 else ""
+        )
+        haircut_html = (
+            f'<p><strong>Recommended guidance haircut:</strong> '
+            f'{pct*100:.1f}%{dollar_text} · confidence '
+            f'<strong>{html.escape(conf)}</strong></p>'
+        )
+
+    # List critical-flag executives by name with the top flag
+    focus_rows: List[str] = []
+    for s in scores:
+        if not getattr(s, "is_red_flag", False):
+            continue
+        exec_obj = getattr(s, "executive", None)
+        name = html.escape(str(getattr(exec_obj, "name", "—")))
+        role_obj = getattr(exec_obj, "role", None)
+        role_val = getattr(role_obj, "value", role_obj)
+        role = html.escape(str(role_val or ""))
+        top_flag = None
+        for rf in (getattr(s, "red_flags", []) or []):
+            if getattr(rf, "severity", "") in ("CRITICAL", "HIGH"):
+                top_flag = rf
+                break
+        flag_text = (
+            html.escape(str(getattr(top_flag, "detail", "") or ""))
+            if top_flag else ""
+        )
+        severity = (
+            html.escape(str(getattr(top_flag, "severity", "") or ""))
+            if top_flag else ""
+        )
+        overall = int(getattr(s, "overall", 0) or 0)
+        focus_rows.append(
+            f'<li><strong>{name}</strong> ({role}) · overall '
+            f'{overall}/100'
+            + (f' · <strong>{severity}</strong> — {flag_text}'
+               if flag_text else '')
+            + '</li>'
+        )
+    focus_html = (
+        f'<ul class="tight">{"".join(focus_rows)}</ul>'
+        if focus_rows else ''
+    )
+
+    return (
+        '<h2>Management Scorecard</h2>'
+        f'{headline}'
+        f'{haircut_html}'
+        f'<p class="hedge">Each executive scored on four dimensions: '
+        'forecast reliability (guidance-vs-actual miss rate), comp '
+        'structure (FMV band + alignment), tenure, and prior-role '
+        'reputation (outcome at prior employer).</p>'
+        f'{focus_html}'
+    )
+
+
+def _exit_strategy_section(
+    exit_report: Optional[Any],
+) -> str:
+    """Render the Exit Strategy section from an ExitTimingReport.
+
+    Quietly suppressed when there's no recommendation (bad inputs,
+    no curve clears the 1.5x MOIC gate).
+    """
+    if exit_report is None:
+        return ""
+    rec = getattr(exit_report, "recommendation", None)
+    if rec is None:
+        return ""
+    exit_year = getattr(rec, "exit_year", None)
+    buyer_label = str(getattr(rec, "buyer_label", "") or "")
+    moic = float(getattr(rec, "expected_moic", 0.0) or 0.0)
+    irr = float(getattr(rec, "expected_irr", 0.0) or 0.0)
+    proceeds = float(
+        getattr(rec, "probability_weighted_proceeds_usd", 0.0) or 0.0,
+    )
+    rationale = str(getattr(rec, "rationale", "") or "")
+
+    headline = (
+        f'<p><strong>Recommended exit:</strong> Year {exit_year} to '
+        f'<strong>{html.escape(buyer_label)}</strong> · MOIC '
+        f'<strong>{moic:.2f}x</strong> · IRR '
+        f'<strong>{irr*100:.1f}%</strong> · probability-weighted '
+        f'proceeds ${proceeds:,.0f}</p>'
+    )
+
+    # Curve snapshot — top 3 candidate years by IRR
+    curve = list(getattr(exit_report, "curve", []) or [])
+    curve_top = sorted(
+        curve, key=lambda p: getattr(p, "irr", 0.0), reverse=True,
+    )[:3]
+    curve_rows: List[str] = []
+    for p in curve_top:
+        curve_rows.append(
+            f'<li>Year {getattr(p, "year", "?")}: MOIC '
+            f'{getattr(p, "moic", 0.0):.2f}x · IRR '
+            f'{getattr(p, "irr", 0.0)*100:.1f}% · proceeds '
+            f'${getattr(p, "equity_proceeds_usd", 0.0):,.0f}</li>'
+        )
+
+    # Buyer-fit top 3
+    buyers = sorted(
+        list(getattr(exit_report, "buyer_fit", []) or []),
+        key=lambda b: getattr(b, "fit_score", 0), reverse=True,
+    )[:3]
+    buyer_rows: List[str] = []
+    for b in buyers:
+        label = html.escape(str(getattr(b, "label", "") or ""))
+        fit = int(getattr(b, "fit_score", 0) or 0)
+        mult = float(
+            getattr(b, "expected_multiple_turns_delta", 0.0) or 0.0,
+        )
+        cert = float(getattr(b, "close_certainty", 0.0) or 0.0)
+        buyer_rows.append(
+            f'<li><strong>{label}</strong> · fit {fit}/100 · '
+            f'multiple delta {mult:+.1f}x · close certainty '
+            f'{cert*100:.0f}%</li>'
+        )
+
+    narrative = (
+        '<p class="hedge">The Exit Timing analyzer computes an IRR × '
+        'MOIC curve across candidate exit years 2-7 and scores each '
+        'buyer type (strategic / PE secondary / IPO / sponsor-hold-'
+        'extension) against the target profile. The recommendation '
+        'maximises probability-weighted IRR (IRR × close certainty), '
+        'filtered to MOIC ≥ 1.5x.</p>'
+    )
+
+    return (
+        '<h2>Exit Strategy</h2>'
+        f'{headline}'
+        f'<p><strong>Rationale:</strong> {html.escape(rationale)}</p>'
+        f'{narrative}'
+        f'<p><strong>Top exit-year candidates (by IRR):</strong></p>'
+        f'<ul class="tight">{"".join(curve_rows)}</ul>'
+        f'<p><strong>Top buyer-type fits:</strong></p>'
+        f'<ul class="tight">{"".join(buyer_rows)}</ul>'
+    )
+
+
+def _roster_optimization_section(
+    eu_report: Optional[Any],
+) -> str:
+    """Render the Per-Provider Roster Optimization section from an
+    EconomicUnitReport.
+
+    Quietly suppressed when no drop candidates exist — we don't
+    print "no optimization" as a risk claim.
+    """
+    if eu_report is None:
+        return ""
+    opt = getattr(eu_report, "optimization", None)
+    if opt is None:
+        return ""
+    candidates = list(getattr(opt, "candidates", []) or [])
+    if not candidates:
+        return ""
+    cap_candidates = candidates[:10]
+
+    uplift = float(getattr(opt, "ebitda_uplift_usd", 0.0) or 0.0)
+    revenue_forgone = float(
+        getattr(opt, "total_revenue_forgone_usd", 0.0) or 0.0,
+    )
+    confidence = str(getattr(opt, "confidence", "MEDIUM"))
+
+    headline = (
+        f'<p><strong>EBITDA uplift at close:</strong> '
+        f'${uplift:,.0f} · <strong>Revenue forgone:</strong> '
+        f'${revenue_forgone:,.0f} · confidence '
+        f'<strong>{html.escape(confidence)}</strong></p>'
+    )
+
+    rows: List[str] = []
+    for c in cap_candidates:
+        pid = html.escape(str(getattr(c, "provider_id", "—")))
+        specialty = html.escape(
+            str(getattr(c, "specialty", "") or "").replace("_", " "),
+        )
+        coll = float(getattr(c, "collections_annual_usd", 0.0) or 0.0)
+        comp = float(getattr(c, "total_comp_usd", 0.0) or 0.0)
+        contrib_obs = float(
+            getattr(c, "contribution_usd", 0.0) or 0.0,
+        )
+        contrib_fmv = float(
+            getattr(c, "fmv_neutral_contribution_usd", 0.0) or 0.0,
+        )
+        rows.append(
+            f'<li><strong>{pid}</strong> ({specialty}): '
+            f'collections ${coll:,.0f} · comp ${comp:,.0f} · '
+            f'contribution ${contrib_obs:,.0f} @ current, '
+            f'${contrib_fmv:,.0f} @ specialty FMV — structurally '
+            f'uneconomic at any comp structure.</li>'
+        )
+
+    narrative = (
+        '<p class="hedge">The Physician Economic Unit analyzer '
+        'computes per-provider contribution margin (collections − '
+        'comp − allocated overhead). Drop candidates are providers '
+        'who remain loss-making even when comp is restructured to '
+        'the specialty p50 FMV anchor — i.e., structurally '
+        'uneconomic at any comp. Partners should quote the EBITDA '
+        'uplift as an offer-shape modification: "our bid includes '
+        'a 2-year retention structure that drops the named '
+        'underperformers at close."</p>'
+    )
+
+    return (
+        '<h2>Roster Optimization</h2>'
+        f'{headline}'
+        f'{narrative}'
+        f'<ul class="tight">{"".join(rows)}</ul>'
+    )
+
+
+def _physician_retention_section(
+    attrition_report: Optional[Any],
+) -> str:
+    """Render the Physician Retention Plan section.
+
+    Silent when no HIGH/CRITICAL providers exist — we don't print
+    "no retention action needed" as a risk claim.
+    """
+    if attrition_report is None:
+        return ""
+    crit = int(getattr(attrition_report, "critical_count", 0) or 0)
+    high = int(getattr(attrition_report, "high_count", 0) or 0)
+    if crit == 0 and high == 0:
+        return ""
+
+    scores = list(getattr(attrition_report, "scores", []) or [])
+    focus = []
+    for s in scores:
+        band_obj = getattr(s, "band", None)
+        band_val = str(
+            getattr(band_obj, "value", band_obj) or "",
+        ).upper()
+        if band_val in ("CRITICAL", "HIGH"):
+            focus.append(s)
+    focus = focus[:10]  # cap at top 10 so the memo stays printable
+
+    bridge = getattr(attrition_report, "bridge_input", None)
+    headline = ""
+    if bridge is not None:
+        ebitda_at_risk = float(
+            getattr(bridge, "ebitda_at_risk_usd", 0.0) or 0.0,
+        )
+        collections_lost = float(
+            getattr(bridge, "expected_collections_lost_usd", 0.0) or 0.0,
+        )
+        confidence = str(getattr(bridge, "confidence", "MEDIUM"))
+        headline = (
+            f'<p><strong>EBITDA at risk:</strong> '
+            f'${ebitda_at_risk:,.0f} (${collections_lost:,.0f} '
+            f'collections) · confidence '
+            f'<strong>{html.escape(confidence)}</strong></p>'
+        )
+
+    rows: List[str] = []
+    total_bond = 0.0
+    for s in focus:
+        band_obj = getattr(s, "band", None)
+        band_val = str(
+            getattr(band_obj, "value", band_obj) or "",
+        ).upper()
+        prob = float(getattr(s, "probability", 0.0) or 0.0)
+        collections = float(
+            getattr(s, "collections_annual_usd", 0.0) or 0.0,
+        )
+        at_risk = float(
+            getattr(s, "expected_collections_at_risk_usd", 0.0) or 0.0,
+        )
+        rec = getattr(s, "recommendation", None)
+        bond = (
+            float(getattr(rec, "suggested_bond_usd", None) or 0.0)
+            if rec else 0.0
+        )
+        years = (
+            int(getattr(rec, "retention_years", None) or 0)
+            if rec else 0
+        )
+        total_bond += bond
+        pid = html.escape(str(getattr(s, "provider_id", "—")))
+        specialty = html.escape(
+            str(getattr(s, "specialty", "") or "").replace("_", " "),
+        )
+        bond_clause = (
+            f"${bond:,.0f} / {years}y bond"
+            if bond > 0 else "monitor only"
+        )
+        rows.append(
+            f'<li><strong>{pid}</strong> '
+            f'({specialty}, {band_val}): '
+            f'{prob*100:.0f}% flight prob · '
+            f'${collections:,.0f} annual collections · '
+            f'~${at_risk:,.0f} at risk · '
+            f'<em>{bond_clause}</em></li>'
+        )
+
+    total_html = (
+        f'<p><strong>Total retention bond sizing:</strong> '
+        f'${total_bond:,.0f} across {len(focus)} providers.</p>'
+    ) if total_bond > 0 else ""
+
+    narrative = (
+        '<p class="hedge">Retention bonds convert physician attrition '
+        'from a variable Deal MC input into a contractually-bounded '
+        'one. The Predictive Physician Attrition Model (P-PAM) '
+        'scored every provider on the 18-month flight-risk horizon '
+        'using comp-vs-FMV gap, tenure, age inflection, productivity '
+        'trend, local competitor density, Stark overlap, employment '
+        'status, revenue concentration, and specialty mobility. '
+        'HIGH/CRITICAL providers listed below must be named in the '
+        'PSA / APA retention schedule.</p>'
+    )
+
+    return (
+        '<h2>Physician Retention Plan</h2>'
+        f'{headline}'
+        f'{total_html}'
+        f'{narrative}'
+        f'<ul class="tight">{"".join(rows)}</ul>'
+    )
+
+
+def _historical_analogue_section(
+    matches: Optional[List[Any]],
+    *,
+    top_n: int = 3,
+    similarity_floor: float = 0.60,
+) -> str:
+    """Render the 'Historical Analogue' block from Deal Autopsy matches.
+
+    ``matches`` should be a list of :class:`MatchResult` instances (or
+    duck-typed equivalents exposing ``deal.name``, ``deal.autopsy``,
+    ``similarity``, and ``aligning``/``diverging`` feature delta lists).
+
+    The block is quietly suppressed when no matches clear the
+    similarity floor — we never print "no match" as a risk claim.
+    """
+    if not matches:
+        return ""
+    relevant = [
+        m for m in matches
+        if getattr(m, "similarity", 0.0) >= similarity_floor
+    ][:top_n]
+    if not relevant:
+        return ""
+
+    def _deltas_as_text(deltas: Optional[List[Any]]) -> str:
+        if not deltas:
+            return ""
+        bits = []
+        for d in deltas[:3]:
+            label = getattr(d, "label", None) or getattr(
+                d, "feature", "",
+            )
+            t_val = getattr(d, "target_value", 0.0)
+            h_val = getattr(d, "historical_value", 0.0)
+            bits.append(
+                f"{html.escape(str(label))} "
+                f"(target {t_val:.2f} vs historical {h_val:.2f})"
+            )
+        return "; ".join(bits)
+
+    rows: List[str] = []
+    top = relevant[0]
+    top_deal = getattr(top, "deal", None)
+    top_sim = getattr(top, "similarity", 0.0)
+    narrative = ""
+    if top_deal is not None:
+        autopsy = getattr(top_deal, "autopsy", None)
+        is_neg = getattr(autopsy, "is_negative", False)
+        name = getattr(top_deal, "name", "")
+        outcome_year = getattr(autopsy, "outcome_year", "") if autopsy else ""
+        lesson = getattr(autopsy, "partner_lesson", "") if autopsy else ""
+        if is_neg and top_sim >= 0.80:
+            narrative = (
+                f'<p class="hedge"><strong>Partner alert:</strong> '
+                f'the target\'s risk signature is '
+                f'{top_sim*100:.0f}% aligned with {html.escape(name)} '
+                f'({outcome_year}). Lesson: '
+                f'{html.escape(lesson)}</p>'
+            )
+        elif is_neg and top_sim >= similarity_floor:
+            narrative = (
+                f'<p class="hedge">Meaningful resemblance '
+                f'({top_sim*100:.0f}%) to {html.escape(name)} '
+                f'({outcome_year}). Lesson: '
+                f'{html.escape(lesson)}</p>'
+            )
+        else:
+            narrative = (
+                f'<p class="hedge">Closest historical pattern is '
+                f'{html.escape(name)} at {top_sim*100:.0f}%. Lesson: '
+                f'{html.escape(lesson)}</p>'
+            )
+
+    for m in relevant:
+        deal = getattr(m, "deal", None)
+        if deal is None:
+            continue
+        autopsy = getattr(deal, "autopsy", None)
+        name = getattr(deal, "name", "—")
+        sponsor = getattr(deal, "sponsor", "")
+        entry_year = getattr(deal, "entry_year", "")
+        outcome = getattr(autopsy, "outcome", "") if autopsy else ""
+        outcome_year = getattr(autopsy, "outcome_year", "") if autopsy else ""
+        primary_killer = (
+            getattr(autopsy, "primary_killer", "") if autopsy else ""
+        )
+        sim = getattr(m, "similarity", 0.0)
+        aligning = _deltas_as_text(getattr(m, "aligning", None))
+        diverging = _deltas_as_text(getattr(m, "diverging", None))
+        rows.append(
+            f'<li><strong>{html.escape(name)}</strong> '
+            f'({html.escape(sponsor)} · entry {entry_year}) · '
+            f'<strong>{sim*100:.0f}% match</strong> · '
+            f'outcome <strong>{html.escape(str(outcome))}</strong> '
+            f'({outcome_year})'
+            + (f' · driver: <code>{html.escape(primary_killer)}</code>'
+               if primary_killer else '')
+            + (f'<br><span class="hedge">Features aligning: '
+               f'{aligning}.</span>' if aligning else '')
+            + (f'<br><span class="hedge">Features diverging: '
+               f'{diverging}.</span>' if diverging else '')
+            + '</li>'
+        )
+
+    return (
+        '<h2>Historical Analogue</h2>'
+        f'{narrative}'
+        f'<ul class="tight">{"".join(rows)}</ul>'
+    )
+
+
 def _market_context_section(
     comps: Optional[List[Dict[str, Any]]],
     sector_sentiment: Optional[str],
@@ -658,6 +1135,50 @@ def _market_context_section(
             f'<tbody>{rows}</tbody></table>'
         )
     return "".join(parts)
+
+
+def _checklist_coverage_section(
+    checklist_state: Optional[Any],
+) -> str:
+    """Render the coverage + P0-open summary from a DealChecklistState.
+
+    Silent when no state is supplied — the section is only valuable
+    when the partner has actually run the checklist tracker.
+    """
+    if checklist_state is None:
+        return ""
+    p0_cov = float(getattr(checklist_state, "p0_coverage", 0.0) or 0.0)
+    open_p0 = int(getattr(checklist_state, "open_p0", 0) or 0)
+    open_p1 = int(getattr(checklist_state, "open_p1", 0) or 0)
+    done = int(getattr(checklist_state, "done", 0) or 0)
+    total = int(getattr(checklist_state, "total", 0) or 0)
+    if total == 0:
+        return ""
+    if p0_cov >= 1.0 and open_p1 == 0:
+        narrative = (
+            f"All {total} diligence items covered. P0 coverage 100%. "
+            f"No outstanding blockers to IC."
+        )
+    elif open_p0 == 0:
+        narrative = (
+            f"P0 coverage 100% ({done}/{total} total). "
+            f"{open_p1} P1 items remain with assigned owners — "
+            f"proceed to IC with the open-questions list below."
+        )
+    else:
+        narrative = (
+            f"⚠ {open_p0} P0 items still open + {open_p1} P1 — "
+            f"P0 coverage {p0_cov*100:.0f}%. "
+            f"IC should not be scheduled until P0 = 100%."
+        )
+    return (
+        '<h2>Diligence Coverage</h2>'
+        f'<p><strong>P0 coverage:</strong> {p0_cov*100:.0f}% · '
+        f'<strong>Total done:</strong> {done}/{total} · '
+        f'<strong>Open P0:</strong> {open_p0} · '
+        f'<strong>Open P1:</strong> {open_p1}</p>'
+        f'<p class="hedge">{html.escape(narrative)}</p>'
+    )
 
 
 def _open_questions_section(questions: Optional[Iterable[Any]]) -> str:
@@ -757,6 +1278,12 @@ def render_ic_packet_html(
     public_comps: Optional[List[Dict[str, Any]]] = None,
     sector_sentiment: Optional[str] = None,
     transaction_multiple_band: Optional[Any] = None,
+    autopsy_matches: Optional[List[Any]] = None,
+    attrition_report: Optional[Any] = None,
+    eu_report: Optional[Any] = None,
+    management_report: Optional[Any] = None,
+    exit_timing_report: Optional[Any] = None,
+    checklist_state: Optional[Any] = None,
 ) -> str:
     """Render the full IC packet. Every section that lacks data is
     quietly suppressed — the memo never renders blank tables or
@@ -821,6 +1348,12 @@ def render_ic_packet_html(
             stark_findings_count=stark_findings_count,
         ),
         _counterfactual_section(counterfactuals),
+        _physician_retention_section(attrition_report),
+        _roster_optimization_section(eu_report),
+        _management_scorecard_section(management_report),
+        _exit_strategy_section(exit_timing_report),
+        _historical_analogue_section(autopsy_matches),
+        _checklist_coverage_section(checklist_state),
         _market_context_section(
             public_comps, sector_sentiment, transaction_multiple_band,
         ),
