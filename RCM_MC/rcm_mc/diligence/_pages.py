@@ -46,6 +46,8 @@ AVAILABLE_FIXTURES: List[Tuple[str, str]] = [
     ("hospital_04_mixed_payer",     "Hospital 04 — 5/5/5/5 mixed payer"),
     ("hospital_05_dental_dso",      "Hospital 05 — Dental DSO proxy (OOD test)"),
     ("hospital_06_waterfall_truth", "Hospital 06 — Waterfall hand-computed truth"),
+    ("hospital_07_waterfall_concordant", "Hospital 07 — QoR concordant (IMMATERIAL)"),
+    ("hospital_08_waterfall_critical",   "Hospital 08 — QoR critical (CRITICAL ~7%)"),
 ]
 
 

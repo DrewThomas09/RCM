@@ -1,0 +1,27 @@
+{
+  "as_of_date": "2025-01-01",
+  "claims_count": 10,
+  "description": "8 paid + 2 clinical-denied (CARC 50) Medicare claims in 2024-03. Waterfall accrual = $6,400; management over-reports at $6,850 → -6.57% divergence → CRITICAL (headline QoR finding).",
+  "expected_waterfall": {
+    "gross_charges": 10000.0,
+    "contractual_adjustments": 2000.0,
+    "front_end_leakage": 0.0,
+    "initial_denials_gross": 1600.0,
+    "appeals_recovered": 0.0,
+    "bad_debt": 0.0,
+    "realized_cash": 6400.0,
+    "accrual_revenue": 6400.0,
+    "realization_rate": 0.64
+  },
+  "hospital": "hospital_08_waterfall_critical",
+  "management_reported_revenue_for_qor_test": {
+    "cohort_month": "2024-03",
+    "management_reported_revenue_usd": 6850.0,
+    "expected_qor_divergence_usd": -450.0,
+    "expected_qor_divergence_pct": -0.06569343065693432,
+    "expected_qor_flag": true,
+    "expected_divergence_status": "CRITICAL",
+    "note": "accrual = 10000 - 2000 - 1600 - 0 = 6400; delta = 6400 - 6850 = -450 = -6.57% → CRITICAL (management over-reports the claims-side reconstruction)"
+  },
+  "provider_id": "H8"
+}

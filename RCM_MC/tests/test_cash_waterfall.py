@@ -196,11 +196,15 @@ class CashWaterfallQoRDivergenceTests(unittest.TestCase):
             cohort.qor_divergence_usd,
             spec["expected_qor_divergence_usd"], places=2,
         )
-        # divergence_pct = -800 / 5000 = -0.16 → |.16| > 0.05 → flag
-        self.assertLess(cohort.qor_divergence_pct, 0.0)
+        # Accrual ($5,800) − management ($5,000) = +$800 → +16% → CRITICAL
+        self.assertGreater(cohort.qor_divergence_pct, 0.0)
         self.assertEqual(cohort.qor_flag, spec["expected_qor_flag"])
+        self.assertEqual(
+            cohort.divergence_status, spec["expected_divergence_status"],
+        )
 
     def test_no_qor_fields_when_management_revenue_absent(self):
+        from rcm_mc.diligence.benchmarks import DivergenceStatus
         report = compute_cash_waterfall(
             self.ccd.claims, as_of_date=self.as_of,
         )
@@ -209,18 +213,118 @@ class CashWaterfallQoRDivergenceTests(unittest.TestCase):
         self.assertIsNone(cohort.qor_divergence_usd)
         self.assertIsNone(cohort.qor_divergence_pct)
         self.assertFalse(cohort.qor_flag)
+        self.assertEqual(cohort.divergence_status,
+                         DivergenceStatus.UNKNOWN.value)
 
     def test_small_divergence_does_not_flag(self):
-        """$4,150 vs $4,200 waterfall → -1.2% divergence, below the
-        5% threshold → no flag."""
+        """Accrual $5,800 vs mgmt $5,750 → +0.87% divergence → IMMATERIAL."""
+        from rcm_mc.diligence.benchmarks import DivergenceStatus
         report = compute_cash_waterfall(
             self.ccd.claims, as_of_date=self.as_of,
-            management_reported_revenue_by_cohort_month={"2024-02": 4_250.0},
+            management_reported_revenue_by_cohort_month={"2024-02": 5_750.0},
         )
         cohort = report.mature_cohorts()[0]
         self.assertFalse(cohort.qor_flag)
         self.assertIsNotNone(cohort.qor_divergence_pct)
-        self.assertLess(abs(cohort.qor_divergence_pct), 0.05)
+        self.assertLess(abs(cohort.qor_divergence_pct), 0.02)
+        self.assertEqual(cohort.divergence_status,
+                         DivergenceStatus.IMMATERIAL.value)
+
+    def test_watch_tier_bands_between_2_and_5_percent(self):
+        """Accrual $5,800 vs mgmt $5,600 → +3.57% → WATCH (2-5% band)."""
+        from rcm_mc.diligence.benchmarks import DivergenceStatus
+        report = compute_cash_waterfall(
+            self.ccd.claims, as_of_date=self.as_of,
+            management_reported_revenue_by_cohort_month={"2024-02": 5_600.0},
+        )
+        cohort = report.mature_cohorts()[0]
+        pct = cohort.qor_divergence_pct
+        self.assertIsNotNone(pct)
+        self.assertGreaterEqual(abs(pct), 0.02)
+        self.assertLess(abs(pct), 0.05)
+        self.assertEqual(cohort.divergence_status,
+                         DivergenceStatus.WATCH.value)
+        # flag is reserved for >= 5% so WATCH does not flag
+        self.assertFalse(cohort.qor_flag)
+
+    def test_accrual_revenue_matches_formula(self):
+        """accrual = gross − contractuals − final_denials_net − bad_debt."""
+        report = compute_cash_waterfall(
+            self.ccd.claims, as_of_date=self.as_of,
+        )
+        cohort = report.mature_cohorts()[0]
+        expected_accrual = self.expected[
+            "expected_waterfall"
+        ]["accrual_revenue"]
+        self.assertIsNotNone(cohort.accrual_revenue_usd)
+        self.assertAlmostEqual(
+            cohort.accrual_revenue_usd, expected_accrual, places=2,
+        )
+
+    def test_report_rolls_up_accrual_and_status(self):
+        """Top-line accrual + divergence_status roll-up match per-cohort."""
+        from rcm_mc.diligence.benchmarks import DivergenceStatus
+        spec = self.expected["management_reported_revenue_for_qor_test"]
+        report = compute_cash_waterfall(
+            self.ccd.claims, as_of_date=self.as_of,
+            management_reported_revenue_by_cohort_month={
+                spec["cohort_month"]: spec["management_reported_revenue_usd"],
+            },
+        )
+        self.assertAlmostEqual(
+            report.total_accrual_revenue_usd,
+            self.expected["expected_waterfall"]["accrual_revenue"],
+            places=2,
+        )
+        self.assertEqual(
+            report.total_divergence_status,
+            DivergenceStatus.CRITICAL.value,
+        )
+        self.assertTrue(report.total_qor_flag)
+
+
+class DivergenceClassifierTests(unittest.TestCase):
+    """Pure-function banding tests — no CCD needed."""
+
+    def test_none_returns_unknown(self):
+        from rcm_mc.diligence.benchmarks import (
+            DivergenceStatus, classify_divergence,
+        )
+        self.assertEqual(classify_divergence(None),
+                         DivergenceStatus.UNKNOWN)
+
+    def test_under_two_percent_is_immaterial(self):
+        from rcm_mc.diligence.benchmarks import (
+            DivergenceStatus, classify_divergence,
+        )
+        self.assertEqual(classify_divergence(0.0),
+                         DivergenceStatus.IMMATERIAL)
+        self.assertEqual(classify_divergence(0.0199),
+                         DivergenceStatus.IMMATERIAL)
+        self.assertEqual(classify_divergence(-0.0199),
+                         DivergenceStatus.IMMATERIAL)
+
+    def test_between_two_and_five_percent_is_watch(self):
+        from rcm_mc.diligence.benchmarks import (
+            DivergenceStatus, classify_divergence,
+        )
+        self.assertEqual(classify_divergence(0.02),
+                         DivergenceStatus.WATCH)
+        self.assertEqual(classify_divergence(0.03),
+                         DivergenceStatus.WATCH)
+        self.assertEqual(classify_divergence(-0.0499),
+                         DivergenceStatus.WATCH)
+
+    def test_five_percent_or_more_is_critical(self):
+        from rcm_mc.diligence.benchmarks import (
+            DivergenceStatus, classify_divergence,
+        )
+        self.assertEqual(classify_divergence(0.05),
+                         DivergenceStatus.CRITICAL)
+        self.assertEqual(classify_divergence(-0.16),
+                         DivergenceStatus.CRITICAL)
+        self.assertEqual(classify_divergence(1.5),
+                         DivergenceStatus.CRITICAL)
 
 
 class CashWaterfallProvenanceTests(unittest.TestCase):
@@ -276,6 +380,13 @@ class CashWaterfallRollUpTests(unittest.TestCase):
         self.assertIn("cohorts_by_payer_class", d)
         self.assertIn("total_realized_cash_usd", d)
         self.assertIn("total_realization_rate", d)
+        # QoR headline round-trip: accrual + divergence status travel
+        # through to_dict so exports/packets can surface the banding.
+        self.assertIn("total_accrual_revenue_usd", d)
+        self.assertIn("total_divergence_status", d)
+        first_cohort = d["cohorts_all_payers"][0]
+        self.assertIn("accrual_revenue_usd", first_cohort)
+        self.assertIn("divergence_status", first_cohort)
         # Cohort dict has the full step list.
         first_cohort = d["cohorts_all_payers"][0]
         self.assertIn("steps", first_cohort)
@@ -285,6 +396,120 @@ class CashWaterfallRollUpTests(unittest.TestCase):
              "initial_denials_gross", "appeals_recovered", "bad_debt",
              "realized_cash"],
         )
+
+
+class CashWaterfallFixtureConcordantTests(unittest.TestCase):
+    """Lock the math against ``hospital_07_waterfall_concordant``.
+
+    Purpose: a hand-built reconciled hospital. 10 clean paid Medicare
+    claims. Waterfall accrual $8,000 vs management $7,920 → +1.01%
+    → IMMATERIAL banding. Tests the happy-path: no denials, no bad
+    debt, divergence below the 2% threshold.
+    """
+
+    def setUp(self):
+        self.ccd = ingest_dataset(
+            FIXTURE_ROOT / "hospital_07_waterfall_concordant",
+        )
+        self.expected = json.loads(
+            (FIXTURE_ROOT / "hospital_07_waterfall_concordant"
+             / "expected.json").read_text("utf-8")
+        )
+        self.as_of = date.fromisoformat(self.expected["as_of_date"])
+
+    def test_waterfall_steps_match_expected(self):
+        report = compute_cash_waterfall(
+            self.ccd.claims, as_of_date=self.as_of,
+        )
+        cohort = report.mature_cohorts()[0]
+        steps = {s.name: s for s in cohort.steps}
+        ew = self.expected["expected_waterfall"]
+        for key in ("gross_charges", "contractual_adjustments",
+                    "front_end_leakage", "initial_denials_gross",
+                    "appeals_recovered", "bad_debt", "realized_cash"):
+            self.assertAlmostEqual(steps[key].amount_usd, ew[key], places=2,
+                                   msg=f"step {key!r} amount mismatch")
+        self.assertAlmostEqual(cohort.accrual_revenue_usd,
+                               ew["accrual_revenue"], places=2)
+
+    def test_management_reconciliation_is_immaterial(self):
+        from rcm_mc.diligence.benchmarks import DivergenceStatus
+        spec = self.expected["management_reported_revenue_for_qor_test"]
+        report = compute_cash_waterfall(
+            self.ccd.claims, as_of_date=self.as_of,
+            management_reported_revenue_by_cohort_month={
+                spec["cohort_month"]: spec["management_reported_revenue_usd"],
+            },
+        )
+        cohort = report.mature_cohorts()[0]
+        self.assertAlmostEqual(cohort.qor_divergence_usd,
+                               spec["expected_qor_divergence_usd"], places=2)
+        self.assertAlmostEqual(cohort.qor_divergence_pct,
+                               spec["expected_qor_divergence_pct"], places=5)
+        self.assertFalse(cohort.qor_flag)
+        self.assertEqual(cohort.divergence_status,
+                         DivergenceStatus.IMMATERIAL.value)
+        # Top-line status rolls up to IMMATERIAL too.
+        self.assertEqual(report.total_divergence_status,
+                         DivergenceStatus.IMMATERIAL.value)
+
+
+class CashWaterfallFixtureCriticalTests(unittest.TestCase):
+    """Lock the math against ``hospital_08_waterfall_critical``.
+
+    Purpose: a hand-built over-reporting hospital. 8 paid + 2 clinical
+    denials. Waterfall accrual $6,400; management over-reports at
+    $6,850 → -6.57% → CRITICAL. Tests the failure-path: mgmt OVER
+    what the claims-side reconstruction supports, by more than the
+    5% threshold.
+    """
+
+    def setUp(self):
+        self.ccd = ingest_dataset(
+            FIXTURE_ROOT / "hospital_08_waterfall_critical",
+        )
+        self.expected = json.loads(
+            (FIXTURE_ROOT / "hospital_08_waterfall_critical"
+             / "expected.json").read_text("utf-8")
+        )
+        self.as_of = date.fromisoformat(self.expected["as_of_date"])
+
+    def test_waterfall_steps_match_expected(self):
+        report = compute_cash_waterfall(
+            self.ccd.claims, as_of_date=self.as_of,
+        )
+        cohort = report.mature_cohorts()[0]
+        steps = {s.name: s for s in cohort.steps}
+        ew = self.expected["expected_waterfall"]
+        for key in ("gross_charges", "contractual_adjustments",
+                    "front_end_leakage", "initial_denials_gross",
+                    "appeals_recovered", "bad_debt", "realized_cash"):
+            self.assertAlmostEqual(steps[key].amount_usd, ew[key], places=2,
+                                   msg=f"step {key!r} amount mismatch")
+        self.assertAlmostEqual(cohort.accrual_revenue_usd,
+                               ew["accrual_revenue"], places=2)
+
+    def test_management_reconciliation_is_critical(self):
+        from rcm_mc.diligence.benchmarks import DivergenceStatus
+        spec = self.expected["management_reported_revenue_for_qor_test"]
+        report = compute_cash_waterfall(
+            self.ccd.claims, as_of_date=self.as_of,
+            management_reported_revenue_by_cohort_month={
+                spec["cohort_month"]: spec["management_reported_revenue_usd"],
+            },
+        )
+        cohort = report.mature_cohorts()[0]
+        self.assertAlmostEqual(cohort.qor_divergence_usd,
+                               spec["expected_qor_divergence_usd"], places=2)
+        self.assertAlmostEqual(cohort.qor_divergence_pct,
+                               spec["expected_qor_divergence_pct"], places=5)
+        self.assertLess(cohort.qor_divergence_pct, 0.0,
+                        msg="critical case: mgmt over-reports → negative delta")
+        self.assertTrue(cohort.qor_flag)
+        self.assertEqual(cohort.divergence_status,
+                         DivergenceStatus.CRITICAL.value)
+        self.assertEqual(report.total_divergence_status,
+                         DivergenceStatus.CRITICAL.value)
 
 
 class CashWaterfallPayerSliceTests(unittest.TestCase):

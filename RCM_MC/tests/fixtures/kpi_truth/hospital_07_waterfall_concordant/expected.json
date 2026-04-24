@@ -1,0 +1,27 @@
+{
+  "as_of_date": "2025-01-01",
+  "claims_count": 10,
+  "description": "10 clean Medicare claims in 2024-03. No denials, no bad debt. Waterfall accrual = $8,000; management accrual reported at $7,920 → +1.01% divergence → IMMATERIAL (reconciled).",
+  "expected_waterfall": {
+    "gross_charges": 10000.0,
+    "contractual_adjustments": 2000.0,
+    "front_end_leakage": 0.0,
+    "initial_denials_gross": 0.0,
+    "appeals_recovered": 0.0,
+    "bad_debt": 0.0,
+    "realized_cash": 8000.0,
+    "accrual_revenue": 8000.0,
+    "realization_rate": 0.80
+  },
+  "hospital": "hospital_07_waterfall_concordant",
+  "management_reported_revenue_for_qor_test": {
+    "cohort_month": "2024-03",
+    "management_reported_revenue_usd": 7920.0,
+    "expected_qor_divergence_usd": 80.0,
+    "expected_qor_divergence_pct": 0.01010101,
+    "expected_qor_flag": false,
+    "expected_divergence_status": "IMMATERIAL",
+    "note": "accrual = 10000 - 2000 - 0 - 0 = 8000; delta = 8000 - 7920 = +80 = +1.01% → IMMATERIAL"
+  },
+  "provider_id": "H7"
+}

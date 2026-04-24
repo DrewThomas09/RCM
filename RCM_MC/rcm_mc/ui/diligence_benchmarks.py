@@ -22,7 +22,8 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from ..diligence.benchmarks import (
     CashWaterfallReport, CohortCell, CohortLiquidationReport,
-    CohortStatus, DenialStratRow, KPIBundle, KPIResult,
+    CohortStatus, DenialStratRow, DivergenceStatus, KPIBundle, KPIResult,
+    QOR_THRESHOLD_IMMATERIAL, QOR_THRESHOLD_WATCH,
     WaterfallCohort, WaterfallStep,
 )
 from ._chartis_kit import P, chartis_shell
@@ -91,18 +92,20 @@ def render_benchmarks_page(
     CCD yet, so there's nothing to compute against.
 
     ``cash_waterfall`` is optional: when supplied, the Quality of
-    Revenue section renders as a fourth section after the denial
-    Pareto. Absent, the section is skipped silently.
+    Revenue section renders as the headline (section #1) above the
+    KPI scorecard. The QoR waterfall is the partner's headline
+    exhibit — KPIs and cohorts support it, not the other way
+    around. Absent, the section is skipped silently.
     """
     if bundle is None:
         return _placeholder_page()
 
     body = (
         _hero(bundle)
+        + _cash_waterfall_section(cash_waterfall)
         + _kpi_scorecard(bundle)
         + _cohort_section(cohort_report)
         + _denial_pareto(bundle.denial_stratification)
-        + _cash_waterfall_section(cash_waterfall)
         + _provenance_footer(bundle)
     )
     return chartis_shell(
@@ -369,53 +372,49 @@ def _denial_pareto(rows: Iterable[DenialStratRow]) -> str:
 
 
 def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
-    """Fourth section: Quality of Revenue / Cash Waterfall.
+    """Headline section: Quality of Revenue / Cash Waterfall.
 
-    Per-cohort cascade rendered as a compact table. Top-line totals
-    render as a header block. A QoR divergence flag (when management-
-    reported revenue was supplied and the delta crosses the 5%
-    threshold) renders as a red banner above the table.
+    Renders in this order:
+      1. Management reconciliation summary card — IMMATERIAL / WATCH
+         / CRITICAL band against management-reported accrual revenue,
+         plus the dollar delta.
+      2. Top-line realization metrics (cash / gross / cohort counts).
+      3. Cohort × step cascade table (ALL-payers).
+      4. Per-payer-class breakout — one compact row per payer class
+         summarising gross → accrual → cash so a partner sees which
+         payer mix is driving the top-line divergence.
+
+    Rendering never fabricates: if a management number was not
+    supplied, the card renders "not supplied" and the status is
+    UNKNOWN. In-flight cohorts show claim counts but no realization.
     """
     if report is None:
         return ""
     mature = report.mature_cohorts()
     censored = report.censored_cohorts()
 
+    mgmt_card = _management_reconciliation_card(report)
+
     # Top-line summary.
     realization_str = (
         f"{report.total_realization_rate * 100:,.1f}%"
         if report.total_realization_rate is not None else "—"
     )
-    if report.total_qor_flag:
-        divergence_colour = P["negative"]
-        divergence_badge = (
-            f'<span style="background:rgba(239,68,68,.15);color:{P["negative"]};'
-            f'padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;'
-            f'letter-spacing:.5px;text-transform:uppercase;margin-left:8px;">'
-            f'QoR divergence {report.total_qor_divergence_pct*100:+.1f}%</span>'
-        )
-    else:
-        divergence_colour = P["text_dim"]
-        divergence_badge = ""
-
     topline = (
         f'<div style="display:flex;align-items:baseline;gap:16px;margin:12px 0 8px 0;">'
         f'  <div style="font-size:10px;color:{P["text_faint"]};letter-spacing:.5px;'
         f'text-transform:uppercase;">Realization Rate</div>'
-        f'  <div style="font-size:24px;color:{divergence_colour};'
+        f'  <div style="font-size:24px;color:{P["text"]};'
         f'font-family:\'JetBrains Mono\',monospace;font-variant-numeric:tabular-nums;'
         f'font-weight:500;">{realization_str}</div>'
         f'  <div style="font-size:11px;color:{P["text_faint"]};">'
         f'${report.total_realized_cash_usd:,.0f} of ${report.total_gross_charges_usd:,.0f} '
         f'gross · {len(mature)} mature cohort(s)'
         f'{", " + str(len(censored)) + " in-flight" if censored else ""}</div>'
-        f'  {divergence_badge}'
         f'</div>'
     )
 
-    # Cascade table. One row per cohort × step; we show the ALL-payer
-    # roll-up by default. Partners who want per-payer-class slices
-    # drill through to the root-cause tab (Phase 3).
+    # Cascade table. One row per cohort × step; ALL-payers roll-up.
     if not mature:
         body_rows = (
             f'<tr><td colspan="5" style="padding:12px;color:{P["text_faint"]};'
@@ -446,15 +445,18 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
                     f'{s.claim_count}</td>'
                     '</tr>'
                 )
-            # QoR divergence row when present on the cohort.
-            if cohort.qor_flag:
+            # Per-cohort divergence status badge row (when we have a
+            # management number to compare against).
+            if cohort.management_reported_revenue_usd is not None:
+                badge_colour, _ = _status_palette(cohort.divergence_status)
+                pct = cohort.qor_divergence_pct or 0.0
                 parts.append(
                     '<tr>'
                     f'<td class="mono">{html.escape(cohort.cohort_month)}</td>'
-                    f'<td style="color:{P["negative"]};font-weight:600;">'
-                    f'QoR flag: waterfall vs management</td>'
-                    f'<td class="num" style="color:{P["negative"]};">'
-                    f'{cohort.qor_divergence_pct*100:+.1f}%</td>'
+                    f'<td style="color:{badge_colour};font-weight:600;">'
+                    f'Reconciliation · {html.escape(cohort.divergence_status)}</td>'
+                    f'<td class="num" style="color:{badge_colour};">'
+                    f'{pct*100:+.1f}%</td>'
                     f'<td class="num" style="color:{P["text_dim"]};">'
                     f'mgmt ${cohort.management_reported_revenue_usd:,.0f}</td>'
                     f'<td></td>'
@@ -462,11 +464,14 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
                 )
         body_rows = "".join(parts)
 
+    per_class = _per_payer_class_table(report)
+
     return (
         f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
-        f'color:{P["text_dim"]};margin:36px 0 12px 0;">Quality of Revenue (Cash Waterfall)</h2>'
+        f'color:{P["text_dim"]};margin:32px 0 12px 0;">Quality of Revenue (Cash Waterfall)</h2>'
+        f'{mgmt_card}'
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:14px 16px;">'
+        f'border-radius:4px;padding:14px 16px;margin-top:12px;">'
         f'  <div style="font-size:11px;color:{P["text_faint"]};margin-bottom:4px;">'
         f'  Claim-level cascade from gross charges to realized cash, cohorted '
         f'by date of service. Cohorts younger than '
@@ -485,6 +490,191 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
         f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">n</th>'
         f'    </tr></thead>'
         f'    <tbody>{body_rows}</tbody>'
+        f'  </table>'
+        f'</div>'
+        f'{per_class}'
+    )
+
+
+# ── QoR helpers ─────────────────────────────────────────────────────
+
+_STATUS_COPY = {
+    DivergenceStatus.IMMATERIAL.value: (
+        "Reconciled",
+        f"Waterfall-derived accrual revenue matches management within "
+        f"{QOR_THRESHOLD_IMMATERIAL*100:,.0f}%. No finding.",
+    ),
+    DivergenceStatus.WATCH.value: (
+        "Watch",
+        f"Divergence between {QOR_THRESHOLD_IMMATERIAL*100:,.0f}% and "
+        f"{QOR_THRESHOLD_WATCH*100:,.0f}%. Worth a follow-up question on "
+        f"accrual methodology.",
+    ),
+    DivergenceStatus.CRITICAL.value: (
+        "Critical",
+        f"Divergence ≥ {QOR_THRESHOLD_WATCH*100:,.0f}% — the claims-side "
+        f"reconstruction disagrees with management's reported revenue by "
+        f"more than the VMG/A&M QoR threshold. Partner-quotable finding.",
+    ),
+    DivergenceStatus.UNKNOWN.value: (
+        "Not supplied",
+        "Management-reported accrual revenue was not provided, so no "
+        "reconciliation was attempted.",
+    ),
+}
+
+
+def _status_palette(status: str) -> tuple[str, str]:
+    """Return ``(text_colour, tint_background)`` for a status label."""
+    if status == DivergenceStatus.IMMATERIAL.value:
+        return P["positive"], "rgba(16,185,129,.12)"
+    if status == DivergenceStatus.WATCH.value:
+        return P["warning"], "rgba(245,158,11,.14)"
+    if status == DivergenceStatus.CRITICAL.value:
+        return P["negative"], "rgba(239,68,68,.14)"
+    return P["text_faint"], P["panel_alt"]
+
+
+def _management_reconciliation_card(report: CashWaterfallReport) -> str:
+    """Headline card above the cascade table: divergence band, delta,
+    and the human copy a partner can drop into a memo."""
+    status = report.total_divergence_status
+    title, copy = _STATUS_COPY.get(status, _STATUS_COPY[DivergenceStatus.UNKNOWN.value])
+    colour, tint = _status_palette(status)
+
+    accrual = report.total_accrual_revenue_usd
+    mgmt = report.total_management_revenue_usd
+    delta = report.total_qor_divergence_usd
+    pct = report.total_qor_divergence_pct
+
+    if status == DivergenceStatus.UNKNOWN.value or mgmt is None:
+        numbers_html = (
+            f'<div style="font-size:11px;color:{P["text_faint"]};">'
+            f'Waterfall accrual: <span class="mono" style="color:{P["text_dim"]};">'
+            f'${(accrual or 0):,.0f}</span>'
+            f'</div>'
+        )
+    else:
+        pct_str = f"{pct*100:+.1f}%" if pct is not None else "n/a"
+        delta_str = f"{'+' if (delta or 0) >= 0 else '−'}${abs(delta or 0):,.0f}"
+        numbers_html = (
+            f'<div style="display:flex;gap:20px;flex-wrap:wrap;font-size:11px;'
+            f'color:{P["text_dim"]};margin-top:2px;">'
+            f'  <div>Waterfall accrual '
+            f'<span class="mono" style="color:{P["text"]};">${accrual:,.0f}</span></div>'
+            f'  <div>Management accrual '
+            f'<span class="mono" style="color:{P["text"]};">${mgmt:,.0f}</span></div>'
+            f'  <div>Delta '
+            f'<span class="mono" style="color:{colour};">{delta_str} '
+            f'({pct_str})</span></div>'
+            f'</div>'
+        )
+
+    return (
+        f'<div style="background:{tint};border:1px solid {colour};'
+        f'border-left:3px solid {colour};border-radius:4px;'
+        f'padding:14px 18px;margin-top:4px;">'
+        f'  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
+        f'    <div style="font-size:10px;color:{colour};font-weight:700;'
+        f'letter-spacing:1.5px;text-transform:uppercase;">{html.escape(status)}</div>'
+        f'    <div style="font-size:15px;color:{P["text"]};font-weight:600;">'
+        f'{html.escape(title)}</div>'
+        f'  </div>'
+        f'  <div style="font-size:12px;color:{P["text_dim"]};max-width:780px;'
+        f'line-height:1.5;">{html.escape(copy)}</div>'
+        f'  {numbers_html}'
+        f'</div>'
+    )
+
+
+def _per_payer_class_table(report: CashWaterfallReport) -> str:
+    """Per-payer-class summary table. One row per class: gross,
+    contractuals, denials (net of appeals), bad debt, accrual,
+    realized, and realization rate. Payers with only in-flight
+    cohorts show "in-flight" instead of numbers."""
+    if not report.cohorts_by_payer_class:
+        return ""
+
+    def _class_totals(cohorts: List[WaterfallCohort]) -> Optional[Dict[str, float]]:
+        mature = [c for c in cohorts if c.status == CohortStatus.MATURE]
+        if not mature:
+            return None
+        totals = {
+            "gross": 0.0, "contractual": 0.0, "front_end": 0.0,
+            "denials_net": 0.0, "bad_debt": 0.0,
+            "accrual": 0.0, "cash": 0.0,
+        }
+        step_lookup = {
+            "contractual_adjustments": "contractual",
+            "front_end_leakage": "front_end",
+            "bad_debt": "bad_debt",
+        }
+        for c in mature:
+            totals["gross"] += c.gross_charges_usd
+            totals["cash"] += c.realized_cash_usd
+            totals["accrual"] += (c.accrual_revenue_usd or 0.0)
+            init_denied = 0.0
+            recovered = 0.0
+            for s in c.steps:
+                key = step_lookup.get(s.name)
+                if key is not None:
+                    totals[key] += s.amount_usd
+                elif s.name == "initial_denials_gross":
+                    init_denied += s.amount_usd
+                elif s.name == "appeals_recovered":
+                    recovered += s.amount_usd
+            totals["denials_net"] += max(init_denied - recovered, 0.0)
+        return totals
+
+    rows: List[str] = []
+    for pc in sorted(report.cohorts_by_payer_class.keys()):
+        cohorts = report.cohorts_by_payer_class[pc]
+        t = _class_totals(cohorts)
+        if t is None:
+            in_flight = len([c for c in cohorts
+                             if c.status == CohortStatus.INSUFFICIENT_DATA])
+            rows.append(
+                '<tr>'
+                f'<td class="mono" style="color:{P["text"]};">{html.escape(pc)}</td>'
+                f'<td colspan="6" style="color:{P["text_faint"]};font-style:italic;">'
+                f'{in_flight} cohort(s) in-flight — insufficient data'
+                f'</td>'
+                '</tr>'
+            )
+            continue
+        rate = (t["cash"] / t["gross"]) if t["gross"] > 0 else None
+        rate_str = f"{rate*100:,.1f}%" if rate is not None else "—"
+        rows.append(
+            '<tr>'
+            f'<td class="mono" style="color:{P["text"]};">{html.escape(pc)}</td>'
+            f'<td class="num">${t["gross"]:,.0f}</td>'
+            f'<td class="num" style="color:{P["text_dim"]};">'
+            f'−${t["contractual"]:,.0f}</td>'
+            f'<td class="num" style="color:{P["text_dim"]};">'
+            f'−${t["denials_net"]:,.0f}</td>'
+            f'<td class="num" style="color:{P["text_dim"]};">'
+            f'−${t["bad_debt"]:,.0f}</td>'
+            f'<td class="num" style="color:{P["text"]};">${t["accrual"]:,.0f}</td>'
+            f'<td class="num" style="color:{P["positive"]};">{rate_str}</td>'
+            '</tr>'
+        )
+
+    return (
+        f'<div style="margin-top:16px;background:{P["panel"]};'
+        f'border:1px solid {P["border"]};border-radius:4px;padding:14px 16px;">'
+        f'  <div style="font-size:10px;color:{P["text_faint"]};letter-spacing:1px;'
+        f'text-transform:uppercase;margin-bottom:8px;">By Payer Class</div>'
+        f'  <table style="width:100%;border-collapse:collapse;font-size:11px;">'
+        f'    <thead><tr style="color:{P["text_dim"]};">'
+        f'      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Payer Class</th>'
+        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Gross</th>'
+        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Contractuals</th>'
+        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Denials (net)</th>'
+        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Bad Debt</th>'
+        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Accrual</th>'
+        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Realization</th>'
+        f'    </tr></thead>'
+        f'    <tbody>{"".join(rows)}</tbody>'
         f'  </table>'
         f'</div>'
     )

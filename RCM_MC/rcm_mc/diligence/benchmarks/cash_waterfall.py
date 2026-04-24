@@ -47,6 +47,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from enum import Enum
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from ._ansi_codes import DenialCategory, classify_carc_set
@@ -57,7 +58,42 @@ from .cohort_liquidation import CohortStatus, _cohort_key, _cohort_start_date
 
 DEFAULT_REALIZATION_WINDOW_DAYS = 120
 DEFAULT_BAD_DEBT_AGE_DAYS = 180        # claims open >180d on net-collectable
-DEFAULT_QOR_DIVERGENCE_THRESHOLD = 0.05  # 5% gap flags a QoR concern
+
+# QoR divergence thresholds — the published healthcare-QoR standard
+# from VMG Health and A&M methodology: <2% is noise, 2-5% warrants
+# a closer look, >5% is a material finding a partner quotes.
+QOR_THRESHOLD_IMMATERIAL = 0.02
+QOR_THRESHOLD_WATCH = 0.05
+# Legacy alias used by earlier callers; matches the WATCH threshold
+# (anything ≥ 5% flags).
+DEFAULT_QOR_DIVERGENCE_THRESHOLD = QOR_THRESHOLD_WATCH
+
+
+class DivergenceStatus(str, Enum):
+    """Status banding for waterfall-computed accrual revenue vs
+    management-reported accrual revenue. Thresholds follow the
+    VMG / A&M QoR convention (<2% / 2-5% / >5%)."""
+    IMMATERIAL = "IMMATERIAL"   # |divergence| < 2%
+    WATCH      = "WATCH"        # 2% ≤ |divergence| < 5%
+    CRITICAL   = "CRITICAL"     # |divergence| ≥ 5%
+    UNKNOWN    = "UNKNOWN"      # no management number supplied
+
+
+def classify_divergence(divergence_pct: Optional[float]) -> DivergenceStatus:
+    """Band a divergence percentage into IMMATERIAL / WATCH / CRITICAL.
+
+    ``divergence_pct`` is a signed fraction (e.g. -0.07 means
+    waterfall is 7% below management). ``None`` → UNKNOWN so the
+    summary card can render "not supplied" rather than a fake tier.
+    """
+    if divergence_pct is None:
+        return DivergenceStatus.UNKNOWN
+    abs_pct = abs(float(divergence_pct))
+    if abs_pct < QOR_THRESHOLD_IMMATERIAL:
+        return DivergenceStatus.IMMATERIAL
+    if abs_pct < QOR_THRESHOLD_WATCH:
+        return DivergenceStatus.WATCH
+    return DivergenceStatus.CRITICAL
 
 # Ordered waterfall step names. The order matters — the running
 # balance walks down in exactly this sequence.
@@ -118,12 +154,19 @@ class WaterfallCohort:
     gross_charges_usd: float = 0.0
     realized_cash_usd: float = 0.0
     realization_rate: Optional[float] = None
+    # Waterfall-computed accrual revenue =
+    #   gross − contractuals − final_denials − bad_debt
+    # where final_denials = initial_denials_gross − appeals_recovered.
+    # Omits front-end leakage because accrual accounting reserves
+    # eligibility-denied claims out of reported revenue anyway.
+    accrual_revenue_usd: Optional[float] = None
 
-    # QoR divergence vs management-reported revenue.
+    # QoR divergence vs management-reported accrual revenue.
     management_reported_revenue_usd: Optional[float] = None
     qor_divergence_usd: Optional[float] = None
     qor_divergence_pct: Optional[float] = None
     qor_flag: bool = False
+    divergence_status: str = DivergenceStatus.UNKNOWN.value
 
     reason: Optional[str] = None
 
@@ -137,10 +180,12 @@ class WaterfallCohort:
             "gross_charges_usd": self.gross_charges_usd,
             "realized_cash_usd": self.realized_cash_usd,
             "realization_rate": self.realization_rate,
+            "accrual_revenue_usd": self.accrual_revenue_usd,
             "management_reported_revenue_usd": self.management_reported_revenue_usd,
             "qor_divergence_usd": self.qor_divergence_usd,
             "qor_divergence_pct": self.qor_divergence_pct,
             "qor_flag": self.qor_flag,
+            "divergence_status": self.divergence_status,
             "reason": self.reason,
         }
 
@@ -158,10 +203,12 @@ class CashWaterfallReport:
     total_gross_charges_usd: float = 0.0
     total_realized_cash_usd: float = 0.0
     total_realization_rate: Optional[float] = None
+    total_accrual_revenue_usd: Optional[float] = None
     total_management_revenue_usd: Optional[float] = None
     total_qor_divergence_usd: Optional[float] = None
     total_qor_divergence_pct: Optional[float] = None
     total_qor_flag: bool = False
+    total_divergence_status: str = DivergenceStatus.UNKNOWN.value
 
     def mature_cohorts(self) -> List[WaterfallCohort]:
         return [c for c in self.cohorts_all_payers
@@ -183,10 +230,12 @@ class CashWaterfallReport:
             "total_gross_charges_usd": self.total_gross_charges_usd,
             "total_realized_cash_usd": self.total_realized_cash_usd,
             "total_realization_rate": self.total_realization_rate,
+            "total_accrual_revenue_usd": self.total_accrual_revenue_usd,
             "total_management_revenue_usd": self.total_management_revenue_usd,
             "total_qor_divergence_usd": self.total_qor_divergence_usd,
             "total_qor_divergence_pct": self.total_qor_divergence_pct,
             "total_qor_flag": self.total_qor_flag,
+            "total_divergence_status": self.total_divergence_status,
         }
 
 
@@ -468,6 +517,15 @@ def _compute_cohort_waterfall(
         claim_ids=tuple(realized_ids),
     ))
 
+    # Accrual revenue per the VMG/A&M QoR formula:
+    #   gross − contractuals − (initial_denials − appeals_recovered) − bad_debt
+    # This is the number management reports as earned revenue.
+    # Front-end leakage is NOT subtracted here — accrual accounting
+    # typically reserves eligibility-denied claims upstream, so
+    # subtracting them would double-count the reserve.
+    final_denials_net = max(initial_denials_amt - appeals_recovered_amt, 0.0)
+    accrual_revenue = gross_charges - contractual_amt - final_denials_net - bad_debt_amt
+
     cohort = WaterfallCohort(
         cohort_month=cohort_month,
         payer_class=payer_class,
@@ -477,6 +535,7 @@ def _compute_cohort_waterfall(
         gross_charges_usd=gross_charges,
         realized_cash_usd=realized_amt,
         realization_rate=(realized_amt / gross_charges) if gross_charges > 0 else None,
+        accrual_revenue_usd=accrual_revenue,
     )
     return cohort
 
@@ -486,18 +545,34 @@ def _compute_cohort_waterfall(
 def _attach_qor_divergence(
     cohort: WaterfallCohort, mgmt_revenue: float, threshold: float,
 ) -> None:
-    """Compute divergence between waterfall realized_cash and
-    management-reported revenue. Does nothing on EMPTY /
-    INSUFFICIENT_DATA cohorts (checked by caller)."""
+    """Compare waterfall-computed ACCRUAL revenue to management-
+    reported accrual revenue. Sets ``divergence_status`` banding
+    (IMMATERIAL / WATCH / CRITICAL). A CRITICAL divergence means
+    management's number disagrees with the claims-side reconstruction
+    by more than the published QoR threshold — the headline finding
+    a partner quotes.
+
+    Does nothing on EMPTY / INSUFFICIENT_DATA cohorts (caller
+    checks). The comparison is against ``accrual_revenue_usd``, not
+    ``realized_cash_usd``, because accrual is the revenue
+    recognition line — which is what management's books report.
+    """
     cohort.management_reported_revenue_usd = float(mgmt_revenue)
-    delta = cohort.realized_cash_usd - float(mgmt_revenue)
+    base = (cohort.accrual_revenue_usd
+            if cohort.accrual_revenue_usd is not None
+            else cohort.realized_cash_usd)
+    delta = float(base) - float(mgmt_revenue)
     cohort.qor_divergence_usd = delta
     if mgmt_revenue:
         cohort.qor_divergence_pct = delta / float(mgmt_revenue)
         cohort.qor_flag = abs(cohort.qor_divergence_pct) >= threshold
+        cohort.divergence_status = classify_divergence(
+            cohort.qor_divergence_pct
+        ).value
     else:
         cohort.qor_divergence_pct = None
         cohort.qor_flag = False
+        cohort.divergence_status = DivergenceStatus.UNKNOWN.value
 
 
 def _roll_up_totals(
@@ -505,15 +580,26 @@ def _roll_up_totals(
     mgmt: Mapping[str, float],
     qor_threshold: float,
 ) -> None:
-    """Aggregate across MATURE cohorts (all payers) for the top-line."""
+    """Aggregate across MATURE cohorts (all payers) for the top-line.
+
+    The total divergence is computed against total ACCRUAL revenue
+    (sum of per-cohort accrual_revenue_usd) vs management's total
+    reported revenue — not against realized cash. This matches the
+    per-cohort contract and produces the headline divergence-status
+    band for the summary card at the top of the waterfall section.
+    """
     mature = report.mature_cohorts()
     if not mature:
         return
     total_gross = sum(c.gross_charges_usd for c in mature)
     total_cash = sum(c.realized_cash_usd for c in mature)
+    total_accrual = sum(
+        (c.accrual_revenue_usd or 0.0) for c in mature
+    )
     report.total_gross_charges_usd = total_gross
     report.total_realized_cash_usd = total_cash
     report.total_realization_rate = (total_cash / total_gross) if total_gross > 0 else None
+    report.total_accrual_revenue_usd = total_accrual
 
     total_mgmt = 0.0
     have_any_mgmt = False
@@ -524,11 +610,14 @@ def _roll_up_totals(
             have_any_mgmt = True
     if have_any_mgmt:
         report.total_management_revenue_usd = total_mgmt
-        delta = total_cash - total_mgmt
+        delta = total_accrual - total_mgmt
         report.total_qor_divergence_usd = delta
         if total_mgmt:
             report.total_qor_divergence_pct = delta / total_mgmt
             report.total_qor_flag = abs(report.total_qor_divergence_pct) >= qor_threshold
+            report.total_divergence_status = classify_divergence(
+                report.total_qor_divergence_pct
+            ).value
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
