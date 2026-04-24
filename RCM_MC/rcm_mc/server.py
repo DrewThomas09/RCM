@@ -2304,6 +2304,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.track_record_page import render_track_record
             return self._send_html(render_track_record(_qp))
+        if path == "/cpom-lattice":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.cpom_state_lattice_page import render_cpom_lattice
+            return self._send_html(render_cpom_lattice(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
