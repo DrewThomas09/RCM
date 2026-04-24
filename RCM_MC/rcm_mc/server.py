@@ -2264,6 +2264,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.adversarial_engine_page import render_adversarial_engine
             return self._send_html(render_adversarial_engine(_qp))
+        if path == "/team-calculator":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.team_calculator_page import render_team_calculator
+            return self._send_html(render_team_calculator(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

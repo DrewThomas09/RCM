@@ -270,6 +270,7 @@ NAV_ITEMS = [
     {"label": "Benchmark Curves", "href": "/benchmark-curves", "icon": "chart"},
     {"label": "Backtest Harness", "href": "/backtest-harness", "icon": "grid"},
     {"label": "Adversarial Engine", "href": "/adversarial-engine", "icon": "bookmark"},
+    {"label": "TEAM Calculator", "href": "/team-calculator", "icon": "chart"},
 ]
 
 NAV_ICONS = {
