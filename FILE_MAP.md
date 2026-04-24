@@ -2737,6 +2737,42 @@ A follow-up pass verified import counts for each candidate. **Most are NOT redun
 
 **Still worth investigating**: the 7-payer-module and 7-deal-scoring-module clusters reflect genuinely accreted surface area. Real consolidation is a **route-retirement question**, not a code-dedup question — merging two modules means removing one URL, which is user-visible.
 
+### Follow-up: cluster analysis
+
+**Payer cluster (7 modules)** resolved — **not redundant, structurally split**:
+
+| Type | Modules | Characteristic |
+|------|---------|---------------|
+| Route-only UI pages (0 non-page imports, own route) | `payer_concentration`, `payer_contracts`, `payer_shift` | UI-facing screens |
+| Internal library modules (many imports, no route) | `payer_intelligence` (8), `payer_mix_shift_model` (13), `payer_sensitivity` (4) | Used by other analytics |
+| Hybrid | `payer_stress` (6 + route) | Both ways |
+
+This is a **meaningful division of concerns**, not redundancy. Not a consolidation target.
+
+**Deal-scoring cluster (7 modules)** resolved — **not redundant, each has a purpose**:
+
+| Module | Imports | Role |
+|--------|--------|------|
+| `deal_teardown_analyzer` | 33 | **Most-used** — realized-deal MOIC attribution |
+| `deal_risk_matrix` | 18 | High-usage library for 6-dim risk |
+| `deal_entry_risk_score` | 13 | Composite entry risk |
+| `deal_quality_score` | 11 | Scoring library (see below) |
+| `deal_quality_scorer` | 11 | Scoring library (see below) |
+| `deal_scorer` | 5 | Generic 0-100 scorer |
+| `deal_risk_scorer` | 1 via `/deal-risk-scores` page | Route-backed |
+
+**Genuine consolidation finding**: `deal_quality_score.py` + `deal_quality_scorer.py` both export **same-named** `score_deal_quality` and `DealQualityScore` with different implementations. Same concept, parallel code.
+
+- `deal_quality_score.py` → consumed by `deal_quality_page.py`, `corpus_dashboard_page.py`, `tests/test_deal_quality_page.py`
+- `deal_quality_scorer.py` → consumed by `deals_library_page.py`, `tests/test_deal_quality_scorer.py`
+
+This IS a real accretion — the same-name exports mean an importer can get different behavior depending on which module they import first. **Flagged for genuine consolidation**, not just naming cleanup.
+
+**Confirmed non-issues (catalog noise)**:
+- Every single-import "orphan candidate" has a matching UI page — canonical 1:1 pattern
+- Docstring similarity alone does not indicate code redundancy
+- 6 of the original 9 flags were false positives
+
 **Rule of thumb**: before deleting any flagged "duplicate":
 1. Real import count via `grep -rn "from .*\.<module>\b\|import <module>\b" rcm_mc/ tests/`
 2. Look for matching `ui/data_public/<topic>_page.py` → dedicated route
