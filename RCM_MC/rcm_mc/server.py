@@ -2299,6 +2299,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.cms_program_integrity_manual_page import render_program_integrity_manual
             return self._send_html(render_program_integrity_manual(_qp))
+        if path == "/track-record":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.track_record_page import render_track_record
+            return self._send_html(render_track_record(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

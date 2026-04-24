@@ -277,6 +277,7 @@ NAV_ITEMS = [
     {"label": "★ IC Brief Assembler", "href": "/ic-brief", "icon": "bookmark"},
     {"label": "DOJ FCA Tracker", "href": "/doj-fca", "icon": "grid"},
     {"label": "CMS PIM 100-08", "href": "/cms-pim", "icon": "bookmark"},
+    {"label": "★ Track Record", "href": "/track-record", "icon": "chart"},
 ]
 
 NAV_ICONS = {

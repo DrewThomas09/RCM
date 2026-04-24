@@ -240,6 +240,7 @@ _CORPUS_NAV = [
     {"label": "★ IC Brief",     "href": "/ic-brief",           "icon": "◈"},
     {"label": "DOJ FCA Tracker","href": "/doj-fca",             "icon": "▤"},
     {"label": "CMS PIM 100-08", "href": "/cms-pim",             "icon": "▥"},
+    {"label": "★ Track Record",  "href": "/track-record",       "icon": "◈"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
     {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},
