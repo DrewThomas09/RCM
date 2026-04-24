@@ -16,6 +16,8 @@ Available datasets (shipped as kpi_truth fixtures under
 - hospital_04_mixed_payer
 - hospital_05_dental_dso
 - hospital_06_waterfall_truth
+- hospital_07_waterfall_concordant
+- hospital_08_waterfall_critical
 
 Auth-aware file uploads are deferred — this wiring uses the existing
 kpi_truth fixtures as the demo corpus, so the tabs are immediately
@@ -343,6 +345,136 @@ def render_benchmarks_page(
         if idx > 0:
             live_html = live_html[: idx + 1] + selector + live_html[idx + 1:]
     return live_html
+
+
+# ── Partner-signed QoE memo: /diligence/qoe-memo ───────────────────
+
+def render_qoe_memo_page(
+    dataset: str = "",
+    qs: Optional[dict] = None,
+) -> str:
+    """Render the partner-signed QoE memo as a standalone HTML page.
+
+    Returns a full <html>...</html> document (not the editorial shell)
+    so "Print → Save as PDF" from a browser produces a clean memo
+    without Chartis nav chrome. When ``dataset`` is empty, renders a
+    minimal landing with a fixture selector + instructions.
+
+    Optional query-string fields read from ``qs``:
+        deal_name, target_entity, engagement_id, partner_name,
+        preparer_name, mgmt_revenue (cohort-month → USD, one-shot
+        form: ``cohort=2024-03,value=6850``). We keep metadata as
+        query params so the memo is reproducible from the URL.
+    """
+    qs = qs or {}
+    ds_path = _resolve_dataset(dataset)
+    if ds_path is None:
+        return _qoe_memo_landing(dataset)
+
+    try:
+        from . import compute_kpis, ingest_dataset
+        from .benchmarks import compute_cash_waterfall
+        from ..exports.qoe_memo import (
+            QoEMemoMetadata, render_qoe_memo_html,
+        )
+        ccd = ingest_dataset(ds_path)
+        as_of = date(2025, 1, 1)
+        bundle = compute_kpis(ccd, as_of_date=as_of, provider_id=dataset)
+
+        mgmt_map = _parse_mgmt_revenue(qs)
+        waterfall = compute_cash_waterfall(
+            ccd.claims, as_of_date=as_of,
+            management_reported_revenue_by_cohort_month=mgmt_map,
+        )
+
+        meta = QoEMemoMetadata(
+            deal_name=(qs.get("deal_name") or [dataset])[0] or None,
+            target_entity=(qs.get("target_entity") or [""])[0] or None,
+            engagement_id=(qs.get("engagement_id") or [""])[0] or None,
+            partner_name=(qs.get("partner_name") or [""])[0] or None,
+            preparer_name=(qs.get("preparer_name") or [""])[0] or None,
+        )
+        return render_qoe_memo_html(
+            bundle=bundle, cash_waterfall=waterfall, metadata=meta,
+        )
+    except Exception as exc:
+        return _qoe_memo_landing(
+            dataset,
+            error=f"{type(exc).__name__}: {exc}",
+        )
+
+
+def _parse_mgmt_revenue(qs: dict) -> Optional[Dict[str, float]]:
+    """Parse ``?mgmt_cohort=2024-03&mgmt_value=6850`` into
+    ``{'2024-03': 6850.0}``. Also accepts repeated pairs. Missing or
+    unparsable input returns None so QoR renders as UNKNOWN."""
+    cohorts = qs.get("mgmt_cohort") or []
+    values = qs.get("mgmt_value") or []
+    if not cohorts or not values:
+        return None
+    out: Dict[str, float] = {}
+    for c, v in zip(cohorts, values):
+        try:
+            out[str(c)] = float(v)
+        except (TypeError, ValueError):
+            continue
+    return out or None
+
+
+def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
+    """Small landing rendered when no fixture was picked (or the
+    pipeline errored). Intentionally a full HTML page, not the shell,
+    to match the memo itself."""
+    err_block = (
+        f'<p style="color:#b23a2d;"><strong>Could not render memo:</strong> '
+        f'{html.escape(error)}</p>'
+        if error else ""
+    )
+    options = "".join(
+        f'<option value="{html.escape(name)}"'
+        f'{" selected" if name == dataset else ""}>'
+        f'{html.escape(label)}</option>'
+        for name, label in AVAILABLE_FIXTURES
+    )
+    return (
+        '<!DOCTYPE html><html><head><meta charset="utf-8">'
+        '<title>QoE Memo — pick a dataset</title>'
+        '<style>body{font-family:Georgia,serif;max-width:7.5in;'
+        'margin:0 auto;padding:0.75in 0.5in;color:#1a1a1a;}'
+        'h1{color:#0b2341;}label{display:block;margin:12pt 0 4pt 0;'
+        'font-size:9pt;letter-spacing:1pt;text-transform:uppercase;'
+        'color:#6b5d3c;font-family:Helvetica,Arial,sans-serif;}'
+        'select,input{width:100%;padding:6pt;font-size:11pt;'
+        'border:1px solid #c9b98a;font-family:inherit;}'
+        'button{margin-top:18pt;padding:8pt 18pt;background:#0b2341;'
+        'color:#fff;border:0;font-size:11pt;cursor:pointer;'
+        'font-family:Helvetica,Arial,sans-serif;letter-spacing:1pt;'
+        'text-transform:uppercase;}</style></head><body>'
+        '<h1>Quality of Earnings Memorandum</h1>'
+        '<p>Pick a canonical claims dataset and (optionally) provide '
+        "management-reported revenue for the QoR reconciliation. The "
+        "memo renders as a standalone, printable HTML document. Use "
+        "your browser's <em>Print → Save as PDF</em> to produce the "
+        "partner deliverable.</p>"
+        f'{err_block}'
+        '<form method="GET" action="/diligence/qoe-memo">'
+        '<label>Dataset</label>'
+        f'<select name="dataset"><option value="">— pick —</option>{options}</select>'
+        '<label>Deal name (shown on cover)</label>'
+        '<input name="deal_name" placeholder="Project Aurora">'
+        '<label>Engagement ID</label>'
+        '<input name="engagement_id" placeholder="RCM-2025-042">'
+        '<label>Partner name</label>'
+        '<input name="partner_name" placeholder="Partner A">'
+        '<label>Preparer name</label>'
+        '<input name="preparer_name" placeholder="Senior Associate B">'
+        '<label>Management cohort (optional, e.g. 2024-03)</label>'
+        '<input name="mgmt_cohort" placeholder="2024-03">'
+        '<label>Management revenue USD (optional)</label>'
+        '<input name="mgmt_value" placeholder="6850.0">'
+        '<button type="submit">Render memo</button>'
+        '</form></body></html>'
+    )
 
 
 # ── Phase 3: /diligence/root-cause ─────────────────────────────────

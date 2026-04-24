@@ -1886,6 +1886,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             qs = urllib.parse.parse_qs(parsed.query)
             ds = (qs.get("dataset") or [""])[0]
             return self._send_html(render_value_page(dataset=ds))
+        if path == "/diligence/qoe-memo":
+            # Partner-signed QoE memo deliverable. `?dataset=<fixture>`
+            # runs the ingest + KPI + waterfall pipeline and renders the
+            # printable memo; other optional query params fill metadata
+            # (deal_name, engagement_id, partner_name, preparer_name,
+            # mgmt_revenue) without requiring a form submission.
+            from .diligence._pages import render_qoe_memo_page
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            return self._send_html(render_qoe_memo_page(dataset=ds, qs=qs))
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
