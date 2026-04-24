@@ -1,0 +1,125 @@
+# MA V28 HCC model — public-summary delta table.
+#
+# CMS V28 is fully effective January 1, 2026. Published impact:
+# ~3.12% reduction in average MA risk scores. Mechanisms:
+#  - 2,027 diagnosis codes removed from HCC mapping
+#  - HCC category expansion from 86 → 115
+#  - Heavy weights reduced or reassigned
+#
+# This YAML captures a REPRESENTATIVE SUBSET of the code mappings
+# used by the recalibration engine. The full 2,027-code removal
+# list is maintained in a separate licensed data feed; for
+# diligence-grade analysis, teams should pay for the CMS-published
+# crosswalk rather than rely on this seed.
+#
+# Numeric risk weights are per-HCC 2026 defaults — they update
+# annually.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://www.cms.gov/medicare/payment/medicare-advantage-rates-statistics/risk-adjustment
+
+# Aggregate CMS projection (industry-wide).
+cms_industry_projection:
+  avg_risk_score_reduction_pct: 0.0312
+  fully_effective_date: 2026-01-01
+
+# Representative diagnosis-code → V24/V28 HCC mappings.
+# ``v24_hcc`` is the pre-V28 bucket; ``v28_hcc`` is None when the
+# code was removed from HCC mapping entirely (2,027 codes).
+code_map:
+  # Vascular disease — major V28 restructure
+  - icd10: I7020       # Atherosclerosis of native arteries
+    description: Atherosclerosis w/o complications
+    v24_hcc: 108
+    v28_hcc: null       # removed from HCC mapping
+    v24_weight: 0.298
+    v28_weight: 0.000
+  - icd10: I25810      # Atherosclerosis of CABG w/ angina
+    description: Atherosclerosis of CABG
+    v24_hcc: 108
+    v28_hcc: 111
+    v24_weight: 0.298
+    v28_weight: 0.195
+
+  # Depression / mood — category split
+  - icd10: F3289       # Other specified depressive episodes
+    description: Other specified depressive episodes
+    v24_hcc: 59
+    v28_hcc: null
+    v24_weight: 0.309
+    v28_weight: 0.000
+  - icd10: F332        # Major depressive disorder, recurrent, severe
+    description: Recurrent severe MDD
+    v24_hcc: 59
+    v28_hcc: 155        # new V28 category
+    v24_weight: 0.309
+    v28_weight: 0.242
+
+  # Diabetes — weight reduction
+  - icd10: E119        # Type 2 diabetes without complications
+    description: Type 2 DM without complications
+    v24_hcc: 19
+    v28_hcc: 37
+    v24_weight: 0.105
+    v28_weight: 0.091
+  - icd10: E1122       # Type 2 diabetes with CKD
+    description: Type 2 DM with CKD
+    v24_hcc: 18
+    v28_hcc: 36
+    v24_weight: 0.302
+    v28_weight: 0.280
+
+  # COPD
+  - icd10: J449        # COPD unspecified
+    description: COPD unspecified
+    v24_hcc: 111
+    v28_hcc: 116
+    v24_weight: 0.335
+    v28_weight: 0.329
+
+  # Chronic kidney disease
+  - icd10: N183        # CKD stage 3
+    description: CKD stage 3
+    v24_hcc: 138
+    v28_hcc: null       # removed — moderate CKD loses HCC status
+    v24_weight: 0.069
+    v28_weight: 0.000
+  - icd10: N184        # CKD stage 4
+    description: CKD stage 4
+    v24_hcc: 137
+    v28_hcc: 138
+    v24_weight: 0.284
+    v28_weight: 0.267
+
+  # Cancer
+  - icd10: C771        # Secondary malignancy of intrathoracic nodes
+    description: Secondary neoplasm of intrathoracic nodes
+    v24_hcc: 8
+    v28_hcc: 17
+    v24_weight: 2.659
+    v28_weight: 2.413
+
+# DOJ / coding-intensity anchor case: Aetna/CVS $117.7M settlement
+# (March 2026) for "add-only retrospective" chart-review practice.
+coding_intensity_case_studies:
+  - name: Aetna / CVS
+    settlement_date: 2026-03-15
+    settlement_usd: 117700000
+    pattern: ADD_ONLY_RETROSPECTIVE
+    narrative: |
+      DOJ settled $117.7M over retrospective chart reviews that
+      added diagnoses but never removed them — systematic
+      upcoding flagged under the False Claims Act.
+
+  - name: Cano Health
+    bankruptcy_date: 2024-02-04
+    narrative: |
+      V28 recalibration + member-acquisition-cost burn directly
+      preceded Ch. 11. Any MA-risk primary care platform with
+      similar HCC capture patterns carries Cano-tier risk.
+
+# HCC capture rate thresholds for the coding-intensity analyzer.
+capture_rate_thresholds:
+  specialty_benchmark_multiplier_watch: 1.20      # 20% above benchmark
+  specialty_benchmark_multiplier_critical: 1.40   # 40% above benchmark
