@@ -1,8 +1,8 @@
 # SeekingChartis / RCM-MC
 
-**Full-stack healthcare RCM diligence workbench — local Python, public-data models, ~30 min from tape to IC-ready memo.**
+**A full-stack healthcare RCM diligence workbench. Runs locally. Calibrated to public-filing data. Turns a banker's book into an IC-ready memo in roughly thirty minutes.**
 
-Replaces the $200K–500K third-party-advisory slice of a healthcare diligence (peer benchmarking, regulatory exposure, covenant stress, bridge audit, bear case) with transparent stdlib-heavy models calibrated to public-filing corpora (HCRIS, Care Compare, 10-K, IRS 990). Everything runs on your laptop. No API calls, no SaaS subscription, no black-box scoring — every output traces back to an input and a function you can read.
+This replaces the slice of healthcare diligence that firms typically outsource to $200K–500K third-party advisors — peer benchmarking, regulatory exposure, covenant stress, synergy-bridge audit, bear case. The inputs are public: HCRIS, Care Compare, 10-K, IRS 990. The models are transparent; every output traces back to an input and a function you can read. Nothing leaves your laptop. There are no API calls, no SaaS subscriptions, no black-box scoring.
 
 ---
 
@@ -37,19 +37,19 @@ Replaces the $200K–500K third-party-advisory slice of a healthcare diligence (
 
 ## 1. What it does
 
-Takes a target (CCN or name) and an LOI-style input (NPR, EBITDA, EV, debt, entry multiple, payer mix, landlord) and runs a **19-step pipeline** in ~170ms that produces:
+You give it a target — CCN or hospital name — plus the LOI economics (NPR, EBITDA, EV, debt stack, entry multiple, payer mix, landlord). It runs a 19-step pipeline in roughly 170 milliseconds and returns:
 
-- Peer benchmark across 15 HCRIS metrics vs 25–50 bed/state/region-matched peers (3-yr trend slopes, peer P25/median/P75 bands)
-- Regulatory exposure mapped to **named thesis drivers** with first-kill date and annual EBITDA overlay
-- 500-path × 20-quarter covenant stress with equity-cure sizing per breach
-- Bridge audit of seller synergies against ~3,000-outcome lever-realization priors with counter-bid math
-- Payer concentration MC with rate-shock priors and HHI amplifier
-- Deal MC (1,500+ trials) with MOIC/IRR/proceeds cones
-- Autopsy match against 12 named historical failures (Steward, Cano, Envision, etc.)
-- Exit-timing IRR curve × buyer-fit across Y2–Y7
-- Auto-generated bear case with `[R/C/B/M/A/E/P/H]` citation keys → print-ready IC memo HTML
+- A **peer benchmark** across 15 HCRIS metrics, compared to 25–50 hospitals matched on size, state, and region — with three-year trend slopes and peer P25 / median / P75 bands
+- A **regulatory exposure map** that identifies, by date, which of your named thesis drivers are killed by upcoming CMS / OIG / FTC rules — and the annual EBITDA overlay that flows downstream
+- A **covenant stress simulation**: 500 lognormal EBITDA paths × 20 quarters × 4 covenants, with equity-cure sizing per breach
+- A **bridge audit** of seller synergies against a library of roughly 3,000 historical initiative outcomes, with counter-bid math and an earn-out alternative
+- A **payer concentration Monte Carlo** with historical rate-shock priors and an HHI amplifier
+- A **Deal MC** (1,500+ trials, 8 varied drivers) producing MOIC / IRR / proceeds cones with driver attribution
+- An **autopsy match** against 12 named historical failures — Steward, Cano, Envision, Surgery Partners, and others
+- An **exit-timing IRR curve** crossed with buyer-type fit across Y2 through Y7
+- An **auto-generated bear case** with citation keys, ranked by severity and dollar impact, rendered as print-ready IC-memo HTML
 
-Every number is reproducible — same inputs → same outputs, no RNG leakage (seeded where needed), no external network calls.
+Every number is reproducible. Same inputs, same outputs. Monte Carlo is seeded where it matters. No network calls in the hot path.
 
 ---
 
@@ -92,20 +92,21 @@ Every number is reproducible — same inputs → same outputs, no RNG leakage (s
 
 ## 3. How the models work
 
-Every module follows the same pattern so outputs are auditable:
+Every module follows the same pattern. That uniformity is what makes the outputs auditable.
 
-1. **Curated prior library** — hand-calibrated YAML / Python dataclass tuples (payer rate-move distributions, lever realization priors, regulatory event × driver mappings, PE autopsy signatures). Each prior cites its source (HFMA survey, 10-K commentary, Federal Register docket, retrospective failure analysis). Refresh cadence per file.
-2. **Target profile normalization** — LOI inputs + HCRIS lookup feed a `target_profile` dict with specialty, MA mix, payer concentration, landlord, CCN. Modules read from this — no cross-module state.
-3. **Monte Carlo where distributions matter** — covenant stress (500 paths × 20 quarters), Deal MC (1,500+ trials × 8 drivers), payer stress (500 paths × horizon years), HCRIS peer-density quantiles. All MC uses stdlib-only Beasley-Springer-Moro inverse normal (no scipy) for reproducibility and zero runtime deps beyond numpy/pandas.
-4. **Target-conditional adjustments** — priors aren't static. A denial-workflow lever prior gets +12pp median realization when the target's denial rate is already >8% (low-hanging fruit). An FTE-reduction prior loses 30pp when the target is unionized. These boosts are explicit in the `LeverPrior` dataclass, not hidden in scoring code.
-5. **Verdict thresholds → named** — every module emits PASS / CAUTION / WARNING / FAIL against documented numeric cutoffs (e.g., covenant breach-probability >50% = FAIL). Thresholds are in the README for each module, editable in one place.
-6. **Dollar-impact rollup** — everything terminates in an EBITDA-at-risk number that feeds downstream. Regulatory overlay → Covenant Lab overlay → Deal MC `reg_headwind_usd` → Bear Case `[R1]` evidence → IC memo headline.
+**Curated priors.** Each analytic engine sits on top of a hand-calibrated prior library — payer rate-move distributions, lever-realization priors, regulatory events mapped to thesis drivers, autopsy signatures. Every prior cites its source (HFMA survey, 10-K commentary, Federal Register docket, retrospective failure analysis) and documents its refresh cadence. You can read every prior in the module README and edit it in one file.
 
-**Trust hooks**:
-- Every `@dataclass` output has a `source_module` and `citation_key` field
-- Every MC function accepts `seed: int` for deterministic reproduction
-- Every prior's calibration source is documented in the module README's "Refreshing the priors" section
-- `rcm-mc analysis <deal_id> --explain <metric>` traces any metric back through its provenance graph to raw inputs
+**Target-profile normalization.** The LOI inputs plus the HCRIS lookup feed a single `target_profile` dictionary — specialty, MA mix, payer concentration, landlord, CCN. Every module reads from this dictionary. There is no hidden cross-module state.
+
+**Monte Carlo where the distribution matters.** Covenant stress runs 500 paths across 20 quarters. Deal MC runs 1,500+ trials across 8 drivers. Payer stress runs 500 paths across the hold period. Every simulation uses a stdlib-only Beasley-Springer-Moro inverse normal for lognormal sampling — no scipy, no outside dependency beyond numpy and pandas.
+
+**Target-conditional adjustments.** Priors are not static. A denial-workflow lever gets +12 points of median realization when the target's denial rate is already above 8% — the low-hanging-fruit adjustment. An FTE-reduction prior loses 30 points when the target is unionized. These adjustments live in the `LeverPrior` dataclass, visible and auditable, not buried in scoring code.
+
+**Named verdict thresholds.** Every module terminates in a PASS / CAUTION / WARNING / FAIL verdict against documented numeric cutoffs — covenant breach probability above 50% is a FAIL; Top-1 payer share above 30% triggers the concentration amplifier. The thresholds are published in each module's README and editable in one place.
+
+**Dollar-impact rollup.** Every analytic output terminates in an EBITDA-at-risk number, and that number flows downstream. The regulatory overlay flows into the Covenant Lab path reconstruction, which flows into Deal MC's `reg_headwind_usd` driver, which flows into the Bear Case `[R1]` evidence, which flows into the IC memo headline. The arithmetic is explicit at every step.
+
+**Trust hooks.** Every dataclass output carries a `source_module` and `citation_key`. Every Monte Carlo function accepts a `seed` argument for deterministic reproduction. Every prior's calibration source is documented in its module README. Any metric can be traced back through the provenance graph to raw inputs via `rcm-mc analysis <deal_id> --explain <metric>`.
 
 ---
 
@@ -259,125 +260,97 @@ Cmd-P prints it cleanly for the partners' Tuesday 8 AM meeting.
 
 ## 6. Module methodology
 
-Each module's per-file README has the full math. The summaries below cover calibration source, sample size, method, key assumptions, and named thresholds.
+Each module's per-file README carries the full math. The summaries below describe what each engine does, the data behind it, and where the key assumptions live.
 
 ### HCRIS Peer X-Ray · `/diligence/hcris-xray` · [README](RCM_MC/rcm_mc/diligence/hcris_xray/README.md)
 
-**Corpus**: 17,701 Medicare cost reports, CMS HCRIS public extract, FY 2020–2022. Cost of 1 cold-load parse ~250ms, cached; subsequent lookups ~7ms.
+The peer-benchmark engine. It loads 17,701 Medicare cost reports from the CMS HCRIS public extract (FY 2020–2022) and benchmarks the target against bed-size-, state-, and region-matched peers across 15 derived metrics.
 
-**Peer-match waterfall**: same cohort (`MICRO / SMALL_COMMUNITY / COMMUNITY / REGIONAL / ACADEMIC` binned on beds) + same state + beds within ±30% → same region → national. Stops at ≥25 peers (configurable via `peer_k`).
+Peer selection uses a waterfall: same cohort (MICRO / SMALL_COMMUNITY / COMMUNITY / REGIONAL / ACADEMIC, binned on beds) plus same state with beds within ±30%, falling back to same region, then national, until at least 25 peers are found. The metric surface covers Size, Payer Mix, Revenue Cycle, Cost Structure, and Margin; each metric carries a direction flag (higher-is-better, lower-is-better, neutral) that drives the coloring. Trend is a three-year linear slope on the same CCN's history, classified as improving, flat, or deteriorating at a ±1% annualized cut.
 
-**Metric surface**: 15 derived ratios grouped into Size / Payer Mix / Revenue Cycle / Cost Structure / Margin. Each metric has a `direction` flag (HIGHER_BETTER / LOWER_BETTER / NEUTRAL) that drives the green/red coloring logic. Full spec in [`metrics.py`](RCM_MC/rcm_mc/diligence/hcris_xray/metrics.py) `METRIC_SPECS`.
-
-**Trend slope**: 3-year linear slope on same-CCN history; classified IMPROVING / FLAT / DETERIORATING on ±1% annualized threshold.
+Cold load parses the gzipped CSV in about 250 milliseconds. Subsequent lookups run in roughly 7 milliseconds on the cached dataset.
 
 ### Regulatory Calendar × Kill-Switch · `/diligence/regulatory-calendar` · [README](RCM_MC/rcm_mc/diligence/regulatory_calendar/README.md)
 
-**Corpus**: 11 hand-curated events covering CMS V28 HCC, OPPS site-neutral CY2026, TEAM mandatory bundled payment, NSA IDR QPA recalculation, ESRD PPS CY2027, FTC HSR expansion, USAP FTC consent order, CT HB 5316 sale-leaseback phaseout, CMS PFS E/M updates, OIG management-fee advisory, DOJ FCA retroactive coding. Each carries publish / effective dates, affected specialties, impact distribution, thesis drivers killed, Federal Register docket URL.
+The thesis kill-switch. It carries 11 hand-curated US healthcare regulatory events — CMS V28, OPPS site-neutral, the TEAM mandatory bundled payment, NSA IDR recalculation, ESRD PPS CY2027, the FTC HSR expansion, the USAP consent order, and others — each with its publish and effective dates, affected specialties, named thesis drivers it puts at risk, impact distribution, and Federal Register docket URL.
 
-**Driver mapping**: target profile (specialty, MA mix, payer share, HOPD revenue %, REIT landlord) fed to per-event impact mapper. Driver-level verdict: UNAFFECTED / DAMAGED (>10% impair) / KILLED (>50% impair or zero residual).
-
-**Verdict thresholds**: PASS = no driver impaired >10%. CAUTION = 1 damaged, 0 killed. WARNING = 1 killed OR 2+ damaged. FAIL = 2+ killed.
-
-**Dollar overlay**: per-year EBITDA headwind $ fed downstream to Covenant Lab (subtracted from EBITDA paths pre-test) and Deal MC (`reg_headwind_usd` driver).
+A target-profile impact mapper takes the target's specialty, MA mix, payer share, HOPD revenue share, and landlord type, then returns a per-driver verdict of UNAFFECTED, DAMAGED (above a 10% impairment threshold), or KILLED (above 50%, or zero residual value). The overall verdict is PASS if no driver is impaired above 10%, CAUTION for one damaged driver, WARNING for a kill or two damaged, and FAIL for two or more kills. The per-year EBITDA headwind feeds downstream into Covenant Lab's path reconstruction and Deal MC's `reg_headwind_usd` driver.
 
 ### Covenant & Capital Stack Stress Lab · `/diligence/covenant-stress` · [README](RCM_MC/rcm_mc/diligence/covenant_lab/README.md)
 
-**Path reconstruction**: Deal MC yearly P25/P50/P75 bands → 500 lognormal paths via stdlib Beasley-Springer-Moro inverse normal. No scipy.
+The covenant breach simulator. It takes Deal MC's yearly P25 / P50 / P75 EBITDA bands and reconstructs 500 lognormal paths using a stdlib-only Beasley-Springer-Moro inverse normal. No scipy.
 
-**Debt schedule**: 6 tranche kinds (REVOLVER / TLA / TLB / UNITRANCHE / MEZZANINE / SELLER_NOTE) with floating or fixed rates, custom amort, commitment fees on undrawn revolver, lien priority. Quarterly interest + scheduled principal + fees.
+The capital stack supports six tranche kinds — revolver, TLA, TLB, unitranche, mezzanine, seller note — each with floating or fixed rate, custom amortization, commitment fees on undrawn revolver balance, and lien priority. Quarterly debt service is applied against each path and tested against four covenants: Net Leverage, DSCR, Interest Coverage, and Fixed Charge Coverage. Step-down schedules are supported (e.g., leverage opens at 7.5× and steps to 6.0× by Y4). For every breach, the tool solves for the minimum equity injection that restores the ratio above threshold with cushion.
 
-**Covenants tested** (default set, editable in [`covenants.py`](RCM_MC/rcm_mc/diligence/covenant_lab/covenants.py) `DEFAULT_COVENANTS`): Net Leverage, DSCR, Interest Coverage, Fixed Charge Coverage. Step-downs supported (e.g., 7.5× → 6.0× over Y1–Y4).
-
-**Equity cure math**: for each breaching path × quarter, solve for the minimum $ injection that restores the breached ratio above threshold with cushion.
-
-**Verdict thresholds** (PE bank underwriting norms): max breach probability <10% = PASS · 10–25% = WATCH · 25–50% = WARNING · >50% = FAIL.
+Verdict thresholds match PE-bank underwriting norms: maximum breach probability under 10% is a PASS, 10–25% is a WATCH, 25–50% is a WARNING, and above 50% is a FAIL.
 
 ### EBITDA Bridge Auto-Auditor · `/diligence/bridge-audit` · [README](RCM_MC/rcm_mc/diligence/bridge_audit/README.md)
 
-**Prior corpus**: ~3,000 historical RCM initiative outcomes calibrated from HFMA/MGMA/AHA surveys + 10-K commentary + retrospective analysis of PE healthcare failures (Steward, Cano, Envision). Refreshed when regulatory environment shifts the failure rate (e.g., V28 dropped `MA_CODING_UPLIFT` prior 15pp from 2022 → 2026).
+The synergy audit engine. It routes each line of a banker's bridge into one of 21 canonical lever categories using a priority-tiebreak keyword classifier — specialized categories like `MA_CODING_UPLIFT` and `SITE_NEUTRAL_MITIGATION` beat the generic `CODING_INTENSITY` when keywords overlap. Each category sits on top of a realization prior calibrated from approximately 3,000 historical RCM initiative outcomes (HFMA / MGMA / AHA surveys, 10-K commentary, retrospective analysis of PE healthcare failures).
 
-**21 lever categories**: routed from raw banker text via priority-tiebreak keyword classifier. Specialized (`MA_CODING_UPLIFT`, `SITE_NEUTRAL_MITIGATION`) beat generic (`CODING_INTENSITY`) on priority. Full list + keywords in [`lever_library.py`](RCM_MC/rcm_mc/diligence/bridge_audit/lever_library.py).
+Each prior carries median / P25 / P75 realization as a fraction of the claimed lift, a historical failure rate (share of deals realizing less than half the claim), a duration-to-run-rate in months, and target-conditional adjustments. The denial-workflow prior gets +12 points of median realization when the target's denial rate is already above 8%. The FTE-reduction prior loses 30 points when the target is unionized. The MA coding prior dropped 15 points between 2022 and 2026 as V28 took effect.
 
-**Per-lever prior**: median / P25 / P75 realization fraction (1.0 = fully realized), failure rate (fraction <50% realized), duration-to-run-rate months, conditional boosts (e.g., `denial_workflow` gets +12pp median when target denial rate >8%; `FTE_REDUCTION` gets −30pp when target is unionized).
-
-**Verdict per lever**: REALISTIC (inside P25-P75) / OVERSTATED (claim >P75) / UNSUPPORTED (claim >P75 AND historical failure rate >40%) / UNDERSTATED (claim <P25, potential sandbag).
-
-**Rollup**: bridge-level gap % between claimed and realistic P50 → counter-bid math = gap × entry multiple. Alternative: structure gap $ as earn-out triggered at higher LTM EBITDA threshold.
+Each lever receives a verdict of REALISTIC (inside the P25–P75 band), OVERSTATED (claim above P75), UNSUPPORTED (claim above P75 and historical failure rate above 40%), or UNDERSTATED (claim below P25 — potential seller sandbag). The bridge-level rollup computes the gap between claimed and realistic P50, then translates that into counter-bid math (gap × entry multiple) with an earn-out alternative triggered at a higher LTM EBITDA threshold.
 
 ### Bear Case Auto-Generator · `/diligence/bear-case` · [README](RCM_MC/rcm_mc/diligence/bear_case/README.md)
 
-**Evidence extractors (8)**: one per source module. Each returns a list of `Evidence` with severity (CRITICAL / HIGH / MEDIUM / LOW), $ impact, citation key, narrative, source deep-link. Extractors are defensive — missing inputs return `[]`, never raise.
+The IC-memo bear-case synthesizer. It runs eight defensive extractors — one per source module — that each pull relevant findings and normalize them into a common `Evidence` record with severity (CRITICAL / HIGH / MEDIUM / LOW), dollar impact, citation key, narrative, and a deep link back to the source.
 
-**Ranking**: severity × absolute $ impact × source-module priority, with deduplication between regulatory overlay and bridge-audit gap (common double-count).
-
-**Citation keys**: `[R{n}]` regulatory, `[C{n}]` covenant, `[B{n}]` bridge audit, `[M{n}]` Deal MC, `[A{n}]` autopsy, `[E{n}]` exit, `[P{n}]` payer, `[H{n}]` HCRIS. Each resolves to a deep link back to the source module page.
-
-**Verdict thresholds**: EBITDA-at-risk as % of run-rate — <3% = clears IC · 3–10% = watch · 10–25% = material · >25% = IC-killable.
+Evidence is ranked by severity × absolute dollar impact × source-module priority, with deduplication between the regulatory overlay and the bridge-audit gap (a common double-count). Citation keys follow a scheme that lets a reader trace any claim back to its origin: `[R]` for regulatory, `[C]` for covenant, `[B]` for bridge audit, `[M]` for Deal MC, `[A]` for autopsy, `[E]` for exit timing, `[P]` for payer, `[H]` for HCRIS. The verdict is framed in terms of EBITDA at risk as a share of run-rate: under 3% clears IC, 3–10% is a watch, 10–25% is material, and above 25% is IC-killable territory.
 
 ### Payer Mix Stress Lab · `/diligence/payer-stress` · [README](RCM_MC/rcm_mc/diligence/payer_stress/README.md)
 
-**Prior library**: 19 curated payers covering national commercial (UHC, Anthem, Aetna, Cigna, Humana), regional Blues, Medicare FFS + MA, Medicaid FFS + Centene + Molina, TRICARE, Workers Comp, Self-pay. Each: per-renewal rate-move distribution (p25/median/p75), negotiating leverage (0-1), 12-mo renewal probability, churn probability. Calibrated from HFMA/MGMA surveys + 10-K commentary (HCA/THC/UHS disclose payer-specific rate movements).
+The payer concentration Monte Carlo. The prior library covers 19 US healthcare payers — the national commercials (UnitedHealthcare, Anthem, Aetna, Cigna, Humana), regional Blues plans, Medicare FFS and Medicare Advantage, Medicaid FFS plus managed Medicaid (Centene, Molina), TRICARE, Workers Comp, and Self-pay. Each payer ships with a per-renewal rate-move distribution (P25 / median / P75), a negotiating leverage score (0–1), a 12-month renewal probability, and a churn probability. The priors were calibrated from HFMA / MGMA rate-move surveys and 10-K disclosures by HCA, Tenet, and UHS.
 
-**Monte Carlo**: 500 paths × horizon years × each payer. Per path: sample rate move from Normal fit to prior, dampen by (1 − renewal probability) when not renewing that year, draw tail churn event with payer-specific probability.
+The simulation runs 500 paths per year per payer. Each path samples a rate move from a Normal fit to the prior, dampens the move by `(1 − renewal probability)` when the contract isn't up for renewal that year, and draws a tail churn event with payer-specific probability.
 
-**Concentration amplifier** (empirical PE credit-fund heuristic): Top-1 share >30% → multiply aggregate NPR volatility by `1 + (top_1 − 0.30) × 2`. Top-2 >50% → +0.10. Top-3 >70% → +0.10 more.
-
-**Verdict thresholds**: max concentration severity + P10 EBITDA drag → PASS / CAUTION / WARNING / FAIL.
+A concentration amplifier — an empirical PE credit-fund heuristic — scales aggregate NPR volatility when the mix is top-heavy. If the top payer's share exceeds 30%, aggregate volatility is multiplied by `1 + (top_1 − 0.30) × 2`. If the top two exceed 50% combined, another 10 points of amplification. If the top three exceed 70%, another 10.
 
 ### Deal Monte Carlo · `/diligence/deal-mc`
 
-**Trials**: 1,500–3,000 (configurable via `n_runs`). 5-year hold default.
+The headline value simulation. It runs 1,500 to 3,000 trials (configurable) over a five-year default hold. Each trial varies eight drivers with calibrated distributions: organic NPR growth, denial-improvement realization, regulatory headwind dollars, lease escalator percentage, physician attrition, cyber-incident probability, V28 coding compression, and exit multiple. The full priors live in the `DealScenario` dataclass.
 
-**Drivers varied**: organic NPR growth, denial-improvement realization, regulatory headwind $, lease escalator %, physician attrition, cyber-incident probability, V28 coding compression, exit multiple. Each driver has a calibrated Normal or lognormal distribution — full priors in the `DealScenario` dataclass.
-
-**Outputs**: MOIC / IRR / proceeds distributions (P10/P50/P90), attribution (variance decomposition across drivers via Sobol-style first-order indices, stdlib-only), sensitivity tornado, P(MOIC<1×).
+The outputs are MOIC, IRR, and proceeds distributions at P10 / P50 / P90, along with a driver-attribution decomposition (Sobol-style first-order indices, stdlib-only) and a sensitivity tornado. The `P(MOIC < 1×)` statistic — the probability of losing money — is surfaced as a first-class metric.
 
 ### Exit Timing + Buyer Fit · `/diligence/exit-timing`
 
-**IRR curve**: MOIC / IRR / proceeds evaluated for exit at each Y2–Y7. Applies exit-multiple compression/expansion priors by buyer type.
-
-**Buyer-fit scoring**: Strategic / PE Secondary / IPO / Sponsor-Hold — each scored on scale fit × synergy fit × financing environment × regulatory timing. Recommendation picks the highest probability-weighted proceeds.
+The exit-window engine. It evaluates MOIC, IRR, and proceeds for an exit in each of years 2 through 7, applying exit-multiple expansion or compression priors by buyer type. It scores four buyer archetypes — Strategic, PE Secondary, IPO, Sponsor-Hold — on scale fit, synergy fit, financing environment, and regulatory timing. The recommendation picks the year-buyer pair with the highest probability-weighted proceeds.
 
 ### Thesis Pipeline · `/diligence/thesis-pipeline` · [README](RCM_MC/rcm_mc/diligence/thesis_pipeline/README.md)
 
-**Step chain**: 19 steps wrapped in `_timed(step_name, fn, step_log)` — catches exceptions per step, logs elapsed ms + OK/ERROR/SKIP status. One broken step never breaks the whole report. Headline synthesizer pulls ~20 top-line numbers into `ThesisPipelineReport` for Deal Profile + IC Packet.
-
-**End-to-end runtime**: ~170ms on fixture data. Optional steps (HCRIS X-Ray when `hcris_ccn` supplied, regulatory calendar when specialty/payer data present) gated on input.
+The orchestrator. It runs the 19-step diligence chain, each step wrapped in `_timed(step_name, fn, step_log)` to catch exceptions, log elapsed milliseconds, and tag each step OK / ERROR / SKIP. One broken step never breaks the whole report. A headline synthesizer pulls roughly 20 top-line numbers into a single `ThesisPipelineReport` for the Deal Profile and IC Packet. End-to-end runtime on fixture data is about 170 milliseconds. Optional steps are gated on input — HCRIS X-Ray runs when a CCN is supplied, regulatory calendar runs when specialty and payer data are present.
 
 ### Management Scorecard · `/diligence/management`
 
-**Role weights**: CEO 35% / CFO 25% / COO 20% / remainder split across named direct reports. Per-exec score = forecast reliability × comp competitiveness × tenure × prior-role reputation (0–100 each, weighted).
+The management-quality grader. Role weights are CEO at 35%, CFO at 25%, COO at 20%, with the remainder split across named direct reports. Each executive is scored 0–100 on forecast reliability, comp competitiveness, tenure, and prior-role reputation. The team-level rollup is a weighted average across roles.
 
 ### Physician Attrition · `/diligence/physician-attrition`
 
-**Inputs**: per-NPI tenure, age, productivity trend, comp delta vs market, specialty churn rate. Outputs per-NPI flight-risk percentile + NPR-at-risk rollup.
+Per-NPI flight risk. Inputs are physician tenure, age, productivity trend, comp delta versus market, and specialty churn rate. The output is a per-physician flight-risk percentile plus an NPR-at-risk rollup.
 
 ### Provider Economics · `/diligence/physician-eu`
 
-**Per-MD P&L**: gross receipts − variable costs − allocated overhead − comp. Drop-candidate = negative contribution margin AND replacement availability. EBITDA uplift from removing drop-candidates fed into Deal MC.
+Per-physician P&L. Gross receipts minus variable costs minus allocated overhead minus compensation. A "drop candidate" is a physician with negative contribution margin and replacement availability. The EBITDA uplift from pruning drop candidates is fed into Deal MC.
 
 ### Deal Autopsy · `/diligence/deal-autopsy`
 
-**Corpus**: 12 named historical failures (Steward, Cano Health, Envision, Surgery Partners, US Acute Care Solutions, Covis Pharma, etc.) with documented signatures across payer mix × lease intensity × regulatory exposure × physician concentration × sponsor pattern.
-
-**Match**: cosine similarity on signature vector. Top match returned with severity grade + narrative rationale + link to case study.
+The pattern-match engine. It holds 12 named historical PE healthcare failures — Steward, Cano Health, Envision, Surgery Partners, US Acute Care Solutions, Covis Pharma, and others — each with a documented signature across payer mix, lease intensity, regulatory exposure, physician concentration, and sponsor pattern. Cosine similarity on the target's signature vector surfaces the closest match, along with a severity grade, narrative rationale, and link to the case study.
 
 ### RCM Benchmarks · `/diligence/benchmarks`
 
-**KPIs**: 20+ revenue-cycle metrics — days in AR, gross denial rate, clean claim rate, cost-to-collect, NPSR realization, cohort liquidation curves, write-off patterns. Computed from claims corpus + HFMA peer-band compared (P25/P50/P75 peer bands by specialty + size).
+Twenty-plus revenue-cycle KPIs computed from the claims corpus — days in AR, gross denial rate, clean claim rate, cost-to-collect, NPSR realization, cohort liquidation curves, and write-off patterns — each compared to HFMA peer bands (P25 / P50 / P75) bucketed by specialty and size.
 
 ### Diligence Checklist · `/diligence/checklist`
 
-**Items**: 40+ diligence tasks across 5 phases — Screening → CCD/benchmarks → Risk workbench → Financial → Deliverables. Auto-check triggered by module fire events in the portfolio audit log.
+A workflow tracker for 40+ diligence tasks across five phases: Screening, CCD and benchmarks, Risk workbench, Financial, and Deliverables. Auto-checks are triggered by module-fire events in the portfolio audit log.
 
 ### IC Packet · `/diligence/ic-packet`
 
-**Output**: print-ready HTML memo bundling Deal metadata + recommendation (PROCEED / PROCEED_WITH_CONDITIONS / DECLINE), waterfall + KPIs, bankruptcy scan, autopsy matches, counterfactual sensitivity, public-comp context, auto-injected regulatory timeline block, auto-injected bear case block, open banker questions, walkaway conditions. `@media print` CSS for clean Cmd-P to PDF.
+The one-click investment-committee deliverable. A print-ready HTML memo bundles deal metadata and recommendation (PROCEED / PROCEED_WITH_CONDITIONS / DECLINE), waterfall and KPIs, bankruptcy scan, autopsy matches, counterfactual sensitivity, public-comp context, auto-injected regulatory timeline block, auto-injected bear-case block, open questions for the banker, and walkaway conditions. `@media print` CSS makes for a clean Cmd-P to PDF.
 
 ### Seeking Alpha Market Intelligence · `/market-intel/seeking-alpha`
 
-**Public operators (14)**: HCA, THC, CYH, UHS, EHC, ARDT, PRVA, DVA, FMS, SGRY, UNH, ELV, MPW, WELL. EV/EBITDA + analyst consensus BUY/HOLD/SELL. **PE transactions (12)**: recent sponsor/target/multiple with narrative and outcome. **Sector sentiment**: category heatmap + news feed. Refresh cadence weekly via curated YAML in `market_intel/content/`.
+Public-tape context. Fourteen public healthcare operators (HCA, THC, CYH, UHS, EHC, ARDT, PRVA, DVA, FMS, SGRY, UNH, ELV, MPW, WELL) with EV / EBITDA multiples and analyst BUY / HOLD / SELL consensus, alongside 12 recent PE transactions with sponsor, target, multiple, and outcome narrative. Sector sentiment is rendered as a category heatmap and news feed. The data refreshes weekly via curated YAML in `market_intel/content/`.
 
 ---
 
