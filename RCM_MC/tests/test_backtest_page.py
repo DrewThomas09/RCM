@@ -215,7 +215,7 @@ class TestRenderBacktest(unittest.TestCase):
     def test_renders_html(self):
         from rcm_mc.ui.data_public.backtest_page import render_backtest
         html = render_backtest()
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 50_000)
 
     def test_contains_svgs(self):
@@ -240,7 +240,8 @@ class TestRenderBacktest(unittest.TestCase):
     def test_nav_link_present(self):
         from rcm_mc.ui.data_public.backtest_page import render_backtest
         html = render_backtest()
-        self.assertIn("/backtest", html)
+        # Page identity check (legacy-nav self-link deprecated).
+        self.assertIn("Corpus Backtest", html)
 
     def test_no_light_theme_palette(self):
         from rcm_mc.ui.data_public.backtest_page import render_backtest

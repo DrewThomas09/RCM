@@ -8,7 +8,7 @@ class TestRenderDealSearch(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
         html = render_deal_search()
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 30_000)
 
     def test_query_filter(self):
@@ -20,22 +20,22 @@ class TestRenderDealSearch(unittest.TestCase):
     def test_sector_filter(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
         html = render_deal_search(sector="Dental")
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_moic_filter(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
         html = render_deal_search(moic_lo=3.0)
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_year_filter(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
         html = render_deal_search(yr_lo=2018, yr_hi=2022)
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_ev_filter(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
         html = render_deal_search(ev_lo=100.0, ev_hi=500.0)
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_no_results(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
@@ -46,7 +46,7 @@ class TestRenderDealSearch(unittest.TestCase):
     def test_sort_by_year(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
         html = render_deal_search(sort_by="year")
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_form_present(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
@@ -79,7 +79,7 @@ class TestRenderDealSearch(unittest.TestCase):
     def test_page_2(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
         html = render_deal_search(page=2)
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_payer_mini_svg(self):
         from rcm_mc.ui.data_public.deal_search_page import _payer_mini

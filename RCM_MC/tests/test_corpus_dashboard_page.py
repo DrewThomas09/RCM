@@ -8,7 +8,7 @@ class TestRenderCorpusDashboard(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
         html = render_corpus_dashboard()
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 20_000)
 
     def test_kpi_bar_present(self):
@@ -49,9 +49,10 @@ class TestRenderCorpusDashboard(unittest.TestCase):
     def test_editorial_theme(self):
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
         html = render_corpus_dashboard()
-        # New editorial theme: CSS tokens linked, not legacy dark terminal
-        self.assertIn("chartis_tokens.css", html)
-        self.assertNotIn("0a0e17", html.lower())
+        # Branch `fix/revert-ui-reskin` restored the dark terminal
+        # palette — the short-lived editorial CSS-tokens theme is gone.
+        self.assertIn("power_ui.css", html)
+        self.assertIn("#0a0e17", html.lower())
 
     def test_quality_summary(self):
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard

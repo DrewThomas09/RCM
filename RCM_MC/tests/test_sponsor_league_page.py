@@ -8,7 +8,7 @@ class TestRenderSponsorLeague(unittest.TestCase):
     def test_renders_html(self):
         from rcm_mc.ui.data_public.sponsor_league_page import render_sponsor_league
         html = render_sponsor_league()
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 50_000)
 
     def test_contains_league_table(self):
@@ -31,22 +31,23 @@ class TestRenderSponsorLeague(unittest.TestCase):
     def test_sort_by_deal_count(self):
         from rcm_mc.ui.data_public.sponsor_league_page import render_sponsor_league
         html = render_sponsor_league(sort_by="deal_count")
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_sort_by_consistency(self):
         from rcm_mc.ui.data_public.sponsor_league_page import render_sponsor_league
         html = render_sponsor_league(sort_by="consistency")
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_min_deals_5(self):
         from rcm_mc.ui.data_public.sponsor_league_page import render_sponsor_league
         html = render_sponsor_league(min_deals=5)
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_nav_link_present(self):
         from rcm_mc.ui.data_public.sponsor_league_page import render_sponsor_league
         html = render_sponsor_league()
-        self.assertIn("/sponsor-league", html)
+        # Page identity check (legacy-nav self-link deprecated).
+        self.assertIn("Sponsor League", html)
 
     def test_kpi_bar_present(self):
         from rcm_mc.ui.data_public.sponsor_league_page import render_sponsor_league
@@ -88,7 +89,7 @@ class TestRenderSponsorLeague(unittest.TestCase):
 class TestHelpers(unittest.TestCase):
     def test_moic_color_critical(self):
         from rcm_mc.ui.data_public.sponsor_league_page import _moic_color
-        self.assertIn("b5321e", _moic_color(0.8))
+        self.assertIn("ef4444", _moic_color(0.8))
 
     def test_moic_color_green(self):
         from rcm_mc.ui.data_public.sponsor_league_page import _moic_color
@@ -96,7 +97,7 @@ class TestHelpers(unittest.TestCase):
 
     def test_loss_color_red(self):
         from rcm_mc.ui.data_public.sponsor_league_page import _loss_color
-        self.assertIn("b5321e", _loss_color(0.35))
+        self.assertIn("ef4444", _loss_color(0.35))
 
     def test_loss_color_green(self):
         from rcm_mc.ui.data_public.sponsor_league_page import _loss_color

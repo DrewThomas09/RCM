@@ -724,7 +724,7 @@ class TestPostForms(unittest.TestCase):
                     self.assertIn("attachment", cd)
                     self.assertIn("ccf_2026", cd)
                     body = r.read().decode()
-                    self.assertIn("<!doctype html>", body)
+                    self.assertIn("<!doctype html>", body.lower())
                     # Same content as regular view (sanity)
                     self.assertIn("ccf_2026", body)
             finally:

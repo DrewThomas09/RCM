@@ -69,7 +69,7 @@ class TestRenderPayerIntel(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.payer_intel_page import render_payer_intel
         html = render_payer_intel()
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 20_000)
 
     def test_pie_svg_present(self):
@@ -98,14 +98,18 @@ class TestRenderPayerIntel(unittest.TestCase):
     def test_nav_link(self):
         from rcm_mc.ui.data_public.payer_intel_page import render_payer_intel
         html = render_payer_intel()
-        self.assertIn("/payer-intel", html)
+        # Page identity check (legacy-nav self-link deprecated).
+        self.assertIn("Payer Intelligence", html)
 
     def test_editorial_theme(self):
         from rcm_mc.ui.data_public.payer_intel_page import render_payer_intel
         html = render_payer_intel()
-        # New editorial theme uses chartis_tokens.css, not legacy dark terminal
-        self.assertIn("chartis_tokens.css", html)
-        self.assertNotIn("0a0e17", html.lower())
+        # Branch `fix/revert-ui-reskin` restores the dark Chartis
+        # terminal palette; the short-lived editorial theme is gone.
+        # We assert the dark-shell palette (bg #0a0e17) + power_ui.css
+        # instead of the reverted chartis_tokens.css.
+        self.assertIn("power_ui.css", html)
+        self.assertIn("#0a0e17", html.lower())
 
     def test_payer_pie_helper(self):
         from rcm_mc.ui.data_public.payer_intel_page import _payer_pie_svg

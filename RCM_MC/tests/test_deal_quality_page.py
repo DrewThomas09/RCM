@@ -109,13 +109,13 @@ class TestRenderDealQuality(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.deal_quality_page import render_deal_quality
         html = render_deal_quality()
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 30_000)
 
     def test_renders_with_tier_filter(self):
         from rcm_mc.ui.data_public.deal_quality_page import render_deal_quality
         html = render_deal_quality(tier_filter="A")
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_kpi_bar_present(self):
         from rcm_mc.ui.data_public.deal_quality_page import render_deal_quality
@@ -155,17 +155,17 @@ class TestRenderDealQuality(unittest.TestCase):
     def test_sort_by_completeness(self):
         from rcm_mc.ui.data_public.deal_quality_page import render_deal_quality
         html = render_deal_quality(sort_by="completeness")
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_sort_by_deal_name(self):
         from rcm_mc.ui.data_public.deal_quality_page import render_deal_quality
         html = render_deal_quality(sort_by="deal_name")
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_tier_d_filter(self):
         from rcm_mc.ui.data_public.deal_quality_page import render_deal_quality
         html = render_deal_quality(tier_filter="D")
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
 
 if __name__ == "__main__":

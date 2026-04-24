@@ -8,7 +8,7 @@ class TestRenderComparables(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.comparables_page import render_comparables
         html = render_comparables()
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 30_000)
 
     def test_renders_with_query(self):
@@ -19,7 +19,7 @@ class TestRenderComparables(unittest.TestCase):
     def test_renders_sector_only(self):
         from rcm_mc.ui.data_public.comparables_page import render_comparables
         html = render_comparables(sector="Physician Practice")
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_contains_query_form(self):
         from rcm_mc.ui.data_public.comparables_page import render_comparables

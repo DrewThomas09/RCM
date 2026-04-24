@@ -8,13 +8,13 @@ class TestRenderPortfolioOptimizer(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.portfolio_optimizer_page import render_portfolio_optimizer
         html = render_portfolio_optimizer()
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 20_000)
 
     def test_renders_with_sectors(self):
         from rcm_mc.ui.data_public.portfolio_optimizer_page import render_portfolio_optimizer
         html = render_portfolio_optimizer(sectors=["Physician Practice", "Dental"])
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertIn("Physician Practice", html)
 
     def test_hhi_panel_present(self):
@@ -79,13 +79,13 @@ class TestRenderPortfolioOptimizer(unittest.TestCase):
     def test_empty_sectors_falls_back_to_default(self):
         from rcm_mc.ui.data_public.portfolio_optimizer_page import render_portfolio_optimizer
         html = render_portfolio_optimizer(sectors=[])
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 20_000)
 
     def test_single_sector(self):
         from rcm_mc.ui.data_public.portfolio_optimizer_page import render_portfolio_optimizer
         html = render_portfolio_optimizer(sectors=["Home Health"])
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
 
     def test_subtitle_contains_hhi(self):
         from rcm_mc.ui.data_public.portfolio_optimizer_page import render_portfolio_optimizer

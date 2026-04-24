@@ -54,7 +54,7 @@ class TestRenderSizeIntel(unittest.TestCase):
     def test_renders_default(self):
         from rcm_mc.ui.data_public.size_intel_page import render_size_intel
         html = render_size_intel()
-        self.assertIn("<!doctype html>", html)
+        self.assertIn("<!doctype html>", html.lower())
         self.assertGreater(len(html), 25_000)
 
     def test_scatter_present(self):
@@ -82,7 +82,11 @@ class TestRenderSizeIntel(unittest.TestCase):
     def test_nav_link(self):
         from rcm_mc.ui.data_public.size_intel_page import render_size_intel
         html = render_size_intel()
-        self.assertIn("/size-intel", html)
+        # Page renders with its title "Size Intelligence" in the
+        # shell title bar.  /size-intel was the legacy-nav self-
+        # reference check; legacy-nav is no longer rendered into
+        # the active sidebar, so we verify page identity instead.
+        self.assertIn("Size Intelligence", html)
 
     def test_no_light_theme(self):
         from rcm_mc.ui.data_public.size_intel_page import render_size_intel
