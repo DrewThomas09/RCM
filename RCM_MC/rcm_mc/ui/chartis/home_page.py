@@ -607,6 +607,78 @@ def _portfolio_is_empty(store: Any) -> bool:
     return len(deals) == 0
 
 
+def _new_modules_index() -> str:
+    """Panel-style index of the new analytic modules — gives a
+    first-time visitor a single row of "what's new in the stack"
+    with one-click entries into each standalone surface.  Sits
+    between the KPI strip and the seven panel grid."""
+    tiles = [
+        ("HCRIS Peer X-Ray", "/diligence/hcris-xray",
+         "17,000 filed Medicare cost reports",
+         "#10b981", "◎"),
+        ("Reg Calendar", "/diligence/regulatory-calendar",
+         "CMS / OIG × thesis kill-switch",
+         "#ef4444", "▤"),
+        ("Covenant Stress", "/diligence/covenant-stress",
+         "Capital stack × breach probability",
+         "#f59e0b", "▥"),
+        ("Bridge Auto-Audit", "/diligence/bridge-audit",
+         "Banker bridge × 21 realization priors",
+         "#3b82f6", "◉"),
+        ("Payer Stress", "/diligence/payer-stress",
+         "19-payer rate-shock MC",
+         "#8b5cf6", "▤"),
+        ("Bear Case Auto-Gen", "/diligence/bear-case",
+         "IC memo counter-narrative from 8 sources",
+         "#ec4899", "▣"),
+        ("Seeking Alpha", "/market-intel/seeking-alpha",
+         "Public comps + PE transactions",
+         "#0891b2", "◉"),
+    ]
+    cards = "".join(
+        f'<a href="{href}" '
+        f'style="display:flex;flex-direction:column;gap:4px;'
+        f'padding:10px 12px;background:#111827;'
+        f'border:1px solid #1e293b;border-left:3px solid {color};'
+        f'border-radius:0 3px 3px 0;text-decoration:none;'
+        f'transition:border-color 140ms, transform 120ms;" '
+        f'onmouseover="this.style.borderColor=\'{color}\';'
+        f'this.style.transform=\'translateX(2px)\'" '
+        f'onmouseout="this.style.borderColor=\'#1e293b\';'
+        f'this.style.transform=\'translateX(0)\'">'
+        f'<div style="display:flex;align-items:baseline;gap:8px;">'
+        f'<span style="font-size:14px;color:{color};">{icon}</span>'
+        f'<span style="font-size:13px;color:#e2e8f0;'
+        f'font-weight:600;">{_html.escape(name)}</span>'
+        f'</div>'
+        f'<div style="font-size:10.5px;color:#94a3b8;'
+        f'line-height:1.35;margin-left:22px;">'
+        f'{_html.escape(tagline)}</div>'
+        f'</a>'
+        for name, href, tagline, color, icon in tiles
+    )
+    return (
+        f'<div style="background:#0f172a;border:1px solid #1e293b;'
+        f'border-radius:4px;padding:14px 18px;margin-bottom:14px;'
+        f'position:relative;overflow:hidden;">'
+        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
+        f'background:linear-gradient(90deg,#10b981,#3b82f6,'
+        f'#8b5cf6,#ec4899);"></div>'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:baseline;margin-bottom:10px;">'
+        f'<div style="font-size:11px;color:#64748b;letter-spacing:1.5px;'
+        f'text-transform:uppercase;font-weight:700;">'
+        f'New Diligence Modules · this cycle</div>'
+        f'<div style="font-size:10.5px;color:#94a3b8;">'
+        f'Point-and-click surfaces · no setup · live data</div>'
+        f'</div>'
+        f'<div style="display:grid;'
+        f'grid-template-columns:repeat(auto-fit,minmax(220px,1fr));'
+        f'gap:8px;">{cards}</div>'
+        f'</div>'
+    )
+
+
 def render_home(store: Any, db_path: str, current_user: Optional[str] = None) -> str:
     """Render the seven-panel home landing page."""
     explainer = render_page_explainer(
@@ -625,6 +697,9 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
     quickstart = (
         _try_the_tool_quickstart() if _portfolio_is_empty(store) else ""
     )
+    # New-module index — always shown so the 7 new diligence surfaces
+    # are discoverable from the landing page, not only via the sidebar.
+    new_modules = _new_modules_index()
     panels = (
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">'
         f'{_panel("Pipeline Funnel", _pipeline_funnel(store), code="FNL")}'
@@ -641,7 +716,7 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         if current_user else "Partner landing — pipeline, alerts, PE brain verdicts"
     )
     return chartis_shell(
-        explainer + kpi + quickstart + panels,
+        explainer + kpi + quickstart + new_modules + panels,
         title="Home",
         active_nav="/home",
         subtitle=subtitle,

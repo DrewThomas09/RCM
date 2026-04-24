@@ -452,6 +452,19 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             sector_sentiment_reviewed=(sector_label is not None),
             deal_autopsy_run=bool(autopsy_matches),
             regulatory_calendar_run=(reg_exposure is not None),
+            # New diligence modules — observed from successful
+            # evidence extraction in the bear case block
+            hcris_xray_run=(
+                bool(bear_block_html) and "HCRIS" in bear_block_html
+            ) if bear_block_html else bool(first("hcris_ccn")),
+            covenant_stress_run=(
+                bool(bear_block_html) and
+                "Covenant" in bear_block_html
+            ),
+            payer_stress_run=(
+                bool(bear_block_html) and
+                "Payer" in bear_block_html
+            ),
             qor_waterfall_computed=(waterfall is not None),
             hfma_days_in_ar_computed=(bundle is not None),
             hfma_denial_rate_computed=(bundle is not None),

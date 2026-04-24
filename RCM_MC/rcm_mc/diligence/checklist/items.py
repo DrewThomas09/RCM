@@ -444,6 +444,62 @@ CHECKLIST_ITEMS: Tuple[ChecklistItem, ...] = (
                  "litigation, regulatory audits, DOJ/OIG matters?",
         default_owner=Owner.LEGAL,
     ),
+    # ─── Automated items linking new diligence modules ─────────────
+    ChecklistItem(
+        item_id="regulatory_calendar_scan",
+        phase=3, category=Category.RISK, priority=Priority.P0,
+        question="Has the Regulatory Calendar × Thesis Kill-Switch "
+                 "been run to map upcoming CMS / OIG / FTC / DOJ / "
+                 "NSA-IDR events to the target's thesis drivers?",
+        default_owner=Owner.ANALYST,
+        auto_check_key="regulatory_calendar_run",
+        evidence_url="/diligence/regulatory-calendar",
+        completion_criteria=(
+            "Kill-switch verdict produced, EBITDA overlay computed, "
+            "driver timelines ordered by first-kill date."
+        ),
+    ),
+    ChecklistItem(
+        item_id="covenant_stress_simulation",
+        phase=4, category=Category.FINANCIAL, priority=Priority.P0,
+        question="Has the Covenant & Capital Stack Stress Lab been "
+                 "run to quantify per-quarter covenant-breach "
+                 "probability and equity-cure sizing?",
+        default_owner=Owner.ANALYST,
+        auto_check_key="covenant_stress_run",
+        evidence_url="/diligence/covenant-stress",
+        completion_criteria=(
+            "Breach probability curves across hold, 50 %-first-at "
+            "quarter identified, median + P75 equity cure sized."
+        ),
+    ),
+    ChecklistItem(
+        item_id="hcris_peer_xray",
+        phase=1, category=Category.SCREENING, priority=Priority.P0,
+        question="Has the HCRIS-Native Peer X-Ray benchmarked the "
+                 "target against 25-50 filed Medicare cost reports?",
+        default_owner=Owner.ANALYST,
+        auto_check_key="hcris_xray_run",
+        evidence_url="/diligence/hcris-xray",
+        completion_criteria=(
+            "Target vs peer P25/median/P75 on 15 derived RCM / "
+            "cost / margin / payer-mix metrics, 3-year trend "
+            "direction confirmed."
+        ),
+    ),
+    ChecklistItem(
+        item_id="payer_mix_stress",
+        phase=3, category=Category.RISK, priority=Priority.P1,
+        question="Has the Payer Mix Stress Lab stress-tested the "
+                 "target's commercial + government payer portfolio?",
+        default_owner=Owner.ANALYST,
+        auto_check_key="payer_stress_run",
+        evidence_url="/diligence/payer-stress",
+        completion_criteria=(
+            "Per-payer rate-shock MC complete, Top-1 concentration "
+            "below 40 %, P10 cumulative NPR drag sized."
+        ),
+    ),
 )
 
 

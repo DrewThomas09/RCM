@@ -386,6 +386,92 @@ def _deeplinks_block(report: ThesisPipelineReport, inp: PipelineInput) -> str:
             "Market Intel",
             f"/market-intel?{_urllib.urlencode(mi_qs)}",
         ))
+        links.append((
+            "Seeking Alpha",
+            "/market-intel/seeking-alpha",
+        ))
+
+    # New diligence modules — auto-linked when the corresponding
+    # pipeline step fired + params are available.
+    target_name_q = _urllib.quote(inp.deal_name)
+    npr = int(inp.revenue_year0_usd or 0)
+    eb = int(inp.ebitda_year0_usd or 0)
+    debt = int(inp.debt_usd or 0)
+    if report.regulatory_exposure is not None:
+        reg_qs = {
+            "target_name": inp.deal_name,
+            "specialty": inp.specialty or "HOSPITAL",
+        }
+        if npr:
+            reg_qs["revenue_usd"] = str(npr)
+        if eb:
+            reg_qs["ebitda_usd"] = str(eb)
+        if inp.medicare_share:
+            reg_qs["ma_mix_pct"] = str(inp.medicare_share)
+        links.append((
+            "Regulatory Calendar",
+            f"/diligence/regulatory-calendar?{_urllib.urlencode(reg_qs)}",
+        ))
+    if report.covenant_stress is not None and eb and debt:
+        cov_qs = {
+            "deal_name": inp.deal_name,
+            "ebitda_y0": str(eb),
+            "total_debt_usd": str(debt),
+            "quarters": "20",
+        }
+        links.append((
+            "Covenant Stress",
+            f"/diligence/covenant-stress?{_urllib.urlencode(cov_qs)}",
+        ))
+    if report.payer_stress is not None and npr:
+        links.append((
+            "Payer Mix Stress",
+            f"/diligence/payer-stress?target_name={target_name_q}"
+            f"&total_npr_usd={npr}&total_ebitda_usd={eb}",
+        ))
+    if report.hcris_xray is not None and inp.hcris_ccn:
+        links.append((
+            "HCRIS X-Ray",
+            f"/diligence/hcris-xray?ccn={_urllib.quote(inp.hcris_ccn)}",
+        ))
+    # Bridge Audit — always available (analyst pastes a bridge)
+    ba_qs = {
+        "target_name": inp.deal_name,
+    }
+    if inp.enterprise_value_usd:
+        ba_qs["asking_price_usd"] = str(int(inp.enterprise_value_usd))
+    if inp.entry_multiple:
+        ba_qs["entry_multiple"] = str(inp.entry_multiple)
+    if inp.medicare_share:
+        ba_qs["ma_mix_pct"] = str(inp.medicare_share)
+    links.append((
+        "Bridge Audit",
+        f"/diligence/bridge-audit?{_urllib.urlencode(ba_qs)}",
+    ))
+    # Bear Case — always link; page handles missing dataset gracefully
+    bc_qs = {
+        "dataset": dataset, "deal_name": inp.deal_name,
+        "specialty": inp.specialty or "",
+    }
+    if npr:
+        bc_qs["revenue_year0_usd"] = str(npr)
+    if eb:
+        bc_qs["ebitda_year0_usd"] = str(eb)
+    if inp.enterprise_value_usd:
+        bc_qs["enterprise_value_usd"] = str(int(inp.enterprise_value_usd))
+    if inp.equity_check_usd:
+        bc_qs["equity_check_usd"] = str(int(inp.equity_check_usd))
+    if debt:
+        bc_qs["debt_usd"] = str(debt)
+    if inp.medicare_share:
+        bc_qs["medicare_share"] = str(inp.medicare_share)
+    if inp.hcris_ccn:
+        bc_qs["hcris_ccn"] = inp.hcris_ccn
+    links.append((
+        "Bear Case",
+        f"/diligence/bear-case?{_urllib.urlencode(bc_qs)}",
+    ))
+
     links.append((
         "IC Packet",
         f"/diligence/ic-packet?dataset={_urllib.quote(dataset)}&"
