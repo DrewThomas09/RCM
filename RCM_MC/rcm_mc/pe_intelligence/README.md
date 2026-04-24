@@ -1,8 +1,8 @@
 # PE Intelligence Brain
 
-**Branch:** `feature/pe-intelligence`
 **Package:** `rcm_mc.pe_intelligence`
-**Scope:** 275 Python modules · 2,970 unit tests · 278 `docs/PE_HEURISTICS.md` sections
+**Scope:** 275 Python modules · 278 `docs/PE_HEURISTICS.md` sections
+**Status:** merged to `main` — previously lived on `feature/pe-intelligence` branch
 
 A senior-PE-healthcare-partner judgment layer that reads a
 `DealAnalysisPacket` and answers the questions a partner actually
@@ -449,7 +449,8 @@ are untouched. The brain consumes a packet; it never mutates one.
 ## Stats
 
 - **275 modules** under `rcm_mc/pe_intelligence/`
-- **2,970 passing unit tests** in `tests/test_pe_intelligence.py`
+- **~2,970 passing unit tests** in `tests/test_pe_intelligence.py`
+  (count drifts — run `pytest --collect-only tests/test_pe_intelligence.py` for current figure)
 - **278 doc sections** in `docs/PE_HEURISTICS.md`
 - **Zero new runtime dependencies**
 - **100% standalone** — each module runs independently from the

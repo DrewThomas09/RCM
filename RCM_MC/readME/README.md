@@ -1,8 +1,12 @@
 # RCM-MC Documentation
 
-Organized documentation for the RCM-MC healthcare PE diligence platform (v0.6.0).
+Organized documentation for the RCM-MC healthcare PE diligence platform.
 
-**New here?** Start with the **[Walkthrough Tutorial](00_Walkthrough_Tutorial.md)** -- a 30-minute hands-on tour that exercises every major feature with copy-paste commands.
+**Completely new?** Read the plain-English explainer at the repo root: **[../../README.md](../../README.md)** — assumes zero prior knowledge of PE or healthcare finance.
+
+**Want to see the tool in action?** Read **[../../WALKTHROUGH.md](../../WALKTHROUGH.md)** — a 13-step case study walking through every module on a real Alabama hospital.
+
+**Hands-on tutorial inside this folder?** Start with **[00 Walkthrough Tutorial](00_Walkthrough_Tutorial.md)** — copy-paste commands that exercise every major feature.
 
 ---
 
@@ -27,7 +31,7 @@ Start with the document that matches your role:
 
 | # | File | Description |
 |---|------|-------------|
-| 01 | [API Reference](01_API_Reference.md) | All 52 API endpoints with parameters, responses, and examples |
+| 01 | [API Reference](01_API_Reference.md) | All API endpoints with parameters, responses, and examples |
 | 02 | [Configuration and Operations](02_Configuration_and_Operations.md) | Database, auth, deployment, backup, monitoring, security |
 | 03 | [Developer Guide](03_Developer_Guide.md) | Architecture, testing, coding conventions, module map |
 | 04 | [Getting Started](04_Getting_Started.md) | Installation, first run, basic workflow |
@@ -67,6 +71,24 @@ Start with the document that matches your role:
 | 23 | [Layer: Provenance](23_Layer_Provenance.md) | Metric lineage tracking |
 | 24 | [Layer: UI and Exports](24_Layer_UI_and_Exports.md) | Renderers, workbench, shell system |
 | 25 | [Architecture Detailed](25_Architecture_Detailed.md) | Extended architecture documentation |
+
+---
+
+## New Diligence Modules (latest cycle)
+
+Seven analytic modules that ship inside `rcm_mc/diligence/`. Each has a module-level README with plain-English explanation + public API snippets + where it plugs in:
+
+| Module | What it does |
+|--------|-------------|
+| [HCRIS X-Ray](../rcm_mc/diligence/hcris_xray/README.md) | Peer benchmark against 17,701 filed Medicare cost reports |
+| [Regulatory Calendar](../rcm_mc/diligence/regulatory_calendar/README.md) | CMS/OIG/FTC events × thesis-driver kill-switch |
+| [Covenant Stress Lab](../rcm_mc/diligence/covenant_lab/README.md) | Capital-stack × per-quarter covenant-breach MC |
+| [Bridge Auto-Auditor](../rcm_mc/diligence/bridge_audit/README.md) | Banker-bridge realization priors against 3,000 historical outcomes |
+| [Bear Case Auto-Gen](../rcm_mc/diligence/bear_case/README.md) | IC memo counter-narrative auto-synthesized from 8 sources |
+| [Payer Mix Stress](../rcm_mc/diligence/payer_stress/README.md) | 19-payer rate-shock MC with concentration amplifier |
+| [Thesis Pipeline](../rcm_mc/diligence/thesis_pipeline/README.md) | 14-step orchestrator over every analytic |
+
+Plus the **Seeking Alpha Market Intelligence** surface at `/market-intel/seeking-alpha` — 14 public healthcare comps + 12 curated PE transactions + sector sentiment heatmap.
 
 ---
 

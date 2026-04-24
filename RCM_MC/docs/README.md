@@ -2,7 +2,18 @@
 
 Reference documents that don't belong in the numbered user guide (`readME/`) — canonical specs, the PE heuristics rulebook, and domain deep-dives.
 
-**For the main documentation index, start here: [readME/README.md](../readME/README.md)**
+**First time here?** Start with the repo-root **[README.md](../../README.md)** for a plain-English explanation of what the tool does, or **[WALKTHROUGH.md](../../WALKTHROUGH.md)** for a case study.
+
+**Main documentation index**: [readME/README.md](../readME/README.md)
+
+**New-module READMEs** (cycle-shipped diligence surfaces):
+- [HCRIS X-Ray](../rcm_mc/diligence/hcris_xray/README.md)
+- [Regulatory Calendar](../rcm_mc/diligence/regulatory_calendar/README.md)
+- [Covenant Stress Lab](../rcm_mc/diligence/covenant_lab/README.md)
+- [Bridge Auto-Auditor](../rcm_mc/diligence/bridge_audit/README.md)
+- [Bear Case Auto-Generator](../rcm_mc/diligence/bear_case/README.md)
+- [Payer Mix Stress](../rcm_mc/diligence/payer_stress/README.md)
+- [Thesis Pipeline](../rcm_mc/diligence/thesis_pipeline/README.md)
 
 ---
 
