@@ -2329,6 +2329,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.nlrb_elections_page import render_nlrb_elections
             return self._send_html(render_nlrb_elections(_qp))
+        if path == "/velocity":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.velocity_metrics_page import render_velocity_metrics
+            return self._send_html(render_velocity_metrics(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
