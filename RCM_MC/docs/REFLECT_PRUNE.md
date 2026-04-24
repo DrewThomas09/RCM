@@ -157,3 +157,19 @@ Net effect: ~60% of round-2 turns were "report duplicate, don't rebuild" — pre
 ---
 
 *Generated at REFLECT AND PRUNE directive, commit cycle concurrent with RAG ship (`c5f8ba4`). Earlier version of this analysis offered inline in the prior turn's response; this is the committed artifact.*
+
+---
+
+## Addendum — Round-3 loop cycle deltas (after original reflection)
+
+After this doc's original commit, the session's `/loop` entered round 3. Net-new shipped:
+
+| Commit | Module | Moat Layer advanced |
+|---|---|---|
+| `f396654` | CMS Claims Processing Manual Pub 100-04 (22/39 ch, 28 §) | Moat 1 |
+| `35d0034` | Benchmark Library BC-09..BC-13 (+248 rows → 636 total, 25% of 2500 target) | Moat 2 |
+| `e3b16c7` | Named-Failure Library NF-17..NF-19 (Aveanna, Surgery Partners, MedPartners) | Moat 3 |
+| `beb34de` | Site-Neutral Payment Simulator (20 codes, $2.6B corpus exposure) | Moat 1 (regulatory sublayer) |
+| `c57bc3d` | NLRB Healthcare Union-Election Filings (54 cases, 81K workers) | New public-data source |
+
+Round-3 continues to produce ~4-5 genuinely-new commits per full 12-directive loop rotation. **Moat 6 (Velocity Compound) remains ignored**. The prune-and-harden plan in §6 above is unchanged; round-3 deltas are expansion not hardening. A disciplined next cycle should execute the §6 hardening plan before adding more knowledge modules.
