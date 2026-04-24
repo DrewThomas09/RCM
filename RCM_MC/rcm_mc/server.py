@@ -1917,6 +1917,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Admin: audit-chain integrity status.
         if path == "/admin/audit-chain":
             return self._route_admin_audit_chain()
+        # Pre-screening: Bankruptcy-Survivor Scan landing (form).
+        if path == "/screening/bankruptcy-survivor":
+            return self._route_bankruptcy_survivor_landing()
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -6027,6 +6030,68 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_header("Location", f"/engagements/{engagement_id}")
         self.end_headers()
 
+    # ── Bankruptcy-Survivor Scan ─────────────────────────────────────
+
+    def _route_bankruptcy_survivor_landing(self) -> None:
+        from .ui.bankruptcy_survivor_page import render_scan_landing
+        self._send_html(render_scan_landing())
+
+    def _route_bankruptcy_survivor_run(self) -> None:
+        from .diligence.screening import (
+            ScanInput, run_bankruptcy_survivor_scan,
+        )
+        from .ui.bankruptcy_survivor_page import render_scan_result
+
+        form = self._read_form_body()
+
+        def _str(name: str, default: str = "") -> str:
+            return str(form.get(name) or default).strip()
+
+        def _list(name: str) -> list:
+            raw = _str(name)
+            if not raw:
+                return []
+            return [t.strip() for t in raw.split(",") if t.strip()]
+
+        def _float(name: str):
+            v = _str(name)
+            if not v:
+                return None
+            try:
+                return float(v)
+            except ValueError:
+                return None
+
+        def _int(name: str):
+            v = _str(name)
+            if not v:
+                return None
+            try:
+                return int(float(v))
+            except ValueError:
+                return None
+
+        target = _str("target_name") or "Unnamed target"
+        scan_in = ScanInput(
+            target_name=target,
+            specialty=(_str("specialty") or None),
+            states=_list("states"),
+            msas=_list("msas"),
+            cbsa_codes=_list("cbsa_codes"),
+            legal_structure=(_str("legal_structure") or None),
+            landlord=(_str("landlord") or None),
+            lease_term_years=_int("lease_term_years"),
+            lease_escalator_pct=_float("lease_escalator_pct"),
+            ebitdar_coverage=_float("ebitdar_coverage"),
+            geography=(_str("geography") or None),
+            is_hospital_based_physician=(
+                _str("is_hospital_based_physician").lower() == "true"
+            ),
+            oon_revenue_share=_float("oon_revenue_share"),
+        )
+        scan = run_bankruptcy_survivor_scan(scan_in)
+        self._send_html(render_scan_result(scan))
+
     def _route_admin_audit_chain(self) -> None:
         """Admin-only view of the compliance audit-chain integrity.
 
@@ -8723,6 +8788,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             or path.startswith("/value-tracker/")
             or path.startswith("/team/")
             or path.startswith("/engagements/")
+            or path.startswith("/screening/")
         )
         if (self._session_token() is not None and not csrf_exempt):
             ctype = self.headers.get("Content-Type", "")
@@ -8775,6 +8841,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/data-room/") and path.endswith("/add"):
             dr_ccn = path.replace("/data-room/", "").replace("/add", "").strip("/")
             return self._route_data_room_add(dr_ccn)
+        # Bankruptcy-Survivor Scan POST (form submit).
+        if path == "/screening/bankruptcy-survivor":
+            return self._route_bankruptcy_survivor_run()
+
         # Engagement POST actions. All under /engagements/... so the
         # csrf_exempt prefix above covers them; the UI uses HTML form
         # POSTs rather than JSON/AJAX.
