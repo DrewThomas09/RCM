@@ -238,6 +238,7 @@ _CORPUS_NAV = [
     {"label": "Tuva + DuckDB",  "href": "/tuva-duckdb",         "icon": "▥"},
     {"label": "Workbench Tools","href": "/workbench-tooling",   "icon": "▣"},
     {"label": "★ IC Brief",     "href": "/ic-brief",           "icon": "◈"},
+    {"label": "DOJ FCA Tracker","href": "/doj-fca",             "icon": "▤"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
     {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},

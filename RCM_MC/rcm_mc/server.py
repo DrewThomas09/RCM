@@ -2289,6 +2289,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.ic_brief_page import render_ic_brief
             return self._send_html(render_ic_brief(_qp))
+        if path == "/doj-fca":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.doj_fca_tracker_page import render_doj_fca_tracker
+            return self._send_html(render_doj_fca_tracker(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
