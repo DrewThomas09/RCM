@@ -263,6 +263,7 @@ NAV_ITEMS = [
     {"label": "Sponsor League", "href": "/sponsor-league", "icon": "grid"},
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
+    {"label": "NCCI Scanner", "href": "/ncci-scanner", "icon": "chart"},
 ]
 
 NAV_ICONS = {
