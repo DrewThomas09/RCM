@@ -1935,6 +1935,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Market intelligence — public healthcare comps + PE news.
         if path == "/market-intel":
             return self._route_market_intel_page()
+        # IC Packet Assembler — one-click IC memo.
+        if path == "/diligence/ic-packet":
+            return self._route_ic_packet_page()
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -6055,6 +6058,15 @@ class RCMHandler(BaseHTTPRequestHandler):
         left = (qs.get("left") or [""])[0]
         right = (qs.get("right") or [""])[0]
         self._send_html(render_compare_page(left=left, right=right))
+
+    # ── IC Packet Assembler ──────────────────────────────────────────
+
+    def _route_ic_packet_page(self) -> None:
+        from .ui.ic_packet_page import render_ic_packet_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_ic_packet_page(qs=qs))
 
     # ── Market Intelligence ──────────────────────────────────────────
 

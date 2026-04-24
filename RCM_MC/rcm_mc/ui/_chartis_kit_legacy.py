@@ -70,6 +70,7 @@ _CORPUS_NAV = [
     {"label": "Market Intel",    "href": "/market-intel",         "icon": "◈"},
     {"label": "Bankruptcy Scan", "href": "/screening/bankruptcy-survivor", "icon": "▥"},
     {"label": "QoE Memo",        "href": "/diligence/qoe-memo",   "icon": "▣"},
+    {"label": "IC Packet",       "href": "/diligence/ic-packet",  "icon": "◈"},
     {"label": "Engagements",     "href": "/engagements",          "icon": "◉"},
 
     # PLATFORM — day-to-day operator entries. Alerts removed from nav

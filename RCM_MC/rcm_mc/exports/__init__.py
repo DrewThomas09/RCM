@@ -10,6 +10,10 @@ from .export_store import (  # noqa: F401
     list_exports,
     record_export,
 )
+from .ic_packet import (  # noqa: F401
+    ICPacketMetadata,
+    render_ic_packet_html,
+)
 from .qoe_memo import (  # noqa: F401
     QoEMemoMetadata,
     render_qoe_memo_html,
@@ -18,4 +22,5 @@ from .qoe_memo import (  # noqa: F401
 __all__ = [
     "PacketRenderer", "list_exports", "record_export",
     "QoEMemoMetadata", "render_qoe_memo_html",
+    "ICPacketMetadata", "render_ic_packet_html",
 ]
