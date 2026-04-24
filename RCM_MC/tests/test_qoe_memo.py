@@ -245,5 +245,103 @@ class QoEMemoHttpRouteTests(unittest.TestCase):
         self.assertIn("Quality of Earnings Memorandum", html)
 
 
+class QoEMemoEngagementLinkTests(unittest.TestCase):
+    """When the memo render is supplied both ``engagement_id`` and
+    ``created_by`` query params AND a store, a DRAFT deliverable is
+    created on the engagement so the memo becomes traceable in the
+    engagement's deliverable list."""
+
+    def _prepare_store(self, tmp: str):
+        import os
+        from rcm_mc.engagement import (
+            EngagementRole, add_member, create_engagement,
+        )
+        from rcm_mc.portfolio.store import PortfolioStore
+        store = PortfolioStore(os.path.join(tmp, "p.db"))
+        create_engagement(
+            store, engagement_id="ENG1", name="Project Aurora",
+            client_name="Aurora Health", created_by="admin",
+        )
+        add_member(store, engagement_id="ENG1", username="analyst1",
+                   role=EngagementRole.ANALYST, added_by="admin")
+        return store
+
+    def test_linked_deliverable_created_when_engagement_supplied(self):
+        import os
+        import tempfile
+
+        from rcm_mc.diligence._pages import render_qoe_memo_page
+        from rcm_mc.engagement import list_deliverables
+
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._prepare_store(tmp)
+            qs = {
+                "deal_name": ["Project Aurora"],
+                "engagement_id": ["ENG1"],
+                "created_by": ["analyst1"],
+                "mgmt_cohort": ["2024-03"],
+                "mgmt_value": ["6850.0"],
+            }
+            html = render_qoe_memo_page(
+                "hospital_08_waterfall_critical", qs=qs, store=store,
+            )
+            self.assertIn("CRITICAL", html)
+            # Deliverable should now exist as DRAFT on the engagement.
+            deliverables = list_deliverables(
+                store, engagement_id="ENG1", viewer="analyst1",
+            )
+            self.assertEqual(len(deliverables), 1)
+            d = deliverables[0]
+            self.assertEqual(d.kind, "QOE_MEMO")
+            self.assertEqual(d.status, "DRAFT")
+            self.assertEqual(d.created_by, "analyst1")
+            self.assertEqual(d.title, "Project Aurora")
+
+    def test_missing_engagement_id_does_not_create_deliverable(self):
+        import tempfile
+
+        from rcm_mc.diligence._pages import render_qoe_memo_page
+        from rcm_mc.engagement import list_deliverables
+
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._prepare_store(tmp)
+            qs = {
+                "mgmt_cohort": ["2024-03"],
+                "mgmt_value": ["6850.0"],
+            }
+            render_qoe_memo_page(
+                "hospital_08_waterfall_critical", qs=qs, store=store,
+            )
+            self.assertEqual(
+                list_deliverables(store, engagement_id="ENG1"), []
+            )
+
+    def test_non_member_silently_skipped(self):
+        """If created_by is not a member of the engagement, no
+        deliverable is created — the memo render still succeeds."""
+        import tempfile
+
+        from rcm_mc.diligence._pages import render_qoe_memo_page
+        from rcm_mc.engagement import list_deliverables
+
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._prepare_store(tmp)
+            qs = {
+                "engagement_id": ["ENG1"],
+                "created_by": ["stranger"],
+                "mgmt_cohort": ["2024-03"],
+                "mgmt_value": ["6850.0"],
+            }
+            html = render_qoe_memo_page(
+                "hospital_08_waterfall_critical", qs=qs, store=store,
+            )
+            # Memo still renders cleanly.
+            self.assertIn("CRITICAL", html)
+            # No deliverable created.
+            self.assertEqual(
+                list_deliverables(store, engagement_id="ENG1"), []
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

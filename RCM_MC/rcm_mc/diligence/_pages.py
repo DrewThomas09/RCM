@@ -352,6 +352,8 @@ def render_benchmarks_page(
 def render_qoe_memo_page(
     dataset: str = "",
     qs: Optional[dict] = None,
+    *,
+    store: Optional[Any] = None,
 ) -> str:
     """Render the partner-signed QoE memo as a standalone HTML page.
 
@@ -363,8 +365,15 @@ def render_qoe_memo_page(
     Optional query-string fields read from ``qs``:
         deal_name, target_entity, engagement_id, partner_name,
         preparer_name, mgmt_revenue (cohort-month → USD, one-shot
-        form: ``cohort=2024-03,value=6850``). We keep metadata as
-        query params so the memo is reproducible from the URL.
+        form: ``cohort=2024-03,value=6850``), created_by.
+
+    Engagement integration: when ``engagement_id`` AND ``created_by``
+    are supplied AND ``store`` is non-None, the render also writes a
+    DRAFT engagement deliverable so the memo shows up in the
+    engagement's deliverable list. The created_by user must be a
+    PARTNER/LEAD/ANALYST member of the engagement; a PermissionError
+    is caught and surfaced in the landing page rather than raising
+    past the route.
     """
     qs = qs or {}
     ds_path = _resolve_dataset(dataset)
@@ -387,13 +396,28 @@ def render_qoe_memo_page(
             management_reported_revenue_by_cohort_month=mgmt_map,
         )
 
+        engagement_id = (qs.get("engagement_id") or [""])[0] or None
+        created_by = (qs.get("created_by") or [""])[0] or None
+
         meta = QoEMemoMetadata(
             deal_name=(qs.get("deal_name") or [dataset])[0] or None,
             target_entity=(qs.get("target_entity") or [""])[0] or None,
-            engagement_id=(qs.get("engagement_id") or [""])[0] or None,
+            engagement_id=engagement_id,
             partner_name=(qs.get("partner_name") or [""])[0] or None,
             preparer_name=(qs.get("preparer_name") or [""])[0] or None,
         )
+
+        # Optional: write a DRAFT engagement deliverable for this
+        # memo render. Silent on failure — rendering the memo always
+        # succeeds even if the engagement link fails.
+        if (store is not None and engagement_id and created_by):
+            _link_memo_as_deliverable(
+                store, engagement_id=engagement_id,
+                created_by=created_by,
+                title=meta.deal_name or dataset or "QoE Memo",
+                content_ref=f"/diligence/qoe-memo?dataset={dataset}",
+            )
+
         return render_qoe_memo_html(
             bundle=bundle, cash_waterfall=waterfall, metadata=meta,
         )
@@ -402,6 +426,29 @@ def render_qoe_memo_page(
             dataset,
             error=f"{type(exc).__name__}: {exc}",
         )
+
+
+def _link_memo_as_deliverable(
+    store: Any,
+    *,
+    engagement_id: str,
+    created_by: str,
+    title: str,
+    content_ref: str,
+) -> None:
+    """Best-effort: create a DRAFT QOE_MEMO deliverable on the
+    engagement. Swallows errors (non-member, missing engagement) so a
+    broken engagement link never fails the memo render."""
+    try:
+        from ..engagement import create_deliverable
+        create_deliverable(
+            store, engagement_id=engagement_id,
+            kind="QOE_MEMO", title=title,
+            created_by=created_by,
+            content_ref=content_ref,
+        )
+    except Exception:  # noqa: BLE001 — engagement link is opportunistic
+        pass
 
 
 def _parse_mgmt_revenue(qs: dict) -> Optional[Dict[str, float]]:

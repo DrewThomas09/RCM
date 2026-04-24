@@ -1891,11 +1891,32 @@ class RCMHandler(BaseHTTPRequestHandler):
             # runs the ingest + KPI + waterfall pipeline and renders the
             # printable memo; other optional query params fill metadata
             # (deal_name, engagement_id, partner_name, preparer_name,
-            # mgmt_revenue) without requiring a form submission.
+            # mgmt_revenue) without requiring a form submission. When
+            # `engagement_id` + `created_by` are supplied, a DRAFT
+            # engagement deliverable is opportunistically linked so the
+            # memo shows up in that engagement's list.
             from .diligence._pages import render_qoe_memo_page
             qs = urllib.parse.parse_qs(parsed.query)
             ds = (qs.get("dataset") or [""])[0]
-            return self._send_html(render_qoe_memo_page(dataset=ds, qs=qs))
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_qoe_memo_page(
+                dataset=ds, qs=qs, store=store,
+            ))
+
+        # Engagement workspace (internal RBAC + deliverables +
+        # comment stream).
+        if path == "/engagements":
+            return self._route_engagements_list()
+        if path.startswith("/engagements/"):
+            eid = path.replace("/engagements/", "").strip("/")
+            return self._route_engagement_detail(eid)
+        # Client portal (published-only view for CLIENT_VIEWER).
+        if path.startswith("/portal/"):
+            eid = path.replace("/portal/", "").strip("/")
+            return self._route_client_portal(eid)
+        # Admin: audit-chain integrity status.
+        if path == "/admin/audit-chain":
+            return self._route_admin_audit_chain()
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -5753,6 +5774,183 @@ class RCMHandler(BaseHTTPRequestHandler):
         except Exception:
             deals = _pd_port.DataFrame()
         return self._send_html(render_portfolio_overview(deals, store))
+
+    # ── Engagement workspace routes ──────────────────────────────────
+
+    def _route_engagements_list(self) -> None:
+        from .engagement import list_engagements
+        from .ui.engagement_pages import render_engagement_list
+        store = PortfolioStore(self.config.db_path)
+        engagements = list_engagements(store)
+        self._send_html(render_engagement_list(engagements))
+
+    def _route_engagement_detail(self, engagement_id: str) -> None:
+        from .engagement import (
+            get_engagement, list_comments, list_deliverables, list_members,
+        )
+        from .engagement.store import get_member_role
+        from .ui.engagement_pages import render_engagement_detail
+
+        if not engagement_id:
+            self._send_html(
+                "<h1>Engagement not found</h1>",
+                status=HTTPStatus.NOT_FOUND,
+            )
+            return
+        store = PortfolioStore(self.config.db_path)
+        eng = get_engagement(store, engagement_id)
+        if eng is None:
+            self._send_html(
+                f"<h1>Engagement {engagement_id!r} not found</h1>",
+                status=HTTPStatus.NOT_FOUND,
+            )
+            return
+        viewer = None
+        cu = self._current_user()
+        if cu:
+            viewer = cu.get("username")
+        viewer_role = (
+            get_member_role(
+                store, engagement_id=engagement_id, username=viewer,
+            )
+            if viewer else None
+        )
+        # Internal detail view — show everything. The /portal/ route
+        # is where CLIENT_VIEWER goes for a filtered view.
+        members = list_members(store, engagement_id)
+        deliverables = list_deliverables(
+            store, engagement_id=engagement_id, viewer=viewer,
+        )
+        comments = list_comments(
+            store, engagement_id=engagement_id, viewer=viewer,
+        )
+        self._send_html(render_engagement_detail(
+            eng, members=members, deliverables=deliverables,
+            comments=comments, viewer_role=viewer_role,
+        ))
+
+    def _route_client_portal(self, engagement_id: str) -> None:
+        from .engagement import (
+            get_engagement, list_comments, list_deliverables,
+        )
+        from .ui.engagement_pages import render_client_portal
+
+        if not engagement_id:
+            self._send_html(
+                "<h1>Engagement not found</h1>",
+                status=HTTPStatus.NOT_FOUND,
+            )
+            return
+        store = PortfolioStore(self.config.db_path)
+        eng = get_engagement(store, engagement_id)
+        if eng is None:
+            self._send_html(
+                f"<h1>Engagement {engagement_id!r} not found</h1>",
+                status=HTTPStatus.NOT_FOUND,
+            )
+            return
+        viewer = None
+        cu = self._current_user()
+        if cu:
+            viewer = cu.get("username")
+        # Forcing viewer on both listings produces the CLIENT_VIEWER
+        # filter when the caller's engagement role is CLIENT_VIEWER;
+        # internal users see everything just like the detail view.
+        deliverables = list_deliverables(
+            store, engagement_id=engagement_id, viewer=viewer,
+        )
+        comments = list_comments(
+            store, engagement_id=engagement_id, viewer=viewer,
+        )
+        self._send_html(render_client_portal(
+            eng, deliverables=deliverables, comments=comments,
+        ))
+
+    def _route_admin_audit_chain(self) -> None:
+        """Admin-only view of the compliance audit-chain integrity.
+
+        Shows chain_status() totals + the latest verify_audit_chain()
+        result. Runs in the request path because it's cheap and the
+        partner actually wants a real-time answer."""
+        from .compliance.audit_chain import (
+            chain_status, verify_audit_chain,
+        )
+        from .ui._chartis_kit import P, chartis_shell
+
+        store = PortfolioStore(self.config.db_path)
+        status = chain_status(store)
+        report = verify_audit_chain(store)
+
+        ok_colour = P["positive"] if report.ok else P["negative"]
+        ok_text = "OK" if report.ok else "TAMPER DETECTED"
+        mismatches_html = ""
+        if report.mismatches:
+            rows = "".join(
+                f'<tr><td class="mono">{m["id"]}</td>'
+                f'<td class="mono" style="font-size:10px;">{m["stored"][:16]}…</td>'
+                f'<td class="mono" style="font-size:10px;">{m["recomputed"][:16]}…</td></tr>'
+                for m in report.mismatches
+            )
+            mismatches_html = (
+                f'<h2 style="font-size:11px;color:{P["text_dim"]};'
+                f'letter-spacing:1px;text-transform:uppercase;margin-top:24px;">'
+                f'Mismatches</h2>'
+                f'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+                f'<thead><tr style="color:{P["text_dim"]};">'
+                f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Row ID</th>'
+                f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Stored</th>'
+                f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Recomputed</th>'
+                f'</tr></thead><tbody>{rows}</tbody></table>'
+            )
+        missing_html = ""
+        if report.missing_prev:
+            ids = ", ".join(str(i) for i in report.missing_prev)
+            missing_html = (
+                f'<div style="margin-top:12px;padding:10px;background:rgba(239,68,68,.1);'
+                f'border-left:3px solid {P["negative"]};font-size:11px;'
+                f'color:{P["negative"]};">'
+                f'Broken prev_hash linkage at row(s): {ids}'
+                f'</div>'
+            )
+        body = (
+            f'<div style="padding:24px 0 12px 0;">'
+            f'  <div style="font-size:11px;color:{P["text_faint"]};letter-spacing:.75px;'
+            f'text-transform:uppercase;margin-bottom:6px;">Audit Chain</div>'
+            f'  <div style="display:flex;align-items:baseline;gap:12px;">'
+            f'    <div style="font-size:22px;color:{P["text"]};font-weight:600;">'
+            f'Integrity Attestation</div>'
+            f'    <div style="background:{P["panel_alt"]};color:{ok_colour};'
+            f'padding:2px 10px;border-radius:3px;font-size:11px;font-weight:700;'
+            f'letter-spacing:.5px;text-transform:uppercase;">{ok_text}</div>'
+            f'  </div>'
+            f'</div>'
+            f'<table style="width:100%;border-collapse:collapse;font-size:12px;'
+            f'margin-top:12px;">'
+            f'<tbody>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Total rows</td>'
+            f'<td class="num">{status["total_rows"]}</td></tr>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Hashed rows</td>'
+            f'<td class="num">{status["hashed_rows"]}</td></tr>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Pre-chain (legacy) rows</td>'
+            f'<td class="num">{status["pre_chain_rows"]}</td></tr>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Last hashed id</td>'
+            f'<td class="num">{status["last_hashed_id"] or "—"}</td></tr>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Last row hash</td>'
+            f'<td class="mono" style="font-size:10px;">{(status["last_row_hash"] or "—")[:32]}…</td></tr>'
+            f'</tbody></table>'
+            f'{missing_html}'
+            f'{mismatches_html}'
+            f'<div style="margin-top:24px;padding-top:12px;border-top:1px solid {P["border"]};'
+            f'font-size:10px;color:{P["text_faint"]};font-family:\'JetBrains Mono\',monospace;">'
+            f'Detective control — see '
+            f'<code>rcm_mc/compliance/HIPAA_READINESS.md</code> for mitigations '
+            f'(WORM storage, off-host hash anchoring).'
+            f'</div>'
+        )
+        self._send_html(chartis_shell(
+            body, "Admin — Audit Chain",
+            subtitle="Compliance integrity attestation",
+        ))
 
     def _route_dashboard(self) -> None:
         # B72: `?live=1` enables auto-refresh (60s meta-refresh). Off by
