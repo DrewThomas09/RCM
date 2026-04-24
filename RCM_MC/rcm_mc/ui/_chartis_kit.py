@@ -243,6 +243,7 @@ _CORPUS_NAV = [
     {"label": "★ Track Record",  "href": "/track-record",       "icon": "◈"},
     {"label": "CPOM 50-State",  "href": "/cpom-lattice",        "icon": "▤"},
     {"label": "RAG / Search",   "href": "/rag",                 "icon": "▣"},
+    {"label": "CMS Claims Mnl",  "href": "/cms-claims-manual",  "icon": "▥"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
     {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},

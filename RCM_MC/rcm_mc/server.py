@@ -2314,6 +2314,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.document_rag_page import render_document_rag
             return self._send_html(render_document_rag(_qp))
+        if path == "/cms-claims-manual":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.cms_claims_processing_manual_page import render_claims_processing_manual
+            return self._send_html(render_claims_processing_manual(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
