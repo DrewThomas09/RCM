@@ -265,6 +265,7 @@ NAV_ITEMS = [
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
     {"label": "NCCI Scanner", "href": "/ncci-scanner", "icon": "chart"},
     {"label": "HFMA MAP Keys", "href": "/hfma-map-keys", "icon": "bookmark"},
+    {"label": "Medicare Utilization", "href": "/medicare-utilization", "icon": "chart"},
 ]
 
 NAV_ICONS = {

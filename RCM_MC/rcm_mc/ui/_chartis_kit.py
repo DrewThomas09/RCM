@@ -228,6 +228,7 @@ _CORPUS_NAV = [
     {"label": "CMS Sources",    "href": "/cms-sources",      "icon": "▥"},
     {"label": "NCCI Scanner",   "href": "/ncci-scanner",      "icon": "▦"},
     {"label": "HFMA MAP Keys",  "href": "/hfma-map-keys",     "icon": "▣"},
+    {"label": "Medicare Util.", "href": "/medicare-utilization", "icon": "▥"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
     {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},

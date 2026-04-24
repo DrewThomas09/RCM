@@ -2239,6 +2239,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.hfma_map_keys_page import render_hfma_map_keys
             return self._send_html(render_hfma_map_keys(_qp))
+        if path == "/medicare-utilization":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.medicare_utilization_page import render_medicare_utilization
+            return self._send_html(render_medicare_utilization(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

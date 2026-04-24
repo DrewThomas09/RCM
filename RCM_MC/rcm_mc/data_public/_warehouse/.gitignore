@@ -1,0 +1,5 @@
+# Generated warehouse files — regenerated from seed data on first compute() call.
+# Seed data lives in the Python source; this directory holds the materialized DB.
+*.db
+*.db-journal
+*.parquet
