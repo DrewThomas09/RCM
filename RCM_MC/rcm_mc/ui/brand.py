@@ -281,6 +281,7 @@ NAV_ITEMS = [
     {"label": "CPOM 50-State", "href": "/cpom-lattice", "icon": "grid"},
     {"label": "RAG / Search", "href": "/rag", "icon": "bookmark"},
     {"label": "CMS Claims Mnl Pub 100-04", "href": "/cms-claims-manual", "icon": "chart"},
+    {"label": "Site-Neutral Simulator", "href": "/site-neutral", "icon": "grid"},
 ]
 
 NAV_ICONS = {

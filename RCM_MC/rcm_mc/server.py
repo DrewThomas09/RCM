@@ -2319,6 +2319,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.cms_claims_processing_manual_page import render_claims_processing_manual
             return self._send_html(render_claims_processing_manual(_qp))
+        if path == "/site-neutral":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.site_neutral_simulator_page import render_site_neutral_simulator
+            return self._send_html(render_site_neutral_simulator(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
