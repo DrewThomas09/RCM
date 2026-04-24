@@ -102,14 +102,49 @@ for row in result.per_payer:
 
 ---
 
-## Files
+## Files in this module
 
 ```
 payer_stress/
-├── __init__.py
-├── payer_library.py        # 19 curated payers + keyword classifier
-└── contract_simulator.py   # run_payer_stress + MC engine + amplifier math
+├── __init__.py             # Public API re-exports
+├── payer_library.py        # 19 curated payers + keyword classifier (410 LOC)
+└── contract_simulator.py   # run_payer_stress + MC engine + amplifier math (634 LOC)
 ```
+
+### `__init__.py` (thin)
+Re-exports: `run_payer_stress`, `PayerMixEntry`, `default_hospital_mix`, `classify_payer`, `PAYER_PRIORS`.
+
+### `payer_library.py` (410 LOC)
+The **curated payer catalog**. 19 `PayerPrior` records covering every material US healthcare payer:
+
+- National commercial: UnitedHealthcare, Anthem, Aetna, Cigna, Humana
+- Regional Blues: BCBS IL / MI / NC / CA, Highmark, Kaiser
+- Government: Medicare FFS, Medicare Advantage aggregate
+- Managed Medicaid: Medicaid FFS, Centene, Molina
+- Other: TRICARE, Workers Comp, Self-pay
+
+Each prior ships with empirical rate-movement priors (p25/median/p75 per renewal), negotiating leverage score (0-1), 12-month renewal probability, churn probability, and behavioral notes (e.g., *"UHC uses Change Healthcare / Optum data to drive evidence-based rate cuts on hospital outliers"*).
+
+Also contains `classify_payer(name) → PayerPrior` — fuzzy keyword matcher so "United" or "UHC" or "UnitedHealthcare" all resolve to the same prior.
+
+### `contract_simulator.py` (634 LOC)
+The **Monte Carlo engine + concentration amplifier**. For each path × year × payer:
+
+1. Sample a rate-move from Normal fit to the payer's prior
+2. Dampen by (1 − renewal probability) when not renewing that year
+3. Draw a tail churn event (contract termination) with payer-specific probability
+4. Apply concentration amplifier: Top-1 share >30% → multiply aggregate NPR volatility by `1 + (top_1 − 0.30) × 2`; Top-2 >50% → +0.10; Top-3 >70% → +0.10 more
+
+Rolls up to per-year NPR impact cone (P10/P50/P90), cumulative NPR + EBITDA at risk, concentration verdict, per-payer detail cards.
+
+Key entry: `run_payer_stress(target_name, mix, total_npr_usd, total_ebitda_usd, horizon_years, n_paths) → PayerStressResult`.
+
+---
+
+## Adjacent files
+
+- **[`rcm_mc/ui/payer_stress_page.py`](../../ui/payer_stress_page.py)** — web page at `/diligence/payer-stress`
+- **[`tests/test_payer_stress.py`](../../../tests/test_payer_stress.py)** — 16 tests covering classifier, amplifier math, mix validation
 
 ---
 

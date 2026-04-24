@@ -6,6 +6,11 @@ This walkthrough puts you in the chair of a private-equity VP evaluating a real 
 
 If you haven't installed the tool yet, go read [README.md](README.md) section 5 first.
 
+> **Companion docs while you read this:**
+> - [README.md](README.md) — plain-English product overview
+> - [FILE_INDEX.md](FILE_INDEX.md) — every file, mapped
+> - Per-module READMEs linked from each step below
+
 ---
 
 ## The scenario

@@ -6,6 +6,21 @@ If you've never heard those words before, don't worry — this README will expla
 
 ---
 
+## I need…
+
+| If you want to… | Go to… |
+|-----------------|--------|
+| **Understand what this tool does in plain English** | [§1 — Plain English](#1-what-is-this-in-plain-english) |
+| **See a full deal walkthrough from Mon 9 AM to Mon 10:30 AM** | [§6 — Walkthrough](#6-full-walkthrough-one-imaginary-deal-start-to-finish) or the longer [WALKTHROUGH.md](WALKTHROUGH.md) |
+| **Install it and run it on my laptop** | [§5 — Install](#5-how-to-install-and-run-it-from-zero) |
+| **Find a specific file or module** | [FILE_INDEX.md](FILE_INDEX.md) — the master map |
+| **Understand how one module works** | [§7 — Per-module tour](#7-the-tools-explained-one-by-one) — each section links to its per-module README |
+| **See what's changed recently** | [COMPUTER_24HOUR_UPDATE_NUMBER_1.md](COMPUTER_24HOUR_UPDATE_NUMBER_1.md), [RCM_MC/CHANGELOG.md](RCM_MC/CHANGELOG.md) |
+| **Contribute or fix a bug** | [CONTRIBUTING.md](CONTRIBUTING.md), [RCM_MC/CLAUDE.md](RCM_MC/CLAUDE.md) (coding conventions) |
+| **Know where metrics come from** | [RCM_MC/docs/METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md), [RCM_MC/docs/BENCHMARK_SOURCES.md](RCM_MC/docs/BENCHMARK_SOURCES.md) |
+
+---
+
 ## Table of contents
 
 1. [What is this, in plain English?](#1-what-is-this-in-plain-english)
@@ -318,7 +333,7 @@ Without this tool, this analysis would have taken 2–3 weeks and cost $200K+ in
 
 This is the long-form walkthrough of every module. Each one has its own web page (URL) and tells a specific part of the story.
 
-### HCRIS Peer X-Ray · `/diligence/hcris-xray`
+### HCRIS Peer X-Ray · `/diligence/hcris-xray` · [module README](RCM_MC/rcm_mc/diligence/hcris_xray/README.md)
 
 **What it does**: Every Medicare-accepting hospital in the US files a "Medicare cost report" every year with the government. That report has 2,500+ data fields — bed count, payer mix, patient days, gross revenue, net revenue, operating expenses, everything. We loaded 17,701 of these reports. You type any hospital's name or Medicare ID (CCN), and the tool instantly benchmarks that hospital against 25–50 similar hospitals (same size, state, payer mix, year) across 15 derived metrics.
 
@@ -326,7 +341,7 @@ This is the long-form walkthrough of every module. Each one has its own web page
 
 **What you see**: target card + metric benchmark grid + per-metric sparkline (3-year trend) + per-metric box-plot (where target sits in peer distribution) + peer roster table + public-comp context block (target vs HCA/Tenet/UHS).
 
-### Regulatory Calendar × Thesis Kill-Switch · `/diligence/regulatory-calendar`
+### Regulatory Calendar × Thesis Kill-Switch · `/diligence/regulatory-calendar` · [module README](RCM_MC/rcm_mc/diligence/regulatory_calendar/README.md)
 
 **What it does**: We curated 11 upcoming US healthcare regulatory events (CMS V28, OPPS site-neutral, TEAM bundled payment, NSA IDR, ESRD PPS, FTC HSR expansion, OIG management-fee, DOJ False Claims, etc.). Each event has a publish date, effective date, and a mapping of which thesis drivers it kills. You input your target's profile (specialty, payer mix, geography), and the tool tells you which of your claimed value-creation drivers die, and on which specific date.
 
@@ -334,7 +349,7 @@ This is the long-form walkthrough of every module. Each one has its own web page
 
 **What you see**: verdict card (PASS/CAUTION/WARNING/FAIL), risk score, Gantt timeline of events, per-driver timeline, EBITDA overlay table.
 
-### Covenant & Capital Stack Stress Lab · `/diligence/covenant-stress`
+### Covenant & Capital Stack Stress Lab · `/diligence/covenant-stress` · [module README](RCM_MC/rcm_mc/diligence/covenant_lab/README.md)
 
 **What it does**: Takes the Deal MC EBITDA projections (the distribution of how much money the company might make over 5 years), overlays your debt structure (revolvers, term loans, mezzanine), and tells you per-quarter how likely you are to breach your loan covenants. A covenant is a rule in the loan agreement like "debt-to-EBITDA must stay below 6×" — break one and the bank can call the loan.
 
@@ -342,7 +357,7 @@ This is the long-form walkthrough of every module. Each one has its own web page
 
 **What you see**: breach probability curves per covenant × quarter, debt service cliff chart, equity cure sizing table, capital stack detail.
 
-### EBITDA Bridge Auto-Auditor · `/diligence/bridge-audit`
+### EBITDA Bridge Auto-Auditor · `/diligence/bridge-audit` · [module README](RCM_MC/rcm_mc/diligence/bridge_audit/README.md)
 
 **What it does**: When sellers pitch their business, they give buyers a "synergy bridge" — a list of ways the buyer will improve EBITDA after closing. For example: "we'll consolidate vendors (saves $2.8M), overhaul denials (adds $4.2M), uplift coding (adds $3.1M)." Total: $10M+ of claimed improvements. Banker says the deal deserves a higher multiple because of these synergies.
 
@@ -352,7 +367,7 @@ The problem: **most of those claimed synergies never show up**. Vendor consolida
 
 **What you see**: verdict card (MATERIAL/GAP/OK), claimed-vs-realistic comparison chart per lever, counter-bid recommendation with earn-out alternative, full lever library reference.
 
-### Bear Case Auto-Generator · `/diligence/bear-case`
+### Bear Case Auto-Generator · `/diligence/bear-case` · [module README](RCM_MC/rcm_mc/diligence/bear_case/README.md)
 
 **What it does**: Every investment committee memo needs a "bear case" section — what could break this thesis. Partners normally write this by hand (3–5 hours per memo × 3–5 memo drafts per deal = 20+ hours). This tool pulls evidence from 8 sources (Regulatory Calendar, Covenant Stress, Bridge Audit, Deal MC, Deal Autopsy, Exit Timing, Payer Stress, HCRIS X-Ray), ranks by severity and dollar impact, assigns citation keys `[R1/C1/B1/M1/A1/E1/P1/H1]`, and produces a print-ready memo block.
 
@@ -360,7 +375,7 @@ The problem: **most of those claimed synergies never show up**. Vendor consolida
 
 **What you see**: verdict card (EBITDA at risk as % of run-rate), theme-grouped evidence cards with citation keys + deep links back to source modules, copy-paste IC memo HTML.
 
-### Payer Mix Stress Lab · `/diligence/payer-stress`
+### Payer Mix Stress Lab · `/diligence/payer-stress` · [module README](RCM_MC/rcm_mc/diligence/payer_stress/README.md)
 
 **What it does**: Hospital revenue depends on which insurance companies are paying. The big 5 national payers (UHC, Anthem, Aetna, Cigna, Humana) plus Blues regional plans + Medicare + Medicaid make up most of the pie. Each payer reprices their contracts every 1–3 years. Our tool curates 19 major payers with historical rate-move distributions, negotiating leverage scores, renewal cadences, and churn probabilities — then runs a Monte Carlo of rate shocks across your target's actual mix to compute NPR and EBITDA at risk.
 
@@ -386,7 +401,7 @@ The problem: **most of those claimed synergies never show up**. Vendor consolida
 
 **What it does**: IRR / MOIC / proceeds curve across years 2–7 + buyer-fit scoring (Strategic / PE Secondary / IPO / Sponsor-Hold) + probability-weighted proceeds. Tells you when to sell and to whom.
 
-### Thesis Pipeline · `/diligence/thesis-pipeline`
+### Thesis Pipeline · `/diligence/thesis-pipeline` · [module README](RCM_MC/rcm_mc/diligence/thesis_pipeline/README.md)
 
 **What it does**: One-click orchestrator that runs all 14 analytic modules in sequence for a given deal. Produces a single report with every headline number + step log + deep-link tiles into each individual module.
 
@@ -438,9 +453,12 @@ The design philosophy is: **keep it boring so it runs anywhere**. A PE analyst c
 
 ## 9. Project file layout
 
+**For a full navigable directory of every major file and module, see [FILE_INDEX.md](FILE_INDEX.md).** The sketch below is the 30-second version.
+
 ```
 Coding Projects/
 ├── README.md                              ← you are here
+├── FILE_INDEX.md                          ← master map of every file
 ├── COMPUTER_24HOUR_UPDATE_NUMBER_1.md    ← latest cycle summary
 ├── WALKTHROUGH.md                         ← detailed case study
 │
@@ -536,7 +554,9 @@ Read [WALKTHROUGH.md](WALKTHROUGH.md) — it's a longer hands-on tour, or jump i
 
 ## Staying current
 
+- Master file map: [FILE_INDEX.md](FILE_INDEX.md)
 - Latest cycle summary: [COMPUTER_24HOUR_UPDATE_NUMBER_1.md](COMPUTER_24HOUR_UPDATE_NUMBER_1.md)
+- Per-module READMEs: every directory under `RCM_MC/rcm_mc/diligence/` has its own README with per-file detail
 - GitHub: https://github.com/DrewThomas09/RCM
 - Test status: 258/258 green on the new modules · 8,477/8,534 (99.3%) on the full suite
 

@@ -88,15 +88,44 @@ for fb in result.first_breach:
 
 ---
 
-## Files
+## Files in this module
 
 ```
 covenant_lab/
-├── __init__.py
-├── capital_stack.py    # DebtTranche + build_debt_schedule + default_lbo_stack
-├── covenants.py        # CovenantDefinition + evaluate_covenant + DEFAULT_COVENANTS
-└── simulator.py        # run_covenant_stress + path reconstruction + equity cures
+├── __init__.py         # Public API re-exports
+├── capital_stack.py    # Debt tranches + amort schedule + default LBO stack (379 LOC)
+├── covenants.py        # Covenant definitions + per-quarter evaluator (259 LOC)
+└── simulator.py        # MC engine + path reconstruction + equity cure math (639 LOC)
 ```
+
+### `__init__.py` (thin)
+Re-exports: `run_covenant_stress`, `default_lbo_stack`, `CapitalStack`, `DebtTranche`, `TrancheKind`, `CovenantDefinition`, `CovenantKind`, `CovenantStressResult`.
+
+### `capital_stack.py` (379 LOC)
+Models the **debt side of the balance sheet**. Six tranche kinds (`REVOLVER / TLA / TLB / UNITRANCHE / MEZZANINE / SELLER_NOTE`) with fixed or floating rates, custom amortization schedules, commitment fees on undrawn revolver, lien priority.
+
+Two big building blocks:
+- `build_debt_schedule(stack, rate_path_annual, quarters)` — quarterly interest + scheduled principal + fees
+- `default_lbo_stack(total_debt_usd, revolver_usd, revolver_draw_pct, term_years)` — a sensible starter stack when the user hasn't specified one
+
+### `covenants.py` (259 LOC)
+Covenant definitions + evaluator. Four built-in covenants (`NET_LEVERAGE`, `DSCR`, `INTEREST_COVERAGE`, `FIXED_CHARGE_COVERAGE`) with optional step-down schedules (e.g., leverage starts at 7.5×, tightens to 6.0× by Y4).
+
+Key entry: `evaluate_covenant(covenant, ltm_ebitda, debt, debt_service, interest, maint_capex, quarter_index) → (headroom_ratio, breached: bool)`.
+
+Edit `DEFAULT_COVENANTS` at the bottom to change the standard test set.
+
+### `simulator.py` (639 LOC)
+The **Monte Carlo brain**. Takes Deal MC's yearly EBITDA p25/p50/p75 bands → reconstructs 500 lognormal synthetic paths via stdlib Beasley-Springer-Moro inverse normal (no scipy). Runs each path through quarterly debt service × covenant evaluation, tracks per-quarter breach probabilities, computes equity-cure sizes when breached, subtracts Regulatory Calendar's EBITDA overlay before testing.
+
+Key entry: `run_covenant_stress(ebitda_bands, capital_stack, rate_path_annual, quarters, regulatory_overlay_usd_by_year) → CovenantStressResult`.
+
+---
+
+## Adjacent files
+
+- **[`rcm_mc/ui/covenant_lab_page.py`](../../ui/covenant_lab_page.py)** — web page at `/diligence/covenant-lab`
+- **[`tests/test_covenant_lab.py`](../../../tests/test_covenant_lab.py)** — 17 tests covering tranche amort, covenant tests, equity-cure math
 
 ---
 

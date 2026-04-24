@@ -112,14 +112,47 @@ print(report.partner_recommendation)
 
 ---
 
-## Files
+## Files in this module
 
 ```
 bridge_audit/
-├── __init__.py
-├── lever_library.py    # 21 LeverPrior records + keyword classifier
-└── auditor.py          # audit_bridge + per-lever verdict + counter-bid math
+├── __init__.py         # Public API re-exports
+├── lever_library.py    # 21 LeverPrior records + keyword classifier (514 LOC)
+└── auditor.py          # audit_bridge + per-lever verdict + counter-bid math (672 LOC)
 ```
+
+### `__init__.py` (thin)
+Re-exports: `audit_bridge`, `audit_lever`, `parse_bridge_text`, `BridgeLever`, `LeverCategory`, `LeverVerdict`, `LEVER_PRIORS`, `classify_lever`, `prior_for`.
+
+### `lever_library.py` (514 LOC)
+The **prior catalog**. 21 hand-curated `LeverPrior` records, one per canonical category, calibrated from ~3,000 historical RCM initiative outcomes. Each prior carries:
+
+- Median / P25 / P75 realization (1.0 = fully realized)
+- Historical failure rate (fraction realizing <50% of claim)
+- Duration-to-run-rate months
+- Conditional boosts (e.g., denial workflow at denial rate >8% gets +12pp)
+
+Also contains the **keyword classifier** — a priority-tiebreak rules engine that routes raw banker text ("Site-neutral mitigation, +$1.8M") to the right category. Specialized categories (MA_CODING_UPLIFT, SITE_NEUTRAL_MITIGATION) beat generic ones (CODING_INTENSITY) via higher priority.
+
+**To recalibrate a prior**: edit the `LeverPrior(...)` tuple at the bottom of this file. **To add a 22nd category**: append to the tuple and register keywords in `_LEVER_KEYWORDS`.
+
+### `auditor.py` (672 LOC)
+The **audit engine**. Takes parsed levers + a target profile + entry multiple + asking price → returns a ranked `BridgeAuditReport` with:
+
+- Per-lever verdict (`REALISTIC / OVERSTATED / UNSUPPORTED / UNDERSTATED`)
+- Target-conditional prior adjustment
+- Bridge-level rollup (total claimed vs realistic, gap %)
+- Counter-bid recommendation
+- Earn-out alternative structured on the overstated gap
+
+Also contains `parse_bridge_text(text)` — the banker-copy-paste ingester that handles common bridge formats (CSV, bullet list, pipe-delimited).
+
+---
+
+## Adjacent files
+
+- **[`rcm_mc/ui/bridge_audit_page.py`](../../ui/bridge_audit_page.py)** — web page at `/diligence/bridge-audit`
+- **[`tests/test_bridge_audit.py`](../../../tests/test_bridge_audit.py)** — 20 tests covering classifier, boosts, verdicts, parser edge cases
 
 ---
 
