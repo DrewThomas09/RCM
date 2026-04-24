@@ -2707,7 +2707,9 @@ Three sibling projects alongside `RCM_MC/` in the repo root. These are **not par
 7. `rcm_mc/tests/` — test conventions + fixture hospital catalog
 8. **26 legacy diligence modules** — benchmarks, checklist, counterfactual, cyber, deal_autopsy, deal_mc, denial_prediction, exit_timing, integrity, labor, ma_dynamics, management_scorecard, patient_pay, physician_attrition, physician_comp, physician_eu, quality, real_estate, referral, regulatory, reputational, root_cause, screening, synergy, value, working_capital
 
-**Consolidation candidates (8 pairs/sets flagged for future cleanup)**:
+**Consolidation candidates (flagged during catalog, most corrected by later import analysis)**:
+
+Original flags (based on docstring similarity):
 1. `deal_quality_score.py` + `deal_quality_scorer.py`
 2. `hold_optimizer.py` + `hold_period_optimizer.py`
 3. `vintage_analysis.py` + `vintage_analytics.py` + `vintage_cohorts.py`
@@ -2717,6 +2719,28 @@ Three sibling projects alongside `RCM_MC/` in the repo root. These are **not par
 7. 7 overlapping deal-scoring modules in `data_public/`
 8. `pe_intelligence.py` (data_public module) vs `pe_intelligence/` (top-level package) — name collision
 9. `unrealistic_on_face_check.py` + `unrealistic_on_its_face.py` in `pe_intelligence/`
+
+### Import-analysis correction
+
+A follow-up pass verified import counts for each candidate. **Most are NOT redundant code** — they're complementary modules with distinct HTTP routes:
+
+| Candidate | Import counts | Corrected verdict |
+|-----------|--------------|-------------------|
+| `hold_optimizer` + `hold_period_optimizer` | 1 + 12 | **Distinct approaches.** Corpus-peer-calibrated vs model-based (multiple-compression). Each has its own route. |
+| `vintage_analysis` + `vintage_analytics` + `vintage_cohorts` | 15 + 10 + 1 | **All three live** at distinct routes (`/vintage-analysis`, `/vintage-analytics`, `/vintage-cohorts`). Related but not redundant. |
+| `value_creation_plan` + `vcp_tracker` | 11 + 1 | **Both live** — different routes. |
+| `tax_structure` + `tax_structure_analyzer` | 1 + 1 | **Both live** — each has a route. Potentially consolidatable if routes retired. |
+| `deal_quality_score` + `deal_quality_scorer` | 11 + 11 | **Heavily used** — 11 importers each. Parallel scorers for different consumer contexts. |
+| `unrealistic_on_face_check` + `unrealistic_on_its_face` | Both imported from `__init__.py` | **Distinct implementations.** `on_face_check` = 14 checks (453 LOC); `on_its_face` = 7 checks (281 LOC). Evolution, not duplication. |
+
+**Single-import modules are NOT orphans** — each is imported by exactly its matching `ui/data_public/<topic>_page.py`, the canonical 1:1 mapping for the corpus-browser surface.
+
+**Still worth investigating**: the 7-payer-module and 7-deal-scoring-module clusters reflect genuinely accreted surface area. Real consolidation is a **route-retirement question**, not a code-dedup question — merging two modules means removing one URL, which is user-visible.
+
+**Rule of thumb**: before deleting any flagged "duplicate":
+1. Real import count via `grep -rn "from .*\.<module>\b\|import <module>\b" rcm_mc/ tests/`
+2. Look for matching `ui/data_public/<topic>_page.py` → dedicated route
+3. Diff implementations — docstring similarity ≠ code similarity
 
 **Key architectural insights locked into FILE_MAP.md**:
 - **Packet-centric architecture** — every UI page / API / export renders from one `DealAnalysisPacket`; `DQReport` is the parallel spine for the heavyweight dbt layer
