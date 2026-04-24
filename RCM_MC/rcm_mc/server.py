@@ -1941,6 +1941,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Deal Monte Carlo — 5-year forward distribution.
         if path == "/diligence/deal-mc":
             return self._route_deal_mc_page()
+        # Claim-level denial prediction — CCD-native predictive analytic.
+        if path == "/diligence/denial-prediction":
+            return self._route_denial_prediction_page()
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -6061,6 +6064,26 @@ class RCMHandler(BaseHTTPRequestHandler):
         left = (qs.get("left") or [""])[0]
         right = (qs.get("right") or [""])[0]
         self._send_html(render_compare_page(left=left, right=right))
+
+    # ── Denial Prediction ────────────────────────────────────────────
+
+    def _route_denial_prediction_page(self) -> None:
+        from .ui.denial_prediction_page import (
+            render_denial_prediction_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        dataset = (qs.get("dataset") or [""])[0]
+        try:
+            train_fraction = float(
+                (qs.get("train_fraction") or ["0.7"])[0],
+            )
+        except ValueError:
+            train_fraction = 0.7
+        self._send_html(render_denial_prediction_page(
+            dataset=dataset, train_fraction=train_fraction,
+        ))
 
     # ── Deal Monte Carlo ─────────────────────────────────────────────
 
