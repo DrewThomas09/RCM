@@ -1,0 +1,74 @@
+# EHR vendor risk matrix.
+#
+# Breach incident history from HHS OCR Breach Portal + public CVE
+# databases. Numeric fields are public-record approximations used
+# for composite scoring; they should not be quoted as exact
+# aggregates without a current OCR pull.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://ocrportal.hhs.gov/ocr/breach/breach_report.jsf
+  - https://nvd.nist.gov/vuln/search
+
+# Per-vendor risk score 0-100 (lower = safer).
+vendors:
+  EPIC:
+    name: Epic
+    ocr_breach_incidents_trailing_3y: 6
+    customer_concentration_multiplier: 1.3
+    systemic_risk_score: 55
+    notes: Concentration risk — Epic runs ~30% of US hospital beds.
+
+  ORACLE_CERNER:
+    name: Oracle Cerner
+    ocr_breach_incidents_trailing_3y: 14
+    customer_concentration_multiplier: 1.1
+    systemic_risk_score: 65
+    notes: Legacy VA / DoD breach surface; migration-era uncertainty.
+
+  ATHENAHEALTH:
+    name: Athenahealth
+    ocr_breach_incidents_trailing_3y: 4
+    customer_concentration_multiplier: 1.0
+    systemic_risk_score: 45
+
+  ECLINICALWORKS:
+    name: eClinicalWorks
+    ocr_breach_incidents_trailing_3y: 8
+    customer_concentration_multiplier: 1.0
+    systemic_risk_score: 58
+
+  NEXTGEN:
+    name: NextGen
+    ocr_breach_incidents_trailing_3y: 5
+    customer_concentration_multiplier: 1.0
+    systemic_risk_score: 52
+
+  MEDITECH:
+    name: Meditech
+    ocr_breach_incidents_trailing_3y: 3
+    customer_concentration_multiplier: 1.0
+    systemic_risk_score: 42
+
+# Known-catastrophic single-points-of-failure among Business
+# Associates. Change Healthcare is the anchor case — the 2024
+# ransomware attack affected ~190M individuals and disrupted 94%
+# of US hospitals financially.
+ba_catastrophes:
+  - name: Change Healthcare
+    aka: [Change, ChangeHealthcare, ECHO Health, Optum/Change]
+    year: 2024
+    description: |
+      UnitedHealth/Optum subsidiary clearinghouse. February 2024
+      ransomware attack produced $2.45B+ response cost, affected
+      ~190M individuals, drove Yale New Haven Health to sue to
+      exit a Prospect acquisition. Single point of failure for
+      roughly a third of US providers.
+    cascade_risk_multiplier: 2.5
+    typical_downtime_days: 21
+
+  - name: MCNA Dental
+    year: 2023
+    description: Clearinghouse breach; ~9M patients.
+    cascade_risk_multiplier: 1.4
+    typical_downtime_days: 5
