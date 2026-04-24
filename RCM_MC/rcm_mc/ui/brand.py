@@ -264,6 +264,7 @@ NAV_ITEMS = [
     {"label": "Exit Timing", "href": "/exit-timing", "icon": "chart"},
     {"label": "CMS Sources", "href": "/cms-sources", "icon": "bookmark"},
     {"label": "NCCI Scanner", "href": "/ncci-scanner", "icon": "chart"},
+    {"label": "HFMA MAP Keys", "href": "/hfma-map-keys", "icon": "bookmark"},
 ]
 
 NAV_ICONS = {

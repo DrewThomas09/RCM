@@ -2234,6 +2234,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.ncci_scanner_page import render_ncci_scanner
             return self._send_html(render_ncci_scanner(_qp))
+        if path == "/hfma-map-keys":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.hfma_map_keys_page import render_hfma_map_keys
+            return self._send_html(render_hfma_map_keys(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
