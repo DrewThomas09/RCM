@@ -235,12 +235,4 @@ def render_vintage_cohorts(params: dict = None) -> str:
         source="data_public/vintage_cohorts.py; Cambridge Associates US PE benchmarks.",
         page_key="vintage-cohorts",
     )
-    from rcm_mc.ui._chartis_kit import ck_related_views
-    related = ck_related_views([
-        ("Deals Library",        "/library"),
-        ("Sponsor Track Record", "/sponsor-track-record"),
-        ("Sector Intel",         "/sector-intel"),
-        ("Corpus Backtest",      "/corpus-backtest"),
-        ("Portfolio Analytics",  "/portfolio-analytics"),
-    ])
-    return chartis_shell(explainer + body + related, "Vintage Cohorts", active_nav="/vintage-cohorts")
+    return chartis_shell(explainer + body, "Vintage Cohorts", active_nav="/vintage-cohorts")

@@ -56,10 +56,27 @@ _SECTION_DEFS: List[tuple[str, str, str]] = [
     ("audit_trail",              "audit",           "Audit Trail"),
 ]
 
+_CLAUDE_STATUS_COLORS = {
+    "confirmed": P["positive"],
+    "needs_attention": P["warning"],
+    "insufficient_support": P["negative"],
+    "not_configured": P["text_faint"],
+    "call_failed": P["negative"],
+    "failed": P["negative"],
+}
 
-def _toc(bundle: Dict[str, Any]) -> str:
+
+def _toc(bundle: Dict[str, Any], review: Any = None) -> str:
     """Links strip at the top — one entry per populated section."""
     items = []
+    if review is not None:
+        items.append(
+            f'<a href="#supplemental-review" '
+            f'style="background:{P["panel"]};border:1px solid {P["border"]};'
+            f'border-radius:2px;padding:4px 8px;font-family:var(--ck-mono);'
+            f'font-size:10px;color:{P["accent"]};text-decoration:none;'
+            f'letter-spacing:0.04em;">Supplemental Review &rarr;</a>'
+        )
     for key, anchor, title in _SECTION_DEFS:
         if not bundle.get(key):
             continue
@@ -89,6 +106,109 @@ def _ic_memo_section(html_body: str, anchor: str) -> str:
         f'margin-left:8px;">MEM</span></div>'
         f'<div style="padding:14px 18px;">{html_body}</div>'
         f'</div>'
+    )
+
+
+def _supplemental_healthcare_panel(review: Any) -> str:
+    checks = getattr(review, "healthcare_checks", None) or {}
+    sev = checks.get("severity_counts") or {}
+    total_hits = int(checks.get("total_hits") or len(checks.get("hits") or []))
+    summary = str(checks.get("summary") or "No supplemental healthcare checks available.")
+    focus_areas = list(checks.get("focus_areas") or [])
+    focus = "".join(
+        f'<span class="ck-sig" style="margin-right:6px;margin-bottom:6px;">'
+        f'{_html.escape(str(area.get("category", "OTHER")))} '
+        f'{int(area.get("count", 0))}</span>'
+        for area in focus_areas[:6]
+    )
+    return (
+        f'<div class="ck-panel">'
+        f'<div class="ck-panel-title">Supplemental Healthcare Checks '
+        f'<span style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.12em;color:{P["text_faint"]};margin-left:8px;">'
+        f'HCX</span></div>'
+        f'<div style="padding:14px 18px;">'
+        f'<div class="ck-kpi-grid" style="margin-bottom:12px;">'
+        f'{ck_kpi_block("Supplemental Hits", str(total_hits), "additive")}'
+        f'{ck_kpi_block("Critical", str(sev.get("CRITICAL", 0)), "extra checks")}'
+        f'{ck_kpi_block("High", str(sev.get("HIGH", 0)), "extra checks")}'
+        f'{ck_kpi_block("Medium", str(sev.get("MEDIUM", 0)), "extra checks")}'
+        f'</div>'
+        f'<p style="color:{P["text_dim"]};font-size:11.5px;line-height:1.55;'
+        f'margin:0 0 10px;">{_html.escape(summary)} These checks are additive '
+        f'and do not override the core IC verdict.</p>'
+        + (
+            f'<div style="display:flex;gap:6px;flex-wrap:wrap;">{focus}</div>'
+            if focus else ""
+        )
+        + f'</div></div>'
+    )
+
+
+def _claude_review_panel(review: Any) -> str:
+    claude = getattr(review, "claude_review", None) or {}
+    status = str(claude.get("status") or "not_configured")
+    color = _CLAUDE_STATUS_COLORS.get(status, P["text_faint"])
+    status_label = status.replace("_", " ").upper()
+    summary = str(claude.get("summary") or "Claude review not available.").strip()
+    model = str(claude.get("model") or "fallback")
+    confirmed = [str(x) for x in list(claude.get("confirmed_points") or []) if str(x).strip()]
+    concerns = [str(x) for x in list(claude.get("concerns") or []) if str(x).strip()]
+
+    def _bullets(items: List[str], label: str, tone: str) -> str:
+        if not items:
+            return ""
+        lis = "".join(
+            f'<li style="padding:4px 0;color:{P["text"]};font-size:11.5px;line-height:1.5;">'
+            f'{_html.escape(item)}</li>'
+            for item in items[:4]
+        )
+        return (
+            f'<div style="margin-top:10px;">'
+            f'<div style="font-family:var(--ck-mono);font-size:9px;letter-spacing:0.12em;'
+            f'color:{tone};margin-bottom:4px;">{_html.escape(label)}</div>'
+            f'<ul style="margin:0;padding-left:18px;">{lis}</ul>'
+            f'</div>'
+        )
+
+    return (
+        f'<div class="ck-panel">'
+        f'<div class="ck-panel-title">Claude Look '
+        f'<span style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.12em;color:{P["text_faint"]};margin-left:8px;">'
+        f'CLD</span></div>'
+        f'<div style="padding:14px 18px;">'
+        f'<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;">'
+        f'<span class="ck-sig" style="color:{color};border:1px solid {color};'
+        f'background:rgba(255,255,255,0.02);">{_html.escape(status_label)}</span>'
+        f'<span style="color:{P["text_faint"]};font-family:var(--ck-mono);font-size:10px;">'
+        f'{_html.escape(model)}</span>'
+        f'</div>'
+        f'<p style="color:{P["text_dim"]};font-size:11.5px;line-height:1.6;margin:10px 0 0;">'
+        f'{_html.escape(summary)}</p>'
+        + _bullets(confirmed, "CONFIRMED POINTS", P["positive"])
+        + _bullets(concerns, "WATCH ITEMS", P["warning"])
+        + f'</div></div>'
+    )
+
+
+def _supplemental_review_section(review: Any) -> str:
+    if review is None:
+        return ""
+    checks = getattr(review, "healthcare_checks", None) or {}
+    total_hits = int(checks.get("total_hits") or len(checks.get("hits") or []))
+    return (
+        f'<div id="supplemental-review">'
+        + ck_section_header(
+            "SUPPLEMENTAL REVIEW SIGNALS",
+            "additive healthcare checks + Claude confirmation",
+            count=total_hits,
+        )
+        + f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
+        f'gap:12px;margin-bottom:14px;">'
+        f'{_supplemental_healthcare_panel(review)}'
+        f'{_claude_review_panel(review)}'
+        f'</div></div>'
     )
 
 
@@ -345,6 +465,11 @@ def render_ic_packet(
 
     # KPI count of populated sections
     populated = sum(1 for k, _, _ in _SECTION_DEFS if b.get(k))
+    healthcare_checks = getattr(review, "healthcare_checks", None) or {}
+    supplemental_hits = int(
+        healthcare_checks.get("total_hits")
+        or len(healthcare_checks.get("hits") or [])
+    )
     kpis = (
         ck_kpi_block("Sections", str(populated), f"of {len(_SECTION_DEFS)} bundled")
         + ck_kpi_block("Bear Patterns", str(len(b.get("bear_patterns") or [])), "matches")
@@ -354,10 +479,11 @@ def render_ic_packet(
                         str(len(b.get("extra_heuristics") or [])), "beyond core")
         + ck_kpi_block("Deep-Dive Hits",
                         str(len(b.get("deepdive_heuristics") or [])), "granular checks")
+        + ck_kpi_block("Healthcare Checks", str(supplemental_hits), "additive")
     )
     kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'
 
-    toc = _toc(b)
+    toc = _toc(b, review=review)
     ic_html = str(b.get("ic_memo") or "")
     ic_memo_section = _ic_memo_section(ic_html, "ic-memo") if ic_html else small_panel(
         "IC Memo", empty_note("ic_memo not rendered."), code="MEM",
@@ -418,6 +544,7 @@ def render_ic_packet(
         + banner
         + kpi_strip
         + toc
+        + _supplemental_review_section(review)
         + ck_section_header(
             "IC-READY PACKET", "master_bundle(packet) composed",
             count=populated,

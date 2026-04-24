@@ -26,9 +26,9 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 def _moic_color(moic: float) -> str:
     if moic >= 3.0: return "#22c55e"
-    if moic >= 2.0: return "#2fb3ad"
-    if moic >= 1.5: return "#b8732a"
-    return "#b5321e"
+    if moic >= 2.0: return "#3b82f6"
+    if moic >= 1.5: return "#f59e0b"
+    return "#ef4444"
 
 
 # ---------------------------------------------------------------------------
@@ -54,11 +54,11 @@ def _moic_bar_chart(stats: List[Any], width: int = 600, height: int = 160) -> st
     for m in (1.0, 2.0, 3.0, 4.0, 5.0):
         if m > max_moic: break
         gx = px(m)
-        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+row_h*len(stats)}" stroke="#d6cfc3" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+row_h*len(stats)}" stroke="#1e293b" stroke-width="0.8"/>')
         elements.append(f'<text x="{gx}" y="{margin["t"]+row_h*len(stats)+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
     # 1x reference
     ref_x = px(1.0)
-    elements.append(f'<line x1="{ref_x}" y1="{margin["t"]}" x2="{ref_x}" y2="{margin["t"]+row_h*len(stats)}" stroke="#b5321e" stroke-width="0.8" stroke-dasharray="3,3"/>')
+    elements.append(f'<line x1="{ref_x}" y1="{margin["t"]}" x2="{ref_x}" y2="{margin["t"]+row_h*len(stats)}" stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3,3"/>')
 
     for i, s in enumerate(stats):
         y = margin["t"] + i * row_h
@@ -70,11 +70,11 @@ def _moic_bar_chart(stats: List[Any], width: int = 600, height: int = 160) -> st
         # whisker P25-P75
         wx25, wx75 = px(s.moic_p25), px(s.moic_p75)
         mid_y = y + bar_h // 2 + 1
-        elements.append(f'<line x1="{wx25}" y1="{mid_y-3}" x2="{wx75}" y2="{mid_y-3}" stroke="#465366" stroke-width="1.2"/>')
-        elements.append(f'<line x1="{wx25}" y1="{mid_y-5}" x2="{wx25}" y2="{mid_y-1}" stroke="#7a8699" stroke-width="1"/>')
-        elements.append(f'<line x1="{wx75}" y1="{mid_y-5}" x2="{wx75}" y2="{mid_y-1}" stroke="#7a8699" stroke-width="1"/>')
+        elements.append(f'<line x1="{wx25}" y1="{mid_y-3}" x2="{wx75}" y2="{mid_y-3}" stroke="#94a3b8" stroke-width="1.2"/>')
+        elements.append(f'<line x1="{wx25}" y1="{mid_y-5}" x2="{wx25}" y2="{mid_y-1}" stroke="#64748b" stroke-width="1"/>')
+        elements.append(f'<line x1="{wx75}" y1="{mid_y-5}" x2="{wx75}" y2="{mid_y-1}" stroke="#64748b" stroke-width="1"/>')
         # year label
-        elements.append(f'<text x="{margin["l"]-3}" y="{y+bar_h-1}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#465366">{s.year}</text>')
+        elements.append(f'<text x="{margin["l"]-3}" y="{y+bar_h-1}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#94a3b8">{s.year}</text>')
         # P50 value
         label_x = px(s.moic_p50) + 3
         elements.append(f'<text x="{label_x}" y="{y+bar_h-1}" font-family="JetBrains Mono,monospace" font-size="7.5" fill="{color}">{s.moic_p50:.2f}x</text>')
@@ -125,11 +125,11 @@ def _heatmap_svg(stats: List[Any], width: int = 600) -> str:
         elements.append(f'<rect x="{cx}" y="0" width="{cell_w-2}" height="{cell_h}" fill="{color}" opacity="0.85" rx="1"/>')
         elements.append(
             f'<text x="{cx+cell_w//2-1}" y="11" text-anchor="middle" '
-            f'font-family="JetBrains Mono,monospace" font-size="8.5" fill="#f5f1ea" font-weight="600">{s.year}</text>'
+            f'font-family="JetBrains Mono,monospace" font-size="8.5" fill="#0a0e17" font-weight="600">{s.year}</text>'
         )
         elements.append(
             f'<text x="{cx+cell_w//2-1}" y="23" text-anchor="middle" '
-            f'font-family="JetBrains Mono,monospace" font-size="8" fill="#f5f1ea">{s.moic_p50:.1f}x</text>'
+            f'font-family="JetBrains Mono,monospace" font-size="8" fill="#0a0e17">{s.moic_p50:.1f}x</text>'
         )
     W = 20 + len(stats) * cell_w
     return (
@@ -162,7 +162,7 @@ def render_vintage_perf() -> str:
         + ck_kpi_block("Total Deals", f'<span class="mn">{total_deals}</span>', "across all vintages")
         + ck_kpi_block("Avg P50 MOIC", f'<span class="mn" style="color:{_moic_color(avg_p50)}">{avg_p50:.2f}x</span>', "vintage-weighted")
         + ck_kpi_block("Best Vintage", f'<span class="mn" style="color:#22c55e">{best.year}</span>', f"P50 {best.moic_p50:.2f}x")
-        + ck_kpi_block("Worst Vintage", f'<span class="mn" style="color:#b5321e">{worst.year}</span>', f"P50 {worst.moic_p50:.2f}x")
+        + ck_kpi_block("Worst Vintage", f'<span class="mn" style="color:#ef4444">{worst.year}</span>', f"P50 {worst.moic_p50:.2f}x")
         + '</div>'
     )
 
@@ -201,23 +201,23 @@ def render_vintage_perf() -> str:
     # Table
     rows = []
     for i, s in enumerate(stats):
-        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
+        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
         mc = _moic_color(s.moic_p50)
         sectors_html = "".join(
-            f'<span style="display:inline-block;margin:1px 2px;padding:1px 5px;border:1px solid #d6cfc3;'
-            f'font-size:8.5px;font-family:var(--ck-mono);color:#7a8699;">{_html.escape(sec[:16])}</span>'
+            f'<span style="display:inline-block;margin:1px 2px;padding:1px 5px;border:1px solid #1e293b;'
+            f'font-size:8.5px;font-family:var(--ck-mono);color:#64748b;">{_html.escape(sec[:16])}</span>'
             for sec in s.top_sectors[:3]
         )
         rows.append(f"""<tr{stripe}>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:center;font-weight:600;">{s.year}</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.n_deals}</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#7a8699;">{s.moic_p25:.2f}x</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{s.moic_p25:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc};font-weight:500;">{s.moic_p50:.2f}x</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#7a8699;">{s.moic_p75:.2f}x</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{s.moic_p75:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.avg_hold:.1f}y</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#b5321e' if s.loss_rate>0.2 else '#b8732a' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.1f}%</td>
+      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">${s.avg_ev_mm:.0f}M</td>
   <td style="padding:5px 8px;">{sectors_html}</td>
 </tr>""")
@@ -227,18 +227,18 @@ def render_vintage_perf() -> str:
   <div class="ck-panel-title">Vintage Detail — {total_yrs} years · {total_deals} deals</div>
   <div class="ck-table-wrap" style="max-height:500px;overflow-y:auto;">
     <table class="ck-table" style="width:100%;">
-      <thead style="position:sticky;top:0;background:#ece6db;z-index:2;">
+      <thead style="position:sticky;top:0;background:#111827;z-index:2;">
         <tr>
-          <th style="padding:5px 8px;text-align:center;color:#7a8699;">Year</th>
-          <th style="padding:5px 8px;text-align:right;color:#7a8699;">Deals</th>
-          <th style="padding:5px 8px;text-align:right;color:#7a8699;">P25 MOIC</th>
-          <th style="padding:5px 8px;text-align:right;color:#7a8699;">P50 MOIC</th>
-          <th style="padding:5px 8px;text-align:right;color:#7a8699;">P75 MOIC</th>
-          <th style="padding:5px 8px;text-align:right;color:#7a8699;">P50 IRR</th>
-          <th style="padding:5px 8px;text-align:right;color:#7a8699;">Avg Hold</th>
-          <th style="padding:5px 8px;text-align:right;color:#7a8699;">Loss %</th>
-          <th style="padding:5px 8px;text-align:right;color:#7a8699;">Avg EV</th>
-          <th style="padding:5px 8px;color:#7a8699;">Top Sectors</th>
+          <th style="padding:5px 8px;text-align:center;color:#64748b;">Year</th>
+          <th style="padding:5px 8px;text-align:right;color:#64748b;">Deals</th>
+          <th style="padding:5px 8px;text-align:right;color:#64748b;">P25 MOIC</th>
+          <th style="padding:5px 8px;text-align:right;color:#64748b;">P50 MOIC</th>
+          <th style="padding:5px 8px;text-align:right;color:#64748b;">P75 MOIC</th>
+          <th style="padding:5px 8px;text-align:right;color:#64748b;">P50 IRR</th>
+          <th style="padding:5px 8px;text-align:right;color:#64748b;">Avg Hold</th>
+          <th style="padding:5px 8px;text-align:right;color:#64748b;">Loss %</th>
+          <th style="padding:5px 8px;text-align:right;color:#64748b;">Avg EV</th>
+          <th style="padding:5px 8px;color:#64748b;">Top Sectors</th>
         </tr>
       </thead>
       <tbody>{''.join(rows)}</tbody>

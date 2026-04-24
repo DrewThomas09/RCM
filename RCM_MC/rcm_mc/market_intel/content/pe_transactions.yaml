@@ -1,0 +1,199 @@
+# Curated healthcare PE transaction library.
+#
+# Each entry represents a closed / announced PE transaction with
+# the published multiple, sponsor, and target characteristics.
+# Refresh monthly from public deal announcements:
+#   - Pitchbook healthcare deal feed (public summaries)
+#   - Mertz Taggart healthcare M&A quarterly report
+#   - Levin Associates deal announcements
+#   - Modern Healthcare / Fierce Healthcare deal coverage
+#   - SEC 13F / Form D filings
+#
+# Multiples are from published deal press releases or reputable
+# secondary sources; private-deal multiples are often
+# approximations. Flagged with `multiple_source` per record.
+
+last_reviewed: 2026-04-23
+
+transactions:
+  - date: 2026-04-12
+    target: Advanced Dermatology & Cosmetic Surgery
+    sponsor: Harvest Partners
+    specialty: DERMATOLOGY
+    deal_size_usd_mm: 620
+    ev_ebitda_multiple: 12.8
+    multiple_source: Pitchbook
+    target_characteristics:
+      sites: 156
+      states: 14
+      model: MSO
+    narrative: |
+      Largest dermatology MSO deal of Q2 2026. Multiple compressed
+      ~150bps from 2024 peak; HSR expanded reporting has lengthened
+      tuck-in cadence in the sector.
+
+  - date: 2026-04-08
+    target: Ridgeline Surgical Partners
+    sponsor: Welsh Carson Anderson & Stowe
+    specialty: AMBULATORY_SURGERY
+    deal_size_usd_mm: 1100
+    ev_ebitda_multiple: 14.2
+    multiple_source: Mertz Taggart
+    target_characteristics:
+      sites: 64
+      states: 9
+      physician_owners_pct: 0.35
+    narrative: |
+      Premium multiple reflecting ASC migration thesis and
+      favorable commercial payer mix. WCAS continues to lead
+      the ASC-rollup space; this is their 3rd ASC platform.
+
+  - date: 2026-03-22
+    target: Meridian Anesthesia Group
+    sponsor: New Mountain Capital
+    specialty: ANESTHESIOLOGY
+    deal_size_usd_mm: 840
+    ev_ebitda_multiple: 9.4
+    multiple_source: Pitchbook
+    target_characteristics:
+      providers: 720
+      hospital_based_pct: 0.92
+      nsa_oon_share: 0.18
+    narrative: |
+      Anesthesia multiples remain depressed vs 2022-2023 peaks;
+      NSA IDR QPA recalculation proposed-rule publication
+      creating overhang on the hospital-based physician sector.
+
+  - date: 2026-03-10
+    target: Prestige Behavioral Health
+    sponsor: Audax Group
+    specialty: BEHAVIORAL_HEALTH
+    deal_size_usd_mm: 480
+    ev_ebitda_multiple: 10.8
+    multiple_source: Levin Associates
+    target_characteristics:
+      facilities: 42
+      states: 11
+      medicaid_mix: 0.58
+    narrative: |
+      Behavioral-health multiples holding firm on back of
+      strong Medicaid reimbursement environment and continued
+      demand tailwind. Medicaid state-exposure concentration
+      remains the top diligence risk.
+
+  - date: 2026-02-28
+    target: Riverview Community Hospitals (3-facility carve-out)
+    sponsor: Rural Healthcare Partners (Arsenal Capital vehicle)
+    specialty: RURAL_ACUTE_HOSPITAL
+    deal_size_usd_mm: 185
+    ev_ebitda_multiple: 6.2
+    multiple_source: Modern Healthcare
+    target_characteristics:
+      beds: 276
+      states: 1
+      medicare_share: 0.58
+    narrative: |
+      Rural hospital carve-out at discount multiple; reflects
+      Medicare-heavy payer mix and thin CBSA economics. Buyer
+      is a rural-platform specialist underwriting on site-
+      neutral-proof service-line portfolio.
+
+  - date: 2026-02-10
+    target: Glendale GI Partners
+    sponsor: Silversmith Capital Partners
+    specialty: GASTROENTEROLOGY
+    deal_size_usd_mm: 320
+    ev_ebitda_multiple: 10.5
+    multiple_source: Pitchbook
+    target_characteristics:
+      providers: 88
+      ambulatory_share: 0.62
+    narrative: |
+      Classic GI platform deal with embedded ASC optionality;
+      multiple anchored around the public-comp median for
+      physician-group MSOs. Tuck-in strategy assumes pre-HSR-
+      expanded-reporting cadence; partners should haircut.
+
+  - date: 2026-01-24
+    target: OakBridge Urgent Care Network
+    sponsor: Nautic Partners
+    specialty: URGENT_CARE
+    deal_size_usd_mm: 410
+    ev_ebitda_multiple: 11.2
+    multiple_source: Mertz Taggart
+    target_characteristics:
+      centers: 78
+      states: 5
+      commercial_share: 0.68
+
+  - date: 2026-01-15
+    target: Northstar Dialysis Holdings
+    sponsor: Linden Capital Partners
+    specialty: DIALYSIS
+    deal_size_usd_mm: 540
+    ev_ebitda_multiple: 8.7
+    multiple_source: Pitchbook
+    target_characteristics:
+      clinics: 112
+      esrd_payer_mix_medicare: 0.78
+    narrative: |
+      Dialysis multiples recovered 50bps post-ESRD PPS CY2027
+      proposed +1.8% rate; sector still trades at discount to
+      pre-2022 peak given MA reimbursement overhang.
+
+  - date: 2025-12-18
+    target: Westridge Eye Care Partners
+    sponsor: FFL Partners
+    specialty: OPHTHALMOLOGY
+    deal_size_usd_mm: 380
+    ev_ebitda_multiple: 11.8
+    multiple_source: Levin Associates
+    target_characteristics:
+      providers: 64
+      asc_attached_pct: 0.45
+
+  - date: 2025-12-05
+    target: Centennial Home Health
+    sponsor: Gryphon Investors
+    specialty: HOME_HEALTH
+    deal_size_usd_mm: 240
+    ev_ebitda_multiple: 9.0
+    multiple_source: Mertz Taggart
+    target_characteristics:
+      episodes_annual: 18500
+      medicare_mix: 0.82
+    narrative: |
+      Home-health multiples compressed vs 2022 post-PDGM
+      implementation; buyers focusing on commercial-mix
+      and MA-plan-network platforms.
+
+  - date: 2025-11-20
+    target: Aspen Orthopedics Partners
+    sponsor: Audax Group
+    specialty: ORTHOPEDICS
+    deal_size_usd_mm: 720
+    ev_ebitda_multiple: 13.1
+    multiple_source: Pitchbook
+    target_characteristics:
+      providers: 142
+      asc_attached_pct: 0.68
+    narrative: |
+      Premium orthopedics multiple on ASC-attached platform;
+      TEAM bundled payment rule overhang priced in via
+      conditional earn-out on LEJR bundle margin.
+
+  - date: 2025-11-02
+    target: Meadowbrook Behavioral (predecessor)
+    sponsor: Carlyle Group
+    specialty: BEHAVIORAL_HEALTH
+    deal_size_usd_mm: 1250
+    ev_ebitda_multiple: 11.4
+    multiple_source: Pitchbook
+    target_characteristics:
+      facilities: 87
+      residential_share: 0.55
+    narrative: |
+      Top-of-range multiple for behavioral; priced on Medicaid
+      demand tailwind and network effects of multi-state
+      platform. Regulatory exposure concentrated in IMD
+      exclusion rule status.

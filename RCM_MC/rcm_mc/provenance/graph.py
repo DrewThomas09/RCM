@@ -40,6 +40,9 @@ class NodeType(str, Enum):
     CALCULATED = "CALCULATED"      # Deterministic arithmetic (bridge levers)
     AGGREGATED = "AGGREGATED"      # Cohort aggregate (peer median, P50)
     BENCHMARK = "BENCHMARK"        # External benchmark anchor (HFMA MAP keys)
+    CCD_DERIVED = "CCD_DERIVED"    # Metric computed from a CCD; chains back
+                                   # through the transformation log to a
+                                   # specific source file + row + rule.
 
 
 class EdgeRelationship(str, Enum):

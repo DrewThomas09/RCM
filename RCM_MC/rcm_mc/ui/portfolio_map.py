@@ -27,13 +27,13 @@ def _project(lat: float, lon: float) -> Tuple[float, float]:
 
 
 # CON state shading colors.
-_CON_FILL = {True: "#d6cfc3", False: "#ece6db"}
+_CON_FILL = {True: "#1e293b", False: "#0f172a"}
 
 _STAGE_COLORS = {
-    "pipeline": "#7a8699",
-    "diligence": "#2fb3ad",
-    "ic": "#b8732a",
-    "hold": "#0a8a5f",
+    "pipeline": "#64748b",
+    "diligence": "#3b82f6",
+    "ic": "#f59e0b",
+    "hold": "#10b981",
     "exit": "#8b5cf6",
 }
 
@@ -56,7 +56,7 @@ def render_portfolio_map(
                 if not coords:
                     continue
                 x, y = _project(coords[0], coords[1])
-                fill = _CON_FILL.get(has_con, "#061626")
+                fill = _CON_FILL.get(has_con, "#0f172a")
                 state_bg += (
                     f'<circle cx="{x:.0f}" cy="{y:.0f}" r="18" '
                     f'fill="{fill}" opacity="0.4"/>'
@@ -84,7 +84,7 @@ def render_portfolio_map(
         ebitda = float(d.get("ebitda_opportunity") or 0)
         radius = max(6, min(20, 6 + ebitda / 5e6))
         stage = str(d.get("stage") or "diligence")
-        color = _STAGE_COLORS.get(stage, "#2fb3ad")
+        color = _STAGE_COLORS.get(stage, "#3b82f6")
         name = _esc(d.get("name") or d.get("deal_id") or "")
         markers += (
             f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{radius:.0f}" '
@@ -97,7 +97,7 @@ def render_portfolio_map(
     if not markers:
         markers = (
             '<text x="480" y="300" text-anchor="middle" '
-            'fill="#465366" font-size="14">No deals to display</text>'
+            'fill="#94a3b8" font-size="14">No deals to display</text>'
         )
 
     # Legend.
@@ -107,14 +107,14 @@ def render_portfolio_map(
         lx = 60 + i * 120
         legend += (
             f'<circle cx="{lx}" cy="{legend_y}" r="5" fill="{color}"/>'
-            f'<text x="{lx + 10}" y="{legend_y + 4}" fill="#465366" '
+            f'<text x="{lx + 10}" y="{legend_y + 4}" fill="#94a3b8" '
             f'font-size="10">{stage}</text>'
         )
 
     svg = (
         '<svg viewBox="0 0 960 600" '
         'style="width:100%;max-width:960px;height:auto;'
-        'background:#f5f1ea;border:1px solid #d6cfc3;border-radius:4px;">'
+        'background:#0a0e17;border:1px solid #1e293b;border-radius:4px;">'
         f'{state_bg}{markers}{legend}'
         '</svg>'
     )

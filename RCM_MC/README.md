@@ -153,22 +153,41 @@ rcm-mc serve --db p.db --port 8080 --host 0.0.0.0
 
 ## Documentation
 
-All documentation lives in the **[readME/](readME/)** folder, organized by topic with numbered files:
+Documentation is organized into two places:
+
+### User Guide — [readME/](readME/README.md)
+
+26 numbered documents covering every aspect of the platform:
 
 | Document | Contents |
 |----------|----------|
-| **[readME/](readME/README.md)** | **Master index -- start here** |
-| [01 API Reference](readME/01_API_Reference.md) | All 52 API endpoints with parameters, responses, examples |
-| [02 Configuration](readME/02_Configuration_and_Operations.md) | Database, auth, deployment, backup, monitoring |
-| [03 Developer Guide](readME/03_Developer_Guide.md) | Architecture, testing, coding conventions, module map |
+| **[readME/README.md](readME/README.md)** | **Master index — start here** |
+| [00 Walkthrough Tutorial](readME/00_Walkthrough_Tutorial.md) | 30-minute hands-on tour with copy-paste commands |
+| [01 API Reference](readME/01_API_Reference.md) | All 52 endpoints with parameters, responses, examples |
+| [02 Configuration & Ops](readME/02_Configuration_and_Operations.md) | Database, auth, deployment, backup, monitoring |
+| [03 Developer Guide](readME/03_Developer_Guide.md) | Architecture, testing, coding conventions |
 | [04 Getting Started](readME/04_Getting_Started.md) | Installation, first run, basic workflow |
 | [05 Architecture](readME/05_Architecture.md) | System design, data flow, design decisions |
-| [06 Analysis Packet](readME/06_Analysis_Packet.md) | The canonical DealAnalysisPacket dataclass |
-| [07 Partner Workflow](readME/07_Partner_Workflow.md) | End-to-end partner usage guide |
+| [06 Analysis Packet](readME/06_Analysis_Packet.md) | The canonical `DealAnalysisPacket` dataclass |
+| [07 Partner Workflow](readME/07_Partner_Workflow.md) | End-to-end workflow: screen → source → diligence → IC → hold → exit |
+| [08–25 Deep-dives](readME/README.md) | Metric provenance, benchmark sources, model improvement, glossary, data flow, build status, layer-by-layer architecture (Analysis / Data / Domain / Infra / MC / ML / PE / Provenance / UI) |
 
-Plus 18 more documents covering metric provenance, data sources, glossary, and layer-by-layer architecture guides. See [readME/README.md](readME/README.md) for the full index.
+### Reference Specs — [docs/](docs/README.md)
 
-Each source package (`rcm_mc/ai/`, `rcm_mc/deals/`, etc.) also has its own README.md describing what that package does and listing every module.
+6 canonical reference documents:
+
+| Document | Contents |
+|----------|----------|
+| [ANALYSIS_PACKET.md](docs/ANALYSIS_PACKET.md) | Every field in `DealAnalysisPacket` with type and builder step |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layer diagram and dependency rules |
+| [BENCHMARK_SOURCES.md](docs/BENCHMARK_SOURCES.md) | CMS HCRIS, Care Compare, IRS 990, SEC EDGAR field-by-field |
+| [METRIC_PROVENANCE.md](docs/METRIC_PROVENANCE.md) | Metric-to-source traceability with confidence tiers |
+| [MODEL_IMPROVEMENT.md](docs/MODEL_IMPROVEMENT.md) | Known limitations and Tier 1–3 improvement roadmap |
+| [PE_HEURISTICS.md](docs/PE_HEURISTICS.md) | 275+ PE partner rules, named failure patterns, and thesis-trap detectors |
+
+### Module READMEs — [rcm_mc/](rcm_mc/)
+
+Every source package has its own `README.md` with per-file documentation (what it does, how it works, data sources). See [readME/README.md](readME/README.md) → Source Code READMEs table for the full list.
 
 ---
 

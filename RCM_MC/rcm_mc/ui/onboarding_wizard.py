@@ -87,72 +87,72 @@ def _esc(s: Any) -> str:
 # ── Shared wizard chrome ───────────────────────────────────────────
 
 _WIZARD_CSS = """
-body.wizard { margin:0; padding:0; background:#f5f1ea; color:#1a2332;
+body.wizard { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   font-size: 14px; line-height: 1.5; }
 .wizard .skip-link { position:absolute; left:16px; top:-48px; z-index:1000;
-  background:#0b2341; color:#fff; padding:10px 14px; border-radius:4px;
+  background:#1f4e78; color:#fff; padding:10px 14px; border-radius:4px;
   text-decoration:none; font-weight:600; }
 .wizard .skip-link:focus { top:16px; }
 .wizard .wrap { max-width:960px; margin:0 auto; padding:32px 24px; }
 .wizard .steps { display:flex; gap:6px; margin-bottom:24px;
   font-size: 11px; text-transform:uppercase; letter-spacing:.08em; }
-.wizard .steps .step { padding:6px 12px; border:1px solid #d6cfc3;
-  border-radius:3px; color:#7a8699; }
-.wizard .steps .step.active { background:#0b2341; color:#fff;
-  border-color:#0b2341; }
+.wizard .steps .step { padding:6px 12px; border:1px solid #1e293b;
+  border-radius:3px; color:#64748b; }
+.wizard .steps .step.active { background:#1f4e78; color:#fff;
+  border-color:#1f4e78; }
 .wizard h1 { font-size: 22px; font-weight:600; margin: 0 0 6px; }
-.wizard .sub { color:#465366; margin-bottom: 24px; font-size: 13px; }
-.wizard .card { background:#ffffff; border:1px solid #d6cfc3;
+.wizard .sub { color:#94a3b8; margin-bottom: 24px; font-size: 13px; }
+.wizard .card { background:#111827; border:1px solid #1e293b;
   padding:18px; border-radius:4px; margin-bottom:16px; }
-.wizard .match-card { background:#f5f1ea; border:1px solid #d6cfc3;
+.wizard .match-card { background:#0f172a; border:1px solid #1e293b;
   padding:12px 14px; margin-bottom:8px; cursor:pointer;
   border-radius:3px; transition:border-color 0.1s; }
-.wizard .match-card:hover { border-color:#2fb3ad; }
-.wizard .match-card:focus-visible { border-color:#2fb3ad; outline:3px solid #2fb3ad; outline-offset:2px; }
+.wizard .match-card:hover { border-color:#3b82f6; }
+.wizard .match-card:focus-visible { border-color:#3b82f6; outline:3px solid #3b82f6; outline-offset:2px; }
 .wizard .match-name { font-weight:600; }
-.wizard .match-meta { color:#465366; font-size:12px; margin-top:2px; }
-.wizard .match-conf { float:right; color:#0a8a5f;
+.wizard .match-meta { color:#94a3b8; font-size:12px; margin-top:2px; }
+.wizard .match-conf { float:right; color:#10b981;
   font-family: "JetBrains Mono", monospace; }
 .wizard input[type=text], .wizard input[type=number], .wizard input[type=search] {
-  background:#ffffff; color:#1a2332; border:1px solid #d6cfc3;
+  background:#0f172a; color:#e2e8f0; border:1px solid #1e293b;
   padding:8px 12px; font-size:14px; border-radius:3px;
   font-family:inherit; width:100%; box-sizing:border-box; }
-.wizard input[type=file] { color:#1a2332; padding:8px 0; }
-.wizard .btn { background:#0b2341; color:#fff; border:none;
+.wizard input[type=file] { color:#e2e8f0; padding:8px 0; }
+.wizard .btn { background:#1f4e78; color:#fff; border:none;
   padding:10px 18px; border-radius:3px; cursor:pointer;
   font-weight:600; font-size:13px; }
-.wizard .btn.secondary { background:#ffffff; border:1px solid #d6cfc3;
-  color:#1a2332; }
-.wizard .btn:hover { background:#132e53; }
+.wizard .btn.secondary { background:#0f172a; border:1px solid #1e293b;
+  color:#e2e8f0; }
+.wizard .btn:hover { background:#2563eb; }
 .wizard .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .wizard .field-row { display:grid; grid-template-columns:180px 1fr auto;
-  gap:8px; padding:4px 0; border-bottom:1px solid #d6cfc3;
+  gap:8px; padding:4px 0; border-bottom:1px solid #1e293b;
   font-size:13px; align-items:baseline; }
-.wizard .source-pill { background:#d6cfc3; color:#465366;
+.wizard .source-pill { background:#1e293b; color:#94a3b8;
   font-size:10px; padding:1px 6px; border-radius:2px;
   font-family: "JetBrains Mono", monospace; text-transform: uppercase;
   letter-spacing:.04em; }
 .wizard .gap-row { display:grid; grid-template-columns:40px 1fr;
-  gap:10px; padding:6px 0; border-bottom:1px solid #d6cfc3;
+  gap:10px; padding:6px 0; border-bottom:1px solid #1e293b;
   font-size:12px; }
-.wizard .gap-rank { color:#b8732a; font-family: "JetBrains Mono", monospace; }
-.wizard .gap-why { color:#465366; font-size:11px; margin-top:2px; }
-.wizard .bar { background:#ece6db; height:6px; border-radius:3px;
+.wizard .gap-rank { color:#f59e0b; font-family: "JetBrains Mono", monospace; }
+.wizard .gap-why { color:#94a3b8; font-size:11px; margin-top:2px; }
+.wizard .bar { background:#0f172a; height:6px; border-radius:3px;
   overflow:hidden; margin-top:6px; }
-.wizard .bar > div { background:#0a8a5f; height:100%; }
-.wizard .grade-A { color:#0a8a5f; }
-.wizard .grade-B { color:#2fb3ad; }
-.wizard .grade-C { color:#b8732a; }
-.wizard .grade-D { color:#b5321e; }
+.wizard .bar > div { background:#10b981; height:100%; }
+.wizard .grade-A { color:#10b981; }
+.wizard .grade-B { color:#3b82f6; }
+.wizard .grade-C { color:#f59e0b; }
+.wizard .grade-D { color:#ef4444; }
 .wizard .pill { display:inline-block; padding:2px 8px;
-  font-size:11px; border-radius:2px; background:#d6cfc3;
-  color:#465366; margin-right:6px; text-transform:uppercase;
+  font-size:11px; border-radius:2px; background:#1e293b;
+  color:#94a3b8; margin-right:6px; text-transform:uppercase;
   letter-spacing: 0.04em; }
-.wizard .empty-hint { color:#465366; padding:8px; font-size:12px; }
-.wizard hr { border:none; border-top:1px solid #d6cfc3; margin:16px 0; }
+.wizard .empty-hint { color:#94a3b8; padding:8px; font-size:12px; }
+.wizard hr { border:none; border-top:1px solid #1e293b; margin:16px 0; }
 .wizard a:focus-visible, .wizard button:focus-visible,
-.wizard input:focus-visible { outline:3px solid #2fb3ad; outline-offset:2px; }
+.wizard input:focus-visible { outline:3px solid #3b82f6; outline-offset:2px; }
 """
 
 
@@ -326,7 +326,7 @@ def render_step2(session: WizardSession) -> str:
             )
         populated_html.append(
             f'<div style="margin-bottom:14px;">'
-            f'<div style="font-weight:600;margin-bottom:6px;color:#0a8a5f;">'
+            f'<div style="font-weight:600;margin-bottom:6px;color:#10b981;">'
             f'✓ {_esc(label)} ({len(bucket)})</div>'
             + "".join(rows) + '</div>'
         )
@@ -365,7 +365,7 @@ def render_step2(session: WizardSession) -> str:
         <div style="font-weight:600;margin-bottom:10px;">
           Still needed ({len(session.gaps)})
         </div>
-        <div style="font-size:12px;color:#465366;margin-bottom:8px;">
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">
           Sorted by EBITDA sensitivity. Top gaps are the highest-value
           things to ask the seller for.
         </div>
@@ -414,7 +414,7 @@ def render_step3(session: WizardSession) -> str:
         Files processed so far ({len(session.uploaded_files)})
       </div>
       <div>{''.join(uploaded_html) or '<div class="empty-hint">No uploads yet.</div>'}</div>
-      <div style="margin-top:8px;font-size:12px;color:#465366;">
+      <div style="margin-top:8px;font-size:12px;color:#94a3b8;">
         Extracted {extracted_count} metric(s) total.
       </div>
     </div>
@@ -486,7 +486,7 @@ def render_step4(session: WizardSession) -> str:
             f'<div>{_esc(c["display_name"])}</div>'
             f'<input type="number" step="0.01" name="override_{_esc(c["metric_key"])}" '
             f'value="{val_str}"/>'
-            f'<div style="color:#7a8699;font-size:11px;">#{c["rank"]}</div>'
+            f'<div style="color:#64748b;font-size:11px;">#{c["rank"]}</div>'
             f'</div>'
         )
     overrides_block = "".join(rows) or (
@@ -529,7 +529,7 @@ def render_step4(session: WizardSession) -> str:
       <div style="font-weight:600;margin-bottom:10px;">
         Editable overrides (top {len(override_candidates)})
       </div>
-      <div style="font-size:12px;color:#465366;margin-bottom:10px;">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;">
         Adjust any pre-filled value; leave blank to keep the
         auto-populated / registry default.
       </div>

@@ -11,6 +11,7 @@ import html
 from typing import Any, Dict, List, Optional
 
 from ..analysis.packet import DealAnalysisPacket
+from .brand import PALETTE as _BRAND_PALETTE
 
 
 _TOP_METRICS = [
@@ -19,15 +20,21 @@ _TOP_METRICS = [
     "case_mix_index",
 ]
 
+# Phase 7 of the UI v2 editorial rework: the local _PALETTE was
+# rewired to pull from rcm_mc.ui.brand.PALETTE so the heatmap's
+# good/neutral/bad/bg/panel/border/text/dim colours flip with the
+# CHARTIS_UI_V2 flag. The local key names are preserved so every
+# _PALETTE["good"] reference in the renderer below keeps working
+# unchanged.
 _PALETTE = {
-    "good": "#0a8a5f",
-    "neutral": "#b8732a",
-    "bad": "#b5321e",
-    "bg": "#f5f1ea",
-    "panel": "#ffffff",
-    "border": "#d6cfc3",
-    "text": "#1a2332",
-    "dim": "#465366",
+    "good":    _BRAND_PALETTE["positive"],
+    "neutral": _BRAND_PALETTE["warning"],
+    "bad":     _BRAND_PALETTE["negative"],
+    "bg":      _BRAND_PALETTE["bg"],
+    "panel":   _BRAND_PALETTE["panel"],
+    "border":  _BRAND_PALETTE["border"],
+    "text":    _BRAND_PALETTE["text"],
+    "dim":     _BRAND_PALETTE["text_dim"],
 }
 
 _LOWER_IS_BETTER = frozenset({
@@ -125,7 +132,7 @@ def render_heatmap(
             )
         grade = (p.completeness.grade if p.completeness else "—")
         grade_color = {
-            "A": _PALETTE["good"], "B": "#2fb3ad",
+            "A": _PALETTE["good"], "B": "#3b82f6",
             "C": _PALETTE["neutral"], "D": _PALETTE["bad"],
         }.get(grade, _PALETTE["dim"])
         rows_html.append(
@@ -140,11 +147,11 @@ def render_heatmap(
     css = """
     .heatmap-table { width:100%; border-collapse:collapse; font-size:12px;
       font-family:"JetBrains Mono",monospace; }
-    .heatmap-table th { background:#ffffff; color:#465366; padding:6px 8px;
+    .heatmap-table th { background:#111827; color:#94a3b8; padding:6px 8px;
       text-align:center; text-transform:uppercase; font-size:10px;
-      letter-spacing:.04em; border-bottom:1px solid #d6cfc3; }
+      letter-spacing:.04em; border-bottom:1px solid #1e293b; }
     .heatmap-table td { padding:6px 8px; text-align:center;
-      border-bottom:1px solid #d6cfc3; }
+      border-bottom:1px solid #1e293b; }
     .heatmap-table td:first-child { text-align:left; }
     """
     table = (

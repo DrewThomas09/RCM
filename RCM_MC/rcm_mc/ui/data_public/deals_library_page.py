@@ -139,6 +139,14 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     )
 
 
+_MOIC_BUCKETS = {
+    "lt1":   ("MOIC < 1.0x",  lambda m: m is not None and m < 1.0),
+    "1to2":  ("1.0x – 2.0x",  lambda m: m is not None and 1.0 <= m < 2.0),
+    "2to3":  ("2.0x – 3.0x",  lambda m: m is not None and 2.0 <= m < 3.0),
+    "gte3":  ("3.0x+",         lambda m: m is not None and m >= 3.0),
+}
+
+
 def render_deals_library(
     sector_filter: str = "",
     regime_filter: str = "",
@@ -154,14 +162,12 @@ def render_deals_library(
 
     deals = _get_all_seed_deals()
     rows = _build_rows(deals)
-    n_deals = len(deals)
     explainer = render_page_explainer(
         what=(
-            f"Browsable {n_deals:,}-deal healthcare-PE corpus — name, "
-            "sponsor, entry year, sector, EV / EBITDA multiple, "
-            "realized MOIC and IRR, hold period, commercial-payer %, "
-            "vintage regime, and data grade per row. See the provenance "
-            "footer for which rows are real vs. synthetic."
+            "Browsable 655-deal healthcare-PE corpus — name, sponsor, "
+            "entry year, sector, EV / EBITDA multiple, realized MOIC "
+            "and IRR, hold period, commercial-payer %, vintage regime, "
+            "and data grade per row."
         ),
         scale=(
             "Data grade A–D reflects row completeness: A = all core "
@@ -188,16 +194,10 @@ def render_deals_library(
         rows = [r for r in rows if r["sector"] == sector_filter]
     if regime_filter:
         rows = [r for r in rows if r["regime"] == regime_filter]
-    # MOIC bucket: fast chip filters for partners looking for winners
-    # / losses / mid-performers without setting numeric ranges manually.
-    if moic_bucket == "home_run":
-        rows = [r for r in rows if (r.get("moic") or 0) >= 3.0]
-    elif moic_bucket == "solid":
-        rows = [r for r in rows if 1.5 <= (r.get("moic") or 0) < 3.0]
-    elif moic_bucket == "loss":
-        rows = [r for r in rows if 0 < (r.get("moic") or 0) < 1.0]
-    elif moic_bucket == "realized":
-        rows = [r for r in rows if r.get("moic") is not None]
+    bucket_entry = _MOIC_BUCKETS.get(moic_bucket)
+    if bucket_entry is not None:
+        _, _pred = bucket_entry
+        rows = [r for r in rows if _pred(r.get("moic"))]
 
     # Sort
     _SORT_KEY = {
@@ -217,64 +217,28 @@ def render_deals_library(
         f'<option value="{r}" {"selected" if r==regime_filter else ""}>{r.title()}</option>'
         for r in all_regimes
     )
-
-    # Quick-filter chips — one-click MOIC bucket shortcuts. Preserves
-    # existing sector/regime/search filters via hidden form inputs so
-    # chips stack with other filters rather than clearing them.
-    def _chip(label: str, bucket: str, desc: str = "") -> str:
-        active = bucket == moic_bucket
-        # Build URL preserving other filters
-        params = []
-        if sector_filter:
-            params.append(f"sector={_html.escape(sector_filter)}")
-        if regime_filter:
-            params.append(f"regime={_html.escape(regime_filter)}")
-        if search:
-            params.append(f"q={_html.escape(search)}")
-        if bucket:
-            params.append(f"moic_bucket={bucket}")
-        href = "/library" + (f"?{'&'.join(params)}" if params else "")
-        cls = "ck-chip ck-chip-active" if active else "ck-chip"
-        title = f' title="{_html.escape(desc)}"' if desc else ""
-        return f'<a href="{href}" class="{cls}"{title}>{_html.escape(label)}</a>'
-
-    chip_bar = (
-        '<div class="ck-chip-bar" style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">'
-        '<span class="ck-filter-label" style="margin-right:4px;">Quick filter</span>'
-        + _chip("All",        "",          "Show every deal")
-        + _chip("Realized",   "realized",  "Deals with a known MOIC")
-        + _chip("Home runs",  "home_run",  "Realized MOIC ≥ 3.0×")
-        + _chip("Solid",      "solid",     "Realized MOIC 1.5× – 3.0×")
-        + _chip("Losses",     "loss",      "Realized MOIC < 1.0×")
-        + '</div>'
+    moic_opts = '<option value="">All MOIC</option>' + "".join(
+        f'<option value="{key}" {"selected" if key==moic_bucket else ""}>{label}</option>'
+        for key, (label, _pred) in _MOIC_BUCKETS.items()
     )
 
     filter_bar = f"""
 <form method="get" action="/library" class="ck-filters" style="margin-bottom:10px;">
-  <input type="hidden" name="moic_bucket" value="{_html.escape(moic_bucket)}">
   <span class="ck-filter-label">Sector</span>
   <select name="sector" class="ck-sel" onchange="this.form.submit()">{sec_opts}</select>
   <span class="ck-filter-label">Regime</span>
   <select name="regime" class="ck-sel" onchange="this.form.submit()">{reg_opts}</select>
+  <span class="ck-filter-label">MOIC</span>
+  <select name="moic_bucket" class="ck-sel" onchange="this.form.submit()">{moic_opts}</select>
   <span class="ck-filter-label">Search</span>
   <input type="text" name="q" value="{_html.escape(search)}" placeholder="deal name, sponsor..." class="ck-input" data-search-target="#deals-tbl">
 </form>"""
 
-    from rcm_mc.ui._chartis_kit import ck_related_views
-
     kpis = _kpi_bar(deals, rows)
     section = ck_section_header("DEAL CORPUS", "all healthcare PE transactions", len(rows))
     table = ck_table(rows, _COLUMNS, caption="", sortable=True, id="deals-tbl")
-    related = ck_related_views([
-        ("Sponsor Track Record",  "/sponsor-track-record"),
-        ("Sector Intel",          "/sector-intel"),
-        ("Base Rates",            "/base-rates"),
-        ("Payer Intelligence",    "/payer-intelligence"),
-        ("Vintage Cohorts",       "/vintage-cohorts"),
-        ("Deal Screening",        "/deal-screening"),
-    ])
 
-    body = explainer + kpis + chip_bar + filter_bar + section + table + related
+    body = explainer + kpis + filter_bar + section + table
 
     return chartis_shell(
         body,

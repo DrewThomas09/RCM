@@ -13,10 +13,10 @@ from rcm_mc.ui._chartis_kit import (
 )
 
 TIER_COLORS = {
-    "Low":      "#0a8a5f",
-    "Medium":   "#2fb3ad",
-    "High":     "#b8732a",
-    "Critical": "#b5321e",
+    "Low":      "#10b981",
+    "Medium":   "#3b82f6",
+    "High":     "#f59e0b",
+    "Critical": "#ef4444",
 }
 
 TIER_BG = {

@@ -1,0 +1,10 @@
+{
+  "canonical_claim_count": 4,
+  "description": "Proprietary CPT + ICD-9 legacy codes. Preserved, marked.",
+  "fixture": "fixture_08_cpt_icd_drift",
+  "must_have_transformation_rules": [
+    "cpt_validate:non_standard",
+    "icd_validate:icd9_legacy"
+  ],
+  "preserves_original_codes": true
+}

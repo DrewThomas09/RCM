@@ -37,7 +37,7 @@ _RADAR_METRICS = [
     "cost_to_collect", "clean_claim_rate", "case_mix_index",
 ]
 
-_PALETTE = ["#2fb3ad", "#0a8a5f", "#b8732a", "#b5321e"]
+_PALETTE = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"]
 
 
 def _pm_val(p: DealAnalysisPacket, metric: str) -> Optional[float]:
@@ -90,7 +90,7 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
             anchor = "start"
         labels += (
             f'<text x="{lx:.0f}" y="{ly:.0f}" '
-            f'text-anchor="{anchor}" fill="#465366" '
+            f'text-anchor="{anchor}" fill="#94a3b8" '
             f'font-size="10">{m.replace("_", " ")}</text>'
         )
 

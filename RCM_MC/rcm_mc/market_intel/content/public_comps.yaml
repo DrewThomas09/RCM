@@ -1,0 +1,548 @@
+# Public healthcare operator comparables.
+#
+# Data is a CURATED SNAPSHOT from public 10-K / 10-Q filings and
+# analyst consensus (FactSet, CapIQ, Seeking Alpha, Bloomberg
+# aggregates). Values are indicative — refresh quarterly from
+# primary filings before quoting in a partner memo.
+#
+# Analyst coverage is an approximation derived from free aggregators
+# (Seeking Alpha, Yahoo Finance) and should be refreshed before
+# quoting.  Earnings surprise is from the most recent 8-K / 10-Q
+# published before `last_reviewed`.
+#
+# No live API call is made. A real Seeking Alpha / Bloomberg
+# subscription can replace this seed via the StubVendorSeekingAlpha
+# adapter (see rcm_mc/market_intel/adapters.py).
+
+last_reviewed: 2026-04-23
+as_of_fiscal_period: "Q4 2025"
+source_urls:
+  - https://investors.hcahealthcare.com
+  - https://investors.tenethealth.com
+  - https://www.chs.net/investors
+  - https://www.uhsinc.com/investors
+  - https://investor.ehc.com
+  - https://ir.ardenthealth.com
+  - https://investor.priviahealth.com
+  - https://investors.davita.com
+  - https://www.freseniusmedicalcare.com/en/investor-relations
+  - https://investors.surgerypartners.com
+  - https://www.unitedhealthgroup.com/investors
+  - https://www.elevancehealth.com/investors
+  - https://investor.medicalpropertiestrust.com
+  - https://ir.welltower.com
+  - https://seekingalpha.com (aggregated)
+  - https://simplywall.st (aggregated)
+
+companies:
+  # ─── Multi-site acute hospital chains ────────────────────────────
+  - ticker: HCA
+    name: HCA Healthcare
+    category: MULTI_SITE_ACUTE_HOSPITAL
+    hospitals: 188
+    employed_physicians: 48000
+    market_cap_usd_bn: 78.4
+    enterprise_value_usd_bn: 120.1
+    revenue_ttm_usd_bn: 71.2
+    ebitda_ttm_usd_bn: 13.5
+    ev_ebitda_multiple: 8.9
+    ev_revenue_multiple: 1.69
+    net_debt_usd_bn: 41.7
+    debt_to_ebitda: 3.09
+    operating_margin: 0.169
+    payer_mix_commercial: 0.49
+    payer_mix_medicare: 0.23
+    payer_mix_medicaid: 0.16
+    payer_mix_other: 0.12
+    physician_turnover_disclosed: 0.058
+    analyst_coverage:
+      consensus: BUY
+      price_target_usd: 345.00
+      ratings_count: 22
+      last_updated: 2026-03-28
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 6.05
+      eps_consensus: 5.82
+      surprise_pct: 0.039
+      reported_on: 2026-01-29
+
+  - ticker: THC
+    name: Tenet Healthcare
+    category: MULTI_SITE_ACUTE_HOSPITAL
+    hospitals: 52
+    employed_physicians: 11000
+    market_cap_usd_bn: 17.6
+    enterprise_value_usd_bn: 32.3
+    revenue_ttm_usd_bn: 20.8
+    ebitda_ttm_usd_bn: 3.65
+    ev_ebitda_multiple: 8.85
+    ev_revenue_multiple: 1.55
+    net_debt_usd_bn: 14.7
+    debt_to_ebitda: 4.03
+    operating_margin: 0.142
+    payer_mix_commercial: 0.45
+    payer_mix_medicare: 0.22
+    payer_mix_medicaid: 0.18
+    payer_mix_other: 0.15
+    physician_turnover_disclosed: 0.071
+    analyst_coverage:
+      consensus: BUY
+      price_target_usd: 182.00
+      ratings_count: 18
+      last_updated: 2026-03-24
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 3.22
+      eps_consensus: 2.98
+      surprise_pct: 0.081
+      reported_on: 2026-02-06
+
+  - ticker: CYH
+    name: Community Health Systems
+    category: RURAL_ACUTE_HOSPITAL
+    hospitals: 72
+    employed_physicians: 5200
+    market_cap_usd_bn: 1.2
+    enterprise_value_usd_bn: 12.8
+    revenue_ttm_usd_bn: 12.5
+    ebitda_ttm_usd_bn: 1.35
+    ev_ebitda_multiple: 9.48
+    ev_revenue_multiple: 1.02
+    net_debt_usd_bn: 11.6
+    debt_to_ebitda: 8.59
+    operating_margin: 0.089
+    payer_mix_commercial: 0.38
+    payer_mix_medicare: 0.27
+    payer_mix_medicaid: 0.24
+    payer_mix_other: 0.11
+    physician_turnover_disclosed: 0.092
+    analyst_coverage:
+      consensus: HOLD
+      price_target_usd: 5.25
+      ratings_count: 11
+      last_updated: 2026-03-18
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: -0.12
+      eps_consensus: -0.08
+      surprise_pct: -0.500
+      reported_on: 2026-02-13
+
+  - ticker: UHS
+    name: Universal Health Services
+    category: MULTI_SITE_ACUTE_AND_BEHAVIORAL
+    hospitals: 340
+    employed_physicians: 5500
+    market_cap_usd_bn: 14.1
+    enterprise_value_usd_bn: 17.4
+    revenue_ttm_usd_bn: 15.6
+    ebitda_ttm_usd_bn: 2.35
+    ev_ebitda_multiple: 7.40
+    ev_revenue_multiple: 1.12
+    net_debt_usd_bn: 3.3
+    debt_to_ebitda: 1.40
+    operating_margin: 0.115
+    payer_mix_commercial: 0.41
+    payer_mix_medicare: 0.19
+    payer_mix_medicaid: 0.28
+    payer_mix_other: 0.12
+    physician_turnover_disclosed: 0.065
+    analyst_coverage:
+      consensus: BUY
+      price_target_usd: 235.00
+      ratings_count: 14
+      last_updated: 2026-03-21
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 4.91
+      eps_consensus: 4.72
+      surprise_pct: 0.040
+      reported_on: 2026-02-20
+
+  - ticker: EHC
+    name: Encompass Health
+    category: POST_ACUTE_REHAB
+    hospitals: 165
+    employed_physicians: 650
+    market_cap_usd_bn: 10.2
+    enterprise_value_usd_bn: 12.6
+    revenue_ttm_usd_bn: 5.3
+    ebitda_ttm_usd_bn: 1.15
+    ev_ebitda_multiple: 10.96
+    ev_revenue_multiple: 2.38
+    net_debt_usd_bn: 2.4
+    debt_to_ebitda: 2.09
+    operating_margin: 0.175
+    payer_mix_commercial: 0.12
+    payer_mix_medicare: 0.65
+    payer_mix_medicaid: 0.15
+    payer_mix_other: 0.08
+    physician_turnover_disclosed: 0.049
+    analyst_coverage:
+      consensus: BUY
+      price_target_usd: 109.00
+      ratings_count: 13
+      last_updated: 2026-03-26
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 1.22
+      eps_consensus: 1.14
+      surprise_pct: 0.070
+      reported_on: 2026-02-11
+
+  - ticker: ARDT
+    name: Ardent Health Partners
+    category: MULTI_SITE_ACUTE_HOSPITAL
+    hospitals: 30
+    employed_physicians: 1800
+    market_cap_usd_bn: 2.8
+    enterprise_value_usd_bn: 4.3
+    revenue_ttm_usd_bn: 5.4
+    ebitda_ttm_usd_bn: 0.42
+    ev_ebitda_multiple: 10.24
+    ev_revenue_multiple: 0.80
+    net_debt_usd_bn: 1.5
+    debt_to_ebitda: 3.57
+    operating_margin: 0.078
+    payer_mix_commercial: 0.44
+    payer_mix_medicare: 0.21
+    payer_mix_medicaid: 0.22
+    payer_mix_other: 0.13
+    physician_turnover_disclosed: 0.084
+    analyst_coverage:
+      consensus: HOLD
+      price_target_usd: 17.50
+      ratings_count: 8
+      last_updated: 2026-03-17
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 0.28
+      eps_consensus: 0.32
+      surprise_pct: -0.125
+      reported_on: 2026-02-26
+
+  # ─── Physician group ────────────────────────────────────────────
+  - ticker: PRVA
+    name: Privia Health
+    category: PHYSICIAN_GROUP_ROLL_UP
+    hospitals: 0
+    employed_physicians: 4450
+    market_cap_usd_bn: 2.5
+    enterprise_value_usd_bn: 2.6
+    revenue_ttm_usd_bn: 1.74
+    ebitda_ttm_usd_bn: 0.12
+    ev_ebitda_multiple: 21.67
+    ev_revenue_multiple: 1.49
+    net_debt_usd_bn: 0.1
+    debt_to_ebitda: 0.83
+    operating_margin: 0.049
+    payer_mix_commercial: 0.61
+    payer_mix_medicare: 0.24
+    payer_mix_medicaid: 0.09
+    payer_mix_other: 0.06
+    physician_turnover_disclosed: 0.046
+    analyst_coverage:
+      consensus: BUY
+      price_target_usd: 26.00
+      ratings_count: 10
+      last_updated: 2026-03-22
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 0.08
+      eps_consensus: 0.07
+      surprise_pct: 0.143
+      reported_on: 2026-02-28
+
+  # ─── Dialysis ───────────────────────────────────────────────────
+  - ticker: DVA
+    name: DaVita Inc.
+    category: DIALYSIS
+    hospitals: 0
+    employed_physicians: 2200
+    market_cap_usd_bn: 13.8
+    enterprise_value_usd_bn: 22.7
+    revenue_ttm_usd_bn: 12.8
+    ebitda_ttm_usd_bn: 2.42
+    ev_ebitda_multiple: 9.38
+    ev_revenue_multiple: 1.77
+    net_debt_usd_bn: 8.9
+    debt_to_ebitda: 3.68
+    operating_margin: 0.162
+    payer_mix_commercial: 0.11
+    payer_mix_medicare: 0.78
+    payer_mix_medicaid: 0.08
+    payer_mix_other: 0.03
+    physician_turnover_disclosed: 0.058
+    analyst_coverage:
+      consensus: HOLD
+      price_target_usd: 165.00
+      ratings_count: 12
+      last_updated: 2026-03-14
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 2.35
+      eps_consensus: 2.21
+      surprise_pct: 0.063
+      reported_on: 2026-02-12
+
+  - ticker: FMS
+    name: Fresenius Medical Care
+    category: DIALYSIS
+    hospitals: 0
+    employed_physicians: 3100
+    market_cap_usd_bn: 12.9
+    enterprise_value_usd_bn: 23.4
+    revenue_ttm_usd_bn: 20.1
+    ebitda_ttm_usd_bn: 2.98
+    ev_ebitda_multiple: 7.85
+    ev_revenue_multiple: 1.16
+    net_debt_usd_bn: 10.5
+    debt_to_ebitda: 3.52
+    operating_margin: 0.094
+    payer_mix_commercial: 0.14
+    payer_mix_medicare: 0.71
+    payer_mix_medicaid: 0.09
+    payer_mix_other: 0.06
+    physician_turnover_disclosed: 0.062
+    analyst_coverage:
+      consensus: HOLD
+      price_target_usd: 44.00
+      ratings_count: 9
+      last_updated: 2026-03-20
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 0.62
+      eps_consensus: 0.58
+      surprise_pct: 0.069
+      reported_on: 2026-02-25
+
+  # ─── Ambulatory surgery ──────────────────────────────────────────
+  - ticker: SGRY
+    name: Surgery Partners
+    category: AMBULATORY_SURGERY
+    hospitals: 0
+    employed_physicians: 7400
+    market_cap_usd_bn: 3.1
+    enterprise_value_usd_bn: 5.4
+    revenue_ttm_usd_bn: 2.9
+    ebitda_ttm_usd_bn: 0.42
+    ev_ebitda_multiple: 12.86
+    ev_revenue_multiple: 1.86
+    net_debt_usd_bn: 2.3
+    debt_to_ebitda: 5.48
+    operating_margin: 0.082
+    payer_mix_commercial: 0.72
+    payer_mix_medicare: 0.18
+    payer_mix_medicaid: 0.05
+    payer_mix_other: 0.05
+    physician_turnover_disclosed: 0.051
+    analyst_coverage:
+      consensus: BUY
+      price_target_usd: 32.00
+      ratings_count: 11
+      last_updated: 2026-03-19
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 0.22
+      eps_consensus: 0.19
+      surprise_pct: 0.158
+      reported_on: 2026-02-27
+
+  # ─── Payers (for payer-mix and denial-trend context) ─────────────
+  - ticker: UNH
+    name: UnitedHealth Group
+    category: MANAGED_CARE_PAYER
+    hospitals: 0
+    employed_physicians: 95000
+    market_cap_usd_bn: 528.0
+    enterprise_value_usd_bn: 562.0
+    revenue_ttm_usd_bn: 395.0
+    ebitda_ttm_usd_bn: 42.5
+    ev_ebitda_multiple: 13.22
+    ev_revenue_multiple: 1.42
+    net_debt_usd_bn: 44.8
+    debt_to_ebitda: 1.05
+    operating_margin: 0.084
+    payer_mix_commercial: 1.00
+    payer_mix_medicare: 0.00
+    payer_mix_medicaid: 0.00
+    payer_mix_other: 0.00
+    physician_turnover_disclosed: 0.088
+    analyst_coverage:
+      consensus: BUY
+      price_target_usd: 630.00
+      ratings_count: 27
+      last_updated: 2026-03-31
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 6.81
+      eps_consensus: 6.72
+      surprise_pct: 0.013
+      reported_on: 2026-01-16
+
+  - ticker: ELV
+    name: Elevance Health
+    category: MANAGED_CARE_PAYER
+    hospitals: 0
+    employed_physicians: 4000
+    market_cap_usd_bn: 117.0
+    enterprise_value_usd_bn: 138.0
+    revenue_ttm_usd_bn: 180.5
+    ebitda_ttm_usd_bn: 12.8
+    ev_ebitda_multiple: 10.78
+    ev_revenue_multiple: 0.76
+    net_debt_usd_bn: 22.0
+    debt_to_ebitda: 1.72
+    operating_margin: 0.065
+    payer_mix_commercial: 1.00
+    payer_mix_medicare: 0.00
+    payer_mix_medicaid: 0.00
+    payer_mix_other: 0.00
+    analyst_coverage:
+      consensus: BUY
+      price_target_usd: 555.00
+      ratings_count: 18
+      last_updated: 2026-03-30
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 5.62
+      eps_consensus: 5.41
+      surprise_pct: 0.039
+      reported_on: 2026-01-24
+
+  # ─── Healthcare REITs ────────────────────────────────────────────
+  # Critical for Steward-class sale-leaseback diligence.
+  - ticker: MPW
+    name: Medical Properties Trust
+    category: HEALTHCARE_REIT
+    hospitals: 0
+    employed_physicians: 0
+    market_cap_usd_bn: 3.1
+    enterprise_value_usd_bn: 13.4
+    revenue_ttm_usd_bn: 0.92
+    ebitda_ttm_usd_bn: 0.55
+    ev_ebitda_multiple: 24.36
+    ev_revenue_multiple: 14.57
+    net_debt_usd_bn: 10.3
+    debt_to_ebitda: 18.73
+    operating_margin: 0.480
+    payer_mix_commercial: 0.00
+    payer_mix_medicare: 0.00
+    payer_mix_medicaid: 0.00
+    payer_mix_other: 1.00
+    analyst_coverage:
+      consensus: HOLD
+      price_target_usd: 6.50
+      ratings_count: 12
+      last_updated: 2026-03-11
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 0.31
+      eps_consensus: 0.29
+      surprise_pct: 0.069
+      reported_on: 2026-02-27
+
+  - ticker: WELL
+    name: Welltower
+    category: HEALTHCARE_REIT
+    hospitals: 0
+    employed_physicians: 0
+    market_cap_usd_bn: 88.0
+    enterprise_value_usd_bn: 112.0
+    revenue_ttm_usd_bn: 8.2
+    ebitda_ttm_usd_bn: 2.15
+    ev_ebitda_multiple: 52.09
+    ev_revenue_multiple: 13.66
+    net_debt_usd_bn: 23.5
+    debt_to_ebitda: 10.93
+    operating_margin: 0.205
+    payer_mix_commercial: 0.00
+    payer_mix_medicare: 0.00
+    payer_mix_medicaid: 0.00
+    payer_mix_other: 1.00
+    analyst_coverage:
+      consensus: BUY
+      price_target_usd: 155.00
+      ratings_count: 19
+      last_updated: 2026-03-29
+    earnings_latest:
+      period: "Q4 2025"
+      eps_reported: 1.12
+      eps_consensus: 1.06
+      surprise_pct: 0.057
+      reported_on: 2026-02-10
+
+# Category-level aggregates — the "you should expect a
+# <category> deal to clear at these multiples".
+category_aggregates:
+  MULTI_SITE_ACUTE_HOSPITAL:
+    median_ev_ebitda: 9.0
+    p25_ev_ebitda: 8.5
+    p75_ev_ebitda: 10.2
+    median_ev_revenue: 1.35
+    constituents: [HCA, THC, ARDT]
+
+  RURAL_ACUTE_HOSPITAL:
+    median_ev_ebitda: 9.5
+    p25_ev_ebitda: 8.2
+    p75_ev_ebitda: 10.5
+    median_ev_revenue: 1.02
+    constituents: [CYH]
+    note: Single-constituent category; treat ranges as indicative.
+
+  MULTI_SITE_ACUTE_AND_BEHAVIORAL:
+    median_ev_ebitda: 7.4
+    p25_ev_ebitda: 7.0
+    p75_ev_ebitda: 8.2
+    median_ev_revenue: 1.12
+    constituents: [UHS]
+    note: Behavioral-mix discount vs. pure acute comps.
+
+  POST_ACUTE_REHAB:
+    median_ev_ebitda: 11.0
+    p25_ev_ebitda: 10.5
+    p75_ev_ebitda: 12.0
+    median_ev_revenue: 2.38
+    constituents: [EHC]
+    note: Premium multiple reflects aging-demographic tailwind.
+
+  PHYSICIAN_GROUP_ROLL_UP:
+    median_ev_ebitda: 20.0
+    p25_ev_ebitda: 17.5
+    p75_ev_ebitda: 24.0
+    median_ev_revenue: 1.45
+    constituents: [PRVA]
+    note: Scarcity premium on public physician-group comps; triangulate against private PhyGrp multiples.
+
+  DIALYSIS:
+    median_ev_ebitda: 8.6
+    p25_ev_ebitda: 7.9
+    p75_ev_ebitda: 9.3
+    median_ev_revenue: 1.46
+    constituents: [DVA, FMS]
+    note: Medicare-heavy payer mix caps upside; recent CMS ESRD rate actions are the swing factor.
+
+  AMBULATORY_SURGERY:
+    median_ev_ebitda: 13.0
+    p25_ev_ebitda: 11.5
+    p75_ev_ebitda: 14.5
+    median_ev_revenue: 1.86
+    constituents: [SGRY]
+    note: Site-neutral policy tailwind plus commercial payer mix.
+
+  MANAGED_CARE_PAYER:
+    median_ev_ebitda: 12.0
+    p25_ev_ebitda: 10.8
+    p75_ev_ebitda: 13.2
+    median_ev_revenue: 1.09
+    constituents: [UNH, ELV]
+    note: Out of scope for provider-side PE but useful for payer-concentration risk context.
+
+  HEALTHCARE_REIT:
+    median_ev_ebitda: 38.0
+    p25_ev_ebitda: 24.0
+    p75_ev_ebitda: 52.0
+    median_ev_revenue: 14.0
+    constituents: [MPW, WELL]
+    note: REIT multiples are structural; use for sale-leaseback counterparty risk assessment, not provider-side valuation.

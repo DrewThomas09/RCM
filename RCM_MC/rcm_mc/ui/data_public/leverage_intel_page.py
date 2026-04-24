@@ -29,9 +29,9 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 def _moic_color(m: float) -> str:
     if m >= 3.0: return "#22c55e"
-    if m >= 2.0: return "#2fb3ad"
-    if m >= 1.5: return "#b8732a"
-    return "#b5321e"
+    if m >= 2.0: return "#3b82f6"
+    if m >= 1.5: return "#f59e0b"
+    return "#ef4444"
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +64,7 @@ def _leverage_histogram(points: List[Any], width: int = 440, height: int = 100) 
         if bh_p > 0:
             elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-1)}" height="{bh_p}" fill="#1d3a5c" opacity="0.7"/>')
         if bh_d > 0:
-            elements.append(f'<rect x="{bx}" y="{by+bh_p}" width="{max(1,bar_w-1)}" height="{bh_d}" fill="#2fb3ad" opacity="0.9"/>')
+            elements.append(f'<rect x="{bx}" y="{by+bh_p}" width="{max(1,bar_w-1)}" height="{bh_d}" fill="#3b82f6" opacity="0.9"/>')
         if i % 4 == 0:
             elements.append(f'<text x="{bx+bar_w//2}" y="{height-1}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="#475569">{i*5}%</text>')
     return (
@@ -90,12 +90,12 @@ def _scatter_svg(points: List[Any], width: int = 440, height: int = 240) -> str:
     elements = []
     for pct in (0.3, 0.45, 0.6, 0.7, 0.85):
         gx = sx(pct)
-        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#d6cfc3" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#1e293b" stroke-width="0.8"/>')
         elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{pct*100:.0f}%</text>')
     for m in (1.0, 2.0, 3.0, 4.0):
         if m > max_moic: break
         gy = sy(m)
-        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#d6cfc3" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#1e293b" stroke-width="0.8"/>')
         elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
 
     for p in points:
@@ -107,8 +107,8 @@ def _scatter_svg(points: List[Any], width: int = 440, height: int = 240) -> str:
         else:
             elements.append(f'<rect x="{cx-2}" y="{cy-2}" width="4" height="4" fill="{color}" opacity="0.5"><title>{_html.escape(p.deal_name[:40])} · lev {p.leverage_pct*100:.0f}% · {p.moic:.2f}x (proxy)</title></rect>')
 
-    elements.append(f'<text x="{margin["l"]+W//2}" y="{height-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">Leverage %</text>')
-    elements.append(f'<text x="9" y="{margin["t"]+H//2}" text-anchor="middle" transform="rotate(-90,9,{margin["t"]+H//2})" font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">Realized MOIC</text>')
+    elements.append(f'<text x="{margin["l"]+W//2}" y="{height-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">Leverage %</text>')
+    elements.append(f'<text x="9" y="{margin["t"]+H//2}" text-anchor="middle" transform="rotate(-90,9,{margin["t"]+H//2})" font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">Realized MOIC</text>')
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
@@ -129,7 +129,7 @@ def _bucket_chart(buckets: List[Any], width: int = 300, height: int = 100) -> st
         bh = max(2, int(b.moic_p50 / max_moic * (height - 20)))
         by = height - 12 - bh
         elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-4)}" height="{bh}" fill="{b.color}" opacity="0.85"/>')
-        elements.append(f'<text x="{bx+bar_w//2-2}" y="{height-1}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a8699">{b.label[:4]}</text>')
+        elements.append(f'<text x="{bx+bar_w//2-2}" y="{height-1}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#64748b">{b.label[:4]}</text>')
         elements.append(f'<text x="{bx+bar_w//2-2}" y="{by-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="{b.color}">{b.moic_p50:.2f}x</text>')
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
@@ -155,7 +155,7 @@ def render_leverage_intel() -> str:
         + ck_kpi_block("Proxied (EV/EBITDA)", f'<span class="mn">{profile.n_proxied}</span>', "estimated from EV/EBITDA")
         + ck_kpi_block("Avg Leverage (direct)", f'<span class="mn">{profile.avg_leverage_direct*100:.1f}%</span>', "direct-data deals")
         + ck_kpi_block("Lev↔MOIC Corr",
-                       f'<span class="mn" style="color:{"#b5321e" if corr<-0.1 else "#22c55e" if corr>0.1 else "#b8732a"}">{corr:+.2f}</span>',
+                       f'<span class="mn" style="color:{"#ef4444" if corr<-0.1 else "#22c55e" if corr>0.1 else "#f59e0b"}">{corr:+.2f}</span>',
                        f"{corr_dir} — Spearman ρ")
         + ck_kpi_block("Optimal Bucket", f'<span class="mn" style="font-size:11px;">{_html.escape(profile.optimal_bucket)}</span>', "highest P50 MOIC")
         + '</div>'
@@ -190,7 +190,7 @@ def render_leverage_intel() -> str:
     # Bucket table
     bucket_rows = []
     for i, b in enumerate(profile.buckets):
-        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
+        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
         mc = _moic_color(b.moic_p50)
         optimal_badge = (
             f'<span style="margin-left:4px;font-size:8px;color:#22c55e;font-family:var(--ck-mono);">★ OPTIMAL</span>'
@@ -201,16 +201,16 @@ def render_leverage_intel() -> str:
     <span style="display:inline-block;width:8px;height:8px;background:{b.color};border-radius:1px;margin-right:4px;vertical-align:middle;"></span>
     {_html.escape(b.label)}{optimal_badge}
   </td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-size:9.5px;color:#7a8699;">{b.lev_range[0]*100:.0f}–{min(100,b.lev_range[1]*100):.0f}%</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-size:9.5px;color:#64748b;">{b.lev_range[0]*100:.0f}–{min(100,b.lev_range[1]*100):.0f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.n_deals}</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.avg_leverage*100:.1f}%</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#7a8699;">{b.moic_p25:.2f}x</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{b.moic_p25:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc};font-weight:500;">{b.moic_p50:.2f}x</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#7a8699;">{b.moic_p75:.2f}x</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{b.moic_p75:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{b.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#b5321e' if b.loss_rate>0.2 else '#b8732a' if b.loss_rate>0.1 else '#22c55e'};">{b.loss_rate*100:.1f}%</td>
-  <td style="padding:5px 8px;font-size:9px;color:#7a8699;">{'direct' if b.is_direct else 'proxy'}</td>
+      color:{'#ef4444' if b.loss_rate>0.2 else '#f59e0b' if b.loss_rate>0.1 else '#22c55e'};">{b.loss_rate*100:.1f}%</td>
+  <td style="padding:5px 8px;font-size:9px;color:#64748b;">{'direct' if b.is_direct else 'proxy'}</td>
 </tr>""")
 
     bucket_table = f"""
@@ -222,16 +222,16 @@ def render_leverage_intel() -> str:
       <table class="ck-table" style="width:100%;">
         <thead>
           <tr>
-            <th style="padding:5px 8px;color:#7a8699;">Bucket</th>
-            <th style="padding:5px 8px;color:#7a8699;">Range</th>
-            <th style="padding:5px 8px;color:#7a8699;text-align:right;">Deals</th>
-            <th style="padding:5px 8px;color:#7a8699;text-align:right;">Avg Lev</th>
-            <th style="padding:5px 8px;color:#7a8699;text-align:right;">P25</th>
-            <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50</th>
-            <th style="padding:5px 8px;color:#7a8699;text-align:right;">P75</th>
-            <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 IRR</th>
-            <th style="padding:5px 8px;color:#7a8699;text-align:right;">Loss %</th>
-            <th style="padding:5px 8px;color:#7a8699;">Source</th>
+            <th style="padding:5px 8px;color:#64748b;">Bucket</th>
+            <th style="padding:5px 8px;color:#64748b;">Range</th>
+            <th style="padding:5px 8px;color:#64748b;text-align:right;">Deals</th>
+            <th style="padding:5px 8px;color:#64748b;text-align:right;">Avg Lev</th>
+            <th style="padding:5px 8px;color:#64748b;text-align:right;">P25</th>
+            <th style="padding:5px 8px;color:#64748b;text-align:right;">P50</th>
+            <th style="padding:5px 8px;color:#64748b;text-align:right;">P75</th>
+            <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 IRR</th>
+            <th style="padding:5px 8px;color:#64748b;text-align:right;">Loss %</th>
+            <th style="padding:5px 8px;color:#64748b;">Source</th>
           </tr>
         </thead>
         <tbody>{''.join(bucket_rows)}</tbody>

@@ -193,10 +193,14 @@ def _resolve_metric_id(graph: ProvenanceGraph, metric_key: str) -> Optional[str]
     """Map a user-friendly metric key (e.g., "denial_rate") to an
     actual node id in the graph. Preference order:
     ``observed:<key>`` > ``predicted:<key>`` > ``bridge:<key>`` >
-    exact match.
+    ``ccd::<key>`` > exact match.
+
+    ``ccd::`` is appended last among the prefix list so a metric that
+    has both an OBSERVED source (partner override) and a CCD_DERIVED
+    variant resolves to the observed one — analyst overrides win.
     """
     for prefix in ("observed:", "predicted:", "bridge:", "target:",
-                    "mc:", "comparables:"):
+                    "mc:", "comparables:", "ccd::"):
         nid = f"{prefix}{metric_key}"
         if nid in graph.nodes:
             return nid
@@ -230,6 +234,11 @@ def explain_metric(graph: ProvenanceGraph, metric_key: str) -> str:
         return _explain_aggregated(node)
     if nt == NodeType.BENCHMARK:
         return _explain_benchmark(node)
+    if nt == NodeType.CCD_DERIVED:
+        # Lazy import so partners without the diligence layer never
+        # pay for the CCD explainer at module-load time.
+        from .ccd_nodes import explain_ccd_derived
+        return explain_ccd_derived(graph, node)
     # Unknown node type — fall back to a generic summary.
     return f"{node.label}: {_fmt(node.value, node.unit)}."
 
@@ -257,6 +266,19 @@ def explain_for_ui(graph: ProvenanceGraph, metric_key: str) -> Dict[str, Any]:
             "error": "metric not found in provenance graph",
         }
     node = graph.nodes[nid]
+    # CCD chain completeness — return a structured error if the chain
+    # drops somewhere. Lazy import so callers without the diligence
+    # layer never pay for it.
+    if node.node_type == NodeType.CCD_DERIVED:
+        from .ccd_nodes import chain_is_complete
+        ok, missing = chain_is_complete(graph, nid)
+        if not ok:
+            return {
+                "metric": metric_key,
+                "node_id": nid,
+                "error": f"CCD provenance chain is incomplete: {missing}",
+                "chain_break": missing,
+            }
     full = explain_metric(graph, metric_key)
     parents_with_rel = graph.direct_parents(nid)
     upstream_payload: List[Dict[str, Any]] = []

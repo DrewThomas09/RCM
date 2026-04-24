@@ -1,0 +1,157 @@
+# CMS Transforming Episode Accountability Model (TEAM) — mandatory
+# CBSA list.
+#
+# Per CMS TEAM final rule (Nov 2024), 741 hospitals in 188 CBSAs
+# are mandatorily enrolled effective 2026-01-01. The bundled episodes
+# are LEJR, SHFFT, spinal fusion, CABG, major bowel.
+#
+# Seeding with a representative subset; the prompt's 188-CBSA
+# count comes from the CMS final rule. Full list is curated into
+# this file as a maintenance task; the current seed is enough to
+# exercise the calculator on any CBSA in it.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://www.cms.gov/priorities/innovation/innovation-models/team-model
+  - https://www.federalregister.gov/documents/2024/08/28/2024-18542
+
+effective_date: 2026-01-01
+
+# Core bundle parameters.
+bundle_episodes:
+  LEJR:
+    label: Lower Extremity Joint Replacement
+    drgs: ["469", "470", "521", "522"]
+    baseline_avg_episode_cost_usd: 18500
+    baseline_avg_margin_per_case_usd: 2100
+
+  SHFFT:
+    label: Surgical Hip/Femur Fracture Treatment
+    drgs: ["480", "481", "482"]
+    baseline_avg_episode_cost_usd: 26000
+    baseline_avg_margin_per_case_usd: 1900
+
+  SPINAL_FUSION:
+    label: Spinal Fusion (cervical, lumbar)
+    drgs: ["453", "454", "455", "456", "457", "458", "471", "472", "473"]
+    baseline_avg_episode_cost_usd: 47000
+    baseline_avg_margin_per_case_usd: 3800
+
+  CABG:
+    label: Coronary Artery Bypass Graft
+    drgs: ["231", "232", "233", "234", "235", "236"]
+    baseline_avg_episode_cost_usd: 58000
+    baseline_avg_margin_per_case_usd: 4400
+
+  MAJOR_BOWEL:
+    label: Major Bowel Procedure
+    drgs: ["329", "330", "331"]
+    baseline_avg_episode_cost_usd: 34000
+    baseline_avg_margin_per_case_usd: 2200
+
+# Track parameters.
+tracks:
+  track_1:
+    label: Track 1 — Upside only
+    upside_cap_pct: 0.10
+    downside_cap_pct: 0.00
+    active_years: [2026]
+  track_2:
+    label: Track 2 — Shared risk (limited)
+    upside_cap_pct: 0.10
+    downside_cap_pct: 0.10
+    active_years: [2026, 2027, 2028, 2029, 2030]
+  track_3:
+    label: Track 3 — Full risk
+    upside_cap_pct: 0.20
+    downside_cap_pct: 0.20
+    active_years: [2027, 2028, 2029, 2030]
+
+# CMS industry projection: two-thirds of participating hospitals
+# expected to lose ~$1,350 per case at baseline year.
+baseline_loss_projection:
+  pct_hospitals_losing: 0.667
+  avg_loss_per_case_usd: 1350
+
+# Seed CBSA list — a meaningful subset of the 188 mandatory
+# CBSAs. Every entry lists state + name + CBSA code. The
+# calculator's membership check works off cbsa_code.
+mandatory_cbsas:
+  - cbsa_code: "35620"
+    name: New York-Newark-Jersey City, NY-NJ-PA
+    state: NY
+  - cbsa_code: "31080"
+    name: Los Angeles-Long Beach-Anaheim, CA
+    state: CA
+  - cbsa_code: "16980"
+    name: Chicago-Naperville-Elgin, IL-IN-WI
+    state: IL
+  - cbsa_code: "19100"
+    name: Dallas-Fort Worth-Arlington, TX
+    state: TX
+  - cbsa_code: "26420"
+    name: Houston-The Woodlands-Sugar Land, TX
+    state: TX
+  - cbsa_code: "47900"
+    name: Washington-Arlington-Alexandria, DC-VA-MD-WV
+    state: DC
+  - cbsa_code: "37980"
+    name: Philadelphia-Camden-Wilmington, PA-NJ-DE-MD
+    state: PA
+  - cbsa_code: "33100"
+    name: Miami-Fort Lauderdale-Pompano Beach, FL
+    state: FL
+  - cbsa_code: "12060"
+    name: Atlanta-Sandy Springs-Alpharetta, GA
+    state: GA
+  - cbsa_code: "14460"
+    name: Boston-Cambridge-Newton, MA-NH
+    state: MA
+  - cbsa_code: "41860"
+    name: San Francisco-Oakland-Berkeley, CA
+    state: CA
+  - cbsa_code: "38060"
+    name: Phoenix-Mesa-Chandler, AZ
+    state: AZ
+  - cbsa_code: "19820"
+    name: Detroit-Warren-Dearborn, MI
+    state: MI
+  - cbsa_code: "42660"
+    name: Seattle-Tacoma-Bellevue, WA
+    state: WA
+  - cbsa_code: "33460"
+    name: Minneapolis-St. Paul-Bloomington, MN-WI
+    state: MN
+  - cbsa_code: "19740"
+    name: Denver-Aurora-Centennial, CO
+    state: CO
+  - cbsa_code: "38900"
+    name: Portland-Vancouver-Hillsboro, OR-WA
+    state: OR
+  - cbsa_code: "34980"
+    name: Nashville-Davidson-Murfreesboro-Franklin, TN
+    state: TN
+  - cbsa_code: "17140"
+    name: Cincinnati, OH-KY-IN
+    state: OH
+  - cbsa_code: "41700"
+    name: San Antonio-New Braunfels, TX
+    state: TX
+  - cbsa_code: "36740"
+    name: Orlando-Kissimmee-Sanford, FL
+    state: FL
+  - cbsa_code: "39300"
+    name: Providence-Warwick, RI-MA
+    state: RI
+  - cbsa_code: "12940"
+    name: Baton Rouge, LA
+    state: LA
+  - cbsa_code: "25420"
+    name: Harrisburg-Carlisle, PA
+    state: PA
+
+# Note: full 188-CBSA list curation is a separate ops task.
+# mandatory_cbsas_incomplete flag signals the UI + any export to
+# warn the analyst that the seeded list is representative, not
+# exhaustive. Always run CMS's own CBSA lookup for the go-live check.
+mandatory_cbsas_incomplete: true

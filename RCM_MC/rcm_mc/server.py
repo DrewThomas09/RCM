@@ -1842,6 +1842,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/home" or path == "/caduceus" or path == "/seekingchartis":
             return self._route_seekingchartis_home()
         if path == "/" or path == "/index.html":
+            # Phase 13 of the UI v2 editorial rework: when
+            # CHARTIS_UI_V2=1, the public marketing landing renders at
+            # "/". Under the legacy flag (default), "/" continues to
+            # serve the signed-in dashboard so existing partners see
+            # no change. A signed-in user hitting "/" on the v2 marketing
+            # page can click "Open Platform" to reach /home.
+            from .ui._chartis_kit import UI_V2_ENABLED
+            if UI_V2_ENABLED:
+                from .ui.chartis.marketing_page import render_marketing_page
+                return self._send_html(render_marketing_page())
             return self._route_dashboard()
         if path == "/portfolio/regression":
             return self._route_regression_page()
@@ -1851,6 +1861,141 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/import":
             from .ui.quick_import import render_quick_import
             return self._send_html(render_quick_import())
+        # RCM Diligence workspace — Phase 1 ingest is live; Phases 2–4
+        # render placeholder tabs until their implementations land.
+        # Load lazily to avoid import cost on every request.
+        if path == "/diligence/ingest":
+            # Phase 14: ?dataset=<fixture_name> drives the live CCD
+            # ingest + transformation-log preview.
+            from .diligence._pages import render_ingest_page
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            return self._send_html(render_ingest_page(dataset=ds))
+        if path == "/diligence/benchmarks":
+            from .diligence._pages import render_benchmarks_page
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            return self._send_html(render_benchmarks_page(dataset=ds))
+        if path == "/diligence/root-cause":
+            from .diligence._pages import render_root_cause_page
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            return self._send_html(render_root_cause_page(dataset=ds))
+        if path == "/diligence/value":
+            from .diligence._pages import render_value_page
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            return self._send_html(render_value_page(dataset=ds))
+        if path == "/diligence/qoe-memo":
+            # Partner-signed QoE memo deliverable. `?dataset=<fixture>`
+            # runs the ingest + KPI + waterfall pipeline and renders the
+            # printable memo; other optional query params fill metadata
+            # (deal_name, engagement_id, partner_name, preparer_name,
+            # mgmt_revenue) without requiring a form submission. When
+            # `engagement_id` + `created_by` are supplied, a DRAFT
+            # engagement deliverable is opportunistically linked so the
+            # memo shows up in that engagement's list.
+            from .diligence._pages import render_qoe_memo_page
+            qs = urllib.parse.parse_qs(parsed.query)
+            ds = (qs.get("dataset") or [""])[0]
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_qoe_memo_page(
+                dataset=ds, qs=qs, store=store,
+            ))
+
+        # Engagement workspace (internal RBAC + deliverables +
+        # comment stream).
+        if path == "/engagements":
+            return self._route_engagements_list()
+        if path.startswith("/engagements/"):
+            eid = path.replace("/engagements/", "").strip("/")
+            return self._route_engagement_detail(eid)
+        # Client portal (published-only view for CLIENT_VIEWER).
+        if path.startswith("/portal/"):
+            eid = path.replace("/portal/", "").strip("/")
+            return self._route_client_portal(eid)
+        # Admin: audit-chain integrity status.
+        if path == "/admin/audit-chain":
+            return self._route_admin_audit_chain()
+        # Pre-screening: Bankruptcy-Survivor Scan landing (form).
+        if path == "/screening/bankruptcy-survivor":
+            return self._route_bankruptcy_survivor_landing()
+        # Regulatory Risk Workbench — integrated 9-panel Tier 1-3 view.
+        if path == "/diligence/risk-workbench":
+            return self._route_risk_workbench()
+        # Counterfactual Advisor — "what would change your mind".
+        if path == "/diligence/counterfactual":
+            return self._route_counterfactual_page()
+        # JSON API for the counterfactual advisor.
+        if path.startswith("/api/counterfactual"):
+            return self._route_counterfactual_api(path)
+        # Side-by-side compare.
+        if path == "/diligence/compare":
+            return self._route_compare_page()
+        # Market intelligence — public healthcare comps + PE news.
+        if path == "/market-intel":
+            return self._route_market_intel_page()
+        # Market intel JSON endpoints — consumed by Deal Profile's
+        # live "Market Context" block + any page that wants on-demand
+        # peer-comparison data.
+        if path == "/api/market-intel/peer-snapshot":
+            return self._route_peer_snapshot_api()
+        # IC Packet Assembler — one-click IC memo.
+        if path == "/diligence/ic-packet":
+            return self._route_ic_packet_page()
+        # Deal Monte Carlo — 5-year forward distribution.
+        if path == "/diligence/deal-mc":
+            return self._route_deal_mc_page()
+        # Claim-level denial prediction — CCD-native predictive analytic.
+        if path == "/diligence/denial-prediction":
+            return self._route_denial_prediction_page()
+        # Deal Autopsy — "you're about to do Steward again" matcher.
+        if path == "/diligence/deal-autopsy":
+            return self._route_deal_autopsy_page()
+        # Physician Attrition — flight-risk predictor per provider.
+        if path == "/diligence/physician-attrition":
+            return self._route_physician_attrition_page()
+        # Physician Economic Unit — per-provider P&L + roster optimization.
+        if path == "/diligence/physician-eu":
+            return self._route_physician_eu_page()
+        # Management Scorecard — forecast reliability × comp × tenure × prior.
+        if path == "/diligence/management":
+            return self._route_management_scorecard_page()
+        # Exit Timing + Buyer-Type Fit — when + to whom.
+        if path == "/diligence/exit-timing":
+            return self._route_exit_timing_page()
+        # Regulatory Calendar × Thesis Kill-Switch — which drivers die, when.
+        if path == "/diligence/regulatory-calendar":
+            return self._route_regulatory_calendar_page()
+        if path == "/api/regulatory-calendar/exposure":
+            return self._route_regulatory_calendar_api()
+        # Covenant Stress Lab — capital stack × covenants × MC cone.
+        if path == "/diligence/covenant-stress":
+            return self._route_covenant_lab_page()
+        # Bridge Auto-Auditor — banker's bridge × realization priors.
+        if path == "/diligence/bridge-audit":
+            return self._route_bridge_audit_page()
+        # Seeking Alpha — public healthcare market intel + PE deal flow.
+        if path == "/market-intel/seeking-alpha":
+            return self._route_seeking_alpha_page()
+        # Bear Case Auto-Generator — what could break this thesis.
+        if path == "/diligence/bear-case":
+            return self._route_bear_case_page()
+        # Payer Mix Stress Lab — rate-shock Monte Carlo on payer mix.
+        if path == "/diligence/payer-stress":
+            return self._route_payer_stress_page()
+        # HCRIS X-Ray — Medicare cost-report peer benchmarking.
+        if path == "/diligence/hcris-xray":
+            return self._route_hcris_xray_page()
+        # Diligence Checklist — orchestration layer + open-questions tracker.
+        if path == "/diligence/checklist":
+            return self._route_diligence_checklist_page()
+        # Thesis Pipeline — one-button full diligence chain runner.
+        if path == "/diligence/thesis-pipeline":
+            return self._route_thesis_pipeline_page()
+        # Unified deal profile — one source of truth per deal.
+        if path == "/diligence/deal" or path.startswith("/diligence/deal/"):
+            return self._route_deal_profile_page(path)
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -3861,6 +4006,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_team()
         if path == "/pipeline":
             return self._route_pipeline()
+        if path == "/deals":
+            # /deals is the v2-nav label — redirect to /pipeline so
+            # stale nav links don't 404.
+            target = "/pipeline"
+            if parsed.query:
+                target = f"{target}?{parsed.query}"
+            self.send_response(301)
+            self.send_header("Location", target)
+            self.end_headers()
+            return
         if path == "/pipeline/bridge":
             return self._route_portfolio_bridge()
         if path == "/fund-learning":
@@ -5709,6 +5864,868 @@ class RCMHandler(BaseHTTPRequestHandler):
             deals = _pd_port.DataFrame()
         return self._send_html(render_portfolio_overview(deals, store))
 
+    # ── Engagement workspace routes ──────────────────────────────────
+
+    def _route_engagements_list(self) -> None:
+        from .engagement import list_engagements
+        from .ui.engagement_pages import render_engagement_list
+        store = PortfolioStore(self.config.db_path)
+        engagements = list_engagements(store)
+        self._send_html(render_engagement_list(engagements))
+
+    def _route_engagement_detail(self, engagement_id: str) -> None:
+        from .engagement import (
+            get_engagement, list_comments, list_deliverables, list_members,
+        )
+        from .engagement.store import get_member_role
+        from .ui.engagement_pages import render_engagement_detail
+
+        if not engagement_id:
+            self._send_html(
+                "<h1>Engagement not found</h1>",
+                status=HTTPStatus.NOT_FOUND,
+            )
+            return
+        store = PortfolioStore(self.config.db_path)
+        eng = get_engagement(store, engagement_id)
+        if eng is None:
+            self._send_html(
+                f"<h1>Engagement {engagement_id!r} not found</h1>",
+                status=HTTPStatus.NOT_FOUND,
+            )
+            return
+        viewer = None
+        cu = self._current_user()
+        if cu:
+            viewer = cu.get("username")
+        viewer_role = (
+            get_member_role(
+                store, engagement_id=engagement_id, username=viewer,
+            )
+            if viewer else None
+        )
+        # Internal detail view — show everything. The /portal/ route
+        # is where CLIENT_VIEWER goes for a filtered view.
+        members = list_members(store, engagement_id)
+        deliverables = list_deliverables(
+            store, engagement_id=engagement_id, viewer=viewer,
+        )
+        comments = list_comments(
+            store, engagement_id=engagement_id, viewer=viewer,
+        )
+        self._send_html(render_engagement_detail(
+            eng, members=members, deliverables=deliverables,
+            comments=comments, viewer_role=viewer_role,
+        ))
+
+    def _route_client_portal(self, engagement_id: str) -> None:
+        from .engagement import (
+            get_engagement, list_comments, list_deliverables,
+        )
+        from .ui.engagement_pages import render_client_portal
+
+        if not engagement_id:
+            self._send_html(
+                "<h1>Engagement not found</h1>",
+                status=HTTPStatus.NOT_FOUND,
+            )
+            return
+        store = PortfolioStore(self.config.db_path)
+        eng = get_engagement(store, engagement_id)
+        if eng is None:
+            self._send_html(
+                f"<h1>Engagement {engagement_id!r} not found</h1>",
+                status=HTTPStatus.NOT_FOUND,
+            )
+            return
+        viewer = None
+        cu = self._current_user()
+        if cu:
+            viewer = cu.get("username")
+        # Forcing viewer on both listings produces the CLIENT_VIEWER
+        # filter when the caller's engagement role is CLIENT_VIEWER;
+        # internal users see everything just like the detail view.
+        deliverables = list_deliverables(
+            store, engagement_id=engagement_id, viewer=viewer,
+        )
+        comments = list_comments(
+            store, engagement_id=engagement_id, viewer=viewer,
+        )
+        self._send_html(render_client_portal(
+            eng, deliverables=deliverables, comments=comments,
+        ))
+
+    # ── Engagement POST handlers ─────────────────────────────────────
+
+    def _route_engagement_create(self) -> None:
+        """POST /engagements/create — create a new engagement.
+
+        Form fields: engagement_id, name, client_name, notes (optional).
+        Actor is the current signed-in user.
+        """
+        from .engagement import create_engagement
+
+        form = self._read_form_body()
+        eid = (form.get("engagement_id") or "").strip()[:60]
+        name = (form.get("name") or "").strip()[:200]
+        client = (form.get("client_name") or "").strip()[:200]
+        notes = (form.get("notes") or "").strip()[:1000]
+        if not eid or not name or not client:
+            return self._error_page(
+                "Missing required fields",
+                "engagement_id, name, and client_name are required.",
+            )
+        cu = self._current_user() or {}
+        actor = cu.get("username") or "system"
+        try:
+            create_engagement(
+                PortfolioStore(self.config.db_path),
+                engagement_id=eid, name=name, client_name=client,
+                created_by=actor, notes=notes,
+            )
+        except ValueError as exc:
+            return self._error_page("Cannot create engagement", str(exc))
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", f"/engagements/{eid}")
+        self.end_headers()
+
+    def _route_engagement_add_member(self, engagement_id: str) -> None:
+        """POST /engagements/<eid>/members/add — add or update a member.
+
+        Form fields: username, role (PARTNER|LEAD|ANALYST|CLIENT_VIEWER).
+        Only members with role PARTNER or LEAD may add new members on
+        the engagement; non-members are rejected. The legacy app
+        ADMIN role short-circuits this check.
+        """
+        from .engagement import EngagementRole, add_member
+        from .engagement.store import get_member_role
+
+        form = self._read_form_body()
+        username = (form.get("username") or "").strip()[:80]
+        role_name = (form.get("role") or "").strip().upper()
+        if not username or role_name not in {
+            r.value for r in EngagementRole
+        }:
+            return self._error_page(
+                "Missing or invalid field",
+                "username and role (PARTNER|LEAD|ANALYST|CLIENT_VIEWER) "
+                "are required.",
+            )
+        cu = self._current_user() or {}
+        actor = cu.get("username") or "system"
+        store = PortfolioStore(self.config.db_path)
+        actor_role = get_member_role(
+            store, engagement_id=engagement_id, username=actor,
+        )
+        is_app_admin = str(cu.get("role") or "").upper() == "ADMIN"
+        if not is_app_admin and actor_role not in (
+            EngagementRole.PARTNER, EngagementRole.LEAD,
+        ):
+            return self._error_page(
+                "Insufficient permission",
+                "Only PARTNER, LEAD, or app ADMIN can add members.",
+            )
+        try:
+            add_member(
+                store, engagement_id=engagement_id,
+                username=username, role=EngagementRole(role_name),
+                added_by=actor,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return self._error_page(
+                "Cannot add member", str(exc)[:300],
+            )
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", f"/engagements/{engagement_id}")
+        self.end_headers()
+
+    def _route_engagement_post_comment(self, engagement_id: str) -> None:
+        """POST /engagements/<eid>/comments/post — post a comment.
+
+        Form fields: target, body, is_internal (checkbox),
+        parent_comment_id (optional).
+        """
+        from .engagement import post_comment
+
+        form = self._read_form_body()
+        target = (form.get("target") or "").strip()[:200]
+        body = (form.get("body") or "").strip()[:4000]
+        is_internal = bool(form.get("is_internal"))
+        parent_raw = form.get("parent_comment_id") or ""
+        try:
+            parent = int(parent_raw) if parent_raw else None
+        except ValueError:
+            parent = None
+        if not target or not body:
+            return self._error_page(
+                "Missing required fields",
+                "target and body are required.",
+            )
+        cu = self._current_user() or {}
+        actor = cu.get("username") or ""
+        if not actor:
+            return self._error_page(
+                "Sign-in required",
+                "Anonymous sessions cannot post comments.",
+            )
+        try:
+            post_comment(
+                PortfolioStore(self.config.db_path),
+                engagement_id=engagement_id, target=target,
+                author=actor, body=body, is_internal=is_internal,
+                parent_comment_id=parent,
+            )
+        except PermissionError as exc:
+            return self._error_page("Not permitted", str(exc))
+        except ValueError as exc:
+            return self._error_page("Invalid comment", str(exc))
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", f"/engagements/{engagement_id}")
+        self.end_headers()
+
+    def _route_engagement_publish_deliverable(
+        self, engagement_id: str, deliverable_id_str: str,
+    ) -> None:
+        """POST /engagements/<eid>/deliverables/<did>/publish — DRAFT
+        → PUBLISHED transition. Role-gated by the store layer.
+        """
+        from .engagement import publish_deliverable
+
+        try:
+            did = int(deliverable_id_str)
+        except ValueError:
+            return self._error_page(
+                "Invalid deliverable id", deliverable_id_str,
+            )
+        cu = self._current_user() or {}
+        actor = cu.get("username") or ""
+        if not actor:
+            return self._error_page(
+                "Sign-in required",
+                "Anonymous sessions cannot publish deliverables.",
+            )
+        try:
+            publish_deliverable(
+                PortfolioStore(self.config.db_path),
+                engagement_id=engagement_id, deliverable_id=did,
+                published_by=actor,
+            )
+        except (PermissionError, ValueError, LookupError) as exc:
+            return self._error_page("Cannot publish", str(exc))
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", f"/engagements/{engagement_id}")
+        self.end_headers()
+
+    # ── Side-by-side Compare ─────────────────────────────────────────
+
+    def _route_compare_page(self) -> None:
+        from .ui.compare_page import render_compare_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        left = (qs.get("left") or [""])[0]
+        right = (qs.get("right") or [""])[0]
+        self._send_html(render_compare_page(left=left, right=right))
+
+    # ── Deal Profile ─────────────────────────────────────────────────
+
+    def _route_deal_profile_page(self, path: str) -> None:
+        from .ui.deal_profile_page import render_deal_profile_page
+        slug = ""
+        if path.startswith("/diligence/deal/"):
+            slug = path.replace("/diligence/deal/", "", 1).strip("/")
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_deal_profile_page(slug=slug, qs=qs))
+
+    # ── Denial Prediction ────────────────────────────────────────────
+
+    def _route_denial_prediction_page(self) -> None:
+        from .ui.denial_prediction_page import (
+            render_denial_prediction_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        dataset = (qs.get("dataset") or [""])[0]
+        try:
+            train_fraction = float(
+                (qs.get("train_fraction") or ["0.7"])[0],
+            )
+        except ValueError:
+            train_fraction = 0.7
+        self._send_html(render_denial_prediction_page(
+            dataset=dataset, train_fraction=train_fraction,
+        ))
+
+    # ── Deal Monte Carlo ─────────────────────────────────────────────
+
+    def _route_deal_mc_page(self) -> None:
+        from .ui.deal_mc_page import render_deal_mc_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_deal_mc_page(qs=qs))
+
+    # ── Deal Autopsy ─────────────────────────────────────────────────
+
+    def _route_deal_autopsy_page(self) -> None:
+        from .ui.deal_autopsy_page import render_deal_autopsy_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_deal_autopsy_page(qs=qs))
+
+    # ── Physician Attrition ──────────────────────────────────────────
+
+    def _route_physician_attrition_page(self) -> None:
+        from .ui.physician_attrition_page import (
+            render_physician_attrition_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_physician_attrition_page(qs=qs))
+
+    # ── Physician Economic Unit ──────────────────────────────────────
+
+    def _route_physician_eu_page(self) -> None:
+        from .ui.physician_eu_page import render_physician_eu_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_physician_eu_page(qs=qs))
+
+    # ── Management Scorecard ─────────────────────────────────────────
+
+    def _route_management_scorecard_page(self) -> None:
+        from .ui.management_scorecard_page import (
+            render_management_scorecard_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_management_scorecard_page(qs=qs))
+
+    # ── Exit Timing ──────────────────────────────────────────────────
+
+    def _route_exit_timing_page(self) -> None:
+        from .ui.exit_timing_page import render_exit_timing_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_exit_timing_page(qs=qs))
+
+    # ── Regulatory Calendar × Kill-Switch ────────────────────────────
+
+    def _route_regulatory_calendar_page(self) -> None:
+        from .ui.regulatory_calendar_page import (
+            render_regulatory_calendar_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_regulatory_calendar_page(qs=qs))
+
+    def _route_regulatory_calendar_api(self) -> None:
+        """GET /api/regulatory-calendar/exposure — JSON exposure
+        report for programmatic clients (Deal MC overlay, IC Packet,
+        Thesis Pipeline)."""
+        import json as _json
+        from .diligence.regulatory_calendar import (
+            analyze_regulatory_exposure,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+
+        def first(k: str, d: str = "") -> str:
+            return (qs.get(k) or [d])[0].strip()
+
+        def fnum(k: str):
+            v = first(k)
+            if not v:
+                return None
+            try:
+                return float(v)
+            except ValueError:
+                return None
+
+        def fbool(k: str) -> bool:
+            return first(k).lower() in ("1", "true", "yes", "on")
+
+        specialties_raw = first("specialties")
+        specialty = first("specialty")
+        specialties = []
+        if specialties_raw:
+            specialties = [
+                s.strip().upper() for s in specialties_raw.split(",")
+                if s.strip()
+            ]
+        if specialty:
+            specialties.append(specialty.upper())
+
+        target = {
+            "specialties": specialties,
+            "ma_mix_pct": fnum("ma_mix_pct"),
+            "commercial_payer_share": fnum("commercial_payer_share"),
+            "has_hopd_revenue": fbool("has_hopd_revenue"),
+            "has_reit_landlord": fbool("has_reit_landlord"),
+            "revenue_usd": fnum("revenue_usd"),
+            "ebitda_usd": fnum("ebitda_usd"),
+        }
+        try:
+            horizon = max(3, min(60, int(float(first("horizon_months") or "24"))))
+        except ValueError:
+            horizon = 24
+
+        report = analyze_regulatory_exposure(
+            target_profile=target, horizon_months=horizon,
+        )
+        payload = _json.dumps(report.to_dict(), default=str).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    # ── Covenant Stress Lab ──────────────────────────────────────────
+
+    def _route_covenant_lab_page(self) -> None:
+        from .ui.covenant_lab_page import render_covenant_lab_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_covenant_lab_page(qs=qs))
+
+    # ── Bridge Auto-Auditor ──────────────────────────────────────────
+
+    def _route_bridge_audit_page(self) -> None:
+        from .ui.bridge_audit_page import render_bridge_audit_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_bridge_audit_page(qs=qs))
+
+    # ── Seeking Alpha Market Intel ───────────────────────────────────
+
+    def _route_seeking_alpha_page(self) -> None:
+        from .ui.seeking_alpha_page import render_seeking_alpha_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_seeking_alpha_page(qs=qs))
+
+    # ── Bear Case Auto-Generator ─────────────────────────────────────
+
+    def _route_bear_case_page(self) -> None:
+        from .ui.bear_case_page import render_bear_case_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_bear_case_page(qs=qs))
+
+    # ── Payer Mix Stress Lab ─────────────────────────────────────────
+
+    def _route_payer_stress_page(self) -> None:
+        from .ui.payer_stress_page import render_payer_stress_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_payer_stress_page(qs=qs))
+
+    # ── HCRIS Peer X-Ray ─────────────────────────────────────────────
+
+    def _route_hcris_xray_page(self) -> None:
+        from .ui.hcris_xray_page import render_hcris_xray_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_hcris_xray_page(qs=qs))
+
+    # ── Diligence Checklist ──────────────────────────────────────────
+
+    def _route_diligence_checklist_page(self) -> None:
+        from .ui.diligence_checklist_page import (
+            render_diligence_checklist_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_diligence_checklist_page(qs=qs))
+
+    # ── Thesis Pipeline ──────────────────────────────────────────────
+
+    def _route_thesis_pipeline_page(self) -> None:
+        from .ui.thesis_pipeline_page import (
+            render_thesis_pipeline_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_thesis_pipeline_page(qs=qs))
+
+    # ── IC Packet Assembler ──────────────────────────────────────────
+
+    def _route_ic_packet_page(self) -> None:
+        from .ui.ic_packet_page import render_ic_packet_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_ic_packet_page(qs=qs))
+
+    # ── Market Intelligence ──────────────────────────────────────────
+
+    def _route_peer_snapshot_api(self) -> None:
+        """GET /api/market-intel/peer-snapshot — JSON peer-comparison
+        envelope consumed by the Deal Profile live Market Context
+        block.  All query params optional; response is self-describing.
+        """
+        from .market_intel import compute_peer_snapshot
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+
+        def _first(k: str) -> str:
+            return (qs.get(k) or [""])[0].strip()
+
+        def _float_or_none(k: str):
+            raw = _first(k)
+            if not raw:
+                return None
+            try:
+                return float(raw)
+            except ValueError:
+                return None
+
+        snap = compute_peer_snapshot(
+            category=_first("category"),
+            target_revenue_usd=_float_or_none("revenue_usd"),
+            target_ev_usd=_float_or_none("ev_usd"),
+            target_ebitda_usd=_float_or_none("ebitda_usd"),
+            specialty=_first("specialty") or None,
+        )
+        self._send_json(snap.to_dict())
+
+    def _route_market_intel_page(self) -> None:
+        from .ui.market_intel_page import render_market_intel_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+
+        def _first(k: str, default: str = "") -> str:
+            return (qs.get(k) or [default])[0].strip()
+
+        def _float(k: str):
+            raw = _first(k)
+            if not raw:
+                return None
+            try:
+                return float(raw)
+            except ValueError:
+                return None
+
+        def _list(k: str) -> List[str]:
+            raw = _first(k)
+            return [t.strip() for t in raw.split(",") if t.strip()]
+
+        self._send_html(render_market_intel_page(
+            category=_first("category") or None,
+            specialty=_first("specialty") or None,
+            ev_usd=_float("ev_usd"),
+            revenue_usd=_float("revenue_usd"),
+            tickers=_list("tickers") or None,
+            tags=_list("tags") or None,
+        ))
+
+    # ── Counterfactual Advisor ───────────────────────────────────────
+
+    def _route_counterfactual_page(self) -> None:
+        from .ui.counterfactual_page import render_counterfactual_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        dataset = (qs.get("dataset") or [""])[0]
+
+        def _first(key: str) -> str:
+            return (qs.get(key) or [""])[0].strip()
+
+        def _list(key: str) -> list:
+            raw = _first(key)
+            return [t.strip() for t in raw.split(",") if t.strip()]
+
+        def _float_or_none(key: str):
+            raw = _first(key)
+            if not raw:
+                return None
+            try:
+                return float(raw)
+            except ValueError:
+                return None
+
+        def _int_or_none(key: str):
+            raw = _first(key)
+            if not raw:
+                return None
+            try:
+                return int(float(raw))
+            except ValueError:
+                return None
+
+        metadata: Dict[str, Any] = {
+            k: v for k, v in {
+                "legal_structure": _first("legal_structure") or None,
+                "states": _list("states"),
+                "msas": _list("msas"),
+                "cbsa_codes": _list("cbsa_codes"),
+                "specialty": _first("specialty") or None,
+                "is_hospital_based_physician": bool(_first("specialty")) and
+                    _first("specialty").upper() in {
+                        "EMERGENCY_MEDICINE", "ANESTHESIOLOGY",
+                        "RADIOLOGY", "PATHOLOGY", "NEONATOLOGY",
+                        "HOSPITALIST",
+                    },
+                "landlord": _first("landlord") or None,
+                "lease_term_years": _int_or_none("lease_term_years"),
+                "lease_escalator_pct": _float_or_none("lease_escalator_pct"),
+                "ebitdar_coverage": _float_or_none("ebitdar_coverage"),
+                "geography": _first("geography") or None,
+                "annual_rent_usd": _float_or_none("annual_rent_usd"),
+                "portfolio_ebitdar_usd":
+                    _float_or_none("portfolio_ebitdar_usd"),
+            }.items() if v not in (None, [], "")
+        }
+        self._send_html(render_counterfactual_page(
+            dataset=dataset, metadata=metadata,
+        ))
+
+    def _route_counterfactual_api(self, path: str) -> None:
+        """JSON API surface.
+
+        GET /api/counterfactual/<fixture> → runs against the CCD
+        fixture + returns the full CounterfactualSet + bridge lever
+        as JSON. Optional query params add metadata.
+        """
+        from .diligence._pages import _resolve_dataset
+        from .diligence.counterfactual import (
+            counterfactual_bridge_lever, run_counterfactuals_from_ccd,
+            summarize_ccd_inputs,
+        )
+        parsed = urllib.parse.urlparse(self.path)
+        fixture = path.replace("/api/counterfactual", "").strip("/")
+        if not fixture:
+            return self._send_json(
+                {"error": "missing fixture",
+                 "example": "/api/counterfactual/hospital_08_waterfall_critical"},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        ds_path = _resolve_dataset(fixture)
+        if ds_path is None:
+            return self._send_json(
+                {"error": f"unknown fixture {fixture!r}"},
+                status=HTTPStatus.NOT_FOUND,
+            )
+        qs = urllib.parse.parse_qs(parsed.query)
+        metadata: Dict[str, Any] = {}
+        for key in (
+            "legal_structure", "specialty", "landlord", "geography",
+        ):
+            val = (qs.get(key) or [""])[0]
+            if val:
+                metadata[key] = val
+        for key in ("states", "msas", "cbsa_codes"):
+            raw = (qs.get(key) or [""])[0]
+            if raw:
+                metadata[key] = [t.strip() for t in raw.split(",") if t.strip()]
+        try:
+            from .diligence import ingest_dataset
+            ccd = ingest_dataset(ds_path)
+        except Exception as exc:  # noqa: BLE001
+            return self._send_json(
+                {"error": "ingest failed", "detail": str(exc)},
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+        cf_set = run_counterfactuals_from_ccd(ccd, metadata=metadata)
+        lever = counterfactual_bridge_lever(cf_set)
+        summary = summarize_ccd_inputs(ccd)
+        self._send_json({
+            "fixture": fixture,
+            "metadata": metadata,
+            "ccd_summary": summary,
+            "counterfactual_set": cf_set.to_dict(),
+            "bridge_lever": lever.to_dict(),
+        })
+
+    # ── Regulatory Risk Workbench ────────────────────────────────────
+
+    def _route_risk_workbench(self) -> None:
+        """GET /diligence/risk-workbench?demo=steward → runs the
+        Steward replay through all 9 panels. Without ``demo``, renders
+        an empty workbench with guidance to supply fixture inputs."""
+        from .ui.risk_workbench_page import (
+            WorkbenchInput, demo_steward_input, render_risk_workbench,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        demo = (qs.get("demo") or [""])[0].lower()
+        if demo == "steward":
+            inp = demo_steward_input()
+        else:
+            inp = WorkbenchInput(
+                target_name=(qs.get("target_name") or ["Unnamed Target"])[0],
+            )
+        self._send_html(render_risk_workbench(inp))
+
+    # ── Bankruptcy-Survivor Scan ─────────────────────────────────────
+
+    def _route_bankruptcy_survivor_landing(self) -> None:
+        from .ui.bankruptcy_survivor_page import render_scan_landing
+        self._send_html(render_scan_landing())
+
+    def _route_bankruptcy_survivor_run(self) -> None:
+        from .diligence.screening import (
+            ScanInput, run_bankruptcy_survivor_scan,
+        )
+        from .ui.bankruptcy_survivor_page import render_scan_result
+
+        form = self._read_form_body()
+
+        def _str(name: str, default: str = "") -> str:
+            return str(form.get(name) or default).strip()
+
+        def _list(name: str) -> list:
+            raw = _str(name)
+            if not raw:
+                return []
+            return [t.strip() for t in raw.split(",") if t.strip()]
+
+        def _float(name: str):
+            v = _str(name)
+            if not v:
+                return None
+            try:
+                return float(v)
+            except ValueError:
+                return None
+
+        def _int(name: str):
+            v = _str(name)
+            if not v:
+                return None
+            try:
+                return int(float(v))
+            except ValueError:
+                return None
+
+        target = _str("target_name") or "Unnamed target"
+        scan_in = ScanInput(
+            target_name=target,
+            specialty=(_str("specialty") or None),
+            states=_list("states"),
+            msas=_list("msas"),
+            cbsa_codes=_list("cbsa_codes"),
+            legal_structure=(_str("legal_structure") or None),
+            landlord=(_str("landlord") or None),
+            lease_term_years=_int("lease_term_years"),
+            lease_escalator_pct=_float("lease_escalator_pct"),
+            ebitdar_coverage=_float("ebitdar_coverage"),
+            geography=(_str("geography") or None),
+            is_hospital_based_physician=(
+                _str("is_hospital_based_physician").lower() == "true"
+            ),
+            oon_revenue_share=_float("oon_revenue_share"),
+        )
+        scan = run_bankruptcy_survivor_scan(scan_in)
+        self._send_html(render_scan_result(scan))
+
+    def _route_admin_audit_chain(self) -> None:
+        """Admin-only view of the compliance audit-chain integrity.
+
+        Shows chain_status() totals + the latest verify_audit_chain()
+        result. Runs in the request path because it's cheap and the
+        partner actually wants a real-time answer."""
+        from .compliance.audit_chain import (
+            chain_status, verify_audit_chain,
+        )
+        from .ui._chartis_kit import P, chartis_shell
+
+        store = PortfolioStore(self.config.db_path)
+        status = chain_status(store)
+        report = verify_audit_chain(store)
+
+        ok_colour = P["positive"] if report.ok else P["negative"]
+        ok_text = "OK" if report.ok else "TAMPER DETECTED"
+        mismatches_html = ""
+        if report.mismatches:
+            rows = "".join(
+                f'<tr><td class="mono">{m["id"]}</td>'
+                f'<td class="mono" style="font-size:10px;">{m["stored"][:16]}…</td>'
+                f'<td class="mono" style="font-size:10px;">{m["recomputed"][:16]}…</td></tr>'
+                for m in report.mismatches
+            )
+            mismatches_html = (
+                f'<h2 style="font-size:11px;color:{P["text_dim"]};'
+                f'letter-spacing:1px;text-transform:uppercase;margin-top:24px;">'
+                f'Mismatches</h2>'
+                f'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+                f'<thead><tr style="color:{P["text_dim"]};">'
+                f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Row ID</th>'
+                f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Stored</th>'
+                f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Recomputed</th>'
+                f'</tr></thead><tbody>{rows}</tbody></table>'
+            )
+        missing_html = ""
+        if report.missing_prev:
+            ids = ", ".join(str(i) for i in report.missing_prev)
+            missing_html = (
+                f'<div style="margin-top:12px;padding:10px;background:rgba(239,68,68,.1);'
+                f'border-left:3px solid {P["negative"]};font-size:11px;'
+                f'color:{P["negative"]};">'
+                f'Broken prev_hash linkage at row(s): {ids}'
+                f'</div>'
+            )
+        body = (
+            f'<div style="padding:24px 0 12px 0;">'
+            f'  <div style="font-size:11px;color:{P["text_faint"]};letter-spacing:.75px;'
+            f'text-transform:uppercase;margin-bottom:6px;">Audit Chain</div>'
+            f'  <div style="display:flex;align-items:baseline;gap:12px;">'
+            f'    <div style="font-size:22px;color:{P["text"]};font-weight:600;">'
+            f'Integrity Attestation</div>'
+            f'    <div style="background:{P["panel_alt"]};color:{ok_colour};'
+            f'padding:2px 10px;border-radius:3px;font-size:11px;font-weight:700;'
+            f'letter-spacing:.5px;text-transform:uppercase;">{ok_text}</div>'
+            f'  </div>'
+            f'</div>'
+            f'<table style="width:100%;border-collapse:collapse;font-size:12px;'
+            f'margin-top:12px;">'
+            f'<tbody>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Total rows</td>'
+            f'<td class="num">{status["total_rows"]}</td></tr>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Hashed rows</td>'
+            f'<td class="num">{status["hashed_rows"]}</td></tr>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Pre-chain (legacy) rows</td>'
+            f'<td class="num">{status["pre_chain_rows"]}</td></tr>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Last hashed id</td>'
+            f'<td class="num">{status["last_hashed_id"] or "—"}</td></tr>'
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid {P["border"]};color:{P["text_dim"]};">Last row hash</td>'
+            f'<td class="mono" style="font-size:10px;">{(status["last_row_hash"] or "—")[:32]}…</td></tr>'
+            f'</tbody></table>'
+            f'{missing_html}'
+            f'{mismatches_html}'
+            f'<div style="margin-top:24px;padding-top:12px;border-top:1px solid {P["border"]};'
+            f'font-size:10px;color:{P["text_faint"]};font-family:\'JetBrains Mono\',monospace;">'
+            f'Detective control — see '
+            f'<code>rcm_mc/compliance/HIPAA_READINESS.md</code> for mitigations '
+            f'(WORM storage, off-host hash anchoring).'
+            f'</div>'
+        )
+        self._send_html(chartis_shell(
+            body, "Admin — Audit Chain",
+            subtitle="Compliance integrity attestation",
+        ))
+
     def _route_dashboard(self) -> None:
         # B72: `?live=1` enables auto-refresh (60s meta-refresh). Off by
         # default so filter state and scroll position persist during
@@ -7114,8 +8131,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .pe_intelligence import partner_review
         except Exception as exc:  # noqa: BLE001
             return None, f"pe_intelligence import failed: {exc!r}", meta
+        store = self._require_store()
         try:
-            packet = get_or_build_packet(self._require_store(), deal_id, skip_simulation=True)
+            packet = get_or_build_packet(store, deal_id, skip_simulation=True)
         except Exception as exc:  # noqa: BLE001
             meta["missing_fields"] = ["analysis packet (run a simulation first)"]
             return None, f"packet build failed: {exc!r}", meta
@@ -7123,6 +8141,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             review = partner_review(packet)
         except Exception as exc:  # noqa: BLE001
             return None, f"partner_review raised: {exc!r}", meta
+        try:
+            from .ai.claude_reviewer import build_claude_review
+            review.claude_review = build_claude_review(review, store=store)
+        except Exception as exc:  # noqa: BLE001
+            review.claude_review = {
+                "reviewer": "claude",
+                "status": "failed",
+                "summary": f"Claude review unavailable: {exc!r}",
+                "confirmed_points": [],
+                "concerns": [],
+            }
         return review, None, meta
 
     def _require_store(self) -> Any:
@@ -8318,6 +9347,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             or path.startswith("/pipeline/")
             or path.startswith("/value-tracker/")
             or path.startswith("/team/")
+            or path.startswith("/engagements/")
+            or path.startswith("/screening/")
         )
         if (self._session_token() is not None and not csrf_exempt):
             ctype = self.headers.get("Content-Type", "")
@@ -8370,6 +9401,26 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/data-room/") and path.endswith("/add"):
             dr_ccn = path.replace("/data-room/", "").replace("/add", "").strip("/")
             return self._route_data_room_add(dr_ccn)
+        # Bankruptcy-Survivor Scan POST (form submit).
+        if path == "/screening/bankruptcy-survivor":
+            return self._route_bankruptcy_survivor_run()
+
+        # Engagement POST actions. All under /engagements/... so the
+        # csrf_exempt prefix above covers them; the UI uses HTML form
+        # POSTs rather than JSON/AJAX.
+        if path == "/engagements/create":
+            return self._route_engagement_create()
+        if path.startswith("/engagements/") and path.endswith("/members/add"):
+            eid = path.split("/")[2]
+            return self._route_engagement_add_member(eid)
+        if path.startswith("/engagements/") and path.endswith("/comments/post"):
+            eid = path.split("/")[2]
+            return self._route_engagement_post_comment(eid)
+        if path.startswith("/engagements/") and "/deliverables/" in path and path.endswith("/publish"):
+            parts = path.split("/")
+            eid, did = parts[2], parts[4]
+            return self._route_engagement_publish_deliverable(eid, did)
+
         if path == "/pipeline/add":
             return self._route_pipeline_add()
         if path == "/pipeline/save-search":

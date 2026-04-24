@@ -1,0 +1,67 @@
+# State-by-state sale-leaseback regulatory overlay.
+#
+# Seeded from the PESP tracker + state bill texts. The 60-day
+# freshness check in the real-estate module uses last_reviewed
+# the same way the regulatory module does.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://pestakeholder.org/healthcare-legislation-tracker/
+
+states:
+  - code: MA
+    name: Massachusetts
+    statute: H.5159 (2024)
+    status: IN_EFFECT
+    effective_date: 2025-01-01
+    impact: Hospital REIT sale-leaseback restrictions limit conversion
+      of hospital real estate to REIT structures. Pre-existing REIT
+      leases may be grandfathered; new conversions require DPH review.
+    source_urls:
+      - https://malegislature.gov/Bills/193/H5159
+
+  - code: CT
+    name: Connecticut
+    statute: HB 5316 (2025)
+    status: PHASED
+    effective_date: 2026-10-01
+    second_phase_date: 2027-10-01
+    impact: REIT operational control of hospitals banned from
+      2026-10-01; sale-leasebacks banned from 2027-10-01. A deal
+      closing before 2026-10-01 with an existing REIT landlord is
+      lawful but becomes vulnerable to unwind if the REIT exercises
+      operational control.
+    source_urls:
+      - https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill&bill_num=HB05316
+
+  - code: PA
+    name: Pennsylvania
+    statute: HB 1664 (pending 2026)
+    status: PENDING
+    effective_date: null
+    impact: Would require DOH pre-close review for sponsor-led
+      hospital real-estate transactions >$50M. Anticipated effect
+      2026-2027; flag as WATCH until enacted.
+    source_urls:
+      - https://www.legis.state.pa.us/cfdocs/billInfo/billInfo.cfm?sYear=2025&sInd=0&body=H&type=B&bn=1664
+
+  - code: RI
+    name: Rhode Island
+    statute: S.2456 (pending 2026)
+    status: PENDING
+    effective_date: null
+    impact: Attorney General review for hospital conversion
+      transactions including REIT-backed sale-leasebacks.
+    source_urls:
+      - https://legislature.ri.gov/BillText/BillText25/SenateText25/S2456.pdf
+
+# REIT landlords that historically populated the "Steward Score"
+# failure pattern. Target's landlord matching any of these bumps
+# the Steward Score by one factor.
+high_risk_reit_landlords:
+  - Medical Properties Trust
+  - MPT
+  - Global Medical REIT
+  - Community Healthcare Trust
+  - Omega Healthcare Investors
+  - Healthpeak Properties

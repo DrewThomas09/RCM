@@ -1,0 +1,156 @@
+# Corporate Practice of Medicine state lattice.
+#
+# Seeded from the PESP tracker + state bill texts as of 2026-04.
+# Every entry MUST carry source_urls and last_reviewed. The
+# regulatory content-freshness test fails any entry older than
+# 60 days — this is the forcing function for curation cadence.
+#
+# Fields per state:
+#   code              — 2-letter USPS
+#   name              — state name
+#   statute           — primary cite
+#   effective_date    — ISO (null if not yet law)
+#   compliance_deadline — ISO (null if none)
+#   structure_bans    — list of legal structures that are banned
+#                       outright (void ab initio). Choose from:
+#                       FRIENDLY_PC_PASS_THROUGH, MSO_PC_MANAGEMENT_FEE,
+#                       DIRECT_EMPLOYMENT, PROFESSIONAL_LLC
+#   structure_restrictions — list of structures subject to conditions
+#   voided_contracts  — specific contract kinds that may be void
+#   remediation_cost_usd — rough legal + restructuring estimate
+#   last_reviewed     — ISO
+#   source_urls       — list of public URLs
+#
+# "structure_bans" is the hard criterion that flips the composite
+# score to RED. "structure_restrictions" triggers YELLOW.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://pestakeholder.org/healthcare-legislation-tracker/
+
+states:
+  - code: OR
+    name: Oregon
+    statute: SB 951 (2025)
+    effective_date: 2026-01-01
+    compliance_deadline: 2027-01-01
+    structure_bans: [FRIENDLY_PC_PASS_THROUGH]
+    structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
+    voided_contracts:
+      - Management agreements that grant non-physician entities
+        clinical decision-making authority are void ab initio.
+      - Restrictive covenants on physicians in friendly-PC
+        structures are unenforceable.
+    remediation_cost_usd: 850000
+    last_reviewed: 2026-04-23
+    source_urls:
+      - https://olis.oregonlegislature.gov/liz/2025R1/Measures/Overview/SB951
+
+  - code: CA
+    name: California
+    statute: SB 351 (2025) + AB 1415 (2025)
+    effective_date: 2026-01-01
+    compliance_deadline: null
+    structure_bans: []
+    structure_restrictions:
+      - FRIENDLY_PC_PASS_THROUGH
+      - MSO_PC_MANAGEMENT_FEE
+    voided_contracts:
+      - Restrictive covenants that prevent former physicians from
+        disparaging the MSO are unenforceable.
+      - Certain referral structures tying comp to volume or value
+        of referrals to MSO-affiliated ancillaries are
+        unenforceable.
+    remediation_cost_usd: 1200000
+    last_reviewed: 2026-04-23
+    source_urls:
+      - https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260SB351
+      - https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260AB1415
+
+  - code: MA
+    name: Massachusetts
+    statute: H.5159 (2024)
+    effective_date: 2025-01-01
+    compliance_deadline: 2026-01-01
+    structure_bans: []
+    structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
+    voided_contracts:
+      - Hospital REIT sale-leaseback restrictions limit
+        conversion of hospital real estate to REIT structures.
+    remediation_cost_usd: 600000
+    last_reviewed: 2026-04-23
+    source_urls:
+      - https://malegislature.gov/Bills/193/H5159
+
+  - code: IN
+    name: Indiana
+    statute: HB 1666 (2024)
+    effective_date: 2024-07-01
+    compliance_deadline: null
+    structure_bans: []
+    structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
+    voided_contracts:
+      - Restrictive covenants on primary care physicians
+        are unenforceable after 2024-07-01.
+    remediation_cost_usd: 450000
+    last_reviewed: 2026-04-23
+    source_urls:
+      - https://iga.in.gov/legislative/2024/bills/house/1666
+
+  - code: NM
+    name: New Mexico
+    statute: Health Care Consolidation Oversight Act (2024)
+    effective_date: 2024-05-15
+    compliance_deadline: null
+    structure_bans: []
+    structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
+    voided_contracts:
+      - HCCOA notice-and-review required for PE acquisition of
+        provider entities; closings prior to AG review are voidable.
+    remediation_cost_usd: 500000
+    last_reviewed: 2026-04-23
+    source_urls:
+      - https://www.nmlegis.gov/Legislation/Legislation?chamber=H&legType=B&legNo=24&year=24
+
+  - code: WA
+    name: Washington
+    statute: HB 2548 (2024)
+    effective_date: 2024-06-06
+    compliance_deadline: null
+    structure_bans: []
+    structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
+    voided_contracts:
+      - AG transaction-review mandate for provider deals above
+        threshold; unreviewed closings subject to unwind.
+    remediation_cost_usd: 500000
+    last_reviewed: 2026-04-23
+    source_urls:
+      - https://app.leg.wa.gov/billsummary?BillNumber=2548&Year=2023
+
+  - code: CT
+    name: Connecticut
+    statute: HB 5316 (2025)
+    effective_date: 2026-10-01
+    compliance_deadline: 2027-10-01
+    structure_bans: []
+    structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
+    voided_contracts:
+      - REIT operational control of hospitals banned from
+        2026-10-01; sale-leasebacks banned from 2027-10-01.
+    remediation_cost_usd: 750000
+    last_reviewed: 2026-04-23
+    source_urls:
+      - https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill&bill_num=HB05316
+
+  - code: NY
+    name: New York
+    statute: S8157 (pending 2026)
+    effective_date: null
+    compliance_deadline: null
+    structure_bans: []
+    structure_restrictions: []
+    voided_contracts: []
+    remediation_cost_usd: 300000
+    last_reviewed: 2026-04-23
+    source_urls:
+      - https://www.nysenate.gov/legislation/bills/2025/S8157

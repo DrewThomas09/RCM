@@ -185,7 +185,7 @@ def render_sponsor_track_record(
 
     kpis = (
         ck_kpi_block("Sponsors Tracked", str(total_sponsors), f"min {2} deals")
-        + ck_kpi_block("Deals Counted", f"{total_deals:,}", "across full corpus")
+        + ck_kpi_block("Deals Counted", str(total_deals), "across 655-deal corpus")
         + ck_kpi_block("Realized", str(realized),
                         f"{realized/total_deals*100:.0f}% of tracked" if total_deals else "—")
         + ck_kpi_block("Overall Median MOIC",
@@ -284,15 +284,6 @@ def render_sponsor_track_record(
         page_key="sponsor-track-record",
     )
 
-    from .._chartis_kit import ck_related_views
-    related = ck_related_views([
-        ("Sponsor Heatmap",   "/sponsor-heatmap"),
-        ("Deals Library",     "/library"),
-        ("Vintage Cohorts",   "/vintage-cohorts"),
-        ("Sector Intel",      "/sector-intel"),
-        ("Corpus Backtest",   "/corpus-backtest"),
-    ])
-
     body = (
         explainer
         + intro
@@ -305,7 +296,6 @@ def render_sponsor_track_record(
             count=total_sponsors,
         )
         + table
-        + related
     )
 
     return chartis_shell(

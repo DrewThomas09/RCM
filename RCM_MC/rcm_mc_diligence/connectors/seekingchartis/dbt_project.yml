@@ -1,0 +1,93 @@
+name: 'seekingchartis'
+version: '0.1.0'
+config-version: 2
+require-dbt-version: ">=1.10.0"
+
+profile: seekingchartis
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+clean-targets:
+  - target
+  - dbt_packages
+
+flags:
+  # Tuva needs this for its Elementary package materialisation
+  # overrides. Mirrors the_tuva_project/dbt_project.yml.
+  require_explicit_package_overrides_for_builtin_materializations: false
+  require_generic_test_arguments_property: true
+
+# Tuva ships dbt_utils macros under its own namespace; dispatch gives
+# them precedence over whatever dbt_utils we might pick up elsewhere.
+dispatch:
+  - macro_namespace: dbt_utils
+    search_order: ['the_tuva_project', 'dbt_utils']
+
+# Phase 0.A scope — only the claims input layer materialises. Clinical,
+# provider attribution, and FHIR preprocessing stay off because:
+#   - clinical_enabled: implies EHR data (observations, conditions,
+#     encounters). We don't ingest EHR yet; that's Phase 0.B+ once we
+#     land the encounter-bucketing work.
+#   - provider_attribution_enabled: requires an attribution model we
+#     don't compute yet. Tuva's input_layer__provider_attribution
+#     renders an empty stub when this is false — see Tuva source.
+#   - fhir_preprocessing_enabled: defaults to false upstream; noted
+#     here explicitly so it's not accidentally flipped.
+vars:
+  claims_enabled: true
+  claims_preprocessing_enabled: true
+  provider_attribution_enabled: false
+  clinical_enabled: false
+  fhir_preprocessing_enabled: false
+  # Disable heavy claim marts — Phase 0.B+ concerns. We only want the
+  # input layer + its DQ tests for Phase 0.A.
+  ccsr_enabled: false
+  cms_chronic_conditions_enabled: false
+  cms_hcc_enabled: false
+  ed_classification_enabled: false
+  financial_pmpm_enabled: false
+  hcc_recapture_enabled: false
+  hcc_suspecting_enabled: false
+  insights_enabled: false
+  quality_measures_enabled: false
+  readmissions_enabled: false
+  tuva_chronic_conditions_enabled: false
+  tuva_provider_attribution: false
+  # Leave Tuva's input-layer DQI testing on — these are the tests
+  # whose results flow into DQReport.tuva_dq_results.
+  enable_input_layer_testing: true
+  enable_legacy_data_quality: false
+
+models:
+  seekingchartis:
+    +materialized: table
+    input_layer:
+      +schema: main
+  # RATIONALE: Tuva's full DAG assumes every claims mart is enabled and
+  # every terminology seed has been loaded. Phase 0.A only needs the
+  # input layer; enabling everything would require ~1GB of seed
+  # downloads and slow the test suite to minutes. We disable the whole
+  # Tuva package at the project level and selectively re-enable the
+  # input_layer subtree. Input-layer generic tests (not_null, unique,
+  # expect_column_to_exist) are declared per-column in Tuva's model
+  # yaml and still run because they attach to the enabled models.
+  the_tuva_project:
+    +enabled: false
+    # Re-enable only the four input-layer models Phase 0.A depends on.
+    # Clinical input-layer models (location, patient, condition, etc.)
+    # reference models we don't materialise; leaving them disabled.
+    input_layer:
+      input_layer__medical_claim:
+        +enabled: true
+      input_layer__pharmacy_claim:
+        +enabled: true
+      input_layer__eligibility:
+        +enabled: true
+      input_layer__provider_attribution:
+        +enabled: true
+    elementary:
+      +enabled: false

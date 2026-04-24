@@ -1,0 +1,14 @@
+{
+  "all_service_dates_non_null": true,
+  "canonical_claim_count": 7,
+  "description": "Seven rows, seven date formats, one canonical date each.",
+  "fixture": "fixture_05_date_format_hell",
+  "must_have_transformation_rules": [
+    "date_parse:iso",
+    "date_parse:us_slash",
+    "date_parse:us_dash",
+    "date_parse:eu_dot",
+    "date_parse:excel_serial",
+    "date_parse:unix_epoch"
+  ]
+}

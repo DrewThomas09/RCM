@@ -28,7 +28,7 @@ def _waterfall_svg(components: List[Any], total: float, width: int = 640, height
         "Sector Baseline":     P["accent"],
         "Size Adjustment":     "#0ea5e9",
         "Payer Mix Adjustment": "#8b5cf6",
-        "Unexplained Premium": "#b8732a" if total > 0 else P["negative"],
+        "Unexplained Premium": "#f59e0b" if total > 0 else P["negative"],
     }
 
     lines = [
@@ -229,13 +229,13 @@ def render_multiple_decomp(params: Dict[str, str]) -> str:
     # Signal: premium vs. expected
     unexp = result.unexplained_premium
     if unexp > 3.0:
-        signal_html = '<span class="mn" style="color:#b5321e">HIGH PREMIUM — caution</span>'
+        signal_html = '<span class="mn" style="color:#ef4444">HIGH PREMIUM — caution</span>'
     elif unexp > 1.0:
-        signal_html = f'<span class="mn" style="color:#b8732a">+{unexp:.1f}× above fundamentals</span>'
+        signal_html = f'<span class="mn" style="color:#f59e0b">+{unexp:.1f}× above fundamentals</span>'
     elif unexp < -1.0:
         signal_html = f'<span class="mn pos">Discount: {unexp:.1f}× below fundamentals</span>'
     else:
-        signal_html = '<span class="mn" style="color:#465366">Inline with fundamentals</span>'
+        signal_html = '<span class="mn" style="color:#94a3b8">Inline with fundamentals</span>'
 
     kpi_grid = (
         '<div class="ck-kpi-grid">'

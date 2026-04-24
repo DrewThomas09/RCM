@@ -1,0 +1,15 @@
+{
+  "as_of_date": "2026-03-15",
+  "claims_count": 10,
+  "description": "Dec 2025 mature cohort + Feb 2026 young cohort; as_of 2026-03-15.",
+  "expected_cohort_liquidation": {
+    "mature_cohort": "2025-12",
+    "mature_cohort_liquidation_at_30d": 1.0,
+    "mature_cohort_status_at_120": "MATURE",
+    "young_cohort": "2026-02",
+    "young_cohort_status_at_120": "INSUFFICIENT_DATA",
+    "young_cohort_status_at_90": "INSUFFICIENT_DATA"
+  },
+  "hospital": "hospital_03_censoring",
+  "provider_id": "H3"
+}

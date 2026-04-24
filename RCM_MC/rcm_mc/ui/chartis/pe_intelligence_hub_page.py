@@ -96,13 +96,15 @@ _PER_DEAL_ROUTES: List[Dict[str, str]] = [
         "suffix": "partner-review",
         "module": "partner_review.partner_review",
         "desc": "Full IC verdict: recommendation, partner-voice narrative, "
-                "reasonableness bands, heuristic hits, secondary analytics.",
+                "reasonableness bands, heuristic hits, supplemental healthcare "
+                "checks, Claude look, and secondary analytics.",
     },
     {
         "suffix": "red-flags",
         "module": "red_flags + reasonableness",
         "desc": "Focused view: critical/high severity heuristic hits plus "
-                "band violations (OUT_OF_BAND + IMPLAUSIBLE).",
+                "band violations (OUT_OF_BAND + IMPLAUSIBLE), supplemental "
+                "healthcare signals, and Claude status.",
     },
     {
         "suffix": "archetype",
@@ -289,7 +291,8 @@ def render_pe_intelligence_hub(
         f'<code style="color:{P["accent"]};font-family:var(--ck-mono);">'
         f'DealAnalysisPacket</code> and answers the questions a partner actually '
         f'asks in IC — not a taxonomy of features but a library of partner '
-        f'reflexes. Open any deal and click '
+        f'reflexes. Partner Review now also surfaces supplemental healthcare '
+        f'checks and a Claude second-look confirmation card. Open any deal and click '
         f'<a href="#" style="color:{P["accent"]};">Partner Review</a> on the '
         f'deal dashboard to exercise the brain against that packet.'
         f'</p></div>'
@@ -357,7 +360,8 @@ def render_pe_intelligence_hub(
         f'<span style="color:{P["accent"]};">Partner Review</span> '
         f'from the deal dashboard — that page links into every drill-down '
         f'below. Need historical comps first? Browse '
-        f'<a href="/library" style="color:{P["accent"]};">the corpus</a>.'
+        f'<a href="/library" style="color:{P["accent"]};">the corpus</a> '
+        f'(655 deals).'
         f'</div></div>'
     )
 

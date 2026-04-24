@@ -1,0 +1,9 @@
+{
+  "canonical_claim_count_min": 2,
+  "description": "Truncated 837 \u2014 first two claims parse, third is incomplete.",
+  "distinct_source_systems": [
+    "edi_837"
+  ],
+  "fixture": "fixture_06_partial_837",
+  "reader_reports_malformed": true
+}

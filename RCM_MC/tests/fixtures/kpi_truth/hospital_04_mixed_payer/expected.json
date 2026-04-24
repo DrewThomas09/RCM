@@ -1,0 +1,23 @@
+{
+  "as_of_date": "2025-01-01",
+  "claims_count": 20,
+  "description": "Even 5/5/5/5 payer mix \u2014 for distribution-shift / payer-mix checks.",
+  "expected_kpis": {
+    "days_in_ar": {
+      "sample_size": 20,
+      "value": 22.0
+    },
+    "first_pass_denial_rate": {
+      "sample_size": 20,
+      "value": 0.0
+    }
+  },
+  "expected_payer_class_counts": {
+    "COMMERCIAL": 5,
+    "MEDICAID": 5,
+    "MEDICARE": 5,
+    "SELF_PAY": 5
+  },
+  "hospital": "hospital_04_mixed_payer",
+  "provider_id": "H4"
+}

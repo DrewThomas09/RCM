@@ -1,0 +1,5 @@
+claim_id,patient_id,date_of_service,cpt_code,diagnosis_code_1,payer,charge_amount,paid_amount
+CD-001,P-8001,2024-02-01,99213,E11.9,Aetna,150.0,120.0
+CD-002,P-8002,2024-02-02,LEGACY07,I10,Aetna,150.0,120.0
+CD-003,P-8003,2024-02-03,99214,250.00,Aetna,150.0,120.0
+CD-004,P-8004,2024-02-04,99213,V70.0,Aetna,150.0,120.0

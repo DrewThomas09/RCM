@@ -20,7 +20,7 @@ def _cost_stack_svg(cost_lines, ebitda_margin: float) -> str:
     bg = P["panel"]
     colors_rotating = [
         P["accent"], "#8b5cf6", P["warning"], "#14b8a6",
-        "#f97316", P["negative"], "#7a8699",
+        "#f97316", P["negative"], "#64748b",
     ]
 
     x = pad_l

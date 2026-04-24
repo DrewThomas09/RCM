@@ -1,0 +1,8 @@
+claim_id,patient_id,date_of_service,cpt_code,payer,charge_amount,paid_amount
+D-001,P-5001,2024-03-15,99213,Blue Cross,150.0,120.0
+D-002,P-5002,03/15/2024,99213,Blue Cross,150.0,120.0
+D-003,P-5003,03-15-2024,99213,Blue Cross,150.0,120.0
+D-004,P-5004,15.03.2024,99213,Blue Cross,150.0,120.0
+D-005,P-5005,45366,99213,Blue Cross,150.0,120.0
+D-006,P-5006,3/15/24,99213,Blue Cross,150.0,120.0
+D-007,P-5007,1710460800,99213,Blue Cross,150.0,120.0

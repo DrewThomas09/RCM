@@ -1,0 +1,19 @@
+{
+  "canonical_claim_count": 2,
+  "description": "Baseline clean 837 with two claims.",
+  "distinct_source_systems": [
+    "edi_837"
+  ],
+  "fixture": "fixture_01_clean_837",
+  "must_have_transformation_rules": [
+    "cpt_validate:ok",
+    "icd_validate:icd10_ok",
+    "payer_resolve:exact",
+    "date_parse:iso"
+  ],
+  "must_not_have_severity_error": true,
+  "payer_class_counts": {
+    "COMMERCIAL": 1,
+    "MEDICARE": 1
+  }
+}

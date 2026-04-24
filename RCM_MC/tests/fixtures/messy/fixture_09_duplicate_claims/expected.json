@@ -1,0 +1,9 @@
+{
+  "canonical_claim_count": 6,
+  "description": "Two logical claims each resubmitted three times under different IDs.",
+  "duplicate_resubmit_cohorts_min": 2,
+  "fixture": "fixture_09_duplicate_claims",
+  "must_have_transformation_rules": [
+    "duplicate_resubmit"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "canonical_claim_count": 7,
+  "description": "Seven Blue Cross spellings must resolve to one canonical + class.",
+  "distinct_payer_canonicals": [
+    "Blue Cross Blue Shield"
+  ],
+  "fixture": "fixture_04_payer_typos",
+  "must_have_transformation_rules": [
+    "payer_resolve:exact"
+  ],
+  "payer_class_counts": {
+    "COMMERCIAL": 7
+  }
+}

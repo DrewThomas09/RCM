@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: raw_data
+    description: |
+      Raw tables produced by rcm_mc_diligence.ingest.file_loader. One
+      source table per logical input (medical_claims, pharmacy, remittance,
+      eligibility). Populated by Python before dbt runs — dbt only reads.
+    schema: raw_data
+    tables:
+      - name: medical_claims
+        description: 837/adjudicated medical claims, possibly merged across clinics.
+        loaded_at_field: ingest_datetime
+      - name: remittance
+        description: 835 remittance rows (may contain orphans vs medical_claims).
+        loaded_at_field: ingest_datetime
+      - name: pharmacy_claims
+        description: Pharmacy claim rows. Optional — small practices often lack pharmacy.
+        loaded_at_field: ingest_datetime
+      - name: eligibility
+        description: Member eligibility / enrollment spans.
+        loaded_at_field: ingest_datetime

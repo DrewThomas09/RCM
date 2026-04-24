@@ -48,9 +48,13 @@ class MetricSource(str, Enum):
     """Provenance source for a single metric value in the merged profile.
 
     Ordering (high → low confidence):
-      OBSERVED > EXTRACTED > AUTO_POPULATED > PREDICTED > BENCHMARK.
+      OBSERVED > CCD > EXTRACTED > AUTO_POPULATED > PREDICTED > BENCHMARK.
 
     - ``OBSERVED``: analyst entered directly, or Phase-2 actuals import.
+      Also used for explicit overrides (analyst typed a number).
+    - ``CCD``: derived by :mod:`rcm_mc.diligence.benchmarks.kpi_engine`
+      from an uploaded Canonical Claims Dataset. Deal-specific,
+      row-traceable via the CCD's transformation log.
     - ``EXTRACTED``: parsed from a seller file via the document reader
       (Prompt 25). Roughly partner-tier because they came out of the
       seller's own system, but column-mapping can misfire — the
@@ -63,6 +67,7 @@ class MetricSource(str, Enum):
       hospital-specific signal.
     """
     OBSERVED = "OBSERVED"
+    CCD = "CCD"
     EXTRACTED = "EXTRACTED"
     AUTO_POPULATED = "AUTO_POPULATED"
     PREDICTED = "PREDICTED"
@@ -194,10 +199,16 @@ class HospitalProfile:
 @dataclass
 class ObservedMetric:
     value: float
-    source: str = "USER_INPUT"   # USER_INPUT | HCRIS | IRS990 | ...
+    source: str = "USER_INPUT"   # USER_INPUT | HCRIS | IRS990 | CCD | …
     source_detail: str = ""
     as_of_date: Optional[date] = None
     quality_flags: List[str] = field(default_factory=list)
+    # Confidence weighting fed into the merge precedence. 1.0 for
+    # analyst overrides + CCD-derived (row-traceable), 0.7 for partner
+    # YAML, variable for PREDICTED (set by the conformal margin). The
+    # default preserves backwards compatibility with callers that
+    # construct ObservedMetric positionally — the field is new.
+    confidence: float = 1.0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -206,6 +217,7 @@ class ObservedMetric:
             "source_detail": self.source_detail,
             "as_of_date": self.as_of_date.isoformat() if self.as_of_date else None,
             "quality_flags": list(self.quality_flags),
+            "confidence": _json_safe(self.confidence),
         }
 
     @classmethod
@@ -216,6 +228,7 @@ class ObservedMetric:
             source_detail=str(d.get("source_detail") or ""),
             as_of_date=_parse_date(d.get("as_of_date")),
             quality_flags=list(d.get("quality_flags") or []),
+            confidence=float(d.get("confidence") if d.get("confidence") is not None else 1.0),
         )
 
 
@@ -948,7 +961,43 @@ SECTION_NAMES = (
     "diligence_questions",
     "exports",
     "v2_simulation",
+    "integrity_checks",
 )
+
+
+# ── Integrity checks (session 4 gauntlet wire-in) ────────────────────
+
+@dataclass
+class IntegrityCheck:
+    """One guardrail's verdict, serialised onto the packet.
+
+    Mirrors ``rcm_mc.diligence.integrity.split_enforcer.GuardrailResult``
+    exactly, but lives in ``analysis/`` so ``packet.py`` has no
+    ``diligence/`` import. The
+    :func:`rcm_mc.diligence.integrity.preflight.to_integrity_checks`
+    converter handles the boundary.
+
+    Present on every packet (default empty list); populated only when
+    ``build_analysis_packet`` was passed a ``ccd=...`` argument.
+    """
+    guardrail: str
+    ok: bool
+    status: str        # "PASS" | "WARN" | "FAIL"
+    reason: str = ""
+    details: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return _json_safe(asdict(self))
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "IntegrityCheck":
+        return cls(
+            guardrail=str(d.get("guardrail") or ""),
+            ok=bool(d.get("ok", False)),
+            status=str(d.get("status") or "PASS"),
+            reason=str(d.get("reason") or ""),
+            details=dict(d.get("details") or {}),
+        )
 
 
 @dataclass
@@ -1035,6 +1084,14 @@ class DealAnalysisPacket:
     # the analyst didn't upload multi-period history.
     metric_forecasts: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
+    # ── Phase-4 additive sections (Session 4 — integrity gauntlet) ──
+    # Preflight results for the six data-integrity guardrails. Empty
+    # list when no CCD was attached to the build (existing behaviour
+    # unchanged). Populated by ``build_analysis_packet`` step 2 when
+    # ``ccd=...`` is supplied. See
+    # :func:`rcm_mc.diligence.integrity.preflight.run_ccd_guardrails`.
+    integrity_checks: List[IntegrityCheck] = field(default_factory=list)
+
     # ── Helpers ──
 
     def section(self, name: str) -> Any:
@@ -1067,6 +1124,7 @@ class DealAnalysisPacket:
             "risk_flags": [r.to_dict() for r in self.risk_flags],
             "provenance": self.provenance.to_dict(),
             "diligence_questions": [q.to_dict() for q in self.diligence_questions],
+            "integrity_checks": [c.to_dict() for c in self.integrity_checks],
             "exports": dict(self.exports),
             "reimbursement_profile": (dict(self.reimbursement_profile)
                                        if self.reimbursement_profile else None),
@@ -1136,6 +1194,8 @@ class DealAnalysisPacket:
             provenance=ProvenanceSnapshot.from_dict(d.get("provenance") or {}),
             diligence_questions=[DiligenceQuestion.from_dict(q)
                                  for q in (d.get("diligence_questions") or [])],
+            integrity_checks=[IntegrityCheck.from_dict(c)
+                              for c in (d.get("integrity_checks") or [])],
             exports=dict(d.get("exports") or {}),
             reimbursement_profile=(dict(d["reimbursement_profile"])
                                     if d.get("reimbursement_profile") else None),

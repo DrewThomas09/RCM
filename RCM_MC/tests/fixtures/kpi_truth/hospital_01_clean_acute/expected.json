@@ -1,0 +1,47 @@
+{
+  "as_of_date": "2025-01-01",
+  "claims_count": 10,
+  "description": "10 Medicare claims, all paid in 30 days \u2014 bedrock KPI test.",
+  "expected_cohort_liquidation": {
+    "liquidation_pct_at_30d": 1.0,
+    "mature_cohorts_all_120": true,
+    "windows": [
+      30,
+      60,
+      90,
+      120
+    ]
+  },
+  "expected_kpis": {
+    "ar_aging_over_90": {
+      "reason_contains": "no open A/R balance",
+      "value": null
+    },
+    "cost_to_collect": {
+      "reason_contains": "requires cost-of-collection",
+      "value": null
+    },
+    "days_in_ar": {
+      "sample_size": 10,
+      "value": 30.0
+    },
+    "first_pass_denial_rate": {
+      "sample_size": 10,
+      "value": 0.0
+    },
+    "lag_bill_to_cash": {
+      "sample_size": 10,
+      "value": 25.0
+    },
+    "lag_service_to_bill": {
+      "sample_size": 10,
+      "value": 5.0
+    },
+    "net_revenue_realization": {
+      "reason_contains": "contracted-rate",
+      "value": null
+    }
+  },
+  "hospital": "hospital_01_clean_acute",
+  "provider_id": "H1"
+}

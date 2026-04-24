@@ -29,9 +29,9 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 def _moic_color(m: float) -> str:
     if m >= 3.0: return "#22c55e"
-    if m >= 2.0: return "#2fb3ad"
-    if m >= 1.5: return "#b8732a"
-    return "#b5321e"
+    if m >= 2.0: return "#3b82f6"
+    if m >= 1.5: return "#f59e0b"
+    return "#ef4444"
 
 
 # ---------------------------------------------------------------------------
@@ -44,10 +44,10 @@ def _payer_pie_svg(comm: float, medicare: float, medicaid: float, self_pay: floa
     cx = cy = size // 2
     r = size // 2 - 4
     slices = [
-        (comm, "#2fb3ad", "Commercial"),
+        (comm, "#3b82f6", "Commercial"),
         (medicare, "#22c55e", "Medicare"),
-        (medicaid, "#b8732a", "Medicaid"),
-        (self_pay, "#7a8699", "Self-Pay"),
+        (medicaid, "#f59e0b", "Medicaid"),
+        (self_pay, "#64748b", "Self-Pay"),
     ]
     total = sum(v for v, _, _ in slices) or 1.0
     elements = []
@@ -69,7 +69,7 @@ def _payer_pie_svg(comm: float, medicare: float, medicaid: float, self_pay: floa
         angle += sweep
     # inner circle (donut)
     ir = r * 0.45
-    elements.append(f'<circle cx="{cx}" cy="{cy}" r="{ir:.0f}" fill="#f5f1ea"/>')
+    elements.append(f'<circle cx="{cx}" cy="{cy}" r="{ir:.0f}" fill="#0a0e17"/>')
     return (
         f'<svg width="{size}" height="{size}" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
@@ -79,19 +79,19 @@ def _payer_pie_svg(comm: float, medicare: float, medicaid: float, self_pay: floa
 
 def _payer_legend(comm: float, medicare: float, medicaid: float, self_pay: float) -> str:
     items = [
-        ("#2fb3ad", "Commercial", comm),
+        ("#3b82f6", "Commercial", comm),
         ("#22c55e", "Medicare",   medicare),
-        ("#b8732a", "Medicaid",   medicaid),
-        ("#7a8699", "Self-Pay",   self_pay),
+        ("#f59e0b", "Medicaid",   medicaid),
+        ("#64748b", "Self-Pay",   self_pay),
     ]
     rows = []
     for color, label, val in items:
         rows.append(
             f'<div style="display:flex;align-items:center;gap:6px;margin:3px 0;">'
             f'<div style="width:10px;height:10px;background:{color};border-radius:1px;flex-shrink:0;"></div>'
-            f'<div style="font-size:10px;color:#465366;min-width:90px;">{label}</div>'
+            f'<div style="font-size:10px;color:#94a3b8;min-width:90px;">{label}</div>'
             f'<div style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;'
-            f'font-size:10px;color:#1a2332;">{val*100:.1f}%</div>'
+            f'font-size:10px;color:#e2e8f0;">{val*100:.1f}%</div>'
             f'</div>'
         )
     return "".join(rows)
@@ -120,12 +120,12 @@ def _scatter_svg(corpus: List[Dict[str, Any]], width: int = 440, height: int = 2
     # grid
     for pct in (0.2, 0.4, 0.6, 0.8):
         gx = sx(pct)
-        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#d6cfc3" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#1e293b" stroke-width="0.8"/>')
         elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{pct*100:.0f}%</text>')
     for m in (1.0, 2.0, 3.0, 4.0):
         if m > max_moic: break
         gy = sy(m)
-        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#d6cfc3" stroke-width="0.8"/>')
+        elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#1e293b" stroke-width="0.8"/>')
         elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
 
     for d in deals_with_data:
@@ -140,10 +140,10 @@ def _scatter_svg(corpus: List[Dict[str, Any]], width: int = 440, height: int = 2
         )
 
     # axis labels
-    elements.append(f'<text x="{margin["l"]+W//2}" y="{height-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">Commercial %</text>')
+    elements.append(f'<text x="{margin["l"]+W//2}" y="{height-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">Commercial %</text>')
     elements.append(
         f'<text x="9" y="{margin["t"]+H//2}" text-anchor="middle" transform="rotate(-90,9,{margin["t"]+H//2})" '
-        f'font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">Realized MOIC</text>'
+        f'font-family="JetBrains Mono,monospace" font-size="9" fill="#64748b">Realized MOIC</text>'
     )
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
@@ -159,7 +159,7 @@ def _regime_moic_bar(p25: float, p50: float, p75: float, width: int = 100) -> st
     color = _moic_color(p50)
     return (
         f'<svg width="{width}" height="12" xmlns="http://www.w3.org/2000/svg">'
-        f'<rect x="0" y="4" width="{width}" height="4" fill="#d6cfc3"/>'
+        f'<rect x="0" y="4" width="{width}" height="4" fill="#1e293b"/>'
         f'<rect x="{x25}" y="2" width="{max(1,x75-x25)}" height="8" fill="#1d3a5c"/>'
         f'<line x1="{x50}" y1="0" x2="{x50}" y2="12" stroke="{color}" stroke-width="2"/>'
         f'</svg>'
@@ -185,7 +185,7 @@ def render_payer_intel() -> str:
         + ck_kpi_block("Avg Medicare %",   f'<span class="mn">{profile.avg_medicare*100:.1f}%</span>', "corpus-weighted")
         + ck_kpi_block("Avg Medicaid %",   f'<span class="mn">{profile.avg_medicaid*100:.1f}%</span>', "corpus-weighted")
         + ck_kpi_block("Comm↔MOIC Corr",
-                       f'<span class="mn" style="color:{"#22c55e" if comm_corr>0.1 else "#b8732a" if comm_corr>0 else "#b5321e"}">'
+                       f'<span class="mn" style="color:{"#22c55e" if comm_corr>0.1 else "#f59e0b" if comm_corr>0 else "#ef4444"}">'
                        f'{comm_corr:+.2f}</span>', "Spearman rank")
         + '</div>'
     )
@@ -225,19 +225,19 @@ def render_payer_intel() -> str:
     # Regime table
     regime_rows = []
     for i, r in enumerate(profile.regime_stats):
-        stripe = ' style="background:#faf7f0"' if i % 2 == 1 else ""
+        stripe = ' style="background:#0f172a"' if i % 2 == 1 else ""
         mc = _moic_color(r.moic_p50)
         regime_rows.append(f"""<tr{stripe}>
   <td style="padding:5px 8px;font-size:10.5px;">{_html.escape(r.regime)}</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-size:9.5px;color:#7a8699;">{r.commercial_range[0]*100:.0f}–{min(100,r.commercial_range[1]*100):.0f}%</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-size:9.5px;color:#64748b;">{r.commercial_range[0]*100:.0f}–{min(100,r.commercial_range[1]*100):.0f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.n_deals}</td>
   <td style="padding:5px 8px;text-align:center;">{_regime_moic_bar(r.moic_p25, r.moic_p50, r.moic_p75)}</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#7a8699;">{r.moic_p25:.2f}x</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{r.moic_p25:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc};font-weight:500;">{r.moic_p50:.2f}x</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#7a8699;">{r.moic_p75:.2f}x</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{r.moic_p75:.2f}x</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.irr_p50*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#b5321e' if r.loss_rate>0.2 else '#b8732a' if r.loss_rate>0.1 else '#22c55e'};">{r.loss_rate*100:.1f}%</td>
+      color:{'#ef4444' if r.loss_rate>0.2 else '#f59e0b' if r.loss_rate>0.1 else '#22c55e'};">{r.loss_rate*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.avg_commercial_pct*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.avg_medicare_pct*100:.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.avg_medicaid_pct*100:.1f}%</td>
@@ -250,18 +250,18 @@ def render_payer_intel() -> str:
     <table class="ck-table" style="width:100%;">
       <thead>
         <tr>
-          <th style="padding:5px 8px;color:#7a8699;text-align:left;">Regime</th>
-          <th style="padding:5px 8px;color:#7a8699;">Range</th>
-          <th style="padding:5px 8px;color:#7a8699;text-align:right;">Deals</th>
-          <th style="padding:5px 8px;color:#7a8699;min-width:110px;">MOIC Range</th>
-          <th style="padding:5px 8px;color:#7a8699;text-align:right;">P25</th>
-          <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50</th>
-          <th style="padding:5px 8px;color:#7a8699;text-align:right;">P75</th>
-          <th style="padding:5px 8px;color:#7a8699;text-align:right;">P50 IRR</th>
-          <th style="padding:5px 8px;color:#7a8699;text-align:right;">Loss %</th>
-          <th style="padding:5px 8px;color:#7a8699;text-align:right;">Avg Comm%</th>
-          <th style="padding:5px 8px;color:#7a8699;text-align:right;">Avg Med%</th>
-          <th style="padding:5px 8px;color:#7a8699;text-align:right;">Avg Maid%</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:left;">Regime</th>
+          <th style="padding:5px 8px;color:#64748b;">Range</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:right;">Deals</th>
+          <th style="padding:5px 8px;color:#64748b;min-width:110px;">MOIC Range</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:right;">P25</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:right;">P50</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:right;">P75</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:right;">P50 IRR</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:right;">Loss %</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:right;">Avg Comm%</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:right;">Avg Med%</th>
+          <th style="padding:5px 8px;color:#64748b;text-align:right;">Avg Maid%</th>
         </tr>
       </thead>
       <tbody>{''.join(regime_rows)}</tbody>
@@ -273,15 +273,15 @@ def render_payer_intel() -> str:
 </div>"""
 
     deeper_link = (
-        f'<div style="background:#ffffff;border:1px solid #d6cfc3;'
-        f'border-left:3px solid #2fb3ad;padding:10px 14px;margin-bottom:14px;'
+        f'<div style="background:#111827;border:1px solid #1e293b;'
+        f'border-left:3px solid #3b82f6;padding:10px 14px;margin-bottom:14px;'
         f'border-radius:3px;">'
         f'<span style="font-family:JetBrains Mono,monospace;font-size:9.5px;'
-        f'letter-spacing:0.15em;color:#465366;">SUMMARY VIEW</span>'
-        f'<div style="color:#1a2332;font-size:12px;margin-top:4px;">'
+        f'letter-spacing:0.15em;color:#94a3b8;">SUMMARY VIEW</span>'
+        f'<div style="color:#e2e8f0;font-size:12px;margin-top:4px;">'
         f'This is the summary. For the comprehensive payer-mix breakdown '
         f'(4 regimes, per-band MOIC distributions, correlation coefficients) '
-        f'see <a href="/payer-intelligence" style="color:#2fb3ad;">'
+        f'see <a href="/payer-intelligence" style="color:#3b82f6;">'
         f'/payer-intelligence</a>.</div></div>'
     )
 

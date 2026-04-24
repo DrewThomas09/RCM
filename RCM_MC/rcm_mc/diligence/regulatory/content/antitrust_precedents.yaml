@@ -1,0 +1,65 @@
+# FTC / DOJ / state-AG antitrust consent orders and divestitures
+# relevant to PE healthcare rollups.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://www.ftc.gov/enforcement/cases-proceedings
+  - https://www.justice.gov/atr/cases
+
+# Anchor cases used for pattern-matching vs. a target's
+# acquisition history.
+consent_orders:
+  - case: Welsh Carson / U.S. Anesthesia Partners (USAP)
+    action: FTC complaint 2023-09; settlement 2024-01
+    specialty: ANESTHESIOLOGY
+    msas_impacted: [Houston, Dallas, Austin]
+    hhi_at_filing: 3800             # post-merger HHI
+    hhi_threshold_trigger: 2500     # above which an anesthesia
+                                     # rollup in a regulated MSA
+                                     # draws FTC attention
+    remedies:
+      - 30-day prior-notice requirement for future physician
+        practice acquisitions.
+      - Divestiture of Texas holdings.
+    narrative: |
+      First FTC case targeting a PE rollup strategy directly
+      rather than the individual transactions. The 30-day
+      notice regime now applies to hospital-based physician
+      acquisitions in regulated MSAs — flag any target
+      doing same-specialty tuck-ins in concentrated markets.
+
+  - case: Colorado AG / Anesthesia Consultants
+    action: 2023
+    specialty: ANESTHESIOLOGY
+    msas_impacted: [Denver]
+    hhi_at_filing: 2900
+    remedies:
+      - Divestiture; structural-separation commitment.
+
+# Flag thresholds applied to target's acquisition history.
+flag_thresholds:
+  hhi_watch: 2000                   # HHI > 2000 at MSA × specialty
+  hhi_critical: 2500                # HHI > 2500 → 30-day FTC notice
+                                     # trigger
+  rollup_tuck_in_count_watch: 3      # 3+ acquisitions in same
+                                     # specialty × MSA → WATCH
+  rollup_tuck_in_count_critical: 5
+
+# Specialties that drew the most enforcement attention.
+high_risk_specialties:
+  - ANESTHESIOLOGY
+  - RADIOLOGY
+  - EMERGENCY_MEDICINE
+  - DERMATOLOGY
+  - OPHTHALMOLOGY
+  - GASTROENTEROLOGY
+
+# State AGs with active PE-healthcare review regimes.
+state_ag_high_risk:
+  - CA  # HCCOA-style review
+  - OR
+  - MA
+  - CO
+  - IN
+  - WA
+  - NM
