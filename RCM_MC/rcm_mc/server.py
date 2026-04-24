@@ -2244,6 +2244,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.medicare_utilization_page import render_medicare_utilization
             return self._send_html(render_medicare_utilization(_qp))
+        if path == "/named-failures":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.named_failure_library_page import render_named_failure_library
+            return self._send_html(render_named_failure_library(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

@@ -266,6 +266,7 @@ NAV_ITEMS = [
     {"label": "NCCI Scanner", "href": "/ncci-scanner", "icon": "chart"},
     {"label": "HFMA MAP Keys", "href": "/hfma-map-keys", "icon": "bookmark"},
     {"label": "Medicare Utilization", "href": "/medicare-utilization", "icon": "chart"},
+    {"label": "Named-Failure Library", "href": "/named-failures", "icon": "bookmark"},
 ]
 
 NAV_ICONS = {
