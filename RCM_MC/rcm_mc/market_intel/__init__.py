@@ -35,19 +35,34 @@ from .adapters import (
 )
 from .news_feed import NewsItem, news_for_target, sector_sentiment
 from .public_comps import (
-    CategoryBand, PublicComp, category_bands, find_comparables,
-    list_companies,
+    AnalystCoverage, CategoryBand, EarningsLatest, PublicComp,
+    category_bands, find_comparables, list_companies,
+    peer_physician_turnover_stats,
+)
+from .peer_snapshot import PeerSnapshot, compute_peer_snapshot
+from .pe_transactions import (
+    PETransaction, list_transactions, multiple_band_by_specialty,
+    sponsor_activity, transactions_for_specialty,
 )
 from .transaction_multiples import (
     MultipleBand, list_specialty_bands, transaction_multiple,
 )
 
 __all__ = [
+    "AnalystCoverage",
     "CategoryBand",
+    "EarningsLatest",
     "ManualMarketIntelAdapter",
     "MultipleBand",
     "NewsItem",
+    "PETransaction",
+    "PeerSnapshot",
     "PublicComp",
+    "compute_peer_snapshot",
+    "list_transactions",
+    "multiple_band_by_specialty",
+    "sponsor_activity",
+    "transactions_for_specialty",
     "StubVendorBloombergAdapter",
     "StubVendorPitchBookAdapter",
     "StubVendorSeekingAlphaAdapter",
@@ -56,6 +71,7 @@ __all__ = [
     "list_companies",
     "list_specialty_bands",
     "news_for_target",
+    "peer_physician_turnover_stats",
     "sector_sentiment",
     "transaction_multiple",
 ]

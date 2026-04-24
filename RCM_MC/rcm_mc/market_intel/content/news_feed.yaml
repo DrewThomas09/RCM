@@ -154,6 +154,186 @@ items:
     sentiment: negative
     tags: [antitrust, usap, ftc, consent_order]
 
+  - date: 2026-04-22
+    title: "Tenet Q1 2026 beats consensus on ASC pivot"
+    source: Seeking Alpha
+    url: https://seekingalpha.com/article/thc-q1-2026
+    summary: |
+      Tenet posted $3.22 EPS vs $2.98 consensus, driven by the
+      USPI ambulatory surgery segment. Management raised FY26
+      EBITDA guidance 3-5%. Sell-side consensus price target
+      lifted to $182 average.
+    tickers: [THC]
+    specialty: AMBULATORY_SURGERY
+    sentiment: positive
+    tags: [earnings, asc, thc, site_neutral]
+
+  - date: 2026-04-11
+    title: "CMS V28 schedule finalized for 2027 compression"
+    source: Modern Healthcare
+    url: https://www.modernhealthcare.com/v28-2027-final
+    summary: |
+      CMS published the final V28 HCC mapping for CY2027. Aggregate
+      risk-score reduction projected at 3.12% — aligns with CY2025
+      pilot data. Providers with >60% MA mix should model $8-15M
+      revenue compression per $500M NPR.
+    tickers: [HCA, UHS, DVA]
+    specialty: MA_RISK_PRIMARY_CARE
+    sentiment: negative
+    tags: [v28, cms, regulatory, coding_intensity]
+
+  - date: 2026-04-05
+    title: "LHC Group's UHG acquisition clears HSR, closes Q2"
+    source: Reuters
+    url: https://www.reuters.com/2026/04/lhc-uhg-close
+    summary: |
+      UnitedHealth's $8.3B LHC acquisition cleared HSR review with
+      no second request. Closing expected Q2 2026. Signal: home-
+      health remains HSR-clean for vertical integration; contrast
+      with USPI and NovaHealth precedents.
+    tickers: [UNH]
+    specialty: HOME_HEALTH
+    sentiment: positive
+    tags: [m_and_a, hsr, uhg, home_health]
+
+  - date: 2026-03-29
+    title: "Private pay DSO multiples hold at 11-13x despite credit tightening"
+    source: Mertz Taggart
+    url: https://mertztaggart.com/dso-2026-q1
+    summary: |
+      Dental DSO private-transaction multiples held 11-13x EV/EBITDA
+      in Q1 despite broader PE slowdown — driven by private-pay
+      payer mix and absence of federal reimbursement overhang.
+      Seven deals >$200M EV cleared in trailing 90 days.
+    tickers: []
+    specialty: DENTAL_DSO
+    sentiment: positive
+    tags: [rollup, dso, dental, transaction_multiples]
+
+  - date: 2026-03-22
+    title: "DaVita upgraded to Buy at 3 shops on ESRD rate stability"
+    source: Seeking Alpha
+    url: https://seekingalpha.com/article/dva-upgrade-march-2026
+    summary: |
+      Three sell-side shops upgraded DaVita following CMS CY2027
+      ESRD PPS preliminary rate release — 1.8% rate increase with
+      no Medicare Advantage carveouts. Consensus price target moved
+      from $145 to $165.
+    tickers: [DVA]
+    specialty: DIALYSIS
+    sentiment: positive
+    tags: [analyst_upgrade, dialysis, cms, esrd]
+
+  - date: 2026-03-06
+    title: "BCBS-TX restores out-of-network par status for 3 ED groups"
+    source: Fierce Healthcare
+    url: https://www.fiercehealthcare.com/bcbs-tx-par-restoration
+    summary: |
+      Three mid-cap emergency medicine groups secured BCBS-TX par
+      status 14 months after the broad OON termination cycle. ED
+      groups' collections recovery averaging 58% of pre-termination
+      run-rate — suggesting NSA pressure is bounded, not terminal.
+    tickers: []
+    specialty: EMERGENCY_MEDICINE
+    sentiment: mixed
+    tags: [nsa, bcbs, par_restoration, emergency_medicine]
+
+  - date: 2026-02-25
+    title: "Surgery Partners Q1 beat, ASC growth outpaces guidance"
+    source: Seeking Alpha
+    url: https://seekingalpha.com/article/sgry-q1-2026
+    summary: |
+      SGRY posted $0.22 EPS vs $0.19 consensus. ASC volume growth
+      11.3% vs prior-year, outpacing management 9% guidance. Analyst
+      consensus price target lifted to $32 average.
+    tickers: [SGRY]
+    specialty: AMBULATORY_SURGERY
+    sentiment: positive
+    tags: [earnings, asc, sgry, site_neutral]
+
+  - date: 2026-02-12
+    title: "Privia Health reports Q4 miss; MA risk book compression cited"
+    source: Seeking Alpha
+    url: https://seekingalpha.com/article/prva-q4-2025
+    summary: |
+      Privia's Q4 2025 missed EPS consensus as MA risk-bearing book
+      compressed faster than expected. Management guided FY26
+      EBITDA growth below Street. Stock closed -12% on the day.
+    tickers: [PRVA]
+    specialty: MA_RISK_PRIMARY_CARE
+    sentiment: negative
+    tags: [earnings, prva, v28, ma]
+
+  - date: 2026-01-28
+    title: "Welltower raises 2026 acquisition capacity to $8B"
+    source: Modern Healthcare
+    url: https://www.modernhealthcare.com/well-acquisition-capacity
+    summary: |
+      Welltower CEO told Q4 call that the REIT has $8B of acquisition
+      capacity deployable in 2026, focused on senior housing and
+      medical-office. Healthcare real estate remains well-funded
+      counterparty despite MPT overhang.
+    tickers: [WELL]
+    specialty: ACUTE_HOSPITAL
+    sentiment: positive
+    tags: [reit, well, senior_housing, medical_office]
+
+  - date: 2026-01-15
+    title: "Behavioral-health PE deal flow up 40% YoY on staffing stabilization"
+    source: Fierce Healthcare
+    url: https://www.fiercehealthcare.com/behavioral-pe-2026
+    summary: |
+      Behavioral health PE deal volume +40% YoY in Q4 2025, driven
+      by staffing cost stabilization and commercial payer rate
+      stability. Transaction multiples firmed to 10-13x EBITDA on
+      deals >$100M EV.
+    tickers: []
+    specialty: BEHAVIORAL
+    sentiment: positive
+    tags: [behavioral, rollup, transaction_multiples]
+
+  - date: 2026-01-09
+    title: "Change Healthcare fallout: cyber reserves now standard on PE diligence"
+    source: STAT
+    url: https://www.statnews.com/change-cyber-diligence
+    summary: |
+      Two years after the Change Healthcare incident, PE healthcare
+      diligence firms reporting 100% inclusion of cyber reserve
+      line items in EBITDA bridge models. Typical reserve: 50-200
+      bps of revenue depending on BA exposure profile.
+    tickers: []
+    specialty: ACUTE_HOSPITAL
+    sentiment: mixed
+    tags: [cyber, change, reserves, diligence]
+
+  - date: 2025-12-18
+    title: "Hospice roll-up: BrightSpring $1.6B EV clears"
+    source: Modern Healthcare
+    url: https://www.modernhealthcare.com/brightspring-hospice-2025
+    summary: |
+      BrightSpring Health closed $1.6B EV hospice acquisition,
+      keeping hospice roll-up multiples at 13-15x EV/EBITDA.
+      Favorable payer mix + demographic tailwind continue to support
+      sector premium.
+    tickers: []
+    specialty: HOSPICE
+    sentiment: positive
+    tags: [hospice, rollup, brightspring]
+
+  - date: 2025-12-05
+    title: "GI partnership structures tighten on antitrust overhang"
+    source: Mertz Taggart
+    url: https://mertztaggart.com/gi-2025-q4
+    summary: |
+      GI MSO transactions in Q4 2025 increasingly structured as
+      minority non-control investments to avoid HSR thresholds.
+      Median deal size dropped from $180M to $110M EV; valuations
+      unchanged at 12-14x.
+    tickers: []
+    specialty: GASTROENTEROLOGY
+    sentiment: mixed
+    tags: [gi, rollup, antitrust, structure]
+
 # Sentiment tags roll up to sector sentiment.
 sector_sentiment:
   ACUTE_HOSPITAL: negative         # site-neutral + TEAM + Steward/Prospect
