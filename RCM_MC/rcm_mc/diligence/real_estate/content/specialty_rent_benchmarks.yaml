@@ -1,0 +1,66 @@
+# Rent-as-%-revenue benchmarks by specialty.
+#
+# Seeded from Green Street, CBRE, and JLL published research.
+# Steward Health's operating rent ran ~15% of revenue at the time
+# of bankruptcy — >3x the hospital benchmark.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://www.greenstreet.com/insights/healthcare
+  - https://www.jll.com/en-us/research/healthcare
+  - https://www.cbre.com/insights/reports/healthcare-real-estate
+
+specialties:
+  HOSPITAL:
+    label: Acute-care hospital (inpatient)
+    rent_pct_revenue:
+      p25: 0.03
+      p50: 0.04
+      p75: 0.05
+    anchor_note: |
+      Typical acute hospital operates rent at 3-5% of net revenue.
+      Steward at bankruptcy operated above 15% — the historical
+      anchor for "suicidal-leverage sale-leaseback" flag.
+
+  SNF:
+    label: Skilled Nursing Facility
+    rent_pct_revenue:
+      p25: 0.07
+      p50: 0.08
+      p75: 0.10
+    anchor_note: SNFs run 7-10% rent-to-revenue typical.
+
+  MOB:
+    label: Medical Office Building (outpatient practice tenant)
+    rent_pct_revenue:
+      p25: 0.08
+      p50: 0.10
+      p75: 0.12
+    anchor_note: MOB tenants pay 8-12% of revenue as rent.
+
+  ASC:
+    label: Ambulatory Surgery Center
+    rent_pct_revenue:
+      p25: 0.04
+      p50: 0.055
+      p75: 0.07
+    anchor_note: ASCs run 4-7% rent-to-revenue.
+
+  SENIOR_LIVING:
+    label: Senior Living / Assisted Living
+    # Senior-living benchmark is rent + debt service combined as
+    # a share of resident revenue; use rent_plus_debt_pct_revenue
+    # when evaluating this specialty.
+    rent_plus_debt_pct_revenue:
+      p25: 0.32
+      p50: 0.38
+      p75: 0.42
+    anchor_note: Rent + debt service typically <40% of resident revenue.
+
+  BEHAVIORAL:
+    label: Behavioral Health
+    rent_pct_revenue:
+      p25: 0.06
+      p50: 0.08
+      p75: 0.10
+    anchor_note: Behavioral health typically 6-10% rent-to-revenue.
