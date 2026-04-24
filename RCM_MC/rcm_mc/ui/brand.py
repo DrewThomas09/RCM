@@ -282,6 +282,7 @@ NAV_ITEMS = [
     {"label": "RAG / Search", "href": "/rag", "icon": "bookmark"},
     {"label": "CMS Claims Mnl Pub 100-04", "href": "/cms-claims-manual", "icon": "chart"},
     {"label": "Site-Neutral Simulator", "href": "/site-neutral", "icon": "grid"},
+    {"label": "NLRB Elections Tracker", "href": "/nlrb-elections", "icon": "bookmark"},
 ]
 
 NAV_ICONS = {
