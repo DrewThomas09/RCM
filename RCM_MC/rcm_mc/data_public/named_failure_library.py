@@ -780,6 +780,144 @@ def _build_patterns() -> List[NamedFailurePattern]:
             ],
         ),
         NamedFailurePattern(
+            pattern_id="NF-17",
+            case_name="Aveanna Healthcare (Pediatric Home Health)",
+            filing_year=2024,
+            jurisdiction="Distress — public (Nasdaq: AVAH)",
+            docket_ref="SEC 10-K FY2023 + subsequent 8-Ks",
+            sector="Pediatric Home Health / Private Duty Nursing",
+            pre_petition_ev_mm=2_600.0,
+            pre_petition_ebitda_mm=110.0,
+            peak_leverage_turns=8.5,
+            root_cause_short="PDGM transition + Medicaid pediatric nursing rate pressure + SPAC-era over-leverage",
+            root_cause_detail=(
+                "Bain Capital + J.H. Whitney Capital-backed pediatric home-health rollup. SPAC IPO 2021 "
+                "via Dune Acquisition at $2.6B EV. Platform growth strategy depended on sustainable "
+                "PDN (Private Duty Nursing) Medicaid rates, which compressed across multiple states 2022-2024. "
+                "Nursing wage inflation + PDGM home-health-Medicare rate pressure + leveraged cap structure "
+                "produced sustained EBITDA compression, debt covenant pressure, and equity-value collapse "
+                "(~75% decline from IPO through 2024). Bankruptcy not filed as of 2024 but distressed-debt "
+                "status. Also: DOJ FCA settlement 2022 ($18.5M pediatric home-health billing)."
+            ),
+            pre_facto_signals=[
+                "Pediatric home health / PDN Medicaid concentration",
+                "State-level Medicaid PDN rate methodology (patchwork)",
+                "SPAC-era IPO at > 10x revenue multiple",
+                "Nursing wage-inflation sensitivity > 8% annually",
+                "Prior FCA settlement (FCA-021, $18.5M 2022)",
+            ],
+            thresholds=[
+                SignalThreshold("PDN Medicaid revenue share", "> 40% of total", "critical"),
+                SignalThreshold("Multi-state Medicaid exposure", "> 10 states", "warning"),
+                SignalThreshold("Prior FCA settlement", "within 5 years", "warning"),
+                SignalThreshold("Leverage at SPAC IPO", "> 7x", "critical"),
+            ],
+            keyword_fingerprint=[
+                "aveanna", "pediatric home health", "private duty nursing", "pdn ",
+                "medicaid home health", "pediatric nursing", "special-needs pediatric",
+            ],
+            sector_fingerprint=["Home Health", "Pediatric"],
+            citations=[
+                "Aveanna Healthcare Holdings 10-K FY2023 (SEC EDGAR)",
+                "U.S. v. Aveanna Healthcare FCA settlement 2022 (DOJ FCA-021)",
+                "Dune Acquisition DEFM14A 2021 SPAC merger proxy",
+            ],
+        ),
+        NamedFailurePattern(
+            pattern_id="NF-18",
+            case_name="Surgery Partners — 2017-2018 Distressed-Debt Episode",
+            filing_year=2018,
+            jurisdiction="Distress — public (Nasdaq: SGRY)",
+            docket_ref="SEC 10-K restatement + 8-K accounting-control disclosures",
+            sector="Ambulatory Surgery Center Rollup",
+            pre_petition_ev_mm=2_100.0,
+            pre_petition_ebitda_mm=145.0,
+            peak_leverage_turns=9.2,
+            root_cause_short="ASC rollup + NMH acquisition integration + accounting controls weakness + FCA overhang",
+            root_cause_detail=(
+                "Bain Capital-backed ASC platform pursued roll-up strategy culminating in 2017 $760M "
+                "acquisition of National Surgical Healthcare (NMH). Post-close integration revealed "
+                "material-weakness in accounting controls, revenue-recognition restatements, and "
+                "aggressive expected-net-revenue estimation. Stock collapsed ~60% from 2018 peak. "
+                "DOJ FCA ASC-upcoding settlement 2018 ($12.5M, FCA-039) added legal overhang. "
+                "Platform did not bankrupt but serves as canonical 'ASC rollup-integration-distress' pattern. "
+                "Recovery required cap-structure rework + KKR secondary investment 2018."
+            ),
+            pre_facto_signals=[
+                "ASC rollup with > 20 centers",
+                "Recent large acquisition (> 35% of EV)",
+                "Revenue-recognition estimation methodology (expected net revenue)",
+                "Accounting material-weakness disclosure",
+                "Prior or contemporaneous DOJ FCA investigation",
+            ],
+            thresholds=[
+                SignalThreshold("Single acquisition size", "> 35% of EV pre-close", "critical"),
+                SignalThreshold("ASC facility count", "> 20 centers", "warning"),
+                SignalThreshold("Recent material-weakness disclosure", "any", "critical"),
+                SignalThreshold("Expected-net-revenue estimation", "disclosed", "warning"),
+            ],
+            keyword_fingerprint=[
+                "surgery partners", "asc rollup", "ambulatory surgery center rollup",
+                "surgical care affiliates", "united surgical partners", "amsurg",
+                "nsh", "national surgical", "expected net revenue",
+            ],
+            sector_fingerprint=["Ambulatory Surgery Center"],
+            citations=[
+                "Surgery Partners Inc. 10-K FY2017 + restatements (SEC EDGAR)",
+                "U.S. v. Surgery Partners FCA settlement 2018 (DOJ FCA-039)",
+                "Bain Capital Fund XI LP 2015 initial investment disclosures",
+                "KKR 2018 secondary investment 8-K",
+            ],
+        ),
+        NamedFailurePattern(
+            pattern_id="NF-19",
+            case_name="MedPartners — 1998-1999 PPM Collapse (Historical Template)",
+            filing_year=1999,
+            jurisdiction="SEC enforcement + class-action securities",
+            docket_ref="SEC v. MedPartners (N.D. Ala. 1999)",
+            sector="Physician Practice Management (PPM)",
+            pre_petition_ev_mm=8_200.0,
+            pre_petition_ebitda_mm=280.0,
+            peak_leverage_turns=None,
+            root_cause_short="Physician practice management (PPM) rollup collapse — the canonical historical precedent",
+            root_cause_detail=(
+                "MedPartners (parent Caremark Rx) assembled a multi-billion-dollar physician "
+                "practice management platform 1995-1998 via roll-up of 13,000+ physicians. "
+                "Thesis: management company could capture scale-efficiencies + shared services across "
+                "independent physician practices. Reality: physician productivity declined post-acquisition "
+                "('why work harder when you're salaried?'), management-fee collection eroded, the accounting "
+                "rules for capitation revenue proved aggressive, and a $1.2B earnings restatement triggered "
+                "SEC enforcement + securities class action. Stock went from $35 → $2. "
+                "THE canonical historical failure pattern that every PE-backed physician rollup since has "
+                "had to address structurally (hence MSO + Friendly PC + incentive alignment)."
+            ),
+            pre_facto_signals=[
+                "PPM / roll-up with > 5,000 physicians",
+                "Acquired-physician salary structure (vs. incentive)",
+                "Aggressive capitation revenue recognition",
+                "Management-fee collection rate < 90%",
+                "Physician productivity decline post-close > 10%",
+            ],
+            thresholds=[
+                SignalThreshold("Acquired physician count", "> 3,000 at >2x rollup pace", "critical"),
+                SignalThreshold("Physician productivity post-close", "declining ≥ 10%", "critical"),
+                SignalThreshold("Capitation revenue share", "> 30% with aggressive recognition", "critical"),
+                SignalThreshold("Management-fee collection rate", "< 90%", "warning"),
+            ],
+            keyword_fingerprint=[
+                "physician practice management", "ppm ", "ppm rollup",
+                "medpartners", "caremark", "physician rollup",
+                "capitation revenue", "physician salary",
+            ],
+            sector_fingerprint=["Physician Group", "Primary Care"],
+            citations=[
+                "SEC v. MedPartners Inc. Complaint (N.D. Ala. 1999)",
+                "MedPartners Inc. 10-K FY1998 restatement + 1999 amendment",
+                "Caremark Rx 1999 DEFM14A merger proxy",
+                "In re MedPartners Securities Litigation (N.D. Ala. 2000)",
+            ],
+        ),
+        NamedFailurePattern(
             pattern_id="NF-16",
             case_name="Akumin (Imaging Rollup)",
             filing_year=2023,
