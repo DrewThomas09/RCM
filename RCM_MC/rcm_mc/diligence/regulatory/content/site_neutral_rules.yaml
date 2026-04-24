@@ -1,0 +1,65 @@
+# CMS OPPS → PFS site-neutral migration calendar.
+#
+# Three scenarios the simulator projects:
+#   current   — CY2026 OPPS final rule (40% of OPPS for drug admin
+#               in grandfathered off-campus HOPDs)
+#   medpac    — MedPAC all-ambulatory proposal ($2B year-1;
+#               $31.2B over 10 years aggregate)
+#   legislative — full legislative site-neutral expansion
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://www.cms.gov/medicare/medicare-fee-for-service-payment/hospitaloutpatientpps
+  - https://www.medpac.gov/wp-content/uploads/2024/03/Mar24_MedPAC_Report_To_Congress.pdf
+
+scenarios:
+  current:
+    label: CY2026 OPPS Final Rule (as enacted)
+    grandfathered_hopd_drug_admin_rate: 0.40      # 40% of OPPS
+    affected_cpt_families:
+      - DRUG_ADMINISTRATION_96xxx
+    annual_revenue_erosion_pct: 0.08             # 8% revenue at risk
+    phase_in_years: 1
+
+  medpac:
+    label: MedPAC all-ambulatory proposal
+    description: |
+      All services delivered in off-campus HOPDs paid at PFS
+      rates. Year-1 aggregate industry impact $2B; 10-year
+      $31.2B per MedPAC 2024 report.
+    affected_cpt_families:
+      - OFFICE_VISITS_99xxx
+      - DRUG_ADMINISTRATION_96xxx
+      - DIAGNOSTIC_IMAGING_7xxxx
+      - OUTPATIENT_PROCEDURES_1xxxx
+    annual_revenue_erosion_pct: 0.22
+    phase_in_years: 3
+
+  legislative:
+    label: Full legislative site-neutral expansion
+    description: |
+      Hypothetical full parity across all off-campus HOPD services
+      with freestanding physician offices. Aggressive case.
+    affected_cpt_families:
+      - OFFICE_VISITS_99xxx
+      - DRUG_ADMINISTRATION_96xxx
+      - DIAGNOSTIC_IMAGING_7xxxx
+      - OUTPATIENT_PROCEDURES_1xxxx
+      - PHYSICAL_THERAPY_97xxx
+    annual_revenue_erosion_pct: 0.35
+    phase_in_years: 2
+
+# 340B remedy recoupment (CY2026+). CMS is recouping the 340B
+# overpayments from 2018-2022. Overlay on top of site-neutral.
+recoupment_overlay_340b:
+  cy2026_recoupment_pct: 0.005       # 0.5% of OPPS reimbursement
+  cy2027_recoupment_pct: 0.020       # 2.0% of OPPS reimbursement
+  cy2028_recoupment_pct: 0.020
+
+# CPT ranges used to classify claims into site-neutral buckets.
+cpt_family_ranges:
+  DRUG_ADMINISTRATION_96xxx: ["96360", "96549"]
+  OFFICE_VISITS_99xxx:       ["99201", "99499"]
+  DIAGNOSTIC_IMAGING_7xxxx:  ["70000", "79999"]
+  OUTPATIENT_PROCEDURES_1xxxx: ["10021", "19499"]
+  PHYSICAL_THERAPY_97xxx:    ["97001", "97799"]

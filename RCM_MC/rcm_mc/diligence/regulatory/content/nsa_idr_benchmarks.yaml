@@ -1,0 +1,72 @@
+# No Surprises Act IDR (Independent Dispute Resolution) benchmarks.
+#
+# QPA (Qualifying Payment Amount) calculation = median contracted
+# rate for the service × geographic adjustment, bounded below by
+# Medicare rate floor for the CPT. IDR cases settle near QPA when
+# payer prevails; above QPA when provider presents documented cost
+# evidence.
+#
+# Seeded from CMS IDR quarterly reports + anchor case studies
+# (Envision, APP). Update cadence: quarterly as CMS issues new
+# geographic adjustments.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://www.cms.gov/nosurprises
+  - https://aspe.hhs.gov/reports/no-surprises-act
+
+# Anchor case studies we benchmark against.
+case_studies:
+  - name: Envision Healthcare
+    bankruptcy_date: 2023-05-15
+    lbo_date: 2018-10-01
+    lbo_leverage_ratio: 0.71        # ~71% leverage at LBO
+    lbo_ev_usd: 9900000000           # $9.9B KKR LBO
+    oon_revenue_share_pre_nsa: 0.45  # ~45% of revenue was OON
+    nsa_revenue_impact_pct: 0.28     # estimated 28% revenue drop post-NSA
+    narrative: |
+      Envision's 2018 KKR LBO loaded the business with ~71% debt.
+      The NSA took effect Jan 2022. Within 18 months Envision's
+      OON-heavy ER physician business saw IDR decisions trend
+      toward payer-offered rates. Bankruptcy May 2023.
+
+  - name: American Physician Partners
+    bankruptcy_date: 2023-07-24
+    lbo_date: 2016-03-01
+    lbo_leverage_ratio: 0.65
+    lbo_ev_usd: 860000000
+    oon_revenue_share_pre_nsa: 0.38
+    nsa_revenue_impact_pct: 0.22
+    nsa_monthly_drag_usd: 3200000
+    narrative: |
+      APP's liquidating trustee filings cited $3.2M/month NSA
+      drag as a direct cause of liquidity failure. Went from
+      profitable to bankrupt in ~18 months post-NSA.
+
+# Flag thresholds. When target's OON revenue share exceeds these
+# we compare to the anchor cases for the pattern-match memo.
+flag_thresholds:
+  oon_revenue_share_watch: 0.20     # >20% OON → WATCH
+  oon_revenue_share_critical: 0.35  # >35% OON → CRITICAL (Envision-tier)
+  qpa_shortfall_watch: 0.10         # seller-claimed rate 10% above QPA
+  qpa_shortfall_critical: 0.25      # 25%+ above QPA → headline finding
+
+# Specialties covered by NSA OON billing protections.
+covered_specialties:
+  - EMERGENCY_MEDICINE
+  - ANESTHESIOLOGY
+  - RADIOLOGY
+  - PATHOLOGY
+  - NEONATOLOGY
+  - HOSPITALIST
+
+# Rough QPA estimates as % of Medicare rate by specialty. Real
+# calculation requires payer-specific median contracted rates;
+# these anchors are used when contract data is absent.
+specialty_qpa_anchors:
+  EMERGENCY_MEDICINE: 1.65      # QPA ~165% of Medicare rate typical
+  ANESTHESIOLOGY:     1.82
+  RADIOLOGY:          1.55
+  PATHOLOGY:          1.48
+  NEONATOLOGY:        1.72
+  HOSPITALIST:        1.35
