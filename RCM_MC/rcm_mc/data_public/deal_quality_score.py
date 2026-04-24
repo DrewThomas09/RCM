@@ -1,5 +1,32 @@
 """Deal quality scoring — data completeness + analytical credibility.
 
+.. warning::
+    **Name collision with** :mod:`rcm_mc.data_public.deal_quality_scorer`.
+    Both modules export ``score_deal_quality`` and ``DealQualityScore``
+    but with **different dataclass shapes**:
+
+    - **This module** (``deal_quality_score``) — flat dataclass with
+      ``completeness_raw``, ``completeness_pct``, ``credibility_raw``,
+      ``credibility_pct``, ``quality_score``, tier thresholds
+      A≥75/B≥55/C≥35/D<35, weights 55% completeness + 45% credibility.
+      13 tracked fields. Used by ``ui/data_public/deal_quality_page.py``
+      and ``ui/data_public/corpus_dashboard_page.py``. Simpler API;
+      kept as-is to avoid breaking these consumers.
+
+    - ``deal_quality_scorer.py`` — richer nested dataclass with
+      ``DataCompleteness`` + ``List[CredibilityCheck]`` sub-objects,
+      stricter thresholds A≥85/B≥70/C≥55/D<55, weights 65%/35%, 7
+      credibility checks, formatters. 14 tracked fields including
+      ``payer_mix``. Used by ``ui/data_public/deals_library_page.py``.
+
+    **For new code: use** ``deal_quality_scorer`` (richer output,
+    stricter thresholds match IC-grade expectations). This module is
+    retained for backward compatibility with its existing consumers.
+
+    Consolidation would require migrating all three consumer pages
+    to the scorer's nested output shape and updating tests; tracked as
+    a known accretion rather than a bug.
+
 Scores each corpus deal on two axes:
 - Completeness: weighted presence of analytically useful fields
 - Credibility: internal consistency checks (MOIC/IRR alignment, EV/EBITDA bounds, etc.)

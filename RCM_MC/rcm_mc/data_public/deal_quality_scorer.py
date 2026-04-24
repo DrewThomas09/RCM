@@ -1,5 +1,17 @@
 """Deal quality scorer — data completeness and analytical credibility.
 
+.. note::
+    **This is the canonical quality-scoring module for new code.** The
+    companion file ``deal_quality_score.py`` uses the same function
+    names (``score_deal_quality``, ``DealQualityScore``) but returns a
+    simpler flat dataclass with different field names and lower thresholds
+    (A≥75 vs A≥85 here). That file is kept for its existing 3 consumers
+    (``deal_quality_page``, ``corpus_dashboard_page``, its test file);
+    new code should import from this module.
+
+    See ``deal_quality_score.py`` docstring for the full comparison
+    between the two implementations.
+
 Answers the IC question: "How much can we trust the analysis for this deal?"
 
 Two separate assessments:
