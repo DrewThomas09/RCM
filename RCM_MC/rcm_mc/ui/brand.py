@@ -268,6 +268,7 @@ NAV_ITEMS = [
     {"label": "Medicare Utilization", "href": "/medicare-utilization", "icon": "chart"},
     {"label": "Named-Failure Library", "href": "/named-failures", "icon": "bookmark"},
     {"label": "Benchmark Curves", "href": "/benchmark-curves", "icon": "chart"},
+    {"label": "Backtest Harness", "href": "/backtest-harness", "icon": "grid"},
 ]
 
 NAV_ICONS = {
