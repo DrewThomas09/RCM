@@ -1923,6 +1923,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Regulatory Risk Workbench — integrated 9-panel Tier 1-3 view.
         if path == "/diligence/risk-workbench":
             return self._route_risk_workbench()
+        # Counterfactual Advisor — "what would change your mind".
+        if path == "/diligence/counterfactual":
+            return self._route_counterfactual_page()
+        # JSON API for the counterfactual advisor.
+        if path.startswith("/api/counterfactual"):
+            return self._route_counterfactual_api(path)
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -6033,6 +6039,124 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_header("Location", f"/engagements/{engagement_id}")
         self.end_headers()
 
+    # ── Counterfactual Advisor ───────────────────────────────────────
+
+    def _route_counterfactual_page(self) -> None:
+        from .ui.counterfactual_page import render_counterfactual_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        dataset = (qs.get("dataset") or [""])[0]
+
+        def _first(key: str) -> str:
+            return (qs.get(key) or [""])[0].strip()
+
+        def _list(key: str) -> list:
+            raw = _first(key)
+            return [t.strip() for t in raw.split(",") if t.strip()]
+
+        def _float_or_none(key: str):
+            raw = _first(key)
+            if not raw:
+                return None
+            try:
+                return float(raw)
+            except ValueError:
+                return None
+
+        def _int_or_none(key: str):
+            raw = _first(key)
+            if not raw:
+                return None
+            try:
+                return int(float(raw))
+            except ValueError:
+                return None
+
+        metadata: Dict[str, Any] = {
+            k: v for k, v in {
+                "legal_structure": _first("legal_structure") or None,
+                "states": _list("states"),
+                "msas": _list("msas"),
+                "cbsa_codes": _list("cbsa_codes"),
+                "specialty": _first("specialty") or None,
+                "is_hospital_based_physician": bool(_first("specialty")) and
+                    _first("specialty").upper() in {
+                        "EMERGENCY_MEDICINE", "ANESTHESIOLOGY",
+                        "RADIOLOGY", "PATHOLOGY", "NEONATOLOGY",
+                        "HOSPITALIST",
+                    },
+                "landlord": _first("landlord") or None,
+                "lease_term_years": _int_or_none("lease_term_years"),
+                "lease_escalator_pct": _float_or_none("lease_escalator_pct"),
+                "ebitdar_coverage": _float_or_none("ebitdar_coverage"),
+                "geography": _first("geography") or None,
+                "annual_rent_usd": _float_or_none("annual_rent_usd"),
+                "portfolio_ebitdar_usd":
+                    _float_or_none("portfolio_ebitdar_usd"),
+            }.items() if v not in (None, [], "")
+        }
+        self._send_html(render_counterfactual_page(
+            dataset=dataset, metadata=metadata,
+        ))
+
+    def _route_counterfactual_api(self, path: str) -> None:
+        """JSON API surface.
+
+        GET /api/counterfactual/<fixture> → runs against the CCD
+        fixture + returns the full CounterfactualSet + bridge lever
+        as JSON. Optional query params add metadata.
+        """
+        from .diligence._pages import _resolve_dataset
+        from .diligence.counterfactual import (
+            counterfactual_bridge_lever, run_counterfactuals_from_ccd,
+            summarize_ccd_inputs,
+        )
+        parsed = urllib.parse.urlparse(self.path)
+        fixture = path.replace("/api/counterfactual", "").strip("/")
+        if not fixture:
+            return self._send_json(
+                {"error": "missing fixture",
+                 "example": "/api/counterfactual/hospital_08_waterfall_critical"},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        ds_path = _resolve_dataset(fixture)
+        if ds_path is None:
+            return self._send_json(
+                {"error": f"unknown fixture {fixture!r}"},
+                status=HTTPStatus.NOT_FOUND,
+            )
+        qs = urllib.parse.parse_qs(parsed.query)
+        metadata: Dict[str, Any] = {}
+        for key in (
+            "legal_structure", "specialty", "landlord", "geography",
+        ):
+            val = (qs.get(key) or [""])[0]
+            if val:
+                metadata[key] = val
+        for key in ("states", "msas", "cbsa_codes"):
+            raw = (qs.get(key) or [""])[0]
+            if raw:
+                metadata[key] = [t.strip() for t in raw.split(",") if t.strip()]
+        try:
+            from .diligence import ingest_dataset
+            ccd = ingest_dataset(ds_path)
+        except Exception as exc:  # noqa: BLE001
+            return self._send_json(
+                {"error": "ingest failed", "detail": str(exc)},
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+        cf_set = run_counterfactuals_from_ccd(ccd, metadata=metadata)
+        lever = counterfactual_bridge_lever(cf_set)
+        summary = summarize_ccd_inputs(ccd)
+        self._send_json({
+            "fixture": fixture,
+            "metadata": metadata,
+            "ccd_summary": summary,
+            "counterfactual_set": cf_set.to_dict(),
+            "bridge_lever": lever.to_dict(),
+        })
+
     # ── Regulatory Risk Workbench ────────────────────────────────────
 
     def _route_risk_workbench(self) -> None:
@@ -7607,8 +7731,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .pe_intelligence import partner_review
         except Exception as exc:  # noqa: BLE001
             return None, f"pe_intelligence import failed: {exc!r}", meta
+        store = self._require_store()
         try:
-            packet = get_or_build_packet(self._require_store(), deal_id, skip_simulation=True)
+            packet = get_or_build_packet(store, deal_id, skip_simulation=True)
         except Exception as exc:  # noqa: BLE001
             meta["missing_fields"] = ["analysis packet (run a simulation first)"]
             return None, f"packet build failed: {exc!r}", meta
@@ -7616,6 +7741,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             review = partner_review(packet)
         except Exception as exc:  # noqa: BLE001
             return None, f"partner_review raised: {exc!r}", meta
+        try:
+            from .ai.claude_reviewer import build_claude_review
+            review.claude_review = build_claude_review(review, store=store)
+        except Exception as exc:  # noqa: BLE001
+            review.claude_review = {
+                "reviewer": "claude",
+                "status": "failed",
+                "summary": f"Claude review unavailable: {exc!r}",
+                "confirmed_points": [],
+                "concerns": [],
+            }
         return review, None, meta
 
     def _require_store(self) -> Any:

@@ -71,9 +71,17 @@ def render_qoe_memo_html(
     repricing_report: Optional[Any] = None,
     risk_flags: Optional[Iterable[Any]] = None,
     diligence_questions: Optional[Iterable[Any]] = None,
+    counterfactuals: Optional[Any] = None,
     metadata: Optional[QoEMemoMetadata] = None,
 ) -> str:
-    """Render the full QoE memo as a printable HTML document."""
+    """Render the full QoE memo as a printable HTML document.
+
+    ``counterfactuals`` (optional) is a :class:`CounterfactualSet`
+    produced by the counterfactual advisor. When supplied, each
+    counterfactual renders as an entry in the Open Questions
+    section under the 'What Would Change Our Mind' subheading —
+    giving partners a signed memo that includes the walkaway /
+    offer-modification levers."""
     meta = metadata or QoEMemoMetadata()
 
     title = meta.deal_name or meta.target_entity or "Target Entity (TBD)"
@@ -89,6 +97,7 @@ def render_qoe_memo_html(
         _repricing_summary(repricing_report),
         _risk_flags_section(risk_flags),
         _diligence_questions_section(diligence_questions),
+        _counterfactual_section(counterfactuals),
         _signoff_block(meta),
         _appendix(bundle, cash_waterfall, meta),
     ]
@@ -501,6 +510,66 @@ def _diligence_questions_section(questions: Optional[Iterable[Any]]) -> str:
         '<h2>7. Open Diligence Questions</h2>'
         "<p>P0 / P1 items requiring management response before IC.</p>"
         f'<ul class="findings">{"".join(items)}</ul>'
+    )
+
+
+def _counterfactual_section(cfs: Optional[Any]) -> str:
+    """Render the counterfactual set as a 'What Would Change Our Mind'
+    section. When the set is empty (or None), the section is
+    suppressed entirely — the memo doesn't need to render an empty
+    walkaway list."""
+    if cfs is None:
+        return ""
+    items = getattr(cfs, "items", []) or []
+    if not items:
+        return ""
+    rows: List[str] = []
+    for cf in items:
+        module = getattr(cf, "module", "") or ""
+        orig = getattr(cf, "original_band", "") or ""
+        target = getattr(cf, "target_band", "") or ""
+        desc = getattr(cf, "change_description", "") or ""
+        narrative = getattr(cf, "narrative", "") or ""
+        implication = getattr(cf, "deal_structure_implication", "") or ""
+        dollar = float(
+            getattr(cf, "estimated_dollar_impact_usd", 0) or 0
+        )
+        feasibility = getattr(cf, "feasibility", "") or ""
+        dollar_span = (
+            f' Estimated savings: <strong>${dollar:,.0f}</strong>.'
+            if dollar > 0 else " Dollar impact: qualitative."
+        )
+        rows.append(
+            f"<li>"
+            f"<strong>{html.escape(module)}</strong> "
+            f"({html.escape(orig)} → {html.escape(target)}, "
+            f"feasibility {html.escape(feasibility)}): "
+            f"{html.escape(desc)}<br>"
+            f"<span class='hedge'>{html.escape(narrative)}</span>"
+            f"<br><span class='hedge'><strong>Deal structure:</strong> "
+            f"{html.escape(implication)}</span>"
+            f"{dollar_span}"
+            f"</li>"
+        )
+    # Largest-lever callout.
+    largest = getattr(cfs, "largest_lever", None)
+    header = (
+        "<p>Counterfactual analysis: the minimum change that flips "
+        "each band to a better state. Partners use this section to "
+        "shape offer terms, closing conditions, and walkaway "
+        "criteria.</p>"
+    )
+    if largest is not None and largest.estimated_dollar_impact_usd > 0:
+        header += (
+            f"<p><strong>Largest lever:</strong> "
+            f"{html.escape(largest.module)} — "
+            f"{html.escape(largest.change_description)} "
+            f"(savings ~${largest.estimated_dollar_impact_usd:,.0f}).</p>"
+        )
+    return (
+        '<h2>8. What Would Change Our Mind</h2>'
+        f'{header}'
+        f'<ul class="findings">{"".join(rows)}</ul>'
     )
 
 

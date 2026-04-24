@@ -418,8 +418,41 @@ def render_qoe_memo_page(
                 content_ref=f"/diligence/qoe-memo?dataset={dataset}",
             )
 
+        # Counterfactual section — when query params give us the
+        # metadata a CCD can't supply (legal_structure, states,
+        # landlord, etc.), run the advisor + attach to the memo.
+        counterfactuals = None
+        try:
+            from .counterfactual import run_counterfactuals_from_ccd
+            cf_meta: Dict[str, Any] = {}
+            for k in (
+                "legal_structure", "specialty", "landlord",
+                "geography",
+            ):
+                val = (qs.get(k) or [""])[0]
+                if val:
+                    cf_meta[k] = val
+            for k in ("states", "msas", "cbsa_codes"):
+                raw = (qs.get(k) or [""])[0]
+                if raw:
+                    cf_meta[k] = [
+                        t.strip() for t in raw.split(",") if t.strip()
+                    ]
+            if cf_meta.get("specialty") in {
+                "EMERGENCY_MEDICINE", "ANESTHESIOLOGY", "RADIOLOGY",
+                "PATHOLOGY", "NEONATOLOGY", "HOSPITALIST",
+            }:
+                cf_meta["is_hospital_based_physician"] = True
+            if cf_meta:
+                counterfactuals = run_counterfactuals_from_ccd(
+                    ccd, metadata=cf_meta,
+                )
+        except Exception:  # noqa: BLE001 — counterfactuals are additive
+            counterfactuals = None
+
         return render_qoe_memo_html(
             bundle=bundle, cash_waterfall=waterfall, metadata=meta,
+            counterfactuals=counterfactuals,
         )
     except Exception as exc:
         return _qoe_memo_landing(

@@ -24,6 +24,9 @@ import html
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from ..diligence.counterfactual import (
+    CounterfactualSet, advise_all,
+)
 from ..diligence.cyber import (
     assess_business_associates, compose_cyber_score,
     cyber_bridge_reserve_pct, detect_deferred_it_capex,
@@ -699,6 +702,216 @@ def _panel_patient_pay_reputational(inp: WorkbenchInput) -> str:
 
 # ── Main entry point ───────────────────────────────────────────────
 
+def _counterfactual_section(inp: WorkbenchInput) -> str:
+    """Build the 'what would change your mind' section by running
+    every solver that has the input data available."""
+    # Run the engines we can, then hand the results to the advisor.
+    cpom = None
+    if inp.legal_structure and inp.states:
+        try:
+            cpom = compute_cpom_exposure(
+                target_structure=inp.legal_structure,
+                footprint_states=inp.states,
+            )
+        except Exception:  # noqa: BLE001
+            cpom = None
+    nsa = None
+    if (inp.is_hospital_based_physician and inp.specialty
+            and inp.oon_revenue_share is not None
+            and inp.oon_dollars_annual is not None):
+        nsa = compute_nsa_exposure(
+            specialty=inp.specialty,
+            oon_revenue_share=inp.oon_revenue_share,
+            oon_dollars_annual=inp.oon_dollars_annual,
+        )
+    steward = None
+    if inp.landlord or inp.lease_term_years:
+        from ..diligence.real_estate import (
+            LeaseLine, LeaseSchedule, compute_steward_score,
+        )
+        steward = compute_steward_score(
+            LeaseSchedule(lines=[LeaseLine(
+                property_id=inp.target_name,
+                property_type="HOSPITAL",
+                base_rent_annual_usd=float(inp.annual_rent_usd or 1.0),
+                escalator_pct=inp.lease_escalator_pct or 0.0,
+                term_years=inp.lease_term_years or 10,
+                landlord=inp.landlord,
+            )]),
+            portfolio_ebitdar_annual_usd=inp.portfolio_ebitdar_usd,
+            portfolio_annual_rent_usd=inp.annual_rent_usd,
+            geography=inp.geography,
+        )
+    team = None
+    if inp.cbsa_codes:
+        for cbsa in inp.cbsa_codes:
+            try:
+                t = compute_team_impact(
+                    cbsa_code=cbsa, track="track_2",
+                    annual_case_volume={"LEJR": 300, "CABG": 80},
+                )
+                if t.in_mandatory_cbsa:
+                    team = t
+                    break
+            except Exception:  # noqa: BLE001
+                continue
+    antitrust = None
+    if inp.acquisitions and inp.specialty:
+        antitrust = compute_antitrust_exposure(
+            target_specialty=inp.specialty,
+            target_msas=inp.msas,
+            acquisitions=inp.acquisitions,
+        )
+    site_neutral = None
+    if inp.hopd_revenue_annual_usd:
+        site_neutral = simulate_site_neutral_impact(
+            scenario="legislative",
+            hopd_total_revenue_usd=inp.hopd_revenue_annual_usd,
+        )
+    cyber_score = None
+    if inp.ehr_vendor or inp.business_associates:
+        ba_findings = (
+            assess_business_associates(inp.business_associates)
+            if inp.business_associates else []
+        )
+        capex = None
+        if (inp.ehr_vendor and inp.years_since_ehr
+                and inp.annual_revenue_usd and inp.it_fte_count is not None):
+            capex = detect_deferred_it_capex(
+                ehr_vendor=inp.ehr_vendor,
+                years_since_ehr_implementation=float(inp.years_since_ehr),
+                annual_revenue_usd=inp.annual_revenue_usd,
+                it_fte_count=inp.it_fte_count,
+            )
+        bi = None
+        if inp.revenue_per_day_usd:
+            cascade = max(
+                (f.cascade_risk_multiplier for f in ba_findings),
+                default=1.0,
+            )
+            bi = simulate_bi_loss(
+                revenue_per_day_baseline_usd=inp.revenue_per_day_usd,
+                incident_probability_per_year=0.10,
+                cascade_risk_multiplier=cascade,
+                n_runs=500,
+            )
+        cyber_score = compose_cyber_score(
+            ehr_vendor_risk=ehr_vendor_risk_score(inp.ehr_vendor)
+                if inp.ehr_vendor else None,
+            ba_findings=ba_findings,
+            it_capex=capex,
+            bi_loss=bi,
+            annual_revenue_usd=inp.annual_revenue_usd or 0.0,
+        )
+
+    cfs = advise_all(
+        cpom=cpom, nsa=nsa, steward=steward, team=team,
+        antitrust=antitrust, cyber=cyber_score,
+        site_neutral=site_neutral,
+    )
+    if not cfs.items:
+        return ""
+
+    rows: List[str] = []
+    for cf in cfs.items:
+        orig_color = _SEVERITY_COLOR.get(cf.original_band, P["text"])
+        target_color = _SEVERITY_COLOR.get(cf.target_band, P["text"])
+        feas_color = {
+            "HIGH": P["positive"],
+            "MEDIUM": P["warning"],
+            "LOW": P["negative"],
+        }.get(cf.feasibility, P["text"])
+        if cf.estimated_dollar_impact_usd > 0:
+            dollar_html = (
+                f'<span class="mono" style="color:{P["positive"]};'
+                f'font-weight:700;font-size:14px;">'
+                f'${cf.estimated_dollar_impact_usd:,.0f}</span>'
+            )
+        else:
+            dollar_html = (
+                f'<span style="color:{P["text_faint"]};'
+                f'font-style:italic;font-size:11px;">qualitative</span>'
+            )
+        rows.append(
+            f'<div style="background:{P["panel"]};'
+            f'border:1px solid {P["border"]};'
+            f'border-left:4px solid {target_color};border-radius:4px;'
+            f'padding:12px 16px;margin-bottom:10px;">'
+            f'  <div style="display:flex;justify-content:space-between;'
+            f'gap:16px;align-items:flex-start;">'
+            f'    <div style="flex:1;min-width:0;">'
+            f'      <div style="font-size:9px;color:{P["text_faint"]};'
+            f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
+            f'margin-bottom:2px;">{html.escape(cf.module)}</div>'
+            f'      <div style="font-size:13px;color:{P["text"]};'
+            f'font-weight:600;line-height:1.4;">'
+            f'{html.escape(cf.change_description)}</div>'
+            f'      <div style="margin-top:6px;display:flex;gap:6px;'
+            f'align-items:center;flex-wrap:wrap;">'
+            f'        <span style="font-size:9px;letter-spacing:1px;'
+            f'text-transform:uppercase;font-weight:700;padding:2px 6px;'
+            f'background:{P["panel_alt"]};color:{orig_color};'
+            f'border-radius:2px;">{html.escape(cf.original_band)}</span>'
+            f'        <span style="color:{P["text_dim"]};font-size:11px;">→</span>'
+            f'        <span style="font-size:9px;letter-spacing:1px;'
+            f'text-transform:uppercase;font-weight:700;padding:2px 6px;'
+            f'background:{P["panel_alt"]};color:{target_color};'
+            f'border-radius:2px;">{html.escape(cf.target_band)}</span>'
+            f'        <span style="font-size:9px;letter-spacing:1px;'
+            f'text-transform:uppercase;font-weight:600;color:{feas_color};'
+            f'margin-left:6px;">feasibility {html.escape(cf.feasibility)}</span>'
+            f'      </div>'
+            f'    </div>'
+            f'    <div style="text-align:right;min-width:120px;">'
+            f'      <div style="font-size:9px;color:{P["text_faint"]};'
+            f'letter-spacing:1px;text-transform:uppercase;'
+            f'margin-bottom:2px;">Savings</div>'
+            f'      {dollar_html}'
+            f'    </div>'
+            f'  </div>'
+            f'  <div style="font-size:11px;color:{P["text_dim"]};'
+            f'line-height:1.55;margin-top:8px;">'
+            f'{html.escape(cf.narrative)}</div>'
+            f'  <div style="font-size:10px;color:{P["text_faint"]};'
+            f'line-height:1.55;margin-top:8px;padding-top:6px;'
+            f'border-top:1px solid {P["border"]};">'
+            f'<span style="color:{P["text_dim"]};font-weight:600;'
+            f'letter-spacing:.5px;text-transform:uppercase;'
+            f'margin-right:4px;">Deal:</span>'
+            f'{html.escape(cf.deal_structure_implication)}</div>'
+            f'</div>'
+        )
+    largest = cfs.largest_lever
+    header_note = ""
+    if largest:
+        header_note = (
+            f'<div style="font-size:11px;color:{P["text_dim"]};'
+            f'margin-bottom:12px;max-width:760px;line-height:1.55;">'
+            f'<strong style="color:{P["text"]};">'
+            f'{cfs.critical_findings_addressed}</strong> RED/CRITICAL '
+            f'finding(s) have a counterfactual that flips the band. '
+            f'Largest lever: <strong style="color:{P["text"]};">'
+            f'{html.escape(largest.module)}</strong> · '
+            f'{html.escape(largest.lever)}.</div>'
+        )
+    return (
+        f'<div style="margin-top:28px;padding:16px 20px;'
+        f'background:{P["panel"]};border:1px solid {P["border"]};'
+        f'border-radius:4px;position:relative;overflow:hidden;">'
+        f'  <div style="position:absolute;top:0;left:0;right:0;height:2px;'
+        f'background:linear-gradient(90deg,{P["positive"]},{P["accent"]});"></div>'
+        f'  <div style="font-size:9px;color:{P["text_faint"]};'
+        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
+        f'margin-top:4px;margin-bottom:4px;">'
+        f'What Would Change Your Mind</div>'
+        f'  <div style="font-size:18px;color:{P["text"]};font-weight:600;'
+        f'margin-bottom:10px;">Counterfactual Advisor</div>'
+        f'  {header_note}'
+        f'  {"".join(rows)}'
+        f'</div>'
+    )
+
+
 def render_risk_workbench(inp: WorkbenchInput) -> str:
     hero = (
         f'<div style="padding:24px 0 12px 0;">'
@@ -727,10 +940,11 @@ def render_risk_workbench(inp: WorkbenchInput) -> str:
         + _panel_labor_referral(inp)
         + _panel_patient_pay_reputational(inp)
         + '</div>'
+        + _counterfactual_section(inp)
     )
     return chartis_shell(
         body, "RCM Diligence — Risk Workbench",
-        subtitle="Tier 1-3 integrated view",
+        subtitle="Tier 1-3 + Counterfactual Advisor",
     )
 
 
