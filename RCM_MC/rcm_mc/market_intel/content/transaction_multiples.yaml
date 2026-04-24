@@ -1,0 +1,136 @@
+# Private-market healthcare transaction multiple library.
+#
+# Aggregated from public sources (Mertz Taggart healthcare M&A
+# quarterly reports, SRS Acquiom deal-term studies, PitchBook
+# healthcare vertical aggregates, Irving Levin / Levin Associates).
+# Refresh quarterly.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://mertztaggart.com/quarterly-reports
+  - https://www.srsacquiom.com/resources
+  - https://pitchbook.com
+  - https://www.levinassociates.com
+
+# Specialty × deal-size EV/EBITDA multiple bands.
+bands:
+  - specialty: MULTI_SITE_PHYSICIAN_GROUP
+    deal_size_band: SUB_100M
+    p25_ev_ebitda: 6.5
+    p50_ev_ebitda: 8.0
+    p75_ev_ebitda: 9.5
+    sample_size_trailing_12_mo: 42
+
+  - specialty: MULTI_SITE_PHYSICIAN_GROUP
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 8.0
+    p50_ev_ebitda: 10.5
+    p75_ev_ebitda: 13.0
+    sample_size_trailing_12_mo: 28
+
+  - specialty: MULTI_SITE_PHYSICIAN_GROUP
+    deal_size_band: OVER_500M
+    p25_ev_ebitda: 10.0
+    p50_ev_ebitda: 13.0
+    p75_ev_ebitda: 16.5
+    sample_size_trailing_12_mo: 11
+    note: Platform deals with national-scale roll-up potential.
+
+  - specialty: DERMATOLOGY
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 8.5
+    p50_ev_ebitda: 11.0
+    p75_ev_ebitda: 14.0
+    sample_size_trailing_12_mo: 16
+
+  - specialty: OPHTHALMOLOGY
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 9.0
+    p50_ev_ebitda: 12.0
+    p75_ev_ebitda: 15.0
+    sample_size_trailing_12_mo: 18
+
+  - specialty: GASTROENTEROLOGY
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 8.0
+    p50_ev_ebitda: 10.5
+    p75_ev_ebitda: 13.0
+    sample_size_trailing_12_mo: 12
+
+  - specialty: ANESTHESIOLOGY
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 6.0          # NSA overhang depresses multiples
+    p50_ev_ebitda: 8.0
+    p75_ev_ebitda: 10.0
+    sample_size_trailing_12_mo: 8
+    note: |
+      Post-USAP / NSA environment compressed multiples ~30% off
+      2020-2022 peak. Market remains dislocated.
+
+  - specialty: EMERGENCY_MEDICINE
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 5.5           # Envision/APP bankruptcy overhang
+    p50_ev_ebitda: 7.5
+    p75_ev_ebitda: 9.0
+    sample_size_trailing_12_mo: 4
+    note: |
+      Deal volume collapsed post-Envision/APP. Multiples reflect
+      both NSA compression and strategic aversion.
+
+  - specialty: ACUTE_HOSPITAL
+    deal_size_band: OVER_500M
+    p25_ev_ebitda: 7.5
+    p50_ev_ebitda: 9.0
+    p75_ev_ebitda: 11.5
+    sample_size_trailing_12_mo: 5
+
+  - specialty: SNF
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 6.0
+    p50_ev_ebitda: 8.0
+    p75_ev_ebitda: 10.0
+    sample_size_trailing_12_mo: 24
+
+  - specialty: HOME_HEALTH
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 8.0
+    p50_ev_ebitda: 10.0
+    p75_ev_ebitda: 13.0
+    sample_size_trailing_12_mo: 19
+
+  - specialty: HOSPICE
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 10.0
+    p50_ev_ebitda: 13.0
+    p75_ev_ebitda: 16.0
+    sample_size_trailing_12_mo: 14
+
+  - specialty: BEHAVIORAL
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 9.0
+    p50_ev_ebitda: 11.5
+    p75_ev_ebitda: 15.0
+    sample_size_trailing_12_mo: 21
+
+  - specialty: DENTAL_DSO
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 9.5
+    p50_ev_ebitda: 12.0
+    p75_ev_ebitda: 15.0
+    sample_size_trailing_12_mo: 27
+
+  - specialty: MA_RISK_PRIMARY_CARE
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 6.5           # Cano overhang
+    p50_ev_ebitda: 9.0
+    p75_ev_ebitda: 13.5
+    sample_size_trailing_12_mo: 6
+    note: |
+      Cano bankruptcy (Feb 2024) + V28 overhang compressed
+      multiples ~40% vs. 2021 peak. Diligence intensity heightened.
+
+# Deal-size band definitions.
+deal_size_bands:
+  SUB_100M:      {min_ev_usd: 0, max_ev_usd: 100000000}
+  100M_TO_500M:  {min_ev_usd: 100000000, max_ev_usd: 500000000}
+  OVER_500M:     {min_ev_usd: 500000000, max_ev_usd: null}

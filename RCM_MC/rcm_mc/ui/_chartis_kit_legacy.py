@@ -67,6 +67,7 @@ _CORPUS_NAV = [
     {"label": "Risk Workbench",  "href": "/diligence/risk-workbench?demo=steward", "icon": "▣"},
     {"label": "Counterfactual",  "href": "/diligence/counterfactual", "icon": "◉"},
     {"label": "Compare",         "href": "/diligence/compare",    "icon": "▤"},
+    {"label": "Market Intel",    "href": "/market-intel",         "icon": "◈"},
     {"label": "Bankruptcy Scan", "href": "/screening/bankruptcy-survivor", "icon": "▥"},
     {"label": "QoE Memo",        "href": "/diligence/qoe-memo",   "icon": "▣"},
     {"label": "Engagements",     "href": "/engagements",          "icon": "◉"},

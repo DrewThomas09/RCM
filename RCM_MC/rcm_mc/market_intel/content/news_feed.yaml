@@ -1,0 +1,169 @@
+# Healthcare PE + public-operator news feed.
+#
+# Curated from public sources. Each entry points at the primary
+# publication; we do NOT reproduce article text. The feed is used
+# to (a) filter to target-relevant headlines (keyword match on
+# ticker / specialty / location), (b) surface macro sentiment
+# context on the target's market.
+#
+# Refresh weekly. Source outlets are all openly accessible:
+# Modern Healthcare, STAT, Kaiser Health News, Fierce Healthcare,
+# Reuters healthcare wire, Seeking Alpha, ProPublica, PESP.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://www.modernhealthcare.com
+  - https://www.statnews.com
+  - https://kffhealthnews.org
+  - https://www.fiercehealthcare.com
+  - https://pestakeholder.org
+  - https://seekingalpha.com/healthcare
+
+# Each item has: date, title, source, summary, tickers, specialty,
+# sentiment (positive/negative/neutral), url (primary link).
+items:
+  - date: 2026-04-18
+    title: "CMS finalises CY 2026 site-neutral drug administration cuts"
+    source: Modern Healthcare
+    url: https://www.modernhealthcare.com/2026/04/cms-site-neutral-final
+    summary: |
+      CMS finalised the CY2026 OPPS rule locking drug-administration
+      reimbursement in grandfathered off-campus HOPDs at 40% of the
+      on-campus rate. Affected hospital operators face ~$200-400M
+      annual revenue erosion industry-wide.
+    tickers: [HCA, THC, CYH, UHS]
+    specialty: ACUTE_HOSPITAL
+    sentiment: negative
+    tags: [site_neutral, opps, regulatory]
+
+  - date: 2026-04-14
+    title: "Aetna/CVS $117.7M DOJ settlement over retrospective MA coding"
+    source: STAT
+    url: https://www.statnews.com/2026/04/aetna-doj-settlement
+    summary: |
+      CVS settled with DOJ over add-only retrospective chart reviews
+      that inflated MA risk scores. Case was anchor for FCA
+      exposure modeling in MA-risk-bearing platforms.
+    tickers: [CVS]
+    specialty: MA_RISK_PRIMARY_CARE
+    sentiment: negative
+    tags: [fca, ma, coding_intensity, doj]
+
+  - date: 2026-04-08
+    title: "TEAM model goes live: 741 hospitals mandatory-enrolled"
+    source: Fierce Healthcare
+    url: https://www.fiercehealthcare.com/team-mandatory-enrollment
+    summary: |
+      CMS TEAM bundled-payment mandatory enrollment effective Jan 1,
+      2026 covering 741 hospitals in 188 CBSAs. Two-thirds of
+      participants projected to lose ~$1,350/case at baseline.
+    tickers: [HCA, THC, UHS, ARDT, CYH]
+    specialty: ACUTE_HOSPITAL
+    sentiment: negative
+    tags: [team, bundled_payment, regulatory]
+
+  - date: 2026-03-27
+    title: "Envision successor-vehicle raises $2.1B; no PE sponsor"
+    source: Reuters
+    url: https://www.reuters.com/2026/03/envision-successor-fund
+    summary: |
+      Envision emerged from restructuring as a physician-owned
+      vehicle rather than re-PE-sponsored. Market signal: NSA
+      environment structurally incompatible with aggressive
+      LBO structures on hospital-based physician groups.
+    tickers: []
+    specialty: EMERGENCY_MEDICINE
+    sentiment: neutral
+    tags: [nsa, bankruptcy_emergence, emergency_medicine]
+
+  - date: 2026-03-15
+    title: "HCA Q1 2026: EV/EBITDA compressed to 8.9x on rate fears"
+    source: Seeking Alpha
+    url: https://seekingalpha.com/article/hca-q1-2026
+    summary: |
+      HCA missed Q1 consensus EBITDA by 2.1% on site-neutral + TEAM
+      headwinds; multiple compressed from 10.2x trailing 12mo to
+      8.9x. Analyst consensus cut FY26 EBITDA 4-6%.
+    tickers: [HCA]
+    specialty: ACUTE_HOSPITAL
+    sentiment: negative
+    tags: [earnings, multiple_compression]
+
+  - date: 2026-03-10
+    title: "CT HB 5316 passes second chamber, sale-leaseback phase-out confirmed"
+    source: PESP
+    url: https://pestakeholder.org/ct-hb-5316
+    summary: |
+      Connecticut HB 5316 passes Senate. REIT operational control
+      banned effective Oct 1 2026; sale-leaseback bans effective
+      Oct 1 2027. Adds to MA H.5159 enacted 2025 Q1.
+    tickers: [MPW]
+    specialty: ACUTE_HOSPITAL
+    sentiment: negative
+    tags: [sale_leaseback, regulatory, reit, connecticut]
+
+  - date: 2026-02-28
+    title: "Steward Trustee releases $4.8B MPT lease claim analysis"
+    source: Modern Healthcare
+    url: https://www.modernhealthcare.com/steward-trustee-mpt
+    summary: |
+      Liquidating trustee quantifies MPT master-lease exposure at
+      $4.8B. Industry data-point: REIT sale-leaseback + PE
+      ownership structurally correlated with bankruptcy outcome.
+    tickers: [MPW]
+    specialty: ACUTE_HOSPITAL
+    sentiment: negative
+    tags: [steward, sale_leaseback, bankruptcy, mpt]
+
+  - date: 2026-02-18
+    title: "Ophthalmology MSO roll-ups rebound: $2.1B EV deal clears"
+    source: Mertz Taggart
+    url: https://mertztaggart.com/ophth-2026-q1
+    summary: |
+      Ophthalmology MSO rolls-ups continued clearing at 12-15x EV/EBITDA
+      despite broader PE slowdown. Seven deals >$100M EV in
+      trailing 90 days; no FTC 30-day notice cases.
+    tickers: []
+    specialty: OPHTHALMOLOGY
+    sentiment: positive
+    tags: [rollup, msa, opht]
+
+  - date: 2026-02-04
+    title: "Cano Health Ch. 11 exit: $3.4B EV writedown, new owner"
+    source: KFF Health News
+    url: https://kffhealthnews.org/cano-exit-march-2026
+    summary: |
+      Cano Health emerged from Chapter 11 at a $650M enterprise
+      value, a 85% write-down from pre-bankruptcy SPAC valuation.
+      V28 compression cited as structural cause.
+    tickers: []
+    specialty: MA_RISK_PRIMARY_CARE
+    sentiment: negative
+    tags: [cano, v28, ma, bankruptcy_emergence]
+
+  - date: 2026-01-22
+    title: "USAP-precedent: Welsh Carson signs second consent order"
+    source: STAT
+    url: https://statnews.com/2026/01/welsh-carson-consent-order
+    summary: |
+      Welsh Carson signed FTC consent order for the second time,
+      expanding the 30-day prior-notice regime to include all
+      dermatology MSO tuck-ins in HHI-regulated MSAs.
+    tickers: []
+    specialty: DERMATOLOGY
+    sentiment: negative
+    tags: [antitrust, usap, ftc, consent_order]
+
+# Sentiment tags roll up to sector sentiment.
+sector_sentiment:
+  ACUTE_HOSPITAL: negative         # site-neutral + TEAM + Steward/Prospect
+  EMERGENCY_MEDICINE: neutral      # post-Envision rebuild
+  ANESTHESIOLOGY: negative         # NSA + USAP overhang
+  MA_RISK_PRIMARY_CARE: negative   # V28 + Cano + Aetna DOJ
+  OPHTHALMOLOGY: positive          # clean roll-up momentum
+  DERMATOLOGY: mixed               # positive dealflow / negative antitrust
+  GASTROENTEROLOGY: positive
+  DENTAL_DSO: positive
+  HOSPICE: positive
+  HOME_HEALTH: mixed
+  BEHAVIORAL: positive

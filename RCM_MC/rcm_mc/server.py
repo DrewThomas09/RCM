@@ -1932,6 +1932,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Side-by-side compare.
         if path == "/diligence/compare":
             return self._route_compare_page()
+        # Market intelligence — public healthcare comps + PE news.
+        if path == "/market-intel":
+            return self._route_market_intel_page()
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -6052,6 +6055,39 @@ class RCMHandler(BaseHTTPRequestHandler):
         left = (qs.get("left") or [""])[0]
         right = (qs.get("right") or [""])[0]
         self._send_html(render_compare_page(left=left, right=right))
+
+    # ── Market Intelligence ──────────────────────────────────────────
+
+    def _route_market_intel_page(self) -> None:
+        from .ui.market_intel_page import render_market_intel_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+
+        def _first(k: str, default: str = "") -> str:
+            return (qs.get(k) or [default])[0].strip()
+
+        def _float(k: str):
+            raw = _first(k)
+            if not raw:
+                return None
+            try:
+                return float(raw)
+            except ValueError:
+                return None
+
+        def _list(k: str) -> List[str]:
+            raw = _first(k)
+            return [t.strip() for t in raw.split(",") if t.strip()]
+
+        self._send_html(render_market_intel_page(
+            category=_first("category") or None,
+            specialty=_first("specialty") or None,
+            ev_usd=_float("ev_usd"),
+            revenue_usd=_float("revenue_usd"),
+            tickers=_list("tickers") or None,
+            tags=_list("tags") or None,
+        ))
 
     # ── Counterfactual Advisor ───────────────────────────────────────
 
