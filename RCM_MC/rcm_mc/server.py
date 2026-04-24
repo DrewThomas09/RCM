@@ -1944,6 +1944,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Claim-level denial prediction — CCD-native predictive analytic.
         if path == "/diligence/denial-prediction":
             return self._route_denial_prediction_page()
+        # Unified deal profile — one source of truth per deal.
+        if path == "/diligence/deal" or path.startswith("/diligence/deal/"):
+            return self._route_deal_profile_page(path)
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -6064,6 +6067,18 @@ class RCMHandler(BaseHTTPRequestHandler):
         left = (qs.get("left") or [""])[0]
         right = (qs.get("right") or [""])[0]
         self._send_html(render_compare_page(left=left, right=right))
+
+    # ── Deal Profile ─────────────────────────────────────────────────
+
+    def _route_deal_profile_page(self, path: str) -> None:
+        from .ui.deal_profile_page import render_deal_profile_page
+        slug = ""
+        if path.startswith("/diligence/deal/"):
+            slug = path.replace("/diligence/deal/", "", 1).strip("/")
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_deal_profile_page(slug=slug, qs=qs))
 
     # ── Denial Prediction ────────────────────────────────────────────
 

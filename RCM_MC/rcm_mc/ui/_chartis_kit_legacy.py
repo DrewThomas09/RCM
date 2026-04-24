@@ -60,6 +60,7 @@ _CORPUS_NAV = [
     # first because it's where the analyst lives during a 3-week
     # sprint; everything else is downstream context.
     {"label": "RCM DILIGENCE", "separator": True},
+    {"label": "Deal Profile",    "href": "/diligence/deal",       "icon": "◉"},
     {"label": "Ingestion",       "href": "/diligence/ingest",     "icon": "▤"},
     {"label": "Benchmarks",      "href": "/diligence/benchmarks", "icon": "▦"},
     {"label": "Root Cause",      "href": "/diligence/root-cause", "icon": "▥"},
