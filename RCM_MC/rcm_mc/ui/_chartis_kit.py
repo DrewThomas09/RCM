@@ -242,6 +242,7 @@ _CORPUS_NAV = [
     {"label": "CMS PIM 100-08", "href": "/cms-pim",             "icon": "▥"},
     {"label": "★ Track Record",  "href": "/track-record",       "icon": "◈"},
     {"label": "CPOM 50-State",  "href": "/cpom-lattice",        "icon": "▤"},
+    {"label": "RAG / Search",   "href": "/rag",                 "icon": "▣"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
     {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},

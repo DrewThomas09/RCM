@@ -279,6 +279,7 @@ NAV_ITEMS = [
     {"label": "CMS PIM 100-08", "href": "/cms-pim", "icon": "bookmark"},
     {"label": "★ Track Record", "href": "/track-record", "icon": "chart"},
     {"label": "CPOM 50-State", "href": "/cpom-lattice", "icon": "grid"},
+    {"label": "RAG / Search", "href": "/rag", "icon": "bookmark"},
 ]
 
 NAV_ICONS = {
