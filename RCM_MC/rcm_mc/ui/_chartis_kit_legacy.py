@@ -64,6 +64,8 @@ _CORPUS_NAV = [
     {"label": "Benchmarks",      "href": "/diligence/benchmarks", "icon": "▦"},
     {"label": "Root Cause",      "href": "/diligence/root-cause", "icon": "▥"},
     {"label": "Value Creation",  "href": "/diligence/value",      "icon": "◈"},
+    {"label": "Risk Workbench",  "href": "/diligence/risk-workbench?demo=steward", "icon": "▣"},
+    {"label": "Bankruptcy Scan", "href": "/screening/bankruptcy-survivor", "icon": "▥"},
     {"label": "QoE Memo",        "href": "/diligence/qoe-memo",   "icon": "▣"},
     {"label": "Engagements",     "href": "/engagements",          "icon": "◉"},
 

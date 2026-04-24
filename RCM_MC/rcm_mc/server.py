@@ -1920,6 +1920,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Pre-screening: Bankruptcy-Survivor Scan landing (form).
         if path == "/screening/bankruptcy-survivor":
             return self._route_bankruptcy_survivor_landing()
+        # Regulatory Risk Workbench — integrated 9-panel Tier 1-3 view.
+        if path == "/diligence/risk-workbench":
+            return self._route_risk_workbench()
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -6029,6 +6032,27 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.SEE_OTHER)
         self.send_header("Location", f"/engagements/{engagement_id}")
         self.end_headers()
+
+    # ── Regulatory Risk Workbench ────────────────────────────────────
+
+    def _route_risk_workbench(self) -> None:
+        """GET /diligence/risk-workbench?demo=steward → runs the
+        Steward replay through all 9 panels. Without ``demo``, renders
+        an empty workbench with guidance to supply fixture inputs."""
+        from .ui.risk_workbench_page import (
+            WorkbenchInput, demo_steward_input, render_risk_workbench,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        demo = (qs.get("demo") or [""])[0].lower()
+        if demo == "steward":
+            inp = demo_steward_input()
+        else:
+            inp = WorkbenchInput(
+                target_name=(qs.get("target_name") or ["Unnamed Target"])[0],
+            )
+        self._send_html(render_risk_workbench(inp))
 
     # ── Bankruptcy-Survivor Scan ─────────────────────────────────────
 
