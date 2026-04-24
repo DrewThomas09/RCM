@@ -24,7 +24,8 @@ This replaces the slice of healthcare diligence that firms typically outsource t
 ## Table of contents
 
 1. [What it does](#1-what-it-does)
-2. [Module surface — 17 analytic cuts](#2-module-surface--17-analytic-cuts)
+2. [Module surface — 17 partner-facing analytic cuts](#2-module-surface--17-analytic-cuts)
+2a. [What sits underneath — the engineering base](#2a-what-sits-underneath--the-engineering-base)
 3. [How the models work](#3-how-the-models-work)
 4. [Install](#4-install)
 5. [Deal walkthrough (Monday AM → IC-ready by 10:30 AM)](#5-deal-walkthrough-mondayam--ic-ready-by-1030am)
@@ -53,7 +54,7 @@ Every number is reproducible. Same inputs, same outputs. Monte Carlo is seeded w
 
 ---
 
-## 2. Module surface — 17 analytic cuts
+## 2. Module surface — 17 partner-facing analytic cuts
 
 ### Screening
 1. **HCRIS Peer X-Ray** — 17,701 Medicare cost reports (FY 2020–2022) × 15 derived metrics × cohort-matched peer group
@@ -82,11 +83,21 @@ Every number is reproducible. Same inputs, same outputs. Monte Carlo is seeded w
 ### Synthesis
 17. **Bear Case + IC Packet** — 8-source evidence synthesizer, severity × $-impact ranked, citation-keyed, print-ready memo HTML
 
-### Financial modeling (can we make money?)
-13. **Deal Monte Carlo** — runs 3,000 simulated futures for the deal, shows the range of possible MOIC (money multiple) and IRR (annual return) outcomes.
-14. **Covenant Stress Lab** — models debt payments quarter by quarter, shows probability of breaching loan covenants.
-15. **Bridge Auto-Auditor** — paste the seller's synergy claims, get a risk-adjusted rebuild with counter-offer math.
-16. **Exit Timing + Buyer Fit** — when should you sell the company, and to whom?
+These 17 are the partner-facing analytic surfaces — the pages a user sees. They sit on top of a substantially larger engineering base (detailed below).
+
+---
+
+## 2a. What sits underneath — the engineering base
+
+The 17 surfaces above are rendered from roughly **1,300 Python source files** organized as follows:
+
+- **29 backend sub-packages** — `core`, `pe`, `rcm`, `analysis`, `ml`, `mc`, `portfolio`, `deals`, `alerts`, `auth`, `data`, `exports`, `reports`, `scenarios`, `ui`, `infra`, `provenance`, `integrations`, `verticals`, `ai`, `analytics`, `compliance`, `engagement`, `finance`, `intelligence`, `lookup`, `market_intel`, `data_demo`, plus the top-level entry points (`server.py`, `cli.py`, `api.py`, `pe_cli.py`, `portfolio_cmd.py`).
+- **35 diligence sub-modules** under `rcm_mc/diligence/` — benchmarks, checklist, counterfactual, cyber, deal_autopsy, deal_mc, denial_prediction, exit_timing, integrity, labor, ma_dynamics, management_scorecard, patient_pay, physician_attrition, physician_comp, physician_eu, quality, real_estate, referral, regulatory, reputational, root_cause, screening, synergy, value, working_capital, plus the seven new-this-cycle modules (hcris_xray, regulatory_calendar, covenant_lab, bridge_audit, bear_case, payer_stress, thesis_pipeline).
+- **276 PE-intelligence modules** under `rcm_mc/pe_intelligence/` — the partner-brain layer covering IC decision synthesis, 3-year value-creation plans, archetype cascades, banker-narrative decoding, earn-out design, covenant package design, buyer-type fit, 9 deal-smell detectors, reverse diligence checklists, first-sit-down prep, partner-voice memos, and more. Each is its own Python file; the `pe_intelligence` [README](RCM_MC/rcm_mc/pe_intelligence/README.md) indexes them all.
+- **61 UI page renderers** under `rcm_mc/ui/` — one per partner-facing page, each wrapping the shared `shell()` in `_ui_kit.py`.
+- **332 test files / roughly 2,971 passing tests** under `RCM_MC/tests/` — every feature gets a `test_<feature>.py`; every filed bug has a `test_bug_fixes_b<N>.py` regression.
+
+The 17 surfaces are where the product shows up. The codebase underneath is where the reproducibility, the auditability, and the portfolio-operations layer live. For the full navigable file map see [FILE_INDEX.md](FILE_INDEX.md); for per-module detail, every sub-package has its own README.
 
 ---
 
