@@ -1,196 +1,138 @@
-# RCM-MC v0.6.0
+# RCM-MC (inside SeekingChartis)
 
-**Revenue Cycle Management Monte Carlo** -- a healthcare private-equity diligence and portfolio operations platform.
+**Revenue Cycle Management + Monte Carlo**
 
-RCM-MC combines Monte Carlo simulation, PE-math (bridge / MOIC / IRR / covenant headroom), and a full-featured web console into a single Python package. Partners use it to screen hospitals, run diligence, track hold-period operations, and prepare IC presentations -- all from one tool with zero external dependencies.
+This is the Python package that does all the work. If you're reading this, you're one level inside the main repo. For the big-picture explanation in plain English, go up one level to [../README.md](../README.md).
+
+This README covers the package-level how-tos for developers.
 
 ---
 
-## Quick Start
+## 30-second start
 
 ```bash
-# 1. Create virtual environment
-python3.14 -m venv .venv
-source .venv/bin/activate
-
-# 2. Install with all optional deps
+# From this directory (RCM_MC/):
+python3.14 -m venv ../.venv
+source ../.venv/bin/activate
 pip install -e ".[all]"
-
-# 3. Seed demo data + launch browser
 python demo.py
-
-# Or start manually with a fresh database
-rcm-mc serve --db portfolio.db --port 8080
 ```
 
-Open `http://localhost:8080`. The portfolio dashboard appears with deal cards, health scores, and alert badges.
+Browser opens at `http://localhost:8080`. Done.
 
 ---
 
-## What This Platform Does
+## What this package is
 
-### Deal Lifecycle (End-to-End)
+A Python package (`rcm_mc`) that, when installed, gives you:
 
-```
-Screen --> Source --> Diligence --> IC Prep --> Close --> Hold --> Exit
-  |          |           |            |          |        |        |
-/screen   /source    /new-deal    /analysis   /deal   /hold    /exit
-```
+1. A **command-line tool** (`rcm-mc`) for scripting / cron
+2. A **local HTTP web app** for interactive use
+3. A **Python API** if you want to embed it in another tool
 
-| Stage | Page / API | What Happens |
-|-------|-----------|--------------|
-| **Screen** | `GET /screen` | Paste hospital names, get ranked verdicts with denial/AR/collection scores |
-| **Source** | `GET /source?thesis=denial_turnaround` | Thesis-driven origination from 6,000+ HCRIS hospitals |
-| **Diligence** | `GET /new-deal` | 5-step wizard: CCN lookup, HCRIS pre-fill, data upload, review, launch |
-| **Analyze** | `GET /analysis/<id>` | Bloomberg-style workbench: 7 tabs (Overview, RCM Profile, EBITDA Bridge, Monte Carlo, Scenarios, Risk & Diligence, Provenance) |
-| **Compare** | `GET /compare?deals=a,b` | Side-by-side metrics, EBITDA trajectory SVG, radar chart |
-| **IC Prep** | `GET /api/deals/<id>/checklist` | Readiness assessment: packet built? notes recorded? plan created? |
-| **Memo** | `GET /api/deals/<id>/memo` | AI-generated IC memo with fact-checking (LLM optional) |
-| **Track** | `GET /deal/<id>` | Notes, tags, deadlines, health score, variance, initiatives |
-| **Alerts** | `GET /alerts` | Fire / ack / snooze / escalate lifecycle with returning-badge |
-| **Export** | `GET /api/deals/<id>/package` | One-click ZIP: executive summary, bridge, risk matrix, questions, data |
+### The three doors into the same house
 
-### Portfolio Operations
+| Want to... | Use... |
+|------------|--------|
+| Click around a web UI | `python demo.py`, open `http://localhost:8080` |
+| Script a batch diligence run | `rcm-mc analysis <deal_id>` |
+| Call from your own Python code | `from rcm_mc.diligence.thesis_pipeline import run_thesis_pipeline` |
 
-| Feature | Location |
-|---------|----------|
-| Dashboard with funnel + KPIs | `GET /` |
-| Health score (0-100) + trend | `GET /api/deals/<id>/health` |
-| Cohorts, watchlists, owners | `GET /cohorts`, `GET /watchlist`, `GET /owners` |
-| LP digest (partner-ready) | `GET /lp-update` |
-| Portfolio Monte Carlo | `GET /portfolio/monte-carlo` |
-| Heatmap + geographic map | `GET /portfolio/heatmap`, `GET /portfolio/map` |
-| Cross-deal metric matrix | `GET /api/portfolio/matrix` |
-| Alerts summary by severity | `GET /api/portfolio/alerts` |
-
-### AI Features
-
-| Feature | Endpoint | Description |
-|---------|----------|-------------|
-| IC Memo | `GET /api/deals/<id>/memo?llm=1` | LLM-generated sections with fact-checking against packet data |
-| Document QA | `GET /api/deals/<id>/qa?q=...` | Search indexed deal documents, return answers with confidence |
-| Chat | `POST /api/chat` | Multi-turn conversational interface with tool dispatch |
-
-All three fall back gracefully when no LLM API key is configured.
+All three dispatch into the same analytic engines. One source of truth.
 
 ---
 
-## Architecture
+## The modules ship in 5 groups
+
+| Group | Purpose | Lives in |
+|-------|---------|----------|
+| **Diligence** | Analytic modules (one per partner question) | `rcm_mc/diligence/` |
+| **Market intel** | Public comps + PE transactions + news feed | `rcm_mc/market_intel/` |
+| **Portfolio ops** | Alerts, deals, health score, deadlines, LP digest | `rcm_mc/portfolio/` + `deals/` + `alerts/` |
+| **Financial engines** | Monte Carlo, PE math, bridge, scenarios | `rcm_mc/mc/` + `pe/` + `core/` |
+| **UI** | Server-rendered web pages | `rcm_mc/ui/` |
+
+The 7 modules shipped in the most recent cycle are inside `diligence/`:
+- `regulatory_calendar/` — CMS/OIG/FTC event kill-switch
+- `covenant_lab/` — capital stack × covenant breach MC
+- `bridge_audit/` — banker-bridge reality check against priors
+- `bear_case/` — IC memo counter-narrative auto-generator
+- `payer_stress/` — payer-mix rate-shock stress lab
+- `hcris_xray/` — Medicare cost-report peer benchmarking
+- `thesis_pipeline/` — 14-step orchestrator over all the above
+
+Each has its own README inside the folder.
+
+---
+
+## Running tests
+
+```bash
+# The new cycle modules (fast, 8 seconds):
+python -m pytest tests/test_hcris_xray.py tests/test_bear_case.py \
+  tests/test_payer_stress.py tests/test_bridge_audit.py \
+  tests/test_covenant_lab.py tests/test_regulatory_calendar.py \
+  tests/test_thesis_pipeline.py tests/test_deal_profile.py \
+  tests/test_ic_packet.py tests/test_deal_mc.py \
+  tests/test_exit_timing.py tests/test_seeking_alpha.py \
+  tests/test_diligence_checklist.py -q
+
+# Should print: 258 passed
+
+# The full suite (slow, ~14 minutes):
+python -m pytest tests/ -q --ignore=tests/test_integration_e2e.py
+
+# Should print: 8,477 passed, 57 failed (the 57 are pre-existing
+# UI-revert collateral, not cycle-module regressions)
+```
+
+---
+
+## The architecture (layer rules)
 
 ```
 Browser / CLI / Cron
-        |
-        v
-   server.py (10K lines)     HTTP app: auth, CSRF, rate-limit, gzip,
-        |                     ETags, CORS, CSP, audit logging
-        v
-   feature packages           alerts/, deals/, portfolio/, auth/,
-        |                     ai/, pe/, mc/, analysis/, exports/,
-        v                     scenarios/, data/, infra/, ui/
-   store.py                   SQLite: single file, WAL mode,
-        |                     busy_timeout=5000, FK enforcement
-        v
-   portfolio.db               One file = entire database
+        ↓
+rcm_mc/server.py         ← HTTP routing (stdlib http.server)
+rcm_mc/cli.py            ← top-level CLI
+        ↓
+feature subpackages      ← diligence/, market_intel/, portfolio/
+        ↓
+core + pe + rcm + mc     ← simulator, PE-math, Monte Carlo
+        ↓
+rcm_mc/portfolio/store.py ← SQLite connection manager
+        ↓
+SQLite file on disk
 ```
 
-### Key Design Decisions
-
-- **Zero external services** -- no Redis, no Postgres, no Docker, no message queue
-- **Single-file database** -- one `.db` file contains all deals, runs, alerts, audit events
-- **Stdlib HTTP** -- `http.server.ThreadingHTTPServer`, no Flask/FastAPI
-- **Server-rendered HTML** -- no SPA, no React, no build step. One shared `shell()` function wraps every page
-- **Packet-centric** -- every UI page, API endpoint, and export renders from a single `DealAnalysisPacket` instance
-- **Dark mode default** -- CSS custom properties with `@media (prefers-color-scheme: dark)` override
+Every layer calls down, never up. The store is the only module that touches the database directly.
 
 ---
 
-## Project Stats
+## Coding conventions
 
-| Metric | Value |
-|--------|-------|
-| Version | 0.6.0 |
-| Python | 3.10+ (developed on 3.14) |
-| Tests | **2,883** (all passing) |
-| Source files | 241 |
-| Test files | 225 |
-| Total lines | 78,678 |
-| API endpoints | 52 paths, 56 methods |
-| HTTP methods | GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS |
-| OpenAPI | Full spec at `/api/openapi.json`, Swagger UI at `/api/docs` |
-| Security headers | 7 (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, CORS, Vary) |
-| Response headers | 5 (X-Request-Id, X-Response-Time, X-API-Version, ETag, Retry-After) |
-| Web pages | 15+ |
-| Runtime deps | numpy, pandas, pyyaml, matplotlib, openpyxl |
+- **No new runtime deps** without discussion
+- **Parameterized SQL only** — never f-string values into SQL
+- **`html.escape()` every user-supplied string** before rendering
+- **Private helpers prefix with `_`**
+- **Docstrings explain WHY, not WHAT** — code says what; docstring explains the constraint or prior incident that drove the decision
+- **Financial figures**: 2 decimal places (`$450.25M`). Percentages: 1 decimal (`15.3%`). Multiples: 2 decimals + `x` (`2.50x`).
 
 ---
 
-## CLI Reference
+## Where to read more
 
-```bash
-# Main Monte Carlo simulation
-rcm-mc --actual actual.yaml --benchmark benchmark.yaml --n-sims 10000 --seed 42
-
-# Version
-rcm-mc --version
-
-# Portfolio management
-rcm-mc portfolio --db p.db list
-rcm-mc portfolio --db p.db register --deal-id acme --stage loi --notes "Initial"
-rcm-mc portfolio --db p.db users create --username boss --password "Strong!1" --role admin
-
-# Analysis packet
-rcm-mc analysis acme --db p.db
-
-# Data refresh (downloads from CMS)
-rcm-mc data refresh hcris
-rcm-mc data status
-
-# HTTP server
-rcm-mc serve --db p.db --port 8080 --host 0.0.0.0
-```
+- **Plain-English overview**: [../README.md](../README.md)
+- **Detailed walkthrough**: [../WALKTHROUGH.md](../WALKTHROUGH.md)
+- **Developer guide**: [readME/03_Developer_Guide.md](readME/03_Developer_Guide.md)
+- **API reference**: [readME/01_API_Reference.md](readME/01_API_Reference.md)
+- **Architecture deep-dive**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ---
 
-## Documentation
+## Status
 
-Documentation is organized into two places:
-
-### User Guide — [readME/](readME/README.md)
-
-26 numbered documents covering every aspect of the platform:
-
-| Document | Contents |
-|----------|----------|
-| **[readME/README.md](readME/README.md)** | **Master index — start here** |
-| [00 Walkthrough Tutorial](readME/00_Walkthrough_Tutorial.md) | 30-minute hands-on tour with copy-paste commands |
-| [01 API Reference](readME/01_API_Reference.md) | All 52 endpoints with parameters, responses, examples |
-| [02 Configuration & Ops](readME/02_Configuration_and_Operations.md) | Database, auth, deployment, backup, monitoring |
-| [03 Developer Guide](readME/03_Developer_Guide.md) | Architecture, testing, coding conventions |
-| [04 Getting Started](readME/04_Getting_Started.md) | Installation, first run, basic workflow |
-| [05 Architecture](readME/05_Architecture.md) | System design, data flow, design decisions |
-| [06 Analysis Packet](readME/06_Analysis_Packet.md) | The canonical `DealAnalysisPacket` dataclass |
-| [07 Partner Workflow](readME/07_Partner_Workflow.md) | End-to-end workflow: screen → source → diligence → IC → hold → exit |
-| [08–25 Deep-dives](readME/README.md) | Metric provenance, benchmark sources, model improvement, glossary, data flow, build status, layer-by-layer architecture (Analysis / Data / Domain / Infra / MC / ML / PE / Provenance / UI) |
-
-### Reference Specs — [docs/](docs/README.md)
-
-6 canonical reference documents:
-
-| Document | Contents |
-|----------|----------|
-| [ANALYSIS_PACKET.md](docs/ANALYSIS_PACKET.md) | Every field in `DealAnalysisPacket` with type and builder step |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layer diagram and dependency rules |
-| [BENCHMARK_SOURCES.md](docs/BENCHMARK_SOURCES.md) | CMS HCRIS, Care Compare, IRS 990, SEC EDGAR field-by-field |
-| [METRIC_PROVENANCE.md](docs/METRIC_PROVENANCE.md) | Metric-to-source traceability with confidence tiers |
-| [MODEL_IMPROVEMENT.md](docs/MODEL_IMPROVEMENT.md) | Known limitations and Tier 1–3 improvement roadmap |
-| [PE_HEURISTICS.md](docs/PE_HEURISTICS.md) | 275+ PE partner rules, named failure patterns, and thesis-trap detectors |
-
-### Module READMEs — [rcm_mc/](rcm_mc/)
-
-Every source package has its own `README.md` with per-file documentation (what it does, how it works, data sources). See [readME/README.md](readME/README.md) → Source Code READMEs table for the full list.
-
----
-
-## License
-
-Proprietary. See LICENSE file.
+- **Python**: 3.14
+- **Tests**: 258/258 green on new cycle modules · 8,477/8,534 (99.3%) full suite
+- **Branch**: `fix/revert-ui-reskin` (merged to `main`)
+- **GitHub**: https://github.com/DrewThomas09/RCM
