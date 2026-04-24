@@ -285,6 +285,9 @@ NAV_ITEMS = [
     {"label": "NLRB Elections Tracker", "href": "/nlrb-elections", "icon": "bookmark"},
     {"label": "★ Velocity — Moat 6", "href": "/velocity", "icon": "chart"},
     {"label": "Causal Inference (AIPW)", "href": "/causal", "icon": "grid"},
+    {"label": "NSA IDR Modeler", "href": "/nsa-idr", "icon": "chart"},
+    {"label": "OIG Work Plan Tracker", "href": "/oig-workplan", "icon": "bookmark"},
+    {"label": "QoE Deliverable", "href": "/qoe", "icon": "chart"},
 ]
 
 NAV_ICONS = {
