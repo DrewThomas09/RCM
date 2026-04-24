@@ -1,0 +1,371 @@
+version: 2
+models:
+  - name: input_layer__provider_attribution
+    description: >-
+      The provider_attribution table assigns a provider to each patient member
+      month of eligibility. Users may assign both a payer-attributed provider,
+      as typically assigned by the payer in value-based care contracts, and a
+      custom-attributed provider defined by the user. Fields related to each
+      attributed provider, such as practice, organization, and line of
+      business, are also present. This table allows you to input a custom
+      attribution assignment from another system, or you can use the Provider
+      Attribution data mart to do this assignment from claims data.
+    grain: Intended to be one record per person, member, year month, payer, plan, and data source.
+    mapping_instructions: 'No explicit mapping instructions provided.'
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          config:
+            severity: error
+            enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
+            tags:
+              - tuva_dqi_sev_1
+              - dqi
+              - dqi_service_categories
+              - dqi_ccsr
+              - dqi_cms_chronic_conditions
+              - dqi_tuva_chronic_conditions
+              - dqi_cms_hccs
+              - dqi_ed_classification
+              - dqi_financial_pmpm
+              - dqi_quality_measures
+              - dqi_readmission
+          arguments:
+            combination_of_columns:
+              - person_id
+              - member_id
+              - payer
+              - '{{ ''"plan"'' if (target.type == ''fabric'') else ''plan'' }}'
+              - year_month
+              - data_source
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_input_layer{% else %}input_layer{%- endif -%}
+      tags: input_layer
+      materialized: view
+    columns:
+      - name: person_id
+        description: Unique identifier for each person in the dataset.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['ahrq_measures', 'cms_hccs', 'financial_pmpm', 'provider_attribution', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: error
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_service_categories
+                  - dqi_ccsr
+                  - dqi_cms_chronic_conditions
+                  - dqi_tuva_chronic_conditions
+                  - dqi_cms_hccs
+                  - dqi_ed_classification
+                  - dqi_financial_pmpm
+                  - dqi_quality_measures
+                  - dqi_readmission
+          - not_null:
+              config:
+                severity: error
+                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_service_categories
+                  - dqi_ccsr
+                  - dqi_cms_chronic_conditions
+                  - dqi_tuva_chronic_conditions
+                  - dqi_cms_hccs
+                  - dqi_ed_classification
+                  - dqi_financial_pmpm
+                  - dqi_quality_measures
+                  - dqi_readmission
+        config:
+          meta:
+            data_type: varchar
+            is_primary_key: true
+      - name: patient_id
+        description: Identifier that links a patient to a particular clinical source system.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: []
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+      - name: member_id
+        description: 'Identifier that links a patient to a particular insurance product or health plan. A patient can have more than one member_id because they can have more than one insurance product/plan.'
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['financial_pmpm']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+          - not_null:
+              config:
+                severity: error
+                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+            is_primary_key: true
+      - name: year_month
+        description: Unique year-month in the dataset computed from eligibility.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['ahrq_measures', 'cms_hccs', 'financial_pmpm', 'provider_attribution', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: error
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_service_categories
+                  - dqi_ccsr
+                  - dqi_cms_chronic_conditions
+                  - dqi_tuva_chronic_conditions
+                  - dqi_cms_hccs
+                  - dqi_ed_classification
+                  - dqi_financial_pmpm
+                  - dqi_quality_measures
+                  - dqi_readmission
+          - not_null:
+              config:
+                severity: error
+                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_service_categories
+                  - dqi_ccsr
+                  - dqi_cms_chronic_conditions
+                  - dqi_tuva_chronic_conditions
+                  - dqi_cms_hccs
+                  - dqi_ed_classification
+                  - dqi_financial_pmpm
+                  - dqi_quality_measures
+                  - dqi_readmission
+        config:
+          meta:
+            data_type: varchar
+            is_primary_key: true
+      - name: payer
+        description: Name of the payer (i.e. health insurer) providing coverage.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['cms_hccs', 'financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+            is_primary_key: true
+      - name: plan
+        description: Name of the plan (i.e. sub contract) providing coverage.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['cms_hccs', 'financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+            is_primary_key: true
+      - name: data_source
+        description: User-configured field that indicates the data source.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['ahrq_measures', 'cms_hccs', 'financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: error
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_service_categories
+                  - dqi_ccsr
+                  - dqi_cms_chronic_conditions
+                  - dqi_tuva_chronic_conditions
+                  - dqi_cms_hccs
+                  - dqi_ed_classification
+                  - dqi_financial_pmpm
+                  - dqi_quality_measures
+                  - dqi_readmission
+          - not_null:
+              config:
+                severity: error
+                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_service_categories
+                  - dqi_ccsr
+                  - dqi_cms_chronic_conditions
+                  - dqi_tuva_chronic_conditions
+                  - dqi_cms_hccs
+                  - dqi_ed_classification
+                  - dqi_financial_pmpm
+                  - dqi_quality_measures
+                  - dqi_readmission
+        config:
+          meta:
+            data_type: varchar
+            is_primary_key: true
+      - name: payer_attributed_provider
+        description: Unique identifier for the provider assigned to this patient-year_month by the payer.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+      - name: payer_attributed_provider_practice
+        description: Name of the practice for the payer attributed provider.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+      - name: payer_attributed_provider_organization
+        description: Name of the organization for the payer attributed provider.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+      - name: payer_attributed_provider_lob
+        description: Name of the line of business for the payer attributed provider (e.g. medicare, medicaid, commercial).
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+      - name: custom_attributed_provider
+        description: Unique identifier for the provider assigned to this patient-year_month by the user.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+      - name: custom_attributed_provider_practice
+        description: Name of the practice for the attributed provider assigned by the user.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+      - name: custom_attributed_provider_organization
+        description: Name of the organization for the attributed provider assigned by the user.
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
+      - name: custom_attributed_provider_lob
+        description: Name of the line of business for the attributed provider assigned by the user (e.g. medicare, medicaid, commercial).
+        mapping_instructions: 'No explicit mapping instructions provided.'
+        required_for_data_marts: ['financial_pmpm', 'semantic_layer']
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              config:
+                severity: warn
+                enabled: '{{ (var(''enable_input_layer_testing'', true)) | as_bool }}'
+                tags:
+                  - tuva_dqi_sev_1
+                  - dqi
+                  - dqi_financial_pmpm
+        config:
+          meta:
+            data_type: varchar
