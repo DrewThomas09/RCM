@@ -1,0 +1,82 @@
+# Physician compensation FMV benchmark library.
+#
+# Seeded from PUBLIC AGGREGATES ONLY until MGMA / Sullivan Cotter /
+# AMGA data licensing is formalised. Every entry flags which source
+# it came from and which are placeholders. A real pre-sale
+# engagement must pay for the licensed data before quoting these
+# numbers in a memo.
+
+last_reviewed: 2026-04-23
+source_urls:
+  - https://www.mgma.com/data/compensation-data (licensed — placeholder here)
+  - https://www.sullivancotter.com/surveys/physician-compensation (licensed)
+  - https://www.amga.org/research/physician-compensation-and-productivity (licensed)
+  - https://www.beckershospitalreview.com/compensation-issues.html (public aggregates)
+
+# Top-level data-license warning — UI + memo templates cite this.
+data_license_status: PUBLIC_AGGREGATES
+warning: |
+  These anchors are public-aggregate approximations. A licensed
+  MGMA / Sullivan Cotter / AMGA pull MUST replace them before
+  publishing a partner-signed FMV opinion. VMG's FMV-MD remains
+  the compliance-letter workflow of record.
+
+# Specialty × ownership_type benchmarks. Anchors are 50th-percentile
+# total comp. Percentile spreads (p25..p90) are public-aggregate
+# approximations — treat as order-of-magnitude only.
+specialties:
+  FAMILY_MEDICINE:
+    independent: {p25: 220000, p50: 260000, p75: 310000, p90: 370000}
+    hospital_employed: {p25: 240000, p50: 280000, p75: 330000, p90: 395000}
+    academic: {p25: 200000, p50: 240000, p75: 285000, p90: 340000}
+
+  INTERNAL_MEDICINE:
+    independent: {p25: 235000, p50: 275000, p75: 325000, p90: 390000}
+    hospital_employed: {p25: 250000, p50: 290000, p75: 345000, p90: 410000}
+    academic: {p25: 215000, p50: 255000, p75: 300000, p90: 360000}
+
+  EMERGENCY_MEDICINE:
+    independent: {p25: 340000, p50: 395000, p75: 450000, p90: 520000}
+    hospital_employed: {p25: 360000, p50: 415000, p75: 475000, p90: 550000}
+    academic: {p25: 320000, p50: 375000, p75: 435000, p90: 500000}
+
+  ANESTHESIOLOGY:
+    independent: {p25: 395000, p50: 475000, p75: 560000, p90: 680000}
+    hospital_employed: {p25: 410000, p50: 490000, p75: 580000, p90: 700000}
+    academic: {p25: 370000, p50: 440000, p75: 525000, p90: 625000}
+
+  CARDIOLOGY:
+    independent: {p25: 520000, p50: 620000, p75: 745000, p90: 900000}
+    hospital_employed: {p25: 540000, p50: 640000, p75: 770000, p90: 925000}
+    academic: {p25: 480000, p50: 570000, p75: 685000, p90: 825000}
+
+  ORTHOPEDICS:
+    independent: {p25: 600000, p50: 745000, p75: 925000, p90: 1150000}
+    hospital_employed: {p25: 625000, p50: 775000, p75: 950000, p90: 1175000}
+    academic: {p25: 540000, p50: 660000, p75: 800000, p90: 995000}
+
+# wRVU benchmarks by specialty (same licensing caveats).
+wrvu_anchors:
+  FAMILY_MEDICINE:   {p25: 4400, p50: 5100, p75: 5900, p90: 6800}
+  INTERNAL_MEDICINE: {p25: 4600, p50: 5300, p75: 6100, p90: 7050}
+  EMERGENCY_MEDICINE: {p25: 7200, p50: 8400, p75: 9700, p90: 11200}
+  ANESTHESIOLOGY:    {p25: 10500, p50: 12500, p75: 14800, p90: 17500}
+  CARDIOLOGY:        {p25: 8400, p50: 10200, p75: 12400, p90: 15100}
+  ORTHOPEDICS:       {p25: 7800, p50: 9700, p75: 12100, p90: 15000}
+
+# Comp per wRVU anchors — the headline metric used in FMV reviews.
+comp_per_wrvu_anchors:
+  FAMILY_MEDICINE:   {p25: 47, p50: 53, p75: 60, p90: 69}
+  INTERNAL_MEDICINE: {p25: 48, p50: 54, p75: 62, p90: 71}
+  EMERGENCY_MEDICINE: {p25: 44, p50: 50, p75: 57, p90: 65}
+  ANESTHESIOLOGY:    {p25: 35, p50: 40, p75: 46, p90: 53}
+  CARDIOLOGY:        {p25: 56, p50: 62, p75: 71, p90: 82}
+  ORTHOPEDICS:       {p25: 72, p50: 80, p75: 90, p90: 105}
+
+# Stark Law thresholds (2021+ final rule).
+stark_thresholds:
+  aggregate_comp_p90_multiplier: 1.0      # stacked comp above 90th
+                                           # percentile draws scrutiny
+  per_click_fmv_cap_hourly_usd: 1500      # indicative FMV cap; real
+                                           # FMV requires specialty
+                                           # + geography specificity
