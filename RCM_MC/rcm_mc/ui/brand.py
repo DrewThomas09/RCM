@@ -267,6 +267,7 @@ NAV_ITEMS = [
     {"label": "HFMA MAP Keys", "href": "/hfma-map-keys", "icon": "bookmark"},
     {"label": "Medicare Utilization", "href": "/medicare-utilization", "icon": "chart"},
     {"label": "Named-Failure Library", "href": "/named-failures", "icon": "bookmark"},
+    {"label": "Benchmark Curves", "href": "/benchmark-curves", "icon": "chart"},
 ]
 
 NAV_ICONS = {

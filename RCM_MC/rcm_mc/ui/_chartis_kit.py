@@ -230,6 +230,7 @@ _CORPUS_NAV = [
     {"label": "HFMA MAP Keys",  "href": "/hfma-map-keys",     "icon": "▣"},
     {"label": "Medicare Util.", "href": "/medicare-utilization", "icon": "▥"},
     {"label": "Named Failures", "href": "/named-failures",     "icon": "▤"},
+    {"label": "Benchmark Curves","href": "/benchmark-curves",   "icon": "▣"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
     {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},

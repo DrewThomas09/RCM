@@ -2249,6 +2249,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.named_failure_library_page import render_named_failure_library
             return self._send_html(render_named_failure_library(_qp))
+        if path == "/benchmark-curves":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.benchmark_curve_library_page import render_benchmark_curves
+            return self._send_html(render_benchmark_curves(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
