@@ -236,6 +236,7 @@ _CORPUS_NAV = [
     {"label": "TEAM Calculator", "href": "/team-calculator",    "icon": "▥"},
     {"label": "Survival ML",    "href": "/survival-analysis",   "icon": "▣"},
     {"label": "Tuva + DuckDB",  "href": "/tuva-duckdb",         "icon": "▥"},
+    {"label": "Workbench Tools","href": "/workbench-tooling",   "icon": "▣"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
     {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},

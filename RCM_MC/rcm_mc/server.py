@@ -2279,6 +2279,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.tuva_duckdb_integration_page import render_tuva_duckdb_integration
             return self._send_html(render_tuva_duckdb_integration(_qp))
+        if path == "/workbench-tooling":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.workbench_tooling_page import render_workbench_tooling
+            return self._send_html(render_workbench_tooling(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
