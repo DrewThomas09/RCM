@@ -247,6 +247,7 @@ _CORPUS_NAV = [
     {"label": "Site-Neutral Sim","href": "/site-neutral",       "icon": "▣"},
     {"label": "NLRB Elections", "href": "/nlrb-elections",      "icon": "▤"},
     {"label": "★ Velocity",     "href": "/velocity",            "icon": "◉"},
+    {"label": "Causal / AIPW",  "href": "/causal",              "icon": "▣"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
     {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},

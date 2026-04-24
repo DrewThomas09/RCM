@@ -284,6 +284,7 @@ NAV_ITEMS = [
     {"label": "Site-Neutral Simulator", "href": "/site-neutral", "icon": "grid"},
     {"label": "NLRB Elections Tracker", "href": "/nlrb-elections", "icon": "bookmark"},
     {"label": "★ Velocity — Moat 6", "href": "/velocity", "icon": "chart"},
+    {"label": "Causal Inference (AIPW)", "href": "/causal", "icon": "grid"},
 ]
 
 NAV_ICONS = {
