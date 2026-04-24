@@ -274,6 +274,7 @@ NAV_ITEMS = [
     {"label": "Survival ML", "href": "/survival-analysis", "icon": "grid"},
     {"label": "Tuva + DuckDB", "href": "/tuva-duckdb", "icon": "bookmark"},
     {"label": "Workbench Tools", "href": "/workbench-tooling", "icon": "chart"},
+    {"label": "★ IC Brief Assembler", "href": "/ic-brief", "icon": "bookmark"},
 ]
 
 NAV_ICONS = {

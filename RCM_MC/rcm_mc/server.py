@@ -2284,6 +2284,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.workbench_tooling_page import render_workbench_tooling
             return self._send_html(render_workbench_tooling(_qp))
+        if path == "/ic-brief":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.ic_brief_page import render_ic_brief
+            return self._send_html(render_ic_brief(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
