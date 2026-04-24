@@ -1929,6 +1929,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # JSON API for the counterfactual advisor.
         if path.startswith("/api/counterfactual"):
             return self._route_counterfactual_api(path)
+        # Side-by-side compare.
+        if path == "/diligence/compare":
+            return self._route_compare_page()
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -6038,6 +6041,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.SEE_OTHER)
         self.send_header("Location", f"/engagements/{engagement_id}")
         self.end_headers()
+
+    # ── Side-by-side Compare ─────────────────────────────────────────
+
+    def _route_compare_page(self) -> None:
+        from .ui.compare_page import render_compare_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        left = (qs.get("left") or [""])[0]
+        right = (qs.get("right") or [""])[0]
+        self._send_html(render_compare_page(left=left, right=right))
 
     # ── Counterfactual Advisor ───────────────────────────────────────
 

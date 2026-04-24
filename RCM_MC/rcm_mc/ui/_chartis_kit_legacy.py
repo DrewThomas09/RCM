@@ -66,6 +66,7 @@ _CORPUS_NAV = [
     {"label": "Value Creation",  "href": "/diligence/value",      "icon": "◈"},
     {"label": "Risk Workbench",  "href": "/diligence/risk-workbench?demo=steward", "icon": "▣"},
     {"label": "Counterfactual",  "href": "/diligence/counterfactual", "icon": "◉"},
+    {"label": "Compare",         "href": "/diligence/compare",    "icon": "▤"},
     {"label": "Bankruptcy Scan", "href": "/screening/bankruptcy-survivor", "icon": "▥"},
     {"label": "QoE Memo",        "href": "/diligence/qoe-memo",   "icon": "▣"},
     {"label": "Engagements",     "href": "/engagements",          "icon": "◉"},
@@ -1727,19 +1728,21 @@ def chartis_shell(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{_html.escape(title)} — Seeking Chartis Corpus</title>
+<title>{_html.escape(title)} — SeekingChartis Corpus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/power_ui.css">
 <style>
 {_BASE_CSS}
 {_KEEP_FEATURES_CSS}
 {_CAD_COMPAT_CSS}
 {extra_css}
 </style>
+<script src="/static/power_ui.js" defer></script>
 </head>
 <body>
 <div class="ck-bar">
-  <span class="ck-bar-logo">Seeking Chartis</span>
+  <span class="ck-bar-logo">SeekingChartis</span>
   <span class="ck-bar-section">Corpus Intelligence</span>
   <span class="ck-bar-title">{_html.escape(title)}</span>
   <span class="ck-bar-time">{now}</span>

@@ -529,28 +529,39 @@ def _render_hero(
 
 
 def _render_ccd_summary(summary: Dict[str, Any]) -> str:
-    cells = [
-        ("Claims in CCD", f"{summary.get('claim_count', 0):,}"),
-        ("Total paid", f"${summary.get('total_paid_usd', 0):,.0f}"),
-        ("OON paid",   f"${summary.get('oon_paid_usd', 0):,.0f}"),
-        ("OON share",  f"{(summary.get('oon_share') or 0)*100:.1f}%"),
+    from .power_ui import provenance
+    cells: List[tuple[str, str, str]] = [
+        ("Claims in CCD", f"{summary.get('claim_count', 0):,}",
+         "Count of Canonical Claims Dataset rows from Phase-1 ingest."),
+        ("Total paid", f"${summary.get('total_paid_usd', 0):,.0f}",
+         "sum(claim.paid_amount) across all CCD claims."),
+        ("OON paid",   f"${summary.get('oon_paid_usd', 0):,.0f}",
+         "sum(paid_amount) where network_status ∈ "
+         "{OON, OUT_OF_NETWORK} or is_oon == True."),
+        ("OON share",  f"{(summary.get('oon_share') or 0)*100:.1f}%",
+         "oon_paid / total_paid — the NSA exposure ratio compared "
+         "against 20% / 35% thresholds."),
         ("HOPD revenue",
-         f"${summary.get('hopd_revenue_usd', 0):,.0f}"),
+         f"${summary.get('hopd_revenue_usd', 0):,.0f}",
+         "sum(paid_amount) where place_of_service == '22' or "
+         "is_hopd == True — drives the site-neutral simulator."),
         ("Commercial HHI",
-         f"{summary.get('commercial_hhi'):,.0f}"
-         if summary.get("commercial_hhi") is not None else "—"),
+         (f"{summary.get('commercial_hhi'):,.0f}"
+          if summary.get("commercial_hhi") is not None else "—"),
+         "HHI = sum((share × 100)²) across commercial payers."),
     ]
-    cell_html = "".join(
-        f'<div class="cf-ccd-cell">'
-        f'<div class="cf-ccd-cell-label">{html.escape(label)}</div>'
-        f'<div class="cf-ccd-cell-value">{html.escape(val)}</div>'
-        f'</div>'
-        for label, val in cells
-    )
+    parts = []
+    for label, val, src in cells:
+        parts.append(
+            f'<div class="cf-ccd-cell">'
+            f'<div class="cf-ccd-cell-label">{html.escape(label)}</div>'
+            f'{provenance(val, source=src, extra_class="cf-ccd-cell-value")}'
+            f'</div>'
+        )
     return (
         f'<div class="cf-ccd-summary">'
         f'<div class="cf-ccd-summary-label">Derived from CCD</div>'
-        f'<div class="cf-ccd-grid">{cell_html}</div>'
+        f'<div class="cf-ccd-grid">{"".join(parts)}</div>'
         f'</div>'
     )
 

@@ -1,0 +1,396 @@
+/**
+ * power_ui.css — premium layer for the PE-analyst power features.
+ *
+ * Every class prefixed `rcm-` to avoid collision with the Chartis
+ * shell. Only uses CSS custom properties present in the existing
+ * shell (so we inherit the dark/editorial palette automatically).
+ */
+
+/* ── Filter bar ───────────────────────────────────────────────── */
+.rcm-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.rcm-filter-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--ck-panel-alt, #0f172a);
+  color: var(--ck-text, #e2e8f0);
+  border: 1px solid var(--ck-border, #1e293b);
+  font-family: inherit;
+  font-size: 12px;
+  transition: border-color 0.15s ease;
+}
+.rcm-filter-input:focus {
+  outline: none;
+  border-color: var(--ck-accent, #3b82f6);
+}
+.rcm-filter-count {
+  font-size: 10px;
+  color: var(--ck-text-faint, #64748b);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Export buttons ──────────────────────────────────────────── */
+.rcm-export-row {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+.rcm-export-btn {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--ck-accent, #3b82f6);
+  border: 1px solid var(--ck-border, #1e293b);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.rcm-export-btn:hover {
+  background: var(--ck-accent, #3b82f6);
+  color: var(--ck-panel, #111827);
+  border-color: var(--ck-accent, #3b82f6);
+}
+
+/* ── Sort indicator ──────────────────────────────────────────── */
+thead th[data-sort-dir="asc"],
+thead th[data-sort-dir="desc"] {
+  color: var(--ck-accent, #3b82f6);
+}
+
+/* ── Provenance tooltip ──────────────────────────────────────── */
+.rcm-provenance-tip {
+  position: absolute;
+  display: none;
+  z-index: 9999;
+  max-width: 340px;
+  padding: 10px 12px;
+  background: var(--ck-panel, #111827);
+  border: 1px solid var(--ck-border, #1e293b);
+  border-left: 3px solid var(--ck-accent, #3b82f6);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font-size: 11px;
+  color: var(--ck-text, #e2e8f0);
+  line-height: 1.5;
+  pointer-events: none;
+}
+.rcm-prov-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ck-text-faint, #64748b);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.rcm-prov-src {
+  color: var(--ck-text, #e2e8f0);
+  margin-bottom: 4px;
+}
+.rcm-prov-formula {
+  margin: 4px 0;
+}
+.rcm-prov-formula code {
+  font-family: var(--ck-mono, "JetBrains Mono", monospace);
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--ck-panel-alt, #0f172a);
+  border-radius: 2px;
+  color: var(--ck-text-dim, #94a3b8);
+}
+.rcm-prov-detail {
+  font-size: 10px;
+  color: var(--ck-text-dim, #94a3b8);
+  margin-top: 4px;
+}
+
+/* ── Overlay (help, palette, saved) ──────────────────────────── */
+.rcm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 23, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10vh;
+  animation: rcm-fade-in 0.15s ease;
+}
+@keyframes rcm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.rcm-overlay-body {
+  background: var(--ck-panel, #111827);
+  border: 1px solid var(--ck-border, #1e293b);
+  border-radius: 6px;
+  max-width: 600px;
+  width: calc(100% - 48px);
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  animation: rcm-slide-up 0.2s ease;
+}
+@keyframes rcm-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.rcm-overlay-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--ck-border, #1e293b);
+}
+.rcm-overlay-title {
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ck-text-faint, #64748b);
+  font-weight: 700;
+}
+.rcm-overlay-close {
+  background: transparent;
+  border: 0;
+  color: var(--ck-text-dim, #94a3b8);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+.rcm-overlay-close:hover {
+  background: var(--ck-panel-alt, #0f172a);
+  color: var(--ck-text, #e2e8f0);
+}
+.rcm-overlay-content {
+  padding: 16px 20px;
+  overflow: auto;
+}
+.rcm-shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ck-border-dim, #0f1a2e);
+}
+.rcm-shortcut-row:last-child {
+  border-bottom: 0;
+}
+.rcm-kbd {
+  font-family: var(--ck-mono, "JetBrains Mono", monospace);
+  font-size: 10px;
+  padding: 3px 8px;
+  background: var(--ck-panel-alt, #0f172a);
+  border: 1px solid var(--ck-border, #1e293b);
+  border-radius: 3px;
+  color: var(--ck-text, #e2e8f0);
+  min-width: 110px;
+  text-align: center;
+}
+.rcm-shortcut-label {
+  font-size: 12px;
+  color: var(--ck-text-dim, #94a3b8);
+  flex: 1;
+}
+
+/* ── Command palette ─────────────────────────────────────────── */
+.rcm-palette-body {
+  padding: 0;
+}
+.rcm-palette-input {
+  width: 100%;
+  padding: 16px 20px;
+  background: transparent;
+  color: var(--ck-text, #e2e8f0);
+  border: 0;
+  border-bottom: 1px solid var(--ck-border, #1e293b);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.rcm-palette-input::placeholder {
+  color: var(--ck-text-faint, #64748b);
+}
+.rcm-palette-list {
+  max-height: 420px;
+  overflow: auto;
+  padding: 6px 0;
+}
+.rcm-palette-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.1s ease;
+}
+.rcm-palette-item:hover,
+.rcm-palette-item.rcm-palette-active {
+  background: var(--ck-panel-alt, #0f172a);
+  border-left-color: var(--ck-accent, #3b82f6);
+}
+.rcm-palette-label {
+  color: var(--ck-text, #e2e8f0);
+  font-size: 13px;
+  font-weight: 500;
+}
+.rcm-palette-url {
+  color: var(--ck-text-faint, #64748b);
+  font-size: 10px;
+  font-family: var(--ck-mono, "JetBrains Mono", monospace);
+}
+
+/* ── Saved views ─────────────────────────────────────────────── */
+.rcm-saved-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ck-border-dim, #0f1a2e);
+}
+.rcm-saved-row:last-child {
+  border-bottom: 0;
+}
+.rcm-saved-link {
+  flex: 1;
+  color: var(--ck-text, #e2e8f0);
+  font-weight: 500;
+  text-decoration: none;
+}
+.rcm-saved-link:hover {
+  color: var(--ck-accent, #3b82f6);
+}
+.rcm-saved-url {
+  font-family: var(--ck-mono, "JetBrains Mono", monospace);
+  font-size: 10px;
+  color: var(--ck-text-faint, #64748b);
+}
+.rcm-saved-del {
+  background: transparent;
+  border: 0;
+  color: var(--ck-text-dim, #94a3b8);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+.rcm-saved-del:hover {
+  background: var(--ck-panel-alt, #0f172a);
+  color: var(--ck-neg, #ef4444);
+}
+.rcm-saved-empty {
+  padding: 12px 0;
+  color: var(--ck-text-faint, #64748b);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.rcm-saved-empty kbd {
+  font-family: var(--ck-mono, "JetBrains Mono", monospace);
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--ck-panel-alt, #0f172a);
+  border: 1px solid var(--ck-border, #1e293b);
+  border-radius: 3px;
+  color: var(--ck-text, #e2e8f0);
+}
+
+/* ── Toast ───────────────────────────────────────────────────── */
+.rcm-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 16px;
+  background: var(--ck-panel, #111827);
+  border: 1px solid var(--ck-border, #1e293b);
+  border-left: 3px solid var(--ck-accent, #3b82f6);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--ck-text, #e2e8f0);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 10001;
+}
+.rcm-toast.rcm-toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Compare view grid ───────────────────────────────────────── */
+.rcm-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.rcm-compare-col {
+  background: var(--ck-panel, #111827);
+  border: 1px solid var(--ck-border, #1e293b);
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+.rcm-compare-col-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ck-border, #1e293b);
+}
+.rcm-compare-col-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ck-text-faint, #64748b);
+  font-weight: 700;
+}
+.rcm-compare-col-title {
+  font-size: 16px;
+  color: var(--ck-text, #e2e8f0);
+  font-weight: 600;
+}
+.rcm-diff-indicator {
+  display: inline-block;
+  font-family: var(--ck-mono, "JetBrains Mono", monospace);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin-left: 8px;
+}
+.rcm-diff-positive {
+  color: var(--ck-pos, #10b981);
+  background: rgba(16, 185, 129, 0.12);
+}
+.rcm-diff-negative {
+  color: var(--ck-neg, #ef4444);
+  background: rgba(239, 68, 68, 0.12);
+}
+.rcm-diff-neutral {
+  color: var(--ck-text-faint, #64748b);
+  background: transparent;
+}
+
+@media (max-width: 900px) {
+  .rcm-compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
