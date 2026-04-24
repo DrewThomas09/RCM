@@ -143,15 +143,36 @@ class ThesisPipelineReport:
 
 ---
 
-## Files
+## Files in this module
 
 ```
 thesis_pipeline/
-├── __init__.py
-└── orchestrator.py    # 14-step chain + defensive wrappers + headline extraction
+├── __init__.py        # Public API re-exports
+└── orchestrator.py    # 19-step chain + defensive wrappers + headline extraction (929 LOC)
 ```
 
-Plus UI at `rcm_mc/ui/thesis_pipeline_page.py`.
+### `__init__.py` (thin)
+Re-exports: `run_thesis_pipeline`, `PipelineInput`, `ThesisPipelineReport`, `pipeline_observations`.
+
+### `orchestrator.py` (929 LOC)
+The **single-file brain** for the whole pipeline. Three responsibilities:
+
+1. **`PipelineInput` dataclass** — every field the 19 steps need. Optional fields (like `hcris_ccn`, `landlord`, `hopd_revenue_annual_usd`) trigger optional steps. Required fields (dataset, deal_name, revenue/EBITDA) are the minimum for the chain to run.
+
+2. **The step chain** — each of the 19 steps is a small function `def step_<name>(input, prior_outputs) → output`. Every call is wrapped in `_timed(step_name, fn, step_log)` which catches exceptions, logs elapsed ms + status (OK / ERROR / SKIP), and allows the chain to continue even when a single step fails. One broken module never breaks the whole report.
+
+3. **Headline extraction** — after all steps run, a final synthesizer pulls out the ~20 headline numbers the Deal Profile + IC Packet need (p50_moic, prob_sub_1x, regulatory_verdict, covenant_max_breach_probability, top_autopsy_match, exit_recommendation_year, exit_expected_irr, etc.) and packs them into `ThesisPipelineReport` as first-class fields.
+
+Also contains `pipeline_observations(report)` — converts the report into a flat dict of booleans (`{"regulatory_calendar_run": True, ...}`) for the IC Packet checklist.
+
+**To add a 20th step**: (1) write `def step_<name>(inp, prior) → output`, (2) add a call inside `run_thesis_pipeline` wrapped in `_timed`, (3) add the output field to `ThesisPipelineReport`. No other file changes.
+
+---
+
+## Adjacent files
+
+- **[`rcm_mc/ui/thesis_pipeline_page.py`](../../ui/thesis_pipeline_page.py)** — web page at `/diligence/thesis-pipeline`
+- **[`tests/test_thesis_pipeline.py`](../../../tests/test_thesis_pipeline.py)** — 18 tests covering chain order, defensive wrappers, headline extraction, optional-step gating
 
 ---
 

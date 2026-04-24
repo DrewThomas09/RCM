@@ -123,14 +123,48 @@ bc = generate_bear_case(
 
 ---
 
-## Files
+## Files in this module
 
 ```
 bear_case/
-├── __init__.py
-├── evidence.py      # Evidence dataclass + 8 extractor functions
-└── generator.py     # orchestrator + ranking + narrative + IC memo HTML
+├── __init__.py      # Public API re-exports
+├── evidence.py      # Evidence dataclass + 8 per-source extractor functions (738 LOC)
+└── generator.py     # orchestrator + ranking + narrative + IC memo HTML (496 LOC)
 ```
+
+### `__init__.py` (thin)
+Re-exports: `generate_bear_case`, `generate_bear_case_from_pipeline`, `Evidence`, `EvidenceSeverity`, `EvidenceSource`, `EvidenceTheme`, `BearCaseReport`.
+
+### `evidence.py` (738 LOC)
+**8 source-specific extractors** that pull relevant findings from each upstream analytic module and normalize them into a common `Evidence` dataclass:
+
+| Extractor | Reads | Produces |
+|-----------|-------|----------|
+| `extract_regulatory_evidence` | `RegulatoryExposureReport` | `[R1/R2/R3]` KILLED drivers + EBITDA overlay |
+| `extract_covenant_evidence` | `CovenantStressResult` | `[C1]` 50%-breach covenants + equity-cure size |
+| `extract_bridge_audit_evidence` | `BridgeAuditReport` | `[B1/B2/B3]` OVERSTATED/UNSUPPORTED levers |
+| `extract_deal_mc_evidence` | Deal MC result | `[M1]` P10 MOIC tail + P(MOIC<1×) |
+| `extract_autopsy_evidence` | Autopsy match list | `[A1]` closest historical failure signature |
+| `extract_exit_timing_evidence` | Exit timing report | `[E1]` 1.5× MOIC hurdle failures |
+| `extract_payer_stress_evidence` | Payer stress result | `[P1]` concentration risk + P10 NPR drag |
+| `extract_hcris_evidence` | HCRIS XRayReport | `[H1]` below-peer margins + deteriorating trend |
+
+Each extractor is defensive — if the source report is `None` or missing a field, it returns an empty list (never raises). This is the contract the Thesis Pipeline relies on.
+
+### `generator.py` (496 LOC)
+The **orchestrator**. Two entry points:
+
+- `generate_bear_case_from_pipeline(thesis_report) → BearCaseReport` — pulls every source off the pipeline report automatically
+- `generate_bear_case(**source_reports) → BearCaseReport` — standalone form; pass whichever source reports you have
+
+Inside: ranks evidence by severity × absolute $ impact × source priority, assigns citation keys, computes total $ at risk (with dedup between regulatory overlay and bridge-audit gap), writes per-theme narrative (REGULATORY / CREDIT / OPERATIONAL / MARKET / STRUCTURAL / PATTERN), emits print-ready IC memo HTML block.
+
+---
+
+## Adjacent files
+
+- **[`rcm_mc/ui/bear_case_page.py`](../../ui/bear_case_page.py)** — web page at `/diligence/bear-case`
+- **[`tests/test_bear_case.py`](../../../tests/test_bear_case.py)** — 9 tests covering each extractor + ranking + memo emission
 
 ---
 

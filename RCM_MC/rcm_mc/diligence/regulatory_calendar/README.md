@@ -103,15 +103,44 @@ for tl in report.driver_timelines:
 
 ---
 
-## Files
+## Files in this module
 
 ```
 regulatory_calendar/
-├── __init__.py
-├── calendar.py         # 11 curated events + queries
-├── impact_mapper.py    # drivers × events × target → impact verdict
-└── killswitch.py       # overall verdict + EBITDA overlay + narrative
+├── __init__.py         # Public API re-exports
+├── calendar.py         # 11 curated regulatory events + query helpers (401 LOC)
+├── impact_mapper.py    # Per-driver impact verdict given target profile (395 LOC)
+└── killswitch.py       # Overall verdict + EBITDA overlay + narrative (487 LOC)
 ```
+
+### `__init__.py` (thin)
+Re-exports the public API: `analyze_regulatory_exposure`, `upcoming_events`, `events_for_specialty`, `map_event_to_drivers`, `RegulatoryEvent`, `KillSwitchVerdict`, `ThesisDriver`, `DEFAULT_THESIS_DRIVERS`.
+
+### `calendar.py` (401 LOC)
+The **curated event library**. One hand-written `RegulatoryEvent` dataclass per rule (11 today). Each event carries publish date, effective date, affected specialties, expected revenue/margin impact, thesis drivers it kills, source URL, and narrative. Query helpers:
+
+- `upcoming_events(horizon_months)` — events effective in the next N months
+- `events_for_specialty(specialty)` — filter by specialty tag
+- `events_affecting_driver(driver_name)` — reverse lookup by driver
+
+**To add a new event** (e.g., a 2027 CMS rule): append a `RegulatoryEvent(...)` to `REGULATORY_EVENTS` at the bottom of this file. No other code changes needed.
+
+### `impact_mapper.py` (395 LOC)
+Takes **one event × one target profile** and returns the impact verdict (`UNAFFECTED / DAMAGED / KILLED`) per thesis driver. This is where the MA-mix-sensitive logic lives — a 90%-MA platform gets KILLED by V28 but a 5%-MA community hospital is UNAFFECTED. Pure functions, no I/O.
+
+Key entry: `map_event_to_drivers(event, target_profile, drivers) → List[DriverImpact]`.
+
+### `killswitch.py` (487 LOC)
+The **partner-facing synthesizer**. Runs every event through `impact_mapper`, rolls per-driver verdicts into a calendar timeline (first-kill date per driver), computes per-year EBITDA overlay (feeds Deal MC's `reg_headwind_usd`), produces partner narrative, and assigns the final PASS/CAUTION/WARNING/FAIL verdict.
+
+Key entry: `analyze_regulatory_exposure(target_profile, horizon_months) → RegulatoryExposureReport`.
+
+---
+
+## Adjacent files
+
+- **[`rcm_mc/ui/regulatory_calendar_page.py`](../../ui/regulatory_calendar_page.py)** — web page at `/diligence/regulatory-calendar`
+- **[`tests/test_regulatory_calendar.py`](../../../tests/test_regulatory_calendar.py)** — 21 tests covering mapper logic, verdict thresholds, overlay math
 
 ---
 

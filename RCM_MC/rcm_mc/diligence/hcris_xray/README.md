@@ -57,20 +57,42 @@ Every metric is semantically colored: **green = better than peer P75** (if the m
 
 ---
 
-## Files
+## Files in this module
 
 ```
 hcris_xray/
-├── __init__.py       # public API
-├── metrics.py        # HospitalMetrics dataclass + 15 metric specs
-└── xray.py           # peer-matching engine + benchmark computation
+├── __init__.py       # Public API surface — re-exports everything from metrics.py + xray.py
+├── metrics.py        # HospitalMetrics dataclass + 15 metric specs + cohort classifier
+└── xray.py           # Peer-matching engine + benchmark computation + XRayReport
 ```
 
-Plus:
-- `rcm_mc/data/hcris.csv.gz` — the 17,701-row dataset
-- `rcm_mc/data/hcris.py` — the loader
-- `rcm_mc/ui/hcris_xray_page.py` — the web page
-- `tests/test_hcris_xray.py` — 21 tests
+### `__init__.py` (thin)
+Pure re-export shim. Import everything from here: `from rcm_mc.diligence.hcris_xray import xray, find_hospital, search_hospitals, HospitalMetrics, XRayReport`.
+
+### `metrics.py` (350 LOC)
+Pure-math module with **no I/O**. Two jobs:
+
+1. **`HospitalMetrics` dataclass** — one filed HCRIS report as typed fields (beds, patient_days, medicare_days, opex, npr, operating_margin, etc.). Built from the CSV row in `rcm_mc/data/hcris.py`.
+2. **`METRIC_SPECS` tuple** — the 15 canonical metrics with `label`, `direction` (HIGHER_BETTER / LOWER_BETTER / NEUTRAL), `units`, `group`, and `extract(m: HospitalMetrics) → float`. Adding a 16th metric means adding one `MetricSpec(...)` entry here — no other file changes.
+3. **Cohort classifier** (`classify_cohort`) — bins beds into `MICRO / SMALL_COMMUNITY / COMMUNITY / REGIONAL / ACADEMIC`. This is what peer-matching uses to stop comparing a 50-bed rural hospital to Cleveland Clinic.
+
+### `xray.py` (538 LOC)
+**The brain.** Three responsibilities:
+
+1. **Hospital lookup** — `find_hospital(ccn_or_name)` + `search_hospitals(query, state=None, limit=20)`. Fuzzy name match over 17,701 rows.
+2. **Peer-group assembly** — for a given target, walks a waterfall: same cohort + same state + ±30% beds → same region → national. Stops when 25+ peers found (configurable via `peer_k`).
+3. **Benchmark computation** — for each of the 15 metrics, computes target value, peer P25/median/P75, signed variance vs median, 3-year trend slope. Returns `XRayReport` with `headline`, `trend_signal`, and `metrics: List[MetricBenchmark]`.
+
+Performance: cold load parses the gzipped CSV (~250ms), then results cache in memory — subsequent x-rays run ~7ms.
+
+---
+
+## Adjacent files (outside this module)
+
+- **[`rcm_mc/data/hcris.csv.gz`](../../data/hcris.csv.gz)** — 17,701-row gzipped dataset (FY 2020–2022)
+- **[`rcm_mc/data/hcris.py`](../../data/hcris.py)** — CSV loader + schema validator
+- **[`rcm_mc/ui/hcris_xray_page.py`](../../ui/hcris_xray_page.py)** — web page at `/diligence/hcris-xray`
+- **[`tests/test_hcris_xray.py`](../../../tests/test_hcris_xray.py)** — 21 tests covering lookup, peer-matching, benchmark math, cohort edge cases
 
 ---
 
