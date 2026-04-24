@@ -178,5 +178,93 @@ class ClientPortalPageTests(unittest.TestCase):
             self.assertIn("Aurora Health", html)
 
 
+class InteractiveFormTests(unittest.TestCase):
+    """Forms must only render to actors who can actually use them —
+    don't tease a CLIENT_VIEWER with an Add Member button."""
+
+    def test_list_page_shows_create_form(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = _seed(tmp)
+            html = render_engagement_list(list_engagements(store))
+            self.assertIn('action="/engagements/create"', html)
+            self.assertIn('name="engagement_id"', html)
+            self.assertIn('name="client_name"', html)
+
+    def test_partner_sees_add_member_form_on_detail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = _seed(tmp)
+            eng = get_engagement(store, "E1")
+            html = render_engagement_detail(
+                eng,
+                members=list_members(store, "E1"),
+                deliverables=list_deliverables(
+                    store, engagement_id="E1", viewer="partner",
+                ),
+                comments=list_comments(
+                    store, engagement_id="E1", viewer="partner",
+                ),
+                viewer_role=EngagementRole.PARTNER,
+            )
+            self.assertIn("/engagements/E1/members/add", html)
+            self.assertIn("/engagements/E1/comments/post", html)
+
+    def test_analyst_sees_comment_form_but_not_add_member(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = _seed(tmp)
+            eng = get_engagement(store, "E1")
+            html = render_engagement_detail(
+                eng,
+                members=list_members(store, "E1"),
+                deliverables=list_deliverables(
+                    store, engagement_id="E1", viewer="analyst",
+                ),
+                comments=list_comments(
+                    store, engagement_id="E1", viewer="analyst",
+                ),
+                viewer_role=EngagementRole.ANALYST,
+            )
+            # Comment form is rendered for any member role
+            self.assertIn("/engagements/E1/comments/post", html)
+            # Add-member form is PARTNER/LEAD only
+            self.assertNotIn("/engagements/E1/members/add", html)
+
+    def test_draft_publish_button_renders_for_partner(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = _seed(tmp)
+            eng = get_engagement(store, "E1")
+            html = render_engagement_detail(
+                eng,
+                members=list_members(store, "E1"),
+                deliverables=list_deliverables(
+                    store, engagement_id="E1", viewer="partner",
+                ),
+                comments=list_comments(
+                    store, engagement_id="E1", viewer="partner",
+                ),
+                viewer_role=EngagementRole.PARTNER,
+            )
+            # The DRAFT deliverable shows a publish action
+            self.assertIn("/deliverables/", html)
+            self.assertIn("/publish", html)
+
+    def test_analyst_sees_no_publish_button(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = _seed(tmp)
+            eng = get_engagement(store, "E1")
+            html = render_engagement_detail(
+                eng,
+                members=list_members(store, "E1"),
+                deliverables=list_deliverables(
+                    store, engagement_id="E1", viewer="analyst",
+                ),
+                comments=list_comments(
+                    store, engagement_id="E1", viewer="analyst",
+                ),
+                viewer_role=EngagementRole.ANALYST,
+            )
+            # Publish action suppressed — role doesn't allow it
+            self.assertNotIn("/publish", html)
+
+
 if __name__ == "__main__":
     unittest.main()

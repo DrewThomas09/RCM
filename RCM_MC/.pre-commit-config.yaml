@@ -21,3 +21,23 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
         args: [--maxkb=500]
+
+  # PHI-leak guardrail — blocks commits that contain SSN, DOB,
+  # phone, email, MRN, NPI patterns in plaintext. Regex-based, narrow
+  # by design (keyword-gated where ambiguous). See
+  # rcm_mc/compliance/phi_scanner.py for the pattern catalogue and
+  # HIPAA_READINESS.md for the control rationale.
+  - repo: local
+    hooks:
+      - id: phi-scan
+        name: PHI pattern scanner
+        entry: python -m rcm_mc.compliance scan
+        language: system
+        pass_filenames: true
+        types: [text]
+        # Staged test fixtures / example data may intentionally
+        # contain synthetic PHI-shaped tokens — the scanner already
+        # tolerates kpi_truth's H6-P000 style IDs. If a commit needs
+        # to land text with genuine PHI-shaped content, redact or
+        # add an inline `# phi-scan:allow` marker and drop the hit
+        # into the exclusion list.

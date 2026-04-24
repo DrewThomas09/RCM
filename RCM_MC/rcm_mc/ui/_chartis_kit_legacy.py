@@ -64,6 +64,8 @@ _CORPUS_NAV = [
     {"label": "Benchmarks",      "href": "/diligence/benchmarks", "icon": "▦"},
     {"label": "Root Cause",      "href": "/diligence/root-cause", "icon": "▥"},
     {"label": "Value Creation",  "href": "/diligence/value",      "icon": "◈"},
+    {"label": "QoE Memo",        "href": "/diligence/qoe-memo",   "icon": "▣"},
+    {"label": "Engagements",     "href": "/engagements",          "icon": "◉"},
 
     # PLATFORM — day-to-day operator entries. Alerts removed from nav
     # — portfolio-ops concept the analyst doesn't need. The alerts/

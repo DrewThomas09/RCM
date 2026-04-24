@@ -5866,6 +5866,167 @@ class RCMHandler(BaseHTTPRequestHandler):
             eng, deliverables=deliverables, comments=comments,
         ))
 
+    # ── Engagement POST handlers ─────────────────────────────────────
+
+    def _route_engagement_create(self) -> None:
+        """POST /engagements/create — create a new engagement.
+
+        Form fields: engagement_id, name, client_name, notes (optional).
+        Actor is the current signed-in user.
+        """
+        from .engagement import create_engagement
+
+        form = self._read_form_body()
+        eid = (form.get("engagement_id") or "").strip()[:60]
+        name = (form.get("name") or "").strip()[:200]
+        client = (form.get("client_name") or "").strip()[:200]
+        notes = (form.get("notes") or "").strip()[:1000]
+        if not eid or not name or not client:
+            return self._error_page(
+                "Missing required fields",
+                "engagement_id, name, and client_name are required.",
+            )
+        cu = self._current_user() or {}
+        actor = cu.get("username") or "system"
+        try:
+            create_engagement(
+                PortfolioStore(self.config.db_path),
+                engagement_id=eid, name=name, client_name=client,
+                created_by=actor, notes=notes,
+            )
+        except ValueError as exc:
+            return self._error_page("Cannot create engagement", str(exc))
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", f"/engagements/{eid}")
+        self.end_headers()
+
+    def _route_engagement_add_member(self, engagement_id: str) -> None:
+        """POST /engagements/<eid>/members/add — add or update a member.
+
+        Form fields: username, role (PARTNER|LEAD|ANALYST|CLIENT_VIEWER).
+        Only members with role PARTNER or LEAD may add new members on
+        the engagement; non-members are rejected. The legacy app
+        ADMIN role short-circuits this check.
+        """
+        from .engagement import EngagementRole, add_member
+        from .engagement.store import get_member_role
+
+        form = self._read_form_body()
+        username = (form.get("username") or "").strip()[:80]
+        role_name = (form.get("role") or "").strip().upper()
+        if not username or role_name not in {
+            r.value for r in EngagementRole
+        }:
+            return self._error_page(
+                "Missing or invalid field",
+                "username and role (PARTNER|LEAD|ANALYST|CLIENT_VIEWER) "
+                "are required.",
+            )
+        cu = self._current_user() or {}
+        actor = cu.get("username") or "system"
+        store = PortfolioStore(self.config.db_path)
+        actor_role = get_member_role(
+            store, engagement_id=engagement_id, username=actor,
+        )
+        is_app_admin = str(cu.get("role") or "").upper() == "ADMIN"
+        if not is_app_admin and actor_role not in (
+            EngagementRole.PARTNER, EngagementRole.LEAD,
+        ):
+            return self._error_page(
+                "Insufficient permission",
+                "Only PARTNER, LEAD, or app ADMIN can add members.",
+            )
+        try:
+            add_member(
+                store, engagement_id=engagement_id,
+                username=username, role=EngagementRole(role_name),
+                added_by=actor,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return self._error_page(
+                "Cannot add member", str(exc)[:300],
+            )
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", f"/engagements/{engagement_id}")
+        self.end_headers()
+
+    def _route_engagement_post_comment(self, engagement_id: str) -> None:
+        """POST /engagements/<eid>/comments/post — post a comment.
+
+        Form fields: target, body, is_internal (checkbox),
+        parent_comment_id (optional).
+        """
+        from .engagement import post_comment
+
+        form = self._read_form_body()
+        target = (form.get("target") or "").strip()[:200]
+        body = (form.get("body") or "").strip()[:4000]
+        is_internal = bool(form.get("is_internal"))
+        parent_raw = form.get("parent_comment_id") or ""
+        try:
+            parent = int(parent_raw) if parent_raw else None
+        except ValueError:
+            parent = None
+        if not target or not body:
+            return self._error_page(
+                "Missing required fields",
+                "target and body are required.",
+            )
+        cu = self._current_user() or {}
+        actor = cu.get("username") or ""
+        if not actor:
+            return self._error_page(
+                "Sign-in required",
+                "Anonymous sessions cannot post comments.",
+            )
+        try:
+            post_comment(
+                PortfolioStore(self.config.db_path),
+                engagement_id=engagement_id, target=target,
+                author=actor, body=body, is_internal=is_internal,
+                parent_comment_id=parent,
+            )
+        except PermissionError as exc:
+            return self._error_page("Not permitted", str(exc))
+        except ValueError as exc:
+            return self._error_page("Invalid comment", str(exc))
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", f"/engagements/{engagement_id}")
+        self.end_headers()
+
+    def _route_engagement_publish_deliverable(
+        self, engagement_id: str, deliverable_id_str: str,
+    ) -> None:
+        """POST /engagements/<eid>/deliverables/<did>/publish — DRAFT
+        → PUBLISHED transition. Role-gated by the store layer.
+        """
+        from .engagement import publish_deliverable
+
+        try:
+            did = int(deliverable_id_str)
+        except ValueError:
+            return self._error_page(
+                "Invalid deliverable id", deliverable_id_str,
+            )
+        cu = self._current_user() or {}
+        actor = cu.get("username") or ""
+        if not actor:
+            return self._error_page(
+                "Sign-in required",
+                "Anonymous sessions cannot publish deliverables.",
+            )
+        try:
+            publish_deliverable(
+                PortfolioStore(self.config.db_path),
+                engagement_id=engagement_id, deliverable_id=did,
+                published_by=actor,
+            )
+        except (PermissionError, ValueError, LookupError) as exc:
+            return self._error_page("Cannot publish", str(exc))
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", f"/engagements/{engagement_id}")
+        self.end_headers()
+
     def _route_admin_audit_chain(self) -> None:
         """Admin-only view of the compliance audit-chain integrity.
 
@@ -8561,6 +8722,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             or path.startswith("/pipeline/")
             or path.startswith("/value-tracker/")
             or path.startswith("/team/")
+            or path.startswith("/engagements/")
         )
         if (self._session_token() is not None and not csrf_exempt):
             ctype = self.headers.get("Content-Type", "")
@@ -8613,6 +8775,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/data-room/") and path.endswith("/add"):
             dr_ccn = path.replace("/data-room/", "").replace("/add", "").strip("/")
             return self._route_data_room_add(dr_ccn)
+        # Engagement POST actions. All under /engagements/... so the
+        # csrf_exempt prefix above covers them; the UI uses HTML form
+        # POSTs rather than JSON/AJAX.
+        if path == "/engagements/create":
+            return self._route_engagement_create()
+        if path.startswith("/engagements/") and path.endswith("/members/add"):
+            eid = path.split("/")[2]
+            return self._route_engagement_add_member(eid)
+        if path.startswith("/engagements/") and path.endswith("/comments/post"):
+            eid = path.split("/")[2]
+            return self._route_engagement_post_comment(eid)
+        if path.startswith("/engagements/") and "/deliverables/" in path and path.endswith("/publish"):
+            parts = path.split("/")
+            eid, did = parts[2], parts[4]
+            return self._route_engagement_publish_deliverable(eid, did)
+
         if path == "/pipeline/add":
             return self._route_pipeline_add()
         if path == "/pipeline/save-search":

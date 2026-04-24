@@ -47,9 +47,49 @@ def render_engagement_list(
         )
     empty_msg = (
         f'<tr><td colspan="5" style="padding:14px;color:{P["text_faint"]};'
-        f'font-style:italic;">No engagements yet. Create one from the '
-        f'CLI or the API.</td></tr>'
+        f'font-style:italic;">No engagements yet. Create one below.</td></tr>'
         if not rows else ""
+    )
+    create_form = (
+        f'<details style="margin-top:24px;background:{P["panel"]};'
+        f'border:1px solid {P["border"]};border-radius:4px;padding:12px 16px;">'
+        f'<summary style="cursor:pointer;font-size:11px;letter-spacing:1px;'
+        f'text-transform:uppercase;color:{P["text_dim"]};">'
+        f'＋ New engagement</summary>'
+        f'<form method="POST" action="/engagements/create" '
+        f'style="display:grid;grid-template-columns:1fr 1fr;gap:10px;'
+        f'margin-top:12px;">'
+        f'<label style="font-size:10px;color:{P["text_faint"]};'
+        f'letter-spacing:.5px;text-transform:uppercase;">Engagement ID'
+        f'<input name="engagement_id" required maxlength="60" '
+        f'style="width:100%;padding:6px 8px;font-size:12px;'
+        f'background:{P["panel_alt"]};color:{P["text"]};'
+        f'border:1px solid {P["border"]};font-family:inherit;"></label>'
+        f'<label style="font-size:10px;color:{P["text_faint"]};'
+        f'letter-spacing:.5px;text-transform:uppercase;">Deal name'
+        f'<input name="name" required maxlength="200" '
+        f'style="width:100%;padding:6px 8px;font-size:12px;'
+        f'background:{P["panel_alt"]};color:{P["text"]};'
+        f'border:1px solid {P["border"]};font-family:inherit;"></label>'
+        f'<label style="font-size:10px;color:{P["text_faint"]};'
+        f'letter-spacing:.5px;text-transform:uppercase;grid-column:span 2;">'
+        f'Client name'
+        f'<input name="client_name" required maxlength="200" '
+        f'style="width:100%;padding:6px 8px;font-size:12px;'
+        f'background:{P["panel_alt"]};color:{P["text"]};'
+        f'border:1px solid {P["border"]};font-family:inherit;"></label>'
+        f'<label style="font-size:10px;color:{P["text_faint"]};'
+        f'letter-spacing:.5px;text-transform:uppercase;grid-column:span 2;">'
+        f'Notes (optional)'
+        f'<textarea name="notes" rows="2" maxlength="1000" '
+        f'style="width:100%;padding:6px 8px;font-size:12px;'
+        f'background:{P["panel_alt"]};color:{P["text"]};'
+        f'border:1px solid {P["border"]};font-family:inherit;"></textarea></label>'
+        f'<button type="submit" style="grid-column:span 2;justify-self:start;'
+        f'padding:8px 18px;background:{P["accent"]};color:{P["panel"]};'
+        f'border:0;font-size:11px;font-weight:600;letter-spacing:.5px;'
+        f'text-transform:uppercase;cursor:pointer;">Create engagement</button>'
+        f'</form></details>'
     )
     body = (
         f'<div style="padding:24px 0 12px 0;">'
@@ -73,6 +113,7 @@ def render_engagement_list(
         f'<th style="text-align:left;padding:8px 10px;border-bottom:1px solid {P["border"]};">Created</th>'
         f'</tr></thead>'
         f'<tbody>{"".join(rows)}{empty_msg}</tbody></table>'
+        f'{create_form}'
     )
     return chartis_shell(body, "RCM Diligence — Engagements",
                          subtitle="Cross-engagement workspace")
@@ -88,16 +129,66 @@ def render_engagement_detail(
     comments: Iterable[Comment],
     viewer_role: Optional[EngagementRole] = None,
 ) -> str:
+    can_manage = viewer_role in (
+        EngagementRole.PARTNER, EngagementRole.LEAD,
+    )
+    can_comment = viewer_role is not None
     body_parts: List[str] = [
         _detail_hero(engagement),
         _members_section(members),
-        _deliverables_section(deliverables, viewer_role=viewer_role),
-        _comments_section(comments, viewer_role=viewer_role),
     ]
+    if can_manage:
+        body_parts.append(_add_member_form(engagement.engagement_id))
+    body_parts.append(
+        _deliverables_section(
+            deliverables, viewer_role=viewer_role,
+            engagement_id=engagement.engagement_id,
+            can_publish_any=can_manage,
+        )
+    )
+    body_parts.append(
+        _comments_section(
+            comments, viewer_role=viewer_role,
+            engagement_id=engagement.engagement_id,
+            can_comment=can_comment,
+        )
+    )
     return chartis_shell(
         "\n".join(body_parts),
         f"Engagement — {engagement.engagement_id}",
         subtitle=f"{engagement.name} · {engagement.client_name}",
+    )
+
+
+def _add_member_form(engagement_id: str) -> str:
+    eid = html.escape(engagement_id)
+    return (
+        f'<details style="margin:8px 0 20px 0;background:{P["panel"]};'
+        f'border:1px solid {P["border"]};border-radius:4px;padding:10px 14px;">'
+        f'<summary style="cursor:pointer;font-size:10px;letter-spacing:.5px;'
+        f'text-transform:uppercase;color:{P["text_dim"]};">＋ Add member</summary>'
+        f'<form method="POST" action="/engagements/{eid}/members/add" '
+        f'style="display:flex;gap:10px;align-items:flex-end;margin-top:10px;">'
+        f'<label style="font-size:10px;color:{P["text_faint"]};'
+        f'letter-spacing:.5px;text-transform:uppercase;">Username'
+        f'<input name="username" required maxlength="80" '
+        f'style="display:block;padding:5px 8px;font-size:12px;'
+        f'background:{P["panel_alt"]};color:{P["text"]};'
+        f'border:1px solid {P["border"]};font-family:inherit;"></label>'
+        f'<label style="font-size:10px;color:{P["text_faint"]};'
+        f'letter-spacing:.5px;text-transform:uppercase;">Role'
+        f'<select name="role" required style="display:block;padding:5px 8px;'
+        f'font-size:12px;background:{P["panel_alt"]};color:{P["text"]};'
+        f'border:1px solid {P["border"]};font-family:inherit;">'
+        f'<option value="ANALYST">ANALYST</option>'
+        f'<option value="LEAD">LEAD</option>'
+        f'<option value="PARTNER">PARTNER</option>'
+        f'<option value="CLIENT_VIEWER">CLIENT_VIEWER</option>'
+        f'</select></label>'
+        f'<button type="submit" style="padding:6px 14px;background:{P["accent"]};'
+        f'color:{P["panel"]};border:0;font-size:10px;font-weight:600;'
+        f'letter-spacing:.5px;text-transform:uppercase;cursor:pointer;">Add</button>'
+        f'</form></details>'
     )
 
 
@@ -171,21 +262,45 @@ def _deliverables_section(
     deliverables: Iterable[Deliverable],
     *,
     viewer_role: Optional[EngagementRole] = None,
+    engagement_id: Optional[str] = None,
+    can_publish_any: bool = False,
 ) -> str:
     rows: List[str] = []
+    eid_esc = html.escape(engagement_id or "")
     for d in deliverables:
         status_colour = {
             "PUBLISHED": P["positive"],
             "DRAFT":     P["warning"],
             "RETRACTED": P["negative"],
         }.get(d.status, P["text_dim"])
-        pub_info = (
-            f'<td class="mono" style="font-size:10px;color:{P["text_faint"]};">'
-            f'{html.escape((d.published_at or "")[:10])} by '
-            f'{html.escape(d.published_by or "")}</td>'
-            if d.status == "PUBLISHED" else
-            f'<td style="color:{P["text_faint"]};font-size:10px;">—</td>'
-        )
+        if d.status == "PUBLISHED":
+            action_cell = (
+                f'<td class="mono" style="font-size:10px;color:{P["text_faint"]};">'
+                f'{html.escape((d.published_at or "")[:10])} by '
+                f'{html.escape(d.published_by or "")}</td>'
+            )
+        elif (d.status == "DRAFT" and can_publish_any
+              and engagement_id):
+            # Role-based can_publish check happens server-side on
+            # submit; partner can publish anything, lead can publish
+            # non-QoE. We render the button for both; a failed attempt
+            # surfaces an error page rather than a silent noop.
+            action_cell = (
+                f'<td>'
+                f'<form method="POST" action="/engagements/{eid_esc}'
+                f'/deliverables/{d.deliverable_id}/publish" '
+                f'style="margin:0;">'
+                f'<button type="submit" style="padding:3px 10px;'
+                f'background:{P["accent"]};color:{P["panel"]};'
+                f'border:0;font-size:10px;font-weight:600;'
+                f'letter-spacing:.5px;text-transform:uppercase;'
+                f'cursor:pointer;">Publish</button>'
+                f'</form></td>'
+            )
+        else:
+            action_cell = (
+                f'<td style="color:{P["text_faint"]};font-size:10px;">—</td>'
+            )
         rows.append(
             '<tr>'
             f'<td class="mono" style="font-size:10px;color:{P["text_dim"]};">'
@@ -195,7 +310,7 @@ def _deliverables_section(
             f'{html.escape(d.kind)}</td>'
             f'<td style="color:{status_colour};font-weight:500;">'
             f'{html.escape(d.status)}</td>'
-            f'{pub_info}'
+            f'{action_cell}'
             '</tr>'
         )
     empty = (
@@ -212,7 +327,7 @@ def _deliverables_section(
         f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Title</th>'
         f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Kind</th>'
         f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Status</th>'
-        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Published</th>'
+        f'<th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Action / Published</th>'
         f'</tr></thead>'
         f'<tbody>{"".join(rows)}{empty}</tbody></table>'
     )
@@ -222,6 +337,8 @@ def _comments_section(
     comments: Iterable[Comment],
     *,
     viewer_role: Optional[EngagementRole] = None,
+    engagement_id: Optional[str] = None,
+    can_comment: bool = False,
 ) -> str:
     items: List[str] = []
     for c in comments:
@@ -255,10 +372,51 @@ def _comments_section(
         f'font-style:italic;font-size:11px;">No comments yet.</div>'
         if not items else ""
     )
+    form = ""
+    if can_comment and engagement_id:
+        internal_checkbox = ""
+        if viewer_role != EngagementRole.CLIENT_VIEWER:
+            internal_checkbox = (
+                f'<label style="font-size:10px;color:{P["text_faint"]};'
+                f'letter-spacing:.5px;text-transform:uppercase;'
+                f'display:inline-flex;align-items:center;gap:6px;'
+                f'margin-right:12px;">'
+                f'<input type="checkbox" name="is_internal" value="1">'
+                f'Internal (hidden from client)</label>'
+            )
+        form = (
+            f'<form method="POST" action="/engagements/'
+            f'{html.escape(engagement_id)}/comments/post" '
+            f'style="background:{P["panel"]};border:1px solid {P["border"]};'
+            f'border-radius:4px;padding:10px 14px;margin-top:8px;">'
+            f'<label style="font-size:10px;color:{P["text_faint"]};'
+            f'letter-spacing:.5px;text-transform:uppercase;">Target'
+            f'<input name="target" required maxlength="200" '
+            f'placeholder="deliverable:1 or deal:X" '
+            f'style="width:100%;padding:5px 8px;font-size:12px;'
+            f'background:{P["panel_alt"]};color:{P["text"]};'
+            f'border:1px solid {P["border"]};font-family:inherit;'
+            f'margin-top:2px;"></label>'
+            f'<label style="font-size:10px;color:{P["text_faint"]};'
+            f'letter-spacing:.5px;text-transform:uppercase;'
+            f'display:block;margin-top:8px;">Comment'
+            f'<textarea name="body" required rows="3" maxlength="4000" '
+            f'style="width:100%;padding:5px 8px;font-size:12px;'
+            f'background:{P["panel_alt"]};color:{P["text"]};'
+            f'border:1px solid {P["border"]};font-family:inherit;'
+            f'margin-top:2px;"></textarea></label>'
+            f'<div style="margin-top:8px;display:flex;align-items:center;">'
+            f'{internal_checkbox}'
+            f'<button type="submit" style="padding:5px 14px;'
+            f'background:{P["accent"]};color:{P["panel"]};border:0;'
+            f'font-size:10px;font-weight:600;letter-spacing:.5px;'
+            f'text-transform:uppercase;cursor:pointer;margin-left:auto;">'
+            f'Post</button></div></form>'
+        )
     return (
         f'<h2 style="font-size:11px;letter-spacing:1px;text-transform:uppercase;'
         f'color:{P["text_dim"]};margin:28px 0 10px 0;">Comments</h2>'
-        f'{"".join(items)}{empty}'
+        f'{"".join(items)}{empty}{form}'
     )
 
 
