@@ -272,6 +272,7 @@ NAV_ITEMS = [
     {"label": "Adversarial Engine", "href": "/adversarial-engine", "icon": "bookmark"},
     {"label": "TEAM Calculator", "href": "/team-calculator", "icon": "chart"},
     {"label": "Survival ML", "href": "/survival-analysis", "icon": "grid"},
+    {"label": "Tuva + DuckDB", "href": "/tuva-duckdb", "icon": "bookmark"},
 ]
 
 NAV_ICONS = {
