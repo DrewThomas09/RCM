@@ -269,6 +269,7 @@ NAV_ITEMS = [
     {"label": "Named-Failure Library", "href": "/named-failures", "icon": "bookmark"},
     {"label": "Benchmark Curves", "href": "/benchmark-curves", "icon": "chart"},
     {"label": "Backtest Harness", "href": "/backtest-harness", "icon": "grid"},
+    {"label": "Adversarial Engine", "href": "/adversarial-engine", "icon": "bookmark"},
 ]
 
 NAV_ICONS = {

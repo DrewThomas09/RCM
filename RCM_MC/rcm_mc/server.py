@@ -2259,6 +2259,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.backtest_harness_page import render_backtest_harness
             return self._send_html(render_backtest_harness(_qp))
+        if path == "/adversarial-engine":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.adversarial_engine_page import render_adversarial_engine
+            return self._send_html(render_adversarial_engine(_qp))
         if path == "/insurance-tracker":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
