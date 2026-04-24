@@ -12,7 +12,8 @@ This replaces the slice of healthcare diligence that firms typically outsource t
 |------|-------|
 | **Install it** | [§4 — Install](#4-install) |
 | **See a full MondayAM→ICready walkthrough** | [§5 — Deal walkthrough](#5-deal-walkthrough-mondayam--ic-ready-by-1030am) or the longer [WALKTHROUGH.md](WALKTHROUGH.md) |
-| **Find a file or module** | [FILE_INDEX.md](FILE_INDEX.md) |
+| **Find a file or module** | [FILE_INDEX.md](FILE_INDEX.md) (navigation map) or [FILE_MAP.md](FILE_MAP.md) (1,659-file catalogue) |
+| **See the architecture visually** | [ARCHITECTURE_MAP.md](ARCHITECTURE_MAP.md) — 8 Mermaid diagrams (GitHub-rendered) |
 | **Read a module's methodology** | [§6 — Module methodology](#6-module-methodology) — each links to its per-module README |
 | **Audit a number's provenance** | [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md), [BENCHMARK_SOURCES.md](RCM_MC/docs/BENCHMARK_SOURCES.md) |
 | **Read the PE heuristics rulebook** | [PE_HEURISTICS.md](RCM_MC/docs/PE_HEURISTICS.md) — 275+ named partner rules |
