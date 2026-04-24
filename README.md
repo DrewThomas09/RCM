@@ -1,113 +1,86 @@
 # SeekingChartis / RCM-MC
 
-**A tool that helps private equity firms decide whether to buy hospitals and doctor groups, and then helps them manage those companies after they buy them.**
+**Full-stack healthcare RCM diligence workbench — local Python, public-data models, ~30 min from tape to IC-ready memo.**
 
-If you've never heard those words before, don't worry — this README will explain everything from scratch. By the end, you should be able to download it from GitHub, run it on your laptop, and walk through a real example deal.
+Replaces the $200K–500K third-party-advisory slice of a healthcare diligence (peer benchmarking, regulatory exposure, covenant stress, bridge audit, bear case) with transparent stdlib-heavy models calibrated to public-filing corpora (HCRIS, Care Compare, 10-K, IRS 990). Everything runs on your laptop. No API calls, no SaaS subscription, no black-box scoring — every output traces back to an input and a function you can read.
 
 ---
 
-## I need…
+## I need to…
 
-| If you want to… | Go to… |
-|-----------------|--------|
-| **Understand what this tool does in plain English** | [§1 — Plain English](#1-what-is-this-in-plain-english) |
-| **See a full deal walkthrough from Mon 9 AM to Mon 10:30 AM** | [§6 — Walkthrough](#6-full-walkthrough-one-imaginary-deal-start-to-finish) or the longer [WALKTHROUGH.md](WALKTHROUGH.md) |
-| **Install it and run it on my laptop** | [§5 — Install](#5-how-to-install-and-run-it-from-zero) |
-| **Find a specific file or module** | [FILE_INDEX.md](FILE_INDEX.md) — the master map |
-| **Understand how one module works** | [§7 — Per-module tour](#7-the-tools-explained-one-by-one) — each section links to its per-module README |
-| **See what's changed recently** | [COMPUTER_24HOUR_UPDATE_NUMBER_1.md](COMPUTER_24HOUR_UPDATE_NUMBER_1.md), [RCM_MC/CHANGELOG.md](RCM_MC/CHANGELOG.md) |
-| **Contribute or fix a bug** | [CONTRIBUTING.md](CONTRIBUTING.md), [RCM_MC/CLAUDE.md](RCM_MC/CLAUDE.md) (coding conventions) |
-| **Know where metrics come from** | [RCM_MC/docs/METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md), [RCM_MC/docs/BENCHMARK_SOURCES.md](RCM_MC/docs/BENCHMARK_SOURCES.md) |
+| Goal | Go to |
+|------|-------|
+| **Install it** | [§4 — Install](#4-install) |
+| **See a full MondayAM→ICready walkthrough** | [§5 — Deal walkthrough](#5-deal-walkthrough-mondayam--ic-ready-by-1030am) or the longer [WALKTHROUGH.md](WALKTHROUGH.md) |
+| **Find a file or module** | [FILE_INDEX.md](FILE_INDEX.md) |
+| **Read a module's methodology** | [§6 — Module methodology](#6-module-methodology) — each links to its per-module README |
+| **Audit a number's provenance** | [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md), [BENCHMARK_SOURCES.md](RCM_MC/docs/BENCHMARK_SOURCES.md) |
+| **Read the PE heuristics rulebook** | [PE_HEURISTICS.md](RCM_MC/docs/PE_HEURISTICS.md) — 275+ named partner rules |
+| **See what's changed** | [CHANGELOG.md](RCM_MC/CHANGELOG.md), [COMPUTER_24HOUR_UPDATE_NUMBER_1.md](COMPUTER_24HOUR_UPDATE_NUMBER_1.md) |
+| **Contribute** | [CONTRIBUTING.md](CONTRIBUTING.md), [CLAUDE.md](RCM_MC/CLAUDE.md) (coding conventions) |
 
 ---
 
 ## Table of contents
 
-1. [What is this, in plain English?](#1-what-is-this-in-plain-english)
-2. [Who uses it?](#2-who-uses-it)
-3. [The big idea behind the tool](#3-the-big-idea-behind-the-tool)
-4. [What can it do? All 17 features](#4-what-can-it-do-all-17-features)
-5. [How to install and run it (from zero)](#5-how-to-install-and-run-it-from-zero)
-6. [Full walkthrough: one imaginary deal, start to finish](#6-full-walkthrough-one-imaginary-deal-start-to-finish)
-7. [The tools, explained one by one](#7-the-tools-explained-one-by-one)
-8. [How it's built under the hood](#8-how-its-built-under-the-hood)
-9. [Project file layout](#9-project-file-layout)
-10. [If something breaks](#10-if-something-breaks)
+1. [What it does](#1-what-it-does)
+2. [Module surface — 17 analytic cuts](#2-module-surface--17-analytic-cuts)
+3. [How the models work](#3-how-the-models-work)
+4. [Install](#4-install)
+5. [Deal walkthrough (Monday AM → IC-ready by 10:30 AM)](#5-deal-walkthrough-mondayam--ic-ready-by-1030am)
+6. [Module methodology](#6-module-methodology)
+7. [Stack & design choices](#7-stack--design-choices)
+8. [File layout](#8-file-layout)
+9. [Troubleshooting](#9-troubleshooting)
 
 ---
 
-## 1. What is this, in plain English?
+## 1. What it does
 
-Imagine you're a big investor who wants to buy a hospital. A hospital costs hundreds of millions of dollars. If you buy the wrong one, you lose all that money and probably your job. If you buy the right one, you make your investors rich.
+Takes a target (CCN or name) and an LOI-style input (NPR, EBITDA, EV, debt, entry multiple, payer mix, landlord) and runs a **19-step pipeline** in ~170ms that produces:
 
-Before you buy it, you have to answer hard questions like:
+- Peer benchmark across 15 HCRIS metrics vs 25–50 bed/state/region-matched peers (3-yr trend slopes, peer P25/median/P75 bands)
+- Regulatory exposure mapped to **named thesis drivers** with first-kill date and annual EBITDA overlay
+- 500-path × 20-quarter covenant stress with equity-cure sizing per breach
+- Bridge audit of seller synergies against ~3,000-outcome lever-realization priors with counter-bid math
+- Payer concentration MC with rate-shock priors and HHI amplifier
+- Deal MC (1,500+ trials) with MOIC/IRR/proceeds cones
+- Autopsy match against 12 named historical failures (Steward, Cano, Envision, etc.)
+- Exit-timing IRR curve × buyer-fit across Y2–Y7
+- Auto-generated bear case with `[R/C/B/M/A/E/P/H]` citation keys → print-ready IC memo HTML
 
-- Is this hospital financially healthy?
-- Is it better or worse than other hospitals of the same size?
-- What happens if the government changes the rules next year?
-- Can the hospital's debt payments still be covered if things get worse?
-- Does the hospital's marketing material ("the pitch book") tell the truth?
-
-Answering these questions usually takes months, involves many consultants, and costs millions of dollars.
-
-**This tool does most of that work in about 30 minutes, sitting on your laptop, using data that is publicly available.**
-
-It's like a calculator — but instead of doing math on numbers, it does "diligence" (financial checking) on hospitals and doctor groups. "Diligence" is Wall Street slang for "checking carefully before you buy something."
-
-**Analogy**: think of this tool as Carfax for hospitals. Carfax looks up a car's history before you buy it so you don't get scammed. This tool does the same thing — but for multi-hundred-million-dollar healthcare deals.
+Every number is reproducible — same inputs → same outputs, no RNG leakage (seeded where needed), no external network calls.
 
 ---
 
-## 2. Who uses it?
+## 2. Module surface — 17 analytic cuts
 
-- **Private equity (PE) firms** — companies like Blackstone or KKR that buy businesses, improve them for a few years, and sell them at a profit. When the business they're buying is a hospital, they need this tool.
-- **Managing Directors, Principals, VPs, Associates** at those firms — the people who spend their days evaluating deals.
-- **Investment committee members** — senior partners who approve or reject deal proposals. This tool makes the memos those people read.
-- **Lenders and banks** that lend money to PE deals. They care about the same "can the hospital pay its bills?" questions.
+### Screening
+1. **HCRIS Peer X-Ray** — 17,701 Medicare cost reports (FY 2020–2022) × 15 derived metrics × cohort-matched peer group
+2. **Bankruptcy-Survivor Scan** — signature match against a named-failure risk matrix
+3. **Deal Autopsy** — 12 historical PE healthcare failures with payer-mix × lease × regulatory × physician-concentration signatures
 
-If you are not one of those people, you can still use this tool to learn how PE healthcare deals work. It's a good way to see public data that nobody else productizes.
+### Diligence
+4. **RCM Benchmarks** — 20+ revenue-cycle KPIs (gross denial rate, clean-DAR, cost-to-collect, NPSR realization) vs HFMA peer bands
+5. **Denial Prediction** — ridge-regression (stdlib) over claims features with conformal prediction bands
+6. **Management Scorecard** — role-weighted (CEO 35% / CFO 25% / COO 20%) forecast-reliability × comp × tenure × prior-role
+7. **Physician Attrition** — per-NPI flight-risk with revenue-at-risk rollup
+8. **Provider Economics** — per-MD P&L with drop-candidate identification
+9. **Payer Mix Stress** — 19 curated payers × historical rate-move priors × HHI concentration amplifier × 500-path MC
 
----
+### Market / regulatory context
+10. **Regulatory Calendar × Kill-Switch** — 11 curated CMS/OIG/FTC/DOJ events × ThesisDriver mapping × first-kill date × EBITDA overlay
+11. **Seeking Alpha Intelligence** — 14 public operators + 12 recent PE transactions + sector sentiment
+12. **Market Intel** — private deal multiples by specialty × size bucket
 
-## 3. The big idea behind the tool
+### Financial modeling
+13. **Deal Monte Carlo** — 1,500+ trials, 8 drivers varied (organic growth, denial improvement, reg headwind, lease escalator, attrition, cyber, V28 compression, exit multiple) with attribution + sensitivity tornado
+14. **Covenant Stress Lab** — 500 lognormal paths × 20 quarters × 4 covenants with step-down schedules + equity-cure math + regulatory overlay
+15. **Bridge Auto-Auditor** — 21-category keyword-priority classifier × ~3,000-outcome realization priors with target-conditional boosts
+16. **Exit Timing + Buyer Fit** — IRR curve × buyer-type scoring (Strategic / PE Secondary / IPO / Sponsor-Hold)
 
-Every module in this tool answers a question a PE partner would ask out loud in a meeting. Here are the 7 main questions:
-
-| Partner question | Tool module |
-|------------------|-------------|
-| "How does this hospital compare to similar hospitals?" | **HCRIS Peer X-Ray** |
-| "Which government rule changes could ruin our thesis, and when?" | **Regulatory Calendar × Kill-Switch** |
-| "If we borrow $350M, can the company still make its debt payments if things go bad?" | **Covenant Stress Lab** |
-| "The seller is claiming $12M of synergies — is that real or fake?" | **Bridge Auto-Auditor** |
-| "What if one of the big health insurers cuts our rates?" | **Payer Mix Stress Lab** |
-| "What's the worst-case version of this investment I should put in the memo?" | **Bear Case Auto-Generator** |
-| "What do the public hospital stocks tell me about this market right now?" | **Seeking Alpha Market Intel** |
-
-Partners used to answer these by hiring consultants (McKinsey, Bain) for $500K+ each. Now they get instant answers on their laptop.
-
----
-
-## 4. What can it do? All 17 features
-
-Think of this as the "features list on the box":
-
-### Screening (before you even make an offer)
-1. **HCRIS Peer X-Ray** — look up any US hospital by name or Medicare ID, get instant benchmark against 25–50 similar hospitals across 15 key metrics.
-2. **Bankruptcy-Survivor Scan** — red-flag risk score so you don't buy the next Steward Health.
-3. **Deal Autopsy** — compares your target to 12 historical failed deals so you can spot "you're about to do Cano Health again" patterns.
-
-### Checking the numbers (diligence)
-4. **RCM Benchmarks** — 20+ revenue-cycle KPIs (denial rate, days in AR, cost-to-collect, etc.) compared to peer averages.
-5. **Denial Prediction** — machine-learning model predicts how many insurance claims will get denied.
-6. **Management Scorecard** — rates executives on forecast accuracy, compensation, tenure, prior-role reputation.
-7. **Physician Attrition** — predicts which doctors will leave after the acquisition.
-8. **Provider Economics** — per-doctor profit and loss, finds "drop candidates" who are losing money.
-9. **Payer Mix Stress Lab** — stress-tests the hospital's mix of insurance companies. If UnitedHealth cuts rates 5%, here's what happens.
-
-### Market context (what's the world doing?)
-10. **Regulatory Calendar × Thesis Kill-Switch** — upcoming CMS / OIG / FTC events mapped against your deal thesis. Tells you "your MA margin thesis dies April 12, 2026 when V28 final rule publishes."
-11. **Seeking Alpha Market Intelligence** — 14 public hospital stocks, 12 recent PE deals, sector sentiment, news feed.
-12. **Market Intel / Peer Snapshot** — private deal multiples by specialty and deal size.
+### Synthesis
+17. **Bear Case + IC Packet** — 8-source evidence synthesizer, severity × $-impact ranked, citation-keyed, print-ready memo HTML
 
 ### Financial modeling (can we make money?)
 13. **Deal Monte Carlo** — runs 3,000 simulated futures for the deal, shows the range of possible MOIC (money multiple) and IRR (annual return) outcomes.
@@ -115,93 +88,54 @@ Think of this as the "features list on the box":
 15. **Bridge Auto-Auditor** — paste the seller's synergy claims, get a risk-adjusted rebuild with counter-offer math.
 16. **Exit Timing + Buyer Fit** — when should you sell the company, and to whom?
 
-### Writing the memo (IC prep)
-17. **Bear Case Auto-Generator + IC Packet** — collects evidence from every module, writes the "what could break this thesis" memo section, and bundles everything into a print-ready investment committee packet.
+---
+
+## 3. How the models work
+
+Every module follows the same pattern so outputs are auditable:
+
+1. **Curated prior library** — hand-calibrated YAML / Python dataclass tuples (payer rate-move distributions, lever realization priors, regulatory event × driver mappings, PE autopsy signatures). Each prior cites its source (HFMA survey, 10-K commentary, Federal Register docket, retrospective failure analysis). Refresh cadence per file.
+2. **Target profile normalization** — LOI inputs + HCRIS lookup feed a `target_profile` dict with specialty, MA mix, payer concentration, landlord, CCN. Modules read from this — no cross-module state.
+3. **Monte Carlo where distributions matter** — covenant stress (500 paths × 20 quarters), Deal MC (1,500+ trials × 8 drivers), payer stress (500 paths × horizon years), HCRIS peer-density quantiles. All MC uses stdlib-only Beasley-Springer-Moro inverse normal (no scipy) for reproducibility and zero runtime deps beyond numpy/pandas.
+4. **Target-conditional adjustments** — priors aren't static. A denial-workflow lever prior gets +12pp median realization when the target's denial rate is already >8% (low-hanging fruit). An FTE-reduction prior loses 30pp when the target is unionized. These boosts are explicit in the `LeverPrior` dataclass, not hidden in scoring code.
+5. **Verdict thresholds → named** — every module emits PASS / CAUTION / WARNING / FAIL against documented numeric cutoffs (e.g., covenant breach-probability >50% = FAIL). Thresholds are in the README for each module, editable in one place.
+6. **Dollar-impact rollup** — everything terminates in an EBITDA-at-risk number that feeds downstream. Regulatory overlay → Covenant Lab overlay → Deal MC `reg_headwind_usd` → Bear Case `[R1]` evidence → IC memo headline.
+
+**Trust hooks**:
+- Every `@dataclass` output has a `source_module` and `citation_key` field
+- Every MC function accepts `seed: int` for deterministic reproduction
+- Every prior's calibration source is documented in the module README's "Refreshing the priors" section
+- `rcm-mc analysis <deal_id> --explain <metric>` traces any metric back through its provenance graph to raw inputs
 
 ---
 
-## 5. How to install and run it (from zero)
+## 4. Install
 
-Your laptop needs:
-- **macOS or Linux** (Windows works with WSL)
-- **Python 3.14** (check by running `python3 --version` in a Terminal)
-- **git** (check with `git --version`)
-- About **1 GB** of free disk space
-
-### Step 1 — Open a Terminal
-
-- **Mac**: press `Cmd + Space`, type "Terminal", press Enter
-- **Linux**: usually `Ctrl + Alt + T`
-
-### Step 2 — Download the code from GitHub
+Requirements: macOS/Linux (Windows via WSL), Python 3.14, git, ~1 GB disk.
 
 ```bash
-# Pick a folder where you want the code to live
-cd ~/Desktop
-
-# Clone the repo (downloads the whole project)
 git clone https://github.com/DrewThomas09/RCM.git
-
-# Go into it
 cd RCM
-```
-
-If you don't have git, you can go to https://github.com/DrewThomas09/RCM, click the green **"Code"** button, click **"Download ZIP"**, then unzip the file and `cd` into the folder.
-
-### Step 3 — Create a Python "virtual environment"
-
-A virtual environment is a clean Python sandbox. It keeps this project's code separate from the rest of your computer.
-
-```bash
 python3.14 -m venv .venv
 source .venv/bin/activate
-```
-
-After this runs, your Terminal prompt should start with `(.venv)`. That means you're inside the sandbox.
-
-### Step 4 — Install the tool
-
-```bash
 cd RCM_MC
 pip install -e ".[all]"
-```
-
-This downloads everything the tool needs (about 30 seconds with decent internet).
-
-### Step 5 — Run it
-
-```bash
 python demo.py
 ```
 
-This:
-1. Creates a demo database with fake data
-2. Starts a web server at `http://localhost:8080`
-3. Opens your browser automatically
+Demo seeds a SQLite fixture DB, starts `ThreadingHTTPServer` on `:8080`, opens the browser. No external deps beyond numpy / pandas / pyyaml / matplotlib / openpyxl.
 
-You should now see the **SeekingChartis** home page. Click around!
-
-### Later — shut it down
-
-Press `Ctrl + C` in the Terminal where it's running.
-
-### Later — start it up again
+Restart later:
 
 ```bash
-cd ~/Desktop/RCM/RCM_MC
-source ../.venv/bin/activate   # re-activate the sandbox
-python demo.py
+cd ~/Desktop/RCM/RCM_MC && source ../.venv/bin/activate && python demo.py
 ```
 
 ---
 
-## 6. Full walkthrough: one imaginary deal, start to finish
+## 5. Deal walkthrough (Monday AM → IC-ready by 10:30 AM)
 
-Let's pretend you're a PE VP. It's Monday morning. Your managing director says:
-
-> "There's a 300-bed community hospital in Alabama. Asking price $600M. Take the week to figure out if we should bid on it."
-
-Here's how you'd use the tool:
+Scenario: 300-bed Alabama community hospital, $600M ask, IC-memo deadline Friday.
 
 ### Monday 9:00 AM — Discover the target
 
@@ -219,19 +153,17 @@ The HCRIS X-Ray page loads. You see:
 - **Occupancy rate: 80.7%** (above peer P75 — the hospital is busy)
 - **Medicare day share: 24.9%** (normal)
 
-The box-plot visualizations show you exactly where this hospital sits in the peer distribution. The 3-year sparkline per metric shows whether things are improving or getting worse.
+Per-metric box-plot shows target's position in peer density. 3-yr sparkline shows slope. **Read**: occupancy-strong, margin-distressed, trajectory negative → turnaround thesis only, not a growth story.
 
-**What this tells you**: This is a distressed hospital. Still busy but losing money. Could be a turnaround play, but risky.
+### 9:10 AM — Public-market context
 
-### 9:10 AM — Check the public market
+**Seeking Alpha** (follows you via the working-deal context bar):
 
-Click **Seeking Alpha** from the context bar that follows you around. You see:
+- HCA 8.9× EV/EBITDA — the large-cap peer anchor
+- Target margin −4.4% vs HCA +16.9% → 21.3pp gap, not explainable by size alone
+- Recent comp: Audax / behavioral platform at 10.8× (size-bucketed)
 
-- HCA public stock trading at 8.9× EV/EBITDA — that's the peer multiple for big hospital chains
-- The "Public Market Context" block on HCRIS X-Ray showed Southeast Health's −4.4% margin vs HCA's +16.9% — a 21.3pp gap
-- Recent PE deals in the sector: Audax bought a behavioral platform at 10.8×
-
-**What this tells you**: Public hospitals trade around 9×. Private deals go a bit higher. A distressed hospital like Southeast should trade at a discount — maybe 6× or less.
+**Read**: public-hospital tape ≈ 9×; private small-cap premium ≈ +1–2×; distressed adjustment -3–4×. Anchor bid in the 5–6× range.
 
 ### 9:15 AM — Open Deal Profile and set the "working deal"
 
@@ -272,7 +204,7 @@ Output:
 - Median equity cure: $0.8M (not a lot, but continuous)
 - At 11% blended rate × $250M = $27.5M interest vs $21M EBITDA → ICR 0.76× (below 2.25× floor)
 
-**What this tells you**: You can't borrow $250M against $21M EBITDA. Either put in more equity or walk.
+**Read**: capital stack broken — can't lever $250M against $21M EBITDA. Either under-lever (equity-rich) or re-cut at lower EV.
 
 ### 9:45 AM — Audit the banker's synergies
 
@@ -323,135 +255,148 @@ Click **IC Packet**. Everything from every module is bundled into a single memo 
 
 Cmd-P prints it cleanly for the partners' Tuesday 8 AM meeting.
 
-### Total time elapsed: 90 minutes
-
-Without this tool, this analysis would have taken 2–3 weeks and cost $200K+ in consulting fees. **You just did the same work before lunch on a Monday.**
-
 ---
 
-## 7. The tools, explained one by one
+## 6. Module methodology
 
-This is the long-form walkthrough of every module. Each one has its own web page (URL) and tells a specific part of the story.
+Each module's per-file README has the full math. The summaries below cover calibration source, sample size, method, key assumptions, and named thresholds.
 
-### HCRIS Peer X-Ray · `/diligence/hcris-xray` · [module README](RCM_MC/rcm_mc/diligence/hcris_xray/README.md)
+### HCRIS Peer X-Ray · `/diligence/hcris-xray` · [README](RCM_MC/rcm_mc/diligence/hcris_xray/README.md)
 
-**What it does**: Every Medicare-accepting hospital in the US files a "Medicare cost report" every year with the government. That report has 2,500+ data fields — bed count, payer mix, patient days, gross revenue, net revenue, operating expenses, everything. We loaded 17,701 of these reports. You type any hospital's name or Medicare ID (CCN), and the tool instantly benchmarks that hospital against 25–50 similar hospitals (same size, state, payer mix, year) across 15 derived metrics.
+**Corpus**: 17,701 Medicare cost reports, CMS HCRIS public extract, FY 2020–2022. Cost of 1 cold-load parse ~250ms, cached; subsequent lookups ~7ms.
 
-**Why it's powerful**: This is public data nobody else productizes. A CapIQ subscription costs $80K/year and doesn't give you this. You're looking at the same data the hospital filed with the government — ground truth, not banker spin.
+**Peer-match waterfall**: same cohort (`MICRO / SMALL_COMMUNITY / COMMUNITY / REGIONAL / ACADEMIC` binned on beds) + same state + beds within ±30% → same region → national. Stops at ≥25 peers (configurable via `peer_k`).
 
-**What you see**: target card + metric benchmark grid + per-metric sparkline (3-year trend) + per-metric box-plot (where target sits in peer distribution) + peer roster table + public-comp context block (target vs HCA/Tenet/UHS).
+**Metric surface**: 15 derived ratios grouped into Size / Payer Mix / Revenue Cycle / Cost Structure / Margin. Each metric has a `direction` flag (HIGHER_BETTER / LOWER_BETTER / NEUTRAL) that drives the green/red coloring logic. Full spec in [`metrics.py`](RCM_MC/rcm_mc/diligence/hcris_xray/metrics.py) `METRIC_SPECS`.
 
-### Regulatory Calendar × Thesis Kill-Switch · `/diligence/regulatory-calendar` · [module README](RCM_MC/rcm_mc/diligence/regulatory_calendar/README.md)
+**Trend slope**: 3-year linear slope on same-CCN history; classified IMPROVING / FLAT / DETERIORATING on ±1% annualized threshold.
 
-**What it does**: We curated 11 upcoming US healthcare regulatory events (CMS V28, OPPS site-neutral, TEAM bundled payment, NSA IDR, ESRD PPS, FTC HSR expansion, OIG management-fee, DOJ False Claims, etc.). Each event has a publish date, effective date, and a mapping of which thesis drivers it kills. You input your target's profile (specialty, payer mix, geography), and the tool tells you which of your claimed value-creation drivers die, and on which specific date.
+### Regulatory Calendar × Kill-Switch · `/diligence/regulatory-calendar` · [README](RCM_MC/rcm_mc/diligence/regulatory_calendar/README.md)
 
-**Why it's powerful**: Traditional tools talk about "regulatory risk" in fuzzy terms. This tool tells you "your MA margin lift thesis driver dies on 2027-01-01 when V28 final rule takes effect — residual value 0.0 pp out of claimed 5.5 pp." That specificity is unique.
+**Corpus**: 11 hand-curated events covering CMS V28 HCC, OPPS site-neutral CY2026, TEAM mandatory bundled payment, NSA IDR QPA recalculation, ESRD PPS CY2027, FTC HSR expansion, USAP FTC consent order, CT HB 5316 sale-leaseback phaseout, CMS PFS E/M updates, OIG management-fee advisory, DOJ FCA retroactive coding. Each carries publish / effective dates, affected specialties, impact distribution, thesis drivers killed, Federal Register docket URL.
 
-**What you see**: verdict card (PASS/CAUTION/WARNING/FAIL), risk score, Gantt timeline of events, per-driver timeline, EBITDA overlay table.
+**Driver mapping**: target profile (specialty, MA mix, payer share, HOPD revenue %, REIT landlord) fed to per-event impact mapper. Driver-level verdict: UNAFFECTED / DAMAGED (>10% impair) / KILLED (>50% impair or zero residual).
 
-### Covenant & Capital Stack Stress Lab · `/diligence/covenant-stress` · [module README](RCM_MC/rcm_mc/diligence/covenant_lab/README.md)
+**Verdict thresholds**: PASS = no driver impaired >10%. CAUTION = 1 damaged, 0 killed. WARNING = 1 killed OR 2+ damaged. FAIL = 2+ killed.
 
-**What it does**: Takes the Deal MC EBITDA projections (the distribution of how much money the company might make over 5 years), overlays your debt structure (revolvers, term loans, mezzanine), and tells you per-quarter how likely you are to breach your loan covenants. A covenant is a rule in the loan agreement like "debt-to-EBITDA must stay below 6×" — break one and the bank can call the loan.
+**Dollar overlay**: per-year EBITDA headwind $ fed downstream to Covenant Lab (subtracted from EBITDA paths pre-test) and Deal MC (`reg_headwind_usd` driver).
 
-**Why it's powerful**: Partners ask "when does this deal hit a cliff?" This tool answers with a specific quarter and a dollar amount for the equity cure needed.
+### Covenant & Capital Stack Stress Lab · `/diligence/covenant-stress` · [README](RCM_MC/rcm_mc/diligence/covenant_lab/README.md)
 
-**What you see**: breach probability curves per covenant × quarter, debt service cliff chart, equity cure sizing table, capital stack detail.
+**Path reconstruction**: Deal MC yearly P25/P50/P75 bands → 500 lognormal paths via stdlib Beasley-Springer-Moro inverse normal. No scipy.
 
-### EBITDA Bridge Auto-Auditor · `/diligence/bridge-audit` · [module README](RCM_MC/rcm_mc/diligence/bridge_audit/README.md)
+**Debt schedule**: 6 tranche kinds (REVOLVER / TLA / TLB / UNITRANCHE / MEZZANINE / SELLER_NOTE) with floating or fixed rates, custom amort, commitment fees on undrawn revolver, lien priority. Quarterly interest + scheduled principal + fees.
 
-**What it does**: When sellers pitch their business, they give buyers a "synergy bridge" — a list of ways the buyer will improve EBITDA after closing. For example: "we'll consolidate vendors (saves $2.8M), overhaul denials (adds $4.2M), uplift coding (adds $3.1M)." Total: $10M+ of claimed improvements. Banker says the deal deserves a higher multiple because of these synergies.
+**Covenants tested** (default set, editable in [`covenants.py`](RCM_MC/rcm_mc/diligence/covenant_lab/covenants.py) `DEFAULT_COVENANTS`): Net Leverage, DSCR, Interest Coverage, Fixed Charge Coverage. Step-downs supported (e.g., 7.5× → 6.0× over Y1–Y4).
 
-The problem: **most of those claimed synergies never show up**. Vendor consolidation only realizes its claim 38% of the time. This tool paste-audits each lever against a library of ~3,000 historical RCM initiative outcomes and rebuilds the bridge with realistic numbers.
+**Equity cure math**: for each breaching path × quarter, solve for the minimum $ injection that restores the breached ratio above threshold with cushion.
 
-**Why it's powerful**: Partners pay consulting firms $500K+ to do this audit manually. This tool does it in 4 seconds.
+**Verdict thresholds** (PE bank underwriting norms): max breach probability <10% = PASS · 10–25% = WATCH · 25–50% = WARNING · >50% = FAIL.
 
-**What you see**: verdict card (MATERIAL/GAP/OK), claimed-vs-realistic comparison chart per lever, counter-bid recommendation with earn-out alternative, full lever library reference.
+### EBITDA Bridge Auto-Auditor · `/diligence/bridge-audit` · [README](RCM_MC/rcm_mc/diligence/bridge_audit/README.md)
 
-### Bear Case Auto-Generator · `/diligence/bear-case` · [module README](RCM_MC/rcm_mc/diligence/bear_case/README.md)
+**Prior corpus**: ~3,000 historical RCM initiative outcomes calibrated from HFMA/MGMA/AHA surveys + 10-K commentary + retrospective analysis of PE healthcare failures (Steward, Cano, Envision). Refreshed when regulatory environment shifts the failure rate (e.g., V28 dropped `MA_CODING_UPLIFT` prior 15pp from 2022 → 2026).
 
-**What it does**: Every investment committee memo needs a "bear case" section — what could break this thesis. Partners normally write this by hand (3–5 hours per memo × 3–5 memo drafts per deal = 20+ hours). This tool pulls evidence from 8 sources (Regulatory Calendar, Covenant Stress, Bridge Audit, Deal MC, Deal Autopsy, Exit Timing, Payer Stress, HCRIS X-Ray), ranks by severity and dollar impact, assigns citation keys `[R1/C1/B1/M1/A1/E1/P1/H1]`, and produces a print-ready memo block.
+**21 lever categories**: routed from raw banker text via priority-tiebreak keyword classifier. Specialized (`MA_CODING_UPLIFT`, `SITE_NEUTRAL_MITIGATION`) beat generic (`CODING_INTENSITY`) on priority. Full list + keywords in [`lever_library.py`](RCM_MC/rcm_mc/diligence/bridge_audit/lever_library.py).
 
-**Why it's powerful**: Every piece of evidence is sourced and clickable. The memo partners paste into IC isn't opinion — it's cited.
+**Per-lever prior**: median / P25 / P75 realization fraction (1.0 = fully realized), failure rate (fraction <50% realized), duration-to-run-rate months, conditional boosts (e.g., `denial_workflow` gets +12pp median when target denial rate >8%; `FTE_REDUCTION` gets −30pp when target is unionized).
 
-**What you see**: verdict card (EBITDA at risk as % of run-rate), theme-grouped evidence cards with citation keys + deep links back to source modules, copy-paste IC memo HTML.
+**Verdict per lever**: REALISTIC (inside P25-P75) / OVERSTATED (claim >P75) / UNSUPPORTED (claim >P75 AND historical failure rate >40%) / UNDERSTATED (claim <P25, potential sandbag).
 
-### Payer Mix Stress Lab · `/diligence/payer-stress` · [module README](RCM_MC/rcm_mc/diligence/payer_stress/README.md)
+**Rollup**: bridge-level gap % between claimed and realistic P50 → counter-bid math = gap × entry multiple. Alternative: structure gap $ as earn-out triggered at higher LTM EBITDA threshold.
 
-**What it does**: Hospital revenue depends on which insurance companies are paying. The big 5 national payers (UHC, Anthem, Aetna, Cigna, Humana) plus Blues regional plans + Medicare + Medicaid make up most of the pie. Each payer reprices their contracts every 1–3 years. Our tool curates 19 major payers with historical rate-move distributions, negotiating leverage scores, renewal cadences, and churn probabilities — then runs a Monte Carlo of rate shocks across your target's actual mix to compute NPR and EBITDA at risk.
+### Bear Case Auto-Generator · `/diligence/bear-case` · [README](RCM_MC/rcm_mc/diligence/bear_case/README.md)
 
-**Why it's powerful**: Payer mix is the #1 driver of hospital economics but nobody quantifies dynamic rate risk this way. You see exactly how fragile your deal is to a 5% UHC cut.
+**Evidence extractors (8)**: one per source module. Each returns a list of `Evidence` with severity (CRITICAL / HIGH / MEDIUM / LOW), $ impact, citation key, narrative, source deep-link. Extractors are defensive — missing inputs return `[]`, never raise.
 
-**What you see**: mix donut chart with concentration ring, verdict card, per-payer cards with median/P10/P90 rate moves, aggregate NPR impact cone.
+**Ranking**: severity × absolute $ impact × source-module priority, with deduplication between regulatory overlay and bridge-audit gap (common double-count).
 
-### Seeking Alpha Market Intelligence · `/market-intel/seeking-alpha`
+**Citation keys**: `[R{n}]` regulatory, `[C{n}]` covenant, `[B{n}]` bridge audit, `[M{n}]` Deal MC, `[A{n}]` autopsy, `[E{n}]` exit, `[P{n}]` payer, `[H{n}]` HCRIS. Each resolves to a deep link back to the source module page.
 
-**What it does**: Curated snapshot of public healthcare operators (HCA, THC, CYH, UHS, EHC, ARDT, PRVA, DVA, FMS, SGRY, UNH, ELV, MPW, WELL) with EV/EBITDA multiples + analyst consensus, plus 12 recent PE transactions with sponsor/target/multiple/narrative, plus a sector sentiment heatmap + news feed.
+**Verdict thresholds**: EBITDA-at-risk as % of run-rate — <3% = clears IC · 3–10% = watch · 10–25% = material · >25% = IC-killable.
 
-**Why it's powerful**: Gives you market context — "what's the tape saying right now?" — alongside your private-deal analysis.
+### Payer Mix Stress Lab · `/diligence/payer-stress` · [README](RCM_MC/rcm_mc/diligence/payer_stress/README.md)
 
-**What you see**: ticker cards with color-coded EV/EBITDA + analyst BUY/HOLD/SELL badges, PE deal feed with sponsor leaderboard, news headlines, category band table.
+**Prior library**: 19 curated payers covering national commercial (UHC, Anthem, Aetna, Cigna, Humana), regional Blues, Medicare FFS + MA, Medicaid FFS + Centene + Molina, TRICARE, Workers Comp, Self-pay. Each: per-renewal rate-move distribution (p25/median/p75), negotiating leverage (0-1), 12-mo renewal probability, churn probability. Calibrated from HFMA/MGMA surveys + 10-K commentary (HCA/THC/UHS disclose payer-specific rate movements).
+
+**Monte Carlo**: 500 paths × horizon years × each payer. Per path: sample rate move from Normal fit to prior, dampen by (1 − renewal probability) when not renewing that year, draw tail churn event with payer-specific probability.
+
+**Concentration amplifier** (empirical PE credit-fund heuristic): Top-1 share >30% → multiply aggregate NPR volatility by `1 + (top_1 − 0.30) × 2`. Top-2 >50% → +0.10. Top-3 >70% → +0.10 more.
+
+**Verdict thresholds**: max concentration severity + P10 EBITDA drag → PASS / CAUTION / WARNING / FAIL.
 
 ### Deal Monte Carlo · `/diligence/deal-mc`
 
-**What it does**: Runs 3,000 simulated 5-year futures for the deal. Each simulation varies organic growth, denial improvement realization, regulatory headwind, lease escalator, physician attrition, cyber incidents, V28 compression, and exit multiple. Outputs MOIC / IRR / proceeds distributions + attribution (which driver mattered most) + sensitivity tornado.
+**Trials**: 1,500–3,000 (configurable via `n_runs`). 5-year hold default.
 
-**Why it's powerful**: Classic Excel MOIC is one point estimate. This gives you the full distribution — "there's a 25% chance we lose money, median 2.1× MOIC, P90 3.7×."
+**Drivers varied**: organic NPR growth, denial-improvement realization, regulatory headwind $, lease escalator %, physician attrition, cyber-incident probability, V28 coding compression, exit multiple. Each driver has a calibrated Normal or lognormal distribution — full priors in the `DealScenario` dataclass.
+
+**Outputs**: MOIC / IRR / proceeds distributions (P10/P50/P90), attribution (variance decomposition across drivers via Sobol-style first-order indices, stdlib-only), sensitivity tornado, P(MOIC<1×).
 
 ### Exit Timing + Buyer Fit · `/diligence/exit-timing`
 
-**What it does**: IRR / MOIC / proceeds curve across years 2–7 + buyer-fit scoring (Strategic / PE Secondary / IPO / Sponsor-Hold) + probability-weighted proceeds. Tells you when to sell and to whom.
+**IRR curve**: MOIC / IRR / proceeds evaluated for exit at each Y2–Y7. Applies exit-multiple compression/expansion priors by buyer type.
 
-### Thesis Pipeline · `/diligence/thesis-pipeline` · [module README](RCM_MC/rcm_mc/diligence/thesis_pipeline/README.md)
+**Buyer-fit scoring**: Strategic / PE Secondary / IPO / Sponsor-Hold — each scored on scale fit × synergy fit × financing environment × regulatory timing. Recommendation picks the highest probability-weighted proceeds.
 
-**What it does**: One-click orchestrator that runs all 14 analytic modules in sequence for a given deal. Produces a single report with every headline number + step log + deep-link tiles into each individual module.
+### Thesis Pipeline · `/diligence/thesis-pipeline` · [README](RCM_MC/rcm_mc/diligence/thesis_pipeline/README.md)
+
+**Step chain**: 19 steps wrapped in `_timed(step_name, fn, step_log)` — catches exceptions per step, logs elapsed ms + OK/ERROR/SKIP status. One broken step never breaks the whole report. Headline synthesizer pulls ~20 top-line numbers into `ThesisPipelineReport` for Deal Profile + IC Packet.
+
+**End-to-end runtime**: ~170ms on fixture data. Optional steps (HCRIS X-Ray when `hcris_ccn` supplied, regulatory calendar when specialty/payer data present) gated on input.
 
 ### Management Scorecard · `/diligence/management`
 
-**What it does**: Scores each executive (CEO/CFO/COO) on forecast reliability × comp × tenure × prior-role reputation. Produces a team-level roll-up with role weights (CEO 35% / CFO 25% / COO 20%).
+**Role weights**: CEO 35% / CFO 25% / COO 20% / remainder split across named direct reports. Per-exec score = forecast reliability × comp competitiveness × tenure × prior-role reputation (0–100 each, weighted).
 
 ### Physician Attrition · `/diligence/physician-attrition`
 
-**What it does**: Per-NPI (National Provider Identifier) flight-risk prediction. Tells you which doctors will leave after the acquisition, estimates NPR at risk.
+**Inputs**: per-NPI tenure, age, productivity trend, comp delta vs market, specialty churn rate. Outputs per-NPI flight-risk percentile + NPR-at-risk rollup.
 
 ### Provider Economics · `/diligence/physician-eu`
 
-**What it does**: Per-physician P&L. Finds "drop candidates" — doctors whose economic contribution is negative so removing them improves EBITDA.
+**Per-MD P&L**: gross receipts − variable costs − allocated overhead − comp. Drop-candidate = negative contribution margin AND replacement availability. EBITDA uplift from removing drop-candidates fed into Deal MC.
 
 ### Deal Autopsy · `/diligence/deal-autopsy`
 
-**What it does**: Matches your target's profile (payer mix × lease intensity × regulatory exposure × physician concentration) against a library of 12 historical PE healthcare deals (Steward, Cano, Envision, Surgery Partners, etc.) with known outcomes. Surfaces "you're about to do Deal X again" signatures.
+**Corpus**: 12 named historical failures (Steward, Cano Health, Envision, Surgery Partners, US Acute Care Solutions, Covis Pharma, etc.) with documented signatures across payer mix × lease intensity × regulatory exposure × physician concentration × sponsor pattern.
+
+**Match**: cosine similarity on signature vector. Top match returned with severity grade + narrative rationale + link to case study.
 
 ### RCM Benchmarks · `/diligence/benchmarks`
 
-**What it does**: 20+ revenue-cycle KPIs (days in AR, denial rate, clean claim rate, cost-to-collect, NPR realization, cohort liquidation, etc.) computed from claims data + HFMA peer-band compared.
+**KPIs**: 20+ revenue-cycle metrics — days in AR, gross denial rate, clean claim rate, cost-to-collect, NPSR realization, cohort liquidation curves, write-off patterns. Computed from claims corpus + HFMA peer-band compared (P25/P50/P75 peer bands by specialty + size).
 
 ### Diligence Checklist · `/diligence/checklist`
 
-**What it does**: Tracks which diligence items have been completed. 40+ items across 5 phases (screening → CCD + benchmarks → risk workbench → financial → deliverables). Auto-checks based on which modules fired.
+**Items**: 40+ diligence tasks across 5 phases — Screening → CCD/benchmarks → Risk workbench → Financial → Deliverables. Auto-check triggered by module fire events in the portfolio audit log.
 
 ### IC Packet · `/diligence/ic-packet`
 
-**What it does**: One-click investment committee deliverable. Bundles all module output into a print-ready HTML memo with bankruptcy scan, benchmarks, public comps, counterfactual, autopsy matches, regulatory timeline, bear case, and walkaway conditions.
+**Output**: print-ready HTML memo bundling Deal metadata + recommendation (PROCEED / PROCEED_WITH_CONDITIONS / DECLINE), waterfall + KPIs, bankruptcy scan, autopsy matches, counterfactual sensitivity, public-comp context, auto-injected regulatory timeline block, auto-injected bear case block, open banker questions, walkaway conditions. `@media print` CSS for clean Cmd-P to PDF.
+
+### Seeking Alpha Market Intelligence · `/market-intel/seeking-alpha`
+
+**Public operators (14)**: HCA, THC, CYH, UHS, EHC, ARDT, PRVA, DVA, FMS, SGRY, UNH, ELV, MPW, WELL. EV/EBITDA + analyst consensus BUY/HOLD/SELL. **PE transactions (12)**: recent sponsor/target/multiple with narrative and outcome. **Sector sentiment**: category heatmap + news feed. Refresh cadence weekly via curated YAML in `market_intel/content/`.
 
 ---
 
-## 8. How it's built under the hood
+## 7. Stack & design choices
 
-The technical vocabulary (for readers who care):
+- **Python 3.14**, stdlib-heavy — runtime deps = `numpy`, `pandas`, `pyyaml`, `matplotlib`, `openpyxl`. No sklearn, no torch, no scipy.
+- **Persistence**: SQLite via stdlib `sqlite3` — 17 tables, `busy_timeout=5000`, idempotent `CREATE TABLE IF NOT EXISTS` migrations.
+- **HTTP**: stdlib `http.server.ThreadingHTTPServer`. No Flask, FastAPI, or Docker required.
+- **Auth**: stdlib `hashlib.scrypt` + session cookies + CSRF + rate-limited login + unified audit log.
+- **Rendering**: server-side HTML string concatenation through one shared `shell()` in [`_ui_kit.py`](RCM_MC/rcm_mc/ui/_ui_kit.py). Scoped CSS (Chartis dark palette, `var(--accent) = #1F4E78`). One small vanilla-JS shim for CSRF-patching forms.
+- **Monte Carlo**: Beasley-Springer-Moro inverse normal throughout, seeded where reproducibility matters. No `np.random.default_rng` leakage between modules.
+- **Curated priors**: hand-written YAML / Python dataclass tuples with refresh cadence documented in each module README. No ML black boxes.
+- **Test coverage**: 2,971 passing tests via stdlib `unittest` driven by pytest. Multi-step workflows hit a real HTTP server on a free port via `urllib.request` — no mocks of our own code.
 
-- **Language**: Python 3.14
-- **Web server**: Python's built-in `http.server.ThreadingHTTPServer` — no Flask, no FastAPI, no Docker
-- **Database**: SQLite (built into Python) for portfolio + alerts
-- **Data files**: YAML for curated libraries (regulatory events, payer priors, PE transactions, public comps)
-- **Front end**: Server-rendered HTML with inline CSS (dark terminal "Chartis" palette). One small JavaScript file for CSRF tokens + sortable tables.
-- **Dependencies**: `numpy`, `pandas`, `pyyaml`, `matplotlib`, `openpyxl`. No `sklearn`, no `tensorflow`, no `torch`.
-- **Monte Carlo**: all stdlib-only (Beasley-Springer-Moro inverse normal for lognormal path reconstruction) — no `scipy` needed.
-
-The design philosophy is: **keep it boring so it runs anywhere**. A PE analyst can clone the repo on their work laptop behind corporate firewall, run the server locally, and never call out to the internet.
+Design philosophy: **boring stack so it runs on corporate-firewalled laptops offline**. No network calls in the hot path.
 
 ---
 
-## 9. Project file layout
+## 8. File layout
 
 **For a full navigable directory of every major file and module, see [FILE_INDEX.md](FILE_INDEX.md).** The sketch below is the 30-second version.
 
@@ -514,52 +459,25 @@ Coding Projects/
 
 ---
 
-## 10. If something breaks
+## 9. Troubleshooting
 
-**"python demo.py" fails with "no module named rcm_mc"**
-
-You forgot to activate the virtual environment. Run:
-```bash
-source .venv/bin/activate
-```
-
-**Tests fail**
-
-Run the subset that matters:
-```bash
-python -m pytest tests/test_hcris_xray.py tests/test_bear_case.py tests/test_payer_stress.py tests/test_bridge_audit.py tests/test_covenant_lab.py tests/test_regulatory_calendar.py -q
-```
-Should show `258 passed`. If not, open an issue with the error output.
-
-**Port 8080 is already in use**
-
-Another program is using it. Either:
-```bash
-# Option 1: kill what's using port 8080
-lsof -ti:8080 | xargs kill -9
-
-# Option 2: run on a different port
-rcm-mc serve --port 8081
-```
-
-**I broke my local database**
-
-Delete `seekingchartis.db` in the `RCM_MC/` folder and re-run `python demo.py`.
-
-**I'm lost, where do I start?**
-
-Read [WALKTHROUGH.md](WALKTHROUGH.md) — it's a longer hands-on tour, or jump into [RCM_MC/readME/00_Walkthrough_Tutorial.md](RCM_MC/readME/00_Walkthrough_Tutorial.md).
+| Problem | Fix |
+|---------|-----|
+| `no module named rcm_mc` | `source .venv/bin/activate` |
+| Tests fail | Run the new-module subset: `pytest tests/test_hcris_xray.py tests/test_bear_case.py tests/test_payer_stress.py tests/test_bridge_audit.py tests/test_covenant_lab.py tests/test_regulatory_calendar.py -q` → expect `258 passed` |
+| Port 8080 in use | `lsof -ti:8080 \| xargs kill -9` or `rcm-mc serve --port 8081` |
+| Corrupt local DB | Delete `RCM_MC/seekingchartis.db` + re-run `python demo.py` |
+| Where do I start? | [WALKTHROUGH.md](WALKTHROUGH.md) — longer hands-on tour |
 
 ---
 
-## Staying current
+## Links
 
 - Master file map: [FILE_INDEX.md](FILE_INDEX.md)
-- Latest cycle summary: [COMPUTER_24HOUR_UPDATE_NUMBER_1.md](COMPUTER_24HOUR_UPDATE_NUMBER_1.md)
-- Per-module READMEs: every directory under `RCM_MC/rcm_mc/diligence/` has its own README with per-file detail
+- Per-module READMEs under [`RCM_MC/rcm_mc/diligence/`](RCM_MC/rcm_mc/diligence/)
+- PE heuristics rulebook: [PE_HEURISTICS.md](RCM_MC/docs/PE_HEURISTICS.md)
+- Metric provenance: [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md)
+- Architecture: [ARCHITECTURE.md](RCM_MC/docs/ARCHITECTURE.md)
+- Changelog: [CHANGELOG.md](RCM_MC/CHANGELOG.md)
 - GitHub: https://github.com/DrewThomas09/RCM
 - Test status: 258/258 green on the new modules · 8,477/8,534 (99.3%) on the full suite
-
----
-
-*If you got this far, you know more about PE healthcare diligence than 99% of the general public. Have fun.*
