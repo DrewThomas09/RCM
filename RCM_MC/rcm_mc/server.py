@@ -1935,6 +1935,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Market intelligence — public healthcare comps + PE news.
         if path == "/market-intel":
             return self._route_market_intel_page()
+        # Market intel JSON endpoints — consumed by Deal Profile's
+        # live "Market Context" block + any page that wants on-demand
+        # peer-comparison data.
+        if path == "/api/market-intel/peer-snapshot":
+            return self._route_peer_snapshot_api()
         # IC Packet Assembler — one-click IC memo.
         if path == "/diligence/ic-packet":
             return self._route_ic_packet_page()
@@ -1944,6 +1949,50 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Claim-level denial prediction — CCD-native predictive analytic.
         if path == "/diligence/denial-prediction":
             return self._route_denial_prediction_page()
+        # Deal Autopsy — "you're about to do Steward again" matcher.
+        if path == "/diligence/deal-autopsy":
+            return self._route_deal_autopsy_page()
+        # Physician Attrition — flight-risk predictor per provider.
+        if path == "/diligence/physician-attrition":
+            return self._route_physician_attrition_page()
+        # Physician Economic Unit — per-provider P&L + roster optimization.
+        if path == "/diligence/physician-eu":
+            return self._route_physician_eu_page()
+        # Management Scorecard — forecast reliability × comp × tenure × prior.
+        if path == "/diligence/management":
+            return self._route_management_scorecard_page()
+        # Exit Timing + Buyer-Type Fit — when + to whom.
+        if path == "/diligence/exit-timing":
+            return self._route_exit_timing_page()
+        # Regulatory Calendar × Thesis Kill-Switch — which drivers die, when.
+        if path == "/diligence/regulatory-calendar":
+            return self._route_regulatory_calendar_page()
+        if path == "/api/regulatory-calendar/exposure":
+            return self._route_regulatory_calendar_api()
+        # Covenant Stress Lab — capital stack × covenants × MC cone.
+        if path == "/diligence/covenant-stress":
+            return self._route_covenant_lab_page()
+        # Bridge Auto-Auditor — banker's bridge × realization priors.
+        if path == "/diligence/bridge-audit":
+            return self._route_bridge_audit_page()
+        # Seeking Alpha — public healthcare market intel + PE deal flow.
+        if path == "/market-intel/seeking-alpha":
+            return self._route_seeking_alpha_page()
+        # Bear Case Auto-Generator — what could break this thesis.
+        if path == "/diligence/bear-case":
+            return self._route_bear_case_page()
+        # Payer Mix Stress Lab — rate-shock Monte Carlo on payer mix.
+        if path == "/diligence/payer-stress":
+            return self._route_payer_stress_page()
+        # HCRIS X-Ray — Medicare cost-report peer benchmarking.
+        if path == "/diligence/hcris-xray":
+            return self._route_hcris_xray_page()
+        # Diligence Checklist — orchestration layer + open-questions tracker.
+        if path == "/diligence/checklist":
+            return self._route_diligence_checklist_page()
+        # Thesis Pipeline — one-button full diligence chain runner.
+        if path == "/diligence/thesis-pipeline":
+            return self._route_thesis_pipeline_page()
         # Unified deal profile — one source of truth per deal.
         if path == "/diligence/deal" or path.startswith("/diligence/deal/"):
             return self._route_deal_profile_page(path)
@@ -3957,6 +4006,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_team()
         if path == "/pipeline":
             return self._route_pipeline()
+        if path == "/deals":
+            # /deals is the v2-nav label — redirect to /pipeline so
+            # stale nav links don't 404.
+            target = "/pipeline"
+            if parsed.query:
+                target = f"{target}?{parsed.query}"
+            self.send_response(301)
+            self.send_header("Location", target)
+            self.end_headers()
+            return
         if path == "/pipeline/bridge":
             return self._route_portfolio_bridge()
         if path == "/fund-learning":
@@ -6109,6 +6168,204 @@ class RCMHandler(BaseHTTPRequestHandler):
         )
         self._send_html(render_deal_mc_page(qs=qs))
 
+    # ── Deal Autopsy ─────────────────────────────────────────────────
+
+    def _route_deal_autopsy_page(self) -> None:
+        from .ui.deal_autopsy_page import render_deal_autopsy_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_deal_autopsy_page(qs=qs))
+
+    # ── Physician Attrition ──────────────────────────────────────────
+
+    def _route_physician_attrition_page(self) -> None:
+        from .ui.physician_attrition_page import (
+            render_physician_attrition_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_physician_attrition_page(qs=qs))
+
+    # ── Physician Economic Unit ──────────────────────────────────────
+
+    def _route_physician_eu_page(self) -> None:
+        from .ui.physician_eu_page import render_physician_eu_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_physician_eu_page(qs=qs))
+
+    # ── Management Scorecard ─────────────────────────────────────────
+
+    def _route_management_scorecard_page(self) -> None:
+        from .ui.management_scorecard_page import (
+            render_management_scorecard_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_management_scorecard_page(qs=qs))
+
+    # ── Exit Timing ──────────────────────────────────────────────────
+
+    def _route_exit_timing_page(self) -> None:
+        from .ui.exit_timing_page import render_exit_timing_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_exit_timing_page(qs=qs))
+
+    # ── Regulatory Calendar × Kill-Switch ────────────────────────────
+
+    def _route_regulatory_calendar_page(self) -> None:
+        from .ui.regulatory_calendar_page import (
+            render_regulatory_calendar_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_regulatory_calendar_page(qs=qs))
+
+    def _route_regulatory_calendar_api(self) -> None:
+        """GET /api/regulatory-calendar/exposure — JSON exposure
+        report for programmatic clients (Deal MC overlay, IC Packet,
+        Thesis Pipeline)."""
+        import json as _json
+        from .diligence.regulatory_calendar import (
+            analyze_regulatory_exposure,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+
+        def first(k: str, d: str = "") -> str:
+            return (qs.get(k) or [d])[0].strip()
+
+        def fnum(k: str):
+            v = first(k)
+            if not v:
+                return None
+            try:
+                return float(v)
+            except ValueError:
+                return None
+
+        def fbool(k: str) -> bool:
+            return first(k).lower() in ("1", "true", "yes", "on")
+
+        specialties_raw = first("specialties")
+        specialty = first("specialty")
+        specialties = []
+        if specialties_raw:
+            specialties = [
+                s.strip().upper() for s in specialties_raw.split(",")
+                if s.strip()
+            ]
+        if specialty:
+            specialties.append(specialty.upper())
+
+        target = {
+            "specialties": specialties,
+            "ma_mix_pct": fnum("ma_mix_pct"),
+            "commercial_payer_share": fnum("commercial_payer_share"),
+            "has_hopd_revenue": fbool("has_hopd_revenue"),
+            "has_reit_landlord": fbool("has_reit_landlord"),
+            "revenue_usd": fnum("revenue_usd"),
+            "ebitda_usd": fnum("ebitda_usd"),
+        }
+        try:
+            horizon = max(3, min(60, int(float(first("horizon_months") or "24"))))
+        except ValueError:
+            horizon = 24
+
+        report = analyze_regulatory_exposure(
+            target_profile=target, horizon_months=horizon,
+        )
+        payload = _json.dumps(report.to_dict(), default=str).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    # ── Covenant Stress Lab ──────────────────────────────────────────
+
+    def _route_covenant_lab_page(self) -> None:
+        from .ui.covenant_lab_page import render_covenant_lab_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_covenant_lab_page(qs=qs))
+
+    # ── Bridge Auto-Auditor ──────────────────────────────────────────
+
+    def _route_bridge_audit_page(self) -> None:
+        from .ui.bridge_audit_page import render_bridge_audit_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_bridge_audit_page(qs=qs))
+
+    # ── Seeking Alpha Market Intel ───────────────────────────────────
+
+    def _route_seeking_alpha_page(self) -> None:
+        from .ui.seeking_alpha_page import render_seeking_alpha_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_seeking_alpha_page(qs=qs))
+
+    # ── Bear Case Auto-Generator ─────────────────────────────────────
+
+    def _route_bear_case_page(self) -> None:
+        from .ui.bear_case_page import render_bear_case_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_bear_case_page(qs=qs))
+
+    # ── Payer Mix Stress Lab ─────────────────────────────────────────
+
+    def _route_payer_stress_page(self) -> None:
+        from .ui.payer_stress_page import render_payer_stress_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_payer_stress_page(qs=qs))
+
+    # ── HCRIS Peer X-Ray ─────────────────────────────────────────────
+
+    def _route_hcris_xray_page(self) -> None:
+        from .ui.hcris_xray_page import render_hcris_xray_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_hcris_xray_page(qs=qs))
+
+    # ── Diligence Checklist ──────────────────────────────────────────
+
+    def _route_diligence_checklist_page(self) -> None:
+        from .ui.diligence_checklist_page import (
+            render_diligence_checklist_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_diligence_checklist_page(qs=qs))
+
+    # ── Thesis Pipeline ──────────────────────────────────────────────
+
+    def _route_thesis_pipeline_page(self) -> None:
+        from .ui.thesis_pipeline_page import (
+            render_thesis_pipeline_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_thesis_pipeline_page(qs=qs))
+
     # ── IC Packet Assembler ──────────────────────────────────────────
 
     def _route_ic_packet_page(self) -> None:
@@ -6119,6 +6376,37 @@ class RCMHandler(BaseHTTPRequestHandler):
         self._send_html(render_ic_packet_page(qs=qs))
 
     # ── Market Intelligence ──────────────────────────────────────────
+
+    def _route_peer_snapshot_api(self) -> None:
+        """GET /api/market-intel/peer-snapshot — JSON peer-comparison
+        envelope consumed by the Deal Profile live Market Context
+        block.  All query params optional; response is self-describing.
+        """
+        from .market_intel import compute_peer_snapshot
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+
+        def _first(k: str) -> str:
+            return (qs.get(k) or [""])[0].strip()
+
+        def _float_or_none(k: str):
+            raw = _first(k)
+            if not raw:
+                return None
+            try:
+                return float(raw)
+            except ValueError:
+                return None
+
+        snap = compute_peer_snapshot(
+            category=_first("category"),
+            target_revenue_usd=_float_or_none("revenue_usd"),
+            target_ev_usd=_float_or_none("ev_usd"),
+            target_ebitda_usd=_float_or_none("ebitda_usd"),
+            specialty=_first("specialty") or None,
+        )
+        self._send_json(snap.to_dict())
 
     def _route_market_intel_page(self) -> None:
         from .ui.market_intel_page import render_market_intel_page

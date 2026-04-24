@@ -134,10 +134,175 @@ class AnalyticMappingTests(unittest.TestCase):
             "/diligence/deal-mc",
             "/diligence/qoe-memo",
             "/diligence/ic-packet",
+            "/diligence/deal-autopsy",
+            "/diligence/physician-attrition",
+            "/diligence/physician-eu",
+            "/diligence/management",
+            "/diligence/checklist",
+            "/diligence/thesis-pipeline",
+            "/diligence/exit-timing",
+            "/diligence/regulatory-calendar",
+            "/diligence/covenant-stress",
+            "/diligence/bridge-audit",
+            "/diligence/bear-case",
+            "/diligence/payer-stress",
+            "/diligence/hcris-xray",
         }
         for a in _ANALYTICS:
             self.assertIn(a["href"], expected_routes,
                           msg=f"unknown route {a['href']}")
+
+    def test_every_analytic_has_a_phase(self):
+        """Every analytic tile should carry a phase — the grouped
+        grid renders by phase so un-categorised tiles fall into a
+        default bucket and look out of place."""
+        from rcm_mc.ui.deal_profile_page import (
+            _ANALYTICS, _PHASE_ORDER,
+        )
+        for a in _ANALYTICS:
+            self.assertIn("phase", a,
+                          msg=f"analytic missing phase: {a.get('label')}")
+            self.assertIn(a["phase"], _PHASE_ORDER,
+                          msg=f"unknown phase {a['phase']!r}")
+
+
+class ThesisSnapshotTests(unittest.TestCase):
+
+    def _render(self, slug="aurora"):
+        from rcm_mc.ui.deal_profile_page import (
+            render_deal_profile_page,
+        )
+        return render_deal_profile_page(slug=slug)
+
+    def test_thesis_snapshot_card_present(self):
+        h = self._render()
+        self.assertIn("Investment Thesis", h)
+        self.assertIn("data-rcm-thesis-narrative", h)
+
+    def test_thesis_kpi_tiles_all_present(self):
+        h = self._render()
+        for hook in (
+            "data-rcm-thesis-ev",
+            "data-rcm-thesis-revenue",
+            "data-rcm-thesis-ebitda",
+            "data-rcm-thesis-multiple",
+        ):
+            self.assertIn(hook, h)
+
+    def test_capital_structure_bar_present(self):
+        h = self._render()
+        self.assertIn("data-rcm-thesis-equity-bar", h)
+        self.assertIn("data-rcm-thesis-debt-bar", h)
+        self.assertIn("Capital structure", h)
+
+    def test_thesis_badge_present(self):
+        h = self._render()
+        self.assertIn("data-rcm-thesis-badge", h)
+        self.assertIn("Awaiting inputs", h)
+
+    def test_thesis_update_js_function_present(self):
+        h = self._render()
+        self.assertIn("updateThesisSnapshot", h)
+
+
+class LifecycleRibbonTests(unittest.TestCase):
+
+    def _render(self):
+        from rcm_mc.ui.deal_profile_page import (
+            render_deal_profile_page,
+        )
+        return render_deal_profile_page(slug="aurora")
+
+    def test_all_five_phases_rendered(self):
+        h = self._render()
+        for phase_label in (
+            "Screening", "Diligence", "Risk Workbench",
+            "Financial synthesis", "Deliverables",
+        ):
+            self.assertIn(phase_label, h,
+                          msg=f"phase missing: {phase_label}")
+
+    def test_phase_count_badges(self):
+        h = self._render()
+        # At least two phases should show "analytic" / "analytics"
+        self.assertIn("analytic", h)
+
+
+class PhaseGroupedAnalyticsTests(unittest.TestCase):
+
+    def _render(self):
+        from rcm_mc.ui.deal_profile_page import (
+            render_deal_profile_page,
+        )
+        return render_deal_profile_page(slug="aurora")
+
+    def test_analytics_grouped_by_phase(self):
+        h = self._render()
+        self.assertIn("grouped by lifecycle phase", h)
+        # The Workspace phase header contains Workspace subtitle
+        self.assertIn("one-button orchestration", h)
+
+
+class DealProfilePowerUITests(unittest.TestCase):
+
+    def _render(self):
+        from rcm_mc.ui.deal_profile_page import (
+            render_deal_profile_page,
+        )
+        return render_deal_profile_page(slug="aurora")
+
+    def test_bookmark_hint_present(self):
+        h = self._render()
+        # Bookmark hint emits a <kbd> element with "?" shortcut
+        self.assertIn("<kbd", h)
+        self.assertIn("for shortcuts", h)
+
+    def test_run_full_pipeline_cta_present(self):
+        h = self._render()
+        self.assertIn("Run Full Pipeline", h)
+        self.assertIn("data-rcm-run-pipeline", h)
+
+    def test_analytic_card_hover_transitions(self):
+        h = self._render()
+        # Hover lift / border color transition
+        self.assertIn("transform 140ms ease", h)
+        self.assertIn("border-color 140ms ease", h)
+
+
+class DealProfileLandingTests(unittest.TestCase):
+    """The /diligence/deal (no slug) landing — shows both the
+    slug-picker form AND a recent-deals grid populated from
+    localStorage client-side."""
+
+    def _render_landing(self):
+        from rcm_mc.ui.deal_profile_page import render_deal_profile_page
+        return render_deal_profile_page(slug="")
+
+    def test_landing_has_recent_deals_placeholder(self):
+        h = self._render_landing()
+        self.assertIn("data-rcm-recent-deals", h)
+
+    def test_landing_carries_enumeration_js(self):
+        h = self._render_landing()
+        self.assertIn("loadSavedDeals", h)
+        # Iterates rcm_deal_ prefix
+        self.assertIn("rcm_deal_", h)
+
+    def test_landing_has_duplicate_and_delete_actions(self):
+        h = self._render_landing()
+        self.assertIn("data-rcm-duplicate", h)
+        self.assertIn("data-rcm-delete", h)
+
+    def test_landing_has_empty_state_message(self):
+        h = self._render_landing()
+        self.assertIn("No saved deals yet", h)
+
+    def test_landing_keeps_slug_picker_form(self):
+        """The new Recent Deals block is additive — the existing
+        slug-picker form must still work for first-time users."""
+        h = self._render_landing()
+        self.assertIn("Open profile", h)
+        self.assertIn('name="slug"', h)
 
 
 if __name__ == "__main__":
