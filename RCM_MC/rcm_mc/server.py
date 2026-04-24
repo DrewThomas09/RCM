@@ -1938,6 +1938,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # IC Packet Assembler — one-click IC memo.
         if path == "/diligence/ic-packet":
             return self._route_ic_packet_page()
+        # Deal Monte Carlo — 5-year forward distribution.
+        if path == "/diligence/deal-mc":
+            return self._route_deal_mc_page()
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -6058,6 +6061,15 @@ class RCMHandler(BaseHTTPRequestHandler):
         left = (qs.get("left") or [""])[0]
         right = (qs.get("right") or [""])[0]
         self._send_html(render_compare_page(left=left, right=right))
+
+    # ── Deal Monte Carlo ─────────────────────────────────────────────
+
+    def _route_deal_mc_page(self) -> None:
+        from .ui.deal_mc_page import render_deal_mc_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_deal_mc_page(qs=qs))
 
     # ── IC Packet Assembler ──────────────────────────────────────────
 
