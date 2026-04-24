@@ -2,7 +2,11 @@
 
 A navigable directory to every significant file in the repo. Use this to find what file owns a behaviour before diving in. Every major directory has its own README with per-file detail — this is the **map of those maps**.
 
-> **Can't find what you want?** Check the [README.md](README.md) for the 9th-grade plain-English overview, or [WALKTHROUGH.md](WALKTHROUGH.md) for the case study.
+**See also**:
+- [FILE_MAP.md](FILE_MAP.md) — per-file catalogue, 1,659 files across 29 chunk summaries with one-line descriptions
+- [ARCHITECTURE_MAP.md](ARCHITECTURE_MAP.md) — 8 GitHub-rendered Mermaid diagrams covering package dependencies, packet-centric data flow, 4 canonical cascades, ingestion paths, predictor ladder, band ladder, 3 UI surfaces, 19-step Thesis Pipeline
+- [README.md](README.md) — plain-English product overview
+- [WALKTHROUGH.md](WALKTHROUGH.md) — full case study
 
 ---
 
