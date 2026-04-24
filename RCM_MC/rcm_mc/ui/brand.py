@@ -271,6 +271,7 @@ NAV_ITEMS = [
     {"label": "Backtest Harness", "href": "/backtest-harness", "icon": "grid"},
     {"label": "Adversarial Engine", "href": "/adversarial-engine", "icon": "bookmark"},
     {"label": "TEAM Calculator", "href": "/team-calculator", "icon": "chart"},
+    {"label": "Survival ML", "href": "/survival-analysis", "icon": "grid"},
 ]
 
 NAV_ICONS = {

@@ -234,6 +234,7 @@ _CORPUS_NAV = [
     {"label": "Backtest Harness","href": "/backtest-harness",   "icon": "▤"},
     {"label": "Adversarial Eng.","href": "/adversarial-engine", "icon": "▦"},
     {"label": "TEAM Calculator", "href": "/team-calculator",    "icon": "▥"},
+    {"label": "Survival ML",    "href": "/survival-analysis",   "icon": "▣"},
     {"label": "Data Admin",     "href": "/admin/data-sources", "icon": "▧"},
     {"label": "MAIN APP",       "separator": True},
     {"label": "← Portfolio",    "href": "/portfolio",        "icon": "◈"},
