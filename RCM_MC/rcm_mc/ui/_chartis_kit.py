@@ -48,6 +48,43 @@ import os as _os
 UI_V2_ENABLED = _os.environ.get("CHARTIS_UI_V2", "0") != "0"
 
 
+# ── PHI posture banner ─────────────────────────────────────────────
+#
+# Controlled by env var ``RCM_MC_PHI_MODE``:
+#   "disallowed" → green "no PHI" banner — public-data-only deployments
+#   "restricted" → amber "PHI under BAA" banner — compliant hosts only
+#   (unset)      → no banner (dev / unconfigured)
+#
+# Inlined CSS: shell templates vary across v2/legacy, and a separate
+# stylesheet would need wiring through both. Inline is additive +
+# self-contained + immune to shell-CSS accidentally overriding it.
+
+def _phi_banner_html() -> str:
+    mode = _os.environ.get("RCM_MC_PHI_MODE", "").strip().lower()
+    if mode == "disallowed":
+        return (
+            '<div style="background:#064e3b;color:#d1fae5;padding:8px 16px;'
+            'text-align:center;font-size:12px;font-weight:500;'
+            'font-family:system-ui,-apple-system,sans-serif;'
+            'border-bottom:1px solid #047857;letter-spacing:0.02em;"'
+            ' data-testid="phi-banner" data-phi-mode="disallowed">'
+            '🛡️ Public data only — no PHI permitted on this instance.'
+            '</div>'
+        )
+    if mode == "restricted":
+        return (
+            '<div style="background:#78350f;color:#fef3c7;padding:8px 16px;'
+            'text-align:center;font-size:12px;font-weight:600;'
+            'font-family:system-ui,-apple-system,sans-serif;'
+            'border-bottom:1px solid #92400e;letter-spacing:0.02em;"'
+            ' data-testid="phi-banner" data-phi-mode="restricted">'
+            '⚠️ PHI-eligible deployment — access audit-logged. '
+            'Do not export outside BAA scope.'
+            '</div>'
+        )
+    return ""
+
+
 if UI_V2_ENABLED:
     # ── v2 editorial shell ──────────────────────────────────────────
     from ._chartis_kit_v2 import (  # noqa: F401
@@ -73,6 +110,8 @@ if UI_V2_ENABLED:
         ck_fmt_irr,
         ck_grade_badge,
         ck_regime_badge,
+        _MONO,
+        _SANS,
     )
 
     def ck_fmt_num(value, decimals: int = 1, suffix: str = "",
@@ -142,7 +181,7 @@ if UI_V2_ENABLED:
         # body. Future cleanup (Phase 15) can drop this shim.
         if subtitle and not breadcrumbs:
             breadcrumbs = [{"label": str(subtitle)}]
-        wrapped_body = body
+        wrapped_body = _phi_banner_html() + body
         if extra_css:
             wrapped_body = f'<style>{extra_css}</style>{wrapped_body}'
         if extra_js:
@@ -159,7 +198,9 @@ else:
         P,
         _CORPUS_NAV,
         _CORPUS_NAV_LEGACY,
-        chartis_shell,
+        _MONO,
+        _SANS,
+        chartis_shell as _legacy_chartis_shell,
         ck_fmt_currency,
         ck_fmt_irr,
         ck_fmt_moic,
@@ -172,6 +213,11 @@ else:
         ck_signal_badge,
         ck_table,
     )
+
+    # PHI banner wrapper — prepended to body before the legacy shell
+    # renders. Preserves the exact kwarg surface of the legacy shell.
+    def chartis_shell(body: str, title: str, **kwargs) -> str:  # type: ignore[misc]
+        return _legacy_chartis_shell(_phi_banner_html() + body, title, **kwargs)
 
     # v2-named helpers that callers may start using in Phase 2+
     # renderers. In legacy mode they delegate to the legacy helpers
@@ -212,11 +258,49 @@ else:
         return ""
 
 
+def ck_related_views(items):
+    """Render a "related pages" strip as a list of links.
+
+    Accepts a list of (label, href) tuples. The editorial reskin
+    introduced this helper; the revert to the legacy shell dropped
+    the implementation but left the callers in place, so this is
+    a minimal compat shim that works in both shells.
+    """
+    import html as _h
+    if not items:
+        return ""
+    chips = []
+    for item in items:
+        try:
+            label, href = item
+        except (TypeError, ValueError):
+            continue
+        chips.append(
+            f'<a href="{_h.escape(str(href))}" '
+            f'style="display:inline-block;margin:0 10px 6px 0;padding:4px 10px;'
+            f'border:1px solid {P.get("border", "#1e293b")};'
+            f'border-radius:4px;color:{P.get("text_dim", "#94a3b8")};'
+            f'font-size:11px;text-decoration:none;">'
+            f'{_h.escape(str(label))}</a>'
+        )
+    return (
+        f'<section style="margin:18px 0;padding:12px 14px;'
+        f'background:{P.get("panel_alt", "#0f172a")};'
+        f'border:1px solid {P.get("border", "#1e293b")};">'
+        f'<div style="font-size:10px;color:{P.get("text_dim", "#94a3b8")};'
+        f'letter-spacing:.14em;text-transform:uppercase;'
+        f'margin-bottom:8px;">Related</div>'
+        + "".join(chips) + '</section>'
+    )
+
+
 __all__ = [
     "UI_V2_ENABLED",
     "P",
     "_CORPUS_NAV",
     "_CORPUS_NAV_LEGACY",
+    "_MONO",
+    "_SANS",
     "chartis_shell",
     "ck_command_palette",
     "ck_fmt_currency",
@@ -230,6 +314,7 @@ __all__ = [
     "ck_kpi_block",
     "ck_panel",
     "ck_regime_badge",
+    "ck_related_views",
     "ck_section_header",
     "ck_signal_badge",
     "ck_table",

@@ -92,11 +92,28 @@ def _fmt_m(val: Any) -> str:
         return "—"
 
 
-def _fmt_pct(val: Any) -> str:
+def _fmt_pct(val: Any, *, is_fraction: bool = False) -> str:
+    """Format a number as a percentage.
+
+    Args:
+        val: numeric value (or None / non-numeric → "—").
+        is_fraction: when True, ``val`` is always treated as a fraction
+            and formatted with ``"{:.1%}"`` regardless of magnitude.
+            Use this for fields where the source unit is unambiguous —
+            e.g. ``LBOReturns.irr`` is always a fraction, so an IRR of
+            1.3022 renders as 130.2% instead of being mis-classified
+            by the abs-less-than-one auto-detect.
+        Default (False) preserves the legacy auto-detect: values with
+            ``abs(v) < 1`` are treated as fractions, otherwise as
+            already-percentage. Used for free-form display of cells
+            whose unit can't be assumed.
+    """
     if val is None:
         return "—"
     try:
         v = float(val)
+        if is_fraction:
+            return f"{v:.1%}"
         if abs(v) < 1:
             return f"{v:.1%}"
         return f"{v:.1f}%"
