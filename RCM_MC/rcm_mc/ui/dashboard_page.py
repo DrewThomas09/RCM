@@ -499,6 +499,122 @@ def _sparkline_svg(scores: List[int], *,
     )
 
 
+def _render_needs_attention_section(db_path: str) -> str:
+    """Top-3 deals the risk scanner flagged as highest-priority.
+
+    Complement to "Pinned deals" — Pinned shows deals the partner
+    has *explicitly* starred; this card shows deals the TOOL has
+    auto-flagged. A deal covenant-tripping overnight that the
+    partner hasn't starred still surfaces here.
+
+    The ranking uses the same `_priority_rank()` the risk-scan
+    page uses, so the top item here is always the top row on
+    /portfolio/risk-scan — consistent answers across surfaces.
+    """
+    from . import _web_components as _wc
+    try:
+        from .portfolio_risk_scan_page import (
+            _gather_per_deal, _priority_rank,
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+
+    try:
+        deals = _gather_per_deal(db_path)
+    except Exception:  # noqa: BLE001
+        return ""
+
+    if not deals:
+        return ""  # no deals → no card (empty state covered elsewhere)
+
+    # Filter to deals with ANY actionable signal — priority > 0
+    # means at least one of the five risk factors is non-neutral.
+    scored = [(d, _priority_rank(d)) for d in deals]
+    scored = [(d, r) for d, r in scored if r > 0]
+    if not scored:
+        # Everything is healthy — render a one-line reassurance
+        # instead of a card full of nothing.
+        return _wc.section_card(
+            "Needs attention today",
+            '<p style="margin:0;color:#065f46;">'
+            '✓ Everything looks healthy. No deals are flagging '
+            'covenant, alert, or deadline risks right now.'
+            '</p>',
+        )
+
+    scored.sort(key=lambda t: t[1], reverse=True)
+    top = scored[:3]
+
+    # One chip row per flagged deal — same visual language as the
+    # risk-scan page so the partner doesn't have to translate.
+    rows: List[str] = []
+    for d, priority in top:
+        # Build a compact "why" string — which factors are firing.
+        reasons: List[str] = []
+        cov = (d.get("covenant_status") or "").upper()
+        if cov == "TRIPPED":
+            reasons.append(
+                '<span style="color:#991b1b;font-weight:600;">'
+                'covenant TRIPPED</span>')
+        elif cov == "TIGHT":
+            reasons.append(
+                '<span style="color:#92400e;">covenant TIGHT</span>')
+        if (d.get("overdue_deadlines") or 0) > 0:
+            reasons.append(
+                f'<span style="color:#991b1b;">'
+                f'{d["overdue_deadlines"]} overdue '
+                f'deadline{"s" if d["overdue_deadlines"] != 1 else ""}</span>')
+        if (d.get("alerts") or 0) > 0:
+            reasons.append(
+                f'<span style="color:#92400e;">'
+                f'{d["alerts"]} open alert{"s" if d["alerts"] != 1 else ""}</span>')
+        score = d.get("score")
+        if isinstance(score, int) and score < 60:
+            reasons.append(
+                f'<span style="color:#92400e;">'
+                f'health {score}</span>')
+        if d.get("snap_age_days") is not None and d["snap_age_days"] > 30:
+            reasons.append(
+                f'<span style="color:#6b7280;">'
+                f'snapshot {d["snap_age_days"]}d stale</span>')
+
+        rows.append(
+            f'<li style="padding:10px 0;border-bottom:1px solid #f3f4f6;'
+            f'display:flex;align-items:center;gap:12px;">'
+            f'<span style="flex-shrink:0;font-family:monospace;font-size:11px;'
+            f'color:#6b7280;text-transform:uppercase;min-width:100px;">'
+            f'{_html.escape(d["deal_id"])}</span>'
+            f'<a href="/deal/{_html.escape(d["deal_id"])}" '
+            f'style="flex:1;color:#1F4E78;font-weight:500;'
+            f'text-decoration:none;">{_html.escape(d["name"])}</a>'
+            f'<span style="flex-shrink:0;font-size:12px;'
+            f'display:flex;flex-wrap:wrap;gap:12px;">'
+            f'{" · ".join(reasons) if reasons else ""}</span>'
+            f'</li>'
+        )
+    more_link = (
+        f'<p style="margin:10px 0 0;font-size:12px;color:#6b7280;">'
+        f'Showing top 3 of {len(scored)} deals with active risk flags. '
+        f'See all on <a href="/portfolio/risk-scan" '
+        f'style="color:#1F4E78;">Portfolio risk scan</a>.'
+        f'</p>'
+        if len(scored) > 3 else
+        f'<p style="margin:10px 0 0;font-size:12px;color:#6b7280;">'
+        f'Showing {len(scored)} deal{"s" if len(scored) != 1 else ""} '
+        f'with active risk flags. See all on '
+        f'<a href="/portfolio/risk-scan" '
+        f'style="color:#1F4E78;">Portfolio risk scan</a>.'
+        f'</p>'
+    )
+    body = (
+        f'<ul style="list-style:none;padding:0;margin:0;">'
+        f'{"".join(rows)}</ul>{more_link}'
+    )
+    return _wc.section_card(
+        f"Needs attention today ({len(scored)})", body, pad=True,
+    )
+
+
 def _render_pinned_deals_section(db_path: str) -> str:
     """Morning glance at health scores for every deal the user has
     starred in the watchlist.
@@ -912,6 +1028,7 @@ def render_dashboard(db_path: str, *,
         header
         + cmdk_hint
         + _render_since_yesterday_section(db_path)
+        + _render_needs_attention_section(db_path)
         + _render_pinned_deals_section(db_path)
         + _render_analyses_section()
         + workflow_shortcuts

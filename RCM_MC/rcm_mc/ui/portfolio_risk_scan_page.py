@@ -149,16 +149,27 @@ def _gather_per_deal(db_path: str) -> List[Dict[str, Any]]:
         snap_by_id = {}
 
     # Pre-load deadlines in one pass — avoids N round-trips.
+    # `list_deadlines` and `overdue` both return pandas DataFrames,
+    # so iterate via iterrows() rather than `for dl in df` (which
+    # would iterate column names).
     open_deadlines: Dict[str, int] = {}
     overdue_deadlines: Dict[str, int] = {}
     try:
         from ..deals.deal_deadlines import list_deadlines, overdue
-        for dl in list_deadlines(store, status="open"):
-            did = str(dl.get("deal_id", ""))
-            open_deadlines[did] = open_deadlines.get(did, 0) + 1
-        for dl in overdue(store):
-            did = str(dl.get("deal_id", ""))
-            overdue_deadlines[did] = overdue_deadlines.get(did, 0) + 1
+        # list_deadlines defaults to include_completed=False so it
+        # returns OPEN deadlines — exactly what we want here.
+        od_df = list_deadlines(store)
+        if od_df is not None and not od_df.empty:
+            for _, dl in od_df.iterrows():
+                did = str(dl.get("deal_id") or "")
+                if did:
+                    open_deadlines[did] = open_deadlines.get(did, 0) + 1
+        ov_df = overdue(store)
+        if ov_df is not None and not ov_df.empty:
+            for _, dl in ov_df.iterrows():
+                did = str(dl.get("deal_id") or "")
+                if did:
+                    overdue_deadlines[did] = overdue_deadlines.get(did, 0) + 1
     except Exception:  # noqa: BLE001
         pass
 
