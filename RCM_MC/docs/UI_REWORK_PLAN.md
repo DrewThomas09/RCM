@@ -143,3 +143,138 @@ Today's rework can avoid all five by gating with a flag, keeping the v2 package 
 - Is there a typography pairing already chosen?
 
 Document the answers in this file as decisions are made — they become the design system spec.
+
+---
+
+## Phase 1 rollback procedure
+
+If Phase 1 ships and a regression appears post-merge to `main` (deploys to `pedesk.app` automatically per `.github/workflows/deploy.yml`):
+
+### Local rollback
+
+```bash
+git checkout main
+git revert <commit-range>  # the 9 commits 53350d2..f7fa01f are atomic
+git push origin main       # auto-deploys the revert
+```
+
+Each of the 9 commits is independently revertable. If the regression is isolated (e.g., only `/login?ui=v3` breaks), revert that single commit (`8d8075c`); the others stay.
+
+### Production VM rollback (no code change needed)
+
+The editorial path is gated behind a flag. To disable v3 instantly without redeploying:
+
+```bash
+ssh azureuser@pedesk.app
+sudo nano /opt/rcm-mc/.env       # remove RCM_MC_UI_VERSION=v3 or set =v2
+sudo systemctl restart rcm-mc
+```
+
+The `?ui=v3` query override still works, but no env-driven editorial render will happen. Legacy shell renders unchanged.
+
+### Code-side rollback (full)
+
+```bash
+ssh azureuser@pedesk.app
+cd /opt/rcm-mc
+sudo git fetch origin main
+sudo git checkout 6001ec1   # last commit before Phase 1 (or any safer point)
+sudo docker compose -f RCM_MC/deploy/docker-compose.yml up -d --build
+```
+
+DB schema is untouched by Phase 1 — no migrations to undo.
+
+### CSS-only regression
+
+If the issue is purely visual (font 404, token typo, missing class), patch
+`rcm_mc/ui/static/v3/chartis.css` and redeploy. Don't flip the flag — the
+broken CSS only affects `?ui=v3` requests; other partners' sessions are fine.
+
+(Phase 2/3/4/5 each get their own rollback section as they land.)
+
+---
+
+## Visual-diff exit criterion
+
+For solo work the bar is eyeball-level, but explicit. Before declaring "v3 page X matches reference HTML":
+
+1. Open the reference file directly in a browser via `file://` URL
+2. Open the deployed v3 page side-by-side via `?ui=v3`
+3. Run through this checklist:
+   - [ ] Brand mark identical (mark + name + italic on "Chartis")
+   - [ ] Topbar height, dividers, padding match
+   - [ ] Form-field shape, border, focus state match
+   - [ ] Submit button: bg `var(--ink)`, text `.72rem`, letter-spacing `.14em`, hover → teal-deep
+   - [ ] Fonts loaded — Source Serif 4 (headings), Inter (labels), JetBrains Mono (numbers / source paths). Network tab shows no font 404s
+   - [ ] No box-shadows, no gradients, no border-radius > 0 except pills
+   - [ ] Color contrast: ink-on-bg meets WCAG AA at body sizes
+4. Save side-by-side screenshots into `docs/design-handoff/diffs/<route>.png` (one per shipped surface)
+5. Sign off in the commit message: "visual diff: matches reference at 1280px and 1920px viewports"
+
+Lighthouse a11y ≥ 95 (per spec §11.10) is **also required** before merge to `main`. Run via Chrome DevTools → Lighthouse panel; report the score in the merge comment.
+
+---
+
+## Pre-merge to main: DB backup
+
+The cutover is the single highest-risk moment of the rework. Before merging `feat/ui-rework-v3` to `main`:
+
+```bash
+# On the production VM
+ssh azureuser@pedesk.app
+sudo docker compose -f /opt/rcm-mc/RCM_MC/deploy/docker-compose.yml \
+  exec rcm-mc python -c "from rcm_mc.infra.backup import create_backup; print(create_backup())"
+
+# Verify the backup file exists and is non-zero
+sudo ls -lh /data/rcm/backup-*.db
+
+# Confirm the file is restoreable on a separate test VM
+# (out of scope here, but it's the canonical "did the backup work" check)
+```
+
+If the backup helper doesn't exist or fails, do NOT merge. The cost of pausing 30 minutes to fix is dwarfed by the cost of needing the backup post-merge and not having one.
+
+This step is non-negotiable. Add it as a checkbox to every PR description that merges a Phase from this branch into `main`.
+
+---
+
+## Phase 4 — registered open questions before that phase begins
+
+Surfaced during the Phase 1 IA pass; need explicit decisions before Phase 4 cutover.
+
+### Q4.1 — `/` reroute (the cutover decision)
+
+The legacy codebase serves the dashboard at `/`. Spec §2 reroutes `/` to the marketing landing page in v3. **This is the single most user-visible change in the entire rework.**
+
+**Risk:** Bookmarks break. External monitors that hit `/` for an auth challenge see HTML instead. Partner muscle memory (years of typing the bare domain to get the dashboard) breaks.
+
+**Required before Phase 4 merge:**
+
+1. Explicit decision: does `/` redirect to `/app`? Or does `/` stay as the dashboard for authenticated users and only render marketing for anonymous users?
+2. New contract test: `test_authenticated_user_lands_on_dashboard_at_root` — when authenticated, GET `/` returns the dashboard or 302s to it. Locks the chosen behavior so a future commit can't silently regress it.
+3. Comms plan: if `/` → marketing, partners must be told before merge, with the new dashboard URL in the announcement.
+
+### Q4.2 — Existing `/dashboard` and `/home` routes
+
+If `/` reroutes, do `/dashboard` and `/home` stay as legacy aliases (302), get repurposed, or 410? Decide alongside Q4.1.
+
+### Q4.3 — `/engagements` (must resolve before Phase 2 begins)
+
+Surface unknown. Listed in `_CORPUS_NAV` but no obvious purpose from the route name. Action: visit it on a running instance, identify what it does. If real, place in PORTFOLIO. If dead, drop. If unanswered when Phase 2 begins, default to dropping (route returns 410).
+
+### Q4.4 — Phase 5 legacy-nav archive
+
+Before deleting `_CORPUS_NAV_LEGACY` in Phase 5, dump its 171 entries to `docs/design-handoff/legacy-nav-archive.md` with a header:
+
+> *"These 171 nav entries existed in the pre-rework codebase. If you're looking for a destination that no longer appears in the topnav, search this archive — it may have been a real surface that was deprecated, or a placeholder that was never built. Removed in commit X of Phase 5."*
+
+This preserves institutional memory at zero ongoing cost and makes the deletion safely reversible. **The archive must exist before the Phase 5 deletion commit lands.**
+
+---
+
+## See also
+
+- [`docs/design-handoff/EDITORIAL_STYLE_PORT.md`](design-handoff/EDITORIAL_STYLE_PORT.md) — the spec
+- [`docs/design-handoff/IA_MAP.md`](design-handoff/IA_MAP.md) — full nav inventory + section assignments
+- [`tests/test_ui_rework_contract.py`](../tests/test_ui_rework_contract.py) — the 12 contract tests guarding this work
+- [`AZURE_DEPLOY.md`](../../AZURE_DEPLOY.md) — production deploy procedure
