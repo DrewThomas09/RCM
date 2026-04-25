@@ -358,6 +358,202 @@ def _since_yesterday_events(db_path: str,
     return events[:20]
 
 
+def _compute_sharpest_insight(db_path: str) -> Optional[Dict[str, Any]]:
+    """Pick the single most-notable cross-portfolio signal to headline
+    the dashboard. The "wow" moment on morning open.
+
+    Ranks candidate insights by how surprising / actionable they are
+    and returns the top one. Each insight has:
+      - ``headline`` (≤ 100 chars, the number a partner would say out loud)
+      - ``body`` (≤ 200 chars, the one-line "so what")
+      - ``href`` (where to click to see the detail)
+      - ``tone`` ("alert", "warn", "positive", "neutral")
+      - ``kind`` (category key for the template)
+
+    Returns None if nothing interesting — dashboard then omits the
+    section (silence > noise).
+    """
+    try:
+        from ..portfolio.store import PortfolioStore
+        from .portfolio_risk_scan_page import _gather_per_deal
+        store = PortfolioStore(db_path)
+        deals = _gather_per_deal(db_path)
+    except Exception:  # noqa: BLE001
+        return None
+    if not deals:
+        return None
+
+    insights: List[Dict[str, Any]] = []
+
+    # Insight 1: Chain-concentration discovery. "You have N deals
+    # in the same chain" — a partner may not realize how much
+    # sector-weighted exposure they're running.
+    chain_counts: Dict[str, List[Dict[str, Any]]] = {}
+    for d in deals:
+        c = (d.get("chain") or "").strip()
+        if c:
+            chain_counts.setdefault(c, []).append(d)
+    for chain, members in chain_counts.items():
+        if len(members) >= 2:
+            names = ", ".join(m["name"] for m in members[:3])
+            if len(members) > 3:
+                names += f", +{len(members) - 3} more"
+            insights.append({
+                "headline": (
+                    f"You have {len(members)} deals in the "
+                    f"{chain} chain"
+                ),
+                "body": (
+                    f"Same corporate parent → correlated covenant, "
+                    f"sponsor, and regulatory exposure. "
+                    f"Deals: {names}."
+                ),
+                "href": "/portfolio/risk-scan",
+                "tone": "warn",
+                "kind": "chain_concentration",
+                "score": 40 + 10 * len(members),
+            })
+
+    # Insight 2: Covenant-tripped headline — the scariest signal.
+    tripped = [d for d in deals
+               if (d.get("covenant_status") or "").upper() == "TRIPPED"]
+    if tripped:
+        t = tripped[0]
+        insights.append({
+            "headline": (
+                f"Covenant TRIPPED on {t['name']}"
+            ),
+            "body": (
+                f"Deal {t['deal_id']} is over its leverage cap — "
+                f"action today. "
+                + (f"{len(tripped)-1} other deal{'s' if len(tripped) > 2 else ''} also tripped."
+                   if len(tripped) > 1 else "")
+            ),
+            "href": f"/deal/{t['deal_id']}",
+            "tone": "alert",
+            "kind": "covenant_tripped",
+            "score": 100,
+        })
+
+    # Insight 3: Stale-snapshot warning — the tool is rendering old
+    # numbers. Partners should refresh before making a decision.
+    stale = [d for d in deals
+             if d.get("snap_age_days") is not None
+             and d["snap_age_days"] > 30]
+    if len(stale) >= 3:
+        worst = max(stale, key=lambda x: x.get("snap_age_days") or 0)
+        insights.append({
+            "headline": (
+                f"{len(stale)} deals haven't refreshed in over 30 days"
+            ),
+            "body": (
+                f"Oldest: {worst['name']} "
+                f"({worst['snap_age_days']}d stale). "
+                f"Current numbers may be outdated."
+            ),
+            "href": "/data/refresh",
+            "tone": "warn",
+            "kind": "stale_portfolio",
+            "score": 25 + len(stale) * 3,
+        })
+
+    # Insight 4: All-green reassurance — when nothing is firing,
+    # say so. Partners appreciate a no-alarms morning read.
+    no_flags = [d for d in deals
+                if (d.get("alerts") or 0) == 0
+                and (d.get("overdue_deadlines") or 0) == 0
+                and (d.get("covenant_status") or "").upper()
+                    not in ("TRIPPED", "TIGHT")]
+    if len(deals) >= 3 and len(no_flags) == len(deals):
+        insights.append({
+            "headline": f"All {len(deals)} deals are healthy this morning",
+            "body": (
+                "No covenant breaks, no overdue deadlines, no open "
+                "alerts. Great week to focus on the pipeline."
+            ),
+            "href": "/pipeline",
+            "tone": "positive",
+            "kind": "all_green",
+            "score": 15,
+        })
+
+    # Insight 5: High-priority pileup — multiple deals at once.
+    flagged = [d for d in deals
+               if (d.get("alerts") or 0) > 0
+               or (d.get("overdue_deadlines") or 0) > 0
+               or (d.get("covenant_status") or "").upper() == "TRIPPED"]
+    if len(flagged) >= 3 and len(deals) >= 5:
+        pct = int(100 * len(flagged) / len(deals))
+        insights.append({
+            "headline": (
+                f"{len(flagged)} of {len(deals)} deals "
+                f"({pct}%) need attention"
+            ),
+            "body": (
+                f"Worst deal: {flagged[0]['name']}. "
+                f"See the portfolio risk scan for the full triage."
+            ),
+            "href": "/portfolio/risk-scan",
+            "tone": "alert" if pct > 30 else "warn",
+            "kind": "attention_pileup",
+            "score": 30 + pct,
+        })
+
+    if not insights:
+        return None
+    insights.sort(key=lambda i: i.get("score", 0), reverse=True)
+    return insights[0]
+
+
+def _render_headline_insight_section(db_path: str) -> str:
+    """One-glance insight card — the "wow" that justifies the morning
+    visit. Rendered immediately after the header, before every other
+    section, so it's the first thing a partner sees."""
+    from . import _web_components as _wc
+    ins = _compute_sharpest_insight(db_path)
+    if ins is None:
+        return ""
+
+    # Tone-driven palette — alert is screaming red, positive is
+    # affirming green, warn is attention-grabbing amber, neutral
+    # is the brand navy.
+    palette = {
+        "alert":    ("#fef2f2", "#fee2e2", "#991b1b", "⚠"),
+        "warn":     ("#fffbeb", "#fef3c7", "#92400e", "●"),
+        "positive": ("#f0fdf4", "#d1fae5", "#065f46", "✓"),
+        "neutral":  ("#f0f6fc", "#d0e3f0", "#1F4E78", "◆"),
+    }
+    bg, border, fg, icon = palette.get(
+        ins.get("tone", "neutral"), palette["neutral"])
+    href = ins.get("href") or "#"
+    headline = _html.escape(ins.get("headline", ""))
+    body = _html.escape(ins.get("body", ""))
+
+    return (
+        f'<a href="{_html.escape(href)}" '
+        f'style="display:block;text-decoration:none;'
+        f'margin:4px 0 16px;padding:18px 22px;background:{bg};'
+        f'border:1px solid {border};border-left:4px solid {fg};'
+        f'border-radius:8px;color:{fg};'
+        f'transition:transform 0.1s, border-color 0.1s;" '
+        f'onmouseover="this.style.transform=\'translateX(2px)\';" '
+        f'onmouseout="this.style.transform=\'\';">'
+        f'<div style="display:flex;align-items:baseline;gap:12px;">'
+        f'<span style="font-size:20px;flex-shrink:0;">{icon}</span>'
+        f'<div style="flex:1;">'
+        f'<div style="font-size:10px;font-weight:600;'
+        f'text-transform:uppercase;letter-spacing:0.08em;opacity:0.75;">'
+        f'Sharpest insight · today</div>'
+        f'<div style="font-size:18px;font-weight:600;'
+        f'margin-top:4px;color:{fg};">{headline}</div>'
+        f'<div style="font-size:13px;margin-top:6px;opacity:0.85;">'
+        f'{body}</div>'
+        f'</div>'
+        f'<span style="flex-shrink:0;opacity:0.5;font-size:18px;">→</span>'
+        f'</div></a>'
+    )
+
+
 def _render_since_yesterday_section(db_path: str) -> str:
     """One-screen "what changed since yesterday" roll-up.
 
@@ -1101,6 +1297,7 @@ def render_dashboard(db_path: str, *,
 
     inner = (
         header
+        + _render_headline_insight_section(db_path)
         + cmdk_hint
         + _render_since_yesterday_section(db_path)
         + _render_needs_attention_section(db_path)
