@@ -1,10 +1,22 @@
-"""Tests for the universal Cmd-K command palette injection.
+"""Regression tests for the Cmd-K command palette coverage.
 
-The palette used to only live on /dashboard. A PE analyst pressing
-⌘K on /watchlist or /alerts expected the jump-anywhere UX and got
-nothing. This regression guards against the muscle-memory gap —
-every authenticated page that routes through ``chartis_shell`` now
-carries the palette.
+Context: the legacy shell (`_chartis_kit_legacy.py`) ships its own
+Cmd-K palette via `_PALETTE_ENTRIES` and `_palette_html()`. Earlier
+in this session, I added a second palette injection in the shell
+dispatcher — which created two modals both binding to Cmd-K and
+opening simultaneously. This regression guard checks:
+
+  1. The legacy shell's palette entries include every web-
+     deployment surface a partner would want to jump to (watchlist,
+     alerts, lp-update, team, data-refresh, etc.) AND the curated-
+     analysis launchers from /dashboard's "What you can run" table.
+
+  2. No page ships two palette modals (no `id="wc-cmdk"` extra on
+     shell-rendered pages — only the legacy `id="ck-palette-bd"`).
+
+  3. `universal_palette_bundle()` remains available for dashboard-
+     specific explicit use (kept as the helper, but not
+     auto-injected globally).
 """
 from __future__ import annotations
 
@@ -23,43 +35,38 @@ def _free_port() -> int:
         return s.getsockname()[1]
 
 
-class TestUniversalPaletteHelpers(unittest.TestCase):
-    def test_bundle_is_self_contained(self):
-        """universal_palette_bundle() must include CSS, modal HTML,
-        and JS in one string — caller doesn't need web_styles()."""
-        from rcm_mc.ui._web_components import universal_palette_bundle
-        bundle = universal_palette_bundle()
-        self.assertIn("<style>", bundle)
-        self.assertIn(".wc-cmdk-backdrop", bundle)
-        self.assertIn('id="wc-cmdk"', bundle)
-        self.assertIn("<script>", bundle)
-        self.assertIn("e.key === 'k'", bundle)  # Cmd-K trigger
-        self.assertIn("metaKey", bundle)         # modifier check
+class TestLegacyPaletteEntries(unittest.TestCase):
+    """The legacy palette is the one partners actually see —
+    verify it covers the enhanced set."""
 
-    def test_universal_commands_cover_daily_workflow(self):
-        """Every Daily-workflow shortcut on the dashboard must also
-        be a Cmd-K command, so typing the label surfaces it."""
-        from rcm_mc.ui._web_components import universal_palette_commands
-        commands = universal_palette_commands()
-        labels = {label for _, label, _ in commands}
-        for expected in ("Active alerts", "Watchlist",
-                         "Pipeline & saved searches",
-                         "Data refresh", "LP quarterly update",
-                         "Team activity"):
+    def test_web_deployment_surfaces_in_palette(self):
+        from rcm_mc.ui._chartis_kit_legacy import _PALETTE_ENTRIES
+        labels = {label for _, label, _ in _PALETTE_ENTRIES}
+        for expected in ("Dashboard (web)", "Downloads", "Data refresh",
+                         "Watchlist", "My inbox", "Team activity",
+                         "LP quarterly update", "Notifications",
+                         "New deal wizard"):
             self.assertIn(expected, labels,
-                          msg=f"{expected!r} missing from universal palette")
+                          msg=f"{expected!r} missing from legacy palette")
 
-    def test_universal_commands_include_analyses(self):
-        from rcm_mc.ui._web_components import universal_palette_commands
-        commands = universal_palette_commands()
-        labels = [l for _, l, _ in commands]
-        # At least one curated analysis made it through
-        self.assertIn("Thesis Pipeline", labels)
+    def test_curated_analyses_in_palette(self):
+        from rcm_mc.ui._chartis_kit_legacy import _PALETTE_ENTRIES
+        labels = {label for _, label, _ in _PALETTE_ENTRIES}
+        for expected in ("Thesis Pipeline", "HCRIS Peer X-Ray",
+                         "Bear Case Generator", "Covenant Stress Lab",
+                         "IC Packet Builder"):
+            self.assertIn(expected, labels,
+                          msg=f"{expected!r} missing from legacy palette")
+
+    def test_run_category_present(self):
+        from rcm_mc.ui._chartis_kit_legacy import _PALETTE_ENTRIES
+        categories = {cat for cat, _, _ in _PALETTE_ENTRIES}
+        self.assertIn("RUN", categories,
+                      msg="RUN category for curated launchers should exist")
 
 
-class TestPaletteOnEveryPage(unittest.TestCase):
-    """Boot a real server and confirm the palette appears on the
-    Daily-workflow pages that previously lacked it."""
+class TestNoDuplicatePaletteModal(unittest.TestCase):
+    """Shell-rendered pages must ship ONE palette modal, not two."""
 
     @classmethod
     def setUpClass(cls):
@@ -88,46 +95,54 @@ class TestPaletteOnEveryPage(unittest.TestCase):
         ) as resp:
             return resp.read().decode()
 
-    def _assert_has_palette(self, path: str, html: str) -> None:
-        self.assertIn('id="wc-cmdk"', html,
-                      msg=f"{path} missing palette modal")
-        self.assertIn('id="wc-cmdk-input"', html,
-                      msg=f"{path} missing palette input")
-        self.assertIn("e.key === 'k'", html,
-                      msg=f"{path} missing Cmd-K handler")
+    def test_single_legacy_modal_per_shell_page(self):
+        """Every shell-rendered page should have exactly 1
+        `ck-palette-bd` modal and 0 `wc-cmdk` backup modals."""
+        for path in ("/watchlist", "/alerts", "/pipeline", "/team",
+                     "/exports", "/data/refresh", "/lp-update"):
+            html = self._get(path)
+            ck_count = html.count('id="ck-palette-bd"')
+            self.assertEqual(ck_count, 1,
+                             msg=f"{path} should have exactly 1 legacy "
+                                 f"palette modal, got {ck_count}")
+            wc_count = html.count('id="wc-cmdk"')
+            self.assertEqual(wc_count, 0,
+                             msg=f"{path} leaked the universal-palette "
+                                 f"duplicate modal ({wc_count} wc-cmdk)")
 
-    def test_dashboard_has_palette(self):
-        self._assert_has_palette("/dashboard", self._get("/dashboard"))
-
-    def test_watchlist_has_palette(self):
-        self._assert_has_palette("/watchlist", self._get("/watchlist"))
-
-    def test_alerts_has_palette(self):
-        self._assert_has_palette("/alerts", self._get("/alerts"))
-
-    def test_pipeline_has_palette(self):
-        self._assert_has_palette("/pipeline", self._get("/pipeline"))
-
-    def test_team_has_palette(self):
-        self._assert_has_palette("/team", self._get("/team"))
-
-    def test_exports_has_palette(self):
-        self._assert_has_palette("/exports", self._get("/exports"))
-
-    def test_data_refresh_has_palette(self):
-        self._assert_has_palette("/data/refresh", self._get("/data/refresh"))
-
-    def test_lp_update_has_palette(self):
-        self._assert_has_palette("/lp-update", self._get("/lp-update"))
-
-    def test_dashboard_has_only_one_palette_modal(self):
-        """Regression guard: dashboard used to inject its own palette
-        AND chartis_shell injected another, yielding duplicate
-        #wc-cmdk elements. Only one modal should ship now."""
+    def test_dashboard_has_exactly_one_palette(self):
+        """/dashboard uses the shell and therefore the legacy
+        palette — not a second wc-cmdk modal."""
         html = self._get("/dashboard")
-        count = html.count('id="wc-cmdk"')
-        self.assertEqual(count, 1,
-                         msg=f"dashboard should have exactly 1 palette modal, got {count}")
+        ck_count = html.count('id="ck-palette-bd"')
+        wc_count = html.count('id="wc-cmdk"')
+        total = ck_count + wc_count
+        self.assertEqual(total, 1,
+                         msg=f"dashboard should have exactly 1 palette "
+                             f"modal, got {total} "
+                             f"(legacy={ck_count}, wc={wc_count})")
+
+
+class TestUniversalPaletteHelperRetained(unittest.TestCase):
+    """The universal_palette_bundle() helper was kept for possible
+    future use on pages that DON'T use chartis_shell (e.g. marketing
+    pages, standalone HTML exports). Confirm it still works."""
+
+    def test_bundle_is_self_contained(self):
+        from rcm_mc.ui._web_components import universal_palette_bundle
+        bundle = universal_palette_bundle()
+        self.assertIn("<style>", bundle)
+        self.assertIn(".wc-cmdk-backdrop", bundle)
+        self.assertIn('id="wc-cmdk"', bundle)
+        self.assertIn("<script>", bundle)
+        self.assertIn("e.key === 'k'", bundle)
+
+    def test_universal_commands_still_exported(self):
+        from rcm_mc.ui._web_components import universal_palette_commands
+        commands = universal_palette_commands()
+        self.assertGreater(len(commands), 10,
+                           msg="universal_palette_commands should "
+                               "still expose the canonical set")
 
 
 if __name__ == "__main__":

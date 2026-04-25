@@ -186,12 +186,10 @@ if UI_V2_ENABLED:
             wrapped_body = f'<style>{extra_css}</style>{wrapped_body}'
         if extra_js:
             wrapped_body = f'{wrapped_body}<script>{extra_js}</script>'
-        # Universal Cmd-K palette on every v2 page, same as legacy.
-        try:
-            from . import _web_components as _wc
-            wrapped_body = wrapped_body + _wc.universal_palette_bundle()
-        except Exception:  # noqa: BLE001 — additive, never block render
-            pass
+        # Note: the v2 shell also has its own Cmd-K handler
+        # (_chartis_kit_v2.py:487). We don't inject a duplicate
+        # palette here for the same reason as the legacy branch —
+        # two handlers binding to Cmd-K would both fire.
         return _v2_chartis_shell(
             wrapped_body, title,
             active_nav=active_nav, breadcrumbs=breadcrumbs, code=code,
@@ -222,20 +220,15 @@ else:
 
     # PHI banner wrapper — prepended to body before the legacy shell
     # renders. Preserves the exact kwarg surface of the legacy shell.
-    #
-    # Also appends the universal Cmd-K command palette so a partner
-    # can press ⌘K / Ctrl-K on ANY authenticated page (not just
-    # /dashboard) and get the same jump-to-anywhere UX. The palette
-    # is self-scoped (wc-cmdk-* CSS classes) so it can't collide
-    # with the legacy shell's styles.
+    # The legacy shell already ships its own Cmd-K palette (see
+    # _chartis_kit_legacy.py::_palette_html), so we DO NOT inject
+    # our own here — doing so would create two #wc-cmdk modals
+    # alongside the existing #ck-palette-bd, both binding to Cmd-K,
+    # both opening on keystroke. The legacy palette's entries are
+    # extended via _PALETTE_ENTRIES in the legacy module instead.
     def chartis_shell(body: str, title: str, **kwargs) -> str:  # type: ignore[misc]
-        try:
-            from . import _web_components as _wc
-            palette = _wc.universal_palette_bundle()
-        except Exception:  # noqa: BLE001 — palette is additive
-            palette = ""
         return _legacy_chartis_shell(
-            _phi_banner_html() + body + palette, title, **kwargs,
+            _phi_banner_html() + body, title, **kwargs,
         )
 
     # v2-named helpers that callers may start using in Phase 2+

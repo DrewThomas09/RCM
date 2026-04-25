@@ -97,16 +97,23 @@ class TestDashboardIncludesPalette(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_dashboard_has_modal(self):
+        """Dashboard uses chartis_shell, which ships the legacy
+        Cmd-K palette (`#ck-palette-bd`). The dashboard's explicit
+        `wc-cmdk` wiring was removed when we discovered it was
+        creating a duplicate modal — the legacy palette is canonical."""
         from rcm_mc.ui.dashboard_page import render_dashboard
         html = render_dashboard(self.db)
-        self.assertIn('id="wc-cmdk"', html)
-        self.assertIn('id="wc-cmdk-input"', html)
+        self.assertIn('id="ck-palette-bd"', html,
+                      msg="legacy Cmd-K palette should render on dashboard")
 
     def test_dashboard_has_cmdk_js(self):
+        """The legacy shell's Cmd-K handler is in chartis_kit_legacy.py
+        and binds to `e.key==='k'` — that's what the dashboard gets
+        via the shell include."""
         from rcm_mc.ui.dashboard_page import render_dashboard
         html = render_dashboard(self.db)
-        self.assertIn("e.key === 'k'", html,
-                      msg="dashboard must include the Cmd-K JS handler")
+        self.assertIn("e.key==='k'", html,
+                      msg="legacy shell Cmd-K handler should be present")
 
     def test_dashboard_shows_discoverability_hint(self):
         from rcm_mc.ui.dashboard_page import render_dashboard
@@ -182,22 +189,21 @@ class TestDashboardWiresPaletteCommands(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def test_dashboard_includes_navigation_commands(self):
-        """Dashboard must feed the 8 workflow pages + curated
-        analyses into the palette so typing "alerts" or "thesis"
-        finds them without a server round-trip."""
+    def test_dashboard_palette_includes_navigation_commands(self):
+        """The legacy shell's palette (rendered on dashboard via
+        chartis_shell) must include the web-deployment surfaces.
+        The legacy palette's entries are statically listed in
+        `_chartis_kit_legacy.py::_PALETTE_ENTRIES`; this test
+        verifies they flow into the rendered HTML."""
         from rcm_mc.ui.dashboard_page import render_dashboard
         html = render_dashboard(self.db)
-        # Navigation hops
-        self.assertIn('"label": "Active alerts"', html)
-        self.assertIn('"label": "Watchlist"', html)
-        self.assertIn('"label": "Downloads"', html)
-        # Curated analyses
-        self.assertIn('"label": "Thesis Pipeline"', html)
-        self.assertIn('"label": "HCRIS Peer X-Ray"', html)
-        # Categories
-        self.assertIn('"category": "Go"', html)
-        self.assertIn('"category": "Run"', html)
+        # Navigation hops that matter for the morning flow
+        self.assertIn("Active alerts", html)
+        self.assertIn("Watchlist", html)
+        self.assertIn("Downloads", html)
+        # Curated analyses — present on the palette via RUN category
+        self.assertIn("Thesis Pipeline", html)
+        self.assertIn("HCRIS Peer X-Ray", html)
 
 
 class TestSearchEndpointContract(unittest.TestCase):

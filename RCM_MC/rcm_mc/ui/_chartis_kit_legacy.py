@@ -693,12 +693,22 @@ button.ck-btn-ghost:hover {{ border-color: var(--ck-accent); color: var(--ck-tex
 _PALETTE_ENTRIES = [
     # NAV — PLATFORM group
     ("NAV", "Home",                     "/home"),
-    ("NAV", "Dashboard",                "/"),
+    ("NAV", "Dashboard (web)",          "/dashboard"),
+    ("NAV", "Dashboard (legacy)",       "/"),
+    ("NAV", "Downloads",                "/exports"),
+    ("NAV", "Data refresh",             "/data/refresh"),
     ("NAV", "Pipeline",                 "/pipeline"),
     ("NAV", "Portfolio",                "/portfolio"),
+    ("NAV", "Watchlist",                "/watchlist"),
     ("NAV", "Alerts",                   "/alerts"),
+    ("NAV", "My inbox",                 "/my/me"),
+    ("NAV", "Team activity",            "/team"),
+    ("NAV", "LP quarterly update",      "/lp-update"),
+    ("NAV", "Notifications",            "/settings/integrations"),
     ("NAV", "Import Deal",              "/import"),
+    ("NAV", "New deal wizard",          "/new-deal"),
     ("NAV", "Audit",                    "/audit"),
+    ("NAV", "System info",              "/api/system/info"),
     # ANL — ANALYTICS group + high-value legacy analytics
     ("ANL", "PE Intelligence",          "/pe-intelligence"),
     ("ANL", "Deal Screening",           "/deal-screening"),
@@ -717,6 +727,20 @@ _PALETTE_ENTRIES = [
     ("ANL", "Vintage Cohorts",          "/vintage-cohorts"),
     ("ANL", "Find Comps",               "/find-comps"),
     ("ANL", "Exit Readiness",           "/exit-readiness"),
+    # RUN — Curated analyses (one-click launchers). These match the
+    # "What you can run" table on /dashboard so the palette stays in
+    # lockstep with the dashboard's recommended entry points.
+    ("RUN", "Thesis Pipeline",
+     "/diligence/thesis-pipeline?dataset=hospital_04_mixed_payer"),
+    ("RUN", "HCRIS Peer X-Ray",         "/diligence/hcris-xray?ccn=010001"),
+    ("RUN", "Bear Case Generator",
+     "/diligence/bear-case?dataset=hospital_04_mixed_payer"),
+    ("RUN", "Regulatory Calendar",      "/diligence/regulatory-calendar"),
+    ("RUN", "Covenant Stress Lab",      "/diligence/covenant-stress"),
+    ("RUN", "Payer Mix Stress",         "/diligence/payer-stress"),
+    ("RUN", "Bridge Auto-Auditor",      "/diligence/bridge-audit"),
+    ("RUN", "Deal Autopsy",             "/diligence/deal-autopsy"),
+    ("RUN", "IC Packet Builder",        "/diligence/ic-packet"),
     # REF — REFERENCE group
     ("REF", "Library (Corpus)",         "/library"),
     ("REF", "Methodology",              "/methodology"),
@@ -724,6 +748,7 @@ _PALETTE_ENTRIES = [
     ("REF", "Module Index",             "/module-index"),
     ("REF", "News",                     "/news"),
     ("REF", "Settings",                 "/settings"),
+    ("REF", "Healthz",                  "/healthz"),
 ]
 
 
