@@ -122,6 +122,46 @@ class TestDashboardWiresFilter(unittest.TestCase):
             self.assertIn(f'data-filter-for="{tbl_id}"', html)
 
 
+class TestRowCounter(unittest.TestCase):
+    """Every sortable_table now ships a row counter footer.
+
+    Non-filterable tables show a static "N rows". Filterable
+    tables get the same starting text but the JS swaps it for
+    "showing K of N rows" when the user types in the filter."""
+
+    def test_static_counter_present_on_simple_table(self):
+        html = sortable_table(["A", "B"],
+                              [["x", "y"], ["p", "q"]],
+                              id="static-tbl")
+        self.assertIn('wc-table-counter', html)
+        self.assertIn('data-total="2"', html)
+        self.assertIn("2 rows", html)
+
+    def test_singular_row(self):
+        html = sortable_table(["A"], [["x"]], id="single-tbl")
+        self.assertIn("1 row", html)
+        self.assertNotIn("1 rows", html)
+
+    def test_filterable_table_includes_counter(self):
+        html = sortable_table(
+            ["A"], [["x"], ["y"], ["z"]],
+            id="ft", filterable=True,
+        )
+        self.assertIn('wc-table-counter', html)
+        self.assertIn('data-counter-for="ft"', html)
+        self.assertIn("3 rows", html)
+
+    def test_js_updates_counter_on_filter(self):
+        """The shared sortable_table_js wires `data-counter-for`
+        bindings to update the counter as the filter narrows the
+        visible set. Verify the JS code path exists."""
+        js = sortable_table_js()
+        self.assertIn("wc-table-counter", js)
+        self.assertIn("showing", js.lower())
+        self.assertIn("data-total", js)
+        self.assertIn("no matches", js)
+
+
 class TestKeyboardShortcuts(unittest.TestCase):
     def test_slash_key_shortcut_wired(self):
         # The SaaS-standard "/" key focuses the first filter input

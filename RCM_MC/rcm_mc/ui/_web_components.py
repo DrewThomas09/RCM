@@ -250,8 +250,19 @@ def sortable_table(
         f'<thead><tr>{"".join(th_cells)}</tr></thead>'
         f'<tbody>{"".join(td_rows)}</tbody></table>'
     )
+    # Row count footer — partner sees "12 rows" or "showing 3 of 12"
+    # when a filter is active. Updates from JS on filter input.
+    row_count = len(rows)
+    counter = (
+        f'<div class="wc-table-counter" '
+        f'data-counter-for="{_html.escape(id) if id else ""}" '
+        f'data-total="{row_count}" '
+        f'style="font-size:11px;color:#6b7280;padding:6px 0 0;'
+        f'font-variant-numeric:tabular-nums;">'
+        f'{row_count} row{"s" if row_count != 1 else ""}</div>'
+    )
     if not filterable:
-        return table_html
+        return table_html + counter
     # Filter input — paired to the table by `data-filter-for` so the
     # JS can find it without needing global state. Uses the table id
     # as the binding key when present; falls back to a generated id.
@@ -262,12 +273,24 @@ def sortable_table(
             f'<table class="wc-table wc-sortable" id="{filter_target}"',
             1,
         )
+    # Filter version: counter has its own data-counter-for hook so
+    # the JS can swap "8 rows" → "showing 3 of 8" as the filter
+    # narrows the visible row set.
+    counter_filterable = (
+        f'<div class="wc-table-counter" '
+        f'data-counter-for="{_html.escape(filter_target)}" '
+        f'data-total="{row_count}" '
+        f'style="font-size:11px;color:#6b7280;padding:6px 0 0;'
+        f'font-variant-numeric:tabular-nums;">'
+        f'{row_count} row{"s" if row_count != 1 else ""}</div>'
+    )
     return (
         f'<input type="search" class="wc-filter" '
         f'data-filter-for="{_html.escape(filter_target)}" '
         f'placeholder="{_html.escape(filter_placeholder)}" '
         f'aria-label="{_html.escape(filter_placeholder)}">'
         + table_html
+        + counter_filterable
     )
 
 
@@ -666,11 +689,38 @@ def sortable_table_js() -> str:
         const q = (query || '').trim().toLowerCase();
         const tbody = table.querySelector('tbody');
         if (!tbody) return;
-        tbody.querySelectorAll('tr').forEach(function(tr) {
-            if (!q) { tr.classList.remove('wc-filter-hide'); return; }
+        let visible = 0;
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(function(tr) {
+            if (!q) {
+                tr.classList.remove('wc-filter-hide');
+                visible++;
+                return;
+            }
             const text = (tr.textContent || '').toLowerCase();
-            tr.classList.toggle('wc-filter-hide', text.indexOf(q) === -1);
+            const match = text.indexOf(q) !== -1;
+            tr.classList.toggle('wc-filter-hide', !match);
+            if (match) visible++;
         });
+        // Sync the counter footer if one is bound to this table.
+        const tableId = table.getAttribute('id');
+        if (tableId) {
+            const counter = document.querySelector(
+                '.wc-table-counter[data-counter-for="' + tableId + '"]'
+            );
+            if (counter) {
+                const total = parseInt(counter.getAttribute('data-total') || '0', 10);
+                if (q && visible !== total) {
+                    counter.textContent = 'showing ' + visible + ' of ' + total
+                        + (total === 1 ? ' row' : ' rows')
+                        + (visible === 0 ? ' — no matches' : '');
+                    counter.style.color = visible === 0 ? '#991b1b' : '#1F4E78';
+                } else {
+                    counter.textContent = total + (total === 1 ? ' row' : ' rows');
+                    counter.style.color = '#6b7280';
+                }
+            }
+        }
     }
     document.querySelectorAll('input.wc-filter').forEach(function(input) {
         const targetId = input.getAttribute('data-filter-for');
