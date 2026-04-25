@@ -48,6 +48,13 @@ from .engine import (
     run_comparables_engine,
     ComparablesResult,
 )
+from .consensus import (
+    consensus_match,
+    balance_diagnostics,
+    ConsensusMatch,
+    ConsensusResult,
+    BalanceDiagnostic,
+)
 
 __all__ = [
     "extract_features",
@@ -61,4 +68,9 @@ __all__ = [
     "mahalanobis_distance_matrix",
     "run_comparables_engine",
     "ComparablesResult",
+    "consensus_match",
+    "balance_diagnostics",
+    "ConsensusMatch",
+    "ConsensusResult",
+    "BalanceDiagnostic",
 ]

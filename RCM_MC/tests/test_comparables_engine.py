@@ -220,5 +220,82 @@ class TestEngine(unittest.TestCase):
             )
 
 
+class TestConsensusMatch(unittest.TestCase):
+    def setUp(self):
+        self.target = {
+            "source_id": "TARGET", "sector": "hospital",
+            "ev_mm": 300, "year": 2022, "state": "TX",
+            "payer_mix": {"medicare": 0.45, "medicaid": 0.20,
+                          "commercial": 0.30, "self_pay": 0.05},
+        }
+
+    def test_consensus_returns_combined_view(self):
+        from rcm_mc.comparables import consensus_match
+        result = consensus_match(
+            _synthetic_corpus(), self.target, k_matches=8)
+        # Membership counts add up
+        total = (result.n_psm_only + result.n_mahalanobis_only
+                 + result.n_consensus)
+        self.assertEqual(total, len(result.matches))
+        # Each match has the membership flags + weights
+        for m in result.matches:
+            self.assertIsNotNone(m.in_psm)
+            self.assertIsNotNone(m.in_mahalanobis)
+            self.assertGreaterEqual(m.consensus_weight, 0)
+            self.assertLessEqual(m.consensus_weight, 1.0)
+        # Consensus matches sort first (largest weight)
+        weights = [m.consensus_weight for m in result.matches]
+        self.assertEqual(weights, sorted(weights, reverse=True))
+
+    def test_balance_diagnostics_present(self):
+        from rcm_mc.comparables import consensus_match
+        result = consensus_match(
+            _synthetic_corpus(), self.target, k_matches=10)
+        # SMDs computed for every feature
+        self.assertGreater(len(result.balance), 0)
+        for d in result.balance:
+            # Bands valid
+            self.assertIn(d.band,
+                          ("excellent", "acceptable", "concerning"))
+            # SMD non-negative
+            self.assertGreaterEqual(
+                d.standardized_mean_difference, 0)
+
+    def test_balance_excellent_for_well_matched(self):
+        """A target very close to the synthetic hospital cluster
+        should produce mostly excellent / acceptable balance for
+        the sector + region one-hots."""
+        from rcm_mc.comparables import consensus_match
+        result = consensus_match(
+            _synthetic_corpus(), self.target, k_matches=10)
+        # At least one feature should hit excellent balance —
+        # sector_hospital is a perfect indicator (1.0 vs ~1.0).
+        excellent = [d for d in result.balance
+                     if d.band == "excellent"]
+        self.assertGreater(len(excellent), 0)
+
+
+class TestBalanceDiagnosticsDirect(unittest.TestCase):
+    def test_constant_feature_zero_smd(self):
+        """If every comp has the same value as the target on a
+        feature, SMD is 0 (excellent)."""
+        from rcm_mc.comparables import (
+            balance_diagnostics, extract_features,
+        )
+        target = {"source_id": "T", "sector": "hospital",
+                  "ev_mm": 300, "year": 2022, "state": "TX"}
+        comps = [
+            {"source_id": f"c{i}", "sector": "hospital",
+             "ev_mm": 300, "year": 2022, "state": "TX"}
+            for i in range(5)
+        ]
+        corpus_fvs, target_fv = extract_features(comps, target)
+        diag = balance_diagnostics(target_fv, corpus_fvs)
+        # The sector_hospital + state_south features should be
+        # identical → SMD = 0 → excellent
+        bands = [d.band for d in diag]
+        self.assertGreater(bands.count("excellent"), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
