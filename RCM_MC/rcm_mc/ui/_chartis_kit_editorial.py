@@ -1,0 +1,610 @@
+"""SeekingChartis — Chartis Kit (editorial port).
+
+The editorial-style replacement for the dark Bloomberg shell in
+``_chartis_kit_legacy``. Produces parchment + serif + teal markup
+matching the four reference HTML files in
+``docs/design-handoff/reference/``.
+
+This module is the v3 port of the (deleted) ``_chartis_kit_v2.py``,
+which held the OLD reverted reskin's palette. The values here come
+from ``docs/design-handoff/EDITORIAL_STYLE_PORT.md`` §3 + §4.
+
+Public API (must match ``_chartis_kit_legacy`` 1:1 — every existing
+page renderer imports through ``_chartis_kit.py`` which dispatches
+between legacy and editorial based on ``CHARTIS_UI_V2`` / per-request
+flag added in commit 5):
+
+Re-exported from legacy (unchanged):
+  _CORPUS_NAV, _LEGACY_NAV, _MONO, _SANS
+  ck_table, ck_kpi_block, ck_section_header
+  ck_signal_badge, ck_grade_badge, ck_regime_badge
+  ck_fmt_num, ck_fmt_pct, ck_fmt_moic, ck_fmt_currency, ck_fmt_irr
+
+Editorial-defined (this module):
+  P                            editorial palette dict
+  ck_panel(body, *, title, code) → str
+                               white card using .editorial-panel CSS
+  ck_command_palette(modules) → str
+                               placeholder ("" until ⌘K wires up)
+  ck_fmt_number(value, precision)  v2-named alias for ck_fmt_num
+  ck_fmt_percent(value, precision) v2-named alias for ck_fmt_pct
+  chartis_shell(body, title, *, active_nav, subtitle, extra_css,
+                extra_js, breadcrumbs, code,
+                show_chrome, show_phi_banner, phi_mode) → str
+
+  pair_block(viz_html, *, label, source, data_table) → str
+                               paired viz+dataset block (spec §5)
+  phi_banner(mode) → str       §7.5 banner. Pure of `mode`; caller
+                               reads RCM_MC_PHI_MODE in handler and
+                               passes the trimmed lower value here.
+  editorial_topbar(active_nav) → str
+  editorial_crumbs(items) → str
+  editorial_page_head(*, eyebrow, title, lede, meta) → str
+                               eyebrow is Sequence[(text, kind)]
+                               where kind is None or 'slug' (mono).
+                               · separators rendered centrally so
+                               every page's eyebrow is consistent.
+
+Atoms (drop-in equivalents of cc-components.jsx):
+
+  covenant_pill(status) → str         SAFE/WATCH/TRIP → green/amber/red
+  stage_pill(stage) → str             Hold/IOI/LOI/SPA/Closed/Exit
+  number_maybe(v, *, format, tone) → str
+                                       formats: moic, pct, ev, drift
+  sparkline_svg(values, *, color) → str
+                                       100×22 inline SVG path
+
+ck_related_views(items) is defined in the dispatcher
+(_chartis_kit.py) at module level, NOT here — it's available in
+both shells because its visual treatment uses palette tokens that
+exist in both. No editorial override is needed.
+
+For the heavy helpers (ck_table, ck_kpi_block, ck_section_header,
+ck_signal_badge, ck_grade_badge, ck_regime_badge), this module
+re-exports the legacy implementations unchanged. As later phases
+port specific page surfaces, those surfaces will use the editorial
+chrome (chartis_shell + pair_block + atoms) and gradually replace
+ck_table calls with editorial-native markup. The mixed state during
+the transition is acceptable: the editorial shell + .pair pattern
+produces the visual identity; the older helpers render their cells
+with legacy ck_* CSS that the editorial CSS doesn't fight (different
+class namespaces).
+"""
+from __future__ import annotations
+
+import html as _html
+import os as _os
+from datetime import datetime, timezone
+from typing import Iterable, List, Mapping, Optional, Sequence, Tuple, Union
+
+# ── Re-exports from legacy (heavy helpers, unchanged in Phase 1) ────
+
+from ._chartis_kit_legacy import (  # noqa: F401
+    _CORPUS_NAV,
+    _CORPUS_NAV_LEGACY as _LEGACY_NAV,
+    _MONO,
+    _SANS,
+    ck_fmt_currency,
+    ck_fmt_irr,
+    ck_fmt_moic,
+    ck_fmt_num,
+    ck_fmt_pct,
+    ck_grade_badge,
+    ck_kpi_block,
+    ck_regime_badge,
+    ck_section_header,
+    ck_signal_badge,
+    ck_table,
+)
+
+
+# ── ck_panel: editorial implementation ────────────────────────────
+#
+# Renders a white card inside the parchment page using the
+# .editorial-panel CSS class (defined in /static/v3/chartis.css).
+# Class is namespaced as `editorial-panel`, NOT plain `.panel`,
+# because the dashboard reference HTML (04-command-center.html) has
+# its own .panel with different padding behavior. Both classes
+# coexist; ck_panel picks the editorial one.
+#
+# Why a class, not inline styles: inline styles are uneditable from
+# CSS, can't grow hover/responsive variants without Python changes,
+# and don't compose with the rest of the editorial type/spacing
+# scale. The class costs ~20 lines of CSS and pays for itself the
+# first time anyone wants a visual variant.
+
+def ck_panel(
+    body_html: str,
+    *,
+    title: Optional[str] = None,
+    code: Optional[str] = None,
+) -> str:
+    """Editorial panel: white card inside the parchment page.
+
+    Args:
+        body_html: Inner HTML. Already HTML-safe.
+        title: Optional uppercase eyebrow above the body.
+        code: Optional source-file path rendered in mono teal.
+
+    All visual styling lives in .editorial-panel CSS.
+    """
+    head_html = ""
+    if title or code:
+        title_span = (
+            f'<span class="ttl">{_html.escape(title)}</span>'
+            if title else '<span class="ttl"></span>'
+        )
+        code_span = (
+            f'<span class="src">{_html.escape(code)}</span>'
+            if code else ""
+        )
+        head_html = f'<div class="head">{title_span}{code_span}</div>'
+    return (
+        '<section class="editorial-panel">'
+        f'{head_html}'
+        f'<div class="body">{body_html}</div>'
+        '</section>'
+    )
+
+
+# ── Editorial palette (mirrors :root in chartis.css) ───────────────
+
+P: dict = {
+    # surfaces
+    "bg":            "#F2EDE3",
+    "bg_alt":        "#ECE5D6",
+    "bg_tint":       "#E8E0D0",
+    "paper":         "#FAF7F0",
+    "paper_pure":    "#FFFFFF",
+    # rules
+    "border":        "#D6CFC0",
+    "border_strong": "#C2B9A6",
+    "rule":          "#BFB6A2",
+    # ink
+    "ink":           "#0F1C2E",
+    "ink_2":         "#1A2840",
+    "muted":         "#5C6878",
+    "faint":         "#8A92A0",
+    # accent
+    "teal":          "#1F7A75",
+    "teal_soft":     "#D4E4E2",
+    "teal_deep":     "#155752",
+    # status
+    "green":         "#3F7D4D",
+    "green_soft":    "#DCE6D9",
+    "amber":         "#B7791F",
+    "amber_soft":    "#EFE2BC",
+    "red":           "#A53A2D",
+    "red_soft":      "#EBD3CD",
+    "blue":          "#2C5C84",
+    "blue_soft":     "#D6E1EB",
+    # legacy aliases (callers that read P["accent"] — Phase 5 sweeps these)
+    "accent":        "#155752",      # → teal_deep
+    "accent_soft":   "#D4E4E2",      # → teal_soft
+}
+
+
+# ── v2-named formatter aliases (callers that import them by either name) ──
+
+def ck_fmt_number(value, precision: int = 1) -> str:
+    """v2-named alias for ck_fmt_num."""
+    return ck_fmt_num(value, decimals=precision)
+
+
+def ck_fmt_percent(value, precision: int = 1) -> str:
+    """v2-named alias for ck_fmt_pct."""
+    return ck_fmt_pct(value, decimals=precision)
+
+
+def ck_command_palette(modules: Optional[Iterable] = None) -> str:
+    """Editorial ⌘K palette — empty placeholder in Phase 1.
+
+    Wired for real in a later phase. Returning "" here keeps callers
+    that always invoke it from emitting a stray <div>.
+    """
+    return ""
+
+
+# ── PHI banner per spec §7.5 ───────────────────────────────────────
+
+def phi_banner(mode: Optional[str]) -> str:
+    """Editorial PHI banner — pure function of ``mode``.
+
+    Args:
+        mode: One of "disallowed", "restricted", or None.
+              The CALLER reads ``RCM_MC_PHI_MODE`` from env (once,
+              in the request handler) and passes the lowercased
+              trimmed value here. Helpers don't read globals — that
+              way unit tests pass mode explicitly and don't have
+              to mutate process env.
+
+    Returns:
+        Banner HTML using ``.phi-banner`` CSS class, or "" for None
+        (or unrecognised mode).
+    """
+    if mode == "disallowed":
+        return (
+            '<div class="phi-banner" data-testid="phi-banner" '
+            'data-phi-mode="disallowed">'
+            '🛡 Public data only — no PHI permitted on this instance.'
+            '</div>'
+        )
+    if mode == "restricted":
+        return (
+            '<div class="phi-banner restricted" data-testid="phi-banner" '
+            'data-phi-mode="restricted">'
+            '⚠ PHI-eligible deployment — access audit-logged. '
+            'Do not export outside BAA scope.'
+            '</div>'
+        )
+    return ""
+
+
+# ── Editorial chrome ───────────────────────────────────────────────
+
+def editorial_topbar(active_nav: Optional[str] = None) -> str:
+    """Render the editorial topbar per spec §6.1.
+
+    5-button topnav (DEALS / ANALYSIS / PORTFOLIO / MARKET / TOOLS)
+    with teal underline on the active item, ⌘K search, SIGN OUT.
+    """
+    nav_items = ("DEALS", "ANALYSIS", "PORTFOLIO", "MARKET", "TOOLS")
+    active_upper = (active_nav or "").upper()
+    nav_html = "".join(
+        f'<button class="{"active" if item == active_upper else ""}">'
+        f'{item} <span class="caret">▾</span></button>'
+        for item in nav_items
+    )
+    return (
+        '<header class="topbar">'
+        '<a href="/" class="brand">'
+        '<div class="brand-mark">SC</div>'
+        '<div class="brand-name">Seeking<em>Chartis</em></div>'
+        '</a>'
+        f'<nav class="topnav">{nav_html}</nav>'
+        '<div class="topbar-right">'
+        '<div class="search">'
+        '<span class="ico">⌕</span>'
+        '<input placeholder="Search…" aria-label="Search">'
+        '<span class="kbd">⌘K</span>'
+        '</div>'
+        '<form method="POST" action="/api/logout" style="display:inline">'
+        '<button type="submit" class="signin">SIGN OUT</button>'
+        '</form>'
+        '</div>'
+        '</header>'
+    )
+
+
+def editorial_crumbs(items: Sequence[Tuple[str, Optional[str]]]) -> str:
+    """Render breadcrumb trail per spec §6.1.
+
+    ``items`` is a sequence of ``(label, href_or_None)`` tuples.
+    The last item is rendered as the current page (no link).
+    """
+    if not items:
+        return ""
+    parts: List[str] = []
+    for i, (label, href) in enumerate(items):
+        is_last = i == len(items) - 1
+        esc_label = _html.escape(str(label))
+        if is_last or not href:
+            parts.append(f'<span class="here">{esc_label}</span>')
+        else:
+            parts.append(f'<a href="{_html.escape(href)}">{esc_label}</a>')
+        if not is_last:
+            parts.append('<span class="sep">›</span>')
+    return f'<div class="crumbs">{"".join(parts)}</div>'
+
+
+def editorial_page_head(
+    *,
+    eyebrow: Optional[Sequence[Tuple[str, Optional[str]]]] = None,
+    title: str = "",
+    lede: Optional[str] = None,
+    meta: Optional[Sequence[Tuple[str, str]]] = None,
+) -> str:
+    """Render the editorial page header per spec §6.2.
+
+    Args:
+        eyebrow: Sequence of (text, kind) tuples. ``kind`` is one of:
+            None    → plain uppercase span
+            "slug"  → mono span (e.g. "/COMMAND-CENTER" source path)
+            Items are joined by `· ` separators rendered centrally so
+            the dot character + spacing stay consistent across pages.
+
+            Example: [("PORTFOLIO", None), ("FUND II", None),
+                      ("/COMMAND-CENTER", "slug")]
+
+        title: Page title — Source Serif 4, weight 400.
+        lede: Optional descriptive paragraph below the title.
+        meta: Right-column list of (label, value) pairs rendered in
+            JetBrains Mono.
+    """
+    eb_html = ""
+    if eyebrow:
+        parts: List[str] = []
+        for i, (text, kind) in enumerate(eyebrow):
+            if i > 0:
+                parts.append('<span class="dot">·</span>')
+            esc = _html.escape(str(text))
+            if kind == "slug":
+                parts.append(f'<span class="slug">{esc}</span>')
+            else:
+                parts.append(f'<span>{esc}</span>')
+        eb_html = f'<div class="eyebrow">{"".join(parts)}</div>'
+    title_h = (
+        f'<h1 class="title">{_html.escape(title)}</h1>'
+        if title else ""
+    )
+    lede_p = (
+        f'<p class="lede">{_html.escape(lede)}</p>'
+        if lede else ""
+    )
+    meta_html = ""
+    if meta:
+        meta_rows = "".join(
+            f'<div>{_html.escape(label)} <span class="dot">·</span> '
+            f'<span class="v">{_html.escape(str(value))}</span></div>'
+            for label, value in meta
+        )
+        meta_html = f'<div class="meta-col">{meta_rows}</div>'
+    return (
+        '<div class="pg-head">'
+        f'<div>{eb_html}{title_h}{lede_p}</div>'
+        f'{meta_html}'
+        '</div>'
+    )
+
+
+# ── Signature pair pattern per spec §5 ────────────────────────────
+
+def pair_block(
+    viz_html: str,
+    *,
+    label: str,
+    source: str,
+    data_table: str,
+) -> str:
+    """Wrap a viz + its underlying data table in one outer rule.
+
+    Per spec §5: every analytical section renders as a .pair —
+    visualization left (1.4fr), live dataset right (1fr), one rule
+    around both. **No chart is ever shown without its underlying
+    numbers.**
+
+    Args:
+        viz_html: pre-rendered chart / sparkline / heatmap HTML
+        label: section label (uppercase; rendered to upper internally
+               by the .data-h CSS)
+        source: source-file path, rendered in mono teal
+                (e.g., "portfolio.db", "summary.csv")
+        data_table: pre-rendered <table> HTML for the data column
+    """
+    return (
+        '<div class="pair">'
+        f'<div class="viz">{viz_html}</div>'
+        '<div class="data">'
+        '<div class="data-h">'
+        f'<span>{_html.escape(label)}</span>'
+        f'<span class="src">{_html.escape(source)}</span>'
+        '</div>'
+        f'{data_table}'
+        '</div>'
+        '</div>'
+    )
+
+
+# ── Atoms (cc-components.jsx equivalents) ──────────────────────────
+
+def covenant_pill(status: str) -> str:
+    """SAFE / WATCH / TRIP → green / amber / red pill."""
+    s = (status or "").upper()
+    if s == "SAFE":
+        return '<span class="pill green"><span class="dot"></span>Safe</span>'
+    if s == "WATCH":
+        return '<span class="pill amber"><span class="dot"></span>Watch</span>'
+    if s == "TRIP":
+        return '<span class="pill red"><span class="dot"></span>Trip</span>'
+    return '<span class="pill muted">—</span>'
+
+
+def stage_pill(stage: str) -> str:
+    """Deal-stage pill per cc-components.jsx StagePill."""
+    tone_map = {
+        "Hold": "blue", "IOI": "amber", "LOI": "amber",
+        "Sourced": "muted", "SPA": "blue",
+        "Closed": "green", "Exit": "green", "Screened": "muted",
+    }
+    tone = tone_map.get(stage, "muted")
+    return f'<span class="pill {tone}">{_html.escape(stage)}</span>'
+
+
+def number_maybe(
+    v: Union[int, float, None],
+    *,
+    format: Optional[str] = None,
+    tone: Optional[str] = None,
+) -> str:
+    """Format a number per cc-components.jsx NumberMaybe.
+
+    formats:
+      moic   → "2.69x"
+      pct    → "21.9%" (input is fraction 0..1)
+      ev     → "$450M"
+      drift  → "+/-X.X%" (input is signed percent)
+
+    tone:
+      green / amber / red → colored output via inline style
+                            (atomic CSS would be nicer; inline is
+                            fewer moving parts in Phase 1)
+
+    Returns "—" when v is None.
+    """
+    if v is None:
+        return '<span style="color:var(--faint)">—</span>'
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return '<span style="color:var(--faint)">—</span>'
+    if format == "moic":
+        s = f"{f:.2f}x"
+    elif format == "pct":
+        s = f"{f * 100:.1f}%"
+    elif format == "ev":
+        s = f"${int(f)}M"
+    elif format == "drift":
+        s = f"{'+' if f >= 0 else ''}{f:.1f}%"
+    else:
+        s = str(v)
+    color_map = {
+        "green": "var(--green)",
+        "amber": "var(--amber)",
+        "red": "var(--red)",
+    }
+    color = color_map.get(tone or "")
+    if color:
+        weight = "600" if tone else "500"
+        return f'<span style="color:{color};font-weight:{weight}">{_html.escape(s)}</span>'
+    return _html.escape(s)
+
+
+def sparkline_svg(
+    values: Sequence[float],
+    *,
+    color: str = "var(--teal)",
+) -> str:
+    """100×22 inline SVG sparkline matching cc-components.jsx Sparkline.
+
+    Auto-scales y-range to (min, max). Returns "" for empty input
+    (callers can use the cell-empty state).
+    """
+    if not values:
+        return ""
+    w, h, pad = 100, 22, 2
+    vmin, vmax = min(values), max(values)
+    rng = (vmax - vmin) or 1.0
+    n = len(values)
+    pts: List[str] = []
+    for i, v in enumerate(values):
+        x = pad + (i * (w - pad * 2)) / max(n - 1, 1)
+        y = h - pad - ((v - vmin) / rng) * (h - pad * 2)
+        cmd = "M" if i == 0 else "L"
+        pts.append(f"{cmd}{x:.1f} {y:.1f}")
+    path = " ".join(pts)
+    return (
+        f'<svg viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+        f'style="width:100%;height:100%;display:block">'
+        f'<path d="{path}" stroke="{color}" stroke-width="1.25" '
+        f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+        '</svg>'
+    )
+
+
+# ── The shell ──────────────────────────────────────────────────────
+
+def chartis_shell(
+    body: str,
+    title: str,
+    *,
+    active_nav: str = "",
+    subtitle: str = "",
+    extra_css: str = "",
+    extra_js: str = "",
+    breadcrumbs: Optional[Sequence[Tuple[str, Optional[str]]]] = None,
+    code: Optional[str] = None,
+    show_chrome: bool = True,
+    show_phi_banner: bool = True,
+    phi_mode: Optional[str] = None,
+) -> str:
+    """Editorial page shell.
+
+    Renders the parchment + serif + teal frame around `body`. Links
+    /static/v3/chartis.css for tokens + base typography + utilities.
+
+    Backwards-compat with the legacy shell signature: same kwargs
+    (``subtitle``, ``extra_css``, ``extra_js``, ``active_nav``) so
+    page renderers in rcm_mc/ui/chartis/* don't change as they're
+    ported. New kwargs (``breadcrumbs``, ``code``) supply the
+    editorial-only chrome elements.
+
+    Args:
+        body: Inner HTML of the page.
+        title: <title> tag content + topbar title.
+        active_nav: One of DEALS / ANALYSIS / PORTFOLIO / MARKET /
+                    TOOLS to underline in the topnav.
+        subtitle: Legacy compat — folded into breadcrumbs if no
+                  breadcrumbs given.
+        extra_css: <style> block injected into <head>.
+        extra_js: <script> block appended at the end of <body>.
+        breadcrumbs: Sequence of (label, href|None) for the .crumbs row.
+        code: Source-file path for the page header (mono teal).
+        show_chrome: Set False on bare pages (login, forgot) that
+                     don't need the topnav. Banner + footer still ok.
+        show_phi_banner: Set False on unauthenticated pages.
+        phi_mode: PHI posture — caller reads RCM_MC_PHI_MODE env in
+                  the handler and passes the value here. None (default)
+                  means no banner, even when show_phi_banner is True.
+                  This keeps env reads in handlers, not helpers.
+    """
+    safe_title = _html.escape(title or "SeekingChartis")
+    chrome = (
+        editorial_topbar(active_nav)
+        if show_chrome else (
+            '<header class="topbar">'
+            '<a href="/" class="brand">'
+            '<div class="brand-mark">SC</div>'
+            '<div class="brand-name">Seeking<em>Chartis</em></div>'
+            '</a>'
+            '</header>'
+        )
+    )
+    crumbs_html = ""
+    if breadcrumbs:
+        crumbs_html = editorial_crumbs(breadcrumbs)
+    elif subtitle and show_chrome:
+        crumbs_html = editorial_crumbs([(subtitle, None)])
+    banner_html = phi_banner(phi_mode) if show_phi_banner else ""
+    extra_css_block = f"<style>{extra_css}</style>" if extra_css else ""
+    extra_js_block = f"<script>{extra_js}</script>" if extra_js else ""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{safe_title} — SeekingChartis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/static/v3/chartis.css">
+{extra_css_block}
+</head>
+<body>
+{chrome}
+{crumbs_html}
+{banner_html}
+<main>
+{body}
+</main>
+{extra_js_block}
+</body>
+</html>"""
+
+
+__all__ = [
+    # Palette + nav
+    "P", "_CORPUS_NAV", "_LEGACY_NAV", "_MONO", "_SANS",
+    # Shell
+    "chartis_shell", "editorial_topbar", "editorial_crumbs",
+    "editorial_page_head", "phi_banner",
+    # Pair pattern
+    "pair_block",
+    # Atoms
+    "covenant_pill", "stage_pill", "number_maybe", "sparkline_svg",
+    # Heavy helpers (re-exported from legacy)
+    "ck_panel", "ck_table", "ck_kpi_block", "ck_section_header",
+    "ck_signal_badge", "ck_grade_badge", "ck_regime_badge",
+    "ck_command_palette",
+    # Formatters
+    "ck_fmt_num", "ck_fmt_pct", "ck_fmt_moic", "ck_fmt_currency",
+    "ck_fmt_irr", "ck_fmt_number", "ck_fmt_percent",
+]

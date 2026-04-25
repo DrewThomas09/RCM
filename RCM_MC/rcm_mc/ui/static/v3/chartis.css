@@ -499,6 +499,50 @@ input:focus, textarea:focus, select:focus {
   margin-top: 1rem;
 }
 
+/* ── editorial panel (ck_panel) ────────────────────────────────────
+ *
+ * Namespaced .editorial-panel rather than .panel so the editorial
+ * card chrome doesn't collide with the .panel class used elsewhere
+ * in the dashboard reference HTML (04-command-center.html line 398:
+ * .panel { padding: 1.25rem 1.5rem; ... }). Both can coexist on the
+ * same page; consumers pick which one.
+ */
+
+.editorial-panel {
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  margin: 1rem 0;
+}
+.editorial-panel > .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: .85rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.editorial-panel > .head .ttl {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.editorial-panel > .head .src {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .72rem;
+  color: var(--teal-deep);
+}
+.editorial-panel > .body {
+  padding: 1.25rem 1.5rem;
+}
+.editorial-panel:hover {
+  /* hover state available; default no-op so existing pages don't
+   * suddenly get hover lift. Overriders can add background tint
+   * via a more specific selector. */
+}
+
 /* ── footer ────────────────────────────────────────────────────── */
 
 footer.editorial {

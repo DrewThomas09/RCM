@@ -41,31 +41,21 @@ import os as _os
 
 # ── Feature flag ────────────────────────────────────────────────────
 #
-# Default "0" during Phases 1–14 so existing test behaviour is
-# byte-for-byte unchanged. Phase 15 flips the default to "1" and
-# removes this module, promoting _chartis_kit_v2 to the only
-# implementation.
-UI_V2_ENABLED = _os.environ.get("CHARTIS_UI_V2", "0") != "0"
+# CHARTIS_UI_V2 (or RCM_MC_UI_VERSION=v3) opts the env into the
+# editorial shell from _chartis_kit_editorial. Default "0" so existing
+# behaviour is byte-for-byte unchanged. Phase 4 flips the default; Phase
+# 5 cleanup deletes _chartis_kit_legacy and this dispatcher.
+#
+# Per-request override via ?ui=v3 query param lands in commit 5 — the
+# request-time flag overrides the env, so a partner can preview the
+# editorial render without changing server config.
+def _ui_flag_on() -> bool:
+    v2 = _os.environ.get("CHARTIS_UI_V2", "")
+    v3 = _os.environ.get("RCM_MC_UI_VERSION", "").lower()
+    return v2 not in ("", "0") or v3 in ("v3", "editorial", "1", "true")
 
-# ── TEMPORARY: editorial port in progress (commits 1–4 of Phase 1) ──
-#
-# The previous _chartis_kit_v2.py held the OLD reverted reskin's
-# palette (#0b2341 navy / #2fb3ad teal). It was deleted in commit 1.
-# Its replacement, _chartis_kit_editorial.py, lands in commit 4.
-#
-# Between now and commit 4, CHARTIS_UI_V2=1 is silently a no-op —
-# the dispatcher falls through to the legacy dark shell regardless.
-# This warning surfaces during that window so a stray bisect or env
-# config doesn't quietly chase a ghost. Removed in commit 4.
-if UI_V2_ENABLED:
-    import sys as _sys
-    print(
-        "[chartis_kit] CHARTIS_UI_V2 is currently a no-op "
-        "(editorial port in progress, see docs/UI_REWORK_PLAN.md). "
-        "Falling through to legacy dark shell.",
-        file=_sys.stderr,
-    )
-    UI_V2_ENABLED = False  # force legacy path until commit 4 rewires
+
+UI_V2_ENABLED = _ui_flag_on()
 
 
 # ── PHI posture banner ─────────────────────────────────────────────
@@ -106,115 +96,49 @@ def _phi_banner_html() -> str:
 
 
 if UI_V2_ENABLED:
-    # ── v2 editorial shell ──────────────────────────────────────────
-    from ._chartis_kit_v2 import (  # noqa: F401
+    # ── editorial shell (Phase 1+ port) ─────────────────────────────
+    #
+    # Pure passthrough — the editorial module's chartis_shell already
+    # matches the legacy kwargs (subtitle, extra_css, extra_js,
+    # active_nav) so existing callers in rcm_mc/ui/chartis/*.py and
+    # rcm_mc/ui/*.py work unchanged. Editorial-only kwargs
+    # (breadcrumbs, code, show_chrome, show_phi_banner) are accepted
+    # but optional. The PHI banner is rendered inside chartis_shell
+    # itself, NOT injected here — avoids the double-banner that the
+    # old compat shim caused.
+    from ._chartis_kit_editorial import (  # noqa: F401
         P,
         _CORPUS_NAV,
         _LEGACY_NAV as _CORPUS_NAV_LEGACY,
-        ck_command_palette,
-        ck_fmt_currency,
-        ck_fmt_number,
-        ck_fmt_percent,
-        ck_kpi_block,
-        ck_panel,
-        ck_section_header,
-        ck_signal_badge as _v2_signal_badge,
-        ck_table,
-        chartis_shell as _v2_chartis_shell,
-    )
-
-    # --- Compat shims: legacy-named functions callers still use ----
-
-    from ._chartis_kit_legacy import (  # noqa: F401
-        ck_fmt_moic,
-        ck_fmt_irr,
-        ck_grade_badge,
-        ck_regime_badge,
         _MONO,
         _SANS,
+        chartis_shell,
+        ck_command_palette,
+        ck_fmt_currency,
+        ck_fmt_irr,
+        ck_fmt_moic,
+        ck_fmt_num,
+        ck_fmt_number,
+        ck_fmt_pct,
+        ck_fmt_percent,
+        ck_grade_badge,
+        ck_kpi_block,
+        ck_panel,
+        ck_regime_badge,
+        ck_section_header,
+        ck_signal_badge,
+        ck_table,
+        # Editorial-only helpers
+        covenant_pill,
+        editorial_crumbs,
+        editorial_page_head,
+        editorial_topbar,
+        number_maybe,
+        pair_block,
+        phi_banner,
+        sparkline_svg,
+        stage_pill,
     )
-
-    def ck_fmt_num(value, decimals: int = 1, suffix: str = "",
-                   na: str = "—") -> str:
-        """Legacy-named wrapper around ``ck_fmt_number``."""
-        if value is None:
-            return na
-        try:
-            return ck_fmt_number(float(value), precision=decimals) + suffix
-        except (TypeError, ValueError):
-            return na
-
-    def ck_fmt_pct(value, decimals: int = 1, signed: bool = False) -> str:
-        """Legacy-named wrapper around ``ck_fmt_percent``.
-
-        ``signed`` prepends '+' to positive values — the legacy
-        behaviour many pages rely on for signed variance displays.
-        """
-        if value is None:
-            return "—"
-        try:
-            out = ck_fmt_percent(float(value), precision=decimals)
-        except (TypeError, ValueError):
-            return "—"
-        if signed and float(value) > 0 and not out.startswith(("+", "-")):
-            out = "+" + out
-        return out
-
-    def ck_signal_badge(signal, *, tone: str | None = None) -> str:
-        """Compat wrapper: accepts either the legacy single-arg form
-        (``ck_signal_badge("OK")``) or the v2 tone-keyword form
-        (``ck_signal_badge("Priority", tone="positive")``).
-        """
-        text = "" if signal is None else str(signal)
-        resolved_tone = tone
-        if resolved_tone is None:
-            # Legacy call: signal IS the tone label, typically one of
-            # POSITIVE / NEGATIVE / WARNING / NEUTRAL.
-            up = text.upper()
-            if up in ("POSITIVE", "BUY", "STRONG"):
-                resolved_tone = "positive"
-            elif up in ("NEGATIVE", "SELL", "WEAK"):
-                resolved_tone = "negative"
-            elif up in ("WARNING", "CAUTION"):
-                resolved_tone = "warning"
-            elif up in ("CRITICAL", "BLOCKER"):
-                resolved_tone = "critical"
-            else:
-                resolved_tone = "neutral"
-        return _v2_signal_badge(text, tone=resolved_tone)
-
-    def chartis_shell(body, title, *, active_nav=None, subtitle: str = "",
-                      breadcrumbs=None, code: str | None = None,
-                      extra_css: str = "", extra_js: str = "",
-                      **kwargs) -> str:
-        """Compat shell: accepts both the legacy kwargs
-        (``subtitle``, ``extra_css``, ``extra_js``) and the v2 kwargs
-        (``breadcrumbs``, ``code``, ``user_initials``, etc.). Unknown
-        kwargs pass through to the v2 shell.
-
-        ``subtitle`` is stashed into the v2 page-head eyebrow row;
-        ``extra_css`` and ``extra_js`` are appended to the body. This
-        keeps the dozens of existing callers working without a
-        simultaneous rewrite of every page.
-        """
-        # Route subtitle to the v2 eyebrow by threading through the
-        # body. Future cleanup (Phase 15) can drop this shim.
-        if subtitle and not breadcrumbs:
-            breadcrumbs = [{"label": str(subtitle)}]
-        wrapped_body = _phi_banner_html() + body
-        if extra_css:
-            wrapped_body = f'<style>{extra_css}</style>{wrapped_body}'
-        if extra_js:
-            wrapped_body = f'{wrapped_body}<script>{extra_js}</script>'
-        # Note: the v2 shell also has its own Cmd-K handler
-        # (_chartis_kit_v2.py:487). We don't inject a duplicate
-        # palette here for the same reason as the legacy branch —
-        # two handlers binding to Cmd-K would both fire.
-        return _v2_chartis_shell(
-            wrapped_body, title,
-            active_nav=active_nav, breadcrumbs=breadcrumbs, code=code,
-            **kwargs,
-        )
 
 else:
     # ── Legacy dark shell ───────────────────────────────────────────
@@ -327,13 +251,16 @@ def ck_related_views(items):
 
 
 __all__ = [
+    # Flag + palette
     "UI_V2_ENABLED",
     "P",
     "_CORPUS_NAV",
     "_CORPUS_NAV_LEGACY",
     "_MONO",
     "_SANS",
+    # Shell
     "chartis_shell",
+    # Helpers (legacy + editorial both expose)
     "ck_command_palette",
     "ck_fmt_currency",
     "ck_fmt_irr",
@@ -350,4 +277,16 @@ __all__ = [
     "ck_section_header",
     "ck_signal_badge",
     "ck_table",
+    # Editorial-only (re-exported when UI_V2_ENABLED; importing through
+    # the dispatcher means callers get an AttributeError under the
+    # legacy shell, which is the intended signal — these helpers
+    # produce editorial markup that doesn't fit the dark theme).
+    "covenant_pill",
+    "editorial_crumbs",
+    "editorial_page_head",
+    "editorial_topbar",
+    "number_maybe",
+    "pair_block",
+    "phi_banner",
+    "sparkline_svg",
 ]
