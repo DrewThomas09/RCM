@@ -4752,6 +4752,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_catalog_page import render_data_catalog_page
             return self._send_html(render_data_catalog_page(
                 PortfolioStore(self.config.db_path)))
+        if path == "/models/quality":
+            from .ui.model_quality_dashboard import (
+                render_model_quality_dashboard)
+            from .ml.model_quality import (
+                _build_default_quality_panel)
+            results = _build_default_quality_panel()
+            return self._send_html(
+                render_model_quality_dashboard(results))
         if path == "/exports":
             from .ui.exports_index_page import render_exports_index
             return self._send_html(render_exports_index(self.config.db_path))
