@@ -53,7 +53,10 @@ class TestHomePage(unittest.TestCase):
                 ) as r:
                     body = r.read().decode()
                 self.assertIn("SeekingChartis", body)
-                self.assertIn("ck-topbar", body)
+                # Terminal-shell chrome: top bar + side nav. The
+                # earlier editorial reskin used `ck-topbar`; the
+                # revert restored the original `ck-bar` class.
+                self.assertIn("ck-bar", body)
                 self.assertIn("ck-nav", body)
             finally:
                 server.shutdown(); server.server_close()

@@ -58,7 +58,9 @@ class TestHospitalProfile(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("SOUTHEAST HEALTH", body)
                 self.assertIn("SeekingChartis Score", body)
-                self.assertIn("ck-topbar", body)
+                # Terminal-shell chrome: top bar (`ck-bar` after the
+                # editorial-reskin revert) + side nav.
+                self.assertIn("ck-bar", body)
             finally:
                 server.shutdown(); server.server_close()
         finally:

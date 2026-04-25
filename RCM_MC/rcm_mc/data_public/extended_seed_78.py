@@ -18,6 +18,7 @@ backtesting, and scenario analysis use cases.
 
 EXTENDED_SEED_DEALS_78 = [
     {
+        "source_id": "seed_summit_ortho_rollup_2018",
         "company_name": "Summit Orthopedic Partners",
         "sector": "Orthopedic Rollup",
         "subsector": "Multi-specialty Orthopedic Group",

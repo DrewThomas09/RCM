@@ -199,17 +199,24 @@ class TestOrchestrator(unittest.TestCase):
                 return count
             return _fn
 
+        # Inject one fake refresher per KNOWN_SOURCE so the assertion
+        # remains true as new public datasets are added.
+        counts = {
+            "hcris": 10, "care_compare": 20, "utilization": 30,
+            "irs990": 5, "cms_pos": 7, "cms_general": 11,
+            "cms_hrrp": 13,
+        }
         refreshers = {
-            "hcris": _r("hcris", 10),
-            "care_compare": _r("care_compare", 20),
-            "utilization": _r("utilization", 30),
-            "irs990": _r("irs990", 5),
+            name: _r(name, counts.get(name, 1))
+            for name in dr.KNOWN_SOURCES
         }
         report = dr.refresh_all_sources(
             self.store, refreshers=refreshers,
         )
         self.assertEqual(set(called), set(dr.KNOWN_SOURCES))
-        self.assertEqual(report.total_records, 65)
+        self.assertEqual(
+            report.total_records,
+            sum(counts.get(n, 1) for n in dr.KNOWN_SOURCES))
         self.assertFalse(report.any_errors)
         rows = {r["source_name"]: r for r in dr.get_status(self.store)}
         self.assertEqual(rows["hcris"]["record_count"], 10)

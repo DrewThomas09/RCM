@@ -690,9 +690,17 @@ class DealsCorpus:
         source_id = deal.get("source_id") or (
             f"auto_{deal_name[:20].replace(' ', '_').lower()}_{deal.get('year', 0)}"
         )
-        realized_moic = deal.get("realized_moic") or deal.get("moic")
-        realized_irr = deal.get("realized_irr") or deal.get("irr")
-        ebitda = deal.get("ebitda_at_entry_mm") or deal.get("ebitda_mm")
+        # Explicit-None fallback so a legitimate 0.0 (complete writeoff)
+        # isn't silently overwritten by the alias key. `0.0 or x` is x.
+        realized_moic = deal.get("realized_moic")
+        if realized_moic is None:
+            realized_moic = deal.get("moic")
+        realized_irr = deal.get("realized_irr")
+        if realized_irr is None:
+            realized_irr = deal.get("irr")
+        ebitda = deal.get("ebitda_at_entry_mm")
+        if ebitda is None:
+            ebitda = deal.get("ebitda_mm")
 
         payer_mix = deal.get("payer_mix")
         if isinstance(payer_mix, dict):
@@ -941,12 +949,31 @@ class DealsCorpus:
             + EXTENDED_SEED_DEALS_104
         )
 
+        # When two seed batches accidentally share a source_id the
+        # second upsert overwrites the first, so the row count after
+        # a full seed is the *unique* count, not len(all_seed). Use
+        # the same formula upsert uses to derive an auto-id so the
+        # populated-threshold matches the actual stored row count.
+        def _stable_id(d: Dict[str, Any]) -> str:
+            sid = d.get("source_id")
+            if sid:
+                return sid
+            name = d.get("deal_name") or d.get("company_name", "")
+            return (f"auto_{name[:20].replace(' ', '_').lower()}_"
+                    f"{d.get('year', 0)}")
+        unique_n = len({_stable_id(d) for d in all_seed})
+
         if skip_if_populated:
+            # Some seed batches set ``source = 'corpus_seed'`` rather
+            # than the canonical ``'seed'`` (legacy schema artefact).
+            # Counting both prevents skip_if_populated from misfiring
+            # and re-running the seed loop on every call.
             with self._connect() as con:
                 count = con.execute(
-                    "SELECT COUNT(*) FROM public_deals WHERE source = 'seed'"
+                    "SELECT COUNT(*) FROM public_deals "
+                    "WHERE source IN ('seed', 'corpus_seed')"
                 ).fetchone()[0]
-            if count >= len(all_seed):
+            if count >= unique_n:
                 return 0
 
         inserted = 0

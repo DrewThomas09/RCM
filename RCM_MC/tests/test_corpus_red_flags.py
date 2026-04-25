@@ -242,8 +242,11 @@ class TestCorpusFlagsPanel(unittest.TestCase):
     def test_dark_theme_colors_present(self):
         from rcm_mc.ui.data_public.corpus_flags_panel import render_corpus_flags_panel
         panel = render_corpus_flags_panel(_deal())
+        # Dark terminal shell — bg + border match the rest of the
+        # ck-* chrome. The editorial reskin briefly shipped a creamy
+        # `#d6cfc3` border which the d8bfac4 revert undid.
         self.assertIn("#0b0f18", panel)  # dark background
-        self.assertIn("#d6cfc3", panel)  # border color
+        self.assertIn("#1e293b", panel)  # terminal-shell border
 
 
 if __name__ == "__main__":
