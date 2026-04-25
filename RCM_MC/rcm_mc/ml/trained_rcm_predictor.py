@@ -102,6 +102,34 @@ class TrainedRCMPredictor:
         out.sort(key=lambda t: -abs(t[1]))
         return out
 
+    def feature_importance(
+        self,
+    ) -> List[Tuple[str, float, float]]:
+        """Global feature importance for the whole training set.
+
+        Returns: list of (feature_name, std_coefficient,
+        relative_importance) tuples sorted by |std_coefficient|
+        descending. relative_importance is the share of total
+        |coefficient| budget — sums to 1.0 across features.
+
+        Because features are standardized at fit time, |β| has a
+        clean interpretation: 'a 1-σ change in this feature
+        moves the prediction by β units, holding others fixed.'
+        Sign tells you direction; magnitude tells you importance.
+        """
+        abs_coefs = np.abs(self.coefficients)
+        total = float(abs_coefs.sum())
+        if total <= 0:
+            return [(n, 0.0, 0.0)
+                    for n in self.feature_names]
+        out = []
+        for i, n in enumerate(self.feature_names):
+            beta = float(self.coefficients[i])
+            rel = float(abs_coefs[i] / total)
+            out.append((n, beta, rel))
+        out.sort(key=lambda t: -abs(t[1]))
+        return out
+
 
 # ── Core fitting ──────────────────────────────────────────────
 
@@ -281,6 +309,48 @@ def train_ridge_with_cv(
         cv_residual_p90=cv_resid_p90,
         sanity_range=sanity_range,
     )
+
+
+def permutation_importance(
+    predictor: TrainedRCMPredictor,
+    X: Any,
+    y: Any,
+    *,
+    n_repeats: int = 5,
+    seed: int = 42,
+) -> List[Tuple[str, float, float]]:
+    """Permutation importance: for each feature, shuffle that
+    column and measure how much R² drops. The drop is the
+    feature's importance.
+
+    More honest than |coefficient| because it accounts for
+    feature correlations — a feature with a big coefficient
+    that's redundant with another feature won't show much
+    permutation importance.
+
+    Returns: (name, importance_drop, std_drop) tuples sorted
+    by importance_drop descending.
+    """
+    rng = np.random.default_rng(seed)
+    X_arr = np.asarray(X, dtype=float)
+    y_arr = np.asarray(y, dtype=float)
+    base_pred = predictor.predict(X_arr)
+    base_r2 = _r2_score(y_arr, base_pred)
+
+    out = []
+    for i, name in enumerate(predictor.feature_names):
+        drops = []
+        for _ in range(n_repeats):
+            X_perm = X_arr.copy()
+            rng.shuffle(X_perm[:, i])
+            perm_pred = predictor.predict(X_perm)
+            perm_r2 = _r2_score(y_arr, perm_pred)
+            drops.append(base_r2 - perm_r2)
+        out.append((
+            name, float(np.mean(drops)),
+            float(np.std(drops))))
+    out.sort(key=lambda t: -t[1])
+    return out
 
 
 @dataclass
