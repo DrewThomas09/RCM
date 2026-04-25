@@ -40,6 +40,11 @@ from .centrality import (
 )
 from .leakage import compute_leakage, compute_key_person_risk
 from .simulate import simulate_departure, payer_leverage_score
+from .loader import (
+    parse_cms_referrals_csv,
+    build_graph_from_cms,
+    CmsReferralRow,
+)
 
 __all__ = [
     "ReferralGraph",
@@ -51,4 +56,7 @@ __all__ = [
     "compute_key_person_risk",
     "simulate_departure",
     "payer_leverage_score",
+    "parse_cms_referrals_csv",
+    "build_graph_from_cms",
+    "CmsReferralRow",
 ]

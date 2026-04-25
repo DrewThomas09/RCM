@@ -208,5 +208,84 @@ class TestPayerLeverage(unittest.TestCase):
             result["payer_leverage_score"], 300.0 / 490.0, places=3)
 
 
+_FIX_DIR = None
+
+
+def _cms_fixture_path():
+    from pathlib import Path
+    import rcm_mc.referral as _r
+    return Path(_r.__file__).parent / "fixtures" / "sample_cms_referrals.csv"
+
+
+class TestCmsLoader(unittest.TestCase):
+    def test_parses_threshold_filter(self):
+        from rcm_mc.referral import parse_cms_referrals_csv
+        rows = list(parse_cms_referrals_csv(
+            _cms_fixture_path(), min_patient_count=11))
+        # 6 fixture rows; one has count=5 (below threshold)
+        self.assertEqual(len(rows), 5)
+        # The 1568901234 row was the suppressed one
+        srcs = {r.referring_npi for r in rows}
+        self.assertNotIn("1568901234", srcs)
+
+    def test_state_filter_keeps_only_tx_endpoints(self):
+        from rcm_mc.referral import parse_cms_referrals_csv
+        rows = list(parse_cms_referrals_csv(
+            _cms_fixture_path(), state_filter=["TX"]))
+        # All 5 surviving rows have at least one TX endpoint
+        # (the IL→TX row qualifies because npi_2 state is IL but
+        # npi_1 state is TX; the CA→TX row also qualifies). So
+        # state_filter=['TX'] returns 5 rows.
+        self.assertEqual(len(rows), 5)
+
+    def test_npi_filter_narrows(self):
+        from rcm_mc.referral import parse_cms_referrals_csv
+        rows = list(parse_cms_referrals_csv(
+            _cms_fixture_path(),
+            npi_filter=["1124567890"],
+        ))
+        # 2 rows touch 1124567890: 1003->1124 and 1124->1235
+        self.assertEqual(len(rows), 2)
+
+
+class TestBuildGraphFromCms(unittest.TestCase):
+    def test_graph_built_without_pricing_store(self):
+        from rcm_mc.referral import build_graph_from_cms
+        g = build_graph_from_cms(_cms_fixture_path())
+        self.assertGreaterEqual(g.edge_count(), 5)
+        # Expected nodes
+        nodes = g.nodes()
+        for n in ("1003456789", "1124567890", "1457890123",
+                  "1235678901", "9999999999"):
+            self.assertIn(n, nodes)
+
+    def test_graph_with_pricing_store_tags_orgs(self):
+        """When NPPES is populated, build_graph_from_cms should
+        tag the matching nodes with their organization names."""
+        import os, tempfile
+        from rcm_mc.pricing import (
+            PricingStore, parse_nppes_csv, load_nppes,
+        )
+        from rcm_mc.referral import build_graph_from_cms
+        tmp = tempfile.TemporaryDirectory()
+        try:
+            db = os.path.join(tmp.name, "p.db")
+            store = PricingStore(db)
+            from pathlib import Path
+            import rcm_mc.pricing as _pkg
+            nppes_fix = (Path(_pkg.__file__).parent
+                         / "fixtures" / "sample_nppes.csv")
+            load_nppes(store, list(parse_nppes_csv(nppes_fix)))
+            g = build_graph_from_cms(
+                _cms_fixture_path(), pricing_store=store)
+            # NPI 1003456789 is Baylor in the NPPES fixture
+            org = g.node_org("1003456789")
+            self.assertIn("BAYLOR", org)
+            # NPI 9999999999 doesn't exist in NPPES → empty org
+            self.assertEqual(g.node_org("9999999999"), "")
+        finally:
+            tmp.cleanup()
+
+
 if __name__ == "__main__":
     unittest.main()
