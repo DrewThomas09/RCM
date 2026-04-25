@@ -195,5 +195,102 @@ class TestDisclosureRender(unittest.TestCase):
         self.assertIn("Cybersecurity", md)
 
 
+class TestIFRS_S1(unittest.TestCase):
+    def test_four_pillars_present(self):
+        from rcm_mc.esg import (
+            render_ifrs_s1, GovernanceProfile, score_governance,
+            WorkforceProfile, compute_dei_metrics,
+        )
+        gov = score_governance(GovernanceProfile(
+            has_cpom_msot_structure=True,
+            cpom_structure_disclosed=True,
+            board_total=8, board_independent=5,
+            annual_third_party_audit=True,
+            named_compliance_officer=True,
+            anonymous_reporting_channel=True,
+        ))
+        dei = compute_dei_metrics(WorkforceProfile(
+            total_headcount=1000, female_count=620,
+            urm_count=200, female_in_management_count=45,
+            management_count=100, board_members=8,
+            board_female=3, board_urm=2,
+            median_male_earnings=85000,
+            median_female_earnings=80750,
+            annual_voluntary_turnover_count=120,
+        ))
+        report = render_ifrs_s1(
+            "Test Co", governance=gov, dei=dei,
+            cpom_disclosed=True)
+        self.assertEqual(report.standard, "S1")
+        # Four pillars all present + non-empty
+        for pillar in (
+            report.governance, report.strategy,
+            report.risk_management, report.metrics_and_targets,
+        ):
+            self.assertGreater(len(pillar.bullets), 0)
+        # Governance pillar surfaces the composite score + the
+        # Friendly-PC / MSO disclosure status
+        gov_text = " ".join(report.governance.bullets)
+        self.assertIn("Friendly-PC", gov_text)
+        # Workforce metrics in the metrics pillar
+        m_text = " ".join(report.metrics_and_targets.bullets)
+        self.assertIn("Female workforce", m_text)
+
+
+class TestIFRS_S2(unittest.TestCase):
+    def test_carbon_in_metrics_pillar(self):
+        from rcm_mc.esg import (
+            render_ifrs_s2, Facility, FacilityType,
+        )
+        facilities = [Facility(
+            facility_id="F1", name="Hosp",
+            facility_type=FacilityType.HOSPITAL,
+            state="TX", annual_kwh=1_000_000,
+            annual_natgas_kwh=500_000,
+            sevoflurane_kg=50,
+        )]
+        report = render_ifrs_s2(
+            "Test Co", facilities=facilities,
+            transition_plan_drafted=True)
+        self.assertEqual(report.standard, "S2")
+        # Metrics pillar carries Scope 1/2/3 figures
+        m_text = " ".join(report.metrics_and_targets.bullets)
+        for needle in ("Scope 1", "Scope 2", "Scope 3"):
+            self.assertIn(needle, m_text)
+        # Strategy pillar references the transition plan
+        s_text = " ".join(report.strategy.bullets)
+        self.assertIn("transition plan", s_text.lower())
+
+
+class TestLPPackage(unittest.TestCase):
+    def test_package_combines_s1_s2_edci(self):
+        from rcm_mc.esg import (
+            build_lp_package, render_lp_package_markdown,
+            render_ifrs_s1, render_ifrs_s2,
+        )
+        s1 = render_ifrs_s1("Test Co")
+        s2 = render_ifrs_s2("Test Co")
+        edci_md = (
+            "## ESG Disclosure — Test Co\n\n"
+            "**EDCI maturity band:** Comprehensive (8 metrics).")
+        package = build_lp_package(
+            "Test Co", "FY2026",
+            s1_report=s1, s2_report=s2,
+            edci_disclosure_md=edci_md,
+            issb_attested=True,
+        )
+        self.assertEqual(package.company, "Test Co")
+        self.assertEqual(package.period, "FY2026")
+        # 4 sections: cover, S1, S2, EDCI
+        self.assertEqual(len(package.sections), 4)
+
+        md = render_lp_package_markdown(package)
+        self.assertIn("# ESG Disclosure Package — Test Co", md)
+        self.assertIn("ISSB IFRS S1", md)
+        self.assertIn("ISSB IFRS S2", md)
+        self.assertIn("attested", md)
+        self.assertIn("EDCI maturity band", md)
+
+
 if __name__ == "__main__":
     unittest.main()
