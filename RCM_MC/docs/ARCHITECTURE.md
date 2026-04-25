@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for the RCM Monte Carlo engine: what it models, where inputs come from, how they move through the simulator, and what the outputs mean. For metric-by-metric definitions, see [METRIC_PROVENANCE.md](METRIC_PROVENANCE.md). For the source of truth on any formula, read [rcm_mc/simulator.py](../rcm_mc/simulator.py).
+Technical reference for the RCM Monte Carlo engine: what it models, where inputs come from, how they move through the simulator, and what the outputs mean. For metric-by-metric definitions, see [METRIC_PROVENANCE.md](METRIC_PROVENANCE.md). For the source of truth on any formula, read [rcm_mc/core/simulator.py](../rcm_mc/core/simulator.py).
 
 ---
 
@@ -181,4 +181,4 @@ Engine internals include: capacity integration in the main path, dollar-weighted
 
 ---
 
-*For exact metric formulas on a given run, prefer `provenance.json` + [METRIC_PROVENANCE.md](METRIC_PROVENANCE.md), and verify against [rcm_mc/simulator.py](../rcm_mc/simulator.py) for engine truth.*
+*For exact metric formulas on a given run, prefer `provenance.json` + [METRIC_PROVENANCE.md](METRIC_PROVENANCE.md), and verify against [rcm_mc/core/simulator.py](../rcm_mc/core/simulator.py) for engine truth.*
