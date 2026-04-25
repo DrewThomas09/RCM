@@ -221,6 +221,27 @@ class TestComparableHttpRoutes(unittest.TestCase):
         # Sector dropdown options present
         self.assertIn('value="hospital"', html)
         self.assertIn('value="managed_care"', html)
+        # Sponsor input now present (was missing — same-sponsor
+        # weight in the matcher had no UI handle)
+        self.assertIn('name="buyer"', html)
+        self.assertIn("Sponsor", html)
+
+    def test_buyer_field_value_round_trips(self):
+        """Submitting the form with a buyer should preserve the
+        value in the form so the partner can see/edit on re-run."""
+        import urllib.parse
+        params = urllib.parse.urlencode({
+            "sector": "hospital", "ev_mm": "500",
+            "buyer": "New Mountain Capital",
+        })
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}"
+            f"/diligence/comparable-outcomes?{params}",
+            timeout=10,
+        ) as resp:
+            html = resp.read().decode()
+        # Buyer input keeps the submitted value
+        self.assertIn('value="New Mountain Capital"', html)
 
     def test_html_route_with_inputs_renders_table(self):
         params = urllib.parse.urlencode({

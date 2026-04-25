@@ -20,6 +20,7 @@ def _input_form(qs: Dict[str, Any]) -> str:
     sector = str(qs.get("sector") or "hospital")
     ev_mm = _html.escape(str(qs.get("ev_mm") or ""))
     year = _html.escape(str(qs.get("year") or ""))
+    buyer = _html.escape(str(qs.get("buyer") or ""))
     sector_options = []
     for s in ("hospital", "managed_care", "post_acute",
               "physician_practice", "specialty_group"):
@@ -53,6 +54,15 @@ def _input_form(qs: Dict[str, Any]) -> str:
         'placeholder="e.g. 2024" min="1990" max="2030" '
         'style="padding:6px 8px;border:1px solid #e5e7eb;'
         'border-radius:4px;font-size:13px;width:100px;"></div>'
+        '<div><label style="display:block;font-size:11px;color:#6b7280;'
+        'text-transform:uppercase;letter-spacing:0.05em;'
+        'margin-bottom:4px;" title="Sponsor name boosts match score '
+        'on same-sponsor deals — useful when tracking a particular '
+        'PE house\'s playbook">Sponsor (optional)</label>'
+        f'<input type="text" name="buyer" value="{buyer}" '
+        'placeholder="e.g. New Mountain Capital" '
+        'style="padding:6px 8px;border:1px solid #e5e7eb;'
+        'border-radius:4px;font-size:13px;width:200px;"></div>'
         '<button type="submit" '
         'style="padding:8px 16px;background:#1F4E78;color:#fff;'
         'border:0;border-radius:4px;font-size:13px;font-weight:500;'
