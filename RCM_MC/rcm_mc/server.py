@@ -3785,6 +3785,111 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "insights": _all_insights(self.config.db_path),
                 "count": len(_all_insights(self.config.db_path)),
             })
+        # ── Synthesis runner — IC binder over 13 packets ──
+        if path.startswith("/diligence/synthesis/"):
+            # /diligence/synthesis/<deal_id> — render IC binder
+            # HTML for the named deal. Builds a DiligenceDossier
+            # from the portfolio store + any optional inputs in
+            # the query string, runs run_full_diligence, renders
+            # via the IC binder HTML renderer.
+            deal_id = path[len("/diligence/synthesis/"):].strip("/")
+            if not deal_id:
+                return self._send_html(
+                    "<h1>404</h1><p>Missing deal_id</p>",
+                    status=HTTPStatus.NOT_FOUND)
+            try:
+                from .diligence_synthesis import (
+                    DiligenceDossier, run_full_diligence,
+                )
+                from .ic_binder import render_html_binder
+                # ``PortfolioStore`` is already imported at module
+                # scope; re-importing it here would make the name
+                # function-local for the entire do_GET method,
+                # shadowing other route branches that rely on the
+                # module-level binding.
+                store = PortfolioStore(self.config.db_path)
+                with store.connect() as con:
+                    row = con.execute(
+                        "SELECT name, profile_json FROM deals "
+                        "WHERE deal_id = ?", (deal_id,),
+                    ).fetchone()
+                if not row:
+                    return self._send_html(
+                        f"<h1>404</h1><p>Deal {deal_id} not found</p>",
+                        status=HTTPStatus.NOT_FOUND)
+                import json as _json
+                profile = {}
+                try:
+                    profile = _json.loads(row["profile_json"] or "{}")
+                except (TypeError, _json.JSONDecodeError):
+                    pass
+                dossier = DiligenceDossier(
+                    deal_name=row["name"] or deal_id,
+                    sector=profile.get("sector") or "hospital",
+                    states=profile.get("states") or [],
+                    ebitda_mm=float(profile.get("ebitda_mm") or 0),
+                    revenue_mm=float(profile.get("revenue_mm") or 0),
+                )
+                result = run_full_diligence(dossier)
+                html = render_html_binder(result)
+                return self._send_html(html)
+            except Exception as exc:  # noqa: BLE001
+                return self._send_html(
+                    f"<h1>500</h1><p>Synthesis failed: "
+                    f"{type(exc).__name__}: {exc}</p>",
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
+        if path.startswith("/api/diligence/synthesis/"):
+            # JSON variant — same dossier construction, machine
+            # readable output for external pipelines.
+            deal_id = path[len("/api/diligence/synthesis/"):
+                          ].strip("/")
+            if not deal_id:
+                return self._send_json(
+                    {"error": "Missing deal_id"},
+                    status=HTTPStatus.NOT_FOUND)
+            try:
+                from .diligence_synthesis import (
+                    DiligenceDossier, run_full_diligence,
+                )
+                # PortfolioStore is module-scoped — see comment
+                # above on the HTML synthesis route.
+                store = PortfolioStore(self.config.db_path)
+                with store.connect() as con:
+                    row = con.execute(
+                        "SELECT name, profile_json FROM deals "
+                        "WHERE deal_id = ?", (deal_id,),
+                    ).fetchone()
+                if not row:
+                    return self._send_json(
+                        {"error": f"Deal {deal_id} not found"},
+                        status=HTTPStatus.NOT_FOUND)
+                import json as _json
+                profile = {}
+                try:
+                    profile = _json.loads(row["profile_json"] or "{}")
+                except (TypeError, _json.JSONDecodeError):
+                    pass
+                dossier = DiligenceDossier(
+                    deal_name=row["name"] or deal_id,
+                    sector=profile.get("sector") or "hospital",
+                    states=profile.get("states") or [],
+                    ebitda_mm=float(profile.get("ebitda_mm") or 0),
+                    revenue_mm=float(profile.get("revenue_mm") or 0),
+                )
+                result = run_full_diligence(dossier)
+                return self._send_json({
+                    "deal_name": result.deal_name,
+                    "sections_run": result.sections_run,
+                    "missing_inputs": result.missing_inputs,
+                    "sections_complete": len(result.sections_run),
+                    "sections_total": 13,
+                })
+            except Exception as exc:  # noqa: BLE001
+                return self._send_json(
+                    {"error": f"{type(exc).__name__}: {exc}"},
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
         if path == "/api/diligence/comparable-outcomes.csv":
             # Time-saver: one-click CSV download of the comparable
             # set + match scores. Partner pastes into memo / Excel /
