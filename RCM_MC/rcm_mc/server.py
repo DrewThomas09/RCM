@@ -15039,6 +15039,82 @@ class RCMHandler(BaseHTTPRequestHandler):
             self._redirect(nxt)
             return
 
+        # POST /api/saved-analyses  — save a new analysis template
+        #   form: name, route, params_json (optional), description,
+        #         pinned ("1" for pinned), redirect (back URL)
+        # POST /api/saved-analyses/<id>/delete — delete a template
+        # POST /api/saved-analyses/<id>/run    — bump run count then
+        #   redirect to the resolved href (server-side so we can
+        #   update last_run_at without JS)
+        if parts[:2] == ["api", "saved-analyses"]:
+            from .analysis.saved_analyses import (
+                save_template, delete_template, bump_run, get_template,
+                resolved_href,
+            )
+            form = self._read_form_body()
+            raw_redirect = form.get("redirect", "/dashboard")
+            safe_redirect = raw_redirect if (
+                raw_redirect.startswith("/")
+                and not raw_redirect.startswith("//")
+                and "://" not in raw_redirect
+            ) else "/dashboard"
+            if len(parts) == 2:
+                # Create
+                try:
+                    params = form.get("params_json", "").strip()
+                    import json as _json
+                    parsed = _json.loads(params) if params else {}
+                    cu = self._current_user()
+                    tid = save_template(
+                        store,
+                        name=form.get("name", ""),
+                        route=form.get("route", ""),
+                        params=parsed if isinstance(parsed, dict) else {},
+                        description=form.get("description", ""),
+                        created_by=(cu or {}).get("username", ""),
+                        pinned=form.get("pinned", "").strip() == "1",
+                    )
+                    self._log_audit("saved_analysis.create",
+                                    target=str(tid),
+                                    name=form.get("name", ""))
+                except (ValueError, _json.JSONDecodeError) as exc:
+                    return self._send_json(
+                        {"error": str(exc), "code": "INVALID_INPUT"},
+                        status=HTTPStatus.BAD_REQUEST,
+                    )
+                accept = self.headers.get("Accept", "")
+                if "application/json" in accept:
+                    return self._send_json(
+                        {"id": tid}, status=HTTPStatus.CREATED,
+                    )
+                return self._redirect(safe_redirect)
+            if len(parts) == 3 or len(parts) == 4:
+                try:
+                    tid = int(parts[2])
+                except (TypeError, ValueError):
+                    return self._send_json(
+                        {"error": "template id must be integer",
+                         "code": "INVALID_ID"},
+                        status=HTTPStatus.BAD_REQUEST,
+                    )
+                action = parts[3] if len(parts) == 4 else ""
+                if action == "delete":
+                    ok = delete_template(store, tid)
+                    if ok:
+                        self._log_audit(
+                            "saved_analysis.delete", target=str(tid))
+                    return self._redirect(safe_redirect)
+                if action == "run":
+                    tmpl = get_template(store, tid)
+                    if not tmpl:
+                        return self._send_json(
+                            {"error": "template not found",
+                             "code": "TEMPLATE_NOT_FOUND"},
+                            status=HTTPStatus.NOT_FOUND,
+                        )
+                    bump_run(store, tid)
+                    return self._redirect(resolved_href(tmpl))
+
         # POST /api/bulk/stage  (B99: advance N deals to the same stage)
         if (parts == ["api", "bulk", "stage"]):
             form = self._read_form_body()

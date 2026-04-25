@@ -499,6 +499,81 @@ def _sparkline_svg(scores: List[int], *,
     )
 
 
+def _render_saved_templates_section(db_path: str) -> str:
+    """Partner's own named shortcuts — one click to relaunch an
+    analysis with the same params they used last time.
+
+    Empty → render a one-line pitch ("Save analyses you run often to
+    relaunch them in one click") + a "Save current" form below the
+    curated analyses table. Non-empty → show up to 8 cards sorted
+    pinned-first, then by most recent run.
+    """
+    from . import _web_components as _wc
+    try:
+        from ..portfolio.store import PortfolioStore
+        from ..analysis.saved_analyses import list_templates, resolved_href
+        store = PortfolioStore(db_path)
+        templates = list_templates(store, limit=8)
+    except Exception:  # noqa: BLE001
+        return ""
+
+    if not templates:
+        return ""
+
+    rows: List[str] = []
+    for t in templates:
+        href = resolved_href(t)
+        run_count = t.get("run_count") or 0
+        last_run = t.get("last_run_at") or "never run"
+        desc = t.get("description") or ""
+        name = t.get("name") or "unnamed"
+        pinned_chip = (
+            '<span style="margin-left:6px;font-size:10px;color:#1F4E78;">'
+            '📌</span>'
+        ) if t.get("pinned") else ""
+        delete_form = (
+            f'<form method="POST" action="/api/saved-analyses/'
+            f'{t["id"]}/delete" style="display:inline;margin:0;" '
+            f'onsubmit="return confirm(\'Delete template: '
+            f'{_html.escape(name)}?\');">'
+            f'<input type="hidden" name="redirect" value="/dashboard">'
+            f'<button type="submit" title="Delete template" '
+            f'style="background:transparent;border:0;color:#9ca3af;'
+            f'cursor:pointer;font-size:14px;padding:0 4px;">×</button>'
+            f'</form>'
+        )
+        rows.append(
+            f'<li style="padding:8px 12px;border-bottom:1px solid #f3f4f6;'
+            f'display:flex;align-items:center;gap:12px;">'
+            f'<a href="/api/saved-analyses/{t["id"]}/run" '
+            f'style="flex:1;color:#1f2937;text-decoration:none;" '
+            f'title="Click to launch"'
+            f' onclick="if(!event.metaKey&&!event.ctrlKey){{'
+            f'fetch(this.href,{{method:\'POST\',credentials:\'same-origin\'}})'
+            f'.then(()=>window.location=\'{_html.escape(href)}\');'
+            f'event.preventDefault();}}">'
+            f'<span style="font-weight:500;color:#1F4E78;">'
+            f'{_html.escape(name)}</span>{pinned_chip}'
+            f'<div style="font-size:11px;color:#6b7280;margin-top:2px;">'
+            f'{_html.escape(desc) if desc else _html.escape(href)}'
+            f' · ran {run_count}×</div>'
+            f'</a>'
+            f'{delete_form}'
+            f'</li>'
+        )
+    body = (
+        f'<ul style="list-style:none;padding:0;margin:0;">'
+        f'{"".join(rows)}</ul>'
+        f'<p style="margin:10px 0 0;font-size:11px;color:#6b7280;">'
+        f'Click any template to launch — run count updates automatically. '
+        f'<a href="/api/saved-analyses" style="color:#1F4E78;">API</a>'
+        f'</p>'
+    )
+    return _wc.section_card(
+        f"Your templates ({len(templates)})", body, pad=True,
+    )
+
+
 def _render_needs_attention_section(db_path: str) -> str:
     """Top-3 deals the risk scanner flagged as highest-priority.
 
@@ -1030,6 +1105,7 @@ def render_dashboard(db_path: str, *,
         + _render_since_yesterday_section(db_path)
         + _render_needs_attention_section(db_path)
         + _render_pinned_deals_section(db_path)
+        + _render_saved_templates_section(db_path)
         + _render_analyses_section()
         + workflow_shortcuts
         + _render_recent_results_section(db_path)
