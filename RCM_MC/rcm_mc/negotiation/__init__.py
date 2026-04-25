@@ -47,6 +47,11 @@ from .counterfactual import (
     simulate_post_merger_rate,
     antitrust_risk_score,
 )
+from .distributions import (
+    RateDistribution,
+    aggregate_rate_distributions,
+    cross_payer_dispersion,
+)
 
 __all__ = [
     "OutsideOptions",
@@ -56,4 +61,7 @@ __all__ = [
     "repeated_game_rate",
     "simulate_post_merger_rate",
     "antitrust_risk_score",
+    "RateDistribution",
+    "aggregate_rate_distributions",
+    "cross_payer_dispersion",
 ]

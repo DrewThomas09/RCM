@@ -183,5 +183,127 @@ class TestAntitrustRisk(unittest.TestCase):
         self.assertGreater(result["hhi"], 2500)
 
 
+# ── Service-line × payer × geo aggregation ──────────────────────
+
+def _seed_with_service_lines(db: str) -> None:
+    """Populate rates with multiple codes, payers, and NPIs so the
+    aggregation tests have a realistic distribution to bucket."""
+    from rcm_mc.pricing import PricingStore
+    from rcm_mc.pricing.normalize import classify_service_line
+    store = PricingStore(db)
+    store.init_db()
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    rows = []
+    # Two ortho codes and one imaging code, four payers, four NPIs
+    for code in ("27447", "27130", "70551"):
+        sl = classify_service_line(code, "CPT")
+        for payer in ("Aetna (CVS)", "BCBS Texas",
+                      "UnitedHealthcare", "Cigna"):
+            for npi in ("N1", "N2", "N3", "N4"):
+                # Ortho rates 23K-29K; imaging 1.0K-1.5K
+                base = 26000 if code != "70551" else 1200
+                rate = base + (hash((payer, npi, code)) % 4000) - 1500
+                rows.append((payer, npi, code, sl, rate))
+    with store.connect() as con:
+        # Add NPPES rows so the CBSA join works
+        for npi, st, zip5, cbsa in (
+            ("N1", "TX", "77030", "26420"),  # Houston
+            ("N2", "TX", "75001", "19100"),  # Dallas
+            ("N3", "IL", "60601", "16980"),  # Chicago
+            ("N4", "TX", "77030", "26420"),  # Houston
+        ):
+            con.execute(
+                "INSERT INTO pricing_nppes "
+                "(npi, entity_type, organization_name, "
+                " state, zip5, cbsa, loaded_at) "
+                "VALUES (?, 2, 'Test', ?, ?, ?, ?)",
+                (npi, st, zip5, cbsa, now),
+            )
+        for payer, npi, code, sl, rate in rows:
+            con.execute(
+                "INSERT INTO pricing_payer_rates "
+                "(payer_name, plan_name, npi, code, code_type, "
+                " negotiation_arrangement, negotiated_rate, "
+                " service_line, loaded_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (payer, "PPO", npi, code, "CPT", "ffs",
+                 rate, sl, now),
+            )
+        con.commit()
+
+
+class TestRateDistributions(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.db = os.path.join(self.tmp.name, "p.db")
+        _seed_with_service_lines(self.db)
+        from rcm_mc.pricing import PricingStore
+        self.store = PricingStore(self.db)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_aggregates_by_service_line_payer_cbsa(self):
+        from rcm_mc.negotiation import aggregate_rate_distributions
+        dists = aggregate_rate_distributions(self.store)
+        self.assertGreater(len(dists), 0)
+        # Each bucket has p25 ≤ p50 ≤ p75
+        for d in dists:
+            self.assertLessEqual(d.p25, d.p50)
+            self.assertLessEqual(d.p50, d.p75)
+            self.assertGreaterEqual(d.n_rates, 3)
+        # CBSA labels populated from NPPES (26420 = Houston,
+        # 19100 = Dallas, 16980 = Chicago)
+        cbsas = {d.cbsa for d in dists}
+        self.assertIn("26420", cbsas)
+
+    def test_filter_by_payer(self):
+        from rcm_mc.negotiation import aggregate_rate_distributions
+        dists = aggregate_rate_distributions(
+            self.store, payer_name="BCBS Texas")
+        self.assertGreater(len(dists), 0)
+        for d in dists:
+            self.assertEqual(d.payer_name, "BCBS Texas")
+
+    def test_min_bucket_size_drops_thin(self):
+        from rcm_mc.negotiation import aggregate_rate_distributions
+        # min_bucket_size much higher than 4 (the per-bucket count)
+        dists = aggregate_rate_distributions(
+            self.store, min_bucket_size=20)
+        self.assertEqual(len(dists), 0)
+
+
+class TestCrossPayerDispersion(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.db = os.path.join(self.tmp.name, "p.db")
+        _seed_with_service_lines(self.db)
+        from rcm_mc.pricing import PricingStore
+        self.store = PricingStore(self.db)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_dispersion_summary(self):
+        from rcm_mc.negotiation import cross_payer_dispersion
+        out = cross_payer_dispersion(self.store, "27447")
+        self.assertEqual(out["code"], "27447")
+        self.assertEqual(out["n_payers"], 4)
+        self.assertEqual(out["n_npis"], 4)
+        self.assertGreater(out["p50"], 0)
+        self.assertGreater(out["max_min_ratio"], 1.0)
+        self.assertEqual(len(out["by_payer"]), 4)
+        # by_payer sorted ascending by median_rate
+        medians = [p["median_rate"] for p in out["by_payer"]]
+        self.assertEqual(medians, sorted(medians))
+
+    def test_unknown_code_returns_empty(self):
+        from rcm_mc.negotiation import cross_payer_dispersion
+        out = cross_payer_dispersion(self.store, "99999")
+        self.assertEqual(out["n_payers"], 0)
+        self.assertEqual(out["by_payer"], [])
+
+
 if __name__ == "__main__":
     unittest.main()
