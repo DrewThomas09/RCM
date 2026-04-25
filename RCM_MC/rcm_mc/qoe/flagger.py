@@ -75,15 +75,31 @@ def _isolation_forest_signal(
 
 def run_qoe_flagger(panel: Dict[str, Any]) -> QoEResult:
     """Single entry point — runs every detector + the iforest +
-    builds the bridge + normalizes NWC."""
+    z-score line-item scan + builds the bridge + normalizes NWC.
+
+    The z-score detector picks up cases the rule detectors miss
+    (e.g. a one-period revenue spike that doesn't match a V-shape
+    NWC pattern but is still 3σ above the trailing baseline).
+    """
     rule_flags = run_rule_detectors(panel)
-    bridge = compute_ebitda_bridge(panel, rule_flags)
+    # Add the z-score line-item path
+    try:
+        from .zscore import detect_line_item_anomalies
+        zscore_flags = detect_line_item_anomalies(panel)
+    except Exception:  # noqa: BLE001
+        zscore_flags = []
+    all_flags = rule_flags + zscore_flags
+    all_flags.sort(
+        key=lambda f: abs(f.proposed_adjustment_mm),
+        reverse=True,
+    )
+    bridge = compute_ebitda_bridge(panel, all_flags)
     nwc = normalize_nwc(panel)
     iforest = _isolation_forest_signal(panel)
 
     return QoEResult(
         deal_name=str(panel.get("deal_name", "")),
-        flags=rule_flags,
+        flags=all_flags,
         ebitda_bridge=bridge,
         nwc_normalization=nwc,
         isolation_forest_scores=iforest["scores"],

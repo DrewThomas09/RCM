@@ -240,5 +240,96 @@ class TestEndToEnd(unittest.TestCase):
         self.assertIsNotNone(result.nwc_normalization)
 
 
+class TestZScoreAnomalies(unittest.TestCase):
+    def test_revenue_spike_flagged(self):
+        """Revenue is steady at $100, $105, $110, then jumps to
+        $200 in TTM — that's a many-σ trailing anomaly."""
+        from rcm_mc.qoe import detect_line_item_anomalies
+        panel = _baseline_panel()
+        panel["periods"] = ["2022", "2023", "2024", "TTM"]
+        panel["income_statement"]["revenue"] = [100.0, 105.0, 110.0, 200.0]
+        panel["income_statement"]["ebitda_reported"] = [10, 11, 12, 20]
+        flags = detect_line_item_anomalies(
+            panel, threshold=2.0)
+        rev_flags = [f for f in flags
+                     if "revenue" in f.title.lower()]
+        self.assertGreater(len(rev_flags), 0)
+        # Period of the spike should be flagged
+        self.assertTrue(
+            any(f.period == "TTM" for f in rev_flags))
+
+    def test_low_threshold_more_flags(self):
+        """Lowering the threshold should produce strictly more
+        (or equal) flags."""
+        from rcm_mc.qoe import detect_line_item_anomalies
+        panel = _baseline_panel()
+        panel["periods"] = ["2022", "2023", "2024", "TTM"]
+        panel["income_statement"]["revenue"] = [
+            100.0, 105.0, 102.0, 130.0]
+        flags_strict = detect_line_item_anomalies(
+            panel, threshold=3.0)
+        flags_loose = detect_line_item_anomalies(
+            panel, threshold=1.5)
+        self.assertGreaterEqual(
+            len(flags_loose), len(flags_strict))
+
+    def test_steady_series_no_flags(self):
+        """A perfectly stable series produces zero z-score flags."""
+        from rcm_mc.qoe import detect_line_item_anomalies
+        panel = _baseline_panel()
+        panel["periods"] = ["2022", "2023", "2024", "TTM"]
+        panel["income_statement"]["revenue"] = [
+            100.0, 100.0, 100.0, 100.0]
+        flags = detect_line_item_anomalies(
+            panel, threshold=2.0)
+        # std=0 → all zs are None → no flags from revenue.
+        rev_flags = [f for f in flags if "revenue" in f.title.lower()]
+        self.assertEqual(len(rev_flags), 0)
+
+    def test_leave_one_out_mode(self):
+        from rcm_mc.qoe import detect_line_item_anomalies
+        panel = _baseline_panel()
+        panel["periods"] = ["2022", "2023", "2024", "TTM"]
+        panel["income_statement"]["revenue"] = [
+            100.0, 102.0, 98.0, 250.0]
+        flags = detect_line_item_anomalies(
+            panel, threshold=2.0, mode="leave_one_out")
+        rev_flags = [f for f in flags
+                     if "revenue" in f.title.lower()]
+        self.assertGreater(len(rev_flags), 0)
+
+
+class TestEndToEndZScoreIntegration(unittest.TestCase):
+    def test_run_qoe_flagger_includes_zscore_flags(self):
+        from rcm_mc.qoe import run_qoe_flagger
+        panel = _baseline_panel()
+        # Big revenue spike that the rule detectors might miss
+        # (no V-shape NWC, no related-party, etc.)
+        panel["periods"] = ["2022", "2023", "2024", "TTM"]
+        panel["income_statement"]["revenue"] = [
+            100.0, 105.0, 110.0, 200.0]
+        panel["income_statement"]["ebitda_reported"] = [
+            10.0, 11.0, 12.0, 25.0]
+        panel["income_statement"]["cogs"] = [60, 62, 64, 70]
+        panel["income_statement"]["opex_compensation"] = [
+            8, 8, 9, 9]
+        panel["income_statement"]["opex_other"] = [22, 24, 25, 26]
+        panel["balance_sheet"]["ar"] = [12, 13, 13, 14]
+        panel["balance_sheet"]["inventory"] = [5, 5, 5, 5]
+        panel["balance_sheet"]["ap"] = [7, 7, 7, 7]
+        panel["cash_flow"]["cash_receipts"] = [98, 103, 108, 195]
+        panel["payer_mix"]["self_pay_share"] = [
+            0.05, 0.05, 0.05, 0.05]
+        panel["payer_mix"]["out_of_network_share"] = [
+            0.05, 0.05, 0.05, 0.05]
+
+        result = run_qoe_flagger(panel)
+        zscore_flags = [
+            f for f in result.flags
+            if f.category == "line_item_zscore"
+        ]
+        self.assertGreater(len(zscore_flags), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

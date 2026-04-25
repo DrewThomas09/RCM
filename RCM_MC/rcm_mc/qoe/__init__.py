@@ -49,6 +49,7 @@ from .bridge import (
     NWCNormalization,
 )
 from .flagger import run_qoe_flagger, QoEResult
+from .zscore import detect_line_item_anomalies
 
 __all__ = [
     "QoEFlag",
@@ -61,4 +62,5 @@ __all__ = [
     "NWCNormalization",
     "IsolationForest",
     "isolation_forest_scores",
+    "detect_line_item_anomalies",
 ]
