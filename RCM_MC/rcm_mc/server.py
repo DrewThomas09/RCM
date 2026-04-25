@@ -3789,6 +3789,61 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.insights_page import render_insights_page
             return self._send_html(render_insights_page(
                 self.config.db_path))
+        if path == "/diligence/comparable-outcomes":
+            # Comparable-deal benchmarking: target profile in,
+            # corpus matches + outcome distribution out.
+            qs = urllib.parse.parse_qs(parsed.query)
+            qp = {k: v[0] for k, v in qs.items() if v}
+            from .ui.comparable_outcomes_page import (
+                render_comparable_outcomes_page,
+            )
+            return self._send_html(
+                render_comparable_outcomes_page(
+                    qp, db_path=self.config.db_path))
+        if path == "/api/diligence/comparable-outcomes":
+            # JSON variant of the same — for external bid-sizing
+            # tools, programmatic comp searches, etc.
+            qs = urllib.parse.parse_qs(parsed.query)
+            qp = {k: v[0] for k, v in qs.items() if v}
+            try:
+                ev = float(qp.get("ev_mm")) if qp.get("ev_mm") else None
+            except (TypeError, ValueError):
+                ev = None
+            try:
+                yr = int(qp.get("year")) if qp.get("year") else None
+            except (TypeError, ValueError):
+                yr = None
+            target = {
+                "sector": qp.get("sector") or "hospital",
+                "ev_mm": ev,
+                "year": yr,
+                "buyer": qp.get("buyer") or "",
+            }
+            try:
+                from .diligence.comparable_outcomes import benchmark_deal
+                from .data_public.deals_corpus import DealsCorpus
+                # Seed the corpus on first call so the benchmark has
+                # something to match against — running tests against
+                # an empty DB would otherwise return zero comparables
+                # (bad UX) or 500 from a missing-table query.
+                corpus = DealsCorpus(self.config.db_path)
+                try:
+                    corpus.seed(skip_if_populated=True)
+                except Exception:  # noqa: BLE001 — best-effort
+                    pass
+                result = benchmark_deal(
+                    corpus, target,
+                    top_n=self._clamp_int(
+                        (qp.get("top_n") or "10"),
+                        default=10, min_v=1, max_v=50,
+                    ),
+                )
+                return self._send_json(result)
+            except Exception as exc:  # noqa: BLE001
+                return self._send_json(
+                    {"error": str(exc), "code": "BENCHMARK_FAILED"},
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                )
         if path == "/manifest.json":
             import json as _json
             manifest = {
