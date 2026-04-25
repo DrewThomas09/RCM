@@ -35,6 +35,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from .colors import STATUS
+from .empty_states import empty_state, EmptyAction
 from .loading import page_progress_bar
 from .nav import breadcrumb, keyboard_shortcuts
 
@@ -578,18 +579,17 @@ def render_deal_profile_v2(
         if packet else deal_id) or deal_id
 
     if packet is None:
-        body = (
-            f'<div style="background:{_BG_ELEVATED};border:'
-            f'1px solid {_BORDER};border-radius:8px;padding:'
-            f'40px;text-align:center;color:{_TEXT_DIM};">'
-            f'<div style="font-size:16px;color:{_TEXT};'
-            f'margin-bottom:8px;">'
-            f'No analysis packet found for {_esc(deal_id)}'
-            f'</div>'
-            f'<div style="font-size:13px;">'
-            f'Run <code>rcm-mc analysis '
-            f'{_esc(deal_id)}</code> to build one.</div>'
-            f'</div>')
+        body = empty_state(
+            f"No analysis packet found for {deal_id}",
+            (f"Run `rcm-mc analysis {deal_id}` to build a "
+             f"packet — every section on this page (entity, "
+             f"market, comps, predictions, EBITDA bridge) "
+             f"depends on it."),
+            icon="◳",
+            actions=[
+                EmptyAction(
+                    "View deal list", "/?v3=1"),
+            ])
     else:
         body = (
             _entity_section(packet)
