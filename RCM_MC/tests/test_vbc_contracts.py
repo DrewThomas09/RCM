@@ -154,5 +154,87 @@ class TestTrackChoice(unittest.TestCase):
         self.assertEqual(scores, sorted(scores, reverse=True))
 
 
+class TestPosteriorWorkflow(unittest.TestCase):
+    """Bayesian-aware Track choice — single-call wrapper that
+    threads prior + observations through to the MC."""
+
+    def test_valuate_with_posterior_returns_full_block(self):
+        from rcm_mc.vbc_contracts import (
+            valuate_contract_with_posterior, PriorBelief,
+            StochasticInputs,
+        )
+        cohort = _baseline_cohort()
+        prior = PriorBelief(mean_pmpm=1100.0, stddev_pmpm=80.0)
+        out = valuate_contract_with_posterior(
+            cohort, "aco_reach_professional",
+            prior=prior,
+            observations=[1080, 1090, 1095],
+            obs_stddev=80.0,
+            inputs=StochasticInputs(n_simulations=40, seed=11),
+        )
+        # Standard fields from the underlying valuate_contract
+        for key in ("program_id", "label", "distribution",
+                    "on_ramp_difficulty",
+                    "risk_adjusted_score"):
+            self.assertIn(key, out)
+        # Posterior block populated
+        self.assertIn("posterior", out)
+        post = out["posterior"]
+        self.assertEqual(post["n_observations"], 3)
+        # With a tight prior + observations near the prior mean,
+        # posterior mean lands between the two
+        self.assertGreater(post["posterior_mean"], 1085)
+        self.assertLess(post["posterior_mean"], 1100)
+        # Posterior stddev tightens vs the prior
+        self.assertLess(
+            post["posterior_stddev"], prior.stddev_pmpm)
+
+    def test_choose_track_with_shared_posterior(self):
+        from rcm_mc.vbc_contracts import (
+            choose_track_with_posterior, PriorBelief,
+            StochasticInputs,
+        )
+        cohort = _baseline_cohort()
+        prior = PriorBelief(mean_pmpm=1100.0, stddev_pmpm=80.0)
+        result = choose_track_with_posterior(
+            cohort, prior=prior,
+            observations=[1080, 1090, 1095],
+            program_ids=[
+                "mssp_basic_a", "mssp_basic_d",
+                "aco_reach_professional",
+            ],
+            inputs=StochasticInputs(n_simulations=40, seed=12),
+        )
+        self.assertIn("posterior", result)
+        self.assertIn("result", result)
+        # All 3 programs evaluated against the SAME posterior
+        track = result["result"]
+        self.assertEqual(len(track["results"]), 3)
+        # Recommended is one of the 3 we passed
+        self.assertIn(track["recommended"],
+                      ("mssp_basic_a", "mssp_basic_d",
+                       "aco_reach_professional"))
+
+    def test_no_observations_uses_prior(self):
+        """With zero observations the posterior == prior — and
+        the contract value should match the no-Bayes path."""
+        from rcm_mc.vbc_contracts import (
+            valuate_contract_with_posterior, PriorBelief,
+            StochasticInputs,
+        )
+        cohort = _baseline_cohort()
+        prior = PriorBelief(
+            mean_pmpm=cohort.annual_pmpm_cost,
+            stddev_pmpm=80.0)
+        out = valuate_contract_with_posterior(
+            cohort, "aco_reach_professional",
+            prior=prior, observations=[],
+            inputs=StochasticInputs(n_simulations=30, seed=13),
+        )
+        self.assertEqual(
+            out["posterior"]["posterior_mean"],
+            prior.mean_pmpm)
+
+
 if __name__ == "__main__":
     unittest.main()

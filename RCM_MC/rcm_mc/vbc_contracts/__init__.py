@@ -52,6 +52,10 @@ from .valuator import (
     choose_optimal_track,
     ContractValuationResult,
 )
+from .posterior import (
+    valuate_contract_with_posterior,
+    choose_track_with_posterior,
+)
 
 __all__ = [
     "VBCProgram",
@@ -67,4 +71,6 @@ __all__ = [
     "valuate_contract",
     "choose_optimal_track",
     "ContractValuationResult",
+    "valuate_contract_with_posterior",
+    "choose_track_with_posterior",
 ]
