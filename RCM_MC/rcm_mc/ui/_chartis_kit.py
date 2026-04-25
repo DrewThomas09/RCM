@@ -47,6 +47,26 @@ import os as _os
 # implementation.
 UI_V2_ENABLED = _os.environ.get("CHARTIS_UI_V2", "0") != "0"
 
+# ── TEMPORARY: editorial port in progress (commits 1–4 of Phase 1) ──
+#
+# The previous _chartis_kit_v2.py held the OLD reverted reskin's
+# palette (#0b2341 navy / #2fb3ad teal). It was deleted in commit 1.
+# Its replacement, _chartis_kit_editorial.py, lands in commit 4.
+#
+# Between now and commit 4, CHARTIS_UI_V2=1 is silently a no-op —
+# the dispatcher falls through to the legacy dark shell regardless.
+# This warning surfaces during that window so a stray bisect or env
+# config doesn't quietly chase a ghost. Removed in commit 4.
+if UI_V2_ENABLED:
+    import sys as _sys
+    print(
+        "[chartis_kit] CHARTIS_UI_V2 is currently a no-op "
+        "(editorial port in progress, see docs/UI_REWORK_PLAN.md). "
+        "Falling through to legacy dark shell.",
+        file=_sys.stderr,
+    )
+    UI_V2_ENABLED = False  # force legacy path until commit 4 rewires
+
 
 # ── PHI posture banner ─────────────────────────────────────────────
 #
