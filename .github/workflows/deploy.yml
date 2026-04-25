@@ -1,76 +1,98 @@
 name: Deploy to Azure VM
 
-# This workflow is gated to manual-trigger-only (`workflow_dispatch`)
-# until the following GitHub Secrets are configured:
-#
-#   AZURE_VM_HOST     - public IP or DNS name of the Azure VM
-#   AZURE_VM_USER     - SSH user (typically `azureuser`)
-#   AZURE_VM_SSH_KEY  - private SSH key (PEM, full contents)
-#
-# Once secrets are set and you've verified one manual deploy succeeds,
-# uncomment the `push: branches: [main]` block below to enable
-# auto-deploy on every push to main. See AZURE_DEPLOY.md.
-
 on:
-  # push:
-  #   branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production
+    timeout-minutes: 15
 
     steps:
+      # ── 1. Record start time for duration calc ──
+      - name: Record start time
+        id: timer
+        run: echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      # ── 2. SSH into VM, pull latest code, rebuild containers ──
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.AZURE_VM_HOST }}
-          username: ${{ secrets.AZURE_VM_USER }}
-          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          command_timeout: 12m
           script: |
             set -euo pipefail
+
+            echo "==> Pulling latest code"
             cd /opt/rcm-mc
+            sudo git fetch origin main
+            sudo git reset --hard origin/main
 
-            echo "--- pull latest ---"
-            git fetch origin main
-            git reset --hard origin/main
+            echo "==> Rebuilding containers (profile=tls)"
+            cd RCM_MC/deploy
+            sudo DOMAIN=pedesk.app docker compose --profile tls up -d --build
 
-            echo "--- rebuild & restart ---"
-            # Compose file lives at /opt/rcm-mc/RCM_MC/deploy/docker-compose.yml
-            # (the deploy/ directory is INSIDE RCM_MC/, not at the repo root).
-            cd RCM_MC
-            docker compose -f deploy/docker-compose.yml pull --quiet 2>/dev/null || true
-            docker compose -f deploy/docker-compose.yml up -d --build
+            echo "==> Deploy script finished on VM"
 
-            echo "--- health check ---"
-            for i in $(seq 1 12); do
-              if curl -sf http://localhost:8080/health > /dev/null; then
-                echo "healthy after ${i}x5s"
-                exit 0
-              fi
-              sleep 5
-            done
-            echo "HEALTH CHECK FAILED" >&2
-            exit 1
+      # ── 3. Verify the public URL returns 200 or 303 ──
+      #    Retries up to 5 times with 5-second sleeps.
+      - name: Health check (public URL)
+        run: |
+          set -euo pipefail
+          URL="https://pedesk.app/"
+          for i in 1 2 3 4 5; do
+            HTTP_CODE=$(curl -sk -o /dev/null -w '%{http_code}' "$URL") || true
+            echo "Attempt $i: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "303" ]; then
+              echo "Health check passed (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Health check failed after 5 attempts"
+          exit 1
 
-      - name: Smoke test
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.AZURE_VM_HOST }}
-          username: ${{ secrets.AZURE_VM_USER }}
-          key: ${{ secrets.AZURE_VM_SSH_KEY }}
-          script: |
-            set -euo pipefail
-            BASE="http://localhost:8080"
+      # ── 4. Job summary: commit info + deploy duration ──
+      - name: Job summary
+        if: always()
+        run: |
+          DURATION=$(( $(date +%s) - ${{ steps.timer.outputs.start }} ))
+          MINUTES=$(( DURATION / 60 ))
+          SECONDS=$(( DURATION % 60 ))
 
-            # Liveness + readiness
-            curl -sf "$BASE/health" > /dev/null
-            curl -sf "$BASE/healthz" > /dev/null
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## Deploy Summary
 
-            # Migrations applied
-            curl -sf "$BASE/api/migrations" | python3 -c \
-              "import sys,json; d=json.load(sys.stdin); \
-               assert d.get('all_applied'), f'migrations: {d}'"
+          | Field | Value |
+          |-------|-------|
+          | **Commit** | \`${GITHUB_SHA::8}\` |
+          | **Message** | $(git log -1 --format='%s' "$GITHUB_SHA" 2>/dev/null || echo "N/A — no checkout") |
+          | **Branch** | \`$GITHUB_REF_NAME\` |
+          | **Duration** | ${MINUTES}m ${SECONDS}s |
+          | **Actor** | @$GITHUB_ACTOR |
+          EOF
 
-            echo "All smoke tests passed."
+      # ── 5. (Optional) Slack / Discord notification ──
+      #    Uncomment and fill in the webhook URL to enable.
+      #
+      # - name: Notify Slack
+      #   if: always()
+      #   uses: slackapi/slack-github-action@v1.27.0
+      #   with:
+      #     payload: |
+      #       {
+      #         "text": "Deploy ${{ job.status }}: `${{ github.sha }}` to pedesk.app by @${{ github.actor }}"
+      #       }
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #
+      # - name: Notify Discord
+      #   if: always()
+      #   run: |
+      #     curl -H "Content-Type: application/json" \
+      #       -d '{"content":"Deploy ${{ job.status }}: `${{ github.sha }}` to pedesk.app by @${{ github.actor }}"}' \
+      #       "${{ secrets.DISCORD_WEBHOOK_URL }}"
