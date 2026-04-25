@@ -1541,6 +1541,137 @@ def _render_predicted_outcomes_section(
     )
 
 
+def _render_quiet_too_long_section(db_path: str) -> str:
+    """Surface deals that haven't been touched in too long — the
+    inverse of "Needs attention". A deal you watchlisted 6 months
+    ago but never opened might be the one needing your fresh eyes
+    more than the one pinging you daily.
+
+    Source: ``audit_events`` table — the same audit log that
+    powers Since-yesterday. Looks for the most recent view event
+    targeting each watchlisted deal; ranks by oldest-first.
+    """
+    from . import _web_components as _wc
+    try:
+        from ..portfolio.store import PortfolioStore
+        from ..deals.watchlist import list_starred
+        store = PortfolioStore(db_path)
+        starred = list_starred(store)
+    except Exception:  # noqa: BLE001
+        return ""
+
+    if not starred:
+        return ""
+
+    # Pull last-view timestamps for each starred deal in one pass.
+    # The audit table doesn't always exist on a fresh install, so
+    # this whole branch is best-effort.
+    last_view_by_deal: Dict[str, Optional[str]] = {d: None for d in starred}
+    try:
+        import sqlite3 as _sql
+        with _sql.connect(db_path) as con:
+            con.row_factory = _sql.Row
+            # Check the table exists first (lazy-created elsewhere)
+            tbl = con.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='audit_events'",
+            ).fetchone()
+            if tbl is None:
+                return ""
+            placeholders = ",".join("?" * len(starred))
+            for row in con.execute(
+                f"SELECT target, MAX(at) AS last_at FROM audit_events "
+                f"WHERE target IN ({placeholders}) "
+                f"GROUP BY target",
+                starred,
+            ).fetchall():
+                last_view_by_deal[row["target"]] = row["last_at"]
+    except Exception:  # noqa: BLE001
+        return ""
+
+    # Rank quiet-first: never-viewed comes first, then oldest, then
+    # newest. Cap at 4 — this is a complement to Pinned, not a
+    # replacement.
+    from datetime import datetime as _dt, timezone as _tz
+    now = _dt.now(_tz.utc)
+
+    def _days_since(iso: Optional[str]) -> Optional[int]:
+        if not iso:
+            return None
+        try:
+            ts = _dt.fromisoformat(str(iso).replace("Z", "+00:00"))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=_tz.utc)
+            return (now - ts).days
+        except (TypeError, ValueError):
+            return None
+
+    enriched: List[Dict[str, Any]] = []
+    for did in starred:
+        last = last_view_by_deal.get(did)
+        days = _days_since(last)
+        # Only surface deals that are actually "quiet" (unseen >14d,
+        # or never viewed). A deal viewed yesterday isn't quiet.
+        if days is not None and days < 14:
+            continue
+        enriched.append({
+            "deal_id": did,
+            "last_view_iso": last,
+            "days_quiet": days,  # None = never viewed
+        })
+
+    if not enriched:
+        return ""
+
+    # Never-viewed first (sentinel: -1 sorts before all positive
+    # day counts when reversed); then by days_quiet descending
+    enriched.sort(
+        key=lambda d: (-1 if d["days_quiet"] is None else d["days_quiet"]),
+        reverse=True,
+    )
+    rows: List[str] = []
+    for d in enriched[:4]:
+        days = d["days_quiet"]
+        if days is None:
+            quiet_label = "never viewed"
+            tone = "#fee2e2"
+            fg = "#991b1b"
+        elif days >= 60:
+            quiet_label = f"{days}d quiet"
+            tone, fg = "#fee2e2", "#991b1b"
+        elif days >= 30:
+            quiet_label = f"{days}d quiet"
+            tone, fg = "#fef3c7", "#92400e"
+        else:
+            quiet_label = f"{days}d quiet"
+            tone, fg = "#e0e7ff", "#3730a3"
+        rows.append(
+            f'<li style="padding:8px 0;border-bottom:1px solid #f3f4f6;'
+            f'display:flex;align-items:center;gap:14px;">'
+            f'<a href="/deal/{_html.escape(d["deal_id"])}" '
+            f'style="flex:1;color:#1F4E78;font-weight:500;'
+            f'text-decoration:none;font-family:monospace;font-size:12px;'
+            f'text-transform:uppercase;letter-spacing:0.03em;">'
+            f'{_html.escape(d["deal_id"])}</a>'
+            f'<span style="display:inline-block;padding:1px 8px;'
+            f'background:{tone};color:{fg};border-radius:9999px;'
+            f'font-size:11px;font-weight:600;">'
+            f'{quiet_label}</span>'
+            f'</li>'
+        )
+    body = (
+        '<p style="margin:0 0 8px;font-size:12px;color:#6b7280;">'
+        'Watchlisted deals you haven\'t opened in a while. The '
+        'one nobody is yelling at might need your fresh eyes more '
+        'than the one pinging you daily.</p>'
+        + f'<ul style="list-style:none;padding:0;margin:0;">'
+        f'{"".join(rows)}</ul>'
+    )
+    return _wc.section_card(
+        f"Quiet too long ({len(enriched)})", body, pad=True,
+    )
+
+
 def _render_pinned_deals_section(db_path: str) -> str:
     """Morning glance at health scores for every deal the user has
     starred in the watchlist.
@@ -1970,6 +2101,7 @@ def render_dashboard(db_path: str, *,
         + _render_needs_attention_section(db_path, deals=deals_scan)
         + _render_exposure_section(db_path, deals=deals_scan)
         + _render_pinned_deals_section(db_path)
+        + _render_quiet_too_long_section(db_path)
         + _render_predicted_outcomes_section(db_path, deals_scan=deals_scan)
         + _render_saved_templates_section(db_path)
         + _render_analyses_section()
