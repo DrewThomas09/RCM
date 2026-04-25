@@ -100,6 +100,44 @@ class TestSavedAnalysesStore(unittest.TestCase):
         self.assertEqual(out[0]["run_count"], 3)
         self.assertIsNotNone(out[0]["last_run_at"])
 
+    def test_clone_template_copies_params(self):
+        """clone_template returns a new id with the same route +
+        params + description, name suffixed " (copy)", and
+        pinned reset to False (clones aren't auto-pinned).
+
+        Time-saver: partner has "Weekly HCRIS, ccn=010001" pinned;
+        cloning gives "Weekly HCRIS, ccn=010001 (copy)" un-pinned
+        which they then edit to change the CCN. No rebuild.
+        """
+        from rcm_mc.analysis.saved_analyses import (
+            save_template, clone_template, get_template,
+        )
+        src = save_template(
+            self.store, name="Weekly HCRIS, ccn=010001",
+            route="/diligence/hcris-xray",
+            params={"ccn": "010001"},
+            description="Routine Monday",
+            created_by="alice",
+            pinned=True,
+        )
+        new_id = clone_template(self.store, src, created_by="alice")
+        self.assertIsNotNone(new_id)
+        self.assertNotEqual(new_id, src)
+
+        clone = get_template(self.store, new_id)
+        self.assertEqual(clone["name"],
+                         "Weekly HCRIS, ccn=010001 (copy)")
+        self.assertEqual(clone["route"], "/diligence/hcris-xray")
+        self.assertEqual(clone["params"], {"ccn": "010001"})
+        self.assertEqual(clone["description"], "Routine Monday")
+        # Clones start un-pinned to avoid surprising the partner with
+        # two pinned items
+        self.assertEqual(clone["pinned"], 0)
+
+    def test_clone_unknown_template_returns_none(self):
+        from rcm_mc.analysis.saved_analyses import clone_template
+        self.assertIsNone(clone_template(self.store, 99999))
+
     def test_pinned_templates_sort_first(self):
         from rcm_mc.analysis.saved_analyses import (
             save_template, list_templates,

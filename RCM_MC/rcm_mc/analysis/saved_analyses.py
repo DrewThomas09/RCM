@@ -124,6 +124,37 @@ def delete_template(store: Any, template_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def clone_template(
+    store: Any,
+    template_id: int,
+    *, name_suffix: str = " (copy)",
+    created_by: str = "",
+) -> Optional[int]:
+    """Duplicate an existing template under a new id.
+
+    The cloned row preserves route + params + description; only the
+    name is appended with `name_suffix` so the partner can tell
+    them apart in the dashboard list. Returns the new id, or None
+    if the source template doesn't exist.
+
+    Time-saver use case: partner has "Weekly HCRIS, ccn=010001"
+    saved. Same week they want the same scan for ccn=050190. They
+    clone, edit just the CCN, run the new copy.
+    """
+    src = get_template(store, template_id)
+    if src is None:
+        return None
+    return save_template(
+        store,
+        name=(src.get("name") or "untitled") + name_suffix,
+        route=src.get("route") or "/",
+        params=src.get("params") or {},
+        description=src.get("description") or "",
+        created_by=created_by or src.get("created_by") or "",
+        pinned=False,  # clones start un-pinned
+    )
+
+
 def bump_run(store: Any, template_id: int) -> None:
     """Update last_run_at + increment run_count. Called whenever a
     partner launches a saved template. Silent no-op for unknown ids."""

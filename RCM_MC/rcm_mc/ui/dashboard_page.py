@@ -985,6 +985,24 @@ def _render_saved_templates_section(db_path: str) -> str:
             '<span style="margin-left:6px;font-size:10px;color:#1F4E78;">'
             '📌</span>'
         ) if t.get("pinned") else ""
+        # Clone button — copy this template's route + params under a
+        # new name so a partner can tweak (e.g. swap the CCN) without
+        # rebuilding from scratch. Major time-saver for repeated
+        # diligence on similar deals.
+        clone_form = (
+            f'<form method="POST" action="/api/saved-analyses/'
+            f'{t["id"]}/clone" style="display:inline;margin:0;">'
+            f'<input type="hidden" name="redirect" value="/dashboard">'
+            f'<button type="submit" '
+            f'title="Clone — duplicate this template under a new name '
+            f'so you can tweak it (e.g. swap the CCN)" '
+            f'style="background:transparent;border:0;color:#9ca3af;'
+            f'cursor:pointer;font-size:14px;padding:0 6px;'
+            f'transition:color 0.1s;" '
+            f'onmouseover="this.style.color=\'#1F4E78\';" '
+            f'onmouseout="this.style.color=\'#9ca3af\';">⎘</button>'
+            f'</form>'
+        )
         delete_form = (
             f'<form method="POST" action="/api/saved-analyses/'
             f'{t["id"]}/delete" style="display:inline;margin:0;" '
@@ -1012,7 +1030,7 @@ def _render_saved_templates_section(db_path: str) -> str:
             f'{_html.escape(desc) if desc else _html.escape(href)}'
             f' · ran {run_count}×</div>'
             f'</a>'
-            f'{delete_form}'
+            f'{clone_form}{delete_form}'
             f'</li>'
         )
     body = (

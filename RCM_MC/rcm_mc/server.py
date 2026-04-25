@@ -15250,6 +15250,23 @@ class RCMHandler(BaseHTTPRequestHandler):
                         )
                     bump_run(store, tid)
                     return self._redirect(resolved_href(tmpl))
+                if action == "clone":
+                    from .analysis.saved_analyses import clone_template
+                    cu = self._current_user()
+                    new_id = clone_template(
+                        store, tid,
+                        created_by=(cu or {}).get("username", ""),
+                    )
+                    if new_id is None:
+                        return self._send_json(
+                            {"error": "template not found",
+                             "code": "TEMPLATE_NOT_FOUND"},
+                            status=HTTPStatus.NOT_FOUND,
+                        )
+                    self._log_audit("saved_analysis.clone",
+                                    target=str(new_id),
+                                    source_id=str(tid))
+                    return self._redirect(safe_redirect)
 
         # POST /api/bulk/stage  (B99: advance N deals to the same stage)
         if (parts == ["api", "bulk", "stage"]):
