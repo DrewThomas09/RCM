@@ -28,6 +28,9 @@ from typing import Any, Dict, List, Optional
 from .colors import STATUS
 from .loading import page_progress_bar
 from .nav import breadcrumb, keyboard_shortcuts
+from .responsive import (
+    responsive_stylesheet, viewport_meta,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -540,13 +543,15 @@ def render_dashboard_v3(store: Any) -> str:
     return (
         f'<!doctype html><html><head>'
         f'<meta charset="utf-8">'
-        f'<title>Portfolio · Morning view</title>'
-        f'<style>body{{margin:0;font-family:system-ui,'
+        + viewport_meta()
+        + f'<title>Portfolio · Morning view</title>'
+        + responsive_stylesheet()
+        + f'<style>body{{margin:0;font-family:system-ui,'
         f'-apple-system,sans-serif;background:{_BG_PRIMARY};'
         f'color:{_TEXT};}}</style></head><body>'
         + page_progress_bar()
-        + f'<div style="max-width:1100px;margin:0 auto;'
-        f'padding:32px 24px;">'
+        + f'<div class="rs-container" '
+        f'style="max-width:1100px;">'
         + breadcrumb([("Dashboard", None)])
         + f'<div style="display:flex;justify-content:'
         f'space-between;align-items:baseline;'

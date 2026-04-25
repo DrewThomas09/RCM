@@ -38,6 +38,9 @@ from .colors import STATUS
 from .empty_states import empty_state, EmptyAction
 from .loading import page_progress_bar
 from .nav import breadcrumb, keyboard_shortcuts
+from .responsive import (
+    responsive_stylesheet, viewport_meta,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -604,8 +607,10 @@ def render_deal_profile_v2(
 
     return (
         f'<!doctype html><html><head><meta charset="utf-8">'
-        f'<title>Deal · {_esc(deal_name)}</title>'
-        f'<style>body{{margin:0;font-family:system-ui,'
+        + viewport_meta()
+        + f'<title>Deal · {_esc(deal_name)}</title>'
+        + responsive_stylesheet()
+        + f'<style>body{{margin:0;font-family:system-ui,'
         f'-apple-system,sans-serif;background:{_BG_PRIMARY};'
         f'color:{_TEXT};}}</style></head><body>'
         + page_progress_bar()

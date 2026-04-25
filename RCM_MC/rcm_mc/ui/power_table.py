@@ -525,10 +525,13 @@ def render_power_table(
                 f'</th>')
 
     table_html = (
-        f'<div style="background:#1f2937;border:1px solid '
-        f'#374151;border-radius:8px;overflow:hidden;'
-        f'overflow-x:auto;">'
-        f'<table style="width:100%;border-collapse:collapse;">'
+        f'<div class="rs-table-wrap" '
+        f'style="background:#1f2937;border:1px solid '
+        f'#374151;border-radius:8px;'
+        f'overflow:hidden;overflow-x:auto;'
+        f'-webkit-overflow-scrolling:touch;">'
+        f'<table style="width:100%;border-collapse:collapse;'
+        f'min-width:max-content;">'
         f'<thead>'
         f'<tr>{"".join(header_cells)}</tr>'
         f'<tr>{"".join(filter_cells)}</tr>'
