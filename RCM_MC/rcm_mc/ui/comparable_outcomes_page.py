@@ -359,10 +359,40 @@ def render_comparable_outcomes_page(
         '</div>'
     )
 
+    # Time-saver: surface CSV + memo-bullet exports in one click. The
+    # partner already filled out sector/ev/year — preserve that
+    # through to the download URLs so the file matches what's on
+    # screen.
+    import urllib.parse as _up
+    export_qs = _up.urlencode({
+        k: str(v) for k, v in target.items()
+        if v is not None and v != ""
+    })
+    btn_style = (
+        "display:inline-flex;align-items:center;gap:6px;"
+        "padding:8px 14px;border:1px solid #d1d5db;border-radius:6px;"
+        "background:#fff;color:#1F4E78;font-size:13px;font-weight:600;"
+        "text-decoration:none;cursor:pointer;"
+    )
+    export_bar = (
+        '<div style="display:flex;flex-wrap:wrap;gap:10px;'
+        'align-items:center;margin:12px 0;">'
+        '<span style="font-size:11px;color:#6b7280;font-weight:600;'
+        'text-transform:uppercase;letter-spacing:0.05em;'
+        'margin-right:4px;">One-click export</span>'
+        f'<a href="/api/diligence/comparable-outcomes.csv?{export_qs}" '
+        f'style="{btn_style}" download>⬇ CSV (with score breakdown)</a>'
+        f'<a href="/api/diligence/comparable-outcomes.memo?{export_qs}" '
+        f'style="{btn_style}" target="_blank" rel="noopener">'
+        '📋 Memo bullets (paste into deal memo)</a>'
+        '</div>'
+    )
+
     inner = (
         header
         + form
         + _outcome_strip(summary)
+        + export_bar
         + _wc.section_card(
             f"Top {len(rows)} comparables — sorted by match score",
             table + breakdown_legend, pad=False,

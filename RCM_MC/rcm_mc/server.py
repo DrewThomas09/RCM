@@ -3785,6 +3785,187 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "insights": _all_insights(self.config.db_path),
                 "count": len(_all_insights(self.config.db_path)),
             })
+        if path == "/api/diligence/comparable-outcomes.csv":
+            # Time-saver: one-click CSV download of the comparable
+            # set + match scores. Partner pastes into memo / Excel /
+            # PowerPoint without retyping or screenshotting.
+            qs = urllib.parse.parse_qs(parsed.query)
+            qp = {k: v[0] for k, v in qs.items() if v}
+            try:
+                ev = float(qp.get("ev_mm")) if qp.get("ev_mm") else None
+            except (TypeError, ValueError):
+                ev = None
+            try:
+                yr = int(qp.get("year")) if qp.get("year") else None
+            except (TypeError, ValueError):
+                yr = None
+            target = {
+                "sector": qp.get("sector") or "hospital",
+                "ev_mm": ev,
+                "year": yr,
+                "buyer": qp.get("buyer") or "",
+            }
+            try:
+                from .diligence.comparable_outcomes import benchmark_deal
+                from .data_public.deals_corpus import DealsCorpus
+                corpus = DealsCorpus(self.config.db_path)
+                try:
+                    corpus.seed(skip_if_populated=True)
+                except Exception:  # noqa: BLE001
+                    pass
+                result = benchmark_deal(
+                    corpus, target,
+                    top_n=self._clamp_int(
+                        (qp.get("top_n") or "10"),
+                        default=10, min_v=1, max_v=50,
+                    ),
+                )
+            except Exception as exc:  # noqa: BLE001
+                return self._send_json(
+                    {"error": str(exc), "code": "BENCHMARK_FAILED"},
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                )
+            import csv as _csv
+            import io as _io
+            buf = _io.StringIO()
+            writer = _csv.writer(buf)
+            writer.writerow([
+                "rank", "deal_id", "deal_name", "year", "buyer",
+                "ev_mm", "realized_moic", "realized_irr",
+                "hold_years", "match_score",
+                "score_sector", "score_size", "score_year",
+                "score_payer_mix", "score_buyer_type",
+                "match_reasons",
+            ])
+            for i, c in enumerate(result.get("comparables") or [], 1):
+                bd = c.get("score_breakdown") or {}
+                writer.writerow([
+                    i, c.get("deal_id"), c.get("deal_name"),
+                    c.get("year"), c.get("buyer"),
+                    c.get("ev_mm"), c.get("realized_moic"),
+                    c.get("realized_irr"), c.get("hold_years"),
+                    c.get("match_score"),
+                    bd.get("sector"), bd.get("size"),
+                    bd.get("year"), bd.get("payer_mix"),
+                    bd.get("buyer_type"),
+                    "; ".join(c.get("match_reasons") or []),
+                ])
+            csv_bytes = buf.getvalue().encode("utf-8")
+            from datetime import datetime as _dt, timezone as _tz
+            today = _dt.now(_tz.utc).date().isoformat()
+            sector_slug = (qp.get("sector") or "hospital").replace(
+                " ", "-")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header(
+                "Content-Disposition",
+                f'attachment; filename="comparables-{sector_slug}-'
+                f'{today}.csv"',
+            )
+            self.send_header("Content-Length", str(len(csv_bytes)))
+            self._send_security_headers()
+            self.end_headers()
+            self.wfile.write(csv_bytes)
+            return
+
+        if path == "/api/diligence/comparable-outcomes.memo":
+            # Second time-saver: render the comparable set as
+            # markdown-style memo bullets ready to paste into a deal
+            # memo. Saves the partner from formatting.
+            qs = urllib.parse.parse_qs(parsed.query)
+            qp = {k: v[0] for k, v in qs.items() if v}
+            try:
+                ev = float(qp.get("ev_mm")) if qp.get("ev_mm") else None
+            except (TypeError, ValueError):
+                ev = None
+            try:
+                yr = int(qp.get("year")) if qp.get("year") else None
+            except (TypeError, ValueError):
+                yr = None
+            target = {
+                "sector": qp.get("sector") or "hospital",
+                "ev_mm": ev,
+                "year": yr,
+                "buyer": qp.get("buyer") or "",
+            }
+            try:
+                from .diligence.comparable_outcomes import benchmark_deal
+                from .data_public.deals_corpus import DealsCorpus
+                corpus = DealsCorpus(self.config.db_path)
+                try:
+                    corpus.seed(skip_if_populated=True)
+                except Exception:  # noqa: BLE001
+                    pass
+                result = benchmark_deal(
+                    corpus, target,
+                    top_n=self._clamp_int(
+                        (qp.get("top_n") or "5"),
+                        default=5, min_v=1, max_v=20,
+                    ),
+                )
+            except Exception as exc:  # noqa: BLE001
+                return self._send_json(
+                    {"error": str(exc), "code": "BENCHMARK_FAILED"},
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                )
+            outcome = result.get("outcome_distribution") or {}
+            moic = outcome.get("moic") or {}
+            irr = outcome.get("irr") or {}
+            lines: list = []
+            tgt_sector = qp.get("sector") or "hospital"
+            tgt_ev = (f"${ev:.0f}M" if ev else "any size")
+            tgt_year = yr or "any year"
+            lines.append(
+                f"## Comparable benchmark — {tgt_sector}, "
+                f"{tgt_ev}, {tgt_year}"
+            )
+            lines.append("")
+            lines.append(
+                f"**Outcome distribution** "
+                f"(n={outcome.get('n_comparables', 0)} comparables):"
+            )
+            if moic.get("median") is not None:
+                lines.append(
+                    f"- Median MOIC: {moic['median']:.2f}x "
+                    f"(p25 {moic.get('p25', 0):.2f}x · "
+                    f"p75 {moic.get('p75', 0):.2f}x)"
+                )
+            if irr.get("median") is not None:
+                lines.append(
+                    f"- Median IRR: {irr['median']*100:.1f}% "
+                    f"(p25 {irr.get('p25', 0)*100:.1f}% · "
+                    f"p75 {irr.get('p75', 0)*100:.1f}%)"
+                )
+            wr = outcome.get("win_rate_2_5x")
+            if wr is not None:
+                lines.append(
+                    f"- Win rate (≥2.5x): {wr*100:.0f}% of "
+                    f"comparables cleared the bar"
+                )
+            lines.append("")
+            lines.append(f"**Top comparables**:")
+            for c in (result.get("comparables") or []):
+                moic_str = (f"{c['realized_moic']:.2f}x"
+                            if c.get("realized_moic") is not None
+                            else "—")
+                year_str = (f"{c['year']}"
+                            if c.get("year") else "—")
+                lines.append(
+                    f"- {c.get('deal_name', '')} ({year_str}, "
+                    f"{c.get('buyer', '—')}): {moic_str} MOIC, "
+                    f"match score {c.get('match_score', 0):.0f}"
+                )
+            memo = "\n".join(lines)
+            text_bytes = memo.encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(text_bytes)))
+            self._send_security_headers()
+            self.end_headers()
+            self.wfile.write(text_bytes)
+            return
+
         if path == "/api/portfolio/risk-scan.csv":
             # Time-saver: dump the entire risk-scan table as CSV
             # so a partner can paste it into PowerPoint, an email
