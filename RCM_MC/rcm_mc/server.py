@@ -3785,6 +3785,68 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "insights": _all_insights(self.config.db_path),
                 "count": len(_all_insights(self.config.db_path)),
             })
+        # ── Portfolio monitoring dashboard ──
+        if path == "/portfolio/monitor":
+            try:
+                from .portfolio_monitor import (
+                    PortfolioAsset, PortfolioSnapshot,
+                    compute_variance, render_monitor_dashboard,
+                )
+                store = PortfolioStore(self.config.db_path)
+                with store.connect() as con:
+                    rows = con.execute(
+                        "SELECT deal_id, name, profile_json "
+                        "FROM deals WHERE archived_at IS NULL"
+                    ).fetchall()
+                import json as _json
+                assets = []
+                for row in rows:
+                    try:
+                        prof = _json.loads(
+                            row["profile_json"] or "{}")
+                    except (TypeError,
+                            _json.JSONDecodeError):
+                        prof = {}
+                    assets.append(PortfolioAsset(
+                        deal_id=row["deal_id"],
+                        name=row["name"] or row["deal_id"],
+                        sector=prof.get("sector") or "hospital",
+                        entry_year=int(
+                            prof.get("entry_year") or 0),
+                        held_years=float(
+                            prof.get("held_years") or 0),
+                        entry_ebitda_mm=float(
+                            prof.get("entry_ebitda_mm") or 0),
+                        plan_ebitda_mm=float(
+                            prof.get("plan_ebitda_mm") or 0),
+                        actual_ebitda_mm=float(
+                            prof.get("actual_ebitda_mm")
+                            or prof.get("ebitda_mm") or 0),
+                        plan_revenue_mm=float(
+                            prof.get("plan_revenue_mm") or 0),
+                        actual_revenue_mm=float(
+                            prof.get("actual_revenue_mm")
+                            or prof.get("revenue_mm") or 0),
+                        comparable_moic_p50=(
+                            prof.get("comparable_moic_p50")),
+                        comparable_moic_p25=(
+                            prof.get("comparable_moic_p25")),
+                        current_moic=(
+                            prof.get("current_moic")),
+                    ))
+                snapshot = PortfolioSnapshot(
+                    fund_name=self.config.title or "Portfolio",
+                    assets=assets,
+                )
+                pv = compute_variance(snapshot)
+                return self._send_html(
+                    render_monitor_dashboard(pv))
+            except Exception as exc:  # noqa: BLE001
+                return self._send_html(
+                    f"<h1>500</h1><p>Monitor failed: "
+                    f"{type(exc).__name__}: {exc}</p>",
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
         # ── IC memo generator (deal_id-based; the older
         # ── /ic-memo/<ccn> route handles hospital CCNs).
         if path.startswith("/diligence/ic-memo/"):
