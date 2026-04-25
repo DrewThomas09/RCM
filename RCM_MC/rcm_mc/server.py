@@ -1899,6 +1899,50 @@ class RCMHandler(BaseHTTPRequestHandler):
         except Exception:  # noqa: BLE001
             pass
 
+    # ── UI version (per-request override) ─────────────────────────
+    #
+    # Editorial v3 vs legacy dark shell. Resolution order:
+    #
+    #   1. ?ui=v3 / ?ui=editorial / ?ui=v2 / ?ui=legacy in the query string
+    #   2. RCM_MC_UI_VERSION env var (v3 / editorial / 1 / true → editorial)
+    #   3. CHARTIS_UI_V2 env var (1 / true → editorial)
+    #   4. default: legacy
+    #
+    # Per-request override means a partner can preview the editorial
+    # render by appending ?ui=v3 to any URL without changing server
+    # config. Page renderers branch on self._ui_choice to pick which
+    # render function to call.
+    _UI_EDITORIAL_VALUES: tuple = ("v3", "editorial", "1", "true", "yes")
+    _UI_LEGACY_VALUES: tuple = ("v2", "legacy", "0", "false", "no")
+
+    def _compute_ui_choice(self) -> None:
+        """Set ``self._ui_choice`` to 'editorial' or 'legacy' for this request."""
+        try:
+            qs = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query
+            )
+        except Exception:  # noqa: BLE001
+            qs = {}
+        ui_q = (qs.get("ui") or [""])[0].lower().strip()
+        if ui_q in self._UI_EDITORIAL_VALUES:
+            self._ui_choice = "editorial"
+            return
+        if ui_q in self._UI_LEGACY_VALUES:
+            self._ui_choice = "legacy"
+            return
+        ui_v3 = os.environ.get("RCM_MC_UI_VERSION", "").lower().strip()
+        if ui_v3 in self._UI_EDITORIAL_VALUES:
+            self._ui_choice = "editorial"
+            return
+        if ui_v3 in self._UI_LEGACY_VALUES:
+            self._ui_choice = "legacy"
+            return
+        ui_v2 = os.environ.get("CHARTIS_UI_V2", "").lower().strip()
+        if ui_v2 in self._UI_EDITORIAL_VALUES:
+            self._ui_choice = "editorial"
+            return
+        self._ui_choice = "legacy"
+
     def do_GET(self) -> None:
         if not self._auth_ok():
             return self._send_401()
@@ -1909,6 +1953,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             self._audit_sensitive_view(parsed.path)
         except Exception:  # noqa: BLE001
             pass
+        # Per-request UI choice (editorial v3 vs legacy dark shell).
+        # Set early so any handler can branch on self._ui_choice.
+        self._compute_ui_choice()
         try:
             self._do_get_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary
@@ -10195,6 +10242,7 @@ class RCMHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         if not self._auth_ok():
             return self._send_401()
+        self._compute_ui_choice()
         try:
             self._do_post_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary

@@ -250,6 +250,26 @@ def ck_related_views(items):
     )
 
 
+# ── Per-request editorial entry point ──────────────────────────────
+#
+# `chartis_shell` above resolves at module-load time based on the env
+# flag. For per-request switching (?ui=v3) page renderers need direct
+# access to the editorial shell regardless of env. This re-export is
+# the load-bearing one for that path.
+#
+# Page renderers should:
+#   if self._ui_choice == "editorial":
+#       from rcm_mc.ui._chartis_kit import editorial_chartis_shell
+#       return editorial_chartis_shell(body, title, ...)
+#   else:
+#       return legacy_chartis_shell(body, title, ...)
+#
+# Both names always resolve, regardless of CHARTIS_UI_V2.
+
+from ._chartis_kit_editorial import chartis_shell as editorial_chartis_shell  # noqa: E402,F401
+from ._chartis_kit_legacy import chartis_shell as legacy_chartis_shell  # noqa: E402,F401
+
+
 __all__ = [
     # Flag + palette
     "UI_V2_ENABLED",
@@ -260,6 +280,8 @@ __all__ = [
     "_SANS",
     # Shell
     "chartis_shell",
+    "editorial_chartis_shell",
+    "legacy_chartis_shell",
     # Helpers (legacy + editorial both expose)
     "ck_command_palette",
     "ck_fmt_currency",
