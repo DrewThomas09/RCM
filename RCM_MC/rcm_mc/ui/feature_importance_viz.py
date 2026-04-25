@@ -16,12 +16,13 @@ import html as _html
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..ml.feature_importance import FeatureImportance
+from .colors import STATUS
 
 
-# Color palette matches CLAUDE.md severity bands
-_COLOR_POSITIVE = "#10B981"   # green
-_COLOR_NEGATIVE = "#EF4444"   # red
-_COLOR_NEUTRAL = "#6b7280"    # gray
+# Status colors come from the semantic palette
+_COLOR_POSITIVE = STATUS["positive"]
+_COLOR_NEGATIVE = STATUS["negative"]
+_COLOR_NEUTRAL = STATUS["neutral"]
 _TEXT_COLOR = "#f3f4f6"
 _AXIS_COLOR = "#374151"
 _BG_COLOR = "#1f2937"

@@ -34,6 +34,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
+from .colors import STATUS
+
 logger = logging.getLogger(__name__)
 
 
@@ -59,17 +61,17 @@ def _fmt_pct(v: Optional[float], digits: int = 1) -> str:
     return f"{v * 100:+.{digits}f}%"
 
 
-# Color palette — matches dashboard_v3 + CLAUDE.md severity bands
+# Color palette — semantic colors come from rcm_mc.ui.colors
 _BG_PRIMARY = "#0f172a"
 _BG_SURFACE = "#1f2937"
 _BG_ELEVATED = "#111827"
 _BORDER = "#374151"
 _TEXT = "#f3f4f6"
-_TEXT_DIM = "#9ca3af"
-_ACCENT = "#60a5fa"
-_GREEN = "#10b981"
-_AMBER = "#f59e0b"
-_RED = "#ef4444"
+_TEXT_DIM = STATUS["neutral"]
+_ACCENT = STATUS["info"]
+_GREEN = STATUS["positive"]
+_AMBER = STATUS["watch"]
+_RED = STATUS["negative"]
 
 
 def _section_header(

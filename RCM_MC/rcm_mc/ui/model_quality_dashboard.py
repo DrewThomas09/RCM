@@ -18,22 +18,29 @@ import math
 from typing import Any, Dict, List
 
 from ..ml.model_quality import ModelBacktestResult
+from .colors import STATUS
 
 
+# Grade colors anchor to the semantic palette: A/B = good (green/info),
+# C = watch (amber), D/F = bad (red).
 _GRADE_COLORS = {
-    "A": ("#065f46", "#a7f3d0"),
-    "B": ("#1e3a8a", "#bfdbfe"),
-    "C": ("#92400e", "#fde68a"),
+    "A": (STATUS["positive_bg"], STATUS["positive_fg"]),
+    "B": (STATUS["info_bg"], STATUS["info_fg"]),
+    "C": (STATUS["watch_bg"], STATUS["watch_fg"]),
     "D": ("#7c2d12", "#fed7aa"),
-    "F": ("#7f1d1d", "#fecaca"),
+    "F": (STATUS["negative_bg"], STATUS["negative_fg"]),
 }
 
 _CALIB_COLORS = {
-    "well_calibrated": ("#065f46", "#a7f3d0"),
-    "overconfident": ("#7f1d1d", "#fecaca"),
-    "underconfident": ("#92400e", "#fde68a"),
-    "no_data": ("#374151", "#9ca3af"),
-    "failed": ("#7f1d1d", "#fecaca"),
+    "well_calibrated": (STATUS["positive_bg"],
+                        STATUS["positive_fg"]),
+    "overconfident": (STATUS["negative_bg"],
+                      STATUS["negative_fg"]),
+    "underconfident": (STATUS["watch_bg"],
+                       STATUS["watch_fg"]),
+    "no_data": (STATUS["neutral_bg"], STATUS["neutral_fg"]),
+    "failed": (STATUS["negative_bg"],
+               STATUS["negative_fg"]),
 }
 
 
