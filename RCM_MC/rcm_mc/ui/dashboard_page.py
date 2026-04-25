@@ -391,7 +391,10 @@ def _since_yesterday_events(db_path: str,
     return events[:20]
 
 
-def _compute_sharpest_insight(db_path: str) -> Optional[Dict[str, Any]]:
+def _compute_sharpest_insight(
+    db_path: str,
+    *, deals: Optional[List[Dict[str, Any]]] = None,
+) -> Optional[Dict[str, Any]]:
     """Pick the single most-notable cross-portfolio signal to headline
     the dashboard. The "wow" moment on morning open.
 
@@ -405,14 +408,18 @@ def _compute_sharpest_insight(db_path: str) -> Optional[Dict[str, Any]]:
 
     Returns None if nothing interesting — dashboard then omits the
     section (silence > noise).
+
+    ``deals`` can be passed pre-computed by the caller. The dashboard
+    render path calls ``_gather_per_deal(db_path)`` once and threads
+    the result into every section that needs it, instead of each
+    section re-running the per-deal scan.
     """
-    try:
-        from ..portfolio.store import PortfolioStore
-        from .portfolio_risk_scan_page import _gather_per_deal
-        store = PortfolioStore(db_path)
-        deals = _gather_per_deal(db_path)
-    except Exception:  # noqa: BLE001
-        return None
+    if deals is None:
+        try:
+            from .portfolio_risk_scan_page import _gather_per_deal
+            deals = _gather_per_deal(db_path)
+        except Exception:  # noqa: BLE001
+            return None
     if not deals:
         return None
 
@@ -538,12 +545,15 @@ def _compute_sharpest_insight(db_path: str) -> Optional[Dict[str, Any]]:
     return insights[0]
 
 
-def _render_headline_insight_section(db_path: str) -> str:
+def _render_headline_insight_section(
+    db_path: str,
+    *, deals: Optional[List[Dict[str, Any]]] = None,
+) -> str:
     """One-glance insight card — the "wow" that justifies the morning
     visit. Rendered immediately after the header, before every other
     section, so it's the first thing a partner sees."""
     from . import _web_components as _wc
-    ins = _compute_sharpest_insight(db_path)
+    ins = _compute_sharpest_insight(db_path, deals=deals)
     if ins is None:
         return ""
 
@@ -826,7 +836,10 @@ def _render_saved_templates_section(db_path: str) -> str:
     )
 
 
-def _render_needs_attention_section(db_path: str) -> str:
+def _render_needs_attention_section(
+    db_path: str,
+    *, deals: Optional[List[Dict[str, Any]]] = None,
+) -> str:
     """Top-3 deals the risk scanner flagged as highest-priority.
 
     Complement to "Pinned deals" — Pinned shows deals the partner
@@ -840,16 +853,16 @@ def _render_needs_attention_section(db_path: str) -> str:
     """
     from . import _web_components as _wc
     try:
-        from .portfolio_risk_scan_page import (
-            _gather_per_deal, _priority_rank,
-        )
+        from .portfolio_risk_scan_page import _priority_rank
     except Exception:  # noqa: BLE001
         return ""
 
-    try:
-        deals = _gather_per_deal(db_path)
-    except Exception:  # noqa: BLE001
-        return ""
+    if deals is None:
+        try:
+            from .portfolio_risk_scan_page import _gather_per_deal
+            deals = _gather_per_deal(db_path)
+        except Exception:  # noqa: BLE001
+            return ""
 
     if not deals:
         return ""  # no deals → no card (empty state covered elsewhere)
@@ -942,7 +955,10 @@ def _render_needs_attention_section(db_path: str) -> str:
     )
 
 
-def _render_exposure_section(db_path: str) -> str:
+def _render_exposure_section(
+    db_path: str,
+    *, deals: Optional[List[Dict[str, Any]]] = None,
+) -> str:
     """Sector + chain concentration at a glance.
 
     A partner with 12 deals should be able to read their portfolio
@@ -954,14 +970,13 @@ def _render_exposure_section(db_path: str) -> str:
     is meaningless on a single deal).
     """
     from . import _web_components as _wc
-    try:
-        from ..portfolio.store import PortfolioStore
-        from .portfolio_risk_scan_page import _gather_per_deal
-        store = PortfolioStore(db_path)
-        deals = _gather_per_deal(db_path)
-    except Exception:  # noqa: BLE001
-        return ""
-    if len(deals) <= 1:
+    if deals is None:
+        try:
+            from .portfolio_risk_scan_page import _gather_per_deal
+            deals = _gather_per_deal(db_path)
+        except Exception:  # noqa: BLE001
+            return ""
+    if not deals or len(deals) <= 1:
         return ""
 
     sector_counts: Dict[str, int] = {}
@@ -1443,13 +1458,25 @@ def render_dashboard(db_path: str, *,
         '</div>'
     )
 
+    # Compute the per-deal scan ONCE per dashboard render and thread
+    # it through every section that needs it. Without this, three
+    # separate sections (headline-insight, needs-attention, exposure)
+    # each call _gather_per_deal independently, multiplying
+    # compute_health and POS lookups by 3× on every page load.
+    deals_scan: Optional[List[Dict[str, Any]]] = None
+    try:
+        from .portfolio_risk_scan_page import _gather_per_deal
+        deals_scan = _gather_per_deal(db_path)
+    except Exception:  # noqa: BLE001
+        deals_scan = None
+
     inner = (
         header
-        + _render_headline_insight_section(db_path)
+        + _render_headline_insight_section(db_path, deals=deals_scan)
         + cmdk_hint
         + _render_since_yesterday_section(db_path)
-        + _render_needs_attention_section(db_path)
-        + _render_exposure_section(db_path)
+        + _render_needs_attention_section(db_path, deals=deals_scan)
+        + _render_exposure_section(db_path, deals=deals_scan)
         + _render_pinned_deals_section(db_path)
         + _render_saved_templates_section(db_path)
         + _render_analyses_section()
