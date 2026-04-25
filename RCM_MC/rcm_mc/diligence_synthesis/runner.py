@@ -199,4 +199,20 @@ def run_full_diligence(dossier: DiligenceDossier) -> SynthesisResult:
         "workforce, governance_profile",
     )
 
+    # ── 10. DealComparablesEngine ────────────────────────────
+    def _comparables():
+        if not (dossier.deal_corpus and dossier.target_deal_profile):
+            return None
+        from ..comparables import run_comparables_engine
+        return run_comparables_engine(
+            dossier.deal_corpus,
+            dossier.target_deal_profile,
+            method=dossier.comparables_method,
+            k_matches=dossier.comparables_k,
+        )
+    result.comparables = _safe_run(
+        "comparables", _comparables, result,
+        "comparables: needs deal_corpus + target_deal_profile",
+    )
+
     return result

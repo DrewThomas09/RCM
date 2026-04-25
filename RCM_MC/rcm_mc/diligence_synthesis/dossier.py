@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional  # noqa: F401
 
 
 @dataclass
@@ -48,6 +48,12 @@ class DiligenceDossier:
     issb_attested: bool = False
     cybersecurity_attested: bool = False
 
+    # DealComparablesEngine inputs
+    deal_corpus: List[Dict[str, Any]] = field(default_factory=list)
+    target_deal_profile: Optional[Dict[str, Any]] = None
+    comparables_method: str = "psm"
+    comparables_k: int = 15
+
 
 @dataclass
 class SynthesisResult:
@@ -65,3 +71,4 @@ class SynthesisResult:
     vbc_track_choice: Any = None
     esg_scorecard: Any = None
     esg_disclosure_md: str = ""
+    comparables: Any = None
