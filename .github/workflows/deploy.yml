@@ -28,19 +28,21 @@ jobs:
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy via SSH
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'set -euo pipefail
-            echo "==> Pulling latest code"
-            cd /opt/rcm-mc
-            sudo git fetch origin main
-            sudo git reset --hard origin/main
-
-            echo "==> Rebuilding containers (profile=tls)"
-            cd RCM_MC/deploy
-            sudo DOMAIN=pedesk.app docker compose --profile tls up -d --build
-
-            echo "==> Deploy script finished on VM"
-          '
+          ssh -o StrictHostKeyChecking=no -T "$SSH_USER@$SSH_HOST" << 'REMOTE_EOF'
+          set -euo pipefail
+          echo "==> Pulling latest code"
+          cd /opt/rcm-mc
+          sudo git fetch origin main
+          sudo git reset --hard origin/main
+          echo "==> Rebuilding containers (profile=tls)"
+          cd RCM_MC/deploy
+          sudo DOMAIN=pedesk.app docker compose --profile tls up -d --build
+          echo "==> Deploy script finished on VM"
+          REMOTE_EOF
 
       # ── 3. Verify the public URL returns 200 or 303 ──
       #    Retries up to 5 times with 5-second sleeps.
