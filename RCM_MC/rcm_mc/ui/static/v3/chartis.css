@@ -554,3 +554,61 @@ footer.editorial {
   color: var(--muted);
 }
 footer.editorial em { color: var(--ink); font-style: italic; }
+
+/* === /app dashboard blocks ====================================
+ *
+ * Phase 2 of the editorial port. Each block helper in
+ * rcm_mc/ui/chartis/_app_*.py owns a section below. Class names are
+ * block-prefixed (`.app-kpi-strip-*`, `.app-pipeline-funnel-*`) so
+ * conflicts with shared chrome (`.pair`, `.crumbs`, etc.) are
+ * impossible by construction.
+ *
+ * Why these live in chartis.css (single static asset) rather than
+ * inline per-helper: cacheability + overrideability. A single
+ * /static/v3/chartis.css is cached by the browser after first hit;
+ * inline <style> blocks accreting per render would re-send ~5KB on
+ * every /app load. And future high-contrast / print / density modes
+ * can override these rules with one media query — inline styles
+ * would force !important or JS mutation.
+ *
+ * Convention for adding new blocks (Phase 2b/2c/2d):
+ *   - Section header comment with the block name + helper file
+ *   - All class names prefixed with the helper's slug
+ *   - Group rules tightly so the section can be deleted in one diff
+ *     when a helper is retired
+ */
+
+/* --- KPI strip (rcm_mc/ui/chartis/_app_kpi_strip.py) --- */
+
+.app-kpi-pair > .viz { padding: 0; }
+.app-kpi-strip {
+  display: grid; grid-template-columns: repeat(8, 1fr);
+  background: var(--paper-pure);
+}
+.app-kpi-strip .kpi-cell {
+  padding: 1.25rem 1rem;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: .15rem;
+}
+.app-kpi-strip .kpi-cell:last-child { border-right: none; }
+.app-kpi-strip .kpi-cell[aria-current="true"] {
+  background: var(--bg-tint);
+}
+.app-kpi-strip .kpi-cell .value {
+  font-size: 1.8rem; line-height: 1.05; color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.app-kpi-strip .kpi-cell .label {
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.app-kpi-strip .kpi-cell .delta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .72rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 1100px) {
+  .app-kpi-strip { grid-template-columns: repeat(4, 1fr); }
+  .app-kpi-strip .kpi-cell:nth-child(4n) { border-right: none; }
+}

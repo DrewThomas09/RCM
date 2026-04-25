@@ -238,6 +238,82 @@ This step is non-negotiable. Add it as a checkbox to every PR description that m
 
 ---
 
+## Conventions for /app block helpers (Phase 2+)
+
+These conventions apply to every paired-block helper in
+`rcm_mc/ui/chartis/_app_*.py`. They were established during the
+Phase 2 commit-1 API surface review and apply to commits 2–8 of
+Phase 2 plus all subsequent dashboard helpers in Phase 2b/2c/2d.
+
+### 1. Pre-computed inputs by default
+
+Helpers receive their data pre-computed by the orchestrator. The
+orchestrator (`app_page.render_app_page`) calls `portfolio_rollup()`
+and `latest_per_deal()` once per request and hands the results to
+every helper that needs them.
+
+**Taking `store` directly requires a docstring justification** — typically
+"this query cannot be batched into the orchestrator's primary fetch."
+Reviewer challenge: if the justification doesn't fit in one sentence,
+the helper probably belongs in the orchestrator, not as a leaf.
+
+### 2. Helper owns its empty state
+
+Each helper renders its own empty state. The empty-state copy is part
+of the helper's contract; if a future page wants different copy for
+the same block, it's a kwarg refactor, not an orchestrator change.
+
+### 3. Block CSS lives in chartis.css, not inline
+
+Module-scoped CSS lives in `/static/v3/chartis.css` under the
+`/* === /app dashboard blocks === */` section header. Class names are
+block-prefixed (`.app-kpi-strip-grid`, `.app-pipeline-funnel-bar`) so
+collisions are impossible by construction.
+
+**No inline `<style>` blocks per helper.** Inline styles would re-send
+~5KB per `/app` render (uncacheable) and fight future high-contrast /
+print / density mode overrides.
+
+### 4. Deferred work uses `# TODO(phase N):` comments
+
+The canonical deferral list is `grep -rn 'TODO(phase' rcm_mc/`.
+
+A contract test (`test_phase_2_todos_resolved`, added in commit 10)
+asserts that `grep -rn 'TODO(phase 2)' rcm_mc/` returns zero matches
+after Phase 2 ships. Each subsequent phase adds the equivalent for
+itself. This forces follow-through and prevents silent slippage.
+
+### 5. Helpers emit complete pairs
+
+`render_*` returns a complete `<div class="pair">…</div>` ready to drop
+into the orchestrator's body. The orchestrator just concatenates 9
+of these — no "compose the pair externally" step.
+
+### 6. Signature shape
+
+`render_block(primary, *, secondary=...)`. Positional primary input is
+what the helper renders; kwarg secondaries are context. Standard
+Python convention; keeps call sites readable.
+
+---
+
+## Architectural decision: UI state via URL round-trips, not client-side state
+
+**Decided in Phase 2 (2026-04-26).** All v3 UI state is encoded in the URL — query parameters like `?ui=v3`, `?deal=ccf_2026`, `?stage=hold`, `?tab=request`. There is no client-side state store. There is no JavaScript framework. Selecting a row in the deals table is a server round-trip; filtering the funnel is a server round-trip; switching tabs is a server round-trip.
+
+**Why this is intentional, not an oversight:**
+
+1. **Bookmarkability + shareability.** A partner can paste `/app?deal=ccf_2026` into Slack and the recipient sees the same focused-deal context. Every UI state is reproducible from its URL alone.
+2. **Zero state-management complexity.** No framework, no store, no hydration mismatches, no "why is the UI showing one thing but the URL shows another" bugs.
+3. **Server round-trips are invisible at this scale.** The platform isn't a real-time trading dashboard; it's a diligence tool. A 50–500ms round-trip is below the threshold of perceptible delay for navigation actions.
+4. **Contract tests guard URLs, not JS behavior.** The contract test surface is HTTP-shaped — `?ui=v3 → 200 with editorial markers`. Client-side state would require a JS test framework that doesn't exist in this codebase, and adding one is out of scope.
+
+**Future-reader note:** if you find yourself thinking "we should add client-side filtering for snappiness" or "we should hydrate the deal table with a JS framework," remember this was a deliberate architectural call. Statelessness is the feature, not the constraint. Reach for client-side state only if a measured perf budget cannot be met — and `docs/design-handoff/PHASE_2_PROPOSAL.md §3d-bis` confirms the budget is achievable without it.
+
+The exception is Phase 3+ small interaction patches (e.g., the deferred KPI hover/click decision). Those are measured in lines of vanilla JS, not framework adoptions.
+
+---
+
 ## Phase 4 — registered open questions before that phase begins
 
 Surfaced during the Phase 1 IA pass; need explicit decisions before Phase 4 cutover.
