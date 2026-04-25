@@ -52,6 +52,7 @@ CRITICAL_PAGES: List[str] = [
     "/health",
     "/healthz",
     "/login",
+    "/forgot",
     "/dashboard",
     "/home",
     "/api/deals",
@@ -121,6 +122,18 @@ class TestUIReworkContract(unittest.TestCase):
             return resp.status
         except urllib.error.HTTPError as e:
             return e.code
+
+    def _fetch_body(self, path: str) -> str:
+        """GET ``path`` and return the decoded body. Raises on non-200/302."""
+        try:
+            resp = self.opener.open(
+                f"http://127.0.0.1:{self.port}{path}", timeout=10
+            )
+        except urllib.error.HTTPError as e:
+            if e.code == 200:
+                return e.read().decode("utf-8", errors="replace")
+            raise
+        return resp.read().decode("utf-8", errors="replace")
 
     def test_critical_pages_resolve(self) -> None:
         """Every page on the critical list must return a non-error status."""
@@ -225,6 +238,107 @@ class TestUIReworkContract(unittest.TestCase):
         data = json.loads(body)  # raises if HTML leaked into a JSON endpoint
         self.assertIn("deals", data)
         self.assertIn("total", data)
+
+    # ── Phase 1 editorial-page contract tests ─────────────────────
+
+    def test_v3_forgot_page_renders(self) -> None:
+        """``?ui=v3`` /forgot returns 200 with editorial markers."""
+        body = self._fetch_body("/forgot?ui=v3")
+        self.assertIn('class="cta-btn submit"', body,
+                      "editorial CTA button class missing")
+        self.assertIn("/static/v3/chartis.css", body,
+                      "editorial CSS link missing — page didn't render via editorial shell")
+        self.assertIn("Source Serif 4", body,
+                      "editorial font preconnect missing")
+        self.assertIn('action="/forgot"', body,
+                      "form action wrong — POST should target /forgot itself")
+        self.assertIn("Reset your", body,
+                      "page heading missing")
+
+    def test_v3_login_page_renders_and_form_posts_to_api_login(self) -> None:
+        """``?ui=v3`` /login renders editorially; the form's POST target
+        is unchanged — auth contract is preserved across shells."""
+        body = self._fetch_body("/login?ui=v3")
+        # Editorial markers
+        self.assertIn("/static/v3/chartis.css", body)
+        self.assertIn('class="cta-btn submit"', body)
+        self.assertIn("console-teaser", body,
+                      "editorial last-session card missing")
+        # The load-bearing invariant: form action is unchanged
+        self.assertIn('action="/api/login"', body,
+                      "editorial /login changed the form action — would break auth")
+        self.assertIn('href="/forgot"', body,
+                      "Forgot password? link missing")
+        # And the round-trip itself still works (re-runs the existing test
+        # logic against the editorial-rendered form)
+        cj = http.cookiejar.CookieJar()
+        opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj)
+        )
+        _login(opener, self.port)
+        self.assertIn("rcm_session", {c.name for c in cj},
+                      "session cookie not set after POST /api/login from editorial form")
+
+    def test_v3_login_request_tab_renders_request_form(self) -> None:
+        """``?ui=v3&tab=request`` shows Request Access, not Sign In."""
+        body = self._fetch_body("/login?ui=v3&tab=request")
+        self.assertIn("Request Access →", body)
+        self.assertIn('action="/login?tab=request"', body)
+        self.assertNotIn("Open Command Center →", body,
+                         "sign-in button shown in request tab")
+
+    # ── Pair-pattern contract (per spec §5) ───────────────────────
+    #
+    # Every analytical v3 page that includes a chart must wrap that
+    # chart in a .pair block alongside its underlying data table.
+    # No chart without numbers.
+    #
+    # Phase 1 doesn't ship any v3 pages with charts (/forgot and
+    # /login are forms). This test starts as parameterized over an
+    # empty list so it's green now AND ready to actively guard the
+    # contract as Phase 3+ adds dashboard pages. Add to V3_CHARTED_PAGES
+    # when you ship a v3 page that contains <svg>/<canvas>.
+
+    V3_CHARTED_PAGES: List[str] = []
+
+    def test_pair_pattern_when_v3_page_renders_a_chart(self) -> None:
+        """Every <svg>/<canvas> on a v3 charted page must sit inside a
+        .pair block that also contains a <table>."""
+        import re
+        failures: list[str] = []
+        for path in self.V3_CHARTED_PAGES:
+            body = self._fetch_body(f"{path}?ui=v3")
+            # Find every <div class="pair"> ... </div> block and
+            # verify it has both a chart element and a table.
+            pair_blocks = re.findall(
+                r'<div class="pair">.*?</div>\s*</div>',
+                body,
+                flags=re.DOTALL,
+            )
+            chart_count = body.count("<svg") + body.count("<canvas")
+            if chart_count == 0:
+                # No charts on the page yet — pair contract vacuously holds.
+                continue
+            for i, block in enumerate(pair_blocks):
+                has_chart = ("<svg" in block) or ("<canvas" in block)
+                has_table = "<table" in block
+                if has_chart and not has_table:
+                    failures.append(
+                        f"{path} pair block #{i}: chart without paired table"
+                    )
+            # A page with a chart MUST have at least one .pair block.
+            if chart_count > 0 and not pair_blocks:
+                failures.append(
+                    f"{path}: page has {chart_count} chart elements but no .pair block"
+                )
+        self.assertEqual(failures, [], f"pair-pattern violations: {failures}")
+
+    # TODO(phase 2): add test_v3_authenticated_pages_render_phi_banner.
+    # Deferred from Phase 1 because no authenticated v3 page ships in
+    # this phase — /forgot and /login are unauthenticated. Re-introducing
+    # the test now would either pass for the wrong reason (legacy shell
+    # rendering on /dashboard) or fail in a misleading way. Add it in
+    # Phase 2 alongside the first authenticated v3 page port.
 
 
 if __name__ == "__main__":
