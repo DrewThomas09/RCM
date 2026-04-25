@@ -10317,6 +10317,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             # above doesn't apply. The handler placeholder-accepts
             # any well-formed email and re-renders with success.
             return self._route_forgot_submit()
+        if path == "/login":
+            # POST /login?tab=request — Request Access form submission.
+            # POST /login (no tab) falls through to /api/login which is
+            # the canonical sign-in endpoint.
+            qs = urllib.parse.parse_qs(parsed.query)
+            if (qs.get("tab") or [""])[0].lower() == "request":
+                return self._route_login_request_submit()
+            # else: legacy clients sometimes POST /login directly; redirect
+            # to /api/login to keep the canonical endpoint single.
+            self.send_response(HTTPStatus.TEMPORARY_REDIRECT)
+            self.send_header("Location", "/api/login")
+            self.end_headers()
+            return
         if path == "/api/upload-actuals":
             return self._route_upload_post()
         if path == "/api/upload-initiatives":
@@ -13967,6 +13980,62 @@ class RCMHandler(BaseHTTPRequestHandler):
         ))
 
     def _route_login_page(self) -> None:
+        """Login page — editorial when ``self._ui_choice == 'editorial'``,
+        else the legacy Bloomberg-style terminal login.
+
+        The form's POST target (``/api/login``) is identical in both
+        shells, so the auth round-trip contract test stays green
+        whichever shell rendered the form.
+        """
+        if getattr(self, "_ui_choice", "legacy") == "editorial":
+            return self._route_login_page_editorial()
+        return self._route_login_page_legacy()
+
+    def _route_login_page_editorial(self) -> None:
+        """Editorial /login — split layout with Sign In / Request Access tabs."""
+        from .ui.chartis.login_page import render_login_page
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        tab = (qs.get("tab") or ["signin"])[0].lower()
+        if tab not in ("signin", "request"):
+            tab = "signin"
+        err = (qs.get("err") or [""])[0]
+        nxt = (qs.get("next") or ["/"])[0]
+        request_success = (qs.get("request_success") or [""])[0] == "1"
+        self._send_html(render_login_page(
+            tab=tab,
+            error=err or None,
+            request_success=request_success,
+            next_url=nxt,
+        ))
+
+    def _route_login_request_submit(self) -> None:
+        """POST /login?tab=request — Request Access form submission.
+
+        Phase 1 placeholder: validates the basic shape and re-renders
+        the request tab with the success block. Actual triage / email
+        handling is out of scope.
+        """
+        from .ui.chartis.login_page import render_login_page
+        try:
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(length).decode("utf-8", errors="replace")
+            form = urllib.parse.parse_qs(raw)
+        except Exception:  # noqa: BLE001
+            form = {}
+        email = (form.get("email") or [""])[0].strip()
+        firm = (form.get("firm") or [""])[0].strip()
+        if not email or "@" not in email or not firm:
+            return self._send_html(render_login_page(
+                tab="request",
+                error="Please provide a valid work email and firm name.",
+            ))
+        # Placeholder: would write a triage record to the DB.
+        return self._send_html(render_login_page(
+            tab="request",
+            request_success=True,
+        ))
+
+    def _route_login_page_legacy(self) -> None:
         """Bloomberg-style terminal login — the SeekingChartis trust gate.
 
         Dark near-black background, amber accent, security/trust indicators,
