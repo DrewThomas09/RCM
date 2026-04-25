@@ -578,6 +578,62 @@ footer.editorial em { color: var(--ink); font-style: italic; }
  *     when a helper is retired
  */
 
+/* --- Covenant heatmap (rcm_mc/ui/chartis/_app_covenant_heatmap.py) --- */
+
+.app-cov-heat {
+  background: var(--paper-pure);
+  font-family: "Inter", sans-serif;
+}
+.app-cov-heat .row {
+  display: grid;
+  grid-template-columns: 200px repeat(8, 1fr) 80px;
+  border-bottom: 1px solid var(--border);
+}
+.app-cov-heat .row:last-child { border-bottom: none; }
+.app-cov-heat .row.head {
+  background: var(--bg);
+  font-size: .68rem; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+}
+.app-cov-heat .row.head .cell { padding: .65rem .5rem; text-align: center; }
+.app-cov-heat .row.head .cell.first { text-align: left; padding-left: 1rem; }
+.app-cov-heat .row.head .cell.trend { text-align: right; padding-right: 1rem; }
+.app-cov-heat .name {
+  padding: .65rem 1rem;
+  font-family: "Source Serif 4", serif; font-size: .9rem; color: var(--ink);
+}
+.app-cov-heat .name .sub {
+  display: block;
+  font-family: "JetBrains Mono", monospace; font-size: .7rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.app-cov-heat .cell {
+  padding: .55rem .35rem; text-align: center;
+  font-family: "JetBrains Mono", monospace; font-size: .76rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  border-left: 1px solid var(--border);
+}
+.app-cov-heat .cell.safe  { background: var(--green-soft); }
+.app-cov-heat .cell.watch { background: var(--amber-soft); color: var(--amber); }
+.app-cov-heat .cell.trip  { background: var(--red-soft);   color: var(--red); }
+.app-cov-heat .cell.empty { color: var(--faint); }
+.app-cov-heat .trend {
+  padding: .65rem 1rem; text-align: right;
+  font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid var(--border);
+}
+.app-cov-heat .empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted);
+  font-family: "Source Serif 4", serif;
+  font-style: italic;
+}
+
 /* --- Deals table + focused-deal bar
        (rcm_mc/ui/chartis/_app_deals_table.py +
         rcm_mc/ui/chartis/_app_focused_deal_bar.py) --- */
