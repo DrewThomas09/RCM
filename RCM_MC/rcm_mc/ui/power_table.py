@@ -236,8 +236,9 @@ _TABLE_JS = """
     var counter = root.querySelector(
       "#" + tableId + "-count");
     if (counter) {
-      counter.textContent = displayed.length +
-        " of " + rows.length;
+      counter.textContent =
+        displayed.length.toLocaleString() +
+        " of " + rows.length.toLocaleString();
     }
   }
 
@@ -472,7 +473,7 @@ def render_power_table(
         f'<span id="{table_id}-count" '
         f'style="color:#9ca3af;font-size:12px;'
         f'font-variant-numeric:tabular-nums;">'
-        f'{len(rows_list)} of {len(rows_list)}</span>')
+        f'{len(rows_list):,} of {len(rows_list):,}</span>')
 
     toolbar = (
         f'<div style="display:flex;gap:10px;'
