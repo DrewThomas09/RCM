@@ -7546,6 +7546,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         # ordinary browsing. Morning-standup use case opts in.
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         live_mode = bool(qs.get("live"))
+        # v3 morning view: story-driven layout (hero strip + top
+        # opportunities + alerts + recent activity). Opt-in via
+        # ?v3=1 or RCM_MC_DASHBOARD=v3.
+        use_v3 = (bool(qs.get("v3"))
+                  or os.environ.get(
+                      "RCM_MC_DASHBOARD", "").lower() == "v3")
+        if use_v3:
+            from .ui.dashboard_v3 import render_dashboard_v3
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_dashboard_v3(store))
         # Prompt 31 v2 dashboard: serve the modern dark-theme morning
         # view when the user explicitly requests it OR when the
         # portfolio has analysis packets (the v2 layout is useless
