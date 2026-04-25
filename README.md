@@ -10,18 +10,19 @@ This replaces the slice of healthcare diligence that firms typically outsource t
 
 | Goal | Go to |
 |------|-------|
-| **Install it** | [§4 — Install](#4-install) |
-| **See a full MondayAM→ICready walkthrough** | [§5 — Deal walkthrough](#5-deal-walkthrough-mondayam--ic-ready-by-1030am) or the longer [WALKTHROUGH.md](WALKTHROUGH.md) |
-| **Find a file or module** | [FILE_INDEX.md](FILE_INDEX.md) (navigation map) or [FILE_MAP.md](FILE_MAP.md) (1,659-file catalogue) |
+| **Install + run locally** | [§4 — Install](#4-install) |
+| **Deploy to Azure** | [AZURE_DEPLOY.md](AZURE_DEPLOY.md) — 5-command quickstart · [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md) for full assessment |
+| **See a full Monday-AM → IC-ready walkthrough** | [§5 — Deal walkthrough](#5-deal-walkthrough-mondayam--ic-ready-by-1030am) or the longer [WALKTHROUGH.md](WALKTHROUGH.md) |
+| **Find a file or module** | [FILE_INDEX.md](FILE_INDEX.md) (navigation map) · [FILE_MAP.md](FILE_MAP.md) (1,659-file catalogue) |
 | **See the architecture visually** | [ARCHITECTURE_MAP.md](ARCHITECTURE_MAP.md) — 8 Mermaid diagrams (GitHub-rendered) |
 | **Read a module's methodology** | [§6 — Module methodology](#6-module-methodology) — each links to its per-module README |
-| **Audit a number's provenance** | [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md), [BENCHMARK_SOURCES.md](RCM_MC/docs/BENCHMARK_SOURCES.md) |
+| **Audit a number's provenance** | [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md) · [BENCHMARK_SOURCES.md](RCM_MC/docs/BENCHMARK_SOURCES.md) |
 | **Read the PE heuristics rulebook** | [PE_HEURISTICS.md](RCM_MC/docs/PE_HEURISTICS.md) — 275+ named partner rules |
-| **See what's changed** | [CHANGELOG.md](RCM_MC/CHANGELOG.md), [COMPUTER_24HOUR_UPDATE_NUMBER_1.md](COMPUTER_24HOUR_UPDATE_NUMBER_1.md) |
 | **See the 6-month roadmap** | [PRODUCT_ROADMAP_6MO.md](RCM_MC/docs/PRODUCT_ROADMAP_6MO.md) — quarter-by-quarter ship plan |
 | **See the beta program** | [BETA_PROGRAM_PLAN.md](RCM_MC/docs/BETA_PROGRAM_PLAN.md) — 3-cohort validation structure |
-| **Read the strategy index** | [docs/README.md](RCM_MC/docs/README.md) — 15 planning docs |
-| **Contribute** | [CONTRIBUTING.md](CONTRIBUTING.md), [CLAUDE.md](RCM_MC/CLAUDE.md) (coding conventions) |
+| **Read the strategy index** | [RCM_MC/docs/README.md](RCM_MC/docs/README.md) — 15 planning docs |
+| **See what's changed** | [CHANGELOG.md](RCM_MC/CHANGELOG.md) · cycle summaries in [RCM_MC/docs/cycle_summaries/](RCM_MC/docs/cycle_summaries/) |
+| **Contribute** | [CONTRIBUTING.md](CONTRIBUTING.md) · [CLAUDE.md](RCM_MC/CLAUDE.md) (coding conventions) |
 
 ---
 
@@ -116,6 +117,8 @@ Every module follows the same pattern. That uniformity is what makes the outputs
 
 ## 4. Install
 
+### Local development
+
 Requirements: macOS/Linux (Windows via WSL), Python 3.14, git, ~1 GB disk.
 
 ```bash
@@ -135,6 +138,17 @@ Restart later:
 ```bash
 cd ~/Desktop/RCM/RCM_MC && source ../.venv/bin/activate && python demo.py
 ```
+
+### Production (Azure VM)
+
+For a public-facing partner deploy, see **[AZURE_DEPLOY.md](AZURE_DEPLOY.md)**. Five commands on a fresh Azure Ubuntu VM:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DrewThomas09/RCM/main/RCM_MC/deploy/vm_setup.sh -o /tmp/vm_setup.sh
+sudo bash /tmp/vm_setup.sh <admin_user> <admin_pass> [domain]
+```
+
+Brings up the stdlib HTTP server in Docker behind optional Caddy + Let's Encrypt TLS, with SQLite on a persistent volume mount and a systemd unit so the stack survives reboots. Full design rationale in [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md).
 
 ---
 
@@ -380,15 +394,23 @@ Design philosophy: **boring stack so it runs on corporate-firewalled laptops off
 ```
 Coding Projects/
 ├── README.md                              ← you are here
+├── AZURE_DEPLOY.md                        ← 5-command Azure deploy
+├── DEPLOYMENT_PLAN.md                     ← full deploy assessment
 ├── FILE_INDEX.md                          ← master map of every file
-├── COMPUTER_24HOUR_UPDATE_NUMBER_1.md    ← latest cycle summary
+├── ARCHITECTURE_MAP.md                    ← 8 Mermaid diagrams
 ├── WALKTHROUGH.md                         ← detailed case study
+├── CONTRIBUTING.md                        ← contribution guide
+├── LICENSE
 │
-└── RCM_MC/
-    ├── README.md                          ← package-level README
-    ├── demo.py                            ← start here: python demo.py
-    ├── readME/                            ← organized documentation
-    ├── docs/                              ← deep-dive specs
+├── RCM_MC/                                ← the actual product
+│   ├── README.md                          ← package-level README
+│   ├── demo.py                            ← start here: python demo.py
+│   ├── readME/                            ← organized documentation
+│   ├── docs/                              ← deep-dive specs + 15 strategy docs
+│   ├── deploy/                            ← Azure VM deploy infra
+│   │   ├── Dockerfile, docker-compose.yml
+│   │   ├── vm_setup.sh, rcm-mc.service
+│   │   └── Caddyfile
     │
     └── rcm_mc/
         ├── server.py                      ← HTTP router
@@ -432,6 +454,14 @@ Coding Projects/
         │   └── hcris.csv.gz               ← 17,701 Medicare cost reports
         │
         └── tests/                         ← 8,500+ tests
+│
+├── vendor/                                ← vendored reference projects (not part of product)
+│   ├── ChartisDrewIntel/                  ← dbt healthcare data models
+│   └── cms_medicare/                      ← earlier CMS API exploration
+│
+└── legacy/                                ← archived (Heroku adapter, old UI handoff)
+    ├── heroku/                            ← superseded by Azure VM deploy
+    └── handoff/                           ← UI rework, reverted
 ```
 
 ---
@@ -450,17 +480,19 @@ Coding Projects/
 
 ## Links
 
-- Master file map: [FILE_INDEX.md](FILE_INDEX.md)
+- Master file map: [FILE_INDEX.md](FILE_INDEX.md) · full catalogue [FILE_MAP.md](FILE_MAP.md)
 - Per-module READMEs under [`RCM_MC/rcm_mc/diligence/`](RCM_MC/rcm_mc/diligence/)
 - ML predictors reference: [rcm_mc/ml/README.md](RCM_MC/rcm_mc/ml/README.md)
 - Data sources reference: [rcm_mc/data/README.md](RCM_MC/rcm_mc/data/README.md)
 - UI components reference: [rcm_mc/ui/README.md](RCM_MC/rcm_mc/ui/README.md)
-- Strategy index (15 docs): [docs/README.md](RCM_MC/docs/README.md)
+- Strategy index (15 docs): [RCM_MC/docs/README.md](RCM_MC/docs/README.md)
 - 6-month roadmap: [PRODUCT_ROADMAP_6MO.md](RCM_MC/docs/PRODUCT_ROADMAP_6MO.md)
 - Beta program: [BETA_PROGRAM_PLAN.md](RCM_MC/docs/BETA_PROGRAM_PLAN.md)
 - PE heuristics rulebook: [PE_HEURISTICS.md](RCM_MC/docs/PE_HEURISTICS.md)
 - Metric provenance: [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md)
 - Architecture: [ARCHITECTURE.md](RCM_MC/docs/ARCHITECTURE.md)
+- Azure deploy: [AZURE_DEPLOY.md](AZURE_DEPLOY.md) · plan: [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md)
+- Cycle retros + summaries: [`RCM_MC/docs/cycle_summaries/`](RCM_MC/docs/cycle_summaries/) · `CYCLE_RETRO_*.md`
 - Changelog: [CHANGELOG.md](RCM_MC/CHANGELOG.md)
 - GitHub: https://github.com/DrewThomas09/RCM
 - Most recent cycle (Apr 2026): 80+ commits — 4 public-data sources, 13 ML predictors, 14+ UI components, 15 strategy docs
