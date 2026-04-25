@@ -208,6 +208,20 @@ def _gather_per_deal(db_path: str) -> List[Dict[str, Any]]:
         snap_age = _days_since(snap.get("snapshot_at")
                                or snap.get("created_at"))
 
+        # Chain lookup via CMS POS — best-effort. Treats the deal_id
+        # as a CCN (which it is for HCRIS-anchored deals); non-CCN
+        # deal_ids just get empty chain strings.
+        chain_name = ""
+        chain_size = 0
+        try:
+            from ..data.cms_pos import get_facility_by_ccn, count_facilities_in_chain
+            fac = get_facility_by_ccn(store, deal_id)
+            if fac:
+                chain_name = fac.get("chain_identifier") or ""
+                chain_size = count_facilities_in_chain(store, deal_id)
+        except Exception:  # noqa: BLE001
+            pass
+
         out.append({
             "deal_id": deal_id,
             "name": name,
@@ -220,6 +234,8 @@ def _gather_per_deal(db_path: str) -> List[Dict[str, Any]]:
             "snap_age_days": snap_age,
             "open_deadlines": open_deadlines.get(deal_id, 0),
             "overdue_deadlines": overdue_deadlines.get(deal_id, 0),
+            "chain": chain_name,
+            "chain_size": chain_size,
         })
 
     return out
@@ -368,9 +384,28 @@ def render_portfolio_risk_scan(db_path: str) -> str:
             f'color:#6b7280;margin-top:2px;text-transform:uppercase;">'
             f'{_html.escape(deal_id)}</div>'
         )
+        # Chain cell — shows the chain identifier + count of
+        # facilities. Independent → "—". Small chain (2-3) → neutral.
+        # Large chain (4+) → amber (concentration heads-up).
+        if d.get("chain"):
+            cs = d.get("chain_size") or 1
+            if cs >= 4:
+                chain_cell = _cell_chip(
+                    f'{_html.escape(d["chain"])} · {cs}',
+                    bg="#fef3c7", fg="#92400e",
+                )
+            else:
+                chain_cell = _cell_chip(
+                    f'{_html.escape(d["chain"])} · {cs}',
+                    bg="#e0e7ff", fg="#3730a3",
+                )
+        else:
+            chain_cell = _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+
         rows.append([
             name_link,
             f'<span style="color:#4b5563;">{_html.escape(d["sector"])}</span>',
+            chain_cell,
             _health_cell(d["score"], d["band"]),
             _covenant_cell(d["covenant_status"]),
             _alerts_cell(d["alerts"]),
@@ -379,12 +414,12 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         ])
 
     table = _wc.sortable_table(
-        ["Deal", "Sector", "Health", "Covenant", "Alerts",
+        ["Deal", "Sector", "Chain", "Health", "Covenant", "Alerts",
          "Snap age", "Deadlines"],
         rows, id="portfolio-risk-scan",
-        hide_columns_sm=[1, 5],
+        hide_columns_sm=[1, 2, 6],
         filterable=True,
-        filter_placeholder="Filter by deal, sector, or stage…",
+        filter_placeholder="Filter by deal, sector, chain, or stage…",
     )
 
     inner = (
