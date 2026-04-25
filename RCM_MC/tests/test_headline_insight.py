@@ -147,5 +147,69 @@ class TestPriorityOrdering(unittest.TestCase):
             tmp.cleanup()
 
 
+class TestHeadlineInsightApi(unittest.TestCase):
+    """GET /api/insights/headline — JSON shape of the headline card.
+
+    External tools (Slack bot, email digest, mobile widget) hit
+    this endpoint to consume the same insight the dashboard renders,
+    without scraping HTML."""
+
+    @classmethod
+    def setUpClass(cls):
+        import socket
+        import threading
+        from contextlib import closing
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.db = os.path.join(cls.tmp.name, "t.db")
+        with closing(__import__("socket").socket()) as s:
+            s.bind(("127.0.0.1", 0))
+            cls.port = s.getsockname()[1]
+        from rcm_mc.server import build_server
+        cls.server, _ = build_server(
+            port=cls.port, host="127.0.0.1", db_path=cls.db, auth=None,
+        )
+        cls.thread = threading.Thread(
+            target=cls.server.serve_forever, daemon=True)
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=5)
+        cls.tmp.cleanup()
+
+    def test_empty_db_returns_null_insight(self):
+        import urllib.request
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}/api/insights/headline",
+            timeout=10,
+        ) as resp:
+            self.assertEqual(resp.status, 200)
+            body = json.loads(resp.read())
+        self.assertIsNone(body.get("insight"))
+        self.assertIn("reason", body)
+
+    def test_populated_db_returns_structured_insight(self):
+        # Seed enough deals to fire all_green
+        from rcm_mc.portfolio.store import PortfolioStore
+        store = PortfolioStore(self.db)
+        store.init_db()
+        for i in range(3):
+            _seed_deal(store, f"DEAL_API_{i}", f"Hospital {i}")
+
+        import urllib.request
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}/api/insights/headline",
+            timeout=10,
+        ) as resp:
+            body = json.loads(resp.read())
+        ins = body.get("insight")
+        self.assertIsNotNone(ins)
+        # Required fields a consumer can rely on
+        for field in ("kind", "headline", "body", "href", "tone", "score"):
+            self.assertIn(field, ins)
+
+
 if __name__ == "__main__":
     unittest.main()

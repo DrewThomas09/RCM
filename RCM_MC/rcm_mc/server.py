@@ -3754,6 +3754,28 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_metrics()
         if path == "/api/system/info":
             return self._route_system_info()
+        if path == "/api/insights/headline":
+            # JSON variant of the dashboard's "Sharpest insight"
+            # card — same compute, same priority order. Lets a
+            # Slack bot, email digest, or mobile widget read the
+            # single most-notable signal without scraping HTML.
+            from .ui.dashboard_page import _compute_sharpest_insight
+            ins = _compute_sharpest_insight(self.config.db_path)
+            if ins is None:
+                return self._send_json({
+                    "insight": None,
+                    "reason": "no deals in portfolio yet, or nothing notable",
+                })
+            return self._send_json({
+                "insight": {
+                    "kind": ins.get("kind"),
+                    "headline": ins.get("headline"),
+                    "body": ins.get("body"),
+                    "href": ins.get("href"),
+                    "tone": ins.get("tone"),
+                    "score": ins.get("score"),
+                },
+            })
         if path == "/manifest.json":
             import json as _json
             manifest = {
