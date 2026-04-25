@@ -167,6 +167,11 @@ class TestStageTransitionValidation(unittest.TestCase):
 
 class TestNavAlertBadge(unittest.TestCase):
 
+    @unittest.skipUnless(
+        os.environ.get("CHARTIS_UI_V2"),
+        "v2 editorial top-bar reverted at d8bfac4 — assertion checks "
+        "ck-topbar marker which only ships in the v2 shell",
+    )
     def test_shell_has_alert_badge(self):
         html = shell("<p>test</p>", "Test Page")
         # Editorial shell uses ck-topbar; alert count badge is route-injected, not in base shell

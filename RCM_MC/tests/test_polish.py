@@ -23,6 +23,15 @@ from rcm_mc.portfolio.store import PortfolioStore
 from rcm_mc.ui._ui_kit import shell
 
 
+# v2-shell-only assertions: "Main navigation" + aria-label were added
+# during the editorial reskin; the revert at d8bfac4 dropped them. The
+# legacy shell still ships /pipeline + /library + SeekingChartis links,
+# but the assertions below were written against v2 markers — gated on
+# the env flag so they re-activate when v2 ships again.
+@unittest.skipUnless(
+    os.environ.get("CHARTIS_UI_V2"),
+    "v2 editorial nav reverted at d8bfac4 — assertions check v2-only markers",
+)
 class TestGlobalNav(unittest.TestCase):
 
     def test_shell_contains_nav(self):

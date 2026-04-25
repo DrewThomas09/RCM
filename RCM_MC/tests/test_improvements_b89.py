@@ -102,6 +102,11 @@ class TestManifest(unittest.TestCase):
         finally:
             os.unlink(tf.name)
 
+    @unittest.skipUnless(
+        os.environ.get("CHARTIS_UI_V2"),
+        "PWA manifest + theme-color shipped with the v2 reskin and was "
+        "reverted at d8bfac4. Re-enable when v2 ships again.",
+    )
     def test_shell_has_manifest_link(self):
         html_str = shell("<p>test</p>", "Test")
         self.assertIn('rel="manifest"', html_str)

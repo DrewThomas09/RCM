@@ -8,6 +8,19 @@
 """
 from __future__ import annotations
 
+import os as _os
+import pytest as _pytest
+
+# v2-shell-only tests. The editorial reskin was reverted at commit
+# d8bfac4; these assertions check for v2-only HTML markers (ck-topbar,
+# shell-v2 branding) that no longer exist on the legacy shell. Skipped
+# unless CHARTIS_UI_V2=1 — flip the env var when v2 ships again to
+# automatically re-enable.
+pytestmark = _pytest.mark.skipif(
+    not _os.environ.get('CHARTIS_UI_V2'),
+    reason='v2 editorial shell reverted at d8bfac4; tests assert v2-only markers'
+)
+
 import json
 import os
 import socket

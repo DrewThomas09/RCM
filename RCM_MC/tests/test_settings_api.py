@@ -196,8 +196,10 @@ class TestSettingsPage(unittest.TestCase):
 
     def test_nav_has_settings_and_map(self):
         html = shell("<p>test</p>", "Test")
-        # v2 shell: horizontal top-nav with core editorial sections
-        self.assertIn("ck-topbar", html)
+        # The v2 horizontal top-nav was reverted at d8bfac4, but the
+        # legacy shell still includes the /home nav target. Asserting
+        # only what survives the revert keeps the test honest about
+        # what's currently shipping.
         self.assertIn("/home", html)
 
 

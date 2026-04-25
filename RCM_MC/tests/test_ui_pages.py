@@ -73,7 +73,10 @@ class TestPortfolioMap(unittest.TestCase):
              "ebitda_opportunity": 5e6, "stage": "hold"},
         ]
         html = render_portfolio_map(deals)
-        self.assertIn("#0a8a5f", html)  # hold color
+        # Hold-stage marker color from rcm_mc/ui/portfolio_map.py
+        # _STAGE_COLORS. The previous v2 reskin used #0a8a5f; the
+        # revert at d8bfac4 restored #10b981.
+        self.assertIn("#10b981", html)
 
     def test_legend_present(self):
         deals = [

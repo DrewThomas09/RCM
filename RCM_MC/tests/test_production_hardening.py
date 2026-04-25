@@ -115,7 +115,16 @@ class TestPagesWithBadData(unittest.TestCase):
         ccn = df.iloc[0]["ccn"]
         html = render_ebitda_bridge(ccn, df)
         self.assertIsInstance(html, str)
-        self.assertNotIn("NaN", html)
+        # The page now ships an inline <script> that uses isNaN() in a
+        # sortable-table comparator — that's correct JS, not a user-
+        # visible NaN. Strip script/style blocks before asserting so
+        # the check targets actual rendered content.
+        import re as _re
+        visible = _re.sub(
+            r"<script[^>]*>.*?</script>", "", html, flags=_re.S)
+        visible = _re.sub(
+            r"<style[^>]*>.*?</style>", "", visible, flags=_re.S)
+        self.assertNotIn("NaN", visible)
 
 
 class TestCCNSanitization(unittest.TestCase):
