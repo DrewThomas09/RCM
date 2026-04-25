@@ -234,5 +234,47 @@ class TestHeatmap(unittest.TestCase):
             self.assertGreater(sum(topics.values()), 0)
 
 
+# ── LDA topic discovery ────────────────────────────────────────
+
+class TestTopicDiscovery(unittest.TestCase):
+    def test_empty_corpus_returns_empty_result(self):
+        from rcm_mc.regulatory import (
+            RegulatoryCorpus, discover_regulatory_topics,
+        )
+        result = discover_regulatory_topics(
+            RegulatoryCorpus(), K=4, n_iter=10)
+        self.assertEqual(result.K, 4)
+        self.assertEqual(result.topics, [])
+
+    def test_discovery_returns_K_topics(self):
+        """Standard LDA fit on the fixture corpus produces K
+        topics, each with the requested number of top words."""
+        from rcm_mc.regulatory import discover_regulatory_topics
+        # Use the fixture corpus from earlier tests
+        result = discover_regulatory_topics(
+            _fixture_corpus(), K=3, n_iter=40, n_top_words=8)
+        self.assertEqual(len(result.topics), 3)
+        for t in result.topics:
+            self.assertEqual(len(t.top_words), 8)
+            # Document share is in [0, 1]
+            self.assertGreaterEqual(t.document_share, 0.0)
+            self.assertLessEqual(t.document_share, 1.0)
+
+    def test_discovered_topics_classify_against_anchors(self):
+        """At least one of the LDA topics fitted on the
+        FTC-noncompete + site-neutral + V28 + Stark fixture should
+        match an anchor (the LDA discovers what's there)."""
+        from rcm_mc.regulatory import discover_regulatory_topics
+        result = discover_regulatory_topics(
+            _fixture_corpus(), K=4, n_iter=80, seed=11)
+        # Sum of matched + novel = K
+        self.assertEqual(
+            result.matched_topic_count + result.novel_topic_count,
+            result.K)
+        # Across the fixture corpus (which is heavily anchor-aligned)
+        # at least one topic should match an anchor.
+        self.assertGreaterEqual(result.matched_topic_count, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

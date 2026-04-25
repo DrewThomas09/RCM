@@ -45,6 +45,11 @@ from .score import (
     TargetProfile,
     TargetExposureResult,
 )
+from .discovery import (
+    discover_regulatory_topics,
+    DiscoveredTopic,
+    TopicDiscoveryResult,
+)
 
 __all__ = [
     "RegulatoryDocument",
@@ -58,4 +63,7 @@ __all__ = [
     "jurisdictional_heatmap",
     "TargetProfile",
     "TargetExposureResult",
+    "discover_regulatory_topics",
+    "DiscoveredTopic",
+    "TopicDiscoveryResult",
 ]
