@@ -17,16 +17,19 @@ jobs:
         run: echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
 
       # ── 2. SSH into VM, pull latest code, rebuild containers ──
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          command_timeout: 12m
-          script: |
-            set -euo pipefail
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
+      - name: Add VM to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'set -euo pipefail
             echo "==> Pulling latest code"
             cd /opt/rcm-mc
             sudo git fetch origin main
@@ -37,6 +40,7 @@ jobs:
             sudo DOMAIN=pedesk.app docker compose --profile tls up -d --build
 
             echo "==> Deploy script finished on VM"
+          '
 
       # ── 3. Verify the public URL returns 200 or 303 ──
       #    Retries up to 5 times with 5-second sleeps.
