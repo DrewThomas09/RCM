@@ -1,0 +1,512 @@
+/* SeekingChartis editorial — base CSS
+ *
+ * Source of truth: docs/design-handoff/EDITORIAL_STYLE_PORT.md
+ * Reference HTML: docs/design-handoff/reference/{01-landing,02-login,
+ *                  03-forgot,04-command-center}.html
+ *
+ * Lifted verbatim from §3 (tokens) + §4 (type) + §8 (button/input states)
+ * of the spec. The :root block matches every reference HTML's :root
+ * for tokens they share; tokens unique to one reference (--navy in
+ * 04-command-center) are reduced to existing canonical tokens.
+ *
+ * Served at /static/v3/chartis.css. Linked from every page rendered by
+ * _chartis_kit_editorial.chartis_shell().
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* surfaces */
+  --bg:           #F2EDE3;   /* parchment page */
+  --bg-alt:       #ECE5D6;   /* deeper parchment for sources block */
+  --bg-tint:      #E8E0D0;   /* row hover, hot rows */
+  --paper:        #FAF7F0;   /* near-white panels */
+  --paper-pure:   #FFFFFF;   /* primary card surface */
+
+  /* rules */
+  --border:       #D6CFC0;   /* hairline, internal */
+  --border-strong:#C2B9A6;   /* heavier internal */
+  --rule:         #BFB6A2;   /* outer rule on cards */
+
+  /* ink */
+  --ink:          #0F1C2E;   /* near-black navy — TEXT only, never a fill */
+  --ink-2:        #1A2840;
+  --muted:        #5C6878;
+  --faint:        #8A92A0;
+
+  /* accent */
+  --teal:         #1F7A75;   /* the only accent — always 1px rule or italic */
+  --teal-soft:    #D4E4E2;
+  --teal-deep:    #155752;
+
+  /* status — sparingly, for numbers + pills */
+  --green:        #3F7D4D;
+  --green-soft:   #DCE6D9;
+  --amber:        #B7791F;
+  --amber-soft:   #EFE2BC;
+  --red:          #A53A2D;
+  --red-soft:     #EBD3CD;
+  --blue:         #2C5C84;
+  --blue-soft:    #D6E1EB;
+
+  /* alias per design decisions: --link folds into --teal-deep */
+  --link:         var(--teal-deep);
+
+  /* TEMPORARY (Phase 5 sweep removes these) ─────────────────────────
+   * server.py and many legacy renderers reference var(--accent) /
+   * var(--accent-soft) / var(--card). When a v3 page injects a
+   * legacy fragment (e.g., an HTML email-style snippet), these
+   * aliases keep the fragment tinting correctly without forcing
+   * a sweep of every callsite in this PR. Phase 5 replaces every
+   * var(--accent) with var(--teal-deep) directly and deletes these. */
+  --accent:       var(--teal-deep);
+  --accent-soft:  var(--teal-soft);
+  --card:         var(--paper-pure);
+}
+
+/* ── reset / base ───────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── type families (per §4) ─────────────────────────────────────── */
+
+.sans { font-family: "Inter", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+.mono { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; font-feature-settings: "tnum" on; }
+.num  { font-variant-numeric: tabular-nums; }
+
+/* Eyebrow micro-label per §4 */
+.micro {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── pills (status) per §8.4 ───────────────────────────────────── */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .15rem .55rem;
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+}
+.pill .dot {
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.pill.green { color: var(--green); background: var(--green-soft); }
+.pill.amber { color: var(--amber); background: var(--amber-soft); }
+.pill.red   { color: var(--red);   background: var(--red-soft); }
+.pill.blue  { color: var(--blue);  background: var(--blue-soft); }
+.pill.muted { color: var(--muted); }
+
+/* ── buttons per §8.1–§8.3 ─────────────────────────────────────── */
+
+.cta-btn {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: .8rem 1.4rem;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: background .12s;
+}
+.cta-btn:hover { background: var(--teal-deep); }
+.cta-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+.ghost-btn {
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding: .8rem 0;
+  border: none;
+  border-bottom: 1px solid var(--ink);
+  background: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+.ghost-btn:hover { color: var(--teal-deep); border-bottom-color: var(--teal-deep); }
+
+/* Tab / nav per §8.3 */
+.tab {
+  background: transparent;
+  border: none;
+  padding: .9rem 0;
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.tab.active { color: var(--ink); border-bottom-color: var(--teal); }
+
+/* ── inputs per §8.5 ───────────────────────────────────────────── */
+
+input, textarea, select {
+  padding: .9rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: "Inter", sans-serif;
+  font-size: .95rem;
+  color: var(--ink);
+  border-radius: 0;
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--teal);
+  background: var(--paper-pure);
+}
+
+/* ── PHI banner per §7.5 ───────────────────────────────────────── */
+
+.phi-banner {
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: .75rem 1.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: .82rem;
+  text-align: center;
+  margin: 1rem 2rem;
+}
+.phi-banner.restricted {
+  background: var(--amber-soft);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+/* ── editorial chrome — topbar + crumbs + page-head ────────────── */
+
+.topbar {
+  background: var(--paper-pure);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: stretch; gap: 1rem;
+  height: 72px;
+}
+.brand { display: flex; align-items: center; gap: .7rem; padding-right: 1rem; text-decoration: none; color: inherit; }
+.brand-mark {
+  width: 38px; height: 38px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Source Serif 4", serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper-pure);
+}
+.brand-name {
+  font-family: "Source Serif 4", serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.brand-name em { font-style: italic; font-weight: 500; }
+.brand:hover { text-decoration: none; }
+
+.topnav { display: flex; align-items: stretch; gap: 0; flex: 1; padding-left: 1.5rem; }
+.topnav button {
+  background: transparent;
+  border: none;
+  font-family: "Inter", sans-serif;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding: 0 1.1rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  display: flex; align-items: center; gap: .35rem;
+}
+.topnav button.active { border-bottom-color: var(--teal); }
+.topnav .caret { color: var(--muted); font-size: .7rem; }
+
+.topbar-right { display: flex; align-items: center; gap: 1rem; padding-left: 1rem; }
+.topbar-right .search {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .4rem .75rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: "Inter", sans-serif;
+  font-size: .82rem;
+  color: var(--muted);
+}
+.topbar-right .search input {
+  border: none;
+  padding: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink);
+  outline: none;
+  width: 16ch;
+}
+.topbar-right .search .kbd {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .68rem;
+  color: var(--faint);
+  border: 1px solid var(--border);
+  padding: .05rem .3rem;
+}
+.signin {
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+}
+.signin:hover { color: var(--ink); text-decoration: none; }
+
+.crumbs {
+  padding: .85rem 2rem;
+  font-family: "Inter", sans-serif;
+  font-size: .78rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.crumbs a { color: var(--muted); }
+.crumbs a:hover { color: var(--ink); }
+.crumbs .sep { margin: 0 .5rem; color: var(--faint); }
+.crumbs .here { color: var(--ink); }
+
+.page { max-width: 1320px; margin: 0 auto; padding: 0 2.5rem; }
+
+.pg-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 2.5rem 0 1.5rem;
+  border-bottom: 1px solid var(--rule);
+  gap: 2rem;
+}
+.pg-head .eyebrow {
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--muted);
+  margin-bottom: .5rem;
+  text-transform: uppercase;
+}
+.pg-head .eyebrow .dot { margin: 0 .35rem; color: var(--faint); }
+.pg-head .eyebrow .slug {
+  font-family: "JetBrains Mono", monospace;
+  color: var(--teal-deep);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.pg-head .title {
+  font-family: "Source Serif 4", serif;
+  font-weight: 400;
+  font-size: clamp(2.3rem, 3.6vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.022em;
+  margin: 0 0 .4rem;
+  color: var(--ink);
+}
+.pg-head .lede {
+  font-family: "Source Serif 4", serif;
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 56ch;
+  margin: 0;
+}
+.pg-head .meta-col {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .76rem;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.pg-head .meta-col .v { color: var(--ink); font-weight: 600; }
+.pg-head .meta-col .dot { margin: 0 .3rem; color: var(--faint); }
+
+/* ── signature pattern: paired viz + dataset (per §5) ──────────── */
+
+.pair {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 0;
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  margin: 1rem 0;
+}
+.pair > .viz {
+  padding: 1.25rem 1.5rem;
+  border-right: 1px solid var(--border);
+}
+.pair > .data {
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-alt);
+}
+.pair .data-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: .85rem;
+  padding-bottom: .55rem;
+  border-bottom: 1px solid var(--border);
+}
+.pair .data-h .src {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .72rem;
+  color: var(--teal-deep);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.pair .data table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+}
+.pair .data th, .pair .data td {
+  padding: .4rem 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.pair .data th.r, .pair .data td.r { text-align: right; }
+.pair .data td.lbl { color: var(--muted); font-family: "Inter", sans-serif; }
+.pair .data td.r {
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.pair .data tr.hot td { background: var(--bg-tint); }
+.pair .data tr.hot td:first-child { border-left: 3px solid var(--amber); }
+
+/* ── editorial card form (used by /forgot, /login) ─────────────── */
+
+.card-wrap {
+  max-width: 520px;
+  margin: 4rem auto;
+  padding: 0 1.5rem;
+}
+.card {
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  padding: 2.5rem 2rem;
+}
+.card .eyebrow {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--teal-deep);
+  margin-bottom: .75rem;
+}
+.card h1 {
+  font-family: "Source Serif 4", serif;
+  font-weight: 400;
+  font-size: 2rem;
+  letter-spacing: -0.018em;
+  margin: 0 0 .8rem;
+  color: var(--ink);
+}
+.card .lede {
+  font-family: "Source Serif 4", serif;
+  font-size: 1rem;
+  color: var(--muted);
+  margin: 0 0 1.75rem;
+}
+.card .field {
+  margin-bottom: 1rem;
+}
+.card .field label {
+  display: block;
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .4rem;
+}
+.card .field input {
+  width: 100%;
+}
+.card .field-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: .85rem 0 1.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: .82rem;
+  color: var(--muted);
+}
+.card .field-row label.check {
+  display: flex; align-items: center; gap: .4rem;
+}
+.card .field-row a { color: var(--teal-deep); }
+.card button.submit {
+  width: 100%;
+}
+.card .success {
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 1rem 1.25rem;
+  font-family: "Inter", sans-serif;
+  font-size: .9rem;
+  margin-top: 1rem;
+}
+
+/* ── footer ────────────────────────────────────────────────────── */
+
+footer.editorial {
+  margin-top: 4rem;
+  padding: 2rem 2rem 3rem;
+  border-top: 1px solid var(--rule);
+  font-family: "Inter", sans-serif;
+  font-size: .8rem;
+  color: var(--muted);
+}
+footer.editorial em { color: var(--ink); font-style: italic; }
