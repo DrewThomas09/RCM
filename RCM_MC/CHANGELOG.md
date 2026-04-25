@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — feature/deals-corpus
+
+### 2026-04-25 — J2 Regulatory-Arbitrage Collapse Detector
+- New module: `rcm_mc/data_public/regulatory_arbitrage_collapse.py` — scores every corpus deal against five named regulatory arbitrages (NSA, 340B contract-pharmacy, MA V28 upcoding, Medicaid MCO concentration, ACO REACH transition) on a 0-100 fragility index with a weight-quadratic roll-up
+- New UI route `/reg-arbitrage` at `rcm_mc/ui/data_public/regulatory_arbitrage_collapse_page.py` — KPI strip + arbitrage definitions + portfolio rollup + top-25 most-fragile deals + Steward-pattern matches with NF-XX parallels and pre-mortem recommendations
+- Word-boundary keyword matcher (`_has_keyword`) prevents short-token substring false positives (the 467→79 high+ deal reduction story); pinned by regression tests
+- Steward-pattern flag triggers when ≥3 arbitrages reach high severity; pre-mortem recommendation `STOP` / `PROCEED_WITH_CONDITIONS` / `PROCEED` keyed off composite collapse index
+- ProvenanceTracker invariant: 5 `ProvenanceEntry` records per scored deal, every entry carrying a primary-source citation (NSA statute, 45 CFR, HRSA OPAIS, CMS-HCC v28, MedPAC, KFF, MACPAC, CMS Innovation Center)
+- 17 unit tests at `tests/test_regulatory_arbitrage_collapse.py` covering positive/negative scoring per arbitrage, Steward stacking, determinism, provenance invariant, score range
+- Smoke harness at `tests/test_data_public_smoke.py` extended with backend + UI parametrize entries; full smoke 58/58 green
+- Documentation: `docs/CHANGES_2026-04-25.md` records the full ship; README + CHANGELOG cross-link
+- Numpy-only · stdlib parsers · DealAnalysisPacket invariant preserved · additive-only modifications to `server.py`, `_chartis_kit.py`, smoke test
+- Live numbers (1,705-deal corpus, 745 scored): 235 high-fragility deals, 2 Steward-pattern matches, 22.1 mean collapse index, 3,725 provenance entries
+
 ## v0.5.0 (2026-04-04)
 
 ### Phase 1: Fix What is Broken (Steps 1-15)

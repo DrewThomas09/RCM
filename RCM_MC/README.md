@@ -168,6 +168,13 @@ All documentation lives in the **[readME/](readME/)** folder, organized by topic
 
 Plus 18 more documents covering metric provenance, data sources, glossary, and layer-by-layer architecture guides. See [readME/README.md](readME/README.md) for the full index.
 
+**Recent change logs:**
+
+| Document | Window |
+|----------|--------|
+| [docs/CHANGES_2026-04-25.md](docs/CHANGES_2026-04-25.md) | Last 14 hours — J2 Regulatory-Arbitrage Collapse Detector ship |
+| [docs/SESSION_SUMMARY.md](docs/SESSION_SUMMARY.md) | 29-commit session, 7 moat layers, 23 modules |
+
 Each source package (`rcm_mc/ai/`, `rcm_mc/deals/`, etc.) also has its own README.md describing what that package does and listing every module.
 
 ---
