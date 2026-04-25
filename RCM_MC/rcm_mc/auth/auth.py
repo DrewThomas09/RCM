@@ -106,6 +106,17 @@ def _ensure_tables(store: PortfolioStore) -> None:
                 FOREIGN KEY(username) REFERENCES users(username)
             )"""
         )
+        # Idempotent column add for the session inactivity timeout.
+        # Pre-existing deployments don't have this; a fresh "ALTER TABLE
+        # ADD COLUMN IF NOT EXISTS" isn't available in SQLite, so we
+        # check the pragma first.
+        cols = {r[1] for r in con.execute(
+            "PRAGMA table_info(sessions)").fetchall()}
+        if "last_seen_at" not in cols:
+            con.execute(
+                "ALTER TABLE sessions "
+                "ADD COLUMN last_seen_at TEXT NOT NULL DEFAULT ''"
+            )
         con.execute(
             "CREATE INDEX IF NOT EXISTS idx_sessions_username "
             "ON sessions(username)"
@@ -199,27 +210,56 @@ def create_session(
     u = _validate_username(username)
     _ensure_tables(store)
     token = secrets.token_urlsafe(32)
-    expires = _utcnow() + timedelta(hours=int(ttl_hours))
+    now = _utcnow()
+    expires = now + timedelta(hours=int(ttl_hours))
     with store.connect() as con:
         con.execute(
-            "INSERT INTO sessions (token, username, expires_at, created_at) "
-            "VALUES (?, ?, ?, ?)",
-            (token, u, _iso(expires), _iso(_utcnow())),
+            "INSERT INTO sessions "
+            "(token, username, expires_at, created_at, last_seen_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (token, u, _iso(expires), _iso(now), _iso(now)),
         )
         con.commit()
     return token
 
 
+# Default idle timeout — 30 minutes of inactivity. Tuned for a PE
+# partner's daily flow: a long coffee, a stand-up, or a surprise call
+# shouldn't force reauth, but an unattended machine overnight should.
+# Overridable via RCM_MC_SESSION_IDLE_MINUTES env var.
+def _idle_timeout_minutes() -> int:
+    raw = os.environ.get("RCM_MC_SESSION_IDLE_MINUTES", "").strip()
+    if not raw:
+        return 30
+    try:
+        n = int(raw)
+    except ValueError:
+        return 30
+    return n if n > 0 else 30
+
+
 def user_for_session(
     store: PortfolioStore, token: str,
+    *, touch: bool = True, idle_timeout_minutes: Optional[int] = None,
 ) -> Optional[Dict[str, str]]:
-    """Return ``{username, display_name, role}`` for a valid token."""
+    """Return ``{username, display_name, role}`` for a valid token.
+
+    Enforces two expiry gates:
+      1. Absolute TTL via ``expires_at`` (default 7 days, set at login).
+      2. Idle timeout via ``last_seen_at``: a session untouched for
+         longer than the idle window is treated as expired.
+
+    When ``touch=True`` (default), bumps ``last_seen_at`` to now so
+    every active request extends the inactivity window. Read-only
+    callers that want to peek without sliding the window (e.g. background
+    audit passes) can pass ``touch=False``.
+    """
     if not token:
         return None
     _ensure_tables(store)
     with store.connect() as con:
         row = con.execute(
-            """SELECT s.username, s.expires_at,
+            """SELECT s.username, s.expires_at, s.last_seen_at,
                       u.display_name, u.role
                FROM sessions s JOIN users u ON s.username = u.username
                WHERE s.token = ?""",
@@ -231,8 +271,43 @@ def user_for_session(
         expires = datetime.fromisoformat(row["expires_at"])
     except (TypeError, ValueError):
         return None
-    if _utcnow() >= expires:
+    now = _utcnow()
+    if now >= expires:
         return None
+
+    idle_mins = (idle_timeout_minutes
+                 if idle_timeout_minutes is not None
+                 else _idle_timeout_minutes())
+    last_seen_raw = row["last_seen_at"] or ""
+    if last_seen_raw:
+        try:
+            last_seen = datetime.fromisoformat(last_seen_raw)
+            if (now - last_seen) > timedelta(minutes=idle_mins):
+                # Session went idle — treat as expired and clean it up
+                # so the next login has a clean slate.
+                with store.connect() as con:
+                    con.execute(
+                        "DELETE FROM sessions WHERE token = ?", (token,),
+                    )
+                    con.commit()
+                return None
+        except (TypeError, ValueError):
+            pass  # malformed last_seen — fall through and touch below
+
+    if touch:
+        try:
+            with store.connect() as con:
+                con.execute(
+                    "UPDATE sessions SET last_seen_at = ? WHERE token = ?",
+                    (_iso(now), token),
+                )
+                con.commit()
+        except Exception:  # noqa: BLE001
+            # Touching the session must never break auth — a DB write
+            # failure here should still let the authenticated request
+            # proceed. Next request will try again.
+            pass
+
     return {
         "username": row["username"],
         "display_name": row["display_name"] or row["username"],

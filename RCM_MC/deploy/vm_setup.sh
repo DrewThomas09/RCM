@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
 # One-time bootstrap for an Azure Ubuntu VM.
-# Run as: sudo bash vm_setup.sh <admin_username> <admin_password>
+#
+# Run as:
+#   sudo bash vm_setup.sh <admin_username> <admin_password> [domain]
+#
+# When `domain` is passed, the script brings up the Caddy TLS
+# sidecar — Caddy provisions a Let's Encrypt cert on first boot.
+# The domain MUST have an A record pointing at the VM's public IP
+# before you run this, or the LE challenge will fail and the cert
+# won't be issued (Caddy will retry in the background; check logs
+# with `docker compose logs caddy`).
+#
+# Without a `domain` argument, the script brings up only the origin
+# on port 8080 — fine for a VM-internal test, not for a partner demo.
+#
 # Prereqs: Ubuntu 22.04 LTS, outbound internet access.
 
 set -euo pipefail
 
 ADMIN_USER="${1:-admin}"
-ADMIN_PASS="${2:?Usage: vm_setup.sh <admin_user> <admin_pass>}"
+ADMIN_PASS="${2:?Usage: vm_setup.sh <admin_user> <admin_pass> [domain]}"
+DOMAIN="${3:-}"
 REPO="https://github.com/DrewThomas09/RCM.git"
 APP_DIR="/opt/rcm-mc"
 DATA_DIR="/data/rcm"
@@ -49,7 +63,16 @@ systemctl enable rcm-mc
 
 echo "=== [6/6] First-time build + start ==="
 cd "$APP_DIR/RCM_MC"
-docker compose -f ../deploy/docker-compose.yml up -d --build
+COMPOSE_FILE="../deploy/docker-compose.yml"
+
+if [ -n "$DOMAIN" ]; then
+    echo "    DOMAIN=$DOMAIN set — bringing up Caddy TLS sidecar"
+    export DOMAIN
+    docker compose -f "$COMPOSE_FILE" --profile tls up -d --build
+else
+    echo "    No domain — origin only (port 8080, no TLS)"
+    docker compose -f "$COMPOSE_FILE" up -d --build
+fi
 
 # Wait for server to be ready (up to 60s)
 echo "Waiting for /health..."
@@ -62,13 +85,25 @@ for i in $(seq 1 12); do
 done
 
 echo "=== Creating admin user ==="
-docker compose -f ../deploy/docker-compose.yml exec rcm-mc \
+docker compose -f "$COMPOSE_FILE" exec rcm-mc \
     python -m rcm_mc portfolio --db /data/rcm_mc.db \
     users create --username "$ADMIN_USER" --password "$ADMIN_PASS" --role admin \
     2>/dev/null || echo "(User may already exist — skipping)"
 
 echo ""
-echo "Done. RCM-MC is live at http://$(curl -sf ifconfig.me):8080/"
+PUBLIC_IP="$(curl -sf ifconfig.me || echo '<public-ip>')"
+if [ -n "$DOMAIN" ]; then
+    echo "Done. RCM-MC is live at https://$DOMAIN/"
+    echo "  (Let's Encrypt cert is being provisioned on first boot —"
+    echo "   check 'docker compose logs caddy' if HTTPS doesn't"
+    echo "   respond within 60 seconds; DNS A-record for $DOMAIN"
+    echo "   must point at $PUBLIC_IP for the challenge to succeed.)"
+    echo ""
+    echo "Firewall: run 'ufw allow 80/tcp && ufw allow 443/tcp && ufw enable'"
+else
+    echo "Done. RCM-MC is live at http://${PUBLIC_IP}:8080/"
+    echo ""
+    echo "Firewall: run 'ufw allow 8080/tcp && ufw enable' to open the port."
+    echo "For HTTPS, re-run with a domain: sudo bash vm_setup.sh $ADMIN_USER <pw> your.domain.com"
+fi
 echo "Admin user: $ADMIN_USER"
-echo ""
-echo "Firewall: run 'ufw allow 8080/tcp && ufw enable' to open the port."

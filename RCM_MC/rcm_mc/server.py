@@ -91,7 +91,10 @@ class ServerConfig:
     ``BaseHTTPRequestHandler`` (which is invoked by the server, not us),
     without globals. Write once at ``build_server``; read many in handlers.
     """
-    db_path: str = os.path.expanduser("~/.rcm_mc/portfolio.db")
+    # Default respects $RCM_MC_DB (Heroku / Docker path) before falling back
+    # to the single-user-laptop default under ~/.rcm_mc/.
+    db_path: str = os.environ.get("RCM_MC_DB") or os.path.expanduser(
+        "~/.rcm_mc/portfolio.db")
     outdir: Optional[str] = None      # If set, /outputs/* serves from here
     title: str = "RCM Portfolio"
     # B89: optional HTTP Basic credentials. If None, auth is disabled.
@@ -1697,7 +1700,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         # require exact match so "/api/login-foo" or path-traversal
         # like "/api/login/../users/create" can't bypass the gate.
         pure_path = urllib.parse.urlparse(self.path).path
-        if pure_path in ("/health", "/login"):
+        # `/healthz` is a convention alias used by Heroku + Kubernetes probes.
+        if pure_path in ("/health", "/healthz", "/login"):
             return True
         if pure_path == "/api/login":
             return True
@@ -1730,17 +1734,66 @@ class RCMHandler(BaseHTTPRequestHandler):
             nxt = urllib.parse.quote(self.path, safe="")
             self.send_response(HTTPStatus.SEE_OTHER)
             self.send_header("Location", f"/login?next={nxt}")
+            self._send_security_headers()
             self.end_headers()
             return
         self.send_response(HTTPStatus.UNAUTHORIZED)
         self.send_header("WWW-Authenticate", 'Basic realm="rcm-mc"')
         self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self._send_security_headers()
         self.end_headers()
         self.wfile.write(b"Authentication required")
 
     # ── Response helpers ──
 
+    def _is_https(self) -> bool:
+        """True when the request reached us over TLS.
+
+        Heroku, Azure, and every reverse-proxy deployment terminates
+        TLS at the edge and forwards the origin hop as plain HTTP —
+        detection via ``X-Forwarded-Proto: https`` is the canonical
+        way to tell. Direct TLS connections (none in this deployment
+        shape) would set ``self.server.secure`` or similar.
+        """
+        xfp = (self.headers.get("X-Forwarded-Proto") or "").strip().lower()
+        return xfp == "https"
+
+    def _cookie_flags(self) -> str:
+        """Append ``; Secure`` to cookie strings when behind HTTPS.
+
+        Callers concatenate this onto a cookie string that already
+        includes ``Path``, ``HttpOnly`` / ``SameSite``, and ``Max-Age``.
+        On plain HTTP (local dev), we DO NOT set Secure — the browser
+        would reject the cookie and the user would be stuck in a
+        login loop.
+        """
+        return "; Secure" if self._is_https() else ""
+
     def _send_html(self, body: str, status: int = HTTPStatus.OK) -> None:
+        # PHI banner safety net: any HTML response that doesn't already
+        # carry the banner gets it injected near the top of <body>. The
+        # chartis_shell dispatcher also injects it, so well-behaved
+        # pages are no-ops here. Pages that bypass the shell (the
+        # legacy ``build_portfolio_dashboard`` HTML, hand-rolled error
+        # pages, etc.) get covered by this layer — compliance posture
+        # must not depend on every renderer remembering the banner.
+        if (status == HTTPStatus.OK
+                and 'data-testid="phi-banner"' not in body):
+            try:
+                from .ui._chartis_kit import _phi_banner_html
+                banner = _phi_banner_html()
+                if banner and "<body" in body.lower():
+                    # Inject right after <body ...> opening tag
+                    import re as _re
+                    body = _re.sub(
+                        r"(<body[^>]*>)",
+                        lambda m: m.group(1) + banner,
+                        body, count=1, flags=_re.IGNORECASE,
+                    )
+                elif banner:
+                    body = banner + body
+            except Exception:  # noqa: BLE001
+                pass
         encoded = body.encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -1756,10 +1809,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             "connect-src 'self'; "
             "frame-ancestors 'none'",
         )
-        self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
-        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        self._send_security_headers()
         self.end_headers()
         self.wfile.write(encoded)
 
@@ -1817,9 +1867,48 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     # ── Route matching ──
 
+    # ── Sensitive-view audit ──
+    # Prefixes that represent administrative surfaces, credentialed data
+    # surfaces, or anything a compliance reviewer would want to see in
+    # an incident timeline. Matched by ``startswith`` on the parsed path.
+    # Everything else (browsing /dashboard, running analyses) is treated
+    # as routine and NOT audited per-view — doing so would flood the
+    # audit table and make real signal unreadable.
+    _SENSITIVE_VIEW_PREFIXES: tuple = (
+        "/admin", "/settings", "/users", "/audit",
+        "/api/users", "/api/backup", "/api/system",
+        "/deals-library",            # full-corpus drill
+        "/api/export/portfolio",     # bulk portfolio export
+    )
+
+    def _audit_sensitive_view(self, path: str) -> None:
+        """Log a single GET against a sensitive prefix.
+
+        Write-failures are deliberately absorbed: a broken audit table
+        must never break the user's page load, but ``_log_audit`` already
+        surfaces the failure via stderr + class counter.
+        """
+        if not any(path.startswith(p) for p in self._SENSITIVE_VIEW_PREFIXES):
+            return
+        try:
+            self._log_audit(
+                "view.sensitive", target=path,
+                client_ip=self.headers.get("X-Forwarded-For", "")
+                          or getattr(self, "client_address", ("",))[0],
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
     def do_GET(self) -> None:
         if not self._auth_ok():
             return self._send_401()
+        # Audit AFTER auth — we don't care that somebody tried to hit
+        # /admin without creds (the 401 attempt already gets logged).
+        try:
+            parsed = urllib.parse.urlparse(self.path)
+            self._audit_sensitive_view(parsed.path)
+        except Exception:  # noqa: BLE001
+            pass
         try:
             self._do_get_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary
@@ -1839,6 +1928,15 @@ class RCMHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
+        if path == "/dashboard":
+            # Private-app landing page (Heroku / small-team deployments).
+            # Composes: curated analyses · recent runs · system status ·
+            # data freshness. See ui/dashboard_page.py.
+            from .ui.dashboard_page import render_dashboard
+            return self._send_html(render_dashboard(
+                self.config.db_path,
+                started_at=getattr(type(self), "_process_started_at", None),
+            ))
         if path == "/home" or path == "/caduceus" or path == "/seekingchartis":
             return self._route_seekingchartis_home()
         if path == "/" or path == "/index.html":
@@ -1848,6 +1946,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             # serve the signed-in dashboard so existing partners see
             # no change. A signed-in user hitting "/" on the v2 marketing
             # page can click "Open Platform" to reach /home.
+            #
+            # Web deployments (Heroku/Azure) usually want the new
+            # private-app /dashboard as the home — set
+            # ``RCM_MC_HOMEPAGE=dashboard`` to redirect "/" there.
+            home = (os.environ.get("RCM_MC_HOMEPAGE") or "").strip().lower()
+            if home == "dashboard":
+                return self._redirect("/dashboard")
             from .ui._chartis_kit import UI_V2_ENABLED
             if UI_V2_ENABLED:
                 from .ui.chartis.marketing_page import render_marketing_page
@@ -3561,7 +3666,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(_shell_settings(
                 body, "Settings", active_nav="/settings",
                 subtitle="Platform configuration & administration"))
-        if path == "/health":
+        if path in ("/health", "/healthz"):
             return self._send_text("ok")
         if path == "/api/migrations":
             from .infra.migrations import list_applied, _MIGRATIONS
@@ -3957,6 +4062,27 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/jobs/"):
             jid = urllib.parse.unquote(path[len("/jobs/"):]).strip("/")
             return self._route_job_detail(jid)
+        # JSON status poll endpoint — used by the browser-side JS in
+        # /data/refresh and any other async-job UI. Returns Job.to_dict()
+        # or a 404 payload.
+        if path.startswith("/api/jobs/"):
+            jid = urllib.parse.unquote(path[len("/api/jobs/"):]).strip("/")
+            from .infra.job_queue import get_default_registry
+            job = get_default_registry().get(jid)
+            if job is None:
+                return self._send_json(
+                    {"error": "job not found", "job_id": jid,
+                     "code": "JOB_NOT_FOUND"},
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return self._send_json(job.to_dict())
+        if path == "/data/refresh":
+            from .ui.data_refresh_page import render_data_refresh_page
+            return self._send_html(render_data_refresh_page(
+                self.config.db_path))
+        if path == "/exports":
+            from .ui.exports_index_page import render_exports_index
+            return self._send_html(render_exports_index(self.config.db_path))
         if path.startswith("/initiative/"):
             init_id = urllib.parse.unquote(path[len("/initiative/"):]).strip("/")
             return self._route_initiative_detail(init_id)
@@ -7896,7 +8022,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .analysis.packet import hash_inputs
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         fmt = ((qs.get("format") or ["html"])[0] or "html").lower()
-        valid = {"html", "pptx", "json", "csv", "xlsx", "questions", "package"}
+        valid = {"html", "pdf", "pptx", "json", "csv", "xlsx",
+                 "questions", "package"}
         if fmt not in valid:
             return self._send_json(
                 {"error": f"unknown format {fmt!r}", "valid": sorted(valid)},
@@ -7945,6 +8072,32 @@ class RCMHandler(BaseHTTPRequestHandler):
                            generated_by=actor)
             return self._send_html(body)
 
+        if fmt == "pdf":
+            # No runtime PDF engine (stdlib-only constraint). Instead we
+            # serve the HTML memo with @media print CSS + an auto-print
+            # `window.print()` on load, so the browser's built-in
+            # "Save as PDF" becomes the PDF engine. Works cross-OS with
+            # zero new deps. User sees a print dialog immediately; cancel
+            # it and the memo stays on screen like any HTML page.
+            body_html = renderer.render_diligence_memo_html(
+                packet, inputs_hash=ihash)
+            auto_print = (
+                '<script>window.addEventListener("load",function(){'
+                'setTimeout(function(){window.print();},200);});</script>'
+                '<style>@media print{.no-print,nav,.sidebar{display:none!important;}'
+                'body{background:#fff!important;color:#000!important;}}</style>'
+            )
+            # Inject before the closing </body> so scripts run after layout.
+            if "</body>" in body_html:
+                body_html = body_html.replace("</body>", auto_print + "</body>", 1)
+            else:
+                body_html = body_html + auto_print
+            record_export(store, deal_id=deal_id, analysis_run_id=packet.run_id,
+                           format="pdf", filepath=None,
+                           file_size_bytes=len(body_html),
+                           packet_hash=ihash, generated_by=actor)
+            return self._send_html(body_html)
+
         # File-bearing formats
         if fmt == "pptx":
             path = renderer.render_diligence_memo_pptx(packet, inputs_hash=ihash)
@@ -7992,6 +8145,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         )
         self.end_headers()
         self.wfile.write(body_b)
+        # Heroku hygiene: PacketRenderer writes to tempfile.mkdtemp() per
+        # instance. Bytes are already streamed, file is no longer needed —
+        # purge the tree so /tmp doesn't accumulate across many exports.
+        # Best-effort; never raise out of a response.
+        try:
+            import shutil as _shutil
+            _root = Path(renderer.out_dir)
+            if str(_root).startswith("/tmp/") or "/T/" in str(_root):
+                _shutil.rmtree(_root, ignore_errors=True)
+        except Exception:  # noqa: BLE001
+            pass
 
     def _route_exports_lp_update(self) -> None:
         """GET /exports/lp-update?days=30 — portfolio LP update rendered
@@ -13749,15 +13913,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         token = create_session(store, username)
         csrf = self._csrf_value(token)
         accept = self.headers.get("Accept", "")
+        secure = self._cookie_flags()
         session_cookie = (
             f"rcm_session={token}; Path=/; HttpOnly; SameSite=Lax; "
-            f"Max-Age={7*24*3600}"
+            f"Max-Age={7*24*3600}{secure}"
         )
         # Non-HttpOnly so the CSRF-patching JS can read it and inject
         # into form submissions.
         csrf_cookie = (
             f"rcm_csrf={csrf}; Path=/; SameSite=Lax; "
-            f"Max-Age={7*24*3600}"
+            f"Max-Age={7*24*3600}{secure}"
         )
         if "application/json" in accept:
             self.send_response(HTTPStatus.OK)
@@ -13790,8 +13955,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if token:
             revoke_session(store, token)
         # Expire both cookies
-        expired_session = "rcm_session=; Path=/; HttpOnly; Max-Age=0"
-        expired_csrf = "rcm_csrf=; Path=/; Max-Age=0"
+        secure = self._cookie_flags()
+        expired_session = f"rcm_session=; Path=/; HttpOnly; Max-Age=0{secure}"
+        expired_csrf = f"rcm_csrf=; Path=/; Max-Age=0{secure}"
         accept = self.headers.get("Accept", "")
         if "application/json" in accept:
             self.send_response(HTTPStatus.OK)
@@ -15106,6 +15272,62 @@ class RCMHandler(BaseHTTPRequestHandler):
                 )
             return self._send_json(report.to_dict())
 
+        # POST /api/data/refresh/<source>/async — enqueue refresh as a
+        # background job. Returns 202 + job_id immediately. The browser
+        # polls GET /api/jobs/<id> until status is "done" or "failed".
+        # Idempotent on (source): a second submit while the first is
+        # still queued/running returns the same job_id.
+        if (len(parts) == 5 and parts[0] == "api" and parts[1] == "data"
+                and parts[2] == "refresh" and parts[4] == "async"):
+            from .data import data_refresh as dr
+            from .infra.job_queue import get_default_registry
+            source = urllib.parse.unquote(parts[3])
+            sources = None
+            if source and source != "all":
+                if source not in dr.KNOWN_SOURCES:
+                    return self._send_json(
+                        {"error": f"unknown source {source!r}",
+                         "code": "UNKNOWN_SOURCE",
+                         "detail": {"known": list(dr.KNOWN_SOURCES)}},
+                        status=HTTPStatus.BAD_REQUEST,
+                    )
+                sources = [source]
+            # Same per-source rate limit as the sync variant — protects
+            # CMS/ProPublica from loops.
+            ok, wait = _REFRESH_RATE_LIMITER.check(f"refresh:{source}:async")
+            if not ok:
+                return self._send_json(
+                    {"error": f"rate limited on {source!r}; "
+                              f"wait {int(wait)}s",
+                     "code": "RATE_LIMITED",
+                     "detail": {"retry_after_seconds": int(wait)}},
+                    status=HTTPStatus.TOO_MANY_REQUESTS,
+                )
+            # Bind store + sources into the runner closure so we don't
+            # need to ship them through params (they aren't JSON-safe).
+            db_path_for_job = self.config.db_path
+
+            def _refresh_runner(p: Dict[str, Any]) -> Dict[str, Any]:
+                # Called by the job worker thread.
+                from .portfolio.store import PortfolioStore as _PS
+                _store = _PS(db_path_for_job)
+                _srcs = p.get("sources")
+                report = dr.refresh_all_sources(_store, sources=_srcs)
+                return report.to_dict()
+
+            job_id = get_default_registry().submit_callable(
+                kind="data_refresh",
+                runner=_refresh_runner,
+                params={"source": source, "sources": sources},
+                idempotency_key=f"data_refresh:{source}",
+            )
+            return self._send_json(
+                {"job_id": job_id,
+                 "status_url": f"/api/jobs/{job_id}",
+                 "source": source},
+                status=HTTPStatus.ACCEPTED,
+            )
+
         # POST /api/analysis/<deal_id>/sensitivity — deterministic sensitivity grid
         # (Prompt 47). Returns MOIC/IRR grid across hold years x exit multiples.
         if (len(parts) == 4 and parts[0] == "api" and parts[1] == "analysis"
@@ -15160,11 +15382,39 @@ class RCMHandler(BaseHTTPRequestHandler):
 
         self.send_error(HTTPStatus.NOT_FOUND, f"Unknown POST path: {path}")
 
+    def _send_security_headers(self) -> None:
+        """Emit the standard hardening header set.
+
+        Factored out of ``_send_html`` so redirects (303/302) and other
+        non-HTML responses can also set these. Browsers do honor HSTS
+        only on the FINAL response after following redirects, but
+        defense-in-depth means setting them on every response — a
+        misbehaving client that doesn't follow the redirect should
+        still see the framing/content-type guarantees.
+        """
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=()",
+        )
+        if self._is_https():
+            self.send_header(
+                "Strict-Transport-Security",
+                "max-age=31536000; includeSubDomains",
+            )
+
     def _redirect(self, location: str) -> None:
-        """See Other redirect — browser re-GETs the target after form POST."""
+        """See Other redirect — browser re-GETs the target after form POST.
+
+        Carries the standard security headers so a redirect response
+        can't be framed or sniffed even before the browser follows it.
+        """
         self.send_response(HTTPStatus.SEE_OTHER)
         self.send_header("Location", location)
         self.send_header("Content-Length", "0")
+        self._send_security_headers()
         self.end_headers()
 
 
@@ -15218,6 +15468,9 @@ def build_server(
     RCMHandler._request_counter = 0
     RCMHandler._response_times = []
     RCMHandler._error_count = 0
+    # Record server start for the dashboard's uptime card.
+    from datetime import datetime as _dt_boot, timezone as _tz_boot
+    RCMHandler._process_started_at = _dt_boot.now(_tz_boot.utc)
 
     # Startup self-test: verify DB is readable
     try:

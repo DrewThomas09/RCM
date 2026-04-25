@@ -58,11 +58,16 @@ class Job:
 
     Attributes are written by the worker; tests read them via the
     registry's thread-safe accessors (``get`` / ``list_recent``).
+
+    For non-MC job kinds (e.g. ``data_refresh``), ``runner`` holds a
+    per-job callable that takes ``params`` and returns a result dict.
+    When ``runner`` is None the registry falls back to its default MC
+    runner — preserves the original submit_run() contract.
     """
     job_id: str
     status: str
     created_at: str
-    kind: str                              # "sim_run" for now; future types possible
+    kind: str                              # "sim_run", "data_refresh", etc.
     params: Dict[str, Any] = field(default_factory=dict)
     started_at: Optional[str] = None
     finished_at: Optional[str] = None
@@ -70,6 +75,12 @@ class Job:
     output_tail: str = ""
     error: Optional[str] = None            # populated on failure
     result: Dict[str, Any] = field(default_factory=dict)
+    # Per-job callable override (e.g. data_refresh's refresher). Not
+    # serialized by to_dict.
+    runner: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
+    # Idempotency key — a second submit with the same key and a non-
+    # terminal status returns the existing job_id. Not serialized.
+    idempotency_key: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -192,9 +203,10 @@ class JobRegistry:
         # Capture stdout + stderr during the run so the progress UI has
         # something meaningful to display.
         buf = io.StringIO()
+        runner_fn = job.runner if job.runner is not None else self._runner
         try:
             with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-                result = self._runner(job.params)
+                result = runner_fn(job.params)
             with self._lock:
                 job.status = "done"
                 job.result = result or {}
@@ -251,6 +263,47 @@ class JobRegistry:
         self._queue.put(job_id)
         return job_id
 
+    def submit_callable(
+        self,
+        *,
+        kind: str,
+        runner: Callable[[Dict[str, Any]], Dict[str, Any]],
+        params: Optional[Dict[str, Any]] = None,
+        idempotency_key: Optional[str] = None,
+    ) -> str:
+        """Queue a generic job with a custom runner.
+
+        Used by non-MC job kinds (data_refresh, etc.) to share the
+        single-worker FIFO without a parallel queue. The runner is
+        stored on the Job and invoked by _run_one in preference to
+        the registry's default runner.
+
+        If ``idempotency_key`` is provided and an existing job with the
+        same key is still queued or running, this is a no-op that
+        returns the existing job_id. Terminal-state jobs don't block
+        a new submission — once a refresh is done, the user can kick
+        off a fresh one.
+        """
+        self._ensure_worker()
+        params = dict(params or {})
+        with self._lock:
+            if idempotency_key:
+                for existing in self._jobs.values():
+                    if (existing.idempotency_key == idempotency_key
+                            and existing.status in ("queued", "running")):
+                        return existing.job_id
+        job_id = uuid.uuid4().hex[:12]
+        job = Job(
+            job_id=job_id, status="queued", created_at=_utcnow(),
+            kind=str(kind), params=params,
+            runner=runner, idempotency_key=idempotency_key,
+        )
+        with self._lock:
+            self._jobs[job_id] = job
+            self._order.append(job_id)
+        self._queue.put(job_id)
+        return job_id
+
     def get(self, job_id: str) -> Optional[Job]:
         with self._lock:
             return self._jobs.get(job_id)
@@ -274,6 +327,45 @@ class JobRegistry:
                 return job
             _time.sleep(0.02)
         return self.get(job_id)
+
+    def mark_stale(self, *, max_age_seconds: float = 3600.0,
+                   reason: str = "marked stale by operator") -> List[str]:
+        """Move stuck-running jobs to ``failed`` after a grace period.
+
+        After a dyno restart, a job in ``running`` state has no worker
+        watching it — the in-memory registry was reset, but a previous
+        submission may have written progress to disk. Operators run
+        this periodically (or on incident) to clean up the dashboard.
+
+        ``max_age_seconds`` is measured from ``started_at``; jobs whose
+        timestamps are unparseable are treated as stale.
+
+        Returns the list of job_ids transitioned to ``failed`` so the
+        caller can log + alert.
+        """
+        from datetime import datetime as _dt, timezone as _tz
+        now = _dt.now(_tz.utc)
+        stale: List[str] = []
+        with self._lock:
+            for job_id, job in self._jobs.items():
+                if job.status != "running":
+                    continue
+                started = job.started_at
+                age = float("inf")
+                if started:
+                    try:
+                        ts = _dt.fromisoformat(started)
+                        age = (now - ts).total_seconds()
+                    except (TypeError, ValueError):
+                        age = float("inf")
+                if age >= max_age_seconds:
+                    job.status = "failed"
+                    job.finished_at = now.isoformat()
+                    job.error = (job.error or "") + (
+                        f"\n[mark_stale] {reason} after {age:.0f}s"
+                    )
+                    stale.append(job_id)
+        return stale
 
 
 # ── Module-level singleton ───────────────────────────────────────────────

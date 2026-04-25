@@ -1,0 +1,63 @@
+# Caddy reverse-proxy config for the Azure VM deploy.
+#
+# Caddy automatically provisions a free Let's Encrypt cert for
+# $DOMAIN and renews it on schedule. No manual cert management.
+#
+# The {$DOMAIN} placeholder is substituted from the container env
+# at startup; docker-compose passes it through from the host shell
+# so `export DOMAIN=diligence.example.com && docker compose up` is
+# all that's needed.
+#
+# Production tradeoffs:
+#   - We proxy to the in-network service name `rcm-mc:8080` (Docker
+#     resolves this via its default network). That requires the
+#     rcm-mc container to bind 0.0.0.0:8080 — see the Dockerfile
+#     CMD for why this is NOT the default for `rcm-mc serve`.
+#   - X-Forwarded-Proto: https is set so the origin can detect the
+#     TLS hop and emit HSTS + Secure cookies (server.py:_is_https).
+#   - Automatic HTTP → HTTPS redirect is on by default in Caddy
+#     when the site block has a domain.
+#
+# Local testing (no real domain): use `:80 { reverse_proxy ... }`
+# instead of the $DOMAIN block below. Disables Let's Encrypt but
+# lets you verify the proxy end-to-end against `curl localhost`.
+
+{$DOMAIN} {
+	# Upstream origin
+	reverse_proxy rcm-mc:8080 {
+		# Tell the origin the request came in over TLS so it can
+		# set Secure cookies + HSTS. See _is_https() in server.py.
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-For   {remote_host}
+		header_up X-Real-IP         {remote_host}
+
+		# Long-running diligence analyses (covenant stress, payer MC)
+		# can run 3-10s. Default read timeout is fine; bump if you
+		# see 504s on /diligence/covenant-stress etc.
+		transport http {
+			read_timeout 120s
+		}
+	}
+
+	# Hardening — Caddy defaults are already good; these are belt-
+	# and-suspenders for the PE-tool threat model.
+	header {
+		# HSTS is also set by the origin via _send_security_headers,
+		# but doubling it here means a misconfigured origin can't
+		# silently drop it.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "DENY"
+		Referrer-Policy           "strict-origin-when-cross-origin"
+		# Caddy sets Server: Caddy by default — remove the version
+		# leak so a scanner can't fingerprint the edge.
+		-Server
+	}
+
+	# Access logs → stdout so `docker compose logs caddy` is the
+	# audit trail. No file rotation to worry about.
+	log {
+		output stdout
+		format json
+	}
+}

@@ -1,21 +1,86 @@
 version: "3.9"
 
+# Azure VM deploy — RCM-MC origin + optional Caddy TLS terminator.
+#
+# DOMAIN unset:
+#   Caddy won't start (it's gated on ${DOMAIN:?...}). `docker compose
+#   up rcm-mc` brings up only the origin, exposing 8080 locally.
+#   Use this for local/VM-only testing with no public domain.
+#
+# DOMAIN set to a domain with an A record pointing at the VM:
+#   `docker compose up` brings up both services. Caddy provisions a
+#   Let's Encrypt cert on first boot and proxies HTTPS → origin.
+#   The origin sees X-Forwarded-Proto: https and emits HSTS +
+#   Secure cookies.
+#
+# Required env (host shell before `docker compose up`):
+#   DOMAIN=diligence.example.com   # A-record to VM public IP
+#   ADMIN_USERNAME=admin           # used by bootstrap on first boot
+#   ADMIN_PASSWORD=StrongPass!12
+#   ANTHROPIC_API_KEY=...          # optional, /settings/ai
+#   RCM_MC_PHI_MODE=disallowed     # recommended (shows banner)
+#   RCM_MC_HOMEPAGE=dashboard      # recommended (/ → /dashboard)
+
 services:
   rcm-mc:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    # Origin is reachable via Caddy on the internal Docker network.
+    # Also publishes 8080 on the host for direct testing — comment
+    # out `ports` in production where Caddy is the only ingress.
     ports:
       - "8080:8080"
+    expose:
+      - "8080"
     volumes:
       - /data/rcm:/data
     environment:
       - RCM_MC_DB=/data/rcm_mc.db
       - RCM_MC_AUTH=${RCM_MC_AUTH:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - RCM_MC_PHI_MODE=${RCM_MC_PHI_MODE:-disallowed}
+      - RCM_MC_HOMEPAGE=${RCM_MC_HOMEPAGE:-dashboard}
+      - RCM_MC_SESSION_IDLE_MINUTES=${RCM_MC_SESSION_IDLE_MINUTES:-30}
     restart: unless-stopped
     logging:
       driver: "json-file"
       options:
         max-size: "50m"
         max-file: "5"
+
+  caddy:
+    # Opt-in: set DOMAIN in the host env to bring up the TLS
+    # terminator. The ${DOMAIN:?} placeholder fails fast with a
+    # clear error if DOMAIN is unset — no partially-configured
+    # half-up stack.
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # Let's Encrypt certs + session state
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:?set DOMAIN=your.domain.com in host env before compose up}
+    depends_on:
+      - rcm-mc
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    profiles:
+      # Profiles gate the caddy service behind an explicit opt-in.
+      # `docker compose up` alone will NOT start Caddy — use
+      # `docker compose --profile tls up` to bring it up.
+      - tls
+
+volumes:
+  # Persisted so Let's Encrypt doesn't re-issue on every deploy —
+  # they rate-limit to ~5 issuances/week per registered domain.
+  caddy_data:
+  caddy_config:
