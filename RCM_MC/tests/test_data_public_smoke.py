@@ -127,6 +127,13 @@ BACKEND_MODULES = [
      lambda r: {"questions": r.total_questions == 3,
                 "estimates": len(r.estimates) > 0,
                 "validations": len(r.validations) > 0}),
+    ("regulatory_arbitrage_collapse", "compute_regulatory_arbitrage_collapse",
+     lambda r: {"arbitrages": r.total_arbitrages == 5,
+                "deals": r.total_deals_scored > 100,
+                "rollups": len(r.portfolio_rollups) == 5,
+                "provenance_5x": len(r.provenance_entries) == 5 * r.total_deals_scored,
+                "definitions_5": len(r.arbitrage_definitions) == 5,
+                "corpus": r.corpus_deal_count > 1000}),
 ]
 
 
@@ -203,6 +210,8 @@ UI_PAGES = [
     ("nlrb_elections_page", "render_nlrb_elections", "/nlrb-elections"),
     ("velocity_metrics_page", "render_velocity_metrics", "/velocity"),
     ("causal_inference_page", "render_causal_inference", "/causal"),
+    ("regulatory_arbitrage_collapse_page", "render_regulatory_arbitrage_collapse",
+     "/reg-arbitrage"),
 ]
 
 

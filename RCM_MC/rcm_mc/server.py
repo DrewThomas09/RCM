@@ -2339,6 +2339,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.causal_inference_page import render_causal_inference
             return self._send_html(render_causal_inference(_qp))
+        if path == "/reg-arbitrage":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.regulatory_arbitrage_collapse_page import render_regulatory_arbitrage_collapse
+            return self._send_html(render_regulatory_arbitrage_collapse(_qp))
         if path == "/nsa-idr":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
