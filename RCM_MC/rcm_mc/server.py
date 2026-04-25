@@ -4760,6 +4760,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             results = _build_default_quality_panel()
             return self._send_html(
                 render_model_quality_dashboard(results))
+        if path == "/models/importance":
+            from .ui.feature_importance_viz import (
+                render_feature_importance_page,
+                _build_default_importance_panel,
+            )
+            panel = _build_default_importance_panel()
+            return self._send_html(
+                render_feature_importance_page(panel))
         if path == "/exports":
             from .ui.exports_index_page import render_exports_index
             return self._send_html(render_exports_index(self.config.db_path))
