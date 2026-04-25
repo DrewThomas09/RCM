@@ -427,6 +427,7 @@ def _all_insights(
     insights.extend(_attention_pileup_insights(deals))
     insights.extend(_geo_concentration_insights(deals))
     insights.extend(_sponsor_concentration_insights(db_path, deals))
+    insights.extend(_low_quality_insights(deals))
     insights.extend(_quiet_morning_insights(deals))
 
     insights.sort(key=lambda i: i.get("score", 0), reverse=True)
@@ -660,6 +661,33 @@ def _sponsor_concentration_insights(
     except Exception:  # noqa: BLE001 — best effort
         pass
     return out
+
+
+def _low_quality_insights(
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """CMS Hospital General 5-star rating ≤2 → labor + revenue-cycle
+    issues that flow straight into the EBITDA bridge. Cluster of
+    these is a real PE concern."""
+    low_rated = [d for d in deals
+                 if isinstance(d.get("quality_rating"), int)
+                 and d["quality_rating"] <= 2]
+    if len(low_rated) >= 2:
+        names = ", ".join(d["name"] for d in low_rated[:3])
+        if len(low_rated) > 3:
+            names += f", +{len(low_rated) - 3} more"
+        return [{
+            "kind": "low_quality_cluster",
+            "headline": (f"{len(low_rated)} hospitals at CMS quality "
+                         f"≤2 stars"),
+            "body": (f"Low CMS rating means readmission penalties + "
+                     f"labor friction + patient-experience drag. "
+                     f"Deals: {names}."),
+            "href": "/portfolio/risk-scan",
+            "tone": "warn",
+            "score": 35 + 8 * len(low_rated),
+        }]
+    return []
 
 
 def _quiet_morning_insights(

@@ -1,0 +1,26 @@
+Facility ID,Facility Name,State,Hospital Type,Hospital Ownership,Emergency Services,Hospital overall rating,Mortality national comparison,Safety of care national comparison,Readmission national comparison,Patient experience national comparison
+010001,SOUTHEAST HEALTH MEDICAL CENTER,AL,Acute Care Hospitals,Voluntary non-profit - Private,Yes,3,Same as the national average,Same as the national average,Same as the national average,Same as the national average
+010005,MARSHALL MEDICAL CENTER SOUTH,AL,Acute Care Hospitals,Government - Hospital District or Authority,Yes,2,Below the national average,Below the national average,Same as the national average,Below the national average
+010011,ST VINCENTS BIRMINGHAM,AL,Acute Care Hospitals,Voluntary non-profit - Private,Yes,4,Above the national average,Above the national average,Same as the national average,Above the national average
+050002,ST JOSEPH HOSPITAL - EUREKA,CA,Acute Care Hospitals,Voluntary non-profit - Private,Yes,3,Same as the national average,Same as the national average,Same as the national average,Above the national average
+050105,MERCY HOSPITAL OF FOLSOM,CA,Acute Care Hospitals,Voluntary non-profit - Private,Yes,4,Above the national average,Same as the national average,Above the national average,Same as the national average
+050107,SUTTER DELTA MEDICAL CENTER,CA,Acute Care Hospitals,Voluntary non-profit - Private,Yes,3,Same as the national average,Same as the national average,Same as the national average,Same as the national average
+050190,MONTEREY PARK HOSPITAL,CA,Acute Care Hospitals,Proprietary,Yes,2,Below the national average,Below the national average,Below the national average,Below the national average
+100007,LIFEPOINT MEMORIAL HOSPITAL,FL,Acute Care Hospitals,Proprietary,Yes,2,Below the national average,Same as the national average,Below the national average,Same as the national average
+100019,HCA FLORIDA LARGO HOSPITAL,FL,Acute Care Hospitals,Proprietary,Yes,3,Same as the national average,Same as the national average,Same as the national average,Same as the national average
+100028,ORLANDO HEALTH,FL,Acute Care Hospitals,Voluntary non-profit - Private,Yes,4,Above the national average,Above the national average,Same as the national average,Above the national average
+140001,ADVOCATE CHRIST MEDICAL CENTER,IL,Acute Care Hospitals,Voluntary non-profit - Private,Yes,4,Above the national average,Above the national average,Above the national average,Same as the national average
+140133,NORTHWESTERN MEMORIAL HOSPITAL,IL,Acute Care Hospitals,Voluntary non-profit - Private,Yes,5,Above the national average,Above the national average,Above the national average,Above the national average
+210001,JOHNS HOPKINS HOSPITAL,MD,Acute Care Hospitals,Voluntary non-profit - Private,Yes,5,Above the national average,Above the national average,Above the national average,Above the national average
+240005,MAYO CLINIC - ROCHESTER,MN,Acute Care Hospitals,Voluntary non-profit - Private,Yes,5,Above the national average,Above the national average,Above the national average,Above the national average
+240080,HENNEPIN COUNTY MEDICAL CENTER,MN,Acute Care Hospitals,Government - County,Yes,3,Same as the national average,Same as the national average,Below the national average,Below the national average
+260032,HCA MIDWEST DIVISION LEES SUMMIT,MO,Acute Care Hospitals,Proprietary,Yes,3,Same as the national average,Same as the national average,Same as the national average,Same as the national average
+330101,NEW YORK PRESBYTERIAN,NY,Acute Care Hospitals,Voluntary non-profit - Private,Yes,4,Above the national average,Above the national average,Same as the national average,Above the national average
+330214,MEMORIAL SLOAN KETTERING,NY,Acute Care Hospitals,Voluntary non-profit - Private,Yes,5,Above the national average,Above the national average,Above the national average,Above the national average
+360001,CLEVELAND CLINIC,OH,Acute Care Hospitals,Voluntary non-profit - Private,Yes,5,Above the national average,Above the national average,Above the national average,Above the national average
+360007,OHIO STATE UNIVERSITY HOSPITAL,OH,Acute Care Hospitals,Government - State,Yes,4,Above the national average,Same as the national average,Same as the national average,Same as the national average
+450004,HCA HOUSTON HEALTHCARE,TX,Acute Care Hospitals,Proprietary,Yes,3,Same as the national average,Same as the national average,Same as the national average,Same as the national average
+450022,LIFEPOINT SILSBEE HOSPITAL,TX,Critical Access Hospitals,Proprietary,Yes,1,Below the national average,Below the national average,Below the national average,Below the national average
+450023,LIFEPOINT PARIS REGIONAL,TX,Acute Care Hospitals,Proprietary,Yes,2,Below the national average,Below the national average,Below the national average,Same as the national average
+450085,HOUSTON METHODIST,TX,Acute Care Hospitals,Voluntary non-profit - Private,Yes,5,Above the national average,Above the national average,Above the national average,Above the national average
+490006,UNIVERSITY OF VIRGINIA MEDICAL CENTER,VA,Acute Care Hospitals,Government - State,Yes,4,Above the national average,Same as the national average,Above the national average,Same as the national average

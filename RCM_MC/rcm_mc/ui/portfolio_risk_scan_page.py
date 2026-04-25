@@ -111,6 +111,20 @@ def _freshness_cell(days: Optional[int]) -> str:
     return _cell_chip(f"{days}d", bg="#fee2e2", fg="#991b1b")
 
 
+def _quality_cell(rating: Optional[int]) -> str:
+    """CMS overall hospital rating, 1-5 stars. None for facilities
+    not in the CMS General Info file (or non-hospital deals)."""
+    if rating is None:
+        return _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+    if rating >= 4:
+        return _cell_chip(f"{rating}★", bg="#d1fae5", fg="#065f46")
+    if rating == 3:
+        return _cell_chip(f"{rating}★", bg="#e0e7ff", fg="#3730a3")
+    if rating == 2:
+        return _cell_chip(f"{rating}★", bg="#fef3c7", fg="#92400e")
+    return _cell_chip(f"{rating}★", bg="#fee2e2", fg="#991b1b")
+
+
 def _deadlines_cell(open_count: int, overdue_count: int) -> str:
     if overdue_count > 0:
         return _cell_chip(
@@ -222,6 +236,18 @@ def _gather_per_deal(db_path: str) -> List[Dict[str, Any]]:
         except Exception:  # noqa: BLE001
             pass
 
+        # CMS Hospital General Information — overall 5-star rating.
+        # Same best-effort pattern: returns None if the table isn't
+        # populated yet or the CCN doesn't match.
+        quality_rating: Optional[int] = None
+        try:
+            from ..data.cms_hospital_general import get_quality_by_ccn
+            q = get_quality_by_ccn(store, deal_id)
+            if q:
+                quality_rating = q.get("overall_rating")
+        except Exception:  # noqa: BLE001
+            pass
+
         out.append({
             "deal_id": deal_id,
             "name": name,
@@ -236,6 +262,7 @@ def _gather_per_deal(db_path: str) -> List[Dict[str, Any]]:
             "overdue_deadlines": overdue_deadlines.get(deal_id, 0),
             "chain": chain_name,
             "chain_size": chain_size,
+            "quality_rating": quality_rating,
         })
 
     return out
@@ -406,6 +433,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
             name_link,
             f'<span style="color:#4b5563;">{_html.escape(d["sector"])}</span>',
             chain_cell,
+            _quality_cell(d.get("quality_rating")),
             _health_cell(d["score"], d["band"]),
             _covenant_cell(d["covenant_status"]),
             _alerts_cell(d["alerts"]),
@@ -414,12 +442,13 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         ])
 
     table = _wc.sortable_table(
-        ["Deal", "Sector", "Chain", "Health", "Covenant", "Alerts",
-         "Snap age", "Deadlines"],
+        ["Deal", "Sector", "Chain", "Quality", "Health", "Covenant",
+         "Alerts", "Snap age", "Deadlines"],
         rows, id="portfolio-risk-scan",
-        hide_columns_sm=[1, 2, 6],
+        hide_columns_sm=[1, 2, 7],
         filterable=True,
-        filter_placeholder="Filter by deal, sector, chain, or stage…",
+        filter_placeholder=(
+            "Filter by deal, sector, chain, or stage…"),
     )
 
     inner = (
