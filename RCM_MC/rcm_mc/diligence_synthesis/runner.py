@@ -171,4 +171,32 @@ def run_full_diligence(dossier: DiligenceDossier) -> SynthesisResult:
         "vbc_track_choice: needs cohort + program_ids",
     )
 
+    # ── 9. ESG-HealthcarePacket ──────────────────────────────
+    def _esg():
+        if not (dossier.facilities or dossier.workforce
+                or dossier.governance_profile):
+            return None
+        from ..esg import (
+            compute_dei_metrics, score_governance,
+            compute_edci_scorecard, render_lp_disclosure,
+        )
+        dei = (compute_dei_metrics(dossier.workforce)
+               if dossier.workforce else None)
+        gov = (score_governance(dossier.governance_profile)
+               if dossier.governance_profile else None)
+        sc = compute_edci_scorecard(
+            dossier.deal_name,
+            facilities=dossier.facilities or None,
+            dei=dei, governance=gov,
+            issb_attested=dossier.issb_attested,
+            cybersecurity_attested=dossier.cybersecurity_attested,
+        )
+        result.esg_disclosure_md = render_lp_disclosure(sc)
+        return sc
+    result.esg_scorecard = _safe_run(
+        "esg_scorecard", _esg, result,
+        "esg_scorecard: needs at least one of facilities, "
+        "workforce, governance_profile",
+    )
+
     return result

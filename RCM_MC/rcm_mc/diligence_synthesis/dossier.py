@@ -41,6 +41,13 @@ class DiligenceDossier:
     # VBC-ContractValuator inputs (besides cohort)
     program_ids: List[str] = field(default_factory=list)
 
+    # ESG-HealthcarePacket inputs
+    facilities: List[Any] = field(default_factory=list)         # esg.Facility
+    workforce: Any = None                                       # esg.WorkforceProfile
+    governance_profile: Any = None                              # esg.GovernanceProfile
+    issb_attested: bool = False
+    cybersecurity_attested: bool = False
+
 
 @dataclass
 class SynthesisResult:
@@ -56,3 +63,5 @@ class SynthesisResult:
     buyandbuild_optimal: Any = None
     exit_readiness: Any = None
     vbc_track_choice: Any = None
+    esg_scorecard: Any = None
+    esg_disclosure_md: str = ""

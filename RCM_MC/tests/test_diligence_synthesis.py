@@ -26,7 +26,7 @@ class TestEmptyDossier(unittest.TestCase):
         self.assertEqual(result.deal_name, "Empty Co")
         self.assertEqual(result.sections_run, [])
         # Every packet should be flagged as missing inputs
-        self.assertEqual(len(result.missing_inputs), 8)
+        self.assertEqual(len(result.missing_inputs), 9)
 
 
 class TestPartialDossier(unittest.TestCase):
@@ -67,9 +67,9 @@ class TestPartialDossier(unittest.TestCase):
         result = run_full_diligence(dossier)
         self.assertIn("qoe", result.sections_run)
         self.assertIsNotNone(result.qoe_result)
-        # Other 7 packets skipped
+        # Other 8 packets skipped
         self.assertEqual(len(result.sections_run), 1)
-        self.assertEqual(len(result.missing_inputs), 7)
+        self.assertEqual(len(result.missing_inputs), 8)
 
 
 class TestFullySupportedDossier(unittest.TestCase):
@@ -200,18 +200,48 @@ class TestFullySupportedDossier(unittest.TestCase):
             exit_target=self.exit_target,
             program_ids=["mssp_basic_a", "aco_reach_professional"],
         )
+        # Wire ESG inputs too
+        from rcm_mc.esg import (
+            Facility, FacilityType, WorkforceProfile,
+            GovernanceProfile,
+        )
+        dossier.facilities = [Facility(
+            facility_id="F1", name="Hospital",
+            facility_type=FacilityType.HOSPITAL,
+            state="TX", annual_kwh=1_000_000,
+        )]
+        dossier.workforce = WorkforceProfile(
+            total_headcount=1000, female_count=620,
+            urm_count=200, female_in_management_count=45,
+            management_count=100, board_members=8,
+            board_female=3, board_urm=2,
+            median_male_earnings=85000,
+            median_female_earnings=80750,
+            annual_voluntary_turnover_count=120,
+        )
+        dossier.governance_profile = GovernanceProfile(
+            has_cpom_msot_structure=True,
+            cpom_structure_disclosed=True,
+            board_total=8, board_independent=5,
+            annual_third_party_audit=True,
+            named_compliance_officer=True,
+            anonymous_reporting_channel=True,
+        )
+        dossier.issb_attested = True
+        dossier.cybersecurity_attested = True
+
         result = run_full_diligence(dossier)
-        # Every section ran
+        # Every section ran (now 9 with ESG)
         for section in (
             "payer_negotiation", "cohort_ltv", "referral_leakage",
             "regulatory_exposure", "qoe", "buyandbuild",
-            "exit_readiness", "vbc_track_choice",
+            "exit_readiness", "vbc_track_choice", "esg_scorecard",
         ):
             self.assertIn(section, result.sections_run,
                           f"{section} did not run; "
                           f"missing: {result.missing_inputs}")
-        self.assertEqual(len(result.sections_run), 8)
-        # And every result attribute is non-None
+        self.assertEqual(len(result.sections_run), 9)
+        # Every result attribute is non-None
         self.assertIsNotNone(result.payer_negotiation)
         self.assertIsNotNone(result.cohort_ltv)
         self.assertIsNotNone(result.referral_leakage)
@@ -220,6 +250,8 @@ class TestFullySupportedDossier(unittest.TestCase):
         self.assertIsNotNone(result.buyandbuild_optimal)
         self.assertIsNotNone(result.exit_readiness)
         self.assertIsNotNone(result.vbc_track_choice)
+        self.assertIsNotNone(result.esg_scorecard)
+        self.assertIn("ESG Disclosure", result.esg_disclosure_md)
 
 
 if __name__ == "__main__":
