@@ -367,6 +367,14 @@ def kfold_backtest(
 
 # ── Multi-model panel ───────────────────────────────────────
 
+from ..infra.cache import ttl_cache
+
+
+# Cached for 5 minutes — the default panel is synthesized from
+# a deterministic seed and doesn't change request-to-request.
+# Re-running the 4 kfold backtests on every /models/quality
+# pageload was wasted CPU.
+@ttl_cache(seconds=300)
 def _build_default_quality_panel(
 ) -> List[ModelBacktestResult]:
     """Build a panel of backtests for the standard trained

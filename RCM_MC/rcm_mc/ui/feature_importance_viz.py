@@ -185,6 +185,12 @@ def render_feature_importance_page(
         + body + '</div>')
 
 
+from ..infra.cache import ttl_cache
+
+
+# Cached for 5 minutes — like the model-quality panel, the
+# importance panel is synthesized from a deterministic seed.
+@ttl_cache(seconds=300)
 def _build_default_importance_panel(
 ) -> Dict[str, List[FeatureImportance]]:
     """Build a panel of importance charts for the standard
