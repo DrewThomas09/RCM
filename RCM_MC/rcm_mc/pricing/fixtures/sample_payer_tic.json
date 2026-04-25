@@ -1,0 +1,81 @@
+{
+  "reporting_entity_name": "Aetna",
+  "reporting_entity_type": "Health Insurance Issuer",
+  "plan_name": "Open Choice PPO",
+  "plan_id": "AETNA-OC-PPO-2026",
+  "plan_id_type": "HIOS",
+  "version": "1.1.0",
+  "last_updated_on": "2025-12-15",
+  "in_network": [
+    {
+      "negotiation_arrangement": "ffs",
+      "name": "Total Knee Arthroplasty",
+      "billing_code": "27447",
+      "billing_code_type": "CPT",
+      "billing_code_type_version": "2025",
+      "description": "Arthroplasty, knee, condyle and plateau",
+      "negotiated_rates": [
+        {
+          "provider_groups": [
+            {"npi": ["1003456789", "1124567890"],
+             "tin": {"type": "ein", "value": "12-3456789"}}
+          ],
+          "negotiated_prices": [
+            {"negotiated_type": "negotiated",
+             "negotiated_rate": 27200.00,
+             "billing_class": "professional",
+             "expiration_date": "2026-12-31",
+             "service_code": ["11", "21"]}
+          ]
+        },
+        {
+          "provider_groups": [
+            {"npi": ["1457890123"]}
+          ],
+          "negotiated_prices": [
+            {"negotiated_type": "negotiated",
+             "negotiated_rate": 23800.00,
+             "billing_class": "professional",
+             "expiration_date": "2026-12-31"}
+          ]
+        }
+      ]
+    },
+    {
+      "negotiation_arrangement": "ffs",
+      "name": "MRI Brain Without Contrast",
+      "billing_code": "70551",
+      "billing_code_type": "CPT",
+      "negotiated_rates": [
+        {
+          "provider_groups": [
+            {"npi": ["1003456789"]}
+          ],
+          "negotiated_prices": [
+            {"negotiated_type": "negotiated",
+             "negotiated_rate": 1240.00,
+             "billing_class": "professional"}
+          ]
+        }
+      ]
+    },
+    {
+      "negotiation_arrangement": "bundle",
+      "name": "MS-DRG 470",
+      "billing_code": "470",
+      "billing_code_type": "MS-DRG",
+      "negotiated_rates": [
+        {
+          "provider_groups": [
+            {"npi": ["1003456789"]}
+          ],
+          "negotiated_prices": [
+            {"negotiated_type": "negotiated",
+             "negotiated_rate": 31000.00,
+             "billing_class": "institutional"}
+          ]
+        }
+      ]
+    }
+  ]
+}

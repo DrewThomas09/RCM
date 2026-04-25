@@ -1,0 +1,75 @@
+{
+  "hospital_name": "Baylor Scott & White Medical Center - Dallas",
+  "ccn": "450022",
+  "billing_npi": "1003456789",
+  "license_number": "TX-001",
+  "version": "2.0.0",
+  "last_updated_on": "2025-12-01",
+  "standard_charge_information": [
+    {
+      "description": "TOTAL KNEE ARTHROPLASTY",
+      "code_information": [
+        {"code": "27447", "type": "CPT"}
+      ],
+      "standard_charges": [
+        {
+          "setting": "outpatient",
+          "gross_charge": 75000,
+          "discounted_cash": 30000,
+          "minimum_negotiated_charge": 22000,
+          "maximum_negotiated_charge": 56000,
+          "payers_information": [
+            {"payer_name": "BCBS-TX", "plan_name": "PPO",
+             "standard_charge_dollar": 24500},
+            {"payer_name": "UnitedHealthcare", "plan_name": "Choice Plus",
+             "standard_charge_dollar": 26800},
+            {"payer_name": "Aetna", "plan_name": "Open Choice",
+             "standard_charge_dollar": 27200},
+            {"payer_name": "Cigna", "plan_name": "OAP",
+             "standard_charge_dollar": 25900}
+          ]
+        }
+      ]
+    },
+    {
+      "description": "DRG 470 — MAJOR JOINT REPLACEMENT W/O MCC",
+      "code_information": [
+        {"code": "470", "type": "MS-DRG"}
+      ],
+      "standard_charges": [
+        {
+          "setting": "inpatient",
+          "gross_charge": 95000,
+          "discounted_cash": 38000,
+          "minimum_negotiated_charge": 28000,
+          "maximum_negotiated_charge": 72000,
+          "payers_information": [
+            {"payer_name": "BCBS-TX", "plan_name": "PPO",
+             "standard_charge_dollar": 31500},
+            {"payer_name": "Medicare", "plan_name": "FFS",
+             "standard_charge_dollar": 14250}
+          ]
+        }
+      ]
+    },
+    {
+      "description": "MRI BRAIN W/O CONTRAST",
+      "code_information": [
+        {"code": "70551", "type": "CPT"}
+      ],
+      "standard_charges": [
+        {
+          "setting": "outpatient",
+          "gross_charge": 4200,
+          "discounted_cash": 1800,
+          "minimum_negotiated_charge": 950,
+          "maximum_negotiated_charge": 2400,
+          "payers_information": [
+            {"payer_name": "BCBS-TX", "plan_name": "PPO",
+             "standard_charge_dollar": 1180}
+          ]
+        }
+      ]
+    }
+  ]
+}
