@@ -40,6 +40,7 @@ KNOWN_SOURCES: Tuple[str, ...] = (
     "irs990",
     "cms_pos",
     "cms_general",
+    "cms_hrrp",
 )
 
 # Allowed status values for data_source_status.status.
@@ -378,6 +379,10 @@ def _default_refreshers() -> Dict[str, Callable[[Any], int]]:
         from . import cms_hospital_general
         return cms_hospital_general.refresh_general_source(store)
 
+    def _cms_hrrp(store):
+        from . import cms_hrrp
+        return cms_hrrp.refresh_hrrp_source(store)
+
     return {
         "hcris": _hcris,
         "care_compare": _care_compare,
@@ -385,6 +390,7 @@ def _default_refreshers() -> Dict[str, Callable[[Any], int]]:
         "irs990": _irs990,
         "cms_pos": _cms_pos,
         "cms_general": _cms_general,
+        "cms_hrrp": _cms_hrrp,
     }
 
 

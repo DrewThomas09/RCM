@@ -428,6 +428,7 @@ def _all_insights(
     insights.extend(_geo_concentration_insights(deals))
     insights.extend(_sponsor_concentration_insights(db_path, deals))
     insights.extend(_low_quality_insights(deals))
+    insights.extend(_hrrp_penalty_insights(deals))
     insights.extend(_quiet_morning_insights(deals))
 
     insights.sort(key=lambda i: i.get("score", 0), reverse=True)
@@ -686,6 +687,36 @@ def _low_quality_insights(
             "href": "/portfolio/risk-scan",
             "tone": "warn",
             "score": 35 + 8 * len(low_rated),
+        }]
+    return []
+
+
+def _hrrp_penalty_insights(
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Hospitals carrying HRRP readmission penalties >2% have
+    direct Medicare-revenue exposure: a 2% penalty on Medicare ≈
+    60-80bps EBITDA hit on a typical hospital. Cluster of these
+    is a real bridge-math concern."""
+    high = [d for d in deals
+            if isinstance(d.get("hrrp_pct"), (int, float))
+            and d["hrrp_pct"] >= 2.0]
+    if len(high) >= 2:
+        names = ", ".join(d["name"] for d in high[:3])
+        if len(high) > 3:
+            names += f", +{len(high) - 3} more"
+        worst_pct = max(d["hrrp_pct"] for d in high)
+        return [{
+            "kind": "hrrp_penalty_cluster",
+            "headline": (f"{len(high)} hospitals carrying HRRP "
+                         f"penalties ≥2%"),
+            "body": (f"Worst: {worst_pct:.1f}% Medicare reduction. "
+                     f"Each 1% HRRP penalty is ~30-40bps EBITDA "
+                     f"on Medicare-heavy facilities. Deals: "
+                     f"{names}."),
+            "href": "/portfolio/risk-scan",
+            "tone": "warn",
+            "score": 32 + 8 * len(high),
         }]
     return []
 

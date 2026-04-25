@@ -111,6 +111,22 @@ def _freshness_cell(days: Optional[int]) -> str:
     return _cell_chip(f"{days}d", bg="#fee2e2", fg="#991b1b")
 
 
+def _hrrp_cell(pct: Optional[float]) -> str:
+    """HRRP penalty as a percentage of Medicare IPPS revenue.
+    None for non-hospitals or hospitals not in the file. 0% =
+    no penalty (green); ≥2% = high penalty (red); cap is 3%.
+    """
+    if pct is None:
+        return _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+    if pct == 0:
+        return _cell_chip("0%", bg="#d1fae5", fg="#065f46")
+    if pct >= 2.0:
+        return _cell_chip(f"{pct:.1f}%", bg="#fee2e2", fg="#991b1b")
+    if pct >= 1.0:
+        return _cell_chip(f"{pct:.1f}%", bg="#fef3c7", fg="#92400e")
+    return _cell_chip(f"{pct:.1f}%", bg="#e0e7ff", fg="#3730a3")
+
+
 def _quality_cell(rating: Optional[int]) -> str:
     """CMS overall hospital rating, 1-5 stars. None for facilities
     not in the CMS General Info file (or non-hospital deals)."""
@@ -248,6 +264,17 @@ def _gather_per_deal(db_path: str) -> List[Dict[str, Any]]:
         except Exception:  # noqa: BLE001
             pass
 
+        # CMS HRRP — readmission penalty as a percentage of Medicare
+        # IPPS payments. Best-effort.
+        hrrp_pct: Optional[float] = None
+        try:
+            from ..data.cms_hrrp import get_penalty_by_ccn
+            h = get_penalty_by_ccn(store, deal_id)
+            if h:
+                hrrp_pct = h.get("payment_adjustment_pct")
+        except Exception:  # noqa: BLE001
+            pass
+
         out.append({
             "deal_id": deal_id,
             "name": name,
@@ -263,6 +290,7 @@ def _gather_per_deal(db_path: str) -> List[Dict[str, Any]]:
             "chain": chain_name,
             "chain_size": chain_size,
             "quality_rating": quality_rating,
+            "hrrp_pct": hrrp_pct,
         })
 
     return out
@@ -434,6 +462,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
             f'<span style="color:#4b5563;">{_html.escape(d["sector"])}</span>',
             chain_cell,
             _quality_cell(d.get("quality_rating")),
+            _hrrp_cell(d.get("hrrp_pct")),
             _health_cell(d["score"], d["band"]),
             _covenant_cell(d["covenant_status"]),
             _alerts_cell(d["alerts"]),
@@ -442,10 +471,10 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         ])
 
     table = _wc.sortable_table(
-        ["Deal", "Sector", "Chain", "Quality", "Health", "Covenant",
-         "Alerts", "Snap age", "Deadlines"],
+        ["Deal", "Sector", "Chain", "Quality", "HRRP", "Health",
+         "Covenant", "Alerts", "Snap age", "Deadlines"],
         rows, id="portfolio-risk-scan",
-        hide_columns_sm=[1, 2, 7],
+        hide_columns_sm=[1, 2, 8],
         filterable=True,
         filter_placeholder=(
             "Filter by deal, sector, chain, or stage…"),
