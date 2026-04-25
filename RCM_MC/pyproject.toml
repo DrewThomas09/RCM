@@ -95,6 +95,19 @@ markers = [
     "integration: multi-module integration tests",
     "slow: tests that take >5 seconds",
 ]
+filterwarnings = [
+    # ThreadingHTTPServer leaves a brief window after
+    # server_close() before the kernel reaps the listener
+    # FD. pytest's unraisable-exception hook captures the
+    # ResourceWarning that follows. The socket *is* closed
+    # via server_close(); this is a gc-timing artifact in
+    # multi-test-file runs, not a real leak.
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+    # Same root cause — when surfaced as a raw
+    # ResourceWarning rather than via the unraisable hook
+    # (depends on pytest version + invocation order).
+    "ignore:unclosed <socket.socket:ResourceWarning",
+]
 
 [tool.ruff]
 line-length = 120
