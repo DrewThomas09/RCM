@@ -281,3 +281,118 @@ def train_ridge_with_cv(
         cv_residual_p90=cv_resid_p90,
         sanity_range=sanity_range,
     )
+
+
+@dataclass
+class CohortCVResult:
+    """Per-cohort transfer skill: train on N-1 cohorts, evaluate
+    on the left-out one. Catches the failure mode where a model
+    trained on big urban hospitals doesn't transfer to rural
+    critical-access — the standard k-fold score wouldn't notice
+    because the held-out fold is iid with the training data."""
+    cohort_labels: List[str]
+    per_cohort_r2: Dict[str, float]
+    per_cohort_mae: Dict[str, float]
+    per_cohort_n: Dict[str, int]
+    overall_transfer_r2: float
+    worst_cohort: str
+    worst_r2: float
+
+
+def cross_validate_across_cohorts(
+    X: Any,
+    y: Any,
+    cohort: List[Any],
+    *,
+    feature_names: List[str],
+    alpha: float = 1.0,
+    sanity_range: Tuple[float, float] = (-1e9, 1e9),
+) -> CohortCVResult:
+    """Leave-one-cohort-out CV. For each unique cohort label,
+    train on all other cohorts, evaluate on this one.
+
+    Args:
+      X: (n, p) feature matrix.
+      y: (n,) target vector.
+      cohort: list of length n with cohort labels (e.g. bed-size
+        bucket, region, urban/rural).
+      feature_names: column labels for X.
+      alpha: Ridge penalty.
+      sanity_range: clip applied to predictions before evaluation.
+
+    Returns: CohortCVResult — per-cohort R²+MAE+n, overall
+    transfer R², worst-cohort label.
+    """
+    X_arr = np.asarray(X, dtype=float)
+    y_arr = np.asarray(y, dtype=float)
+    cohort_arr = np.array(cohort)
+    if not (X_arr.shape[0] == y_arr.shape[0]
+            == cohort_arr.shape[0]):
+        raise ValueError(
+            "X, y, cohort row counts must match")
+
+    mask = (~np.isnan(X_arr).any(axis=1)
+            & ~np.isnan(y_arr))
+    X_arr = X_arr[mask]
+    y_arr = y_arr[mask]
+    cohort_arr = cohort_arr[mask]
+
+    unique = sorted(set(cohort_arr.tolist()),
+                    key=lambda x: str(x))
+    if len(unique) < 2:
+        raise ValueError(
+            "Need ≥2 cohorts for "
+            "leave-one-cohort-out CV")
+
+    per_r2: Dict[str, float] = {}
+    per_mae: Dict[str, float] = {}
+    per_n: Dict[str, int] = {}
+    all_y: List[float] = []
+    all_yhat: List[float] = []
+    for label in unique:
+        train_mask = cohort_arr != label
+        val_mask = cohort_arr == label
+        if (int(train_mask.sum()) < 5
+                or int(val_mask.sum()) < 1):
+            per_r2[str(label)] = float("nan")
+            per_mae[str(label)] = float("nan")
+            per_n[str(label)] = int(val_mask.sum())
+            continue
+        Xtr = X_arr[train_mask]
+        ytr = y_arr[train_mask]
+        m = Xtr.mean(axis=0)
+        s = Xtr.std(axis=0)
+        s[s < 1e-9] = 1.0
+        Xtr_s = (Xtr - m) / s
+        b, _ = _ridge_fit(Xtr_s, ytr - ytr.mean(), alpha)
+        Xv_s = (X_arr[val_mask] - m) / s
+        yv_hat = Xv_s @ b + ytr.mean()
+        lo, hi = sanity_range
+        yv_hat = np.clip(yv_hat, lo, hi)
+        yv_true = y_arr[val_mask]
+        per_r2[str(label)] = _r2_score(yv_true, yv_hat)
+        per_mae[str(label)] = float(
+            np.mean(np.abs(yv_true - yv_hat)))
+        per_n[str(label)] = int(val_mask.sum())
+        all_y.extend(yv_true.tolist())
+        all_yhat.extend(yv_hat.tolist())
+
+    overall = _r2_score(
+        np.array(all_y), np.array(all_yhat))
+    valid = {k: v for k, v in per_r2.items()
+             if not np.isnan(v)}
+    if valid:
+        worst = min(valid, key=valid.get)
+        worst_r2 = valid[worst]
+    else:
+        worst = ""
+        worst_r2 = float("nan")
+    return CohortCVResult(
+        cohort_labels=[str(u) for u in unique],
+        per_cohort_r2=per_r2,
+        per_cohort_mae=per_mae,
+        per_cohort_n=per_n,
+        overall_transfer_r2=overall,
+        worst_cohort=worst,
+        worst_r2=worst_r2,
+    )
