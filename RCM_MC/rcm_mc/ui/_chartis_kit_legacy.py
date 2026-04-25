@@ -699,6 +699,7 @@ _PALETTE_ENTRIES = [
     ("NAV", "Data refresh",             "/data/refresh"),
     ("NAV", "Pipeline",                 "/pipeline"),
     ("NAV", "Portfolio",                "/portfolio"),
+    ("NAV", "Portfolio risk scan",      "/portfolio/risk-scan"),
     ("NAV", "Watchlist",                "/watchlist"),
     ("NAV", "Alerts",                   "/alerts"),
     ("NAV", "My inbox",                 "/my/me"),

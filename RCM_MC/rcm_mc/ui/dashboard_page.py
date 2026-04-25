@@ -625,6 +625,10 @@ def _render_workflow_shortcuts_section(db_path: str) -> str:
     alert_lvl = ("warn" if (counts.get("alerts") or 0) > 0 else "neutral")
 
     items = [
+        ("Portfolio risk scan",       "/portfolio/risk-scan",
+         "One-screen scan — which deals need attention today, "
+         "sorted highest-priority first. Start here on Monday.",
+         ""),
         ("Pipeline & saved searches", "/pipeline",
          "Resume a saved filter or pin a new one for the morning sweep.",
          _badge(counts.get("saved_searches"))),

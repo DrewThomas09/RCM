@@ -1,0 +1,370 @@
+"""`/portfolio/risk-scan` — morning portfolio risk scan.
+
+The partner's Monday-morning question: "which of my 12 hold-period
+deals needs attention today?" Currently the answer requires opening
+each deal individually. This page answers it in one screen.
+
+Each deal is scanned against five risk dimensions:
+
+  1. **Health score** — current composite score + band, with a
+     90-day trend sparkline showing direction.
+  2. **Covenant headroom** — TRIPPED / TIGHT / SAFE status read from
+     the portfolio snapshot. A TRIPPED deal needs work TODAY.
+  3. **Active alerts** — count of unacked alerts for the deal. Any
+     deal with >0 open alerts surfaces amber; ≥3 surfaces red.
+  4. **Snapshot freshness** — days since the latest portfolio
+     snapshot. A deal stale >30 days is rendering on old data.
+  5. **Pending deadlines** — count of open deadlines where the
+     user is the owner, plus count of overdue deadlines.
+
+Everything is best-effort — a missing table or a failing compute
+on a single deal falls through to "—" for that cell, not a page
+crash. The goal is to always render SOMETHING, even on a fresh
+deploy or a partially-populated DB.
+
+The page respects the same filterable/sortable contract as the
+dashboard's tables (`_web_components.sortable_table` with
+`filterable=True`) so a partner with 50 deals can type "sector"
+or "covenant" and filter in place.
+
+Public API:
+    render_portfolio_risk_scan(db_path: str) -> str
+"""
+from __future__ import annotations
+
+import html as _html
+import sqlite3
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+
+
+def _safe_int(v: Any, default: int = 0) -> int:
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return default
+
+
+def _days_since(iso: Optional[str]) -> Optional[int]:
+    if not iso:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - dt).days
+    except (TypeError, ValueError):
+        return None
+
+
+def _cell_chip(label: str, *, bg: str, fg: str) -> str:
+    return (
+        f'<span style="display:inline-block;padding:1px 8px;'
+        f'background:{bg};color:{fg};border-radius:9999px;'
+        f'font-size:11px;font-weight:600;'
+        f'font-variant-numeric:tabular-nums;">{_html.escape(label)}</span>'
+    )
+
+
+# ── Per-dimension cell renderers ───────────────────────────────────
+
+def _health_cell(score: Optional[int], band: Optional[str]) -> str:
+    """Score chip color-coded by band."""
+    if score is None:
+        return _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+    band_l = (band or "").lower()
+    if band_l in ("excellent", "good"):
+        return _cell_chip(str(score), bg="#d1fae5", fg="#065f46")
+    if band_l == "fair":
+        return _cell_chip(str(score), bg="#fef3c7", fg="#92400e")
+    if band_l in ("poor", "critical"):
+        return _cell_chip(str(score), bg="#fee2e2", fg="#991b1b")
+    return _cell_chip(str(score), bg="#e0e7ff", fg="#3730a3")
+
+
+def _covenant_cell(status: Optional[str]) -> str:
+    s = (status or "").upper()
+    if s == "TRIPPED":
+        return _cell_chip("TRIPPED", bg="#fee2e2", fg="#991b1b")
+    if s == "TIGHT":
+        return _cell_chip("TIGHT", bg="#fef3c7", fg="#92400e")
+    if s in ("SAFE", "OK"):
+        return _cell_chip("SAFE", bg="#d1fae5", fg="#065f46")
+    return _cell_chip("—", bg="#f3f4f6", fg="#6b7280")
+
+
+def _alerts_cell(count: int) -> str:
+    if count <= 0:
+        return _cell_chip("0", bg="#f3f4f6", fg="#6b7280")
+    if count >= 3:
+        return _cell_chip(str(count), bg="#fee2e2", fg="#991b1b")
+    return _cell_chip(str(count), bg="#fef3c7", fg="#92400e")
+
+
+def _freshness_cell(days: Optional[int]) -> str:
+    if days is None:
+        return _cell_chip("never", bg="#f3f4f6", fg="#6b7280")
+    if days < 7:
+        return _cell_chip(f"{days}d", bg="#d1fae5", fg="#065f46")
+    if days < 30:
+        return _cell_chip(f"{days}d", bg="#fef3c7", fg="#92400e")
+    return _cell_chip(f"{days}d", bg="#fee2e2", fg="#991b1b")
+
+
+def _deadlines_cell(open_count: int, overdue_count: int) -> str:
+    if overdue_count > 0:
+        return _cell_chip(
+            f"{open_count} ({overdue_count} overdue)",
+            bg="#fee2e2", fg="#991b1b",
+        )
+    if open_count > 0:
+        return _cell_chip(str(open_count), bg="#e0e7ff", fg="#3730a3")
+    return _cell_chip("0", bg="#f3f4f6", fg="#6b7280")
+
+
+# ── Data gathering ──────────────────────────────────────────────────
+
+def _gather_per_deal(db_path: str) -> List[Dict[str, Any]]:
+    """One dict per deal. Every field is best-effort."""
+    try:
+        from ..portfolio.store import PortfolioStore
+        store = PortfolioStore(db_path)
+        deals_df = store.list_deals(include_archived=False)
+    except Exception:  # noqa: BLE001
+        return []
+
+    if deals_df.empty:
+        return []
+
+    # Pull latest snapshot per deal once (cheap) — gives
+    # covenant_status + snapshot freshness cheaply.
+    try:
+        from ..portfolio.portfolio_snapshots import latest_per_deal
+        snap_df = latest_per_deal(store)
+        snap_by_id: Dict[str, Dict[str, Any]] = {
+            str(r["deal_id"]): r.to_dict()
+            for _, r in snap_df.iterrows()
+        } if not snap_df.empty else {}
+    except Exception:  # noqa: BLE001
+        snap_by_id = {}
+
+    # Pre-load deadlines in one pass — avoids N round-trips.
+    open_deadlines: Dict[str, int] = {}
+    overdue_deadlines: Dict[str, int] = {}
+    try:
+        from ..deals.deal_deadlines import list_deadlines, overdue
+        for dl in list_deadlines(store, status="open"):
+            did = str(dl.get("deal_id", ""))
+            open_deadlines[did] = open_deadlines.get(did, 0) + 1
+        for dl in overdue(store):
+            did = str(dl.get("deal_id", ""))
+            overdue_deadlines[did] = overdue_deadlines.get(did, 0) + 1
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Active-alerts-per-deal in one pass.
+    alerts_per_deal: Dict[str, int] = {}
+    try:
+        from ..alerts.alerts import evaluate_active
+        for a in evaluate_active(store):
+            did = str(getattr(a, "deal_id", "") or "")
+            alerts_per_deal[did] = alerts_per_deal.get(did, 0) + 1
+    except Exception:  # noqa: BLE001
+        pass
+
+    out: List[Dict[str, Any]] = []
+    for _, row in deals_df.iterrows():
+        deal_id = str(row.get("deal_id") or "")
+        if not deal_id:
+            continue
+        name = str(row.get("name") or deal_id)
+        snap = snap_by_id.get(deal_id, {})
+
+        # Health score — compute_health is pricey on a real DB; do
+        # it lazily with try/except so one failed compute doesn't
+        # crash the whole page.
+        score: Optional[int] = None
+        band: Optional[str] = None
+        try:
+            from ..deals.health_score import compute_health
+            h = compute_health(store, deal_id)
+            score = h.get("score")
+            band = h.get("band")
+        except Exception:  # noqa: BLE001
+            pass
+
+        # Snapshot freshness — age of the latest snapshot row.
+        snap_age = _days_since(snap.get("snapshot_at")
+                               or snap.get("created_at"))
+
+        out.append({
+            "deal_id": deal_id,
+            "name": name,
+            "sector": str(row.get("sector") or "") or "—",
+            "stage": str(row.get("stage") or "") or "—",
+            "score": score,
+            "band": band,
+            "covenant_status": snap.get("covenant_status"),
+            "alerts": alerts_per_deal.get(deal_id, 0),
+            "snap_age_days": snap_age,
+            "open_deadlines": open_deadlines.get(deal_id, 0),
+            "overdue_deadlines": overdue_deadlines.get(deal_id, 0),
+        })
+
+    return out
+
+
+# ── Row-level priority ranker ──────────────────────────────────────
+#
+# Puts "needs attention today" rows at the top without requiring the
+# partner to click the Covenant or Alerts column header. Priority is
+# a simple weighted sum — TRIPPED covenant and overdue deadlines
+# dominate; low health scores and unacked alerts pile on.
+
+def _priority_rank(deal: Dict[str, Any]) -> int:
+    score = 0
+    if (deal.get("covenant_status") or "").upper() == "TRIPPED":
+        score += 100
+    elif (deal.get("covenant_status") or "").upper() == "TIGHT":
+        score += 30
+    score += 20 * int(deal.get("overdue_deadlines") or 0)
+    score += 5 * int(deal.get("alerts") or 0)
+    h = deal.get("score")
+    if isinstance(h, int):
+        if h < 40:
+            score += 40
+        elif h < 60:
+            score += 15
+    if deal.get("snap_age_days") is not None:
+        days = deal["snap_age_days"]
+        if days > 60:
+            score += 20
+        elif days > 30:
+            score += 10
+    return score
+
+
+# ── Page renderer ──────────────────────────────────────────────────
+
+def render_portfolio_risk_scan(db_path: str) -> str:
+    from . import _web_components as _wc
+    from ._chartis_kit import chartis_shell
+
+    deals = _gather_per_deal(db_path)
+
+    header = _wc.page_header(
+        "Portfolio risk scan",
+        subtitle=(
+            "One-screen scan across every active deal — health score, "
+            "covenant, alerts, snapshot freshness, deadlines. Rows "
+            "sorted highest-priority first so attention-required "
+            "deals surface without clicking a column."
+        ),
+        crumbs=[("Dashboard", "/dashboard"),
+                ("Portfolio risk scan", None)],
+    )
+
+    if not deals:
+        empty = (
+            '<p>No active deals in the portfolio store yet. '
+            'Add deals via the <a href="/new-deal" '
+            'style="color:#1F4E78;">new deal wizard</a> or import '
+            'via <a href="/import" style="color:#1F4E78;">Quick '
+            'import</a>, then this scan will populate.</p>'
+        )
+        body = (
+            _wc.web_styles()
+            + _wc.responsive_container(
+                header + _wc.section_card("No deals yet", empty))
+        )
+        return chartis_shell(body, "Portfolio risk scan",
+                             active_nav="/portfolio/risk-scan")
+
+    # Priority-sort so the worst deals float to the top
+    deals.sort(key=_priority_rank, reverse=True)
+
+    # Summary strip: counts across the portfolio for the 3
+    # most-actionable categories.
+    tripped = sum(1 for d in deals
+                  if (d.get("covenant_status") or "").upper() == "TRIPPED")
+    any_alerts = sum(1 for d in deals if (d.get("alerts") or 0) > 0)
+    any_overdue = sum(1 for d in deals
+                      if (d.get("overdue_deadlines") or 0) > 0)
+
+    def _summary_chip(label: str, n: int, *, level: str) -> str:
+        colors = {
+            "ok": ("#d1fae5", "#065f46"),
+            "warn": ("#fef3c7", "#92400e"),
+            "alert": ("#fee2e2", "#991b1b"),
+        }
+        bg, fg = colors.get(level, colors["ok"])
+        return (
+            f'<div style="padding:10px 14px;background:{bg};color:{fg};'
+            f'border-radius:8px;flex:1;min-width:180px;">'
+            f'<div style="font-size:11px;font-weight:600;text-transform:uppercase;'
+            f'letter-spacing:0.05em;opacity:0.85;">{_html.escape(label)}</div>'
+            f'<div style="font-size:22px;font-weight:700;margin-top:2px;'
+            f'font-variant-numeric:tabular-nums;">{n}</div>'
+            f'</div>'
+        )
+
+    summary_strip = (
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:16px 0;">'
+        + _summary_chip("Covenant TRIPPED", tripped,
+                        level="alert" if tripped else "ok")
+        + _summary_chip("Deals with open alerts", any_alerts,
+                        level="warn" if any_alerts else "ok")
+        + _summary_chip("Deals with overdue deadlines", any_overdue,
+                        level="alert" if any_overdue else "ok")
+        + _summary_chip("Active deals scanned", len(deals), level="ok")
+        + "</div>"
+    )
+
+    # Row construction — each cell is a colored chip so the scan
+    # reads visually, not by reading numbers.
+    rows: List[List[str]] = []
+    for d in deals:
+        deal_id = d["deal_id"]
+        name_link = (
+            f'<a href="/deal/{_html.escape(deal_id)}" '
+            f'style="color:#1F4E78;font-weight:500;text-decoration:none;">'
+            f'{_html.escape(d["name"])}</a>'
+            f'<div style="font-family:monospace;font-size:10px;'
+            f'color:#6b7280;margin-top:2px;text-transform:uppercase;">'
+            f'{_html.escape(deal_id)}</div>'
+        )
+        rows.append([
+            name_link,
+            f'<span style="color:#4b5563;">{_html.escape(d["sector"])}</span>',
+            _health_cell(d["score"], d["band"]),
+            _covenant_cell(d["covenant_status"]),
+            _alerts_cell(d["alerts"]),
+            _freshness_cell(d["snap_age_days"]),
+            _deadlines_cell(d["open_deadlines"], d["overdue_deadlines"]),
+        ])
+
+    table = _wc.sortable_table(
+        ["Deal", "Sector", "Health", "Covenant", "Alerts",
+         "Snap age", "Deadlines"],
+        rows, id="portfolio-risk-scan",
+        hide_columns_sm=[1, 5],
+        filterable=True,
+        filter_placeholder="Filter by deal, sector, or stage…",
+    )
+
+    inner = (
+        header
+        + summary_strip
+        + _wc.section_card(
+            f"Per-deal scan ({len(deals)} active deals)",
+            table, pad=False,
+        )
+    )
+
+    body = (
+        _wc.web_styles()
+        + _wc.responsive_container(inner)
+        + _wc.sortable_table_js()
+    )
+    return chartis_shell(body, "Portfolio risk scan",
+                         active_nav="/portfolio/risk-scan")

@@ -1963,6 +1963,13 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/portfolio/regression/hospital/"):
             ccn = path.replace("/portfolio/regression/hospital/", "").strip("/")
             return self._route_hospital_regression(ccn)
+        if path == "/portfolio/risk-scan":
+            # Morning cross-portfolio scan — health / covenant /
+            # alerts / snapshot-freshness / deadlines across every
+            # active deal in one sortable, filterable table.
+            from .ui.portfolio_risk_scan_page import render_portfolio_risk_scan
+            return self._send_html(render_portfolio_risk_scan(
+                self.config.db_path))
         if path == "/import":
             from .ui.quick_import import render_quick_import
             return self._send_html(render_quick_import())
