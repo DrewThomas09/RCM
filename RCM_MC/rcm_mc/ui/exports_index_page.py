@@ -67,21 +67,36 @@ def _export_rows(rows: List[Tuple[str, str, str]]) -> List[List[str]]:
 
 
 def _deal_format_guide() -> str:
-    """Reference card: how to use /api/analysis/<deal_id>/export?format=X."""
+    """Reference card: how to use /api/analysis/<deal_id>/export?format=X.
+
+    Each row carries a typical-size hint so a partner picking the
+    right format knows what to expect: HTML is small + browser-
+    renderable, PPTX is large + presentation-ready, JSON is round-
+    trip safe for tooling.
+    """
     formats = [
-        ("html",     "Full diligence memo — renders in browser."),
-        ("pdf",      "HTML memo with auto-print; use browser's Save-as-PDF."),
-        ("xlsx",     "Multi-sheet Excel workbook for the deal."),
-        ("pptx",     "PowerPoint deck (requires python-pptx; falls back to .txt)."),
-        ("csv",      "Raw packet metrics as CSV."),
-        ("json",     "Canonical DealAnalysisPacket JSON (round-trip safe)."),
-        ("package",  "ZIP archive: all formats + provenance index."),
+        ("html",     "Full diligence memo — renders in browser.",
+         "~50–200 KB"),
+        ("pdf",      "HTML memo with auto-print; use browser's Save-as-PDF.",
+         "~50–200 KB"),
+        ("xlsx",     "Multi-sheet Excel workbook for the deal.",
+         "~100–500 KB"),
+        ("pptx",     "PowerPoint deck (requires python-pptx; falls back to .txt).",
+         "~500 KB–2 MB"),
+        ("csv",      "Raw packet metrics as CSV.",
+         "~5–20 KB"),
+        ("json",     "Canonical DealAnalysisPacket JSON (round-trip safe).",
+         "~10–50 KB"),
+        ("package",  "ZIP archive: all formats + provenance index.",
+         "~1–3 MB"),
     ]
     rows: List[List[str]] = []
-    for name, desc in formats:
+    for name, desc, size in formats:
         rows.append([
             (f'<code>?format={_html.escape(name)}</code>'),
             _html.escape(desc),
+            f'<span style="color:#6b7280;font-family:monospace;'
+            f'font-size:11px;">{_html.escape(size)}</span>',
         ])
     intro = (
         '<p>Any deal can be exported via '
@@ -89,8 +104,8 @@ def _deal_format_guide() -> str:
         'Open a deal from the dashboard first, then use its export menu.</p>'
     )
     table = _wc.sortable_table(
-        ["Format", "What you get"], rows,
-        id="exports-format-guide",
+        ["Format", "What you get", "Typical size"], rows,
+        id="exports-format-guide", hide_columns_sm=[2],
         filterable=True, filter_placeholder="Filter formats…",
     )
     return _wc.section_card("Per-deal exports", intro + table)
