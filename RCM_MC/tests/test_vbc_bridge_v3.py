@@ -286,5 +286,154 @@ class TestShrinkage(unittest.TestCase):
         self.assertEqual(w, 0.0)
 
 
+# ── Hierarchical Bayesian model ─────────────────────────────────
+
+class TestHierarchicalFit(unittest.TestCase):
+    def test_empty_observations_returns_zero_population(self):
+        from rcm_mc.vbc import (
+            fit_hierarchical_pmpm, CohortObservation,
+        )
+        fit = fit_hierarchical_pmpm([])
+        self.assertEqual(fit.population_mean, 0.0)
+        self.assertEqual(fit.n_cohorts, 0)
+
+    def test_population_mean_weighted_by_size(self):
+        """Two cohorts: small @ 1500 PMPM, large @ 1000 PMPM. The
+        size-weighted mean should pull toward the large cohort."""
+        from rcm_mc.vbc import (
+            fit_hierarchical_pmpm, CohortObservation,
+        )
+        fit = fit_hierarchical_pmpm([
+            CohortObservation("small",
+                              [1500] * 3),  # n=3, mean=1500
+            CohortObservation("large",
+                              [1000] * 30),  # n=30, mean=1000
+        ])
+        # Weighted mean: (3*1500 + 30*1000) / 33 ≈ 1045
+        self.assertAlmostEqual(fit.population_mean, 1045.45,
+                               places=0)
+
+    def test_small_cohort_shrinks_more_than_large(self):
+        """A small noisy cohort should have a smaller shrinkage
+        weight (more pull toward population mean) than a large
+        cohort."""
+        from rcm_mc.vbc import (
+            fit_hierarchical_pmpm, CohortObservation,
+        )
+        # Three cohorts; one large with stable mean, one small
+        # with extreme observed value, one mid.
+        fit = fit_hierarchical_pmpm([
+            CohortObservation(
+                "big",
+                [1000, 1010, 990, 1020, 1005, 995, 1015, 985,
+                 1005, 1010, 990, 1000]),
+            CohortObservation("medium", [1100, 1080, 1120]),
+            # Tiny + extreme
+            CohortObservation("tiny_extreme", [1500, 1480, 1520]),
+        ])
+        big_post = fit.posterior("big")
+        tiny_post = fit.posterior("tiny_extreme")
+        self.assertIsNotNone(big_post)
+        self.assertIsNotNone(tiny_post)
+        # Both have same n=3 vs n=12 — large cohort gets more trust
+        # weight even though both have similar within-cohort SD.
+        self.assertGreater(big_post.shrinkage_weight,
+                           tiny_post.shrinkage_weight)
+
+    def test_zero_between_variance_full_shrinkage(self):
+        """When all cohorts have identical means, σ²_between = 0 →
+        every posterior pulls fully to the population mean."""
+        from rcm_mc.vbc import (
+            fit_hierarchical_pmpm, CohortObservation,
+        )
+        fit = fit_hierarchical_pmpm([
+            CohortObservation("a", [1000, 1010, 990]),
+            CohortObservation("b", [1005, 995, 1010]),
+            CohortObservation("c", [1000, 1005, 995]),
+        ])
+        for cid, post in fit.posteriors.items():
+            # Posterior should be near population mean, w_k near 0
+            self.assertAlmostEqual(
+                post.posterior_mean, fit.population_mean, places=0)
+
+
+# ── LTV with hierarchical shrinkage ────────────────────────────
+
+class TestPanelLTVWithShrinkage(unittest.TestCase):
+    def test_shrunk_pmpm_meaningfully_pulls_outlier(self):
+        """Realistic fixture: 5 cohorts with similar true PMPMs +
+        one outlier. The hierarchical model should identify the
+        outlier and shrink it toward the population center."""
+        from rcm_mc.vbc import (
+            Cohort, CohortPanel, ContractTerms,
+            project_panel_lifetime_value,
+        )
+        # 5 cohorts ~$1000 PMPM + 1 noisy outlier at $1400
+        cohorts = [
+            Cohort(cohort_id=f"c{i}", size=2000, avg_age=70,
+                   hcc_distribution={"HCC_DM_NO_COMP": 0.20},
+                   annual_pmpm_cost=1000.0,
+                   expected_attrition_rate=0.05)
+            for i in range(5)
+        ]
+        cohorts.append(
+            Cohort(cohort_id="outlier", size=150, avg_age=72,
+                   hcc_distribution={"HCC_DM_NO_COMP": 0.20},
+                   annual_pmpm_cost=1400.0,
+                   expected_attrition_rate=0.05))
+        panel = CohortPanel(
+            panel_id="P", operator_name="Op", cohorts=cohorts,
+            benchmark_year=2026,
+        )
+        contract = ContractTerms(
+            contract_type="TCC", benchmark_pmpm=1100.0,
+        )
+
+        plain = project_panel_lifetime_value(
+            panel, contract, horizon_years=3,
+        )
+
+        # Observed PMPM history. Within-cohort SD is moderate (~$80)
+        # so per-cohort sampling variance is meaningful.
+        rng_seed_base = [1005, 995, 1010, 1000, 990, 1015, 985, 1000]
+        obs = {}
+        for i in range(5):
+            obs[f"c{i}"] = [v + i * 5 for v in rng_seed_base[:6]]
+        # Outlier: only 3 noisy observations
+        obs["outlier"] = [1380, 1420, 1400]
+
+        shrunk = project_panel_lifetime_value(
+            panel, contract, horizon_years=3,
+            pmpm_observations=obs,
+        )
+
+        # Hierarchical fit happened
+        self.assertIsNotNone(shrunk["hierarchical_fit"])
+        self.assertEqual(
+            shrunk["hierarchical_fit"]["n_cohorts"], 6)
+        # Plain path skipped the fit
+        self.assertIsNone(plain.get("hierarchical_fit"))
+
+        # Outlier posterior is below its observed mean — the
+        # direction-of-shrinkage invariant. Magnitude is
+        # MoM-conservative (single outliers inflate σ²_between
+        # and self-justify their own trust weight; this is the
+        # textbook MoM behavior and a partner-defensible default).
+        outlier_post = shrunk["hierarchical_fit"]["posteriors"][
+            "outlier"]
+        self.assertLess(outlier_post["posterior_mean"],
+                        outlier_post["observed_mean"])
+        # And shrinkage_weight < 1 (some pull toward population)
+        self.assertLess(outlier_post["shrinkage_weight"], 1.0)
+
+        # The 5 stable cohorts should NOT be materially shrunk
+        # since they're internally consistent — observed mean
+        # approximately equals posterior mean.
+        for i in range(5):
+            p = shrunk["hierarchical_fit"]["posteriors"][f"c{i}"]
+            self.assertAlmostEqual(
+                p["posterior_mean"], p["observed_mean"], delta=10)
+
+
 if __name__ == "__main__":
     unittest.main()

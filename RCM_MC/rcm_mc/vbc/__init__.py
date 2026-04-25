@@ -57,6 +57,12 @@ from .ltv import (
     LTVResult,
 )
 from .shrinkage import bayesian_shrink_cohort
+from .hierarchical import (
+    fit_hierarchical_pmpm,
+    CohortObservation,
+    CohortPosterior,
+    HierarchicalFit,
+)
 
 __all__ = [
     "Cohort",
@@ -71,4 +77,8 @@ __all__ = [
     "project_panel_lifetime_value",
     "LTVResult",
     "bayesian_shrink_cohort",
+    "fit_hierarchical_pmpm",
+    "CohortObservation",
+    "CohortPosterior",
+    "HierarchicalFit",
 ]
