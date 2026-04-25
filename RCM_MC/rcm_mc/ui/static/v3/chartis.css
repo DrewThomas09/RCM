@@ -578,6 +578,53 @@ footer.editorial em { color: var(--ink); font-style: italic; }
  *     when a helper is retired
  */
 
+/* --- EBITDA drag (rcm_mc/ui/chartis/_app_ebitda_drag.py) --- */
+
+.app-drag-bar {
+  display: flex;
+  height: 26px;
+  border: 1px solid var(--border);
+  margin: .5rem 0 1rem;
+  background: var(--paper-pure);
+}
+.app-drag-bar > .seg {
+  height: 100%;
+  border-right: 1px solid var(--paper-pure);
+  font-family: "JetBrains Mono", monospace; font-size: .68rem;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--paper-pure);
+  font-variant-numeric: tabular-nums;
+}
+.app-drag-bar > .seg:last-child { border-right: none; }
+.app-drag-rows { display: grid; gap: .55rem; }
+.app-drag-rows .row {
+  display: grid;
+  grid-template-columns: 16px 1fr auto auto;
+  gap: .65rem;
+  align-items: center;
+  font-family: "Inter", sans-serif; font-size: .85rem;
+}
+.app-drag-rows .row .swatch {
+  width: 12px; height: 12px;
+}
+.app-drag-rows .row .label { color: var(--ink); }
+.app-drag-rows .row .pct {
+  font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.app-drag-rows .row .v {
+  font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  color: var(--ink); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.app-drag-empty {
+  padding: 1.5rem; text-align: center;
+  color: var(--muted); font-family: "Source Serif 4", serif;
+  font-style: italic;
+}
+.app-drag-empty a { color: var(--teal-deep); text-decoration: underline; }
+
 /* --- Covenant heatmap (rcm_mc/ui/chartis/_app_covenant_heatmap.py) --- */
 
 .app-cov-heat {
