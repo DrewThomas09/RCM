@@ -3785,6 +3785,52 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "insights": _all_insights(self.config.db_path),
                 "count": len(_all_insights(self.config.db_path)),
             })
+        if path == "/api/portfolio/risk-scan.csv":
+            # Time-saver: dump the entire risk-scan table as CSV
+            # so a partner can paste it into PowerPoint, an email
+            # to the team, or upload to Excel for a one-off pivot.
+            # No tab to navigate to, no "export" dialog, no
+            # post-processing — just a one-click download.
+            from .ui.portfolio_risk_scan_page import _gather_per_deal
+            import csv as _csv
+            import io as _io
+            deals = _gather_per_deal(self.config.db_path)
+            buf = _io.StringIO()
+            writer = _csv.writer(buf)
+            writer.writerow([
+                "deal_id", "name", "sector", "stage", "chain",
+                "chain_size", "quality_rating", "health_score",
+                "health_band", "covenant_status", "open_alerts",
+                "snapshot_age_days", "open_deadlines",
+                "overdue_deadlines",
+            ])
+            for d in deals:
+                writer.writerow([
+                    d.get("deal_id", ""), d.get("name", ""),
+                    d.get("sector", ""), d.get("stage", ""),
+                    d.get("chain", ""), d.get("chain_size", "") or 0,
+                    d.get("quality_rating") or "",
+                    d.get("score") or "", d.get("band", ""),
+                    d.get("covenant_status") or "",
+                    d.get("alerts", 0),
+                    d.get("snap_age_days") or "",
+                    d.get("open_deadlines", 0),
+                    d.get("overdue_deadlines", 0),
+                ])
+            csv_bytes = buf.getvalue().encode("utf-8")
+            from datetime import datetime as _dt, timezone as _tz
+            today = _dt.now(_tz.utc).date().isoformat()
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header(
+                "Content-Disposition",
+                f'attachment; filename="risk-scan-{today}.csv"',
+            )
+            self.send_header("Content-Length", str(len(csv_bytes)))
+            self._send_security_headers()
+            self.end_headers()
+            self.wfile.write(csv_bytes)
+            return
         if path == "/insights":
             from .ui.insights_page import render_insights_page
             return self._send_html(render_insights_page(

@@ -451,10 +451,27 @@ def render_portfolio_risk_scan(db_path: str) -> str:
             "Filter by deal, sector, chain, or stage…"),
     )
 
+    # One-click CSV export — saves a partner from copy-paste-and-
+    # reformat-into-PowerPoint when they need to share the scan.
+    csv_link = (
+        '<a href="/api/portfolio/risk-scan.csv" '
+        'download style="display:inline-block;margin:0 0 12px;'
+        'padding:6px 12px;background:#fff;border:1px solid #d0e3f0;'
+        'color:#1F4E78;border-radius:4px;font-size:12px;'
+        'font-weight:500;text-decoration:none;'
+        'transition:background 0.1s;" '
+        'onmouseover="this.style.background=\'#f0f6fc\';" '
+        'onmouseout="this.style.background=\'#fff\';" '
+        'title="Download today\'s scan as CSV — paste into PowerPoint, '
+        'email, or Excel">'
+        '⬇ Export CSV</a>'
+    )
+
     inner = (
         header
         + summary_strip
         + legend
+        + csv_link
         + _wc.section_card(
             f"Per-deal scan ({len(deals)} active deals)",
             table, pad=False,
