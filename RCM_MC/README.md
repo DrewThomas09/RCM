@@ -42,26 +42,33 @@ All three dispatch into the same analytic engines. One source of truth.
 
 ---
 
-## The modules ship in 5 groups
+## The modules ship in 6 groups
 
 | Group | Purpose | Lives in |
 |-------|---------|----------|
 | **Diligence** | Analytic modules (one per partner question) | `rcm_mc/diligence/` |
+| **ML predictors** | Ridge + conformal + ensemble + cohort CV — 25+ models | `rcm_mc/ml/` |
 | **Market intel** | Public comps + PE transactions + news feed | `rcm_mc/market_intel/` |
 | **Portfolio ops** | Alerts, deals, health score, deadlines, LP digest | `rcm_mc/portfolio/` + `deals/` + `alerts/` |
 | **Financial engines** | Monte Carlo, PE math, bridge, scenarios | `rcm_mc/mc/` + `pe/` + `core/` |
-| **UI** | Server-rendered web pages | `rcm_mc/ui/` |
+| **UI** | Server-rendered web pages + reusable components | `rcm_mc/ui/` |
 
-The 7 modules shipped in the most recent cycle are inside `diligence/`:
+The 7 diligence modules from the prior cycle still live in `diligence/`:
 - `regulatory_calendar/` — CMS/OIG/FTC event kill-switch
 - `covenant_lab/` — capital stack × covenant breach MC
 - `bridge_audit/` — banker-bridge reality check against priors
 - `bear_case/` — IC memo counter-narrative auto-generator
 - `payer_stress/` — payer-mix rate-shock stress lab
 - `hcris_xray/` — Medicare cost-report peer benchmarking
-- `thesis_pipeline/` — 14-step orchestrator over all the above
+- `thesis_pipeline/` — orchestrator over all the above
 
-Each has its own README inside the folder.
+The most recent cycle (Apr 2026) added:
+- **4 new public-data ingest modules** in `data/` — CDC PLACES, state APCD, AHRQ HCUP, CMS MA enrollment, plus a unified data catalog at `/data/catalog`
+- **13 new ML predictors** in `ml/` — denial rate, days-in-AR, collection rate, forward distress, improvement potential, contract strength, service-line profitability, labor efficiency, volume forecaster, regime detection, ensemble methods, feature importance, geographic clustering, payer-mix cascade. Plus a backtest harness at `/models/quality` and feature-importance viz at `/models/importance`
+- **14+ reusable UI components** in `ui/` — `power_table`, `power_chart`, semantic colors, metric tooltips, breadcrumbs + keyboard shortcuts, skeletons, empty states, responsive utilities, theme toggle, comparison surface, provenance badges, global search, preferences, canonical UI kit
+- **15 strategic planning docs** in `docs/` — see [docs/README.md](docs/README.md) for the index. Headlines: 6-month product roadmap, 3-cohort beta program plan, business model, competitive landscape, partnerships, multi-asset expansion, multi-user architecture, PHI security, integrations, regulatory roadmap, data acquisition, learning loop, v2 plan, next-cycle plan, MD demo script
+
+Each module has its own README inside the folder.
 
 ---
 
@@ -127,12 +134,19 @@ Every layer calls down, never up. The store is the only module that touches the 
 - **Developer guide**: [readME/03_Developer_Guide.md](readME/03_Developer_Guide.md)
 - **API reference**: [readME/01_API_Reference.md](readME/01_API_Reference.md)
 - **Architecture deep-dive**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **6-month product roadmap**: [docs/PRODUCT_ROADMAP_6MO.md](docs/PRODUCT_ROADMAP_6MO.md)
+- **Beta program design**: [docs/BETA_PROGRAM_PLAN.md](docs/BETA_PROGRAM_PLAN.md)
+- **Strategy index (15 docs)**: [docs/README.md](docs/README.md)
+- **ML modules reference**: [rcm_mc/ml/README.md](rcm_mc/ml/README.md)
+- **Data sources reference**: [rcm_mc/data/README.md](rcm_mc/data/README.md)
+- **UI components reference**: [rcm_mc/ui/README.md](rcm_mc/ui/README.md)
 
 ---
 
 ## Status
 
 - **Python**: 3.14
-- **Tests**: 258/258 green on new cycle modules · 8,477/8,534 (99.3%) full suite
-- **Branch**: `fix/revert-ui-reskin` (merged to `main`)
+- **Tests**: 10,000+ test functions across 452 test files; cycle additions ship with their own resilience suites (empty-data, extreme-value, exports, full-pipeline 10 hospitals)
+- **Branch**: `main` (current), `fix/revert-ui-reskin` working
+- **Most recent cycle**: 80+ commits — 4 data sources, 13 ML predictors, 14+ UI components, 15 strategy docs, 6-month roadmap
 - **GitHub**: https://github.com/DrewThomas09/RCM

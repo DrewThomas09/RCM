@@ -18,6 +18,9 @@ This replaces the slice of healthcare diligence that firms typically outsource t
 | **Audit a number's provenance** | [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md), [BENCHMARK_SOURCES.md](RCM_MC/docs/BENCHMARK_SOURCES.md) |
 | **Read the PE heuristics rulebook** | [PE_HEURISTICS.md](RCM_MC/docs/PE_HEURISTICS.md) — 275+ named partner rules |
 | **See what's changed** | [CHANGELOG.md](RCM_MC/CHANGELOG.md), [COMPUTER_24HOUR_UPDATE_NUMBER_1.md](COMPUTER_24HOUR_UPDATE_NUMBER_1.md) |
+| **See the 6-month roadmap** | [PRODUCT_ROADMAP_6MO.md](RCM_MC/docs/PRODUCT_ROADMAP_6MO.md) — quarter-by-quarter ship plan |
+| **See the beta program** | [BETA_PROGRAM_PLAN.md](RCM_MC/docs/BETA_PROGRAM_PLAN.md) — 3-cohort validation structure |
+| **Read the strategy index** | [docs/README.md](RCM_MC/docs/README.md) — 15 planning docs |
 | **Contribute** | [CONTRIBUTING.md](CONTRIBUTING.md), [CLAUDE.md](RCM_MC/CLAUDE.md) (coding conventions) |
 
 ---
@@ -449,9 +452,15 @@ Coding Projects/
 
 - Master file map: [FILE_INDEX.md](FILE_INDEX.md)
 - Per-module READMEs under [`RCM_MC/rcm_mc/diligence/`](RCM_MC/rcm_mc/diligence/)
+- ML predictors reference: [rcm_mc/ml/README.md](RCM_MC/rcm_mc/ml/README.md)
+- Data sources reference: [rcm_mc/data/README.md](RCM_MC/rcm_mc/data/README.md)
+- UI components reference: [rcm_mc/ui/README.md](RCM_MC/rcm_mc/ui/README.md)
+- Strategy index (15 docs): [docs/README.md](RCM_MC/docs/README.md)
+- 6-month roadmap: [PRODUCT_ROADMAP_6MO.md](RCM_MC/docs/PRODUCT_ROADMAP_6MO.md)
+- Beta program: [BETA_PROGRAM_PLAN.md](RCM_MC/docs/BETA_PROGRAM_PLAN.md)
 - PE heuristics rulebook: [PE_HEURISTICS.md](RCM_MC/docs/PE_HEURISTICS.md)
 - Metric provenance: [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md)
 - Architecture: [ARCHITECTURE.md](RCM_MC/docs/ARCHITECTURE.md)
 - Changelog: [CHANGELOG.md](RCM_MC/CHANGELOG.md)
 - GitHub: https://github.com/DrewThomas09/RCM
-- Test status: 258/258 green on the new modules · 8,477/8,534 (99.3%) on the full suite
+- Most recent cycle (Apr 2026): 80+ commits — 4 public-data sources, 13 ML predictors, 14+ UI components, 15 strategy docs

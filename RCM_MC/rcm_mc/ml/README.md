@@ -206,9 +206,109 @@ Machine learning layer for metric prediction, anomaly detection, backtesting, an
 
 ---
 
+---
+
+## Predictor expansion cycle (Apr 2026)
+
+Thirteen ML surfaces shipped in the most recent autonomous-loop cycle. All follow the same discipline as the existing modules: closed-form Ridge in numpy, conformal-style intervals via residual quantiles, leave-one-cohort-out CV where the data permits, hard sanity-range clamps on every output, `provenance` flag to distinguish synthetic-priors fits from real-cohort calibration.
+
+### `denial_rate_predictor.py` — Hospital denial-rate model
+
+**What it does:** Predicts a hospital's gross denial rate from 13 structural features (bed count, payer mix, occupancy, net-to-gross, operating margin, case-mix proxy, Care Compare star rating, readmission rate, mortality rate, HCAHPS, MA penetration, state RCM factor). Sanity range `(0.0, 0.40)`.
+
+**How it works:** Closed-form Ridge `(XᵀX + αI)⁻¹Xᵀy`, α=1.0, k-fold CV for R²/MAE, residual-quantile 90% bands, top-3 feature contributions per prediction.
+
+### `days_in_ar_predictor.py` — A/R days predictor
+
+**What it does:** Predicts days-in-AR from the same feature schema as the denial-rate model plus throughput indicators. Used for pre-deal benchmarking against HFMA bands.
+
+**How it works:** Adds **leave-one-cohort-out CV** (cohorts: cohort_id, region, bed-band) so MAE is reported against held-out *cohorts*, not just held-out hospitals. This catches systematic bias the i.i.d. CV misses.
+
+### `collection_rate_predictor.py` — Net collection rate
+
+**What it does:** Predicts net collection rate (cash collected / NPSR). Headline metric for RCM-thesis defensibility.
+
+**How it works:** Standard Ridge + conformal; ships a global feature-importance summary across the calibration set so users see which structural features matter most before drilling into a single deal.
+
+### `forward_distress_predictor.py` — 12–24mo distress probability
+
+**What it does:** Probability a hospital breaches a covenant or files for protection within a forward 12-24 month window. Calibrated against the named-failure case library (Steward, Cano, Envision, etc.).
+
+**How it works:** Logistic regression (closed-form numpy via Newton-IRLS), calibrated by Platt scaling. Top risk drivers per hospital. Distress band labels (`stable / watch / elevated / critical`).
+
+### `improvement_potential.py` — Peer-benchmark gap → $ uplift
+
+**What it does:** For each of the 7 v1 bridge levers, computes the gap between the hospital's current metric and the peer P75 (achievable benchmark) and dollarizes it through the bridge to estimate total RCM improvement opportunity in $M.
+
+**How it works:** Wraps `comparable_finder` + `pe/rcm_ebitda_bridge.py`. Returns per-lever opportunity, total $, and a percentile rank vs the peer pool. Does not double-count cross-lever interactions (caps total at 80% of additive sum).
+
+### `contract_strength.py` — Payer contract strength estimator
+
+**What it does:** Estimates how favorable a hospital's payer contracts are versus market based on Transparency-in-Coverage MRF data + peer comp. Bands: `very_weak / weak / market / strong / very_strong` with thresholds at 0.85 / 0.95 / 1.05 / 1.20.
+
+**How it works:** For each (payer, CPT) cell with sufficient peer coverage, computes the hospital's negotiated rate as a multiple of the peer-median rate. Aggregates weighted by hospital's volume mix. Top-K best/worst contracts surfaced for negotiation prep.
+
+### `service_line_profitability.py` — Service-line P&L + cross-subsidy
+
+**What it does:** Per-service-line contribution margin from DRG-level utilization × charge-to-payment × cost allocation. Surfaces **cross-subsidies** (loss-leader lines kept for strategic reasons) versus genuine value-destroyers.
+
+**How it works:** Reads `cms_utilization` DRG output + HCRIS cost-allocation. Three-tier classification: `profit_center`, `subsidy_candidate`, `drag`. The drag list flows into the `improvement_potential` consideration.
+
+### `labor_efficiency.py` — Labor-efficiency model + scenarios
+
+**What it does:** FTE-per-adjusted-discharge, productivity vs peer P50/P75, and an EBITDA-impact scenario for closing the labor-efficiency gap by N percentage points.
+
+**How it works:** Ridge over wage-index, MA mix, teaching status, beds. Outputs current FTE/AD, peer-implied target, dollar impact at 25%/50%/75% gap closure. Hard-clamps target FTE at 80% of current to avoid recommending unrealistic cuts.
+
+### `volume_trend_forecaster.py` — Service-line volume forecast
+
+**What it does:** 8-quarter forward forecast of DRG-grouped discharge volume with a **trajectory classifier** (`growing`, `stable`, `declining`, `volatile`). Drives the volume-trend assumption in Deal MC.
+
+**How it works:** Auto-selects between Holt-Winters (≥8 quarters of history), linear OLS (≥6), and weighted-recent (<6). Method label is exposed in the output; never silent.
+
+### `regime_detection.py` — PELT changepoint analysis
+
+**What it does:** Detects regime shifts in a metric's quarterly history (e.g., "denial rate jumped at 2024Q3 — is that a real regime change or noise?"). Used to validate forecaster assumptions.
+
+**How it works:** Pure-numpy PELT (Pruned Exact Linear Time) changepoint algorithm with a quadratic-loss cost function. Returns changepoint indices + per-segment summary stats. No scipy.
+
+### `ensemble_methods.py` — Bag / blend / stack
+
+**What it does:** Three real ensemble methods for combining weak individual predictors: **bagging** (resample-and-average for variance reduction), **blending** (validation-set linear combination), **stacking** (out-of-fold meta-learner). Used when no single base learner crosses the R²≥0.30 threshold.
+
+**How it works:** All three are closed-form numpy. Returns the combined prediction plus per-base-learner weights for interpretability.
+
+### `feature_importance.py` — Unified feature importance
+
+**What it does:** Computes feature importance for any of the Ridge predictors using a unified API so the UI can render a consistent feature-importance chart across models.
+
+**How it works:** Three options: standardized-coefficient magnitude (default for Ridge), permutation importance (held-out MAE delta when feature is permuted), and SHAP-like contributions (linear models only, single-deal explanation). Pairs with `ui/feature_importance_viz.py` for the SVG rendering at `/models/importance`.
+
+### `geographic_clustering.py` — Geographic clusters + hotspots
+
+**What it does:** Clusters hospitals by geography (CBSA → state → region) crossed with structural features, then identifies "hotspots" — areas where a metric (e.g., denial rate, distress probability) is materially worse than national.
+
+**How it works:** Hierarchical k-means on the 6-comparable-dimension feature space, weighted by geographic adjacency. Hotspot detection via z-score against national distribution per metric. Feeds the deal-sourcing screener with "look here" geographic prompts.
+
+### `payer_mix_cascade.py` — Payer mix shift → downstream impact
+
+**What it does:** Simulates the full downstream impact of a payer-mix shift (e.g., "what if commercial drops 5pp and MA picks up 5pp over 36 months?") through denial rate, AR days, contract strength, collection rate, EBITDA, and bridge feasibility — one cascade, four canonical paths.
+
+**How it works:** Wires the four canonical PE-intelligence cascades from `pe_intelligence/` into a single API. Returns time-stepped trajectories, per-step provenance, and a "thesis-still-works" verdict at the end.
+
+### `model_quality.py` + `/models/quality` — Backtest harness
+
+**What it does:** Unified backtesting harness that runs every Ridge predictor through both i.i.d. CV and leave-one-cohort-out CV, computes empirical CI coverage, and renders a model-quality scoreboard at `/models/quality`. Cached via `infra/cache.ttl_cache` for >100,000× speedup on repeat loads.
+
+**How it works:** Iterates predictors registered in `MODEL_QUALITY_REGISTRY`, runs CV, computes MAE/MAPE/R²/coverage, renders a power-table with provenance badges (`real-cohort-N` vs `synthetic-priors`).
+
+---
+
 ## Key Concepts
 
 - **No sklearn dependency**: Ridge is one line of numpy; conformal prediction is ~50 lines. The stdlib+numpy invariant is preserved throughout.
 - **Conformal coverage guarantee**: 90% intervals that contain the truth 90% of the time with no distributional assumptions, calibrated per-metric.
 - **Graceful fallback ladder**: When there aren't enough comparables for Ridge, the system falls back to weighted median, then to benchmark percentiles — always returning a result with an honest grade.
 - **Dollar metrics are never predicted**: Net revenue, EBITDA, and operating expenses are always analyst inputs. The model never fabricates revenue from peer medians.
+- **Sanity-range clamps**: Every numeric output is clamped to a documented physical range (e.g., denial rate ∈ [0.0, 0.40]) so a misfit model can't return a -200% collection rate.
+- **Provenance flag**: Every predictor carries `provenance: "synthetic-priors"` until calibrated against ≥30 real closed-deal labels, at which point it flips to `"real-cohort-N"`. The flag is rendered in the UI.

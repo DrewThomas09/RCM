@@ -340,9 +340,48 @@ Data ingestion, public-data loaders, and hospital profile assembly. Connects to 
 
 ---
 
+---
+
+## Public-data expansion cycle (Apr 2026)
+
+Four new public-data ingestion surfaces shipped in the most recent autonomous-loop cycle, plus a unified data-catalog UI surface that surfaces every data source the platform understands.
+
+### `cdc_places.py` — CDC PLACES + NVSS county-level health
+
+**What it does:** Loads CDC PLACES county-level chronic disease prevalence (diabetes, COPD, heart disease, etc.) plus NVSS mortality and natality summaries. Used as a market-context overlay on `portfolio_map` and as a covariate in `geographic_clustering`.
+
+**How it works:** Streams PLACES annual CSV (~500MB) by chunk; normalizes 28 health indicators into the `county_health` SQLite table keyed by FIPS. Uses `_cms_download.py` retry logic. Schema-drift tolerant.
+
+### `state_apcd.py` — State All-Payer Claims Database loaders
+
+**What it does:** Ingests publicly-released State APCD aggregates from the ~12 states that publish them (CO, MA, NH, OR, RI, UT, VT, etc.). Each state's schema differs; this module normalizes to a common `apcd_aggregate` row schema.
+
+**How it works:** Per-state adapters with a registry (`APCD_STATES`). Each adapter handles its state's quirks (CO uses provider TIN, MA uses license number, OR uses internal IDs) and emits normalized rows. Schema-drift defended by alias tables and graceful column-name fallbacks.
+
+### `ahrq_hcup.py` — AHRQ HCUP NIS / NEDS
+
+**What it does:** Loads the AHRQ HCUP National Inpatient Sample (NIS) and National Emergency Department Sample (NEDS) public-use files. Drives the service-line volume forecaster and cross-subsidy analysis.
+
+**How it works:** HCUP files are large fixed-width SAS exports; this module uses a coordinate table to extract the columns we actually use (DRG, age, payer, charges, LOS, mortality flag) and writes to `hcup_discharge` partitioned by year + state.
+
+### `cms_ma_enrollment.py` — CMS Medicare Advantage enrollment + Star ratings
+
+**What it does:** Loads CMS Medicare Advantage county-level enrollment penetration (the share of Medicare beneficiaries enrolled in MA plans), plan Star ratings, and benchmark payments. Critical for the V28 coding-compression risk model and the regulatory calendar's MA exposure overlay.
+
+**How it works:** Three CMS endpoints — Monthly Enrollment, Plan Ratings, MA Benchmark Payments — with `_cms_download.py`. Star ratings dimensionalized by contract × plan × year. Benchmark payments normalized to per-bene per-month for cross-county comparison.
+
+### `catalog.py` + `/data/catalog` — Data catalog page
+
+**What it does:** Surfaces the **full data estate** of the platform on a single page: every source, the modules it powers, last-refresh timestamp, row count, schema-drift status. Eliminates the "what data does this tool know about?" question.
+
+**How it works:** Reads from `data_source_log` plus a static registry of source metadata (`CATALOG_SOURCES`). Renders a `power_table` with sortable columns + status badges (fresh / stale / missing). UI lives in `ui/data_catalog_page.py`.
+
+---
+
 ## Key Concepts
 
 - **No runtime network calls for core analysis**: Public data ships pre-parsed in `hcris.csv.gz`; external refreshes are explicit analyst actions via `rcm-mc data refresh`.
 - **Alias-aware column matching**: Seller files use hundreds of different column names for the same metrics — the alias table in `core/_calib_schema.py` handles the mapping.
 - **Per-field provenance**: Every auto-populated value is tagged with its source (`HCRIS / care_compare / irs990 / analyst`) so the analyst can defend each number in IC.
 - **Partial failure tolerance**: One broken CMS source never blocks the others — `data_refresh.py` runs each loader independently.
+- **Schema drift defense**: Every loader carries an alias table and graceful column-name fallbacks so a CMS or state APCD schema change doesn't break the loader silently.
