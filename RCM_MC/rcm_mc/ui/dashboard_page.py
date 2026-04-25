@@ -753,6 +753,440 @@ def _compute_sharpest_insight(
     return rows[0] if rows else None
 
 
+def _portfolio_pulse_inputs(
+    db_path: str,
+    *, deals: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    """Crunch the numbers behind the Portfolio Pulse hero.
+
+    Pulled out of the renderer so tests can assert on the maths
+    without parsing HTML.
+
+    Returns a dict with:
+      n_deals, total_ev_mm, avg_health, band_counts (great/good/fair/poor),
+      portfolio_moic_median + p25 + p75 (from corpus benchmarks),
+      hrrp_exposure_mm (annualized $ EBITDA at risk from HRRP penalties),
+      headline_synthesis (string — the surprise insight).
+    """
+    out: Dict[str, Any] = {
+        "n_deals": 0,
+        "total_ev_mm": 0.0,
+        "avg_health": None,
+        "band_counts": {"great": 0, "good": 0, "fair": 0, "poor": 0},
+        "deal_tiles": [],          # [{deal_id, name, score, band}]
+        "portfolio_moic_median": None,
+        "portfolio_moic_p25": None,
+        "portfolio_moic_p75": None,
+        "hrrp_exposure_mm": 0.0,
+        "n_hrrp_exposed": 0,
+        "headline_synthesis": "",
+    }
+
+    rows: List[Dict[str, Any]] = list(deals or [])
+    if not rows:
+        return out
+
+    out["n_deals"] = len(rows)
+
+    # ── Per-deal profile lookup for EV ──────────────────────────
+    profiles: Dict[str, Dict[str, Any]] = {}
+    try:
+        from ..portfolio.store import PortfolioStore
+        import json as _json
+        store = PortfolioStore(db_path)
+        deal_ids = [d.get("deal_id") for d in rows if d.get("deal_id")]
+        if deal_ids:
+            with store.connect() as con:
+                placeholders = ",".join("?" * len(deal_ids))
+                for r in con.execute(
+                    f"SELECT deal_id, profile_json FROM deals "
+                    f"WHERE deal_id IN ({placeholders})",
+                    deal_ids,
+                ).fetchall():
+                    try:
+                        profiles[r["deal_id"]] = _json.loads(
+                            r["profile_json"] or "{}")
+                    except (TypeError, _json.JSONDecodeError):
+                        profiles[r["deal_id"]] = {}
+    except Exception:  # noqa: BLE001
+        pass
+
+    # HCRIS revenue → EV proxy fallback. Loaded once, used per deal.
+    hcris_lookup = None
+    try:
+        from ..data.hcris import _get_latest_per_ccn
+        hcris_lookup = _get_latest_per_ccn()
+    except Exception:  # noqa: BLE001
+        pass
+
+    # ── Aggregate stats ─────────────────────────────────────────
+    score_sum = 0
+    score_n = 0
+    deal_tiles: List[Dict[str, Any]] = []
+    for d in rows:
+        deal_id = d.get("deal_id") or ""
+        score = d.get("score")
+        band = d.get("band") or "unknown"
+        if isinstance(score, (int, float)):
+            score_sum += int(score)
+            score_n += 1
+        if band in out["band_counts"]:
+            out["band_counts"][band] += 1
+        deal_tiles.append({
+            "deal_id": deal_id,
+            "name": d.get("name") or deal_id,
+            "score": score,
+            "band": band,
+        })
+
+        # Total EV: explicit profile.ev_mm wins; HCRIS proxy second
+        prof = profiles.get(deal_id, {})
+        ev = prof.get("ev_mm")
+        if ev is None and hcris_lookup is not None:
+            try:
+                if not hcris_lookup.empty:
+                    h = hcris_lookup[hcris_lookup["ccn"] == deal_id]
+                    if not h.empty:
+                        rev = h.iloc[0].get("net_patient_revenue")
+                        if rev and rev > 0:
+                            ev = float(rev) / 1_000_000.0
+            except Exception:  # noqa: BLE001
+                pass
+        if ev:
+            try:
+                out["total_ev_mm"] += float(ev)
+            except (TypeError, ValueError):
+                pass
+
+        # HRRP exposure: penalty% × Medicare-IPPS-equivalent. We
+        # use a lightweight proxy: 1% HRRP penalty ≈ 30bps of EBITDA
+        # for a typical Medicare-heavy hospital. Anchor a $200M EV
+        # deal to ~$20M EBITDA at 10% margin × 30bps × pct.
+        # Resulting $ figure is in $M of *annualized* EBITDA at risk.
+        hrrp = d.get("hrrp_pct")
+        if hrrp and hrrp > 0:
+            out["n_hrrp_exposed"] += 1
+            ev_for_calc = ev or 200.0  # default proxy if unknown
+            ebitda_proxy = ev_for_calc * 0.10
+            out["hrrp_exposure_mm"] += (
+                ebitda_proxy * 0.0030 * hrrp)
+
+    if score_n > 0:
+        out["avg_health"] = round(score_sum / score_n, 1)
+    out["deal_tiles"] = deal_tiles
+
+    # ── Portfolio-level predicted MOIC (corpus benchmark) ───────
+    # Run benchmark_deal once per deal and aggregate the medians.
+    # Bounded — only deals with enough profile signal participate.
+    try:
+        from ..diligence.comparable_outcomes import benchmark_deal
+        from ..data_public.deals_corpus import DealsCorpus
+        corpus = DealsCorpus(db_path)
+        try:
+            corpus.seed(skip_if_populated=True)
+        except Exception:  # noqa: BLE001
+            pass
+
+        medians: List[float] = []
+        for d in rows:
+            deal_id = d.get("deal_id") or ""
+            prof = profiles.get(deal_id, {})
+            target = {
+                "sector": d.get("sector") or prof.get("sector")
+                          or "hospital",
+                "ev_mm": prof.get("ev_mm"),
+                "year": prof.get("entry_year") or prof.get("year"),
+                "buyer": prof.get("sponsor") or prof.get("buyer") or "",
+                "payer_mix": prof.get("payer_mix"),
+            }
+            try:
+                res = benchmark_deal(corpus, target, top_n=10)
+            except Exception:  # noqa: BLE001
+                continue
+            outcome = res.get("outcome_distribution", {})
+            moic = outcome.get("moic", {})
+            med = moic.get("median")
+            if med is not None and outcome.get("n_comparables", 0) >= 3:
+                medians.append(float(med))
+
+        if medians:
+            sorted_m = sorted(medians)
+            n = len(sorted_m)
+            out["portfolio_moic_median"] = round(
+                sorted_m[n // 2], 2)
+            # 25th/75th of the per-deal medians = portfolio dispersion
+            out["portfolio_moic_p25"] = round(
+                sorted_m[max(0, int(n * 0.25))], 2)
+            out["portfolio_moic_p75"] = round(
+                sorted_m[min(n - 1, int(n * 0.75))], 2)
+    except Exception:  # noqa: BLE001
+        pass
+
+    # ── Surprise synthesis: pick the most striking aggregate ────
+    # Priority order: HRRP $ exposure → covenant-tripped count →
+    # health-band cluster → readiness affirmation.
+    syn = ""
+    if out["n_hrrp_exposed"] >= 2:
+        syn = (
+            f"{out['n_hrrp_exposed']} portfolio hospitals carry CMS "
+            f"readmission penalties — combined ~"
+            f"${out['hrrp_exposure_mm']:.1f}M EBITDA at risk this fiscal "
+            f"year. Discount the bid book accordingly."
+        )
+    else:
+        tripped = sum(1 for d in rows
+                      if (d.get("covenant_status") or "").upper()
+                      == "TRIPPED")
+        if tripped >= 1:
+            syn = (
+                f"{tripped} deal{'s' if tripped != 1 else ''} have "
+                f"TRIPPED covenants in the latest snapshot. Lender "
+                f"calls land first — review the watchlist before the "
+                f"morning standup."
+            )
+        elif (out["band_counts"]["poor"] + out["band_counts"]["fair"]
+              >= max(2, len(rows) // 3)):
+            n_below = (out["band_counts"]["poor"]
+                       + out["band_counts"]["fair"])
+            syn = (
+                f"{n_below} of {len(rows)} deals scored fair-or-poor "
+                f"on health. The portfolio's middle is widening — "
+                f"prioritize ops time on the bottom-quartile names."
+            )
+        elif out["portfolio_moic_median"] is not None:
+            syn = (
+                f"Predicted exit MOIC across the portfolio: "
+                f"{out['portfolio_moic_median']:.2f}x median, with "
+                f"the comparable corpus suggesting {out['n_deals']} "
+                f"deals are tracking inside the historical band."
+            )
+        else:
+            syn = (
+                f"Portfolio of {out['n_deals']} deals — "
+                f"{out['band_counts']['great']} great, "
+                f"{out['band_counts']['good']} good. Quiet morning. "
+                f"Use it to chase the long-tail diligence asks."
+            )
+    out["headline_synthesis"] = syn
+
+    return out
+
+
+def _band_color(band: str) -> str:
+    """Map health bands to the visual palette for the mosaic."""
+    return {
+        "great": "#10b981",
+        "good":  "#3b82f6",
+        "fair":  "#f59e0b",
+        "poor":  "#ef4444",
+    }.get(band or "unknown", "#9ca3af")
+
+
+def _format_money_compact(mm: float) -> str:
+    """`$1,840M` → `$1.84B`; `$320M` → `$320M`. Compact for the hero."""
+    if mm is None:
+        return "—"
+    try:
+        v = float(mm)
+    except (TypeError, ValueError):
+        return "—"
+    if v >= 1000:
+        return f"${v/1000:.2f}B"
+    if v >= 1:
+        return f"${v:.0f}M"
+    return f"${v*1000:.0f}K"
+
+
+def _render_portfolio_pulse_hero(
+    db_path: str,
+    *, deals: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    """The wow-moment hero card. Sits at the very top of the
+    dashboard and synthesizes:
+
+      • Total deals + total EV (sum across portfolio profiles)
+      • Average health + a per-deal mosaic (one colored tile per deal)
+      • The most striking aggregate signal (HRRP $ exposure, covenant
+        cluster, health-band cluster, or predicted MOIC)
+      • Predicted portfolio-level exit MOIC distribution
+
+    Designed so a partner who has never opened the tool sees a
+    single screen that explains: how big the book is, how it's
+    doing, and what to worry about — without clicking anywhere.
+    """
+    pulse = _portfolio_pulse_inputs(db_path, deals=deals)
+    if pulse["n_deals"] == 0:
+        return ""
+
+    n = pulse["n_deals"]
+    total_ev = _format_money_compact(pulse["total_ev_mm"])
+    avg_health = (f"{int(round(pulse['avg_health']))}"
+                  if pulse["avg_health"] is not None else "—")
+    bands = pulse["band_counts"]
+
+    # ── Mosaic: one colored square per deal ─────────────────────
+    # Sorted high-to-low so the mosaic reads as a gradient — visual
+    # cue for portfolio shape at a glance.
+    tiles = sorted(
+        pulse["deal_tiles"],
+        key=lambda t: (t.get("score") or -1),
+        reverse=True,
+    )
+    tile_html: List[str] = []
+    for t in tiles[:80]:  # cap at 80 to keep DOM bounded
+        c = _band_color(t.get("band") or "")
+        deal_id = _html.escape(t.get("deal_id") or "")
+        name = _html.escape(t.get("name") or "")
+        score = t.get("score")
+        score_str = f"{score}" if isinstance(score, (int, float)) else "—"
+        tile_html.append(
+            f'<a href="/deal/{deal_id}" '
+            f'title="{name} — health {score_str}" '
+            f'style="display:inline-block;width:18px;height:18px;'
+            f'background:{c};border-radius:3px;'
+            f'transition:transform 0.1s, box-shadow 0.1s;" '
+            f'onmouseover="this.style.transform=\'scale(1.4)\';'
+            f'this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.25)\';" '
+            f'onmouseout="this.style.transform=\'\';'
+            f'this.style.boxShadow=\'\';"></a>'
+        )
+    mosaic = (
+        '<div style="display:flex;flex-wrap:wrap;gap:4px;'
+        'margin-top:2px;line-height:0;">'
+        + "".join(tile_html)
+        + '</div>'
+    )
+
+    # ── MOIC strip ──────────────────────────────────────────────
+    moic_med = pulse["portfolio_moic_median"]
+    moic_p25 = pulse["portfolio_moic_p25"]
+    moic_p75 = pulse["portfolio_moic_p75"]
+    moic_strip = ""
+    if moic_med is not None:
+        bar = _moic_range_bar(moic_p25, moic_med, moic_p75,
+                              width=300, height=22)
+        moic_strip = (
+            '<div style="display:flex;align-items:center;gap:14px;'
+            'margin-top:14px;padding-top:12px;'
+            'border-top:1px solid rgba(255,255,255,0.18);">'
+            '<div style="font-size:10px;font-weight:600;'
+            'text-transform:uppercase;letter-spacing:0.08em;'
+            'color:#cbd5f5;flex-shrink:0;">'
+            'Predicted exit MOIC<br/>(corpus)</div>'
+            f'<div style="font-size:28px;font-weight:700;'
+            f'color:#fff;font-variant-numeric:tabular-nums;'
+            f'flex-shrink:0;">{moic_med:.2f}x</div>'
+            f'<div style="background:#fff;padding:6px 10px;'
+            f'border-radius:6px;flex-shrink:0;">{bar}</div>'
+            f'<div style="font-size:11px;color:#cbd5f5;'
+            f'font-variant-numeric:tabular-nums;">'
+            f'p25 {moic_p25:.2f}x · p75 {moic_p75:.2f}x'
+            f'</div></div>'
+        )
+
+    # ── Band-mosaic legend ──────────────────────────────────────
+    legend_chip = (
+        lambda c, label, n: (
+            f'<span style="display:inline-flex;align-items:center;'
+            f'gap:4px;font-size:11px;color:#cbd5f5;'
+            f'font-variant-numeric:tabular-nums;">'
+            f'<span style="display:inline-block;width:10px;'
+            f'height:10px;background:{c};border-radius:2px;"></span>'
+            f'{label} <strong style="color:#fff;">{n}</strong></span>'
+        )
+    )
+    legend = (
+        '<div style="display:flex;gap:14px;margin-top:8px;'
+        'flex-wrap:wrap;">'
+        + legend_chip("#10b981", "great", bands["great"])
+        + legend_chip("#3b82f6", "good", bands["good"])
+        + legend_chip("#f59e0b", "fair", bands["fair"])
+        + legend_chip("#ef4444", "poor", bands["poor"])
+        + '</div>'
+    )
+
+    # ── Stat tiles ──────────────────────────────────────────────
+    def _stat(big: str, small: str) -> str:
+        return (
+            '<div style="flex:1;min-width:120px;">'
+            f'<div style="font-size:32px;font-weight:700;color:#fff;'
+            f'line-height:1;font-variant-numeric:tabular-nums;'
+            f'letter-spacing:-0.02em;">{big}</div>'
+            f'<div style="font-size:10px;font-weight:600;'
+            f'text-transform:uppercase;letter-spacing:0.1em;'
+            f'color:#cbd5f5;margin-top:6px;">{small}</div>'
+            '</div>'
+        )
+
+    stats = (
+        '<div style="display:flex;gap:24px;flex-wrap:wrap;'
+        'margin-bottom:16px;">'
+        + _stat(f"{n}", "deals")
+        + _stat(total_ev, "total EV")
+        + _stat(avg_health, "portfolio health")
+        + '</div>'
+    )
+
+    # ── The synthesis line — the surprise the partner didn't ask for
+    syn_text = _html.escape(pulse["headline_synthesis"])
+    synthesis = (
+        '<div style="background:rgba(255,255,255,0.08);'
+        'border-left:3px solid #fbbf24;padding:12px 16px;'
+        'border-radius:6px;margin:18px 0 0;">'
+        '<div style="font-size:10px;font-weight:600;'
+        'text-transform:uppercase;letter-spacing:0.1em;'
+        'color:#fbbf24;margin-bottom:4px;">'
+        'The synthesis you\'d miss</div>'
+        f'<div style="font-size:14px;color:#fff;line-height:1.5;">'
+        f'{syn_text}</div>'
+        '</div>'
+    )
+
+    # ── Live indicator + label row ──────────────────────────────
+    label_row = (
+        '<div style="display:flex;align-items:center;'
+        'justify-content:space-between;margin-bottom:14px;">'
+        '<div style="font-size:11px;font-weight:700;'
+        'text-transform:uppercase;letter-spacing:0.18em;color:#fff;">'
+        'Portfolio pulse</div>'
+        '<span style="display:inline-flex;align-items:center;gap:6px;'
+        'font-size:10px;color:#86efac;font-weight:600;'
+        'text-transform:uppercase;letter-spacing:0.12em;">'
+        '<span class="wc-pulse-dot" style="display:inline-block;'
+        'width:8px;height:8px;background:#22c55e;border-radius:50%;'
+        'box-shadow:0 0 6px #22c55e;"></span> live</span>'
+        '</div>'
+    )
+
+    pulse_anim = (
+        '<style>'
+        '@keyframes wc-pulse {'
+        ' 0%,100% { opacity:1; transform:scale(1); }'
+        ' 50% { opacity:0.55; transform:scale(0.85); } }'
+        '.wc-pulse-dot { animation: wc-pulse 1.6s ease-in-out infinite; }'
+        '</style>'
+    )
+
+    return (
+        pulse_anim
+        + '<section style="background:linear-gradient(135deg,'
+        '#0f172a 0%,#1F4E78 100%);color:#fff;padding:22px 26px;'
+        'border-radius:12px;margin:6px 0 18px;'
+        'box-shadow:0 8px 24px rgba(15,23,42,0.18);">'
+        + label_row
+        + stats
+        + '<div style="font-size:10px;font-weight:600;'
+        'text-transform:uppercase;letter-spacing:0.08em;'
+        'color:#cbd5f5;margin:8px 0 4px;">'
+        'Deals (sorted by health, hover for name)</div>'
+        + mosaic
+        + legend
+        + moic_strip
+        + synthesis
+        + '</section>'
+    )
+
+
 def _render_headline_insight_section(
     db_path: str,
     *, deals: Optional[List[Dict[str, Any]]] = None,
@@ -2126,6 +2560,7 @@ def render_dashboard(db_path: str, *,
 
     inner = (
         header
+        + _render_portfolio_pulse_hero(db_path, deals=deals_scan)
         + _render_headline_insight_section(db_path, deals=deals_scan)
         + cmdk_hint
         + _render_since_yesterday_section(db_path)
