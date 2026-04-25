@@ -186,6 +186,12 @@ if UI_V2_ENABLED:
             wrapped_body = f'<style>{extra_css}</style>{wrapped_body}'
         if extra_js:
             wrapped_body = f'{wrapped_body}<script>{extra_js}</script>'
+        # Universal Cmd-K palette on every v2 page, same as legacy.
+        try:
+            from . import _web_components as _wc
+            wrapped_body = wrapped_body + _wc.universal_palette_bundle()
+        except Exception:  # noqa: BLE001 — additive, never block render
+            pass
         return _v2_chartis_shell(
             wrapped_body, title,
             active_nav=active_nav, breadcrumbs=breadcrumbs, code=code,
@@ -216,8 +222,21 @@ else:
 
     # PHI banner wrapper — prepended to body before the legacy shell
     # renders. Preserves the exact kwarg surface of the legacy shell.
+    #
+    # Also appends the universal Cmd-K command palette so a partner
+    # can press ⌘K / Ctrl-K on ANY authenticated page (not just
+    # /dashboard) and get the same jump-to-anywhere UX. The palette
+    # is self-scoped (wc-cmdk-* CSS classes) so it can't collide
+    # with the legacy shell's styles.
     def chartis_shell(body: str, title: str, **kwargs) -> str:  # type: ignore[misc]
-        return _legacy_chartis_shell(_phi_banner_html() + body, title, **kwargs)
+        try:
+            from . import _web_components as _wc
+            palette = _wc.universal_palette_bundle()
+        except Exception:  # noqa: BLE001 — palette is additive
+            palette = ""
+        return _legacy_chartis_shell(
+            _phi_banner_html() + body + palette, title, **kwargs,
+        )
 
     # v2-named helpers that callers may start using in Phase 2+
     # renderers. In legacy mode they delegate to the legacy helpers

@@ -282,6 +282,114 @@ def responsive_container(body_html: str) -> str:
     return f'<div class="wc-container">{body_html}</div>'
 
 
+def universal_palette_commands() -> List[Tuple[str, str, str]]:
+    """Canonical set of Cmd-K commands available on every page.
+
+    Returned as a list of ``(category, label, href)`` tuples ready for
+    ``command_palette_js(static_commands=...)``. Keeping the list in
+    one place lets every page (via chartis_shell) expose the same
+    muscle memory — type "alerts" from /watchlist, from /exports, or
+    from the dashboard and get the same result.
+    """
+    commands: List[Tuple[str, str, str]] = []
+    for label, href in [
+        ("Dashboard",                 "/dashboard"),
+        ("Downloads",                 "/exports"),
+        ("Data refresh",              "/data/refresh"),
+        ("Pipeline & saved searches", "/pipeline"),
+        ("Watchlist",                 "/watchlist"),
+        ("Active alerts",             "/alerts"),
+        ("My inbox",                  "/my/me"),
+        ("Team activity",             "/team"),
+        ("LP quarterly update",       "/lp-update"),
+        ("Notifications",             "/settings/integrations"),
+        ("System info (API)",         "/api/system/info"),
+        ("API index",                 "/api"),
+        ("New deal wizard",           "/new-deal"),
+        ("Audit log",                 "/audit"),
+        ("Healthz",                   "/healthz"),
+    ]:
+        commands.append(("Go", label, href))
+    # Curated analyses pulled via delayed import to avoid a circular
+    # dependency (dashboard_page imports us).
+    try:
+        from .dashboard_page import _CURATED_ANALYSES
+        for a in _CURATED_ANALYSES:
+            commands.append(("Run", a["name"], a["route"]))
+    except Exception:  # noqa: BLE001
+        pass
+    return commands
+
+
+def universal_palette_bundle() -> str:
+    """Self-contained palette block (CSS + modal HTML + JS).
+
+    Designed to be dropped into any page body — includes its own
+    minimal CSS subset so a page that doesn't already carry
+    ``web_styles()`` still renders the modal correctly. The CSS is
+    scoped to ``wc-cmdk-*`` so it can't collide with the host
+    page's existing styles.
+
+    The ``chartis_shell`` dispatcher uses this to make Cmd-K
+    universal across the private web deployment — every
+    authenticated page inherits the palette automatically.
+    """
+    # Self-contained CSS (subset of web_styles() — only the Cmd-K
+    # classes). Scoped with wc-cmdk- prefix so no collision.
+    css = """<style>
+.wc-cmdk-backdrop { position: fixed; inset: 0; z-index: 9999;
+    background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(2px);
+    display: none; align-items: flex-start; justify-content: center;
+    padding-top: 12vh; }
+.wc-cmdk-backdrop.wc-cmdk-open { display: flex; }
+.wc-cmdk-backdrop[aria-hidden="true"] { display: none; }
+.wc-cmdk-card { width: 92%; max-width: 560px; background: #fff;
+    border: 1px solid #e5e7eb; border-radius: 10px;
+    box-shadow: 0 20px 50px -10px rgba(0,0,0,0.35),
+                0 8px 20px -8px rgba(0,0,0,0.2);
+    overflow: hidden; font-family: -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif; color: #111827; }
+.wc-cmdk-input-wrap { display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px; border-bottom: 1px solid #f3f4f6; }
+.wc-cmdk-input { flex: 1; border: none; outline: none;
+    font-size: 15px; font-family: inherit; color: #111827;
+    background: transparent; padding: 0; }
+.wc-cmdk-input::placeholder { color: #9ca3af; }
+.wc-cmdk-hint { font-size: 10px; padding: 2px 6px;
+    background: #f3f4f6; color: #6b7280; border-radius: 3px;
+    font-family: monospace; border: 1px solid #e5e7eb; }
+.wc-cmdk-results { max-height: 50vh; overflow-y: auto; padding: 4px 0;
+    background: #fff; }
+.wc-cmdk-row { display: flex; align-items: center; gap: 12px;
+    padding: 8px 16px; color: #111827; text-decoration: none;
+    font-size: 13px; border-left: 2px solid transparent; }
+.wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
+    background: #f0f6fc; border-left-color: #1F4E78; }
+.wc-cmdk-id { font-family: monospace; color: #1F4E78;
+    font-size: 11px; min-width: 90px; flex-shrink: 0;
+    text-transform: uppercase; letter-spacing: 0.03em; }
+.wc-cmdk-name { flex: 1; color: #1f2937; }
+.wc-cmdk-badge { font-size: 10px; padding: 1px 6px;
+    background: #fef3c7; color: #92400e; border-radius: 3px; }
+.wc-cmdk-empty { padding: 20px 16px; text-align: center;
+    color: #9ca3af; font-size: 13px; background: #fff; }
+.wc-cmdk-section { padding: 6px 16px 2px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #6b7280;
+    border-top: 1px solid #f3f4f6; background: #fafbfc; }
+.wc-cmdk-section:first-child { border-top: 0; }
+.wc-cmdk-footer { display: flex; gap: 16px; padding: 8px 16px;
+    border-top: 1px solid #f3f4f6; font-size: 11px; color: #6b7280;
+    background: #fafbfc; }
+.wc-cmdk-footer kbd { font-family: monospace; padding: 1px 5px;
+    background: #fff; color: #374151; border: 1px solid #e5e7eb;
+    border-radius: 3px; font-size: 10px; margin: 0 2px; }
+</style>"""
+    return css + command_palette() + command_palette_js(
+        static_commands=universal_palette_commands(),
+    )
+
+
 def command_palette() -> str:
     """Hidden modal overlay — opens on Cmd-K / Ctrl-K.
 

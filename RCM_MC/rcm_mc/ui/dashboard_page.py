@@ -868,34 +868,15 @@ def render_dashboard(db_path: str, *,
         + _render_data_freshness_section(db_path)
         + portfolio_exports
     )
-    # Command palette commands: 8 workflow pages + 10 curated analyses.
-    # Static — baked into the JS — so typing "alerts" in Cmd-K offers
-    # "Go → Alerts" alongside any deal matching that string.
-    cmdk_commands: List[Tuple[str, str, str]] = []
-    for label, href in [
-        ("Dashboard",              "/dashboard"),
-        ("Downloads",              "/exports"),
-        ("Data refresh",           "/data/refresh"),
-        ("Pipeline & saved searches", "/pipeline"),
-        ("Watchlist",              "/watchlist"),
-        ("Active alerts",          "/alerts"),
-        ("My inbox",               "/my/me"),
-        ("Team activity",          "/team"),
-        ("LP quarterly update",    "/lp-update"),
-        ("Notifications",          "/settings/integrations"),
-        ("System info (API)",      "/api/system/info"),
-        ("API index",              "/api"),
-    ]:
-        cmdk_commands.append(("Go", label, href))
-    for a in _CURATED_ANALYSES:
-        cmdk_commands.append(("Run", a["name"], a["route"]))
-
+    # The Cmd-K palette is now injected globally by chartis_shell
+    # via universal_palette_bundle() — every authenticated page on
+    # the private web deployment has it. No dashboard-specific
+    # wiring needed; removing the duplicate here keeps the DOM
+    # free of two #wc-cmdk modals on the dashboard.
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
-        + _wc.command_palette()
         + _wc.sortable_table_js()
         + _wc.spinner_js()
-        + _wc.command_palette_js(static_commands=cmdk_commands)
     )
     return chartis_shell(body, "Dashboard", active_nav="/dashboard")
