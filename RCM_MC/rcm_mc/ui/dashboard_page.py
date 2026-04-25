@@ -427,8 +427,20 @@ def _render_since_yesterday_section(db_path: str) -> str:
             f'font-family:monospace;white-space:nowrap;">{ts}</span>'
             f'</li>'
         )
+    # Sort hint — the list is always newest-first, but without this
+    # caption a partner may wonder whether it's oldest-first or some
+    # priority ordering. 20-event cap also surfaced so they know
+    # older-than-top might exist off-page.
+    hint = (
+        f'<p style="margin:0 0 10px;color:#6b7280;font-size:11px;">'
+        f'{len(events)} event{"s" if len(events) != 1 else ""} · '
+        f'newest first · past 24 hours'
+        f'{" · older events in /audit" if len(events) >= 20 else ""}'
+        f'</p>'
+    )
     body = (
-        f'<ul style="list-style:none;padding:0;margin:0;'
+        hint
+        + f'<ul style="list-style:none;padding:0;margin:0;'
         f'font-size:13px;">{"".join(rows)}</ul>'
     )
     return _wc.section_card("Since yesterday", body, pad=True)

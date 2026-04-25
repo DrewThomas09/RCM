@@ -283,6 +283,30 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     # Priority-sort so the worst deals float to the top
     deals.sort(key=_priority_rank, reverse=True)
 
+    # Color legend — tells a first-time user what each chip means
+    # before they have to hover or click to discover it.
+    legend = (
+        '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;'
+        'margin:12px 0 4px;padding:10px 12px;background:#fafbfc;'
+        'border:1px solid #f3f4f6;border-radius:6px;'
+        'font-size:11px;color:#6b7280;">'
+        '<span style="font-weight:600;color:#374151;'
+        'text-transform:uppercase;letter-spacing:0.05em;">Key</span>'
+        '<span><span style="display:inline-block;width:10px;height:10px;'
+        'background:#10b981;border-radius:50%;margin-right:6px;'
+        'vertical-align:middle;"></span>safe / fresh / excellent</span>'
+        '<span><span style="display:inline-block;width:10px;height:10px;'
+        'background:#f59e0b;border-radius:50%;margin-right:6px;'
+        'vertical-align:middle;"></span>tight / stale / fair</span>'
+        '<span><span style="display:inline-block;width:10px;height:10px;'
+        'background:#ef4444;border-radius:50%;margin-right:6px;'
+        'vertical-align:middle;"></span>tripped / cold / poor / overdue</span>'
+        '<span><span style="display:inline-block;width:10px;height:10px;'
+        'background:#d1d5db;border-radius:50%;margin-right:6px;'
+        'vertical-align:middle;"></span>no data / zero</span>'
+        '</div>'
+    )
+
     # Summary strip: counts across the portfolio for the 3
     # most-actionable categories.
     tripped = sum(1 for d in deals
@@ -355,6 +379,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     inner = (
         header
         + summary_strip
+        + legend
         + _wc.section_card(
             f"Per-deal scan ({len(deals)} active deals)",
             table, pad=False,
