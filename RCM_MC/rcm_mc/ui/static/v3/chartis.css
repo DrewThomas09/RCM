@@ -578,6 +578,51 @@ footer.editorial em { color: var(--ink); font-style: italic; }
  *     when a helper is retired
  */
 
+/* --- Pipeline funnel (rcm_mc/ui/chartis/_app_pipeline_funnel.py) --- */
+
+.app-pipeline-funnel {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 0;
+  background: var(--paper-pure);
+}
+.app-pipeline-funnel .stage {
+  padding: 1rem .9rem;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: .35rem;
+  text-decoration: none; color: var(--ink);
+  cursor: pointer;
+}
+.app-pipeline-funnel .stage:last-child { border-right: none; }
+.app-pipeline-funnel .stage:hover { background: var(--bg); }
+.app-pipeline-funnel .stage.active {
+  background: var(--bg-tint);
+  box-shadow: inset 0 -2px 0 var(--teal);
+}
+.app-pipeline-funnel .stage .name {
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.app-pipeline-funnel .stage .count {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.4rem; line-height: 1.05; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.app-pipeline-funnel .stage .bar {
+  height: 4px; background: var(--teal-soft);
+  margin-top: .35rem;
+  position: relative;
+}
+.app-pipeline-funnel .stage .bar > .fill {
+  position: absolute; top: 0; left: 0; bottom: 0;
+  background: var(--teal-deep);
+}
+.app-pipeline-funnel .stage.active .bar { background: var(--teal); }
+.app-pipeline-funnel .stage.active .bar > .fill { background: var(--teal-deep); }
+@media (max-width: 1100px) {
+  .app-pipeline-funnel { grid-template-columns: repeat(4, 1fr); }
+  .app-pipeline-funnel .stage:nth-child(4n) { border-right: none; }
+}
+
 /* --- KPI strip (rcm_mc/ui/chartis/_app_kpi_strip.py) --- */
 
 .app-kpi-pair > .viz { padding: 0; }
