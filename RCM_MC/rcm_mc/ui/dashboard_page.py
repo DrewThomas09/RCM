@@ -1456,6 +1456,21 @@ def _render_predicted_outcomes_section(
         win_pct = f"{int(win_rate * 100)}%" if win_rate else "—"
         name = scan_row.get("name") or deal_id
 
+        # "See why" deep-link — preserves the EXACT target profile
+        # used for the prediction so the comparable-outcomes page
+        # shows the same comparable set. Partner clicks the median,
+        # gets the full ranked match list with reasons.
+        import urllib.parse as _urlparse
+        comp_qs = _urlparse.urlencode(
+            {k: v for k, v in {
+                "sector": target.get("sector"),
+                "ev_mm": target.get("ev_mm"),
+                "year": target.get("year"),
+                "buyer": target.get("buyer"),
+            }.items() if v not in (None, "")},
+        )
+        comp_href = f"/diligence/comparable-outcomes?{comp_qs}"
+
         rows.append(
             f'<li style="padding:10px 0;border-bottom:1px solid #f3f4f6;'
             f'display:flex;align-items:center;gap:14px;">'
@@ -1470,11 +1485,16 @@ def _render_predicted_outcomes_section(
             f'<div style="flex-shrink:0;">{bar}</div>'
             f'<div style="flex:1;font-size:12px;color:#374151;'
             f'font-variant-numeric:tabular-nums;white-space:nowrap;">'
+            f'<a href="{_html.escape(comp_href)}" '
+            f'title="See the comparable deals that drove this prediction" '
+            f'style="text-decoration:none;color:inherit;">'
             f'<span style="font-weight:600;color:#1F4E78;'
-            f'font-size:14px;">{median:.2f}x</span>'
+            f'font-size:14px;border-bottom:1px dotted #1F4E78;">'
+            f'{median:.2f}x</span>'
             f'<span style="color:#6b7280;"> median · '
             f'p25 {p25:.2f}x · p75 {p75:.2f}x · '
-            f'{win_pct} clear 2.5x</span></div>'
+            f'{win_pct} clear 2.5x</span>'
+            f'</a></div>'
             f'</li>'
         )
 

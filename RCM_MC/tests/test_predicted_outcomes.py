@@ -200,6 +200,50 @@ class TestPerDealTargetProfile(unittest.TestCase):
             tmp.cleanup()
 
 
+class TestSeeWhyDeepLink(unittest.TestCase):
+    """Each predicted-outcome row's median MOIC links to
+    /diligence/comparable-outcomes with the SAME target profile
+    that produced the prediction. Closes the "see why this number"
+    loop without making the partner re-type the deal's parameters."""
+
+    def test_median_value_links_to_comparable_outcomes(self):
+        tmp = tempfile.TemporaryDirectory()
+        try:
+            db = os.path.join(tmp.name, "t.db")
+            from rcm_mc.portfolio.store import PortfolioStore
+            store = PortfolioStore(db)
+            store.init_db()
+            with store.connect() as con:
+                con.execute(
+                    "INSERT INTO deals (deal_id, name, created_at, "
+                    "profile_json) VALUES (?, ?, ?, ?)",
+                    ("WATCH_PIVOT", "Pivot Hospital",
+                     datetime.now(timezone.utc).isoformat(),
+                     json.dumps({"sector": "managed_care",
+                                 "ev_mm": 750, "year": 2023})),
+                )
+                con.commit()
+            from rcm_mc.deals.watchlist import star_deal
+            star_deal(store, "WATCH_PIVOT")
+            from rcm_mc.data_public.deals_corpus import DealsCorpus
+            DealsCorpus(db).seed(skip_if_populated=True)
+
+            from rcm_mc.ui.dashboard_page import render_dashboard
+            html = render_dashboard(db)
+
+            # Deep-link present with the deal's actual profile values
+            self.assertIn(
+                "/diligence/comparable-outcomes?", html,
+                msg="median value should be a deep-link to the "
+                    "comparable-outcomes page",
+            )
+            # Sector + ev_mm threaded through the query string
+            self.assertIn("sector=managed_care", html)
+            self.assertIn("ev_mm=750", html)
+        finally:
+            tmp.cleanup()
+
+
 class TestCapAtEightDeals(unittest.TestCase):
     """Watchlist of 12 → only 8 prediction rows. Bounds compute
     on busy partners' dashboards."""
