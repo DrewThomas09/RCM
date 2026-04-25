@@ -1,0 +1,76 @@
+name: Deploy to Azure VM
+
+# This workflow is gated to manual-trigger-only (`workflow_dispatch`)
+# until the following GitHub Secrets are configured:
+#
+#   AZURE_VM_HOST     - public IP or DNS name of the Azure VM
+#   AZURE_VM_USER     - SSH user (typically `azureuser`)
+#   AZURE_VM_SSH_KEY  - private SSH key (PEM, full contents)
+#
+# Once secrets are set and you've verified one manual deploy succeeds,
+# uncomment the `push: branches: [main]` block below to enable
+# auto-deploy on every push to main. See AZURE_DEPLOY.md.
+
+on:
+  # push:
+  #   branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/rcm-mc
+
+            echo "--- pull latest ---"
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "--- rebuild & restart ---"
+            # Compose file lives at /opt/rcm-mc/RCM_MC/deploy/docker-compose.yml
+            # (the deploy/ directory is INSIDE RCM_MC/, not at the repo root).
+            cd RCM_MC
+            docker compose -f deploy/docker-compose.yml pull --quiet 2>/dev/null || true
+            docker compose -f deploy/docker-compose.yml up -d --build
+
+            echo "--- health check ---"
+            for i in $(seq 1 12); do
+              if curl -sf http://localhost:8080/health > /dev/null; then
+                echo "healthy after ${i}x5s"
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "HEALTH CHECK FAILED" >&2
+            exit 1
+
+      - name: Smoke test
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            BASE="http://localhost:8080"
+
+            # Liveness + readiness
+            curl -sf "$BASE/health" > /dev/null
+            curl -sf "$BASE/healthz" > /dev/null
+
+            # Migrations applied
+            curl -sf "$BASE/api/migrations" | python3 -c \
+              "import sys,json; d=json.load(sys.stdin); \
+               assert d.get('all_applied'), f'migrations: {d}'"
+
+            echo "All smoke tests passed."

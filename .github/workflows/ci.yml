@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# All jobs run from the RCM_MC/ subdirectory because pyproject.toml,
+# rcm_mc/, and tests/ all live there. The repo root holds README.md,
+# AZURE_DEPLOY.md, FILE_INDEX.md, etc. but no Python code.
+defaults:
+  run:
+    working-directory: ./RCM_MC
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install runtime + dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run go-live test subset
+        # Targeted subset (~160 tests, ~20s) covering smoke, auth, exports,
+        # resilience, full pipeline, and the README link checker. Full suite
+        # is large; run via `pytest tests/` locally before tagging a release.
+        run: |
+          pytest \
+            tests/test_healthz.py \
+            tests/test_api_endpoints_smoke.py \
+            tests/test_full_pipeline_10_hospitals.py \
+            tests/test_readme_links.py \
+            tests/test_data_pipeline_resilience.py \
+            tests/test_empty_data_resilience.py \
+            tests/test_extreme_values_resilience.py \
+            tests/test_exports_end_to_end.py \
+            tests/test_auth.py \
+            tests/test_csrf.py \
+            tests/test_portfolio.py \
+            tests/test_alerts.py \
+            tests/test_health_score.py
+
+      - name: Smoke-test server boot + /health
+        run: |
+          python -c "
+          import os, tempfile, threading, time, urllib.request
+          from rcm_mc.server import build_server
+          tmp = tempfile.mkdtemp()
+          db = os.path.join(tmp, 'ci.db')
+          server, handler = build_server(port=0, db_path=db, host='127.0.0.1')
+          port = server.server_address[1]
+          t = threading.Thread(target=server.serve_forever, daemon=True)
+          t.start()
+          time.sleep(0.5)
+          resp = urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=5)
+          assert resp.status == 200, f'health returned {resp.status}'
+          assert resp.read().decode() == 'ok', 'health body mismatch'
+          server.shutdown()
+          print('SMOKE OK')
+          "

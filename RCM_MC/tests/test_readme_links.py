@@ -68,6 +68,23 @@ class TestReadmeLinks(unittest.TestCase):
                     broken.append(f"{f.name} -> {raw}")
         self.assertEqual(broken, [], f"broken links: {broken}")
 
+    def test_subfolder_readmes_resolve(self) -> None:
+        """Walk every README.md under rcm_mc/ and the package root."""
+        root = _repo_root()
+        broken = []
+        excluded_parts = {
+            "__pycache__", ".pytest_cache", ".venv", "node_modules",
+            "dbt_packages",  # vendored third-party
+        }
+        for f in root.rglob("README.md"):
+            if any(part in excluded_parts for part in f.parts):
+                continue
+            for raw, resolved in _scan(f):
+                if not resolved.exists():
+                    rel = f.relative_to(root)
+                    broken.append(f"{rel} -> {raw}")
+        self.assertEqual(broken, [], f"broken links: {broken}")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,9 +1,0 @@
-Portfolio digest — since 2025-01-01
-──────────────────────────────────────────────────
-
-  Informational:
-    ● ccf_2026              New deal entered portfolio at stage hold
-    ● nyp_2026              New deal entered portfolio at stage ioi
-    ● mgh_2026              New deal entered portfolio at stage sourced
-
-  Summary: 3 informational

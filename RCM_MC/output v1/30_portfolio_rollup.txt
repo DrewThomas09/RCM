@@ -1,8 +1,0 @@
-Portfolio roll-up — 3 deals
-────────────────────────────────────────────────────────────
-  Stage funnel:    sourced: 1 · ioi: 1 · hold: 1
-  Weighted MOIC:   2.69x
-  Weighted IRR:    21.9%
-  Covenant trips:  0
-  Covenant tight:  0
-  With concerning: 0

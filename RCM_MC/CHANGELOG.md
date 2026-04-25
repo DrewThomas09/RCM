@@ -1,5 +1,45 @@
 # Changelog
 
+## v0.6.1 (2026-04-25) — Repo cleanup + go-live hardening
+
+### Front-page reorganization
+- Moved Heroku artifacts (Procfile, app.json, runtime.txt, requirements.txt, run_local.sh, web/) → `legacy/heroku/`
+- Moved vendored projects (ChartisDrewIntel, cms_medicare) → `vendor/`
+- Moved cycle summaries + historical docs (SESSION_SUMMARY, COMPUTER_24HOUR_UPDATE, FEATURE_DEALS_CORPUS, NEXT_CYCLE.md, REDESIGN_LOG.md) → `RCM_MC/docs/cycle_summaries/`
+- Moved reverted UI handoff → `legacy/handoff/`
+- Deleted superseded `RCM_MC/Dockerfile`, `RCM_MC/docker-compose.yml`, `RCM_MC/DEMO.md`, root `docs/` (4 stale files)
+- Moved `run_all.sh` + `run_everything.sh` → `RCM_MC/scripts/`
+
+### Azure deploy infrastructure
+- New canonical 1-page guide: `AZURE_DEPLOY.md`
+- Fixed compose path bug in `vm_setup.sh` and `rcm-mc.service` (was `/opt/rcm-mc/deploy/...`; actual path is `/opt/rcm-mc/RCM_MC/deploy/...`) — would have failed first deploy
+- Added `.dockerignore` for lean build context
+- Untracked stray SQLite DBs (`seekingchartis.db`, `output v1/portfolio.db`) that would have overwritten production data on `git pull`
+
+### GitHub Actions
+- Moved 4 workflows from `RCM_MC/.github/` → `.github/` (workflows only run from repo root)
+- Set `defaults.run.working-directory: ./RCM_MC` on ci, release, regression-sweep
+- Gated `deploy.yml` to `workflow_dispatch` only until SSH secrets are configured
+
+### Documentation coverage
+- Added READMEs to 28 previously-undocumented subfolders: diligence, screening, causal, comparables, ic_memo, ic_binder, qoe, portfolio_monitor, regulatory, pricing, site_neutral, vbc, vbc_contracts, buyandbuild, exit_readiness, irr_attribution, management, montecarlo_v3, negotiation, portfolio_synergy, referral, sector_themes, diligence_synthesis, esg, scripts, rcm_mc_diligence, configs, scenarios
+- Updated surface READMEs (top-level, RCM_MC/, ml/, data/, ui/, docs/) for the Apr 2026 cycle
+- 15 new strategic planning docs in `RCM_MC/docs/`: PRODUCT_ROADMAP_6MO, BETA_PROGRAM_PLAN, BUSINESS_MODEL, COMPETITIVE_LANDSCAPE, PARTNERSHIPS_PLAN, MULTI_ASSET_EXPANSION, MULTI_USER_ARCHITECTURE, PHI_SECURITY_ARCHITECTURE, INTEGRATIONS_PLAN, REGULATORY_ROADMAP, DATA_ACQUISITION_STRATEGY, LEARNING_LOOP, V2_PLAN, NEXT_CYCLE_PLAN, MD_DEMO_SCRIPT
+- Added `tests/test_readme_links.py` (3 tests: surface READMEs, strategy docs, tree-wide subfolders); caught 8 stale-path links during cleanup
+
+### Engineering (Apr 2026 cycle)
+- 4 new public-data ingest modules: CDC PLACES, state APCD, AHRQ HCUP, CMS MA enrollment
+- 13 new ML predictors: denial rate, days-in-AR, collection rate, forward distress, improvement potential, contract strength, service-line profitability, labor efficiency, volume forecaster, regime detection, ensemble methods, feature importance, geographic clustering, payer-mix cascade
+- 14+ reusable UI components: power_table, power_chart, semantic colors, metric tooltips, breadcrumbs+keyboard, skeletons, empty states, responsive utils, dark/light theme toggle, comparison surface, provenance badges, global search, preferences, canonical UI kit
+
+### Verified
+- 1,498 / 1,498 `rcm_mc` submodules import cleanly
+- 161 / 161 go-live test subset passes (auth + portfolio + alerts + smoke + resilience + exports + pipeline + READMEs)
+- All 4 schema migrations apply on fresh DB
+- `/health` + `/healthz` return 200 with body `"ok"`
+- 0 secrets, `.env`, `.pem`, or DBs tracked
+- 109 READMEs scanned, 315 / 316 links resolve (one false positive in vendored dbt-expectations package, excluded from checker)
+
 ## v0.5.0 (2026-04-04)
 
 ### Phase 1: Fix What is Broken (Steps 1-15)
