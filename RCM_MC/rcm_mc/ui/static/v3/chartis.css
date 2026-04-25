@@ -578,6 +578,52 @@ footer.editorial em { color: var(--ink); font-style: italic; }
  *     when a helper is retired
  */
 
+/* --- Deliverables (rcm_mc/ui/chartis/_app_deliverables.py) --- */
+
+.app-deliv-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  background: var(--paper-pure); border: 1px solid var(--rule);
+}
+.app-deliv {
+  padding: 1.1rem 1.25rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-decoration: none; color: var(--ink);
+  display: block;
+  transition: background .12s;
+}
+.app-deliv:nth-child(4n) { border-right: none; }
+.app-deliv:nth-last-child(-n+4) { border-bottom: none; }
+.app-deliv:hover { background: var(--bg); text-decoration: none; }
+.app-deliv .kind {
+  display: inline-block;
+  font-family: "Inter", sans-serif; font-size: .62rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--teal-deep);
+  padding: 1px 6px;
+  border: 1px solid var(--teal);
+  margin-bottom: .55rem;
+}
+.app-deliv .kind.csv  { color: var(--amber); border-color: var(--amber); }
+.app-deliv .kind.json { color: var(--blue); border-color: var(--blue); }
+.app-deliv .kind.xls  { color: var(--green); border-color: var(--green); }
+.app-deliv .kind.html { color: var(--teal-deep); border-color: var(--teal); }
+.app-deliv .nm {
+  font-family: "JetBrains Mono", monospace; font-size: .85rem;
+  color: var(--ink); word-break: break-word;
+}
+.app-deliv .meta {
+  font-family: "Inter", sans-serif; font-size: .72rem;
+  color: var(--muted); margin-top: .55rem;
+  display: flex; justify-content: space-between;
+}
+.app-deliv-empty {
+  padding: 2rem; text-align: center;
+  color: var(--muted); font-family: "Source Serif 4", serif;
+  font-style: italic;
+}
+.app-deliv-empty a { color: var(--teal-deep); text-decoration: underline; }
+
 /* --- Alerts (rcm_mc/ui/chartis/_app_alerts.py) --- */
 
 .app-alerts { display: grid; gap: .55rem; }
