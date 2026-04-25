@@ -22,7 +22,10 @@ class DealFilter:
     size_max_mm: Optional[float] = None
     confidence_floor: float = 0.0
     exclude_topics: List[str] = field(default_factory=list)
-    min_uplift_mm: float = 0.0
+    # None = no minimum (default no-op). 0.0 still works as
+    # an explicit 'positive uplift only' floor — but a fresh
+    # DealFilter() must be a true no-op.
+    min_uplift_mm: Optional[float] = None
 
 
 def apply_filter(
@@ -46,7 +49,9 @@ def apply_filter(
             continue
         if r.confidence < flt.confidence_floor:
             continue
-        if r.predicted_ebitda_uplift_mm < flt.min_uplift_mm:
+        if (flt.min_uplift_mm is not None
+                and r.predicted_ebitda_uplift_mm
+                < flt.min_uplift_mm):
             continue
         # Topic exclusion: any risk-factor string contains the
         # exclude term → drop this row
