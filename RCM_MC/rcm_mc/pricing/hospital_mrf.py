@@ -61,7 +61,12 @@ from .normalize import normalize_code, normalize_payer_name
 @dataclass
 class HospitalChargeRecord:
     """A single charge row — one combination of (CCN, code, payer,
-    plan, setting). Cash-price rows have empty payer_name + plan_name."""
+    plan, setting). Cash-price rows have empty payer_name + plan_name.
+
+    CY2026 fields (``percentile_*``, ``billing_npi_type_2``) are
+    populated when the hospital ships the new schema; otherwise
+    None / empty so legacy v2.0 files continue to load cleanly.
+    """
     ccn: str
     npi: Optional[str] = None
     code: str = ""
@@ -75,6 +80,11 @@ class HospitalChargeRecord:
     plan_name: str = ""
     deidentified_min: Optional[float] = None
     deidentified_max: Optional[float] = None
+    # CY2026 additions
+    percentile_25: Optional[float] = None
+    percentile_50: Optional[float] = None
+    percentile_75: Optional[float] = None
+    billing_npi_type_2: Optional[str] = None
 
 
 def _safe_float(v: Any) -> Optional[float]:
@@ -103,6 +113,14 @@ def parse_hospital_mrf(
     ccn = str(doc.get("ccn") or doc.get("hospital_id") or "")
     npi = doc.get("billing_npi") or doc.get("npi")
     npi = str(npi) if npi else None
+    # CY2026: explicit Type-2 (organizational) billing NPI in
+    # addition to the legacy ``billing_npi`` field. When the
+    # schema is v2.0 (no Type-2 field), fall back to
+    # ``billing_npi`` since CMS clarified it should be Type-2.
+    billing_npi_type_2 = (doc.get("billing_npi_type_2")
+                          or doc.get("billing_npi"))
+    billing_npi_type_2 = (str(billing_npi_type_2)
+                          if billing_npi_type_2 else None)
 
     items = doc.get("standard_charge_information") or []
     for item in items:
@@ -128,6 +146,25 @@ def parse_hospital_mrf(
                     charge.get("minimum_negotiated_charge"))
                 dmax = _safe_float(
                     charge.get("maximum_negotiated_charge"))
+                # CY2026: percentile allowed amounts. CMS spec
+                # publishes them in either flat keys or nested
+                # ``percentile_allowed_amounts`` block — handle
+                # both.
+                pct_block = (charge.get(
+                    "percentile_allowed_amounts") or {})
+                p25 = _safe_float(
+                    charge.get("percentile_25_charge")
+                    or pct_block.get("p25")
+                    or pct_block.get("percentile_25"))
+                p50 = _safe_float(
+                    charge.get("percentile_50_charge")
+                    or charge.get("median_negotiated_charge")
+                    or pct_block.get("p50")
+                    or pct_block.get("percentile_50"))
+                p75 = _safe_float(
+                    charge.get("percentile_75_charge")
+                    or pct_block.get("p75")
+                    or pct_block.get("percentile_75"))
 
                 payers = charge.get("payers_information") or []
                 if payers:
@@ -150,6 +187,10 @@ def parse_hospital_mrf(
                                 p_blk.get("plan_name") or "").strip(),
                             deidentified_min=dmin,
                             deidentified_max=dmax,
+                            percentile_25=p25,
+                            percentile_50=p50,
+                            percentile_75=p75,
+                            billing_npi_type_2=billing_npi_type_2,
                         )
                 else:
                     # Cash-price-only row (no payer rates)
@@ -163,6 +204,10 @@ def parse_hospital_mrf(
                         payer_name="", plan_name="",
                         deidentified_min=dmin,
                         deidentified_max=dmax,
+                        percentile_25=p25,
+                        percentile_50=p50,
+                        percentile_75=p75,
+                        billing_npi_type_2=billing_npi_type_2,
                     )
 
 
@@ -178,6 +223,25 @@ def load_hospital_mrf(
     (e.g. the hospital CCN or filename); defaults to the CCN of
     the first record."""
     store.init_db()
+    # CY2026 schema additions — idempotent ALTERs since the
+    # foundation schema doesn't carry the percentile + Type-2
+    # NPI columns. New columns are NULLable so legacy rows
+    # remain valid.
+    with store.connect() as con:
+        for col, decl in (
+            ("percentile_25", "REAL"),
+            ("percentile_50", "REAL"),
+            ("percentile_75", "REAL"),
+            ("billing_npi_type_2", "TEXT"),
+        ):
+            try:
+                con.execute(
+                    f"ALTER TABLE pricing_hospital_charges "
+                    f"ADD COLUMN {col} {decl}")
+            except Exception:  # noqa: BLE001
+                pass
+        con.commit()
+
     now = datetime.now(timezone.utc).isoformat()
     n = 0
     first_ccn: Optional[str] = None
@@ -192,14 +256,18 @@ def load_hospital_mrf(
                         ccn, npi, code, code_type, description,
                         setting, gross_charge, discounted_cash_price,
                         payer_specific_charge, payer_name, plan_name,
-                        deidentified_min, deidentified_max, loaded_at
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        deidentified_min, deidentified_max,
+                        percentile_25, percentile_50, percentile_75,
+                        billing_npi_type_2, loaded_at
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (r.ccn, r.npi, r.code, r.code_type, r.description,
                      r.setting, r.gross_charge,
                      r.discounted_cash_price,
                      r.payer_specific_charge,
                      r.payer_name, r.plan_name,
                      r.deidentified_min, r.deidentified_max,
+                     r.percentile_25, r.percentile_50,
+                     r.percentile_75, r.billing_npi_type_2,
                      now),
                 )
                 n += 1

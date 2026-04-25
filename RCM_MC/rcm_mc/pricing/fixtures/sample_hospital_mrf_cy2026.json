@@ -1,0 +1,62 @@
+{
+  "hospital_name": "Baylor Scott & White CY2026",
+  "ccn": "450022",
+  "billing_npi": "1003456789",
+  "billing_npi_type_2": "1003456789",
+  "license_number": "TX-001",
+  "version": "2.2.0",
+  "last_updated_on": "2026-01-15",
+  "standard_charge_information": [
+    {
+      "description": "TOTAL KNEE ARTHROPLASTY",
+      "code_information": [
+        {"code": "27447", "type": "CPT"}
+      ],
+      "standard_charges": [
+        {
+          "setting": "outpatient",
+          "gross_charge": 75000,
+          "discounted_cash": 30000,
+          "minimum_negotiated_charge": 22000,
+          "maximum_negotiated_charge": 56000,
+          "percentile_25_charge": 24500,
+          "percentile_50_charge": 28000,
+          "percentile_75_charge": 38000,
+          "payers_information": [
+            {"payer_name": "BCBS-TX", "plan_name": "PPO",
+             "standard_charge_dollar": 24500},
+            {"payer_name": "UnitedHealthcare",
+             "plan_name": "Choice Plus",
+             "standard_charge_dollar": 26800},
+            {"payer_name": "Aetna", "plan_name": "Open Choice",
+             "standard_charge_dollar": 27200}
+          ]
+        }
+      ]
+    },
+    {
+      "description": "MRI BRAIN",
+      "code_information": [
+        {"code": "70551", "type": "CPT"}
+      ],
+      "standard_charges": [
+        {
+          "setting": "outpatient",
+          "gross_charge": 4200,
+          "discounted_cash": 1800,
+          "minimum_negotiated_charge": 950,
+          "maximum_negotiated_charge": 2400,
+          "percentile_allowed_amounts": {
+            "p25": 1100,
+            "p50": 1180,
+            "p75": 1820
+          },
+          "payers_information": [
+            {"payer_name": "BCBS-TX", "plan_name": "PPO",
+             "standard_charge_dollar": 1180}
+          ]
+        }
+      ]
+    }
+  ]
+}
