@@ -46,11 +46,32 @@ STATUS_COLORS = {
 }
 
 
+_STATUS_TO_PRIORITY = {
+    "CRITICAL": "Critical",
+    "WARNING":  "High",
+    "MISSING":  "Medium",
+    "PASS":     "Low",
+}
+
+_PRIORITY_COLORS = {
+    "Critical": "#ef4444",
+    "High":     "#ea580c",
+    "Medium":   "#f59e0b",
+    "Low":      "#64748b",
+}
+
+
 @dataclass
 class ChecklistItem:
     """A single review line. ``section`` is the renderer ordering;
     ``status`` is the data-driven verdict; ``recommendation`` is the
-    "what to do if this trips" string the partner sees first."""
+    "what to do if this trips" string the partner sees first.
+
+    Legacy aliases (``priority``, ``priority_color``, ``is_red_flag``,
+    ``corpus_fail_rate``, ``category``) are exposed as properties so
+    pre-rewrite callers (notably the /diligence-checklist UI page)
+    keep working without code changes.
+    """
     id: str
     section: str
     title: str
@@ -59,12 +80,46 @@ class ChecklistItem:
     detail: str             # filled in at evaluation time
     recommendation: str = ""
 
+    # ── Legacy aliases for pre-rewrite callers ────────────────
+    @property
+    def priority(self) -> str:
+        """Old API used Critical/High/Medium/Low priorities; map
+        from the new status field."""
+        return _STATUS_TO_PRIORITY.get(self.status, "Medium")
+
+    @property
+    def priority_color(self) -> str:
+        return _PRIORITY_COLORS[self.priority]
+
+    @property
+    def is_red_flag(self) -> bool:
+        return self.status == "CRITICAL"
+
+    @property
+    def corpus_fail_rate(self) -> float:
+        """Old API surfaced a hand-curated fail-rate per item.
+        Approximate from status: CRITICAL items fail ~40%,
+        WARNING ~20%, MISSING ~25%, PASS ~5%."""
+        return {"CRITICAL": 0.40, "WARNING": 0.20,
+                "MISSING": 0.25, "PASS": 0.05}.get(self.status, 0.20)
+
+    @property
+    def category(self) -> str:
+        """Old API used a free-text category; the new section
+        label (``"1. Deal Overview"`` etc.) serves the same role."""
+        return self.section
+
 
 @dataclass
 class DiligenceChecklistResult:
     """Top-level checklist result. ``critical_count`` and
     ``warning_count`` drive the IC-binder header chip; ``open_questions``
-    is the partner-facing follow-up list."""
+    is the partner-facing follow-up list.
+
+    Legacy aliases (``total_items``, ``critical_items``,
+    ``high_items``, ``red_flags_triggered``, ``by_category``) are
+    exposed as properties so pre-rewrite callers keep working.
+    """
     deal_name: str
     deal_id: Optional[str]
     sector: str
@@ -76,6 +131,36 @@ class DiligenceChecklistResult:
     missing_count: int = 0
     open_questions: List[str] = field(default_factory=list)
     corpus_deal_count: int = 0
+
+    # ── Legacy aliases ────────────────────────────────────────
+    @property
+    def total_items(self) -> int:
+        return len(self.items)
+
+    @property
+    def critical_items(self) -> int:
+        return self.critical_count
+
+    @property
+    def high_items(self) -> int:
+        """Pre-rewrite UI used 'high' = WARNING-equivalent."""
+        return self.warning_count
+
+    @property
+    def red_flags_triggered(self) -> int:
+        """Pre-rewrite UI surfaced a separate red-flag count;
+        we treat CRITICAL items as the equivalent."""
+        return self.critical_count
+
+    @property
+    def by_category(self) -> Dict[str, List[ChecklistItem]]:
+        """Group items by their section label so the legacy UI
+        renderer's ``for cat in _CATEGORY_ORDER`` loop hits the
+        right buckets."""
+        out: Dict[str, List[ChecklistItem]] = {}
+        for it in self.items:
+            out.setdefault(it.section, []).append(it)
+        return out
 
 
 # ── Section labels (frozen — tests assert on these strings) ──

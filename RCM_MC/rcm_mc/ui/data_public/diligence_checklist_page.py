@@ -14,7 +14,11 @@ _SECTORS = [
 ]
 
 _CATEGORY_ORDER = [
-    "Financial Quality", "Operations", "Regulatory", "Market", "Leverage", "Management"
+    # Aligned with rcm_mc.data_public.diligence_checklist sections
+    # (post-rewrite). Old category names ("Financial Quality",
+    # "Operations", "Regulatory", etc.) live on as legacy comments.
+    "1. Deal Overview", "2. Returns Analysis", "3. Capital Structure",
+    "4. Payer Mix Risk", "5. PE Intelligence", "6. Data Quality",
 ]
 
 
