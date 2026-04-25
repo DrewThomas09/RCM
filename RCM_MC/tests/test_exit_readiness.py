@@ -141,5 +141,135 @@ class TestPacket(unittest.TestCase):
         self.assertGreater(result.recommended_ev_mm, 0)
 
 
+class TestRoadmap(unittest.TestCase):
+    def test_low_readiness_target_score(self):
+        from rcm_mc.exit_readiness import (
+            ExitTarget, build_readiness_roadmap,
+        )
+        # Target with several severe gaps
+        t = ExitTarget(
+            target_name="Gap-Heavy Co",
+            sector="hospital",
+            ttm_revenue_mm=80.0,         # below IPO floor
+            ttm_ebitda_mm=8.0,           # below sponsor S2S floor
+            growth_rate=0.05,            # below CV growth
+            ebitda_margin=0.10,          # below SecPE margin
+            net_debt_mm=50.0,
+            public_comp_multiple=8.0,    # below take-private
+            private_comp_multiple=10.0,
+            growth_durability_score=0.4, # below CV durability
+            cash_pay_share=0.30,         # high (s2s gap)
+            physician_concentration=0.50,  # high (SecPE gap)
+            payer_concentration=0.65,    # high (strategic gap)
+        )
+        roadmap = build_readiness_roadmap(t)
+        # Many gaps → readiness score well below 1.0
+        self.assertLess(roadmap.readiness_score, 0.5)
+        self.assertGreater(roadmap.total_gaps, 4)
+        self.assertGreater(roadmap.high_severity_count, 0)
+
+    def test_clean_target_high_score(self):
+        from rcm_mc.exit_readiness import (
+            ExitTarget, build_readiness_roadmap,
+        )
+        # Target with no gaps
+        t = ExitTarget(
+            target_name="Clean Co",
+            sector="hospital",
+            ttm_revenue_mm=400.0,
+            ttm_ebitda_mm=72.0,
+            growth_rate=0.12,
+            ebitda_margin=0.18,
+            net_debt_mm=180.0,
+            public_comp_multiple=12.5,
+            private_comp_multiple=11.0,
+            growth_durability_score=0.75,
+            cash_pay_share=0.10,
+            physician_concentration=0.30,
+            payer_concentration=0.40,
+        )
+        roadmap = build_readiness_roadmap(t)
+        # Few or no gaps → score near 1.0
+        self.assertGreaterEqual(roadmap.readiness_score, 0.85)
+
+    def test_roadmap_quarters_sorted(self):
+        from rcm_mc.exit_readiness import (
+            ExitTarget, build_readiness_roadmap,
+        )
+        t = ExitTarget(
+            target_name="Mixed Co", sector="hospital",
+            ttm_revenue_mm=80.0, ttm_ebitda_mm=8.0,
+            growth_rate=0.05, ebitda_margin=0.10,
+            cash_pay_share=0.30, physician_concentration=0.50,
+            payer_concentration=0.65, public_comp_multiple=8.0,
+            private_comp_multiple=10.0,
+            growth_durability_score=0.4,
+        )
+        roadmap = build_readiness_roadmap(t)
+        # Quarter indices are non-decreasing
+        indices = [q.quarter_index for q in roadmap.quarters]
+        self.assertEqual(indices, sorted(indices))
+        # First quarter contains high-severity gaps
+        if roadmap.quarters:
+            first_q = roadmap.quarters[0]
+            if first_q.gaps:
+                self.assertEqual(first_q.gaps[0].severity, "high")
+
+    def test_sponsor_to_sponsor_cash_pay_gap(self):
+        from rcm_mc.exit_readiness import (
+            ExitTarget, build_readiness_roadmap, ExitArchetype,
+        )
+        t = ExitTarget(
+            target_name="High Cash-Pay Co",
+            sector="physician_group",
+            ttm_revenue_mm=300.0, ttm_ebitda_mm=50.0,
+            cash_pay_share=0.30,    # triggers s2s gap
+        )
+        roadmap = build_readiness_roadmap(t)
+        s2s_gaps = [
+            g
+            for q in roadmap.quarters
+            for g in q.gaps
+            if g.archetype == ExitArchetype.SPONSOR_TO_SPONSOR
+        ]
+        self.assertGreater(len(s2s_gaps), 0)
+
+    def test_continuation_growth_gap(self):
+        from rcm_mc.exit_readiness import (
+            ExitTarget, build_readiness_roadmap, ExitArchetype,
+        )
+        t = ExitTarget(
+            target_name="Slow-Growth Co",
+            sector="hospital",
+            ttm_revenue_mm=350.0, ttm_ebitda_mm=63.0,
+            growth_rate=0.04,    # triggers CV gap
+            growth_durability_score=0.5,  # also triggers CV
+        )
+        roadmap = build_readiness_roadmap(t)
+        cv_gaps = [
+            g
+            for q in roadmap.quarters
+            for g in q.gaps
+            if g.archetype == ExitArchetype.CONTINUATION
+        ]
+        self.assertGreaterEqual(len(cv_gaps), 1)
+
+    def test_render_markdown(self):
+        from rcm_mc.exit_readiness import (
+            ExitTarget, build_readiness_roadmap,
+            render_roadmap_markdown,
+        )
+        t = ExitTarget(
+            target_name="Render Co",
+            sector="hospital",
+            ttm_revenue_mm=80.0, ttm_ebitda_mm=8.0,
+            cash_pay_share=0.30,
+        )
+        roadmap = build_readiness_roadmap(t)
+        md = render_roadmap_markdown(roadmap)
+        self.assertIn("## Readiness Roadmap", md)
+        self.assertIn("Readiness score", md)
+
+
 if __name__ == "__main__":
     unittest.main()

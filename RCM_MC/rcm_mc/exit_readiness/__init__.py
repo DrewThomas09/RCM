@@ -52,6 +52,12 @@ from .valuators import (
 from .equity_story import score_equity_story, EquityStoryScore
 from .readiness import identify_readiness_gaps, ReadinessGap
 from .packet import run_exit_readiness_packet, ExitReadinessResult
+from .roadmap import (
+    build_readiness_roadmap,
+    render_roadmap_markdown,
+    ReadinessRoadmap,
+    RoadmapQuarter,
+)
 
 __all__ = [
     "ExitTarget", "ExitArchetype", "ArchetypeResult",
@@ -62,4 +68,6 @@ __all__ = [
     "score_equity_story", "EquityStoryScore",
     "identify_readiness_gaps", "ReadinessGap",
     "run_exit_readiness_packet", "ExitReadinessResult",
+    "build_readiness_roadmap", "render_roadmap_markdown",
+    "ReadinessRoadmap", "RoadmapQuarter",
 ]
