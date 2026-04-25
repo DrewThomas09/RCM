@@ -619,31 +619,54 @@ def _render_since_yesterday_section(db_path: str) -> str:
                      f'style="color:#1F4E78;text-decoration:none;">'
                      f'{label}</a>')
 
-        # Inline ack button for alert rows — one-click dismissal
-        # without navigating away. CSRF auto-injected by the shell's
-        # form-patching JS. Redirect back to /dashboard so the
-        # user's scroll position + the other events are preserved.
+        # Inline ack + snooze controls for alert rows. Two
+        # one-click options without leaving the dashboard:
+        #   - Ack       (snooze_days=0, "I'm handling it")
+        #   - Snooze 7d (snooze_days=7, "remind me in a week")
+        # CSRF auto-injected by the shell's form-patching JS.
+        # Both forms redirect back to /dashboard so the user's
+        # scroll position + other events are preserved.
         ack_form = ""
         if ev.get("kind") == "alert":
             k = _html.escape(ev.get("alert_kind") or "")
             d = _html.escape(ev.get("alert_deal_id") or "")
             t = _html.escape(ev.get("alert_trigger_key") or "")
             if k and d and t:
-                ack_form = (
-                    f'<form method="POST" action="/api/alerts/ack" '
-                    f'style="flex-shrink:0;margin:0;" '
-                    f'onsubmit="event.target.querySelector(\'button\')'
-                    f'.disabled=true;">'
+                btn_style = (
+                    "background:transparent;border:1px solid #d0e3f0;"
+                    "color:#1F4E78;padding:2px 8px;border-radius:4px;"
+                    "font-size:11px;cursor:pointer;font-weight:500;"
+                )
+                hidden = (
                     f'<input type="hidden" name="kind" value="{k}">'
                     f'<input type="hidden" name="deal_id" value="{d}">'
                     f'<input type="hidden" name="trigger_key" value="{t}">'
-                    f'<input type="hidden" name="snooze_days" value="0">'
                     f'<input type="hidden" name="redirect" value="/dashboard">'
-                    f'<button type="submit" title="Acknowledge alert" '
-                    f'style="background:transparent;border:1px solid #d0e3f0;'
-                    f'color:#1F4E78;padding:2px 10px;border-radius:4px;'
-                    f'font-size:11px;cursor:pointer;font-weight:500;">'
-                    f'Ack</button></form>'
+                )
+                ack_form = (
+                    f'<span style="flex-shrink:0;display:flex;gap:4px;">'
+                    # Ack now (snooze_days=0)
+                    f'<form method="POST" action="/api/alerts/ack" '
+                    f'style="margin:0;" '
+                    f'onsubmit="event.target.querySelector(\'button\')'
+                    f'.disabled=true;">'
+                    f'{hidden}'
+                    f'<input type="hidden" name="snooze_days" value="0">'
+                    f'<button type="submit" title="Acknowledge — handled" '
+                    f'style="{btn_style}">Ack</button></form>'
+                    # Snooze 7d (snooze_days=7) — partner says "I see
+                    # this, but don't bother me about it for a week"
+                    f'<form method="POST" action="/api/alerts/ack" '
+                    f'style="margin:0;" '
+                    f'onsubmit="event.target.querySelector(\'button\')'
+                    f'.disabled=true;">'
+                    f'{hidden}'
+                    f'<input type="hidden" name="snooze_days" value="7">'
+                    f'<button type="submit" '
+                    f'title="Snooze for 7 days — remind me later" '
+                    f'style="{btn_style}background:#fafbfc;">'
+                    f'Snooze 7d</button></form>'
+                    f'</span>'
                 )
 
         rows.append(

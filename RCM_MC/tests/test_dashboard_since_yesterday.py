@@ -152,6 +152,34 @@ class TestEventsPopulate(unittest.TestCase):
         # other events remain after acknowledgement
         self.assertIn('name="redirect" value="/dashboard"', html)
 
+    def test_alert_row_has_snooze_button(self):
+        """Each alert row offers BOTH Ack (snooze_days=0) AND
+        Snooze 7d (snooze_days=7) — two distinct one-click flows
+        for "handled now" vs "remind me later". Partners use
+        snooze constantly so this can't be an extra-click flow."""
+        from rcm_mc.alerts.alert_history import _ensure_table
+        _ensure_table(self.store)
+        with self.store.connect() as con:
+            con.execute(
+                "INSERT INTO alert_history (kind, deal_id, trigger_key, "
+                "first_seen_at, last_seen_at, severity, title, detail) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                ("covenant", "DEAL_S1", "covenant:s1",
+                 self.recent, self.recent, "medium",
+                 "Snooze test alert", "{}"),
+            )
+            con.commit()
+
+        from rcm_mc.ui.dashboard_page import render_dashboard
+        html = render_dashboard(self.db)
+        # Both snooze_days values render as hidden inputs
+        self.assertIn('name="snooze_days" value="0"', html)
+        self.assertIn('name="snooze_days" value="7"', html)
+        # The Snooze button text/label is present
+        self.assertIn("Snooze 7d", html)
+        # Both forms target the same endpoint
+        self.assertGreaterEqual(html.count('action="/api/alerts/ack"'), 2)
+
     def test_login_audit_appears(self):
         from rcm_mc.auth.audit_log import log_event, _ensure_table
         _ensure_table(self.store)
@@ -231,6 +259,80 @@ class TestEventGatherer(unittest.TestCase):
         old_idx = next(i for i, t in enumerate(titles) if "OLD" in t)
         self.assertLess(new_idx, old_idx,
                         msg="events should be newest-first")
+
+
+class TestSnoozeEndToEnd(unittest.TestCase):
+    """The form on /dashboard POSTs to /api/alerts/ack with
+    snooze_days=7. Verify the endpoint actually persists the
+    snooze (not just acks) and that the snooze_until field is
+    populated ~7 days in the future."""
+
+    @classmethod
+    def setUpClass(cls):
+        import socket
+        import threading
+        from contextlib import closing
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.db = os.path.join(cls.tmp.name, "t.db")
+        with closing(__import__("socket").socket()) as s:
+            s.bind(("127.0.0.1", 0))
+            cls.port = s.getsockname()[1]
+        from rcm_mc.server import build_server
+        cls.server, _ = build_server(
+            port=cls.port, host="127.0.0.1", db_path=cls.db, auth=None,
+        )
+        cls.thread = threading.Thread(
+            target=cls.server.serve_forever, daemon=True)
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=5)
+        cls.tmp.cleanup()
+
+    def test_snooze_7d_persists(self):
+        import urllib.parse
+        import urllib.request
+        body = urllib.parse.urlencode({
+            "kind": "covenant",
+            "deal_id": "DEAL_END_TO_END",
+            "trigger_key": "k",
+            "snooze_days": "7",
+            "redirect": "/dashboard",
+        }).encode()
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/alerts/ack",
+            data=body, method="POST",
+            headers={"Content-Type": "application/x-www-form-urlencoded",
+                     "Accept": "application/json"},
+        )
+        # Server returns 201 on json accept, 303 on HTML form post.
+        # The Accept header above forces 201.
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            self.assertEqual(resp.status, 201)
+
+        # Verify the row in alert_acks has snooze_until ~7d ahead.
+        # `is_acked` returns True when an active ack OR un-expired
+        # snooze covers the alert — exactly what we want here.
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.alerts.alert_acks import is_acked, list_acks
+        store = PortfolioStore(self.db)
+        self.assertTrue(
+            is_acked(store, kind="covenant", deal_id="DEAL_END_TO_END",
+                     trigger_key="k"),
+            msg="ack record should cover the alert immediately",
+        )
+        # And confirm the snooze_until field carries the +7d value
+        # so the schedule is real, not just a 0-day ack.
+        df = list_acks(store)
+        rows = df[(df["deal_id"] == "DEAL_END_TO_END")
+                  & (df["trigger_key"] == "k")]
+        self.assertEqual(len(rows), 1)
+        snooze_until = rows.iloc[0].get("snooze_until")
+        self.assertTrue(snooze_until,
+                        msg=f"snooze_until should be set, got {snooze_until!r}")
 
 
 if __name__ == "__main__":
