@@ -187,5 +187,69 @@ class TestTargetUniverse(unittest.TestCase):
             self.assertGreater(d9.composite_score, d4.composite_score)
 
 
+class TestMomentum(unittest.TestCase):
+    def test_rising_theme_classified_correctly(self):
+        """A theme with strict positive slope should be either
+        rising or emerging."""
+        from rcm_mc.sector_themes import compute_theme_momentum
+        heatmap = {
+            "glp1_specialty_pharmacy": {
+                "2022": 0.05, "2023": 0.10, "2024": 0.20,
+            },
+            "behavioral_health_consolidation": {
+                "2022": 0.30, "2023": 0.30, "2024": 0.31,
+            },
+        }
+        momentum = compute_theme_momentum(heatmap)
+        glp1 = next(m for m in momentum
+                    if m.theme_id == "glp1_specialty_pharmacy")
+        bh = next(m for m in momentum
+                  if m.theme_id
+                  == "behavioral_health_consolidation")
+        # GLP-1 trajectory is steep upward, low current density
+        # → emerging or rising
+        self.assertIn(glp1.band, ("emerging", "rising"))
+        # GLP-1 slope > BH slope (BH is essentially flat)
+        self.assertGreater(glp1.slope, bh.slope)
+        # Behavioral health is high-density + flat → saturated
+        self.assertEqual(bh.band, "saturated")
+
+    def test_declining_theme(self):
+        from rcm_mc.sector_themes import compute_theme_momentum
+        heatmap = {
+            "fading": {
+                "2021": 0.20, "2022": 0.15, "2023": 0.10,
+                "2024": 0.05,
+            },
+        }
+        momentum = compute_theme_momentum(heatmap)
+        m = momentum[0]
+        self.assertEqual(m.band, "declining")
+        self.assertLess(m.slope, 0)
+
+    def test_top_emerging_filters_to_rising(self):
+        """top_emerging_themes should return only EMERGING /
+        RISING bands."""
+        from rcm_mc.sector_themes import (
+            top_emerging_themes, Document,
+        )
+        # Use the existing fixture corpus from earlier tests
+        out = top_emerging_themes(_theme_corpus(), top_n=5)
+        for m in out:
+            self.assertIn(m.band, ("emerging", "rising"))
+
+    def test_momentum_score_sort(self):
+        """Output sorted by momentum_score descending."""
+        from rcm_mc.sector_themes import compute_theme_momentum
+        heatmap = {
+            "a": {"2022": 0.05, "2023": 0.20, "2024": 0.40},
+            "b": {"2022": 0.05, "2023": 0.07, "2024": 0.10},
+            "c": {"2022": 0.30, "2023": 0.31, "2024": 0.32},
+        }
+        momentum = compute_theme_momentum(heatmap)
+        scores = [m.momentum_score for m in momentum]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+
 if __name__ == "__main__":
     unittest.main()

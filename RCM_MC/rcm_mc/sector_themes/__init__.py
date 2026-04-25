@@ -41,6 +41,11 @@ from .themes import (
 )
 from .heatmap import emerging_theme_heatmap
 from .target_universe import build_target_universe
+from .momentum import (
+    compute_theme_momentum,
+    top_emerging_themes,
+    ThemeMomentum,
+)
 
 __all__ = [
     "Document", "Corpus", "build_vocabulary",
@@ -48,4 +53,7 @@ __all__ = [
     "THEME_ANCHORS", "ThemeMatch", "score_deal_against_themes",
     "emerging_theme_heatmap",
     "build_target_universe",
+    "compute_theme_momentum",
+    "top_emerging_themes",
+    "ThemeMomentum",
 ]
