@@ -188,5 +188,62 @@ class TestJointTailShock(unittest.TestCase):
         self.assertGreaterEqual(joint.mean(), 0.001)
 
 
+class TestAntithetic(unittest.TestCase):
+    def test_antithetic_reduces_variance_for_monotone_f(self):
+        """Antithetic should beat plain MC for a monotone f. Use
+        f(X) = X[0] (linear, monotone) where antithetic is exact:
+        Var(Ŷ) = 0 because (X + (-X)) / 2 = 0 every pair."""
+        from rcm_mc.montecarlo_v3 import antithetic_estimate
+        def f(samples):
+            return samples[:, 0]
+        est, se = antithetic_estimate(
+            f, n_pairs=200, dim=1, seed=2)
+        # E[X] = 0; antithetic gives exact zero per pair → SE ≈ 0
+        self.assertAlmostEqual(est, 0.0, places=6)
+        self.assertLess(se, 1e-6)
+
+    def test_antithetic_pair_doubles_sample_count(self):
+        from rcm_mc.montecarlo_v3 import antithetic_pair
+        import numpy as np
+        rng = np.random.default_rng(0)
+        X = rng.standard_normal((10, 3))
+        Y = antithetic_pair(X)
+        self.assertEqual(Y.shape, (20, 3))
+        # Second half should be -1 × first half
+        np.testing.assert_array_almost_equal(
+            Y[10:], -Y[:10])
+
+
+class TestStratified(unittest.TestCase):
+    def test_stratified_uniform_in_unit_interval(self):
+        from rcm_mc.montecarlo_v3 import stratified_uniform
+        u = stratified_uniform(n_samples=100, seed=4)
+        self.assertEqual(u.size, 100)
+        self.assertTrue((u >= 0).all())
+        self.assertTrue((u < 1).all())
+        # Stratification means each (k/n, (k+1)/n) bucket has
+        # exactly one sample
+        sorted_u = sorted(u)
+        for i, v in enumerate(sorted_u):
+            self.assertGreaterEqual(v, i / 100)
+            self.assertLess(v, (i + 1) / 100)
+
+    def test_latin_hypercube_shape_and_bounds(self):
+        from rcm_mc.montecarlo_v3 import latin_hypercube
+        L = latin_hypercube(50, 4, seed=5)
+        self.assertEqual(L.shape, (50, 4))
+        self.assertTrue((L >= 0).all())
+        self.assertTrue((L < 1).all())
+
+    def test_stratified_estimate_unbiased(self):
+        """Estimate E[U] for U ~ Uniform[0,1] — true value 0.5."""
+        from rcm_mc.montecarlo_v3 import stratified_estimate
+        def f(u):
+            return u[:, 0]
+        est, _ = stratified_estimate(
+            f, n_samples=200, dim=1, seed=6)
+        self.assertAlmostEqual(est, 0.5, places=2)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -51,6 +51,12 @@ from .importance import (
 from .control_variates import control_variate_estimate
 from .nested import nested_mc_real_option
 from .healthcare import joint_tail_healthcare_shock
+from .antithetic import antithetic_estimate, antithetic_pair
+from .stratified import (
+    stratified_uniform,
+    latin_hypercube,
+    stratified_estimate,
+)
 
 __all__ = [
     "gaussian_copula_sample",
@@ -64,4 +70,9 @@ __all__ = [
     "control_variate_estimate",
     "nested_mc_real_option",
     "joint_tail_healthcare_shock",
+    "antithetic_estimate",
+    "antithetic_pair",
+    "stratified_uniform",
+    "latin_hypercube",
+    "stratified_estimate",
 ]
