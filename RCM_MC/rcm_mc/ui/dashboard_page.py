@@ -942,6 +942,98 @@ def _render_needs_attention_section(db_path: str) -> str:
     )
 
 
+def _render_exposure_section(db_path: str) -> str:
+    """Sector + chain concentration at a glance.
+
+    A partner with 12 deals should be able to read their portfolio
+    composition without opening every deal. This card shows two
+    breakdowns — sector and chain — as inline horizontal bars
+    sorted by exposure.
+
+    Skipped entirely on portfolios <= 1 deal (concentration math
+    is meaningless on a single deal).
+    """
+    from . import _web_components as _wc
+    try:
+        from ..portfolio.store import PortfolioStore
+        from .portfolio_risk_scan_page import _gather_per_deal
+        store = PortfolioStore(db_path)
+        deals = _gather_per_deal(db_path)
+    except Exception:  # noqa: BLE001
+        return ""
+    if len(deals) <= 1:
+        return ""
+
+    sector_counts: Dict[str, int] = {}
+    chain_counts: Dict[str, int] = {}
+    for d in deals:
+        s = (d.get("sector") or "").strip() or "—"
+        sector_counts[s] = sector_counts.get(s, 0) + 1
+        c = (d.get("chain") or "").strip()
+        if c:
+            chain_counts[c] = chain_counts.get(c, 0) + 1
+
+    total = len(deals)
+
+    def _bar_chart(items: Dict[str, int], *, top_n: int = 6,
+                   color: str = "#1F4E78") -> str:
+        if not items:
+            return (
+                '<p style="margin:0;color:#9ca3af;font-size:12px;'
+                'font-style:italic;">No data yet.</p>'
+            )
+        # Sort descending, cap at top_n, lump the rest into "Other"
+        ranked = sorted(items.items(), key=lambda t: t[1], reverse=True)
+        head = ranked[:top_n]
+        tail = ranked[top_n:]
+        if tail:
+            head.append((f"Other ({len(tail)})", sum(v for _, v in tail)))
+
+        rows: List[str] = []
+        for label, count in head:
+            pct = (count / total) * 100
+            bar_w = int(round(pct))
+            rows.append(
+                f'<div style="display:grid;grid-template-columns:'
+                f'140px 1fr 70px;align-items:center;gap:10px;'
+                f'padding:4px 0;font-size:12px;">'
+                f'<span style="color:#374151;white-space:nowrap;'
+                f'overflow:hidden;text-overflow:ellipsis;" '
+                f'title="{_html.escape(label)}">'
+                f'{_html.escape(label)}</span>'
+                f'<div style="background:#f3f4f6;border-radius:3px;'
+                f'height:14px;overflow:hidden;">'
+                f'<div style="background:{color};height:100%;'
+                f'width:{bar_w}%;transition:width 0.2s;"></div></div>'
+                f'<span style="color:#6b7280;font-variant-numeric:'
+                f'tabular-nums;text-align:right;">'
+                f'{count} · {pct:.0f}%</span></div>'
+            )
+        return "".join(rows)
+
+    sector_block = (
+        '<div style="font-size:11px;font-weight:600;color:#374151;'
+        'text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">'
+        'By sector</div>'
+        + _bar_chart(sector_counts, color="#1F4E78")
+    )
+    chain_block = (
+        '<div style="font-size:11px;font-weight:600;color:#374151;'
+        'text-transform:uppercase;letter-spacing:0.05em;'
+        'margin:14px 0 6px;">By chain '
+        '<span style="font-weight:normal;color:#9ca3af;">'
+        '— deals where CMS POS knows the parent</span></div>'
+        + (_bar_chart(chain_counts, color="#92400e") if chain_counts
+           else '<p style="margin:0;color:#9ca3af;font-size:12px;'
+                'font-style:italic;">No chain-affiliated deals — '
+                'either all independent or POS data not loaded.</p>')
+    )
+    body = sector_block + chain_block
+    return _wc.section_card(
+        f"Portfolio composition ({total} active deals)", body, pad=True,
+    )
+
+
 def _render_pinned_deals_section(db_path: str) -> str:
     """Morning glance at health scores for every deal the user has
     starred in the watchlist.
@@ -1357,6 +1449,7 @@ def render_dashboard(db_path: str, *,
         + cmdk_hint
         + _render_since_yesterday_section(db_path)
         + _render_needs_attention_section(db_path)
+        + _render_exposure_section(db_path)
         + _render_pinned_deals_section(db_path)
         + _render_saved_templates_section(db_path)
         + _render_analyses_section()
