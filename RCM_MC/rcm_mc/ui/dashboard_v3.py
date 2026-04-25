@@ -26,6 +26,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from .colors import STATUS
+from .nav import breadcrumb, keyboard_shortcuts
 
 logger = logging.getLogger(__name__)
 
@@ -544,7 +545,8 @@ def render_dashboard_v3(store: Any) -> str:
         f'color:{_TEXT};}}</style></head><body>'
         f'<div style="max-width:1100px;margin:0 auto;'
         f'padding:32px 24px;">'
-        f'<div style="display:flex;justify-content:'
+        + breadcrumb([("Dashboard", None)])
+        + f'<div style="display:flex;justify-content:'
         f'space-between;align-items:baseline;'
         f'margin-bottom:8px;">'
         f'<h1 style="font-size:22px;color:{_TEXT};margin:0;">'
@@ -565,5 +567,7 @@ def render_dashboard_v3(store: Any) -> str:
         + _opportunities_section(opportunities)
         + _alerts_section(alerts)
         + _activity_section(activity)
-        + '</div></body></html>'
+        + '</div>'
+        + keyboard_shortcuts()
+        + '</body></html>'
     )

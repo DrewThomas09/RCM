@@ -35,6 +35,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from .colors import STATUS
+from .nav import breadcrumb, keyboard_shortcuts
 
 logger = logging.getLogger(__name__)
 
@@ -608,7 +609,12 @@ def render_deal_profile_v2(
         f'color:{_TEXT};}}</style></head><body>'
         f'<div style="max-width:1100px;margin:0 auto;'
         f'padding:32px 24px;">'
-        f'<div style="display:flex;justify-content:'
+        + breadcrumb([
+            ("Dashboard", "/?v3=1"),
+            ("Deals", "/?v3=1"),
+            (deal_name, None),
+        ])
+        + f'<div style="display:flex;justify-content:'
         f'space-between;align-items:baseline;'
         f'margin-bottom:8px;">'
         f'<h1 style="font-size:24px;color:{_TEXT};margin:0;">'
@@ -622,5 +628,7 @@ def render_deal_profile_v2(
         f'<p style="color:{_TEXT_DIM};font-size:13px;'
         f'margin:0 0 8px 0;">Top-to-bottom investment '
         f'narrative — read sequentially.</p>'
-        + body + '</div></body></html>'
+        + body + '</div>'
+        + keyboard_shortcuts()
+        + '</body></html>'
     )
