@@ -31,6 +31,9 @@ from .nav import breadcrumb, keyboard_shortcuts
 from .responsive import (
     responsive_stylesheet, viewport_meta,
 )
+from .theme import (
+    theme_init_script, theme_stylesheet, theme_toggle,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -543,12 +546,13 @@ def render_dashboard_v3(store: Any) -> str:
     return (
         f'<!doctype html><html><head>'
         f'<meta charset="utf-8">'
+        + theme_init_script()
         + viewport_meta()
         + f'<title>Portfolio · Morning view</title>'
+        + theme_stylesheet()
         + responsive_stylesheet()
         + f'<style>body{{margin:0;font-family:system-ui,'
-        f'-apple-system,sans-serif;background:{_BG_PRIMARY};'
-        f'color:{_TEXT};}}</style></head><body>'
+        f'-apple-system,sans-serif;}}</style></head><body>'
         + page_progress_bar()
         + f'<div class="rs-container" '
         f'style="max-width:1100px;">'
@@ -565,7 +569,8 @@ def render_dashboard_v3(store: Any) -> str:
         f'Models →</a>'
         f'<a href="/?v2=1" style="color:{_TEXT_DIM};">'
         f'Legacy v2</a>'
-        f'</div></div>'
+        + theme_toggle()
+        + f'</div></div>'
         f'<p style="color:{_TEXT_DIM};font-size:13px;'
         f'margin:0 0 24px 0;">Today\'s read on the '
         f'portfolio — what\'s working, what needs your '

@@ -41,6 +41,9 @@ from .nav import breadcrumb, keyboard_shortcuts
 from .responsive import (
     responsive_stylesheet, viewport_meta,
 )
+from .theme import (
+    theme_init_script, theme_stylesheet, theme_toggle,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -607,12 +610,13 @@ def render_deal_profile_v2(
 
     return (
         f'<!doctype html><html><head><meta charset="utf-8">'
+        + theme_init_script()
         + viewport_meta()
         + f'<title>Deal · {_esc(deal_name)}</title>'
+        + theme_stylesheet()
         + responsive_stylesheet()
         + f'<style>body{{margin:0;font-family:system-ui,'
-        f'-apple-system,sans-serif;background:{_BG_PRIMARY};'
-        f'color:{_TEXT};}}</style></head><body>'
+        f'-apple-system,sans-serif;}}</style></head><body>'
         + page_progress_bar()
         + f'<div style="max-width:1100px;margin:0 auto;'
         f'padding:32px 24px;">'
@@ -631,7 +635,8 @@ def render_deal_profile_v2(
         f'style="color:{_ACCENT};">Detail →</a>'
         f'<a href="/?v3=1" '
         f'style="color:{_TEXT_DIM};">Dashboard</a>'
-        f'</div></div>'
+        + theme_toggle()
+        + f'</div></div>'
         f'<p style="color:{_TEXT_DIM};font-size:13px;'
         f'margin:0 0 8px 0;">Top-to-bottom investment '
         f'narrative — read sequentially.</p>'
