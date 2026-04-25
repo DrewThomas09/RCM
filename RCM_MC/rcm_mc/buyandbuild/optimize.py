@@ -128,8 +128,11 @@ def optimize_sequence(
     """Find the highest-NPV feasible sequence.
 
     Uses straight enumeration up to ~7 candidates (5,040 perms);
-    above that, falls back to a greedy heuristic ordered by
-    per-dollar expected synergy.
+    above that, falls back to branch-and-bound search with
+    per-candidate upper-bound pruning. Branch-and-bound stays
+    optimal where greedy can miss good sequences in which the
+    high-value candidates depend on slot position (the synergy
+    curve is nonlinear in count of integrated add-ons).
     """
     constraints = constraints or SequenceConstraints()
     cand_list = [c for c in candidates]
@@ -174,37 +177,13 @@ def optimize_sequence(
             notes=["no feasible sequence under constraints"],
         )
     else:
-        # Greedy: rank candidates by per-dollar expected value and
-        # take the top ``target_len`` that fit constraints.
-        scored = []
-        for c in cand_list:
-            block = regulatory_block_prob(c)
-            density = geographic_density_score(platform, c)
-            expected = (c.standalone_ebitda_mm * 8.0
-                        * (1.0 - block) * (0.7 + 0.3 * density))
-            value_per_dollar = expected / max(0.1, c.purchase_price_mm)
-            scored.append((value_per_dollar, c))
-        scored.sort(key=lambda kv: kv[0], reverse=True)
-
-        chosen: List[AddOnCandidate] = []
-        capital = 0.0
-        block_compound = 0.0
-        for _, c in scored:
-            if len(chosen) >= target_len:
-                break
-            if capital + c.purchase_price_mm \
-                    > constraints.max_total_capital_mm:
-                continue
-            new_block = 1 - (1 - block_compound) \
-                * (1 - regulatory_block_prob(c))
-            if new_block > constraints.max_cumulative_block_prob:
-                continue
-            chosen.append(c)
-            capital += c.purchase_price_mm
-            block_compound = new_block
-
-        return valuate_sequence(
-            platform, chosen, curve=curve,
-            discount_rate=discount_rate,
-            volatility=volatility,
+        # Branch-and-bound: optimal at scale. Per-candidate
+        # upper-bound pruning prevents the exponential blow-up
+        # that pure enumeration would hit at len > 7.
+        from .branch_and_bound import branch_and_bound_optimize
+        best, _stats = branch_and_bound_optimize(
+            platform, cand_list, constraints,
+            curve=curve, discount_rate=discount_rate,
+            volatility=volatility, max_seq_len=max_seq_len,
         )
+        return best

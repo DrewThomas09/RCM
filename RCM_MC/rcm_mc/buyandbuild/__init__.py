@@ -38,6 +38,10 @@ from .constraints import (
     SequenceConstraints,
 )
 from .optimize import valuate_sequence, optimize_sequence, ValuedSequence
+from .branch_and_bound import (
+    branch_and_bound_optimize,
+    BBStats,
+)
 
 __all__ = [
     "AddOnCandidate",
@@ -53,4 +57,6 @@ __all__ = [
     "valuate_sequence",
     "optimize_sequence",
     "ValuedSequence",
+    "branch_and_bound_optimize",
+    "BBStats",
 ]
