@@ -162,6 +162,29 @@ class TestRowCounter(unittest.TestCase):
         self.assertIn("no matches", js)
 
 
+class TestSectionCardSemantic(unittest.TestCase):
+    """section_card titles must render as <h2> — partner-facing
+    accessibility (screen readers, document-outline tools, PDF
+    print) was broken when the title was a styled <span>."""
+
+    def test_title_is_h2_element(self):
+        from rcm_mc.ui._web_components import section_card
+        html = section_card("Risk overview", "<p>body</p>")
+        self.assertIn("<h2", html)
+        self.assertIn("Risk overview</h2>", html)
+
+    def test_title_html_escaped(self):
+        from rcm_mc.ui._web_components import section_card
+        html = section_card("<script>x</script>", "body")
+        self.assertNotIn("<script>x</script>", html)
+        self.assertIn("&lt;script&gt;", html)
+
+    def test_actions_still_render_alongside(self):
+        from rcm_mc.ui._web_components import section_card
+        html = section_card("X", "body", actions_html="<button>Y</button>")
+        self.assertIn("<button>Y</button>", html)
+
+
 class TestKeyboardShortcuts(unittest.TestCase):
     def test_slash_key_shortcut_wired(self):
         # The SaaS-standard "/" key focuses the first filter input

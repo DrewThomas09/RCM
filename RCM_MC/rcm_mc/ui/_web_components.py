@@ -199,11 +199,24 @@ def page_header(title: str, *, subtitle: Optional[str] = None,
 
 def section_card(title: str, body_html: str, *, pad: bool = True,
                  actions_html: str = "") -> str:
-    """Panel: header strip + body. `actions_html` floats on the header right."""
+    """Panel: header strip + body. `actions_html` floats on the header right.
+
+    Title renders as a real ``<h2>`` so screen readers, the document
+    outline tool, and PDF/print engines see a proper heading
+    hierarchy. The h2 inherits the existing wc-card-head styling
+    (12px size, 600 weight, navy) via inline reset; no visual
+    change for browser users.
+    """
     pad_class = "" if pad else " wc-no-pad"
+    # Inline reset so the wc-card-head's font-size/weight wins over
+    # the browser's default h2 (which would be 24px bold).
+    h2_style = (
+        "margin:0;padding:0;font-size:inherit;font-weight:inherit;"
+        "color:inherit;line-height:inherit;letter-spacing:inherit;"
+    )
     return (
         f'<section class="wc-card"><div class="wc-card-head">'
-        f'<span>{_html.escape(title)}</span>'
+        f'<h2 style="{h2_style}">{_html.escape(title)}</h2>'
         f'<span>{actions_html}</span>'
         f'</div>'
         f'<div class="wc-card-body{pad_class}">{body_html}</div></section>'
