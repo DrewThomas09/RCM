@@ -3831,6 +3831,32 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(csv_bytes)
             return
+        if path == "/api/digest/morning":
+            # JSON preview of the morning digest — no email sent.
+            # Useful for cron-driven mailers that want the structured
+            # payload to render in their own template.
+            from .infra.morning_digest import build_morning_digest
+            from dataclasses import asdict
+            payload = build_morning_digest(self.config.db_path)
+            return self._send_json(asdict(payload))
+        if path == "/digest/morning":
+            # HTML preview of the morning digest — the same body
+            # SMTP would send, viewable in-browser. Lets a partner
+            # confirm the digest's content before scheduling email.
+            from .infra.morning_digest import (
+                build_morning_digest, digest_to_html,
+            )
+            payload = build_morning_digest(self.config.db_path)
+            html_body = digest_to_html(payload)
+            return self._send_html(
+                f'<!DOCTYPE html><html><head>'
+                f'<meta charset="utf-8"><title>Morning digest preview</title>'
+                f'</head><body style="background:#f3f4f6;padding:24px;">'
+                f'<div style="max-width:720px;margin:0 auto;background:#fff;'
+                f'border-radius:8px;padding:24px;'
+                f'box-shadow:0 2px 8px rgba(0,0,0,0.05);">{html_body}</div>'
+                f'</body></html>'
+            )
         if path == "/insights":
             from .ui.insights_page import render_insights_page
             return self._send_html(render_insights_page(
