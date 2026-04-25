@@ -1,0 +1,26 @@
+# Runtime deps for Heroku — mirrors RCM_MC/pyproject.toml [project.dependencies].
+# Kept minimal; everything else is stdlib.
+numpy>=1.24,<3.0
+pandas>=2.0,<4.0
+pyyaml>=6.0,<7.0
+matplotlib>=3.7,<4.0
+openpyxl>=3.1,<4.0
+
+# Install the rcm_mc package from its subdirectory via its pyproject.toml.
+# Heroku's Python buildpack runs `pip install -r requirements.txt` at the
+# repo root; this line is what makes `import rcm_mc` work in the dyno.
+./RCM_MC
+
+# Gunicorn — installed but NOT the current entrypoint.
+#
+# Why it's here: standard Heroku Python deploys use gunicorn, and
+# pinning it keeps the slug consistent with that convention. A
+# future migration to WSGI (Flask wrapper around the existing routes,
+# or FastAPI rewrite) drops in without a fresh `pip install`.
+#
+# Why it's NOT in the Procfile: rcm_mc.server is stdlib
+# http.server.ThreadingHTTPServer — not a WSGI app. The Procfile
+# launches it directly via `python -m web.heroku_adapter`. Pointing
+# gunicorn at the stdlib server would fail at startup — don't switch
+# the Procfile to gunicorn until the WSGI migration actually lands.
+gunicorn>=21.0,<24.0

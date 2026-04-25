@@ -1,0 +1,62 @@
+{
+  "name": "SeekingChartis / RCM-MC",
+  "description": "Private, password-gated healthcare PE diligence workbench. Backed by the 15,327-LOC stdlib HTTP server in rcm_mc/server.py; Heroku adapter in web/. No WSGI framework, no Redis, no Postgres — single dyno + SQLite.",
+  "repository": "https://github.com/DrewThomas09/RCM",
+  "stack": "heroku-24",
+  "keywords": ["healthcare", "private-equity", "diligence", "analytics", "internal-tool"],
+  "env": {
+    "PYTHONUNBUFFERED": {
+      "description": "Flush stdout/stderr so `heroku logs --tail` keeps up with the server in real time.",
+      "value": "1"
+    },
+    "PYTHONDONTWRITEBYTECODE": {
+      "description": "Skip .pyc file writes — the dyno filesystem is ephemeral and we want predictable startup.",
+      "value": "1"
+    },
+    "ADMIN_USERNAME": {
+      "description": "Login username for the first admin user (created during release phase).",
+      "required": true
+    },
+    "ADMIN_PASSWORD": {
+      "description": "Admin password, 8+ characters. Bootstrap is idempotent — safe to re-run on redeploy. Rotate via `heroku config:set ADMIN_PASSWORD=...` + new admin UI flow after first login.",
+      "required": true,
+      "generator": "secret"
+    },
+    "RCM_MC_DB": {
+      "description": "SQLite path. Heroku's filesystem is ephemeral (wiped on every dyno cycle). /tmp works for MVP; for persistence, wire a nightly backup job to S3 via rcm_mc.infra.backup.",
+      "value": "/tmp/rcm_mc.db"
+    },
+    "RCM_MC_PHI_MODE": {
+      "description": "PHI posture banner driver. 'disallowed' = public-data-only deployment (shows a commitment banner on every page). 'restricted' = PHI flows allowed under BAA (Heroku Standard is NOT BAA-compliant — do not set to 'restricted' here). Leave 'disallowed' for standard Heroku deployments.",
+      "value": "disallowed"
+    },
+    "ANTHROPIC_API_KEY": {
+      "description": "Optional. Enables LLM-assisted features in rcm_mc/ai/. Safe to omit — features degrade to template fallbacks.",
+      "required": false
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "buildpacks": [
+    {"url": "heroku/python"}
+  ],
+  "healthchecks": [
+    {
+      "type": "startup",
+      "name": "web-healthz",
+      "path": "/healthz"
+    },
+    {
+      "type": "liveness",
+      "name": "web-healthz-live",
+      "path": "/healthz"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "python -m web.bootstrap"
+  }
+}
