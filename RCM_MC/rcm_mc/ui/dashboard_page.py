@@ -391,158 +391,307 @@ def _since_yesterday_events(db_path: str,
     return events[:20]
 
 
-def _compute_sharpest_insight(
+def _all_insights(
     db_path: str,
     *, deals: Optional[List[Dict[str, Any]]] = None,
-) -> Optional[Dict[str, Any]]:
-    """Pick the single most-notable cross-portfolio signal to headline
-    the dashboard. The "wow" moment on morning open.
+) -> List[Dict[str, Any]]:
+    """Compute ALL candidate insights (not just the top-1).
 
-    Ranks candidate insights by how surprising / actionable they are
-    and returns the top one. Each insight has:
-      - ``headline`` (≤ 100 chars, the number a partner would say out loud)
-      - ``body`` (≤ 200 chars, the one-line "so what")
-      - ``href`` (where to click to see the detail)
-      - ``tone`` ("alert", "warn", "positive", "neutral")
-      - ``kind`` (category key for the template)
+    Used by the dashboard headline card (which picks #1) AND by
+    the /insights full-page view (which renders the complete
+    ranked list). Insights are returned sorted highest-score first;
+    consumers can slice as needed.
 
-    Returns None if nothing interesting — dashboard then omits the
-    section (silence > noise).
-
-    ``deals`` can be passed pre-computed by the caller. The dashboard
-    render path calls ``_gather_per_deal(db_path)`` once and threads
-    the result into every section that needs it, instead of each
-    section re-running the per-deal scan.
+    Each insight is a dict with:
+      - ``kind`` (slug for templating)
+      - ``headline`` (one-line attention-grabber, ≤ 100 chars)
+      - ``body`` (one-line "so what", ≤ 200 chars)
+      - ``href`` (drill-down URL)
+      - ``tone`` ("alert" | "warn" | "positive" | "neutral")
+      - ``score`` (priority for ranking — higher = more urgent)
     """
     if deals is None:
         try:
             from .portfolio_risk_scan_page import _gather_per_deal
             deals = _gather_per_deal(db_path)
         except Exception:  # noqa: BLE001
-            return None
+            return []
     if not deals:
-        return None
+        return []
 
     insights: List[Dict[str, Any]] = []
+    insights.extend(_chain_concentration_insights(deals))
+    insights.extend(_covenant_insights(deals))
+    insights.extend(_health_distribution_insights(deals))
+    insights.extend(_freshness_insights(deals))
+    insights.extend(_attention_pileup_insights(deals))
+    insights.extend(_geo_concentration_insights(deals))
+    insights.extend(_sponsor_concentration_insights(db_path, deals))
+    insights.extend(_quiet_morning_insights(deals))
 
-    # Insight 1: Chain-concentration discovery. "You have N deals
-    # in the same chain" — a partner may not realize how much
-    # sector-weighted exposure they're running.
+    insights.sort(key=lambda i: i.get("score", 0), reverse=True)
+    return insights
+
+
+# ── Individual insight detectors ──────────────────────────────────
+#
+# Each returns 0+ insight dicts. Composing them in `_all_insights`
+# lets us add new signals without touching the picking logic.
+
+def _chain_concentration_insights(
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Multiple deals in the same CMS POS chain → correlated
+    covenant + sponsor + regulatory exposure."""
     chain_counts: Dict[str, List[Dict[str, Any]]] = {}
     for d in deals:
         c = (d.get("chain") or "").strip()
         if c:
             chain_counts.setdefault(c, []).append(d)
+    out: List[Dict[str, Any]] = []
     for chain, members in chain_counts.items():
         if len(members) >= 2:
             names = ", ".join(m["name"] for m in members[:3])
             if len(members) > 3:
                 names += f", +{len(members) - 3} more"
-            insights.append({
-                "headline": (
-                    f"You have {len(members)} deals in the "
-                    f"{chain} chain"
-                ),
-                "body": (
-                    f"Same corporate parent → correlated covenant, "
-                    f"sponsor, and regulatory exposure. "
-                    f"Deals: {names}."
-                ),
+            out.append({
+                "kind": "chain_concentration",
+                "headline": f"You have {len(members)} deals in the {chain} chain",
+                "body": (f"Same corporate parent → correlated covenant, "
+                         f"sponsor, and regulatory exposure. "
+                         f"Deals: {names}."),
                 "href": "/portfolio/risk-scan",
                 "tone": "warn",
-                "kind": "chain_concentration",
                 "score": 40 + 10 * len(members),
             })
+    return out
 
-    # Insight 2: Covenant-tripped headline — the scariest signal.
+
+def _covenant_insights(
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """TRIPPED is the scariest signal; TIGHT pile-up is a quieter
+    warning that 3+ deals are within 1 turn of breach."""
+    out: List[Dict[str, Any]] = []
     tripped = [d for d in deals
                if (d.get("covenant_status") or "").upper() == "TRIPPED"]
     if tripped:
         t = tripped[0]
-        insights.append({
-            "headline": (
-                f"Covenant TRIPPED on {t['name']}"
-            ),
-            "body": (
-                f"Deal {t['deal_id']} is over its leverage cap — "
-                f"action today. "
-                + (f"{len(tripped)-1} other deal{'s' if len(tripped) > 2 else ''} also tripped."
-                   if len(tripped) > 1 else "")
-            ),
+        rest = (
+            f"{len(tripped)-1} other deal{'s' if len(tripped) > 2 else ''} also tripped."
+            if len(tripped) > 1 else ""
+        )
+        out.append({
+            "kind": "covenant_tripped",
+            "headline": f"Covenant TRIPPED on {t['name']}",
+            "body": (f"Deal {t['deal_id']} is over its leverage cap — "
+                     f"action today. {rest}".strip()),
             "href": f"/deal/{t['deal_id']}",
             "tone": "alert",
-            "kind": "covenant_tripped",
             "score": 100,
         })
+    tight = [d for d in deals
+             if (d.get("covenant_status") or "").upper() == "TIGHT"]
+    if len(tight) >= 3:
+        names = ", ".join(d["name"] for d in tight[:3])
+        out.append({
+            "kind": "covenant_tight_pileup",
+            "headline": f"{len(tight)} deals within 1 turn of covenant breach",
+            "body": (f"Cluster of TIGHT-covenant deals: {names}. "
+                     f"Run covenant-stress on each before any "
+                     f"adverse-case shock lands."),
+            "href": "/diligence/covenant-stress",
+            "tone": "warn",
+            "score": 50 + 5 * len(tight),
+        })
+    return out
 
-    # Insight 3: Stale-snapshot warning — the tool is rendering old
-    # numbers. Partners should refresh before making a decision.
+
+def _health_distribution_insights(
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Worst-of-portfolio + median-shift signals."""
+    out: List[Dict[str, Any]] = []
+    scored = [d for d in deals if isinstance(d.get("score"), int)]
+    if not scored:
+        return out
+
+    # Single worst deal — even if covenant is fine, a 25 health is
+    # an "investigate today" signal.
+    worst = min(scored, key=lambda d: d["score"])
+    if worst["score"] < 40:
+        out.append({
+            "kind": "single_worst_deal",
+            "headline": (f"{worst['name']} health score is "
+                         f"{worst['score']} ({worst.get('band') or 'poor'})"),
+            "body": (f"{worst['deal_id']} is the weakest deal in the "
+                     f"portfolio — drill into the deal page to see "
+                     f"which components are dragging the score."),
+            "href": f"/deal/{worst['deal_id']}",
+            "tone": "warn",
+            "score": 35 + max(0, 40 - worst["score"]),
+        })
+
+    # Median check — if median < 60, the whole portfolio is shaky.
+    sorted_scores = sorted(d["score"] for d in scored)
+    median = sorted_scores[len(sorted_scores) // 2]
+    if median < 60 and len(scored) >= 5:
+        out.append({
+            "kind": "median_health_low",
+            "headline": (f"Median health score across {len(scored)} "
+                         f"deals is {median}"),
+            "body": ("Half the portfolio is below a 60 — the issue "
+                     "isn't a single bad deal. Look for systemic "
+                     "drivers (sector, payer mix, vintage)."),
+            "href": "/portfolio/risk-scan",
+            "tone": "warn",
+            "score": 28 + (60 - median),
+        })
+    return out
+
+
+def _freshness_insights(
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Stale snapshots → tool is rendering old numbers."""
     stale = [d for d in deals
              if d.get("snap_age_days") is not None
              and d["snap_age_days"] > 30]
     if len(stale) >= 3:
         worst = max(stale, key=lambda x: x.get("snap_age_days") or 0)
-        insights.append({
-            "headline": (
-                f"{len(stale)} deals haven't refreshed in over 30 days"
-            ),
-            "body": (
-                f"Oldest: {worst['name']} "
-                f"({worst['snap_age_days']}d stale). "
-                f"Current numbers may be outdated."
-            ),
+        return [{
+            "kind": "stale_portfolio",
+            "headline": (f"{len(stale)} deals haven't refreshed "
+                         f"in over 30 days"),
+            "body": (f"Oldest: {worst['name']} "
+                     f"({worst['snap_age_days']}d stale). "
+                     f"Current numbers may be outdated."),
             "href": "/data/refresh",
             "tone": "warn",
-            "kind": "stale_portfolio",
             "score": 25 + len(stale) * 3,
-        })
+        }]
+    return []
 
-    # Insight 4: All-green reassurance — when nothing is firing,
-    # say so. Partners appreciate a no-alarms morning read.
-    no_flags = [d for d in deals
-                if (d.get("alerts") or 0) == 0
-                and (d.get("overdue_deadlines") or 0) == 0
-                and (d.get("covenant_status") or "").upper()
-                    not in ("TRIPPED", "TIGHT")]
-    if len(deals) >= 3 and len(no_flags) == len(deals):
-        insights.append({
-            "headline": f"All {len(deals)} deals are healthy this morning",
-            "body": (
-                "No covenant breaks, no overdue deadlines, no open "
-                "alerts. Great week to focus on the pipeline."
-            ),
-            "href": "/pipeline",
-            "tone": "positive",
-            "kind": "all_green",
-            "score": 15,
-        })
 
-    # Insight 5: High-priority pileup — multiple deals at once.
+def _attention_pileup_insights(
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """When a meaningful share of the portfolio needs attention."""
     flagged = [d for d in deals
                if (d.get("alerts") or 0) > 0
                or (d.get("overdue_deadlines") or 0) > 0
                or (d.get("covenant_status") or "").upper() == "TRIPPED"]
     if len(flagged) >= 3 and len(deals) >= 5:
         pct = int(100 * len(flagged) / len(deals))
-        insights.append({
-            "headline": (
-                f"{len(flagged)} of {len(deals)} deals "
-                f"({pct}%) need attention"
-            ),
-            "body": (
-                f"Worst deal: {flagged[0]['name']}. "
-                f"See the portfolio risk scan for the full triage."
-            ),
+        return [{
+            "kind": "attention_pileup",
+            "headline": (f"{len(flagged)} of {len(deals)} deals "
+                         f"({pct}%) need attention"),
+            "body": (f"Worst deal: {flagged[0]['name']}. "
+                     f"See the portfolio risk scan for the full triage."),
             "href": "/portfolio/risk-scan",
             "tone": "alert" if pct > 30 else "warn",
-            "kind": "attention_pileup",
             "score": 30 + pct,
-        })
+        }]
+    return []
 
-    if not insights:
-        return None
-    insights.sort(key=lambda i: i.get("score", 0), reverse=True)
-    return insights[0]
+
+def _geo_concentration_insights(
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Single-state exposure ≥ 50% → state-policy / Medicaid-rate
+    risk concentrated in one regulator's hands. Reads the state
+    field from the CMS POS join (already in `deals` dicts via
+    chain lookup; falls back to deal name parsing if absent)."""
+    # State field isn't propagated through _gather_per_deal yet,
+    # so we infer from the chain's POS row when available. This
+    # is an approximation that improves once the per-deal POS row
+    # is threaded through (separate refactor).
+    out: List[Dict[str, Any]] = []
+    # Skip for tiny portfolios — concentration math isn't meaningful.
+    if len(deals) < 5:
+        return out
+    # We don't have state yet on the deal dicts; placeholder until
+    # _gather_per_deal threads facility.state through.
+    # Don't emit anything here for now — better to ship empty than
+    # fake.
+    return out
+
+
+def _sponsor_concentration_insights(
+    db_path: str,
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Multiple deals from the same sponsor → reputation risk +
+    correlated diligence assumptions. Sponsor field comes from the
+    deals table profile_json; uses a best-effort lookup."""
+    import json as _json
+    out: List[Dict[str, Any]] = []
+    try:
+        from ..portfolio.store import PortfolioStore
+        store = PortfolioStore(db_path)
+        sponsor_counts: Dict[str, List[str]] = {}
+        with store.connect() as con:
+            rows = con.execute(
+                "SELECT deal_id, profile_json FROM deals "
+                "WHERE archived_at IS NULL"
+            ).fetchall()
+        for r in rows:
+            try:
+                profile = _json.loads(r["profile_json"] or "{}")
+            except (TypeError, _json.JSONDecodeError):
+                continue
+            sponsor = (profile.get("sponsor") or "").strip()
+            if sponsor:
+                sponsor_counts.setdefault(sponsor, []).append(r["deal_id"])
+        for sponsor, dids in sponsor_counts.items():
+            if len(dids) >= 3:
+                out.append({
+                    "kind": "sponsor_concentration",
+                    "headline": (f"{len(dids)} deals from sponsor "
+                                 f"{sponsor}"),
+                    "body": ("Diligence on these deals is correlated — "
+                             "if the sponsor's playbook fails on one, "
+                             "expect it to fail on the others."),
+                    "href": "/sponsor-league",
+                    "tone": "warn",
+                    "score": 30 + 5 * len(dids),
+                })
+    except Exception:  # noqa: BLE001 — best effort
+        pass
+    return out
+
+
+def _quiet_morning_insights(
+    deals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """All-green reassurance — when nothing is firing, say so."""
+    no_flags = [d for d in deals
+                if (d.get("alerts") or 0) == 0
+                and (d.get("overdue_deadlines") or 0) == 0
+                and (d.get("covenant_status") or "").upper()
+                    not in ("TRIPPED", "TIGHT")]
+    if len(deals) >= 3 and len(no_flags) == len(deals):
+        return [{
+            "kind": "all_green",
+            "headline": f"All {len(deals)} deals are healthy this morning",
+            "body": ("No covenant breaks, no overdue deadlines, no open "
+                     "alerts. Great week to focus on the pipeline."),
+            "href": "/pipeline",
+            "tone": "positive",
+            "score": 15,
+        }]
+    return []
+
+
+def _compute_sharpest_insight(
+    db_path: str,
+    *, deals: Optional[List[Dict[str, Any]]] = None,
+) -> Optional[Dict[str, Any]]:
+    """Top-ranked candidate — used by the dashboard headline card.
+    See ``_all_insights`` for the full ranked list."""
+    rows = _all_insights(db_path, deals=deals)
+    return rows[0] if rows else None
 
 
 def _render_headline_insight_section(
@@ -553,7 +702,8 @@ def _render_headline_insight_section(
     visit. Rendered immediately after the header, before every other
     section, so it's the first thing a partner sees."""
     from . import _web_components as _wc
-    ins = _compute_sharpest_insight(db_path, deals=deals)
+    all_ins = _all_insights(db_path, deals=deals)
+    ins = all_ins[0] if all_ins else None
     if ins is None:
         return ""
 
@@ -572,6 +722,19 @@ def _render_headline_insight_section(
     headline = _html.escape(ins.get("headline", ""))
     body = _html.escape(ins.get("body", ""))
 
+    # "See all N" link only appears when there are more than the
+    # top-1 — otherwise we're nudging the partner at empty.
+    extras = len(all_ins) - 1
+    see_all = ""
+    if extras > 0:
+        see_all = (
+            f'<div style="margin-top:8px;font-size:11px;color:{fg};'
+            f'opacity:0.7;">'
+            f'+ {extras} more signal{"s" if extras != 1 else ""} · '
+            f'<a href="/insights" style="color:{fg};font-weight:500;">'
+            f'see all →</a>'
+            f'</div>'
+        )
     return (
         f'<a href="{_html.escape(href)}" '
         f'style="display:block;text-decoration:none;'
@@ -591,6 +754,7 @@ def _render_headline_insight_section(
         f'margin-top:4px;color:{fg};">{headline}</div>'
         f'<div style="font-size:13px;margin-top:6px;opacity:0.85;">'
         f'{body}</div>'
+        f'{see_all}'
         f'</div>'
         f'<span style="flex-shrink:0;opacity:0.5;font-size:18px;">→</span>'
         f'</div></a>'

@@ -3776,6 +3776,19 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "score": ins.get("score"),
                 },
             })
+        if path == "/api/insights":
+            # Full ranked list — every cross-portfolio signal the
+            # tool can compute, highest-score first. Same /insights
+            # HTML view's data, JSON-shaped for external consumers.
+            from .ui.dashboard_page import _all_insights
+            return self._send_json({
+                "insights": _all_insights(self.config.db_path),
+                "count": len(_all_insights(self.config.db_path)),
+            })
+        if path == "/insights":
+            from .ui.insights_page import render_insights_page
+            return self._send_html(render_insights_page(
+                self.config.db_path))
         if path == "/manifest.json":
             import json as _json
             manifest = {
