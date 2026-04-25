@@ -4754,6 +4754,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.deal_profile_v2 import render_deal_profile_v2
             return self._send_html(render_deal_profile_v2(
                 PortfolioStore(self.config.db_path), deal_id))
+        if path == "/api/global-search":
+            from .ui.global_search import search
+            qs = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query)
+            q = (qs.get("q") or [""])[0]
+            results = search(
+                PortfolioStore(self.config.db_path), q)
+            return self._send_json({
+                "results": [r.to_dict()
+                            for r in results]})
         if path == "/data/catalog":
             from .ui.data_catalog_page import render_data_catalog_page
             return self._send_html(render_data_catalog_page(

@@ -26,6 +26,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from .colors import STATUS
+from .global_search import render_search_bar
 from .loading import page_progress_bar
 from .nav import breadcrumb, keyboard_shortcuts
 from .responsive import (
@@ -562,7 +563,9 @@ def render_dashboard_v3(store: Any) -> str:
         f'margin-bottom:8px;">'
         f'<h1 style="font-size:22px;color:{_TEXT};margin:0;">'
         f'Morning view</h1>'
-        f'<div style="display:flex;gap:14px;font-size:12px;">'
+        + render_search_bar()
+        + f'<div style="display:flex;gap:14px;font-size:12px;'
+        f'align-items:center;">'
         f'<a href="/data/catalog" style="color:{_ACCENT};">'
         f'Data →</a>'
         f'<a href="/models/quality" style="color:{_ACCENT};">'
