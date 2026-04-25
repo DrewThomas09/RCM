@@ -70,6 +70,55 @@ class TestPerFeatureScoring(unittest.TestCase):
         self.assertEqual(_payer_mix_match(a, b), 1.0)
 
 
+class TestScoreBreakdown(unittest.TestCase):
+    """The new per-feature breakdown lets the UI render WHY a
+    comparable scored what it did. Sum-of-breakdown must equal
+    the composite score."""
+
+    def test_breakdown_sums_to_composite(self):
+        from rcm_mc.diligence.comparable_outcomes import (
+            score_breakdown, score_match,
+        )
+        target = {"sector": "hospital", "ev_mm": 500, "year": 2024,
+                  "buyer": "NMC"}
+        candidate = {"sector": "hospital", "ev_mm": 480, "year": 2023,
+                     "buyer": "NMC"}
+        breakdown = score_breakdown(target, candidate)
+        composite = score_match(target, candidate)
+        # Sum should equal composite (both rounded to 1dp)
+        self.assertAlmostEqual(
+            sum(breakdown.values()), composite, places=1,
+            msg=f"breakdown {breakdown} sum != composite {composite}",
+        )
+
+    def test_breakdown_has_all_five_features(self):
+        from rcm_mc.diligence.comparable_outcomes import score_breakdown
+        target = {"sector": "hospital", "ev_mm": 500, "year": 2024,
+                  "buyer": "NMC"}
+        out = score_breakdown(target, target)
+        for feat in ("sector", "size", "year", "payer_mix", "buyer_type"):
+            self.assertIn(feat, out)
+
+    def test_breakdown_propagates_to_comparable(self):
+        """find_comparables now annotates each Comparable with
+        score_breakdown so the UI can render the stacked bar."""
+        from rcm_mc.diligence.comparable_outcomes import (
+            find_comparables,
+        )
+
+        class _FakeCorpus:
+            def list(self, **_kw):
+                return [{"source_id": "X", "sector": "hospital",
+                         "ev_mm": 500, "year": 2024,
+                         "realized_moic": 2.0}]
+
+        target = {"sector": "hospital", "ev_mm": 500, "year": 2024}
+        comps = find_comparables(_FakeCorpus(), target, top_n=1)
+        self.assertEqual(len(comps), 1)
+        self.assertTrue(comps[0].score_breakdown)
+        self.assertIn("sector", comps[0].score_breakdown)
+
+
 class TestCompositeMatch(unittest.TestCase):
     def test_perfect_match_is_100(self):
         from rcm_mc.diligence.comparable_outcomes import score_match
@@ -242,6 +291,29 @@ class TestComparableHttpRoutes(unittest.TestCase):
             html = resp.read().decode()
         # Buyer input keeps the submitted value
         self.assertIn('value="New Mountain Capital"', html)
+
+    def test_breakdown_legend_in_results(self):
+        """The match-score-bar legend explains the per-feature
+        color coding so partners decode the stacked bars."""
+        import urllib.parse
+        params = urllib.parse.urlencode({
+            "sector": "hospital", "ev_mm": "500",
+        })
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}"
+            f"/diligence/comparable-outcomes?{params}",
+            timeout=10,
+        ) as resp:
+            html = resp.read().decode()
+        self.assertIn("Match-score bar", html)
+        # All five feature labels with their max-weight numbers
+        self.assertIn("sector (35)", html)
+        self.assertIn("size (20)", html)
+        self.assertIn("year (20)", html)
+        self.assertIn("payer mix (15)", html)
+        self.assertIn("sponsor (10)", html)
+        # And the SVG breakdown bars themselves render
+        self.assertIn('aria-label="Match score breakdown"', html)
 
     def test_html_route_with_inputs_renders_table(self):
         params = urllib.parse.urlencode({

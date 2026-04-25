@@ -145,15 +145,15 @@ def _buyer_type_match(target_buyer: str, candidate_buyer: str) -> float:
     return 0.0
 
 
-def score_match(
+def score_breakdown(
     target: Dict[str, Any],
     candidate: Dict[str, Any],
-) -> float:
-    """Return a 0–100 similarity score across the five dimensions.
+) -> Dict[str, float]:
+    """Return per-feature contribution to the composite match score.
 
-    Inputs are dicts with optional keys: sector, ev_mm, year,
-    payer_mix, buyer. Missing fields fall through to 0.5 neutrals
-    so partial information doesn't penalize.
+    Lets the UI show a partner WHY a comparable scored 70 vs 50:
+    "70 because sector + payer matched, but size is 3× off". The
+    sum of the values equals what `score_match` returns.
     """
     s_sector = _sector_match(target.get("sector", ""),
                              candidate.get("sector", ""))
@@ -165,15 +165,27 @@ def score_match(
                                 candidate.get("payer_mix"))
     s_buyer  = _buyer_type_match(target.get("buyer", ""),
                                  candidate.get("buyer", ""))
+    return {
+        "sector":     round(_W_SECTOR     * s_sector,     1),
+        "size":       round(_W_SIZE       * s_size,       1),
+        "year":       round(_W_YEAR       * s_year,       1),
+        "payer_mix":  round(_W_PAYER_MIX  * s_payer,      1),
+        "buyer_type": round(_W_BUYER_TYPE * s_buyer,      1),
+    }
 
-    return round(
-        _W_SECTOR     * s_sector
-      + _W_SIZE       * s_size
-      + _W_YEAR       * s_year
-      + _W_PAYER_MIX  * s_payer
-      + _W_BUYER_TYPE * s_buyer,
-        1,
-    )
+
+def score_match(
+    target: Dict[str, Any],
+    candidate: Dict[str, Any],
+) -> float:
+    """Return a 0–100 similarity score across the five dimensions.
+
+    Sum of `score_breakdown(target, candidate).values()`. Inputs
+    are dicts with optional keys: sector, ev_mm, year, payer_mix,
+    buyer. Missing fields fall through to 0.5 neutrals so partial
+    information doesn't penalize.
+    """
+    return round(sum(score_breakdown(target, candidate).values()), 1)
 
 
 # ── Comparable record + outcome summary ────────────────────────────
@@ -184,6 +196,7 @@ class Comparable:
     deal: Dict[str, Any]
     score: float
     match_reasons: List[str] = field(default_factory=list)
+    score_breakdown: Dict[str, float] = field(default_factory=dict)
 
 
 def _explain_reasons(target: Dict[str, Any],
@@ -231,10 +244,12 @@ def find_comparables(
     for c in candidates:
         if c.get("source_id") == target.get("source_id"):
             continue  # don't compare a deal to itself
-        sc = score_match(target, c)
+        breakdown = score_breakdown(target, c)
+        sc = round(sum(breakdown.values()), 1)
         scored.append(Comparable(
             deal=c, score=sc,
             match_reasons=_explain_reasons(target, c),
+            score_breakdown=breakdown,
         ))
     scored.sort(key=lambda x: x.score, reverse=True)
     return scored[:top_n]
@@ -323,6 +338,7 @@ def benchmark_deal(
                 "hold_years": _safe_float(c.deal.get("hold_years")),
                 "match_score": c.score,
                 "match_reasons": c.match_reasons,
+                "score_breakdown": c.score_breakdown,
             }
             for c in comps
         ],

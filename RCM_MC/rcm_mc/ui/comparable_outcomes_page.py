@@ -129,6 +129,66 @@ def _outcome_strip(summary: Dict[str, Any]) -> str:
     )
 
 
+def _breakdown_bar(breakdown: Dict[str, float]) -> str:
+    """Stacked horizontal mini-bar showing per-feature contribution
+    to the composite match score. Hovering each segment shows the
+    feature name + points. Lets a partner instantly see whether a
+    65 came from "sector + payer match, size off" or "size + year
+    match, sector wrong".
+    """
+    if not breakdown:
+        return ""
+    feature_palette = {
+        "sector":     "#1F4E78",  # navy — the heaviest weight
+        "size":       "#3b82f6",  # blue
+        "year":       "#10b981",  # green
+        "payer_mix":  "#f59e0b",  # amber
+        "buyer_type": "#8b5cf6",  # purple
+    }
+    feature_max = {
+        "sector": 35.0, "size": 20.0, "year": 20.0,
+        "payer_mix": 15.0, "buyer_type": 10.0,
+    }
+    width = 80
+    height = 8
+    segments: List[str] = []
+    x_cursor = 0
+    for feat, max_w in feature_max.items():
+        # Each feature owns a fixed slice of the bar (proportional
+        # to its max weight). Within that slice, fill = actual /
+        # max points. Empty fraction shows up as track gray.
+        slice_w = max_w / 100.0 * width
+        actual = breakdown.get(feat, 0.0)
+        fill_pct = actual / max_w if max_w > 0 else 0
+        fill_w = slice_w * fill_pct
+        color = feature_palette[feat]
+        # Title attribute = hover tooltip
+        title = f"{feat}: {actual:.1f}/{max_w:.0f}"
+        # Filled segment
+        if fill_w > 0:
+            segments.append(
+                f'<rect x="{x_cursor}" y="0" '
+                f'width="{fill_w}" height="{height}" fill="{color}">'
+                f'<title>{title}</title></rect>'
+            )
+        # Empty fraction shows track color so segment widths read
+        if fill_w < slice_w:
+            segments.append(
+                f'<rect x="{x_cursor + fill_w}" y="0" '
+                f'width="{slice_w - fill_w}" height="{height}" '
+                f'fill="#f3f4f6" opacity="0.6"><title>{title}</title></rect>'
+            )
+        x_cursor += slice_w
+    return (
+        f'<svg width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" '
+        f'aria-label="Match score breakdown" '
+        f'style="display:block;margin-top:3px;">'
+        + "".join(segments) +
+        '</svg>'
+    )
+
+
 def _comparable_row(c: Dict[str, Any]) -> List[str]:
     score = c.get("match_score") or 0
     bg, fg = (
@@ -136,10 +196,15 @@ def _comparable_row(c: Dict[str, Any]) -> List[str]:
         ("#fef3c7", "#92400e") if score >= 50 else
         ("#f3f4f6", "#6b7280")
     )
+    breakdown = c.get("score_breakdown") or {}
+    bar = _breakdown_bar(breakdown)
     score_chip = (
+        f'<div>'
         f'<span style="display:inline-block;padding:1px 8px;background:{bg};'
         f'color:{fg};border-radius:9999px;font-size:11px;font-weight:600;'
         f'font-variant-numeric:tabular-nums;">{score:.0f}</span>'
+        f'{bar}'
+        f'</div>'
     )
     name = (
         f'<div><span style="font-weight:500;color:#1f2937;">'
@@ -269,13 +334,38 @@ def render_comparable_outcomes_page(
         filter_placeholder="Filter by deal name or buyer…",
     )
 
+    breakdown_legend = (
+        '<div style="display:flex;flex-wrap:wrap;gap:14px;'
+        'font-size:11px;color:#6b7280;margin:8px 0 0;'
+        'padding:8px 12px;background:#fafbfc;border-radius:6px;">'
+        '<span style="font-weight:600;color:#374151;'
+        'text-transform:uppercase;letter-spacing:0.05em;">'
+        'Match-score bar</span>'
+        '<span><span style="display:inline-block;width:10px;'
+        'height:8px;background:#1F4E78;margin-right:4px;'
+        'vertical-align:middle;"></span>sector (35)</span>'
+        '<span><span style="display:inline-block;width:10px;'
+        'height:8px;background:#3b82f6;margin-right:4px;'
+        'vertical-align:middle;"></span>size (20)</span>'
+        '<span><span style="display:inline-block;width:10px;'
+        'height:8px;background:#10b981;margin-right:4px;'
+        'vertical-align:middle;"></span>year (20)</span>'
+        '<span><span style="display:inline-block;width:10px;'
+        'height:8px;background:#f59e0b;margin-right:4px;'
+        'vertical-align:middle;"></span>payer mix (15)</span>'
+        '<span><span style="display:inline-block;width:10px;'
+        'height:8px;background:#8b5cf6;margin-right:4px;'
+        'vertical-align:middle;"></span>sponsor (10)</span>'
+        '</div>'
+    )
+
     inner = (
         header
         + form
         + _outcome_strip(summary)
         + _wc.section_card(
             f"Top {len(rows)} comparables — sorted by match score",
-            table, pad=False,
+            table + breakdown_legend, pad=False,
         )
     )
     body = (
