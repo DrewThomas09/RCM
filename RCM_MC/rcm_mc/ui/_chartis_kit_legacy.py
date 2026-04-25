@@ -743,6 +743,7 @@ _PALETTE_ENTRIES = [
     ("RUN", "Payer Mix Stress",         "/diligence/payer-stress"),
     ("RUN", "Bridge Auto-Auditor",      "/diligence/bridge-audit"),
     ("RUN", "Comparable outcomes",      "/diligence/comparable-outcomes"),
+    ("RUN", "Sponsor detail",           "/diligence/sponsor-detail"),
     ("RUN", "Deal Autopsy",             "/diligence/deal-autopsy"),
     ("RUN", "IC Packet Builder",        "/diligence/ic-packet"),
     # REF — REFERENCE group

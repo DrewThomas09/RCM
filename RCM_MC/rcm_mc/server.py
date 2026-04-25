@@ -3861,6 +3861,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.insights_page import render_insights_page
             return self._send_html(render_insights_page(
                 self.config.db_path))
+        if path == "/diligence/sponsor-detail":
+            # Single-sponsor drill-down — given a sponsor name,
+            # render their realized MOIC distribution + vintage
+            # timeline + sector breakdown + per-deal list. The
+            # "is this sponsor's pitched 3.5x base case credible?"
+            # answer in one screen.
+            qs = urllib.parse.parse_qs(parsed.query)
+            qp = {k: v[0] for k, v in qs.items() if v}
+            from .ui.sponsor_detail_page import render_sponsor_detail_page
+            return self._send_html(
+                render_sponsor_detail_page(qp, db_path=self.config.db_path)
+            )
         if path == "/diligence/comparable-outcomes":
             # Comparable-deal benchmarking: target profile in,
             # corpus matches + outcome distribution out.
