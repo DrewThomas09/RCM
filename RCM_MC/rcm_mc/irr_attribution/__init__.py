@@ -39,6 +39,12 @@ from .components import (
 from .irr import compute_irr, compute_moic
 from .decompose import decompose_value_creation
 from .ilpa import format_ilpa_2_0, render_lp_narrative
+from .fund import (
+    aggregate_fund_attribution,
+    format_fund_ilpa,
+    FundAttributionResult,
+    FundDealRow,
+)
 
 __all__ = [
     "DealCashflows",
@@ -49,4 +55,8 @@ __all__ = [
     "decompose_value_creation",
     "format_ilpa_2_0",
     "render_lp_narrative",
+    "aggregate_fund_attribution",
+    "format_fund_ilpa",
+    "FundAttributionResult",
+    "FundDealRow",
 ]

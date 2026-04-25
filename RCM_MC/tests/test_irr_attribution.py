@@ -157,5 +157,107 @@ class TestLPNarrative(unittest.TestCase):
         self.assertIn("| Component | $M | Share |", md)
 
 
+def _three_deal_fund():
+    """Three realized deals across two vintage years."""
+    from rcm_mc.irr_attribution import DealCashflows
+    return [
+        DealCashflows(
+            deal_name="DealA",
+            entry_year=2018, exit_year=2023,
+            ev_at_entry_mm=200.0, ev_at_exit_mm=400.0,
+            ebitda_at_entry_mm=20.0, ebitda_at_exit_mm=40.0,
+            revenue_at_entry_mm=110.0, revenue_at_exit_mm=180.0,
+            net_debt_at_entry_mm=100.0, net_debt_at_exit_mm=80.0,
+            addon_revenue_contribution_mm=20.0,
+            cashflows=[(0.0, -100.0), (5.0, 320.0)],
+        ),
+        DealCashflows(
+            deal_name="DealB",
+            entry_year=2018, exit_year=2024,
+            ev_at_entry_mm=400.0, ev_at_exit_mm=750.0,
+            ebitda_at_entry_mm=40.0, ebitda_at_exit_mm=70.0,
+            revenue_at_entry_mm=220.0, revenue_at_exit_mm=320.0,
+            net_debt_at_entry_mm=200.0, net_debt_at_exit_mm=160.0,
+            addon_revenue_contribution_mm=25.0,
+            cashflows=[(0.0, -200.0), (6.0, 590.0)],
+        ),
+        DealCashflows(
+            deal_name="DealC",
+            entry_year=2020, exit_year=2025,
+            ev_at_entry_mm=300.0, ev_at_exit_mm=540.0,
+            ebitda_at_entry_mm=30.0, ebitda_at_exit_mm=45.0,
+            revenue_at_entry_mm=170.0, revenue_at_exit_mm=205.0,
+            net_debt_at_entry_mm=150.0, net_debt_at_exit_mm=130.0,
+            addon_revenue_contribution_mm=10.0,
+            cashflows=[(0.0, -150.0), (5.0, 410.0)],
+        ),
+    ]
+
+
+class TestFundAggregation(unittest.TestCase):
+    def test_fund_total_sums_per_deal(self):
+        from rcm_mc.irr_attribution import (
+            aggregate_fund_attribution,
+        )
+        fund = aggregate_fund_attribution(
+            "TestFund I", _three_deal_fund())
+        self.assertEqual(fund.n_deals, 3)
+        # Fund total = sum of per-deal totals
+        deal_sum = sum(
+            r.total_value_created_mm for r in fund.deal_rows)
+        self.assertAlmostEqual(
+            fund.total_value_created_mm, deal_sum, places=1)
+
+    def test_deal_lookthrough_sorted_descending(self):
+        from rcm_mc.irr_attribution import (
+            aggregate_fund_attribution,
+        )
+        fund = aggregate_fund_attribution(
+            "TestFund I", _three_deal_fund())
+        # Deal rows ordered by total_value_created descending
+        totals = [r.total_value_created_mm
+                  for r in fund.deal_rows]
+        self.assertEqual(totals, sorted(totals, reverse=True))
+
+    def test_vintage_rollup_buckets_by_year(self):
+        from rcm_mc.irr_attribution import (
+            aggregate_fund_attribution,
+        )
+        fund = aggregate_fund_attribution(
+            "TestFund I", _three_deal_fund())
+        # Two vintages: 2018 (2 deals), 2020 (1 deal)
+        self.assertIn(2018, fund.vintage_rollup)
+        self.assertIn(2020, fund.vintage_rollup)
+        # 2018 vintage total should exceed 2020 (2 deals vs 1)
+        v18 = fund.vintage_rollup[2018].total_value_created_mm
+        v20 = fund.vintage_rollup[2020].total_value_created_mm
+        self.assertGreater(v18, v20)
+
+    def test_format_fund_ilpa_schema(self):
+        from rcm_mc.irr_attribution import (
+            aggregate_fund_attribution, format_fund_ilpa,
+        )
+        fund = aggregate_fund_attribution(
+            "TestFund I", _three_deal_fund())
+        out = format_fund_ilpa(fund)
+        self.assertEqual(out["fund_name"], "TestFund I")
+        self.assertEqual(out["n_realized_deals"], 3)
+        self.assertEqual(out["ilpa_template_version"], "2.0")
+        # Required ILPA attribution keys
+        attr = out["value_creation_attribution"]
+        for k in ("revenue_growth_organic",
+                  "revenue_growth_inorganic",
+                  "margin_expansion", "multiple_expansion",
+                  "debt_paydown_leverage", "fx_translation",
+                  "dividend_recap", "subscription_line_credit",
+                  "cross_terms_residual"):
+            self.assertIn(k, attr)
+        # Lookthrough has all 3 deals
+        self.assertEqual(len(out["deal_lookthrough"]), 3)
+        # Vintage rollup has both years
+        self.assertIn("2018", out["vintage_rollup"])
+        self.assertIn("2020", out["vintage_rollup"])
+
+
 if __name__ == "__main__":
     unittest.main()
