@@ -3785,6 +3785,82 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "insights": _all_insights(self.config.db_path),
                 "count": len(_all_insights(self.config.db_path)),
             })
+        # ── Deal Screening dashboard ──
+        if path == "/screening/dashboard":
+            # Bloomberg-like filterable deal universe.
+            qs = urllib.parse.parse_qs(parsed.query)
+            qp = {k: v[0] for k, v in qs.items() if v}
+            try:
+                from .screening import (
+                    DealCandidate, DealFilter, apply_filter,
+                    render_screening_dashboard, score_universe,
+                )
+                store = PortfolioStore(self.config.db_path)
+                with store.connect() as con:
+                    rows = con.execute(
+                        "SELECT deal_id, name, profile_json "
+                        "FROM deals WHERE archived_at IS NULL"
+                    ).fetchall()
+                import json as _json
+                candidates = []
+                for row in rows:
+                    try:
+                        prof = _json.loads(
+                            row["profile_json"] or "{}")
+                    except (TypeError, _json.JSONDecodeError):
+                        prof = {}
+                    candidates.append(DealCandidate(
+                        deal_id=row["deal_id"],
+                        name=row["name"] or row["deal_id"],
+                        sector=prof.get("sector") or "hospital",
+                        state=prof.get("state", ""),
+                        cbsa=prof.get("cbsa", ""),
+                        revenue_mm=float(
+                            prof.get("revenue_mm") or 0),
+                        ebitda_mm=float(
+                            prof.get("ebitda_mm") or 0),
+                        ebitda_margin=float(
+                            prof.get("ebitda_margin") or 0.15),
+                        growth_rate=float(
+                            prof.get("growth_rate") or 0.05),
+                        payer_concentration=float(
+                            prof.get("payer_concentration") or 0.40),
+                        physician_concentration=float(
+                            prof.get(
+                                "physician_concentration") or 0.30),
+                        cash_pay_share=float(
+                            prof.get("cash_pay_share") or 0.10),
+                        out_of_network_share=float(
+                            prof.get(
+                                "out_of_network_share") or 0.05),
+                        has_pe_history=bool(
+                            prof.get("has_pe_history") or False),
+                    ))
+                results = score_universe(candidates)
+                flt = DealFilter(
+                    sectors=([qp["sector"]]
+                             if qp.get("sector") else []),
+                    size_min_mm=(float(qp["size_min"])
+                                  if qp.get("size_min") else None),
+                    size_max_mm=(float(qp["size_max"])
+                                  if qp.get("size_max") else None),
+                    confidence_floor=float(
+                        qp.get("confidence_floor") or 0.0),
+                    exclude_topics=[
+                        t.strip() for t in
+                        (qp.get("exclude") or "").split(",")
+                        if t.strip()],
+                )
+                filtered = apply_filter(results, flt)
+                html = render_screening_dashboard(
+                    filtered, flt=flt)
+                return self._send_html(html)
+            except Exception as exc:  # noqa: BLE001
+                return self._send_html(
+                    f"<h1>500</h1><p>Screening failed: "
+                    f"{type(exc).__name__}: {exc}</p>",
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
         # ── Synthesis runner — IC binder over 13 packets ──
         if path.startswith("/diligence/synthesis/"):
             # /diligence/synthesis/<deal_id> — render IC binder
