@@ -4748,6 +4748,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_refresh_page import render_data_refresh_page
             return self._send_html(render_data_refresh_page(
                 self.config.db_path))
+        if path.startswith("/deal/") and path.endswith("/profile"):
+            mid = path[len("/deal/"):-len("/profile")]
+            deal_id = urllib.parse.unquote(mid).strip("/")
+            from .ui.deal_profile_v2 import render_deal_profile_v2
+            return self._send_html(render_deal_profile_v2(
+                PortfolioStore(self.config.db_path), deal_id))
         if path == "/data/catalog":
             from .ui.data_catalog_page import render_data_catalog_page
             return self._send_html(render_data_catalog_page(
