@@ -143,10 +143,37 @@ def _render_analyses_section() -> str:
 
     rows: List[List[str]] = []
     for a in _CURATED_ANALYSES:
+        # Save-as-template form: pre-fills the name + route from
+        # this row so the partner just clicks ★ to bookmark the
+        # current parametrization. Wraps to /api/saved-analyses
+        # POST → 303-redirect back to /dashboard.
+        save_form = (
+            f'<form method="POST" action="/api/saved-analyses" '
+            f'style="display:inline;margin:0;" '
+            f'onsubmit="var n=prompt(\'Save this analysis as template '
+            f'— give it a name:\', \'{_html.escape(a["name"])}\');'
+            f'if(!n){{return false;}}'
+            f'this.querySelector(\'input[name=name]\').value=n;return true;">'
+            f'<input type="hidden" name="name" value="">'
+            f'<input type="hidden" name="route" '
+            f'value="{_html.escape(a["route"])}">'
+            f'<input type="hidden" name="description" '
+            f'value="{_html.escape(a["desc"][:200])}">'
+            f'<input type="hidden" name="redirect" value="/dashboard">'
+            f'<button type="submit" '
+            f'title="Save as template for one-click relaunch" '
+            f'style="background:transparent;border:0;color:#9ca3af;'
+            f'cursor:pointer;font-size:14px;padding:0;'
+            f'transition:color 0.1s;" '
+            f'onmouseover="this.style.color=\'#1F4E78\';" '
+            f'onmouseout="this.style.color=\'#9ca3af\';">★</button>'
+            f'</form>'
+        )
         rows.append([
             (f'<a href="{_html.escape(a["route"])}" '
              f'style="color:#1F4E78;font-weight:500;">'
-             f'{_html.escape(a["name"])}</a>'),
+             f'{_html.escape(a["name"])}</a>'
+             f'&nbsp;{save_form}'),
             f'<span style="color:#6b7280;">{_html.escape(a["category"])}</span>',
             _html.escape(a["desc"]),
             (f'<span style="color:#6b7280;">'
@@ -157,7 +184,13 @@ def _render_analyses_section() -> str:
         rows, id="dashboard-analyses", hide_columns_sm=[1, 3],
         filterable=True, filter_placeholder="Filter analyses…",
     )
-    return _wc.section_card("What you can run", table, pad=False)
+    return _wc.section_card(
+        "What you can run", table, pad=False,
+        actions_html=(
+            '<span style="font-size:11px;color:#6b7280;'
+            'font-weight:normal;">click ★ to save as template</span>'
+        ),
+    )
 
 
 def _workflow_badge_counts(db_path: str) -> Dict[str, Optional[int]]:

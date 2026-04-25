@@ -129,6 +129,27 @@ class TestDashboardSurface(unittest.TestCase):
         html = render_dashboard(self.db)
         self.assertNotIn("Your templates", html)
 
+    def test_save_button_appears_on_each_curated_analysis(self):
+        """Every row in 'What you can run' carries a ★ Save button —
+        the only in-browser way to create a template before this fix.
+        Regression guard: 10 curated analyses → 10 save forms in
+        the rendered HTML."""
+        from rcm_mc.ui.dashboard_page import (
+            render_dashboard, _CURATED_ANALYSES,
+        )
+        html = render_dashboard(self.db)
+        # Each save form posts to /api/saved-analyses; count those.
+        save_forms = html.count('action="/api/saved-analyses"')
+        # Should be at least 1 per curated analysis (only +0 because
+        # there's no other render path that posts there).
+        self.assertGreaterEqual(
+            save_forms, len(_CURATED_ANALYSES),
+            msg=f"expected ≥{len(_CURATED_ANALYSES)} save forms "
+                f"(one per curated analysis), got {save_forms}",
+        )
+        # Hint copy in the section header
+        self.assertIn("click ★ to save as template", html)
+
     def test_template_renders_with_launch_link(self):
         from rcm_mc.analysis.saved_analyses import save_template
         save_template(self.store, name="Weekly HCRIS",
