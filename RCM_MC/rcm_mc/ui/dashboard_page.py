@@ -1361,17 +1361,80 @@ def _render_predicted_outcomes_section(
 
     rows: List[str] = []
     any_prediction = False
+    # Pull EV / payer-mix / sponsor from the deal's profile_json
+    # in one query so each prediction can be deal-specific instead
+    # of every starred deal getting the same hardcoded target.
+    profiles_by_id: Dict[str, Dict[str, Any]] = {}
+    try:
+        import json as _json
+        with store.connect() as con:
+            for r in con.execute(
+                "SELECT deal_id, profile_json FROM deals "
+                "WHERE deal_id IN ({})".format(
+                    ",".join("?" * len(starred))),
+                starred,
+            ).fetchall():
+                try:
+                    profiles_by_id[r["deal_id"]] = _json.loads(
+                        r["profile_json"] or "{}")
+                except (TypeError, _json.JSONDecodeError):
+                    profiles_by_id[r["deal_id"]] = {}
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Cache HCRIS revenue → rough EV proxy (10x revenue is a typical
+    # hospital multiple) when the profile doesn't carry an explicit EV.
+    hcris_lookup = None
+    try:
+        from ..data.hcris import _get_latest_per_ccn
+        hcris_lookup = _get_latest_per_ccn()
+    except Exception:  # noqa: BLE001
+        pass
+
     for deal_id in starred:
         scan_row = scan_by_id.get(deal_id, {})
-        # Build target profile from whatever we know about the deal
-        sector = scan_row.get("sector") or "hospital"
-        # No reliable EV per-deal in our gather — fall back on a
-        # rough proxy. Caller can pin EV in the deal's profile_json.
+        profile = profiles_by_id.get(deal_id, {})
+
+        # Sector: prefer the scan row (already normalized), fall
+        # back to profile, finally default to hospital.
+        sector = (scan_row.get("sector")
+                  or profile.get("sector")
+                  or "hospital")
+
+        # EV: explicit profile wins; HCRIS-derived proxy second;
+        # None last (corpus matcher uses 0.5 neutral on None).
+        ev_mm: Optional[float] = profile.get("ev_mm")
+        if ev_mm is None and hcris_lookup is not None:
+            try:
+                if not hcris_lookup.empty:
+                    h = hcris_lookup[hcris_lookup["ccn"] == deal_id]
+                    if not h.empty:
+                        rev = h.iloc[0].get("net_patient_revenue")
+                        # Hospital EV / revenue typically 0.5-1.5x;
+                        # use 1.0 as a middling proxy.
+                        if rev and rev > 0:
+                            ev_mm = float(rev) / 1_000_000.0
+            except Exception:  # noqa: BLE001
+                pass
+
+        # Year: sponsor expects the analysis-year (default to current
+        # so recency match favors recent comparables).
+        year = profile.get("entry_year") or profile.get("year") or 2024
+
+        # Buyer: helps the same-sponsor weight when the partner
+        # tracks a sponsor's playbook
+        buyer = (profile.get("sponsor") or profile.get("buyer") or "")
+
+        # Payer mix: directly from profile if the deal was
+        # registered with one, otherwise falls through to neutral.
+        payer_mix = profile.get("payer_mix")
+
         target = {
             "sector": sector,
-            "ev_mm": None,  # corpus matcher uses neutral 0.5 when None
-            "year": 2024,
-            "buyer": "",
+            "ev_mm": ev_mm,
+            "year": year,
+            "buyer": buyer,
+            "payer_mix": payer_mix,
         }
         try:
             result = benchmark_deal(corpus, target, top_n=10)
