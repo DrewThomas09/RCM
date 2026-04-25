@@ -4748,6 +4748,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_refresh_page import render_data_refresh_page
             return self._send_html(render_data_refresh_page(
                 self.config.db_path))
+        if path == "/data/catalog":
+            from .ui.data_catalog_page import render_data_catalog_page
+            return self._send_html(render_data_catalog_page(
+                PortfolioStore(self.config.db_path)))
         if path == "/exports":
             from .ui.exports_index_page import render_exports_index
             return self._send_html(render_exports_index(self.config.db_path))
