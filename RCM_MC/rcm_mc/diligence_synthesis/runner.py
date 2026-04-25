@@ -215,4 +215,19 @@ def run_full_diligence(dossier: DiligenceDossier) -> SynthesisResult:
         "comparables: needs deal_corpus + target_deal_profile",
     )
 
+    # ── 11. IRR-Attribution Packet ───────────────────────────
+    def _irr():
+        if not dossier.realized_cashflows:
+            return None
+        from ..irr_attribution import (
+            decompose_value_creation, render_lp_narrative,
+        )
+        attr = decompose_value_creation(dossier.realized_cashflows)
+        result.irr_attribution_lp_md = render_lp_narrative(attr)
+        return attr
+    result.irr_attribution = _safe_run(
+        "irr_attribution", _irr, result,
+        "irr_attribution: needs realized_cashflows",
+    )
+
     return result

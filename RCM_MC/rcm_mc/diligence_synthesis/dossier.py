@@ -54,6 +54,9 @@ class DiligenceDossier:
     comparables_method: str = "psm"
     comparables_k: int = 15
 
+    # IRR-Attribution inputs
+    realized_cashflows: Any = None    # rcm_mc.irr_attribution.DealCashflows
+
 
 @dataclass
 class SynthesisResult:
@@ -72,3 +75,5 @@ class SynthesisResult:
     esg_scorecard: Any = None
     esg_disclosure_md: str = ""
     comparables: Any = None
+    irr_attribution: Any = None
+    irr_attribution_lp_md: str = ""

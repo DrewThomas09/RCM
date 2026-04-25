@@ -26,7 +26,7 @@ class TestEmptyDossier(unittest.TestCase):
         self.assertEqual(result.deal_name, "Empty Co")
         self.assertEqual(result.sections_run, [])
         # Every packet should be flagged as missing inputs
-        self.assertEqual(len(result.missing_inputs), 10)
+        self.assertEqual(len(result.missing_inputs), 11)
 
 
 class TestPartialDossier(unittest.TestCase):
@@ -67,9 +67,9 @@ class TestPartialDossier(unittest.TestCase):
         result = run_full_diligence(dossier)
         self.assertIn("qoe", result.sections_run)
         self.assertIsNotNone(result.qoe_result)
-        # Other 9 packets skipped
+        # Other 10 packets skipped
         self.assertEqual(len(result.sections_run), 1)
-        self.assertEqual(len(result.missing_inputs), 9)
+        self.assertEqual(len(result.missing_inputs), 10)
 
 
 class TestFullySupportedDossier(unittest.TestCase):
