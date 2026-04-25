@@ -3785,6 +3785,69 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "insights": _all_insights(self.config.db_path),
                 "count": len(_all_insights(self.config.db_path)),
             })
+        # ── IC memo generator (deal_id-based; the older
+        # ── /ic-memo/<ccn> route handles hospital CCNs).
+        if path.startswith("/diligence/ic-memo/"):
+            deal_id = path[
+                len("/diligence/ic-memo/"):].strip("/")
+            if not deal_id:
+                return self._send_html(
+                    "<h1>404</h1><p>Missing deal_id</p>",
+                    status=HTTPStatus.NOT_FOUND)
+            try:
+                from .ic_memo import (
+                    build_ic_memo, render_memo_html,
+                )
+                from .diligence_synthesis import (
+                    DiligenceDossier, run_full_diligence,
+                )
+                store = PortfolioStore(self.config.db_path)
+                with store.connect() as con:
+                    row = con.execute(
+                        "SELECT name, profile_json FROM deals "
+                        "WHERE deal_id = ?", (deal_id,),
+                    ).fetchone()
+                if not row:
+                    return self._send_html(
+                        f"<h1>404</h1><p>Deal {deal_id} not "
+                        f"found</p>",
+                        status=HTTPStatus.NOT_FOUND)
+                import json as _json
+                try:
+                    prof = _json.loads(
+                        row["profile_json"] or "{}")
+                except (TypeError, _json.JSONDecodeError):
+                    prof = {}
+                dossier = DiligenceDossier(
+                    deal_name=row["name"] or deal_id,
+                    sector=prof.get("sector") or "hospital",
+                    states=prof.get("states") or [],
+                    ebitda_mm=float(prof.get("ebitda_mm") or 0),
+                    revenue_mm=float(
+                        prof.get("revenue_mm") or 0),
+                )
+                synthesis = run_full_diligence(dossier)
+                memo = build_ic_memo(
+                    deal_id=deal_id,
+                    deal_name=row["name"] or deal_id,
+                    sector=prof.get("sector") or "hospital",
+                    states=prof.get("states") or [],
+                    revenue_mm=float(
+                        prof.get("revenue_mm") or 0),
+                    ebitda_mm=float(prof.get("ebitda_mm") or 0),
+                    ebitda_margin=float(
+                        prof.get("ebitda_margin") or 0.15),
+                    growth_rate=float(
+                        prof.get("growth_rate") or 0.05),
+                    synthesis_result=synthesis,
+                )
+                return self._send_html(render_memo_html(memo))
+            except Exception as exc:  # noqa: BLE001
+                return self._send_html(
+                    f"<h1>500</h1><p>IC memo failed: "
+                    f"{type(exc).__name__}: {exc}</p>",
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
         # ── Deal Screening dashboard ──
         if path == "/screening/dashboard":
             # Bloomberg-like filterable deal universe.
