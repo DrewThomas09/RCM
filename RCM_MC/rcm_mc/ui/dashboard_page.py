@@ -262,9 +262,12 @@ def _since_yesterday_events(db_path: str,
         except Exception:  # noqa: BLE001 — missing table / permission / race
             return []
 
-    # Alerts fired
+    # Alerts fired. Pull `kind` + `trigger_key` so the UI can emit an
+    # inline ack form per row — the three together identify a specific
+    # alert instance for POST /api/alerts/ack.
     for r in _q(
-        "SELECT first_seen_at AS at, deal_id, title, severity "
+        "SELECT first_seen_at AS at, kind, deal_id, trigger_key, "
+        "title, severity "
         "FROM alert_history WHERE first_seen_at >= ? "
         "ORDER BY first_seen_at DESC LIMIT 10",
         (cutoff,),
@@ -275,6 +278,10 @@ def _since_yesterday_events(db_path: str,
             "kind": "alert",
             "label": f'{r["severity"].upper()}: {r["title"]}'[:80],
             "href": f"/deal/{r['deal_id']}" if r["deal_id"] else "/alerts",
+            # Ack-form fields
+            "alert_kind": r["kind"] or "",
+            "alert_deal_id": r["deal_id"] or "",
+            "alert_trigger_key": r["trigger_key"] or "",
         })
 
     # Data refreshes
@@ -382,11 +389,40 @@ def _render_since_yesterday_section(db_path: str) -> str:
             label = (f'<a href="{_html.escape(href)}" '
                      f'style="color:#1F4E78;text-decoration:none;">'
                      f'{label}</a>')
+
+        # Inline ack button for alert rows — one-click dismissal
+        # without navigating away. CSRF auto-injected by the shell's
+        # form-patching JS. Redirect back to /dashboard so the
+        # user's scroll position + the other events are preserved.
+        ack_form = ""
+        if ev.get("kind") == "alert":
+            k = _html.escape(ev.get("alert_kind") or "")
+            d = _html.escape(ev.get("alert_deal_id") or "")
+            t = _html.escape(ev.get("alert_trigger_key") or "")
+            if k and d and t:
+                ack_form = (
+                    f'<form method="POST" action="/api/alerts/ack" '
+                    f'style="flex-shrink:0;margin:0;" '
+                    f'onsubmit="event.target.querySelector(\'button\')'
+                    f'.disabled=true;">'
+                    f'<input type="hidden" name="kind" value="{k}">'
+                    f'<input type="hidden" name="deal_id" value="{d}">'
+                    f'<input type="hidden" name="trigger_key" value="{t}">'
+                    f'<input type="hidden" name="snooze_days" value="0">'
+                    f'<input type="hidden" name="redirect" value="/dashboard">'
+                    f'<button type="submit" title="Acknowledge alert" '
+                    f'style="background:transparent;border:1px solid #d0e3f0;'
+                    f'color:#1F4E78;padding:2px 10px;border-radius:4px;'
+                    f'font-size:11px;cursor:pointer;font-weight:500;">'
+                    f'Ack</button></form>'
+                )
+
         rows.append(
             f'<li style="padding:6px 0;border-bottom:1px solid #f3f4f6;'
-            f'display:flex;gap:10px;align-items:baseline;">'
+            f'display:flex;gap:10px;align-items:center;">'
             f'<span style="flex-shrink:0;font-size:14px;width:20px;">{icon}</span>'
             f'<span style="flex:1;color:#1f2937;">{label}</span>'
+            f'{ack_form}'
             f'<span style="flex-shrink:0;color:#6b7280;font-size:11px;'
             f'font-family:monospace;white-space:nowrap;">{ts}</span>'
             f'</li>'

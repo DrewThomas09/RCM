@@ -15018,7 +15018,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             accept = self.headers.get("Accept", "")
             if "application/json" in accept:
                 return self._send_json({"ack_id": ack_id}, status=HTTPStatus.CREATED)
-            self._redirect("/alerts")
+            # Honor a `redirect` form field so the dashboard's
+            # inline ack button can return to /dashboard instead
+            # of the default /alerts destination. B146 guard: only
+            # accept local paths so ?redirect=https://evil can't
+            # turn the ack into an open-redirect gadget.
+            raw_next = form.get("redirect", "") or "/alerts"
+            nxt = raw_next if (
+                raw_next.startswith("/")
+                and not raw_next.startswith("//")
+                and "://" not in raw_next
+            ) else "/alerts"
+            self._redirect(nxt)
             return
 
         # POST /api/bulk/stage  (B99: advance N deals to the same stage)

@@ -122,6 +122,36 @@ class TestEventsPopulate(unittest.TestCase):
         # Record count formatted with thousands separator
         self.assertIn("12,345 rows", html)
 
+    def test_alert_row_has_inline_ack_form(self):
+        """Regression for the "4-click ack" workflow: each alert in
+        Since-yesterday renders an inline POST form targeting
+        /api/alerts/ack with kind + deal_id + trigger_key, and
+        redirects back to /dashboard on success."""
+        from rcm_mc.alerts.alert_history import _ensure_table
+        _ensure_table(self.store)
+        with self.store.connect() as con:
+            con.execute(
+                "INSERT INTO alert_history (kind, deal_id, trigger_key, "
+                "first_seen_at, last_seen_at, severity, title, detail) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                ("covenant", "DEAL_042", "covenant:Q3:breach",
+                 self.recent, self.recent, "high",
+                 "Covenant breach", "{}"),
+            )
+            con.commit()
+
+        from rcm_mc.ui.dashboard_page import render_dashboard
+        html = render_dashboard(self.db)
+        # Form target
+        self.assertIn('action="/api/alerts/ack"', html)
+        # All three identifying fields must be present
+        self.assertIn('name="kind" value="covenant"', html)
+        self.assertIn('name="deal_id" value="DEAL_042"', html)
+        self.assertIn('name="trigger_key" value="covenant:Q3:breach"', html)
+        # Redirect stays on the dashboard so the scroll position +
+        # other events remain after acknowledgement
+        self.assertIn('name="redirect" value="/dashboard"', html)
+
     def test_login_audit_appears(self):
         from rcm_mc.auth.audit_log import log_event, _ensure_table
         _ensure_table(self.store)
