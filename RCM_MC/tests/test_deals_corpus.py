@@ -6442,10 +6442,32 @@ class TestExtendedSeed27(unittest.TestCase):
         self.assertGreaterEqual(deal["realized_moic"], 3.0)
 
     def test_seed_569_signify_health_homerun(self):
-        """Signify Health / NMC — 5.5x homerun on in-home eval platform."""
-        deal = self.corpus.get("seed_569")
-        self.assertIsNotNone(deal)
-        self.assertGreaterEqual(deal["realized_moic"], 5.0)
+        """Signify Health — PE homerun tracked under seed_187.
+
+        seed_569 is the CVS strategic-acquirer view (realized_moic
+        explicitly None; CVS doesn't earn a PE return on this
+        transaction). The New Mountain Capital PE realization lives
+        at seed_187 per the comment in extended_seed_27.py — 4.5x
+        / 46% IRR, not 5.5x as the original test assumed.
+
+        This test asserts that both rows exist with the correct
+        shape: seed_569 as strategic (no realized values), seed_187
+        as a realized PE deal clearing a ≥4x bar.
+        """
+        strategic = self.corpus.get("seed_569")
+        self.assertIsNotNone(strategic,
+                             msg="seed_569 (strategic CVS view) must exist")
+        self.assertIsNone(strategic["realized_moic"],
+                          msg="strategic acquirer row must not claim a "
+                              "PE return; see extended_seed_27.py comment")
+
+        pe_realization = self.corpus.get("seed_187")
+        self.assertIsNotNone(pe_realization,
+                             msg="seed_187 (NMC PE realization) must exist")
+        self.assertGreaterEqual(
+            pe_realization["realized_moic"], 4.0,
+            msg="Signify PE realization under seed_187 must clear 4x MOIC",
+        )
 
     def test_seed_575_present(self):
         deal = self.corpus.get("seed_575")
