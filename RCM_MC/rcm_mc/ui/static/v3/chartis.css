@@ -578,6 +578,56 @@ footer.editorial em { color: var(--ink); font-style: italic; }
  *     when a helper is retired
  */
 
+/* --- Alerts (rcm_mc/ui/chartis/_app_alerts.py) --- */
+
+.app-alerts { display: grid; gap: .55rem; }
+.app-alert {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 1rem; align-items: center;
+  padding: 1rem 1.25rem;
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--muted);
+}
+.app-alert.amber  { border-left-color: var(--amber); }
+.app-alert.red    { border-left-color: var(--red); }
+.app-alert.info   { border-left-color: var(--blue); }
+.app-alert .ico {
+  font-family: "Source Serif 4", serif; font-size: 1.4rem;
+  text-align: center;
+}
+.app-alert.amber .ico { color: var(--amber); }
+.app-alert.red   .ico { color: var(--red); }
+.app-alert.info  .ico { color: var(--blue); }
+.app-alert .body .title {
+  font-family: "Source Serif 4", serif; font-size: 1rem;
+  color: var(--ink); margin-bottom: .25rem;
+}
+.app-alert .body .desc {
+  font-family: "Inter", sans-serif; font-size: .85rem;
+  color: var(--muted); line-height: 1.4;
+}
+.app-alert .body .meta {
+  font-family: "JetBrains Mono", monospace; font-size: .72rem;
+  color: var(--teal-deep); margin-top: .35rem;
+}
+.app-alert .cta {
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--teal-deep);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.app-alert .cta:hover { text-decoration: underline; }
+.app-alerts-clear {
+  padding: 1.5rem; text-align: center;
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  font-family: "Source Serif 4", serif; font-style: italic;
+  color: var(--green);
+}
+
 /* --- Initiative tracker (rcm_mc/ui/chartis/_app_initiative_tracker.py) --- */
 
 .app-init { background: var(--paper-pure); }
