@@ -57,13 +57,13 @@ echo "=== [4/6] Data directory ==="
 mkdir -p "$DATA_DIR"
 
 echo "=== [5/6] Install systemd service ==="
-cp "$APP_DIR/deploy/rcm-mc.service" /etc/systemd/system/
+cp "$APP_DIR/RCM_MC/deploy/rcm-mc.service" /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable rcm-mc
 
 echo "=== [6/6] First-time build + start ==="
 cd "$APP_DIR/RCM_MC"
-COMPOSE_FILE="../deploy/docker-compose.yml"
+COMPOSE_FILE="deploy/docker-compose.yml"
 
 if [ -n "$DOMAIN" ]; then
     echo "    DOMAIN=$DOMAIN set — bringing up Caddy TLS sidecar"
