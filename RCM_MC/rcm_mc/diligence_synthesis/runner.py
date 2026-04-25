@@ -230,4 +230,45 @@ def run_full_diligence(dossier: DiligenceDossier) -> SynthesisResult:
         "irr_attribution: needs realized_cashflows",
     )
 
+    # ── 12. MonteCarloPacket v3 — joint tail healthcare shock ──
+    def _joint_tail():
+        if not dossier.run_joint_tail_shock:
+            return None
+        from ..montecarlo_v3 import joint_tail_healthcare_shock
+        return joint_tail_healthcare_shock(
+            n_samples=dossier.joint_tail_n_samples, seed=42,
+        )
+    result.joint_tail_shock = _safe_run(
+        "joint_tail_shock", _joint_tail, result,
+        "joint_tail_shock: needs run_joint_tail_shock=True",
+    )
+
+    # ── 13. SectorThemeDetector ───────────────────────────────
+    def _themes():
+        if not dossier.theme_documents:
+            return None
+        from ..sector_themes import (
+            score_deal_against_themes, emerging_theme_heatmap,
+            build_target_universe,
+        )
+        # Score each document; collect top theme matches
+        matches_by_doc = {}
+        for doc in dossier.theme_documents:
+            matches_by_doc[doc.doc_id] = score_deal_against_themes(
+                doc.text)
+        result.theme_heatmap = emerging_theme_heatmap(
+            dossier.theme_documents,
+            granularity=dossier.theme_heatmap_granularity,
+        )
+        if dossier.thesis_theme_ids:
+            result.target_universe = build_target_universe(
+                dossier.theme_documents,
+                thesis_theme_ids=dossier.thesis_theme_ids,
+            )
+        return matches_by_doc
+    result.sector_themes = _safe_run(
+        "sector_themes", _themes, result,
+        "sector_themes: needs theme_documents",
+    )
+
     return result

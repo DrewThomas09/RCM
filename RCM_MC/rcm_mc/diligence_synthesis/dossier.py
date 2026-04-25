@@ -57,6 +57,16 @@ class DiligenceDossier:
     # IRR-Attribution inputs
     realized_cashflows: Any = None    # rcm_mc.irr_attribution.DealCashflows
 
+    # MonteCarloPacket v3 inputs — joint tail simulation
+    run_joint_tail_shock: bool = False
+    joint_tail_n_samples: int = 2000
+
+    # SectorThemeDetector inputs
+    theme_documents: List[Any] = field(default_factory=list)
+        # rcm_mc.sector_themes.Document
+    thesis_theme_ids: List[str] = field(default_factory=list)
+    theme_heatmap_granularity: str = "year"
+
 
 @dataclass
 class SynthesisResult:
@@ -77,3 +87,7 @@ class SynthesisResult:
     comparables: Any = None
     irr_attribution: Any = None
     irr_attribution_lp_md: str = ""
+    joint_tail_shock: Any = None
+    sector_themes: Any = None
+    theme_heatmap: Any = None
+    target_universe: Any = None

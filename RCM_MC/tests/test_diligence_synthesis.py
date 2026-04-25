@@ -26,7 +26,7 @@ class TestEmptyDossier(unittest.TestCase):
         self.assertEqual(result.deal_name, "Empty Co")
         self.assertEqual(result.sections_run, [])
         # Every packet should be flagged as missing inputs
-        self.assertEqual(len(result.missing_inputs), 11)
+        self.assertEqual(len(result.missing_inputs), 13)
 
 
 class TestPartialDossier(unittest.TestCase):
@@ -67,9 +67,9 @@ class TestPartialDossier(unittest.TestCase):
         result = run_full_diligence(dossier)
         self.assertIn("qoe", result.sections_run)
         self.assertIsNotNone(result.qoe_result)
-        # Other 10 packets skipped
+        # Other 12 packets skipped
         self.assertEqual(len(result.sections_run), 1)
-        self.assertEqual(len(result.missing_inputs), 10)
+        self.assertEqual(len(result.missing_inputs), 12)
 
 
 class TestFullySupportedDossier(unittest.TestCase):
@@ -230,17 +230,64 @@ class TestFullySupportedDossier(unittest.TestCase):
         dossier.issb_attested = True
         dossier.cybersecurity_attested = True
 
+        # Wire the remaining packets — IRR-Attribution, MC v3
+        # joint-tail, and SectorThemeDetector — so this test
+        # asserts the full 13-section runner.
+        from rcm_mc.irr_attribution import DealCashflows
+        from rcm_mc.sector_themes import Document
+        dossier.realized_cashflows = DealCashflows(
+            deal_name="Full Co",
+            entry_year=2021, exit_year=2026,
+            ev_at_entry_mm=300.0, ev_at_exit_mm=600.0,
+            ebitda_at_entry_mm=30.0, ebitda_at_exit_mm=50.0,
+            revenue_at_entry_mm=167.0, revenue_at_exit_mm=227.0,
+            net_debt_at_entry_mm=150.0, net_debt_at_exit_mm=120.0,
+            addon_revenue_contribution_mm=15.0,
+            cashflows=[(0.0, -150.0), (5.0, 480.0)],
+        )
+        dossier.run_joint_tail_shock = True
+        dossier.joint_tail_n_samples = 200
+        dossier.theme_documents = [
+            Document(doc_id="T1", date="2025-03-01",
+                     text="GLP-1 specialty pharmacy compounding "
+                          "semaglutide for obesity demand."),
+            Document(doc_id="T2", date="2025-04-01",
+                     text="AI-enabled RCM denial management "
+                          "platform with computer-assisted coding."),
+        ]
+        dossier.thesis_theme_ids = ["glp1_specialty_pharmacy"]
+        # Also wire DealComparablesEngine so we hit all 13.
+        # Mirror the corpus shape the comparables tests use.
+        dossier.deal_corpus = [
+            {"source_id": f"comp_{i}", "deal_name": f"C{i}",
+             "sector": "hospital", "ev_mm": 200 + i*30,
+             "ebitda_at_entry_mm": 25, "year": 2020 + (i % 5),
+             "state": "TX", "buyer": "Sponsor", "realized_moic": 2.0,
+             "ebitda_margin_at_entry": 0.13,
+             "ebitda_margin_at_exit": 0.18,
+             "payer_mix": {"medicare": 0.4, "medicaid": 0.2,
+                           "commercial": 0.35, "self_pay": 0.05}}
+            for i in range(20)
+        ]
+        dossier.target_deal_profile = {
+            "source_id": "TARGET", "sector": "hospital",
+            "ev_mm": 250, "year": 2022, "state": "TX",
+            "payer_mix": {"medicare": 0.4},
+        }
+
         result = run_full_diligence(dossier)
-        # Every section ran (now 9 with ESG)
+        # Every section ran (now 13)
         for section in (
             "payer_negotiation", "cohort_ltv", "referral_leakage",
             "regulatory_exposure", "qoe", "buyandbuild",
             "exit_readiness", "vbc_track_choice", "esg_scorecard",
+            "comparables", "irr_attribution",
+            "joint_tail_shock", "sector_themes",
         ):
             self.assertIn(section, result.sections_run,
                           f"{section} did not run; "
                           f"missing: {result.missing_inputs}")
-        self.assertEqual(len(result.sections_run), 9)
+        self.assertEqual(len(result.sections_run), 13)
         # Every result attribute is non-None
         self.assertIsNotNone(result.payer_negotiation)
         self.assertIsNotNone(result.cohort_ltv)
@@ -251,6 +298,12 @@ class TestFullySupportedDossier(unittest.TestCase):
         self.assertIsNotNone(result.exit_readiness)
         self.assertIsNotNone(result.vbc_track_choice)
         self.assertIsNotNone(result.esg_scorecard)
+        self.assertIsNotNone(result.comparables)
+        self.assertIsNotNone(result.irr_attribution)
+        self.assertIsNotNone(result.joint_tail_shock)
+        self.assertIsNotNone(result.sector_themes)
+        self.assertIsNotNone(result.theme_heatmap)
+        self.assertIsNotNone(result.target_universe)
         self.assertIn("ESG Disclosure", result.esg_disclosure_md)
 
 
