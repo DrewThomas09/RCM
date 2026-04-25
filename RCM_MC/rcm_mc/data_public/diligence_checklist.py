@@ -598,7 +598,6 @@ def _eval_data_quality(deal: Dict[str, Any]) -> List[ChecklistItem]:
 def build_checklist(
     deal: Dict[str, Any],
     db_path: Optional[str] = None,
-    *,
     entry_debt_mm: Optional[float] = None,
     **_unused_kwargs: Any,
 ) -> DiligenceChecklistResult:
