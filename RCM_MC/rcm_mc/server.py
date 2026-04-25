@@ -1701,7 +1701,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         # like "/api/login/../users/create" can't bypass the gate.
         pure_path = urllib.parse.urlparse(self.path).path
         # `/healthz` is a convention alias used by Heroku + Kubernetes probes.
-        if pure_path in ("/health", "/healthz", "/login"):
+        # `/forgot` is the editorial password-recovery page — like /login it
+        # must be reachable without auth (the user has no creds when they
+        # land on it).
+        if pure_path in ("/health", "/healthz", "/login", "/forgot"):
             return True
         if pure_path == "/api/login":
             return True
@@ -4488,6 +4491,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_upload_page()
         if path == "/login":
             return self._route_login_page()
+        if path == "/forgot":
+            return self._route_forgot_page()
         if path == "/audit":
             return self._route_audit()
         if path == "/users":
@@ -10307,6 +10312,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_login_post()
         if path == "/api/logout":
             return self._route_logout_post()
+        if path == "/forgot":
+            # Unauthenticated POST — no session, so the CSRF gate
+            # above doesn't apply. The handler placeholder-accepts
+            # any well-formed email and re-renders with success.
+            return self._route_forgot_submit()
         if path == "/api/upload-actuals":
             return self._route_upload_post()
         if path == "/api/upload-initiatives":
@@ -14317,6 +14327,48 @@ class RCMHandler(BaseHTTPRequestHandler):
             '</body></html>'
         )
         self._send_html(page)
+
+    def _route_forgot_page(self) -> None:
+        """Editorial password-recovery page at /forgot.
+
+        Editorial-only — there is no legacy /forgot. Self.ui_choice is
+        ignored here because the route was added in v3 and has no
+        legacy counterpart.
+        """
+        from .ui.chartis.forgot_page import render_forgot_page
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        success = (qs.get("success") or [""])[0] == "1"
+        submitted = (qs.get("email") or [None])[0]
+        self._send_html(render_forgot_page(
+            success=success,
+            submitted_email=submitted,
+        ))
+
+    def _route_forgot_submit(self) -> None:
+        """POST /forgot — accepts an email, re-renders with success=True.
+
+        Phase 1 placeholder: actual recovery-email dispatch is out of
+        scope. Re-rendering (instead of redirecting) means a refresh
+        won't accidentally double-submit.
+        """
+        from .ui.chartis.forgot_page import render_forgot_page
+        try:
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(length).decode("utf-8", errors="replace")
+            form = urllib.parse.parse_qs(raw)
+        except Exception:  # noqa: BLE001
+            form = {}
+        email = (form.get("email") or [""])[0].strip()
+        if not email or "@" not in email:
+            return self._send_html(render_forgot_page(
+                error="Enter a valid email address.",
+                submitted_email=email,
+            ))
+        # Placeholder: would enqueue a recovery email here.
+        return self._send_html(render_forgot_page(
+            success=True,
+            submitted_email=email,
+        ))
 
     def _route_upload_page(self) -> None:
         """Drop-target form for bulk CSV ingest of actuals or initiatives."""
