@@ -85,12 +85,20 @@ class TestPinnedDealsPopulates(unittest.TestCase):
 
         # Good deal still appears
         self.assertIn("DEAL_042", html)
-        # Flaky deal dropped from the card list (test that its
-        # specific mention as a linked card is gone — the audit
-        # view might still reference it elsewhere)
+        # Flaky deal dropped from the Pinned-deals card. Other
+        # sections (e.g. Predicted exit outcomes) iterate the
+        # watchlist independent of compute_health and may still
+        # reference the deal — that's fine; this test asserts
+        # only that the Pinned-deals card itself drops the broken
+        # row. Bound the slice to the next </section> so we don't
+        # bleed into adjacent cards.
         section_start = html.find("Pinned deals")
-        section = html[section_start:section_start + 3000] if section_start >= 0 else ""
-        self.assertNotIn('href="/deal/DEAL_017"', section)
+        section_end = html.find("</section>", section_start)
+        section = (html[section_start:section_end]
+                   if section_start >= 0 and section_end > 0 else "")
+        self.assertNotIn('href="/deal/DEAL_017"', section,
+                         msg="Pinned deals card should NOT link to "
+                             "DEAL_017 when its health compute failed")
 
     def test_cap_at_12_pins(self):
         """Watchlist of 20 deals → 12 cards on dashboard (cap).

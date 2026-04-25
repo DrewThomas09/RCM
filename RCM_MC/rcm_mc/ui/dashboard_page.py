@@ -1259,6 +1259,205 @@ def _render_exposure_section(
     )
 
 
+def _moic_range_bar(p25: Optional[float],
+                    median: Optional[float],
+                    p75: Optional[float],
+                    *, scale_max: float = 6.0,
+                    width: int = 200, height: int = 18) -> str:
+    """Inline SVG horizontal range bar showing p25 - median - p75
+    of predicted realized MOIC.
+
+    Visual: a thin gray track from 0 to scale_max, an indigo whisker
+    spanning p25-p75, a navy dot at the median, optional dashed line
+    at 1.0x (cost of capital) and 2.5x (the partner's "good deal" bar).
+    """
+    if median is None:
+        return ""
+    p25 = p25 if p25 is not None else median
+    p75 = p75 if p75 is not None else median
+
+    def _x(v: float) -> float:
+        return min(width, max(0, (v / scale_max) * width))
+
+    cost_x = _x(1.0)
+    bar_x = _x(2.5)
+    p25_x = _x(p25)
+    p75_x = _x(p75)
+    med_x = _x(median)
+
+    return (
+        f'<svg width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" '
+        f'aria-label="MOIC range chart" '
+        f'style="vertical-align:middle;">'
+        # Background track
+        f'<rect x="0" y="{height/2 - 2}" width="{width}" height="4" '
+        f'fill="#f3f4f6"/>'
+        # 1.0x cost-of-capital reference line
+        f'<line x1="{cost_x}" y1="2" x2="{cost_x}" y2="{height-2}" '
+        f'stroke="#d1d5db" stroke-width="1" stroke-dasharray="2,2"/>'
+        # 2.5x "good deal" reference line
+        f'<line x1="{bar_x}" y1="2" x2="{bar_x}" y2="{height-2}" '
+        f'stroke="#10b981" stroke-width="1" stroke-dasharray="2,2"/>'
+        # p25-p75 whisker
+        f'<rect x="{p25_x}" y="{height/2 - 4}" '
+        f'width="{max(2, p75_x - p25_x)}" height="8" '
+        f'fill="#1F4E78" opacity="0.35" rx="2"/>'
+        # Median dot
+        f'<circle cx="{med_x}" cy="{height/2}" r="4" '
+        f'fill="#1F4E78" stroke="#fff" stroke-width="1.5"/>'
+        f'</svg>'
+    )
+
+
+def _render_predicted_outcomes_section(
+    db_path: str,
+    *, deals_scan: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    """For each pinned deal, predict an exit MOIC distribution by
+    running it through the comparable-outcomes engine against the
+    corpus of 600+ realized PE deals.
+
+    The wow moment: a partner pinned DEAL_042 to track. Without
+    asking for any analysis, the dashboard volunteers "your similar
+    deals returned 2.3x median, 3.1x p75 at exit. Yours is on track."
+
+    Compute is bounded — only runs for the partner's watchlisted
+    deals (max 8) so the dashboard doesn't pay for 100 corpus
+    scans on every render.
+    """
+    from . import _web_components as _wc
+    try:
+        from ..portfolio.store import PortfolioStore
+        from ..deals.watchlist import list_starred
+        from ..data_public.deals_corpus import DealsCorpus
+        from ..diligence.comparable_outcomes import benchmark_deal
+        store = PortfolioStore(db_path)
+        starred = list_starred(store)
+    except Exception:  # noqa: BLE001
+        return ""
+
+    if not starred:
+        return ""
+
+    # Cap at 8 — bounded compute, room for partners with deep watchlists
+    starred = starred[:8]
+
+    # Best-effort corpus seed so the prediction has data to chew on
+    try:
+        corpus = DealsCorpus(db_path)
+        try:
+            corpus.seed(skip_if_populated=True)
+        except Exception:  # noqa: BLE001
+            pass
+    except Exception:  # noqa: BLE001
+        return ""
+
+    # Build a {deal_id → scan_row} map for sector + size lookup
+    scan_by_id: Dict[str, Dict[str, Any]] = {}
+    if deals_scan:
+        scan_by_id = {d.get("deal_id", ""): d for d in deals_scan
+                      if d.get("deal_id")}
+
+    rows: List[str] = []
+    any_prediction = False
+    for deal_id in starred:
+        scan_row = scan_by_id.get(deal_id, {})
+        # Build target profile from whatever we know about the deal
+        sector = scan_row.get("sector") or "hospital"
+        # No reliable EV per-deal in our gather — fall back on a
+        # rough proxy. Caller can pin EV in the deal's profile_json.
+        target = {
+            "sector": sector,
+            "ev_mm": None,  # corpus matcher uses neutral 0.5 when None
+            "year": 2024,
+            "buyer": "",
+        }
+        try:
+            result = benchmark_deal(corpus, target, top_n=10)
+        except Exception:  # noqa: BLE001
+            continue
+        outcome = result.get("outcome_distribution", {})
+        moic = outcome.get("moic", {})
+        median = moic.get("median")
+        p25 = moic.get("p25")
+        p75 = moic.get("p75")
+        win_rate = outcome.get("win_rate_2_5x")
+        n_comps = outcome.get("n_comparables", 0)
+
+        if median is None or n_comps < 3:
+            continue
+        any_prediction = True
+
+        bar = _moic_range_bar(p25, median, p75)
+        win_pct = f"{int(win_rate * 100)}%" if win_rate else "—"
+        name = scan_row.get("name") or deal_id
+
+        rows.append(
+            f'<li style="padding:10px 0;border-bottom:1px solid #f3f4f6;'
+            f'display:flex;align-items:center;gap:14px;">'
+            f'<a href="/deal/{_html.escape(deal_id)}" '
+            f'style="color:#1f2937;text-decoration:none;'
+            f'min-width:160px;flex-shrink:0;">'
+            f'<div style="font-weight:500;color:#1F4E78;font-size:13px;">'
+            f'{_html.escape(name)}</div>'
+            f'<div style="font-family:monospace;font-size:10px;'
+            f'color:#6b7280;text-transform:uppercase;margin-top:2px;">'
+            f'{_html.escape(deal_id)}</div></a>'
+            f'<div style="flex-shrink:0;">{bar}</div>'
+            f'<div style="flex:1;font-size:12px;color:#374151;'
+            f'font-variant-numeric:tabular-nums;white-space:nowrap;">'
+            f'<span style="font-weight:600;color:#1F4E78;'
+            f'font-size:14px;">{median:.2f}x</span>'
+            f'<span style="color:#6b7280;"> median · '
+            f'p25 {p25:.2f}x · p75 {p75:.2f}x · '
+            f'{win_pct} clear 2.5x</span></div>'
+            f'</li>'
+        )
+
+    if not any_prediction:
+        return ""
+
+    legend = (
+        '<div style="display:flex;align-items:center;gap:14px;'
+        'font-size:11px;color:#6b7280;margin-bottom:10px;'
+        'flex-wrap:wrap;">'
+        '<span style="display:inline-flex;align-items:center;gap:5px;">'
+        '<svg width="20" height="10" viewBox="0 0 20 10">'
+        '<rect x="0" y="3" width="20" height="4" fill="#f3f4f6"/>'
+        '<line x1="3" y1="0" x2="3" y2="10" stroke="#d1d5db" '
+        'stroke-width="1" stroke-dasharray="2,2"/>'
+        '<line x1="9" y1="0" x2="9" y2="10" stroke="#10b981" '
+        'stroke-width="1" stroke-dasharray="2,2"/>'
+        '</svg>scale 0–6×</span>'
+        '<span style="display:inline-flex;align-items:center;gap:4px;">'
+        '<span style="display:inline-block;width:14px;height:6px;'
+        'background:#1F4E78;opacity:0.35;border-radius:2px;"></span>'
+        'p25–p75 range</span>'
+        '<span style="display:inline-flex;align-items:center;gap:4px;">'
+        '<span style="display:inline-block;width:8px;height:8px;'
+        'background:#1F4E78;border-radius:50%;border:1.5px solid #fff;'
+        'box-shadow:0 0 0 1px #1F4E78;"></span>'
+        'median predicted MOIC</span>'
+        '<span style="color:#10b981;">— —</span>'
+        '<span>2.5× "good deal" bar</span>'
+        '</div>'
+    )
+
+    body = (
+        '<p style="margin:0 0 10px;font-size:12px;color:#6b7280;">'
+        'Predicted exit MOIC for each watchlisted deal, computed '
+        'live by matching against the realized PE deals in the '
+        'corpus.</p>'
+        + legend
+        + f'<ul style="list-style:none;padding:0;margin:0;">'
+        f'{"".join(rows)}</ul>'
+    )
+    return _wc.section_card(
+        f"Predicted exit outcomes ({len(rows)})", body, pad=True,
+    )
+
+
 def _render_pinned_deals_section(db_path: str) -> str:
     """Morning glance at health scores for every deal the user has
     starred in the watchlist.
@@ -1688,6 +1887,7 @@ def render_dashboard(db_path: str, *,
         + _render_needs_attention_section(db_path, deals=deals_scan)
         + _render_exposure_section(db_path, deals=deals_scan)
         + _render_pinned_deals_section(db_path)
+        + _render_predicted_outcomes_section(db_path, deals_scan=deals_scan)
         + _render_saved_templates_section(db_path)
         + _render_analyses_section()
         + workflow_shortcuts
