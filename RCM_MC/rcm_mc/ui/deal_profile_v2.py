@@ -35,6 +35,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from .colors import STATUS
+from .loading import page_progress_bar
 from .nav import breadcrumb, keyboard_shortcuts
 
 logger = logging.getLogger(__name__)
@@ -607,7 +608,8 @@ def render_deal_profile_v2(
         f'<style>body{{margin:0;font-family:system-ui,'
         f'-apple-system,sans-serif;background:{_BG_PRIMARY};'
         f'color:{_TEXT};}}</style></head><body>'
-        f'<div style="max-width:1100px;margin:0 auto;'
+        + page_progress_bar()
+        + f'<div style="max-width:1100px;margin:0 auto;'
         f'padding:32px 24px;">'
         + breadcrumb([
             ("Dashboard", "/?v3=1"),

@@ -26,6 +26,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from .colors import STATUS
+from .loading import page_progress_bar
 from .nav import breadcrumb, keyboard_shortcuts
 
 logger = logging.getLogger(__name__)
@@ -543,7 +544,8 @@ def render_dashboard_v3(store: Any) -> str:
         f'<style>body{{margin:0;font-family:system-ui,'
         f'-apple-system,sans-serif;background:{_BG_PRIMARY};'
         f'color:{_TEXT};}}</style></head><body>'
-        f'<div style="max-width:1100px;margin:0 auto;'
+        + page_progress_bar()
+        + f'<div style="max-width:1100px;margin:0 auto;'
         f'padding:32px 24px;">'
         + breadcrumb([("Dashboard", None)])
         + f'<div style="display:flex;justify-content:'

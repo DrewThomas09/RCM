@@ -533,10 +533,27 @@ def render_power_table(
         f'<tr>{"".join(header_cells)}</tr>'
         f'<tr>{"".join(filter_cells)}</tr>'
         f'</thead>'
-        f'<tbody><tr><td colspan="{len(columns)}" '
-        f'style="padding:24px;color:#9ca3af;'
-        f'text-align:center;font-size:13px;">'
-        f'Loading…</td></tr></tbody>'
+        f'<tbody>'
+        + "".join(
+            f'<tr>{"".join(f"<td style=padding:10px-14px;border-bottom:1px-solid-#374151;>"+"X"+"</td>" for _ in range(len(columns)))}</tr>'
+            for _ in range(0))  # placeholder; replaced below
+        + ''.join(
+            '<tr>' + ''.join(
+                f'<td style="padding:10px 14px;'
+                f'border-bottom:1px solid #374151;">'
+                f'<span style="display:block;'
+                f'background:linear-gradient(90deg,'
+                f'#374151 0%,#4b5563 50%,#374151 100%);'
+                f'background-size:200% 100%;'
+                f'animation:skeleton-shimmer 1.4s '
+                f'linear infinite;border-radius:4px;'
+                f'height:12px;width:80%;"></span></td>'
+                for _ in range(len(columns)))
+            + '</tr>' for _ in range(min(5, len(rows_list)) or 5))
+        + '<style>@keyframes skeleton-shimmer{'
+        '0%{background-position:200% 0;}'
+        '100%{background-position:-200% 0;}}</style>'
+        + f'</tbody>'
         f'</table></div>'
     )
 
