@@ -1,0 +1,44 @@
+/* SeekingChartis editorial design tokens
+ * Extracted from SeekingChartis.html. This is the canonical token set —
+ * adopt verbatim per §3 of EDITORIAL_STYLE_PORT.md.
+ */
+
+:root {
+    --bg: #F2EDE3;
+    --bg-alt: #ECE5D6;
+    --bg-tint: #E8E0D0;
+    --paper: #FAF7F0;
+    --paper-pure: #FFFFFF;
+    --border: #D6CFC0;
+    --rule: #BFB6A2;
+    --ink: #0F1C2E;
+    --ink-2: #1A2840;
+    --muted: #5C6878;
+    --faint: #8A92A0;
+    --teal: #1F7A75;
+    --teal-soft: #D4E4E2;
+    --teal-deep: #155752;
+    --green: #3F7D4D;
+    --amber: #B7791F;
+    --red: #A53A2D;
+  }
+
+/* Aliases / extras used across login, forgot, and the command center.
+ * Keep in sync with the :root blocks in login.html and
+ * SeekingChartis Command Center.html.
+ */
+:root {
+  --bg-alt:        #ECE5D6;
+  --bg-tint:       #E8E0D0;
+  --paper:         #FAF7F0;
+  --paper-pure:    #FFFFFF;
+  --border-strong: #C2B9A6;
+  --ink-2:         #1A2840;
+  --green-soft:    #DCE6D9;
+  --amber:         #B7791F;
+  --amber-soft:    #EFE2BC;
+  --red:           #A53A2D;
+  --red-soft:      #EBD3CD;
+  --blue:          #2C5C84;
+  --blue-soft:     #D6E1EB;
+}
