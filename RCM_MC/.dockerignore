@@ -1,0 +1,74 @@
+# Build-context exclusions for `docker compose build`.
+#
+# The Dockerfile only does `COPY pyproject.toml ./` and `COPY rcm_mc/ rcm_mc/`,
+# so most of these wouldn't end up in the image anyway — but excluding them
+# keeps the context small (faster `Sending build context to Docker daemon`)
+# and prevents accidentally leaking dev state into image layers if the
+# Dockerfile ever does a wider COPY.
+
+# Local Python state
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+*.egg-info/
+build/
+dist/
+
+# Virtual envs (~500MB)
+.venv/
+venv/
+env/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# Local databases / runtime output (not a fixture; created at runtime)
+*.db
+*.sqlite
+*.sqlite3
+*.log
+output/
+output*/
+seekingchartis.db
+
+# Tests, demo seeds, and analysis fixtures aren't needed in the image
+tests/
+data_demo/
+
+# IDE state
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git metadata (the image doesn't need git history)
+.git/
+.gitignore
+.gitattributes
+
+# Secrets — second line of defense in case anything sneaks in
+.env
+.env.local
+*.pem
+*.key
+
+# Docs aren't shipped in the runtime image
+readME/
+*.md
+!README.md
+
+# Finder duplicates (Heroku artifacts, vendor dirs are at repo root anyway)
+* [0-9].py
+* [0-9].md
