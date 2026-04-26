@@ -47,10 +47,73 @@ import logging
 import sys
 import tempfile
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
+
+
+# ── Curated demo deals ──────────────────────────────────────────────
+#
+# Per SEEDER_PROPOSAL.md §4.1 — fictional hospital systems with
+# plausible PE-portfolio shapes. Names verified non-trademarked at
+# authoring time; if conflicts surface, swap.
+#
+# Each entry: (deal_id, display name, terminal stage, vintage_year)
+# The snapshot trajectory per deal is in _COVENANT_TRAJECTORY below.
+
+_CURATED_DEALS: List[Tuple[str, str, str, int]] = [
+    ("ccf_2026", "Cypress Crossing Health",          "hold", 2026),
+    ("arr_2025", "Arrowhead Regional",                "hold", 2025),
+    ("pma_2024", "Peninsula Medical Associates",      "hold", 2024),
+    ("tlc_2023", "Tidewater Long-term Care",          "exit", 2023),
+    ("nbh_2026", "Northbay Heart",                    "spa",  2026),
+    ("mvm_2026", "Mountainview Medical",              "loi",  2026),
+    ("evh_2026", "Evergreen Health",                  "ioi",  2026),
+]
+
+
+# Covenant leverage trajectories per held deal (latest quarter last).
+# Numbers chosen to demonstrate distinct visual outcomes on the
+# editorial covenant heatmap: ccf drifts safe→watch, arr trips,
+# pma deleverages cleanly, tlc held flat then exited.
+
+_COVENANT_TRAJECTORY: Dict[str, List[float]] = {
+    # 8 quarters: drifts from safe (≤6.0) into watch (≤6.5) — common
+    # demo line: "the thesis is intact but warrants attention"
+    "ccf_2026": [5.2, 5.4, 5.6, 5.8, 5.9, 6.0, 6.1, 6.2],
+    # 8 quarters: trips covenant in latest (>6.5) — fires alerts
+    "arr_2025": [5.8, 5.9, 6.0, 6.2, 6.4, 6.6, 6.8, 7.0],
+    # 8 quarters: deleveraging — strong story
+    "pma_2024": [5.0, 4.9, 4.8, 4.7, 4.6, 4.5, 4.4, 4.3],
+    # 4 quarters at 4.5 then exited
+    "tlc_2023": [4.5, 4.5, 4.5, 4.5],
+}
+
+# Per-deal entry economics (also drive the KPI strip + deals table)
+_DEAL_ECONOMICS: Dict[str, Dict[str, float]] = {
+    "ccf_2026": {
+        "entry_ebitda": 18.5, "entry_multiple": 11.0, "exit_multiple": 12.5,
+        "hold_years": 5.0, "moic": 2.4, "irr": 0.19,
+        "entry_ev": 203.5, "exit_ev": 425.0,
+    },
+    "arr_2025": {
+        "entry_ebitda": 24.0, "entry_multiple": 10.0, "exit_multiple": 9.5,
+        "hold_years": 5.0, "moic": 1.6, "irr": 0.10,
+        "entry_ev": 240.0, "exit_ev": 312.0,
+    },
+    "pma_2024": {
+        "entry_ebitda": 14.0, "entry_multiple": 9.5, "exit_multiple": 13.0,
+        "hold_years": 5.0, "moic": 3.1, "irr": 0.25,
+        "entry_ev": 133.0, "exit_ev": 364.0,
+    },
+    "tlc_2023": {
+        "entry_ebitda": 9.0, "entry_multiple": 8.5, "exit_multiple": 10.0,
+        "hold_years": 4.0, "moic": 2.0, "irr": 0.18,
+        "entry_ev": 76.5, "exit_ev": 167.0,
+    },
+}
 
 
 # ── Production-target guard ─────────────────────────────────────────
@@ -115,6 +178,210 @@ class SeedResult:
             f"exports={self.exports_inserted} files={self.export_files_written} "
             f"in {self.duration_seconds:.1f}s"
         )
+
+
+# ── Deals + snapshots seeders ───────────────────────────────────────
+
+# Reference time anchors for deterministic timestamps. All snapshots
+# count BACKWARDS from the reference quarter so the latest snapshot
+# is the most recent — matches what `latest_per_deal()` expects.
+_REF_DATETIME = datetime(2026, 4, 25, 12, 0, tzinfo=timezone.utc)
+
+
+def _quarter_offset_dt(quarters_back: int) -> datetime:
+    """Return a deterministic datetime ``quarters_back`` quarters before
+    the reference. 0 = same quarter as reference, 1 = previous, etc."""
+    days = int(quarters_back * 91.25)
+    return _REF_DATETIME - timedelta(days=days)
+
+
+def _seed_deals_and_snapshots(
+    store: Any,
+    *,
+    deal_count: int,
+    snapshot_quarters: int,
+    overwrite: bool,
+    result: SeedResult,
+) -> None:
+    """Insert curated deals + lifecycle stage history + per-quarter
+    snapshots. Updates ``result`` in place.
+
+    Held deals (``ccf_2026``, ``arr_2025``, ``pma_2024``) get
+    ``snapshot_quarters`` snapshots each at stage='hold' with
+    covenant_leverage following ``_COVENANT_TRAJECTORY``.
+
+    Exit deal (``tlc_2023``) gets 4 hold snapshots then 1 exit
+    snapshot (so the deals table shows it as exited).
+
+    Pre-hold deals (spa/loi/ioi) get a single snapshot at their
+    respective stage with no covenant data — they don't have one
+    yet pre-close.
+    """
+    from rcm_mc.portfolio.portfolio_snapshots import _ensure_snapshot_table
+    from rcm_mc.deals.deal_stages import _ensure_table as _ensure_stage_table
+
+    _ensure_snapshot_table(store)
+    _ensure_stage_table(store)
+
+    # Optional clean slate when overwrite=True. Only clears the seeded
+    # tables; user data in other tables (auth, audit_log, etc.) survives.
+    if overwrite:
+        with store.connect() as con:
+            for table in (
+                "deal_snapshots", "deal_stage_history",
+                "initiative_actuals", "generated_exports",
+                "analysis_runs", "deals",
+            ):
+                try:
+                    con.execute(f"DELETE FROM {table}")
+                except Exception:  # noqa: BLE001 — table may not exist yet
+                    pass
+            con.commit()
+
+    deals_to_seed = _CURATED_DEALS[:deal_count]
+    # Extension beyond the 7 curated entries: auto-named tail at sourced.
+    if deal_count > len(_CURATED_DEALS):
+        for i in range(deal_count - len(_CURATED_DEALS)):
+            extra_id = f"extra_{i+1:03d}"
+            deals_to_seed.append(
+                (extra_id, f"Extra Deal {i+1:03d}", "sourced", 2026)
+            )
+
+    for deal_id, name, terminal_stage, _vintage_year in deals_to_seed:
+        # 1. deals row (via store.upsert_deal)
+        store.upsert_deal(deal_id, name=name)
+        result.deals_inserted += 1
+
+        # 2. deal_stage_history rows — each transition that led to the
+        #    terminal stage. Uses raw INSERT to control timestamps;
+        #    set_stage()'s validate_transition forces sequencing that
+        #    we can encode directly.
+        _seed_stage_history(store, deal_id, terminal_stage, result)
+
+        # 3. deal_snapshots rows — varies by terminal stage.
+        if terminal_stage == "hold" and deal_id in _COVENANT_TRAJECTORY:
+            traj = _COVENANT_TRAJECTORY[deal_id]
+            n_quarters = min(snapshot_quarters, len(traj))
+            for q in range(n_quarters):
+                quarters_back = (n_quarters - 1) - q
+                created = _quarter_offset_dt(quarters_back)
+                cov_lev = traj[q]
+                _insert_snapshot(
+                    store, deal_id, "hold", created, cov_lev,
+                    economics=_DEAL_ECONOMICS.get(deal_id),
+                    result=result,
+                )
+        elif terminal_stage == "exit" and deal_id in _COVENANT_TRAJECTORY:
+            traj = _COVENANT_TRAJECTORY[deal_id]
+            for q, cov_lev in enumerate(traj):
+                quarters_back = len(traj) - q
+                created = _quarter_offset_dt(quarters_back)
+                _insert_snapshot(
+                    store, deal_id, "hold", created, cov_lev,
+                    economics=_DEAL_ECONOMICS.get(deal_id),
+                    result=result,
+                )
+            # Final exit snapshot at reference - 1 day
+            _insert_snapshot(
+                store, deal_id, "exit", _REF_DATETIME - timedelta(days=1),
+                None, economics=_DEAL_ECONOMICS.get(deal_id),
+                result=result,
+            )
+        else:
+            # Pre-hold deals (spa/loi/ioi/sourced): single snapshot
+            _insert_snapshot(
+                store, deal_id, terminal_stage,
+                _REF_DATETIME - timedelta(days=14),
+                None, economics=None, result=result,
+            )
+
+
+def _seed_stage_history(
+    store: Any, deal_id: str, terminal_stage: str, result: SeedResult,
+) -> None:
+    """Insert a plausible stage-transition history landing at terminal_stage.
+
+    Uses raw INSERT (not set_stage()) because we want deterministic
+    timestamps and don't need automation-engine event firing.
+    """
+    # Stage path per terminal — chronologically ordered, oldest first.
+    # The dashboard funnel reads `latest_per_deal.stage` (from
+    # deal_snapshots, not deal_stage_history) — this table is for
+    # the audit trail / per-deal lifecycle ribbon.
+    stage_paths: Dict[str, List[str]] = {
+        "ioi":     ["pipeline"],
+        "loi":     ["pipeline", "diligence"],
+        "spa":     ["pipeline", "diligence", "ic"],
+        "hold":    ["pipeline", "diligence", "ic", "hold"],
+        "exit":    ["pipeline", "diligence", "ic", "hold", "exit"],
+        "sourced": [],
+        "closed":  ["pipeline", "diligence", "ic", "hold", "closed"],
+    }
+    path = stage_paths.get(terminal_stage, [])
+    if not path:
+        return
+    n = len(path)
+    with store.connect() as con:
+        for i, stg in enumerate(path):
+            # Spread transitions evenly: oldest at year-2, newest at
+            # year-0 (relative to reference)
+            quarters_back = (n - i) * 4
+            ts = _quarter_offset_dt(quarters_back)
+            con.execute(
+                "INSERT INTO deal_stage_history "
+                "(deal_id, stage, changed_at, changed_by, notes) "
+                "VALUES (?,?,?,?,?)",
+                (deal_id, stg, ts.isoformat(), "seed", "seed:demo"),
+            )
+            result.stage_transitions_inserted += 1
+        con.commit()
+
+
+def _insert_snapshot(
+    store: Any, deal_id: str, stage: str, created: datetime,
+    covenant_leverage: Optional[float],
+    *, economics: Optional[Dict[str, float]],
+    result: SeedResult,
+) -> None:
+    """Direct INSERT into deal_snapshots — bypasses register_snapshot()
+    so we control the created_at timestamp deterministically and don't
+    need to spin up fake run_dirs."""
+    econ = economics or {}
+    cov_status: Optional[str] = None
+    cov_headroom: Optional[float] = None
+    if covenant_leverage is not None:
+        # Translate leverage → headroom + status using the same bands
+        # as the editorial covenant heatmap (Phase 3 commit 7):
+        # ≤6.0x safe / ≤6.5x watch / >6.5x trip
+        threshold = 6.5
+        cov_headroom = round(threshold - covenant_leverage, 2)
+        if covenant_leverage <= 6.0:
+            cov_status = "SAFE"
+        elif covenant_leverage <= 6.5:
+            cov_status = "TIGHT"
+        else:
+            cov_status = "TRIPPED"
+    with store.connect() as con:
+        con.execute(
+            """INSERT INTO deal_snapshots
+            (deal_id, stage, created_at, run_dir,
+             entry_ebitda, entry_multiple, exit_multiple, hold_years,
+             moic, irr, entry_ev, exit_ev,
+             covenant_leverage, covenant_headroom_turns, covenant_status,
+             concerning_signals, favorable_signals, notes)
+            VALUES (?,?,?,?, ?,?,?,?, ?,?,?,?, ?,?,?, ?,?, ?)""",
+            (
+                deal_id, stage, created.isoformat(), None,
+                econ.get("entry_ebitda"), econ.get("entry_multiple"),
+                econ.get("exit_multiple"), econ.get("hold_years"),
+                econ.get("moic"), econ.get("irr"),
+                econ.get("entry_ev"), econ.get("exit_ev"),
+                covenant_leverage, cov_headroom, cov_status,
+                None, None, "seed:demo",
+            ),
+        )
+        con.commit()
+        result.snapshots_inserted += 1
 
 
 # ── Public API skeleton ─────────────────────────────────────────────
@@ -190,6 +457,15 @@ def seed_demo_db(
                     f"{existing['n']} rows in deals. Pass overwrite=True "
                     f"(or --overwrite on the CLI) to clobber."
                 )
+
+    # Seed step 1: deals + stage history + snapshots (blocks 1-5, 8)
+    _seed_deals_and_snapshots(
+        store,
+        deal_count=deal_count,
+        snapshot_quarters=snapshot_quarters,
+        overwrite=overwrite,
+        result=result,
+    )
 
     result.duration_seconds = time.monotonic() - started
     return result
