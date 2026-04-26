@@ -1117,3 +1117,75 @@ footer.editorial em { color: var(--ink); font-style: italic; }
      content gets full width. */
   .layout-with-rail .rail { display: none; }
 }
+
+/* ── Module cards (editorial spec §7.6) ─────────────────────────────
+   4-column grid of action-tile cards, used on the home dashboard's
+   "New Diligence Modules" surface. Visual treatment matches
+   .app-deliv-grid (deliverables block) — same border / hover /
+   spacing — but the .kind pill is always teal (per spec). */
+
+.module-section { margin: 1rem 0 1.25rem 0; }
+
+.module-eyebrow {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin: 0 .25rem .6rem .25rem;
+}
+.module-eyebrow-h {
+  font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.module-eyebrow-sub {
+  font-family: "Inter", sans-serif; font-size: .72rem;
+  color: var(--muted);
+}
+
+.module-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  background: var(--paper-pure); border: 1px solid var(--rule);
+}
+
+.module-card {
+  padding: 1.1rem 1.25rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-decoration: none; color: var(--ink);
+  display: block;
+  transition: background .12s;
+}
+.module-card:nth-child(4n) { border-right: none; }
+.module-card:nth-last-child(-n+4) { border-bottom: none; }
+.module-card:hover { background: var(--bg); text-decoration: none; }
+
+.module-card .kind {
+  display: inline-block;
+  font-family: "Inter", sans-serif; font-size: .62rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--teal-deep);
+  padding: 1px 6px;
+  border: 1px solid var(--teal);
+  margin-bottom: .55rem;
+}
+.module-card .nm {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1rem; font-weight: 500;
+  color: var(--ink); margin-bottom: .2rem;
+}
+.module-card .sub {
+  font-family: "Inter", sans-serif; font-size: .78rem;
+  color: var(--muted); line-height: 1.4;
+}
+
+/* Responsive: collapse to 2 columns on tablet, 1 on phone */
+@media (max-width: 1100px) {
+  .module-grid { grid-template-columns: repeat(2, 1fr); }
+  .module-card:nth-child(4n) { border-right: 1px solid var(--border); }
+  .module-card:nth-child(2n) { border-right: none; }
+  .module-card:nth-last-child(-n+4):not(:nth-last-child(-n+2)) {
+    border-bottom: 1px solid var(--border);
+  }
+}
+@media (max-width: 600px) {
+  .module-grid { grid-template-columns: 1fr; }
+  .module-card { border-right: none !important; }
+  .module-card:not(:last-child) { border-bottom: 1px solid var(--border) !important; }
+}
