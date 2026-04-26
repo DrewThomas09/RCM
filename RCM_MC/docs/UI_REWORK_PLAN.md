@@ -297,6 +297,36 @@ Same rule as Phase 2: env-flag flip is silent, code revert is loud. If you rever
 
 ---
 
+## Discovered during local testing 2026-04-25
+
+First end-to-end load of `/app?ui=v3` against an empty local DB surfaced four gaps that the per-helper unit tests + the contract suite did not catch (and were not designed to). Captured here as context preservation, **not as a work plan** — fixes attach to existing phases (Phase 2b/2c/2d for cross-cutting nav, separate seeder ticket for data, no-phase polish for the verification commands).
+
+### 1. `?ui=v3` query flag does not propagate across navigation
+
+Clicking the SeekingChartis logo from `/app?ui=v3` lands on legacy `/`. The flag is set on entry but every internal link rebuilds without it, dropping the user back into the dark legacy shell mid-session. Same issue applies to the topnav buttons (insofar as they navigate at all — see #2).
+
+**Resolution path (Phase 2b prerequisite):** either (a) sticky flag propagation in all internal anchor builders, or (b) `RCM_MC_UI_VERSION=v3` env var so flag-passing isn't required at all. Option (b) is simpler operationally; option (a) preserves per-session A/B without a server restart. Pick at Phase 2b kickoff.
+
+### 2. Topnav dropdowns are non-functional
+
+The 5 editorial topnav sections (DEALS / ANALYSIS / PORTFOLIO / MARKET / TOOLS) render with caret affordances but do not open dropdowns or navigate anywhere. Their target pages haven't been ported to v3 — that's Phase 2b/2c/2d work, by design. The chrome ships ahead of the destinations so the editorial visual language is in place when the per-section ports land.
+
+**Resolution path:** Phase 2b ports DEALS (deal profile editorial), Phase 2c ports ANALYSIS (workbench editorial), Phase 2d ports the remaining sections. Each phase removes the corresponding "decorative-only" line item here.
+
+### 3. No demo seed script exists
+
+`docs/DEMO_CHECKLIST.md` enumerates the data the dashboard needs to render meaningfully (3 hold deals + snapshots + initiative actuals + generated_exports + PHI mode), but never wires the operationalized way to populate it. First load tonight produced empty-state across every block — correctly, given an empty DB, but unusable as a partner-walkthrough surface.
+
+**Resolution path:** tracked separately in `docs/design-handoff/SEEDER_PROPOSAL.md`. Pre-Phase-2b infrastructure work; produces a `seed_demo_db()` entry point invocable as `python -m rcm_mc.dev.seed --db <path>`.
+
+### 4. DEMO_CHECKLIST verification commands never validated against a real run
+
+The "Quick verification commands" section in `DEMO_CHECKLIST.md` was drafted from inferred SQL/CLI shape but never executed against a live DB. At least one command path likely needs adjustment — for example, the `'2025Q3'` literal threshold in the initiative-actuals check is correct as of 2026-04-25 but will go stale; the verification block should compute the threshold rather than hardcode it.
+
+**Resolution path:** after the seeder lands, run all four verification commands against the seeded DB; correct any path/SQL drift; consider promoting the threshold computation to a small helper in `rcm_mc/dev/`.
+
+---
+
 ## Visual-diff exit criterion
 
 For solo work the bar is eyeball-level, but explicit. Before declaring "v3 page X matches reference HTML":
