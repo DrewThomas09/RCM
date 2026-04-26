@@ -68,3 +68,31 @@ Format: one entry per file/symbol pair. Each entry names: which branches diverge
 4. Do NOT run `--overwrite` against a live DB until MR1059 (live-DB ALTER migration) ships.
 
 ---
+
+## 3. `RCM_MC/rcm_mc/exports/canonical_facade.py` × `RCM_MC/rcm_mc/infra/exports.py`
+
+**Triage source:** TRIAGE.md MR1018 / Report-0259.md / Report-0247 MR1019.
+
+**State on `main`:**
+- Neither file exists.
+- `rcm_mc/exports/export_store.py:43 record_export(...)` already exists with the kwargs the facade uses — no main-side change required for that seam.
+
+**State on `origin/feat/ui-rework-v3`:**
+- `rcm_mc/exports/canonical_facade.py` (424 LOC) — 11 facade functions over existing report writers, each routes the writer's tmp-output to `/data/exports/<deal_id>/<timestamp>_<filename>` via `shutil.move` and writes a `record_export(...)` audit row.
+- `rcm_mc/infra/exports.py` (225 LOC, also new) — supplies `canonical_deal_export_path()` and `canonical_portfolio_export_path()`. The facade imports `canonical_deal_export_path` directly.
+
+**Conflict at merge:**
+- No textual conflict (both files are net-new on feat-branch).
+- **`canonical_facade.py` cannot land alone** — the import on line 48 hard-binds to `infra/exports.canonical_deal_export_path`. If a partial cherry-pick takes the facade but not `infra/exports.py`, the module raises `ImportError` at load time and every report-route on the new server breaks.
+
+**Recommended resolution at merge time:**
+1. Treat `canonical_facade.py` and `infra/exports.py` as a **must-land-together** pair — never split across PRs.
+2. Verify post-merge with `python -c "from rcm_mc.exports.canonical_facade import export_full_html_report; from rcm_mc.infra.exports import canonical_deal_export_path; print('ok')"`.
+3. Spot-check one facade end-to-end (e.g. `export_partner_brief`) against a fresh seeded DB to confirm the `/data/exports/<deal_id>/...` round-trip writes both the file and the `generated_exports` audit row.
+4. **Post-merge follow-up MR1066** — promote the `_record` bare-except (line 102-103) to a logged warning so manifest failures don't silently swallow.
+
+**Why no preemptive fix on `audit/reports-and-triage`:**
+- Both files are net-new and would conflict with the feature branch's authoritative versions if mirrored on main.
+- Audit branch documents the must-land-together coupling so the merge author can sequence the PR atomically.
+
+---
