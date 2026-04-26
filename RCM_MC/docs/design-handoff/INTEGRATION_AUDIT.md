@@ -245,14 +245,25 @@ A second pass — probing the 4 user-named marquee routes (`dashboard`, `deal pr
 Full list of renderers that build own HTML (case-insensitive `<!DOCTYPE` grep):
 
 - `rcm_mc/ui/analysis_workbench.py` — Bloomberg-style workbench at `/analysis/<deal_id>`
-- `rcm_mc/ui/bankruptcy_survivor_page.py` — `/screening/bankruptcy-survivor`
+- ~~`rcm_mc/ui/bankruptcy_survivor_page.py`~~ — **legitimate bypass** (verified 2026-04-26): docstring states *"The result page is intentionally standalone — no Chartis shell — so partners can print it cleanly"*. Uses `@page{size:Letter}` + `@media print` rules. Designed to print as IC-packet PDF attachment. Wrapping it in `chartis_shell` would print the topbar/breadcrumbs/PHI banner on the artifact. **DO NOT port.**
 - `rcm_mc/ui/dashboard_v2.py` — old reskin attempt (probably unused; verify before delete)
 - `rcm_mc/ui/dashboard_v3.py` — another reskin attempt (probably unused; verify)
-- `rcm_mc/ui/deal_profile_v2.py` — `/deal/<id>/profile`
+- `rcm_mc/ui/deal_profile_v2.py` — `/deal/<id>/profile` — partner-visible; large (646 LOC); has its own `theme.py` system. Wrapper port would clash with editorial parchment. **Needs full rewrite, not port.**
 - `rcm_mc/ui/onboarding_wizard.py` — first-time setup
 - `rcm_mc/ui/sensitivity_dashboard.py` — utility page
 - `rcm_mc/ui/chartis/marketing_page.py` — public landing page (legitimate bypass; this is the marketing splash and intentionally has its own shell)
-- `rcm_mc/screening/dashboard.py` — `/screening/dashboard`
+- ~~`rcm_mc/screening/dashboard.py`~~ — **PORTED 2026-04-26 (commit `c3d8e5f`)**. Now passes through `chartis_shell()`.
+
+Refined Phase 2b priority list (bypass surfaces with no intent reason to stay bypassed):
+
+| File | Status | Notes |
+|---|---|---|
+| `screening/dashboard.py` | ✅ ported (`c3d8e5f`) | template for the pattern |
+| `analysis_workbench.py` | ⏳ next candidate? | Bloomberg-style; high complexity but high partner visibility |
+| `deal_profile_v2.py` | ⚠️ needs rewrite, not port | own theme system fights editorial |
+| `dashboard_v2.py` / `v3.py` | 🗑 retire-or-port? | Phase 4 cutover decision: do these survive at all in v3? |
+| `onboarding_wizard.py` | ❓ low priority | one-shot setup flow |
+| `sensitivity_dashboard.py` | ❓ low priority | utility |
 
 ### Why "wrapper port" doesn't work for these pages
 
