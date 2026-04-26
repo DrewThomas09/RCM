@@ -728,6 +728,40 @@ class TestUIReworkContract(unittest.TestCase):
         self.assertEqual(editorial_link("relative/path"), "relative/path")
         self.assertEqual(editorial_link(""), "")
 
+    def test_v3_focused_deal_bar_renders_export_buttons(self) -> None:
+        """Focused-deal context bar renders 3 export buttons that link
+        to the existing /api/analysis/<deal_id>/export endpoint with
+        format query params (html / xlsx / json).
+
+        Per the "make it feel complete" cycle (2026-04-26): the editorial
+        spec puts download affordances on the focused-deal bar; the
+        backend endpoints already exist; this just wires the anchors.
+        """
+        body = self._fetch_body("/app?ui=v3&deal=anything")
+        # The deal_id is sanitized server-side; the buttons appear
+        # whenever a focused-deal-bar is rendered (which requires the
+        # deal_row to resolve from deals_df). On the empty-DB contract
+        # suite, no deal resolves, so no buttons render. That's the
+        # correct behavior — but it also means we can't assert button
+        # presence here without seeded data. Instead assert the helper
+        # contract: when called with a deal_id, it produces the buttons.
+        from rcm_mc.ui.chartis._app_focused_deal_bar import (
+            _render_export_buttons,
+        )
+        html = _render_export_buttons("ccf_2026")
+        self.assertIn('class="exp-btn"', html)
+        self.assertIn(
+            "/api/analysis/ccf_2026/export?format=html", html,
+        )
+        self.assertIn(
+            "/api/analysis/ccf_2026/export?format=xlsx", html,
+        )
+        self.assertIn(
+            "/api/analysis/ccf_2026/export?format=json", html,
+        )
+        # Empty deal_id → empty string (no buttons; defensive)
+        self.assertEqual(_render_export_buttons(""), "")
+
     def test_v3_app_canonical_export_path_helpers_exist(self) -> None:
         """Per Phase 3 commit 1 (Q3.5 + Q2 push-back):
         canonical_deal_export_path + canonical_portfolio_export_path

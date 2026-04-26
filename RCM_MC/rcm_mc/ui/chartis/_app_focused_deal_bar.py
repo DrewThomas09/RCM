@@ -138,6 +138,45 @@ def render_focused_deal_bar(
         f'<span class="meta">IRR <span class="v">'
         f'{number_maybe(irr, format="pct")}</span></span>'
         '</div>'
+        f'{_render_export_buttons(deal_id)}'
         f'{_build_switch_links(deal_row, held_deals=held_deals, selected_stage=selected_stage)}'
+        '</div>'
+    )
+
+
+def _render_export_buttons(deal_id: str) -> str:
+    """3-button export group on the focused-deal context bar.
+
+    Each button is an anchor that hits ``/api/analysis/<deal_id>/export``
+    with a format query param. The endpoint streams the file with a
+    ``Content-Disposition: attachment`` header so the browser saves
+    rather than navigates. Every export writes a generated_exports
+    audit row server-side.
+
+    Buttons:
+      - HTML report      → format=html  (full DealAnalysisPacket as HTML)
+      - IC packet HTML   → format=html  with ?packet=ic   (or alias)
+      - Deal Excel       → format=xlsx  (multi-sheet workbook)
+
+    Note: the existing /api/analysis endpoint takes ``format`` only,
+    not a packet-variant flag. The 'IC packet' button just uses the
+    same html format — Phase 4 polish can add a per-variant query
+    param if partner usage signals a need to differentiate.
+    """
+    if not deal_id:
+        return ""
+    deal_q = _html.escape(deal_id, quote=True)
+    base = f"/api/analysis/{deal_q}/export"
+    return (
+        '<div class="exports">'
+        f'<a class="exp-btn" href="{base}?format=html" '
+        'title="Download the full deal-analysis report as HTML">'
+        '⇣ HTML</a>'
+        f'<a class="exp-btn" href="{base}?format=xlsx" '
+        'title="Download the deal workbook as Excel">'
+        '⇣ Excel</a>'
+        f'<a class="exp-btn" href="{base}?format=json" '
+        'title="Download the raw DealAnalysisPacket as JSON">'
+        '⇣ JSON</a>'
         '</div>'
     )

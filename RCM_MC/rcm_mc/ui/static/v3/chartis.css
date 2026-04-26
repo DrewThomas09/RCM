@@ -951,6 +951,27 @@ footer.editorial em { color: var(--ink); font-style: italic; }
   color: var(--ink);
   border-color: var(--ink);
 }
+/* Export buttons (3-button group: HTML / Excel / JSON) — sit between
+   the ctx column and the prev/next switcher on the focused-deal bar.
+   Match the .switch a anchor treatment but accent on hover with the
+   editorial teal so the action affordance is distinct from navigation. */
+.app-focused-deal-bar .exports {
+  display: flex; gap: .35rem; margin-right: .75rem;
+}
+.app-focused-deal-bar .exports .exp-btn {
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--teal-deep);
+  text-decoration: none;
+  padding: .35rem .65rem;
+  border: 1px solid var(--teal-soft);
+  background: var(--paper-pure);
+}
+.app-focused-deal-bar .exports .exp-btn:hover {
+  color: var(--paper-pure);
+  background: var(--teal-deep);
+  border-color: var(--teal-deep);
+}
 
 /* --- Pipeline funnel (rcm_mc/ui/chartis/_app_pipeline_funnel.py) --- */
 
