@@ -228,6 +228,72 @@ The 14 dark-shell-pattern matches my earlier grep flagged were all in `home_page
 
 **Recommendation:** start Phase 2b with `home_page.py` regardless of whether it's the highest-traffic page — its dark-shell contamination makes the editorial chrome look broken. Other pages can wait.
 
+### Tier 3.5 finding (added 2026-04-25): 9 pages bypass the editorial dispatcher entirely
+
+A second pass — probing the 4 user-named marquee routes (`dashboard`, `deal profile`, `screening`, `exports`) under `CHARTIS_UI_V2=1` — found that **3 of the 4 either bypass the dispatcher entirely or have heavy legacy-CSS contamination**:
+
+| Route | Renderer | State |
+|---|---|---|
+| `/app?ui=v3` | `chartis/app_page.py` | Fully editorial-native (Tier 0) |
+| `/dashboard` | `dashboard_page.py` | chartis_shell chrome ✓ · legacy hex in body ⚠ |
+| `/home` | `chartis/home_page.py` | chartis_shell chrome ✓ · 17 hardcoded dark-shell hex ⚠ |
+| `/deal/<id>/profile` | `deal_profile_v2.py` | **bypasses dispatcher entirely** — builds own `<!doctype>...` |
+| `/screening/dashboard` | `screening/dashboard.py` | **bypasses dispatcher entirely** — builds own `<!doctype>...` |
+| `/screening/bankruptcy-survivor` | `bankruptcy_survivor_page.py` | **bypasses dispatcher entirely** |
+| `/exports` | `_export_menu.py` | chartis_shell chrome ✓ · legacy hex in body ⚠ |
+
+Full list of renderers that build own HTML (case-insensitive `<!DOCTYPE` grep):
+
+- `rcm_mc/ui/analysis_workbench.py` — Bloomberg-style workbench at `/analysis/<deal_id>`
+- `rcm_mc/ui/bankruptcy_survivor_page.py` — `/screening/bankruptcy-survivor`
+- `rcm_mc/ui/dashboard_v2.py` — old reskin attempt (probably unused; verify before delete)
+- `rcm_mc/ui/dashboard_v3.py` — another reskin attempt (probably unused; verify)
+- `rcm_mc/ui/deal_profile_v2.py` — `/deal/<id>/profile`
+- `rcm_mc/ui/onboarding_wizard.py` — first-time setup
+- `rcm_mc/ui/sensitivity_dashboard.py` — utility page
+- `rcm_mc/ui/chartis/marketing_page.py` — public landing page (legitimate bypass; this is the marketing splash and intentionally has its own shell)
+- `rcm_mc/screening/dashboard.py` — `/screening/dashboard`
+
+### Why "wrapper port" doesn't work for these pages
+
+Tempting fix: wrap their body in `chartis_shell()` and pass the page-local CSS as `extra_css`. **This would actively make them worse**, not better.
+
+Looking at `screening/dashboard.py:_CSS`, the page-local CSS sets:
+
+```css
+body {
+  background: var(--c-bg);  /* #0a0e17 — dark navy */
+  color: var(--c-text);     /* #e2e8f0 — light gray */
+  ...
+}
+```
+
+If wrapped in `chartis_shell()`, the editorial chrome (parchment topbar) renders at the top, then the body's `background: #0a0e17` overrides editorial parchment, producing a Frankenstein render: parchment topbar → dark navy body. Worse than the current state, which at least is internally consistent dark-shell.
+
+Same shape for `deal_profile_v2.py` (uses `theme_stylesheet()`) and `bankruptcy_survivor_page.py`.
+
+**The correct fix is per-page visual rewrite, not wrapper port.** Each page needs:
+1. Strip the global `body { background, color }` overrides
+2. Replace `--c-*` palette variable values with editorial palette equivalents
+3. Replace dark-shell hex throughout (~30-100 substitutions per file)
+4. Verify the page still renders with editorial chrome
+
+That's per-region visual judgment work — same scope as `home_page.py` rewrite from earlier in this audit. Each page is **1 working day** for the wrap-and-token-port (mechanical), **3-5 days** for full editorial body rewrite.
+
+### Updated Phase 2b sizing for the 4 user-named pages
+
+Re-prioritizing per the user's stated direction ("focus on dashboard, deal profile, screening, exports"):
+
+| # | Page | Effort | Notes |
+|---|---|---|---|
+| 1 | `chartis/home_page.py` (`/home`) | 1 week visual rewrite | 17 hardcoded dark-shell hex; passes chartis_shell chrome already |
+| 2 | `screening/dashboard.py` (`/screening/dashboard`) | 1-3 days dispatcher-port + 2-3 days visual | Bypass + dark-shell body |
+| 3 | `deal_profile_v2.py` (`/deal/<id>/profile`) | 1-3 days dispatcher-port + 3-5 days visual | Bypass; large file (646 LOC) |
+| 4 | `bankruptcy_survivor_page.py` | 1-2 days | Bypass; smaller file |
+| 5 | `_export_menu.py` (`/exports`) | 2-3 days visual | chrome works; legacy hex in body |
+
+**Total: ~3 weeks of focused work for the 4 named surfaces.** Half the original Tier-1 estimate because chrome already works on 2 of 4. This is the actual Phase 2b scope the user asked for.
+
 ### CSS-side: `chartis.css` is internally consistent
 
 Grep of `rcm_mc/ui/static/v3/chartis.css` (820 lines) shows the palette tokens are used cleanly throughout — `var(--green)`, `var(--teal)`, `var(--ink)`, etc. The Q3.7 PHI banner work added `--green-muted: #3D6F45` cleanly. No drift from the design system inside the CSS file itself.
