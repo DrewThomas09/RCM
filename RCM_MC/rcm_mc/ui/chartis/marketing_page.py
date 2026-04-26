@@ -40,12 +40,12 @@ def _esc(s: Any) -> str:
 
 
 def _eyebrow(text: str, *, on_navy: bool = False) -> str:
-    color = "var(--sc-teal)" if on_navy else "var(--sc-teal-ink)"
-    tx = "var(--sc-on-navy-dim)" if on_navy else "var(--sc-text-dim)"
+    color = "var(--teal)" if on_navy else "var(--teal-deep)"
+    tx = "var(--muted)" if on_navy else "var(--muted)"
     return (
         '<div class="sc-eyebrow" style="'
         'display:inline-flex;align-items:center;gap:12px;'
-        f'font-family:var(--sc-mono);font-size:11px;font-weight:600;'
+        f'font-family:\"JetBrains Mono\", monospace;font-size:11px;font-weight:600;'
         'letter-spacing:0.16em;text-transform:uppercase;'
         f'color:{tx};">'
         f'<span style="display:inline-block;width:24px;height:2px;'
@@ -56,17 +56,17 @@ def _eyebrow(text: str, *, on_navy: bool = False) -> str:
 
 def _h_display(text: str) -> str:
     return (
-        '<h1 style="font-family:var(--sc-serif);font-weight:400;'
+        '<h1 style="font-family:\"Source Serif 4\", Georgia, serif;font-weight:400;'
         'font-size:clamp(40px, 5.5vw, 72px);line-height:1.05;'
-        'letter-spacing:-0.02em;color:var(--sc-navy);margin:0;">'
+        'letter-spacing:-0.02em;color:var(--ink-2);margin:0;">'
         f'{text}</h1>'
     )
 
 
 def _h_section(text: str, *, on_navy: bool = False) -> str:
-    color = "var(--sc-on-navy)" if on_navy else "var(--sc-navy)"
+    color = "var(--paper)" if on_navy else "var(--ink-2)"
     return (
-        '<h2 style="font-family:var(--sc-serif);font-weight:400;'
+        '<h2 style="font-family:\"Source Serif 4\", Georgia, serif;font-weight:400;'
         'font-size:clamp(30px, 3.6vw, 44px);line-height:1.08;'
         f'letter-spacing:-0.015em;color:{color};margin:0;max-width:22ch;">'
         f'{text}</h2>'
@@ -74,9 +74,9 @@ def _h_section(text: str, *, on_navy: bool = False) -> str:
 
 
 def _lead(text: str, *, on_navy: bool = False) -> str:
-    color = "var(--sc-on-navy-dim)" if on_navy else "var(--sc-text-dim)"
+    color = "var(--muted)" if on_navy else "var(--muted)"
     return (
-        '<p style="font-family:var(--sc-serif);font-weight:400;'
+        '<p style="font-family:\"Source Serif 4\", Georgia, serif;font-weight:400;'
         f'font-size:19px;line-height:1.6;color:{color};'
         'max-width:46ch;margin:0;">'
         f'{_esc(text)}</p>'
@@ -87,8 +87,8 @@ def _cta_primary(href: str, label: str) -> str:
     return (
         f'<a href="{_esc(href)}" style="'
         'display:inline-flex;align-items:center;gap:12px;'
-        'padding:16px 28px;background:var(--sc-navy);color:var(--sc-on-navy);'
-        'font-family:var(--sc-sans);font-size:14px;font-weight:600;'
+        'padding:16px 28px;background:var(--ink-2);color:var(--paper);'
+        'font-family:\"Inter\", -apple-system, sans-serif;font-size:14px;font-weight:600;'
         'letter-spacing:0.04em;text-decoration:none;border-radius:2px;'
         'transition:background 0.15s;">'
         f'{_esc(label)}'
@@ -100,14 +100,14 @@ def _cta_primary(href: str, label: str) -> str:
 
 
 def _cta_ghost(href: str, label: str, *, on_navy: bool = False) -> str:
-    color = "var(--sc-on-navy)" if on_navy else "var(--sc-navy)"
-    border = "var(--sc-on-navy-faint)" if on_navy else "var(--sc-navy)"
+    color = "var(--paper)" if on_navy else "var(--ink-2)"
+    border = "var(--faint)" if on_navy else "var(--ink-2)"
     return (
         f'<a href="{_esc(href)}" style="'
         'display:inline-flex;align-items:center;gap:12px;'
         f'padding:14px 26px;color:{color};'
         f'border:1px solid {border};'
-        'font-family:var(--sc-sans);font-size:14px;font-weight:600;'
+        'font-family:\"Inter\", -apple-system, sans-serif;font-size:14px;font-weight:600;'
         'letter-spacing:0.04em;text-decoration:none;border-radius:2px;">'
         f'{_esc(label)}</a>'
     )
@@ -117,7 +117,7 @@ def _cta_ghost(href: str, label: str, *, on_navy: bool = False) -> str:
 
 def _hero() -> str:
     return (
-        '<section style="background:var(--sc-parchment);">'
+        '<section style="background:var(--bg);">'
         '<div style="max-width:1280px;margin:0 auto;padding:72px 32px 96px;'
         'display:grid;grid-template-columns:1.05fr 1fr;gap:80px;'
         'align-items:center;">'
@@ -157,7 +157,7 @@ def _hero_chart_svg() -> str:
     )
     return (
         '<svg viewBox="0 0 480 360" style="width:100%;height:auto;'
-        'background:var(--sc-bone);border-radius:2px;'
+        'background:var(--paper);border-radius:2px;'
         'box-shadow:0 1px 2px rgba(6,22,38,0.06);">'
         '<defs><pattern id="gridMkt" width="40" height="40" '
         'patternUnits="userSpaceOnUse">'
@@ -210,24 +210,24 @@ def _capabilities() -> str:
     ]
     cards: List[str] = []
     for i, (num, title, body) in enumerate(items):
-        border_right = ("1px solid var(--sc-rule)"
+        border_right = ("1px solid var(--rule)"
                         if i < len(items) - 1 else "none")
         cards.append(
             '<div style="padding:32px 28px;'
             f'border-right:{border_right};">'
-            '<div style="font-family:var(--sc-mono);font-size:11px;'
-            'color:var(--sc-teal-ink);letter-spacing:0.16em;'
+            '<div style="font-family:\"JetBrains Mono\", monospace;font-size:11px;'
+            'color:var(--teal-deep);letter-spacing:0.16em;'
             f'margin-bottom:24px;">— {num}</div>'
-            '<h3 style="font-family:var(--sc-serif);font-weight:500;'
-            'font-size:22px;line-height:1.2;color:var(--sc-navy);'
+            '<h3 style="font-family:\"Source Serif 4\", Georgia, serif;font-weight:500;'
+            'font-size:22px;line-height:1.2;color:var(--ink-2);'
             f'margin:0 0 14px 0;">{_esc(title)}</h3>'
-            '<p style="font-family:var(--sc-sans);font-size:14px;'
-            'line-height:1.6;color:var(--sc-text-dim);margin:0;">'
+            '<p style="font-family:\"Inter\", -apple-system, sans-serif;font-size:14px;'
+            'line-height:1.6;color:var(--muted);margin:0;">'
             f'{_esc(body)}</p>'
             '</div>'
         )
     return (
-        '<section style="background:var(--sc-parchment);padding:96px 0;">'
+        '<section style="background:var(--bg);padding:96px 0;">'
         '<div style="max-width:1280px;margin:0 auto;padding:0 32px;">'
         # Header row
         '<div style="display:grid;grid-template-columns:1fr 2fr;'
@@ -237,8 +237,8 @@ def _capabilities() -> str:
         '<div style="height:20px;"></div>'
         + _h_section("Four engines, one platform.")
         + '</div>'
-        '<p style="font-family:var(--sc-serif);font-size:19px;'
-        'line-height:1.6;color:var(--sc-text-dim);padding-top:40px;'
+        '<p style="font-family:\"Source Serif 4\", Georgia, serif;font-size:19px;'
+        'line-height:1.6;color:var(--muted);padding-top:40px;'
         'margin:0;max-width:46ch;">'
         "SeekingChartis / RCM-MC compresses the least-leveraged hours "
         "of healthcare PE diligence. Dozens of API endpoints, hundreds "
@@ -247,7 +247,7 @@ def _capabilities() -> str:
         '</div>'
         # Grid row
         '<div style="display:grid;grid-template-columns:repeat(4,1fr);'
-        'border-top:1px solid var(--sc-rule-2);">'
+        'border-top:1px solid var(--border-strong);">'
         + "".join(cards) +
         '</div>'
         '</div></section>'
@@ -271,28 +271,28 @@ def _modules() -> str:
         rows.append(
             '<div style="display:grid;grid-template-columns:120px 1fr 200px;'
             'gap:40px;padding:24px 0;'
-            f'border-bottom:1px solid var(--sc-navy-3);'
+            f'border-bottom:1px solid var(--ink-2);'
             'align-items:baseline;">'
             # Stage number + label
             '<div>'
-            '<div style="font-family:var(--sc-mono);font-size:10px;'
-            'color:var(--sc-teal);letter-spacing:0.18em;'
+            '<div style="font-family:\"JetBrains Mono\", monospace;font-size:10px;'
+            'color:var(--teal);letter-spacing:0.18em;'
             f'margin-bottom:6px;">STAGE {i+1:02d}</div>'
-            '<div style="font-family:var(--sc-serif);font-size:22px;'
-            f'font-weight:500;color:var(--sc-on-navy);">{_esc(k)}</div>'
+            '<div style="font-family:\"Source Serif 4\", Georgia, serif;font-size:22px;'
+            f'font-weight:500;color:var(--paper);">{_esc(k)}</div>'
             '</div>'
             # Description
-            '<div style="font-family:var(--sc-serif);font-size:16px;'
-            'line-height:1.55;color:var(--sc-on-navy-dim);">'
+            '<div style="font-family:\"Source Serif 4\", Georgia, serif;font-size:16px;'
+            'line-height:1.55;color:var(--muted);">'
             f'{_esc(desc)}</div>'
             # Route tag
-            '<div style="font-family:var(--sc-mono);font-size:11px;'
-            'color:var(--sc-on-navy-faint);letter-spacing:0.04em;'
+            '<div style="font-family:\"JetBrains Mono\", monospace;font-size:11px;'
+            'color:var(--faint);letter-spacing:0.04em;'
             f'text-align:right;">{_esc(route)}</div>'
             '</div>'
         )
     return (
-        '<section style="background:var(--sc-navy);color:var(--sc-on-navy);'
+        '<section style="background:var(--ink-2);color:var(--paper);'
         'padding:96px 0;">'
         '<div style="max-width:1280px;margin:0 auto;padding:0 32px;">'
         '<div style="margin-bottom:56px;">'
@@ -301,7 +301,7 @@ def _modules() -> str:
         + _h_section("From screening to exit, every stage has a "
                      "partner-reflex module.", on_navy=True)
         + '</div>'
-        '<div style="border-top:1px solid var(--sc-teal);">'
+        '<div style="border-top:1px solid var(--teal);">'
         + "".join(rows) +
         '</div>'
         '</div></section>'
@@ -319,25 +319,25 @@ def _stats() -> str:
     ]
     items: List[str] = []
     for i, (val, label) in enumerate(stats):
-        border = ("1px solid var(--sc-rule)"
+        border = ("1px solid var(--rule)"
                   if i < len(stats) - 1 else "none")
         items.append(
             '<div style="padding:40px 28px;'
             f'border-right:{border};">'
-            '<div style="font-family:var(--sc-serif);font-size:48px;'
+            '<div style="font-family:\"Source Serif 4\", Georgia, serif;font-size:48px;'
             'font-weight:400;letter-spacing:-0.02em;line-height:1;'
-            f'color:var(--sc-navy);margin-bottom:12px;">{_esc(val)}</div>'
-            '<div style="font-family:var(--sc-mono);font-size:11px;'
-            'color:var(--sc-text-faint);letter-spacing:0.14em;'
+            f'color:var(--ink-2);margin-bottom:12px;">{_esc(val)}</div>'
+            '<div style="font-family:\"JetBrains Mono\", monospace;font-size:11px;'
+            'color:var(--faint);letter-spacing:0.14em;'
             f'text-transform:uppercase;">{_esc(label)}</div>'
             '</div>'
         )
     return (
-        '<section style="background:var(--sc-parchment);padding:64px 0;">'
+        '<section style="background:var(--bg);padding:64px 0;">'
         '<div style="max-width:1280px;margin:0 auto;padding:0 32px;">'
         '<div style="display:grid;grid-template-columns:repeat(4,1fr);'
-        'border-top:1px solid var(--sc-rule-2);'
-        'border-bottom:1px solid var(--sc-rule-2);">'
+        'border-top:1px solid var(--border-strong);'
+        'border-bottom:1px solid var(--border-strong);">'
         + "".join(items) +
         '</div></div></section>'
     )
@@ -347,10 +347,10 @@ def _stats() -> str:
 
 def _cta_strip() -> str:
     return (
-        '<section style="background:var(--sc-bone);padding:96px 0;">'
+        '<section style="background:var(--paper);padding:96px 0;">'
         '<div style="max-width:1280px;margin:0 auto;padding:0 32px;">'
         '<div style="display:grid;grid-template-columns:1fr 1fr;'
-        'gap:80px;align-items:center;background:var(--sc-navy);'
+        'gap:80px;align-items:center;background:var(--ink-2);'
         'padding:64px 56px;border-radius:2px;">'
         '<div>'
         + _eyebrow("Ready to diligence", on_navy=True)
@@ -371,14 +371,14 @@ def _cta_strip() -> str:
 
 def _footer() -> str:
     return (
-        '<footer style="background:var(--sc-ink);color:var(--sc-on-navy-dim);'
-        'padding:48px 0 40px;font-family:var(--sc-sans);font-size:13px;">'
+        '<footer style="background:var(--ink);color:var(--muted);'
+        'padding:48px 0 40px;font-family:\"Inter\", -apple-system, sans-serif;font-size:13px;">'
         '<div style="max-width:1280px;margin:0 auto;padding:0 32px;'
         'display:flex;justify-content:space-between;align-items:center;">'
-        '<div style="font-family:var(--sc-serif);font-size:18px;'
-        'font-weight:500;color:var(--sc-on-navy);letter-spacing:-0.005em;">'
-        'Seeking<em style="font-weight:400;color:var(--sc-teal-2);">Chartis</em></div>'
-        '<div style="font-family:var(--sc-mono);font-size:11px;'
+        '<div style="font-family:\"Source Serif 4\", Georgia, serif;font-size:18px;'
+        'font-weight:500;color:var(--paper);letter-spacing:-0.005em;">'
+        'Seeking<em style="font-weight:400;color:var(--teal-soft);">Chartis</em></div>'
+        '<div style="font-family:\"JetBrains Mono\", monospace;font-size:11px;'
         'letter-spacing:0.1em;">© 2026 — Healthcare PE diligence, '
         'instrument-grade</div>'
         '</div></footer>'
@@ -390,31 +390,31 @@ def _footer() -> str:
 def _marketing_topnav() -> str:
     return (
         '<header style="position:sticky;top:0;z-index:50;'
-        'background:var(--sc-parchment);'
-        'border-bottom:1px solid var(--sc-rule);">'
+        'background:var(--bg);'
+        'border-bottom:1px solid var(--rule);">'
         '<div style="max-width:1280px;margin:0 auto;padding:18px 32px;'
         'display:flex;align-items:center;justify-content:space-between;">'
         # Wordmark
         '<a href="/" style="text-decoration:none;'
-        'font-family:var(--sc-serif);font-size:20px;font-weight:500;'
-        'color:var(--sc-navy);letter-spacing:-0.005em;'
+        'font-family:\"Source Serif 4\", Georgia, serif;font-size:20px;font-weight:500;'
+        'color:var(--ink-2);letter-spacing:-0.005em;'
         'display:flex;align-items:center;gap:10px;">'
         '<svg width="26" height="26" viewBox="0 0 48 48" style="flex-shrink:0;">'
-        '<circle cx="24" cy="24" r="22" fill="none" stroke="var(--sc-navy)" stroke-width="1.5"/>'
-        '<circle cx="24" cy="24" r="3" fill="var(--sc-teal)"/>'
-        '<path d="M24 6 L19 15 L24 12 L29 15 Z" fill="var(--sc-navy)"/>'
-        '<path d="M42 24 L33 19 L36 24 L33 29 Z" fill="var(--sc-navy)"/>'
-        '<path d="M24 42 L29 33 L24 36 L19 33 Z" fill="var(--sc-navy)"/>'
-        '<path d="M6 24 L15 29 L12 24 L15 19 Z" fill="var(--sc-navy)"/>'
+        '<circle cx="24" cy="24" r="22" fill="none" stroke="var(--ink-2)" stroke-width="1.5"/>'
+        '<circle cx="24" cy="24" r="3" fill="var(--teal)"/>'
+        '<path d="M24 6 L19 15 L24 12 L29 15 Z" fill="var(--ink-2)"/>'
+        '<path d="M42 24 L33 19 L36 24 L33 29 Z" fill="var(--ink-2)"/>'
+        '<path d="M24 42 L29 33 L24 36 L19 33 Z" fill="var(--ink-2)"/>'
+        '<path d="M6 24 L15 29 L12 24 L15 19 Z" fill="var(--ink-2)"/>'
         '</svg>'
         'Seeking<em style="font-weight:400;font-style:italic;">Chartis</em></a>'
         # Right-side CTA
         '<div style="display:flex;align-items:center;gap:24px;">'
-        '<a href="/methodology" style="font-family:var(--sc-sans);'
-        'font-size:13px;font-weight:500;color:var(--sc-text-dim);'
+        '<a href="/methodology" style="font-family:\"Inter\", -apple-system, sans-serif;'
+        'font-size:13px;font-weight:500;color:var(--muted);'
         'text-decoration:none;">Methodology</a>'
-        '<a href="/home" style="font-family:var(--sc-sans);font-size:13px;'
-        'font-weight:600;color:var(--sc-on-navy);background:var(--sc-navy);'
+        '<a href="/home" style="font-family:\"Inter\", -apple-system, sans-serif;font-size:13px;'
+        'font-weight:600;color:var(--paper);background:var(--ink-2);'
         'padding:10px 18px;border-radius:2px;text-decoration:none;">'
         'Open Platform</a>'
         '</div></div></header>'
@@ -448,11 +448,11 @@ def render_marketing_page() -> str:
         'platform for healthcare-focused private equity. From screening '
         'to exit, partner-reflex modules on 6,024 HCRIS hospitals.">'
         + fonts +
-        '<link rel="stylesheet" href="/static/chartis_tokens.css">'
+        '<link rel="stylesheet" href="/static/v3/chartis.css">'
         '<style>'
         '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}'
-        'body{background:var(--sc-parchment);color:var(--sc-text);'
-        'font-family:var(--sc-sans);-webkit-font-smoothing:antialiased;}'
+        'body{background:var(--bg);color:var(--ink);'
+        'font-family:\"Inter\", -apple-system, sans-serif;-webkit-font-smoothing:antialiased;}'
         'em{font-style:italic;}'
         '@media (max-width: 960px) {'
         '  [style*="grid-template-columns:1.05fr 1fr"],'
