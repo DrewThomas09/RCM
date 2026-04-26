@@ -532,6 +532,12 @@ def number_maybe(
         f = float(v)
     except (TypeError, ValueError):
         return '<span style="color:var(--faint)">—</span>'
+    # NaN check: pandas + numpy use float('nan') for missing values,
+    # which passes float() but crashes int(). Treat as missing.
+    # NaN is the only float that doesn't equal itself, so the test
+    # works without importing math.
+    if f != f:
+        return '<span style="color:var(--faint)">—</span>'
     if format == "moic":
         s = f"{f:.2f}x"
     elif format == "pct":
