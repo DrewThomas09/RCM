@@ -226,7 +226,7 @@ def phi_banner(mode: Optional[str]) -> str:
         return (
             '<div class="phi-banner" data-testid="phi-banner" '
             'data-phi-mode="disallowed">'
-            '🛡 Public data only — no PHI permitted on this instance.'
+            '🛡 Public data only — no PHI'
             '</div>'
         )
     if mode == "restricted":
