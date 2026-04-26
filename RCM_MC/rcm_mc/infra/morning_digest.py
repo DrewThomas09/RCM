@@ -31,6 +31,17 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 
+def _safe_status_str(v: object) -> str:
+    """Coerce possibly-NaN covenant_status to a string. Same fix as
+    dashboard_page._safe_status_str — pandas NaN crashes .upper()."""
+    if v is None:
+        return ""
+    if isinstance(v, float) and v != v:
+        return ""
+    s = str(v)
+    return "" if s.lower() == "nan" else s
+
+
 @dataclass
 class DigestPayload:
     """Structured representation of the morning email's content."""
@@ -73,7 +84,7 @@ def build_morning_digest(db_path: str) -> DigestPayload:
     flagged.sort(key=lambda t: t[1], reverse=True)
     for d, priority in flagged[:3]:
         reasons: List[str] = []
-        cov = (d.get("covenant_status") or "").upper()
+        cov = _safe_status_str(d.get("covenant_status")).upper()
         if cov in ("TRIPPED", "TIGHT"):
             reasons.append(f"covenant {cov}")
         if (d.get("overdue_deadlines") or 0) > 0:

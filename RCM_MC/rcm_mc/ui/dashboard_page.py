@@ -29,6 +29,26 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 
+def _safe_status_str(v: object) -> str:
+    """Coerce a possibly-NaN covenant_status value to a string safely.
+
+    pandas serializes NULL DB columns as float('nan'), which is truthy
+    so the common `(value or "")` idiom doesn't catch it, and calling
+    `.upper()` on the float then crashes. This helper canonicalizes
+    None and NaN to empty string.
+
+    Same pattern as the number_maybe NaN fix in
+    _chartis_kit_editorial.py — surfaced by the seeded-DB integration
+    test 2026-04-26.
+    """
+    if v is None:
+        return ""
+    if isinstance(v, float) and v != v:  # NaN: x != x is True only for NaN
+        return ""
+    s = str(v)
+    return "" if s.lower() == "nan" else s
+
+
 # ── Curated analyses catalog ───────────────────────────────────────
 # Not the full 40-module module_index — a focused subset of the
 # highest-signal user-triggerable analyses. Each entry is a single
@@ -476,7 +496,7 @@ def _covenant_insights(
     warning that 3+ deals are within 1 turn of breach."""
     out: List[Dict[str, Any]] = []
     tripped = [d for d in deals
-               if (d.get("covenant_status") or "").upper() == "TRIPPED"]
+               if _safe_status_str(d.get("covenant_status")).upper() == "TRIPPED"]
     if tripped:
         t = tripped[0]
         rest = (
@@ -493,7 +513,7 @@ def _covenant_insights(
             "score": 100,
         })
     tight = [d for d in deals
-             if (d.get("covenant_status") or "").upper() == "TIGHT"]
+             if _safe_status_str(d.get("covenant_status")).upper() == "TIGHT"]
     if len(tight) >= 3:
         names = ", ".join(d["name"] for d in tight[:3])
         out.append({
@@ -582,7 +602,7 @@ def _attention_pileup_insights(
     flagged = [d for d in deals
                if (d.get("alerts") or 0) > 0
                or (d.get("overdue_deadlines") or 0) > 0
-               or (d.get("covenant_status") or "").upper() == "TRIPPED"]
+               or _safe_status_str(d.get("covenant_status")).upper() == "TRIPPED"]
     if len(flagged) >= 3 and len(deals) >= 5:
         pct = int(100 * len(flagged) / len(deals))
         return [{
@@ -728,7 +748,7 @@ def _quiet_morning_insights(
     no_flags = [d for d in deals
                 if (d.get("alerts") or 0) == 0
                 and (d.get("overdue_deadlines") or 0) == 0
-                and (d.get("covenant_status") or "").upper()
+                and _safe_status_str(d.get("covenant_status")).upper()
                     not in ("TRIPPED", "TIGHT")]
     if len(deals) >= 3 and len(no_flags) == len(deals):
         return [{
@@ -934,9 +954,10 @@ def _portfolio_pulse_inputs(
             f"year. Discount the bid book accordingly."
         )
     else:
-        tripped = sum(1 for d in rows
-                      if (d.get("covenant_status") or "").upper()
-                      == "TRIPPED")
+        tripped = sum(
+            1 for d in rows
+            if _safe_status_str(d.get("covenant_status")).upper() == "TRIPPED"
+        )
         if tripped >= 1:
             syn = (
                 f"{tripped} deal{'s' if tripped != 1 else ''} have "
@@ -1566,7 +1587,7 @@ def _render_needs_attention_section(
     for d, priority in top:
         # Build a compact "why" string — which factors are firing.
         reasons: List[str] = []
-        cov = (d.get("covenant_status") or "").upper()
+        cov = _safe_status_str(d.get("covenant_status")).upper()
         if cov == "TRIPPED":
             reasons.append(
                 '<span style="color:#991b1b;font-weight:600;">'
