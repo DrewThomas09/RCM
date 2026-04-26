@@ -6,3 +6,4 @@ b31aecd | 2026-04-26 | HIGH     | Report-0150 | profiles.yml not in .gitignore �
 a53321f | 2026-04-26 | HIGH     | Report-0254 | infra/README.md described nonexistent ConfigValidationError + write_yaml — corrected to ConfigError + cross-link to core/calibration.py
 5685af4 | 2026-04-26 | HIGH     | Report-0247 | _chartis_kit_v2 deletion on feat/ui-rework-v3 documented in MERGE-CONFLICTS.md (4 main refs at _chartis_kit.py L9/L46/L90/L190) with merge-time resolution recipe
 9287908 | 2026-04-26 | HIGH     | Report-0119 | RCM_MC_AUTH unset = open server — added stderr warning at server start when bound non-loopback with no auth + no DB users
+f4ffdac | 2026-04-26 | HIGH     | Report-0211 | CLAUDE.md SQLite table count drift (said 17, audit found 21, grep finds 89) — doc now says ~89 with a self-derivable grep recipe
