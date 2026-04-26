@@ -242,11 +242,46 @@ def phi_banner(mode: Optional[str]) -> str:
 
 # ── Editorial chrome ───────────────────────────────────────────────
 
+def editorial_link(path: str) -> str:
+    """Build a v3-aware URL for internal anchors inside the editorial chrome.
+
+    Per "Discovered during local testing 2026-04-25" §1 in
+    ``docs/UI_REWORK_PLAN.md``: clicking the SeekingChartis logo from
+    ``/app?ui=v3`` was dropping users back into the legacy shell
+    because every internal anchor rebuilt its href without the
+    ``?ui=v3`` flag.
+
+    This helper preserves the flag on internal absolute paths.
+    External URLs (anything starting with a scheme), in-page anchors
+    (``#…``), and paths that already carry their own query string are
+    passed through untouched — the helper only adds ``?ui=v3`` when
+    it's safe to do so.
+
+    Phase 4 (Q4.1 cutover) will replace this with a session-attribute
+    or env-driven flag so anchors don't need rewriting at all. Until
+    then, sticky-flag-on-anchors is the smallest-blast-radius fix.
+    """
+    if not path:
+        return path
+    if path.startswith(("http://", "https://", "mailto:", "tel:", "#",
+                         "data:", "//")):
+        return path
+    if "?" in path or "&" in path:
+        return path
+    if not path.startswith("/"):
+        return path
+    return f"{path}?ui=v3"
+
+
 def editorial_topbar(active_nav: Optional[str] = None) -> str:
     """Render the editorial topbar per spec §6.1.
 
     5-button topnav (DEALS / ANALYSIS / PORTFOLIO / MARKET / TOOLS)
     with teal underline on the active item, ⌘K search, SIGN OUT.
+
+    Brand link points at ``/app?ui=v3`` so clicking the logo from any
+    chrome'd v3 page lands the authenticated user on the canonical
+    home, not legacy ``/``. Per the 2026-04-25 local-test §1 finding.
     """
     nav_items = ("DEALS", "ANALYSIS", "PORTFOLIO", "MARKET", "TOOLS")
     active_upper = (active_nav or "").upper()
@@ -257,7 +292,7 @@ def editorial_topbar(active_nav: Optional[str] = None) -> str:
     )
     return (
         '<header class="topbar">'
-        '<a href="/" class="brand">'
+        '<a href="/app?ui=v3" class="brand">'
         '<div class="brand-mark">SC</div>'
         '<div class="brand-name">Seeking<em>Chartis</em></div>'
         '</a>'
@@ -281,6 +316,10 @@ def editorial_crumbs(items: Sequence[Tuple[str, Optional[str]]]) -> str:
 
     ``items`` is a sequence of ``(label, href_or_None)`` tuples.
     The last item is rendered as the current page (no link).
+
+    Internal hrefs are routed through ``editorial_link()`` so the
+    ``?ui=v3`` flag stays sticky as the user navigates back up the
+    crumb trail — same fix shape as the brand link.
     """
     if not items:
         return ""
@@ -291,7 +330,8 @@ def editorial_crumbs(items: Sequence[Tuple[str, Optional[str]]]) -> str:
         if is_last or not href:
             parts.append(f'<span class="here">{esc_label}</span>')
         else:
-            parts.append(f'<a href="{_html.escape(href)}">{esc_label}</a>')
+            v3_href = editorial_link(href)
+            parts.append(f'<a href="{_html.escape(v3_href)}">{esc_label}</a>')
         if not is_last:
             parts.append('<span class="sep">›</span>')
     return f'<div class="crumbs">{"".join(parts)}</div>'
@@ -551,8 +591,12 @@ def chartis_shell(
     chrome = (
         editorial_topbar(active_nav)
         if show_chrome else (
+            # No-chrome brand for unauthenticated pages (login, forgot).
+            # Points at /?ui=v3 so the logo keeps the user inside the
+            # editorial shell at the marketing splash, instead of
+            # dropping back to legacy /. Same fix as chrome'd brand.
             '<header class="topbar">'
-            '<a href="/" class="brand">'
+            '<a href="/?ui=v3" class="brand">'
             '<div class="brand-mark">SC</div>'
             '<div class="brand-name">Seeking<em>Chartis</em></div>'
             '</a>'
@@ -595,7 +639,7 @@ __all__ = [
     "P", "_CORPUS_NAV", "_LEGACY_NAV", "_MONO", "_SANS",
     # Shell
     "chartis_shell", "editorial_topbar", "editorial_crumbs",
-    "editorial_page_head", "phi_banner",
+    "editorial_page_head", "editorial_link", "phi_banner",
     # Pair pattern
     "pair_block",
     # Atoms

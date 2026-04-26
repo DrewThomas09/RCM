@@ -563,6 +563,58 @@ class TestUIReworkContract(unittest.TestCase):
             "Q3.7 trim regressed — verbose legacy copy returned",
         )
 
+    def test_v3_brand_link_preserves_editorial_flag(self) -> None:
+        """The SeekingChartis logo on any v3 page must NOT drop the user
+        back into the legacy shell when clicked.
+
+        Discovered during local testing 2026-04-25 (§1 in
+        docs/UI_REWORK_PLAN.md). Chrome'd pages point the brand at
+        /app?ui=v3 (authenticated dashboard); no-chrome pages
+        (login/forgot) point at /?ui=v3 (preserves flag at marketing
+        splash). This test guards both shapes so a future style
+        refactor doesn't silently revert to plain `/`.
+        """
+        body_app = self._fetch_body("/app?ui=v3")
+        self.assertIn(
+            'href="/app?ui=v3" class="brand"', body_app,
+            "authenticated v3 page brand link missing the editorial-flag-preserving href",
+        )
+        self.assertNotIn(
+            'href="/" class="brand"', body_app,
+            "authenticated v3 page brand link still points at legacy /",
+        )
+        body_login = self._fetch_body("/login?ui=v3")
+        self.assertIn(
+            'href="/?ui=v3" class="brand"', body_login,
+            "unauthenticated v3 page brand link missing the editorial-flag-preserving href",
+        )
+        self.assertNotIn(
+            'href="/" class="brand"', body_login,
+            "unauthenticated v3 page brand link still points at legacy /",
+        )
+
+    def test_editorial_link_helper_passes_through_external_urls(self) -> None:
+        """``editorial_link`` must NOT rewrite external URLs / mailto /
+        in-page anchors / already-querystring'd paths. Internal absolute
+        paths get the v3 flag appended; everything else passes through.
+        Lock the contract so a future change can't accidentally rewrite
+        external links to a malformed ``https://...?ui=v3`` shape."""
+        from rcm_mc.ui._chartis_kit_editorial import editorial_link
+        self.assertEqual(editorial_link("/dashboard"), "/dashboard?ui=v3")
+        self.assertEqual(editorial_link("/app"), "/app?ui=v3")
+        self.assertEqual(
+            editorial_link("https://example.com"), "https://example.com",
+        )
+        self.assertEqual(
+            editorial_link("mailto:foo@bar.com"), "mailto:foo@bar.com",
+        )
+        self.assertEqual(editorial_link("#section-2"), "#section-2")
+        self.assertEqual(
+            editorial_link("/app?deal=ccf_2026"), "/app?deal=ccf_2026",
+        )
+        self.assertEqual(editorial_link("relative/path"), "relative/path")
+        self.assertEqual(editorial_link(""), "")
+
     def test_v3_app_canonical_export_path_helpers_exist(self) -> None:
         """Per Phase 3 commit 1 (Q3.5 + Q2 push-back):
         canonical_deal_export_path + canonical_portfolio_export_path
