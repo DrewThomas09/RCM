@@ -194,6 +194,54 @@ broken CSS only affects `?ui=v3` requests; other partners' sessions are fine.
 
 ---
 
+## Phase 2 rollback procedure
+
+If Phase 2 ships and a regression appears post-merge to `main`:
+
+### Local rollback (~3 min)
+
+```bash
+git checkout main
+git revert <commit-range>  # the 11 commits e0cfdda..<commit-11> are atomic
+git push origin main       # auto-deploys the revert
+```
+
+Phase 2 is pure-additive — every commit is independently revertable. If the regression is isolated to one block helper (e.g., the EBITDA drag rendering wrong on a specific deal), revert that single helper commit; the others stay. The orchestrator (`a3ad808`) imports conditionally; missing helpers degrade to no-render rather than raising.
+
+**Time estimate:** ~3 minutes (commit + push + auto-deploy via `deploy.yml`).
+
+### Production VM env-flag flip (~30 sec)
+
+The editorial path is gated behind a per-request flag. To disable v3 instantly without redeploying:
+
+```bash
+ssh azureuser@pedesk.app
+sudo nano /opt/rcm-mc/.env       # remove RCM_MC_UI_VERSION=v3 or set =v2
+sudo systemctl restart rcm-mc
+```
+
+`/app` continues to render for `?ui=v3` query overrides but no longer for env-driven editorial; legacy `/dashboard` continues serving as today. Same flag pattern as Phase 1.
+
+**Time estimate:** ~30 seconds (SSH + edit + restart). Fastest path; use first when uncertain.
+
+### Disabling /app entirely (~5 min)
+
+If `/app` itself is the regression (rare — rendering issues, not the route gate), patch `_route_app_page` in `rcm_mc/server.py` to 303 to `/dashboard` unconditionally. ~3 lines. Cherry-pick + push + redeploy.
+
+**Time estimate:** ~5 minutes (cherry-pick + push + auto-deploy).
+
+### DB-side regression
+
+Phase 2 added zero schema changes. No migrations to undo.
+
+### Communication threshold
+
+Local revert and `/app`-specific patch both go through the auto-deploy pipeline visible to anyone watching `deploy.yml`. Env-flag flip is silent — invisible to anyone not on the VM. **Rule of thumb:** if you're using the env-flag path, no comms needed; if you're using either of the others, post a one-liner in whatever incident channel the team uses ("Reverting Phase 2 commit X due to <symptom>; ETA <minutes>").
+
+(Phase 3/4/5 each get their own rollback sections as they land.)
+
+---
+
 ## Visual-diff exit criterion
 
 For solo work the bar is eyeball-level, but explicit. Before declaring "v3 page X matches reference HTML":
@@ -283,6 +331,13 @@ asserts that `grep -rn 'TODO(phase 2)' rcm_mc/` returns zero matches
 after Phase 2 ships. Each subsequent phase adds the equivalent for
 itself. This forces follow-through and prevents silent slippage.
 
+**Phase 2 result:** the test caught one real violation on its first
+run — `_app_pipeline_funnel.py:109` had a `TODO(phase 2)` for
+preserving `?deal=<id>` across funnel stage clicks. Resolved in the
+same commit (commit 10) by threading `focused_deal_id` through the
+orchestrator → funnel link builder. Working as intended: discipline
+test catches the deferral; resolution lands alongside, not after.
+
 ### 5. Helpers emit complete pairs
 
 `render_*` returns a complete `<div class="pair">…</div>` ready to drop
@@ -311,6 +366,42 @@ Python convention; keeps call sites readable.
 **Future-reader note:** if you find yourself thinking "we should add client-side filtering for snappiness" or "we should hydrate the deal table with a JS framework," remember this was a deliberate architectural call. Statelessness is the feature, not the constraint. Reach for client-side state only if a measured perf budget cannot be met — and `docs/design-handoff/PHASE_2_PROPOSAL.md §3d-bis` confirms the budget is achievable without it.
 
 The exception is Phase 3+ small interaction patches (e.g., the deferred KPI hover/click decision). Those are measured in lines of vanilla JS, not framework adoptions.
+
+---
+
+## Phase 3 — registered open questions before that phase begins
+
+Surfaced during Phase 2 implementation; resolve before Phase 3 starts.
+
+**Recommended sequencing: Q3.5 first.** It's the only one with a real product decision embedded ("where on the VM does the export pipeline write to? Currently variable per caller"). One-meeting decision that unblocks filesystem work. The other four wiring tasks (Q3.1-Q3.4) are all "implement against known data shapes" — they can parallelize once Q3.5 is decided. Q3.6 is conditional and runs last (only-if-needed). Doing Q3.5 last means by the time it's addressed, three Phase 3 commits will have worked around the problem and canonicalization has to undo their workarounds — cheap to surface now, expensive to discover later.
+
+### Q3.1 — KPI cell hover/click interaction
+
+Phase 2 deferred this per the C4 push-back: replacing the spec's hover with click would silently change UX semantics; adding hover via JS would expand the test surface beyond Phase 2's scope. `_app_kpi_strip.py` carries a `# TODO(phase 3): KPI cell hover/click interaction` comment.
+
+Phase 3 makes a deliberate UX call: hover via vanilla JS / click toggle / small-multiples view / palette-style filter. The decision drives whether the right-side paired table is fixed (today: Weighted MOIC), interactive (changes per cell), or replaced (small-multiples show all 8 KPIs simultaneously).
+
+### Q3.2 — Real `covenant_grid` wiring + per-deal threshold mapping
+
+`_app_covenant_heatmap.covenant_grid()` is a Phase 2 stub returning all-empty cells. Phase 3 wires it to `quarterly_snapshots` + per-deal threshold config. The threshold mapping is currently in `deal_sim_inputs` per-deal but not surfaced for v3 — Phase 3 needs a `covenant_thresholds(deal_id)` accessor.
+
+### Q3.3 — Real EBITDA-drag decomposition
+
+`_app_ebitda_drag._decompose_drag()` returns 5 uniform 20% placeholders when a packet has `ebitda_bridge` set. Phase 3 maps the `DealAnalysisPacket.ebitda_bridge` shape to the 5 spec components (Denial workflow gap / Coding-CDI miss / A/R aging / Self-pay leakage / Other) with real per-component dollar impacts. Recovery quarters table + recovery sparkline are Phase 3 too.
+
+### Q3.4 — Cross-portfolio playbook signals on /app
+
+`_app_initiative_tracker` Phase 2 stub: when no deal is focused, shows empty-state copy. Phase 3 implements cross-portfolio aggregation (top variances across all held deals). Spec §6.9 mentions "playbook gap — not a deal-specific issue" — that's the aggregation Phase 3 wires up.
+
+### Q3.5 — Live `exports/` folder for deliverables (DO FIRST)
+
+`_app_deliverables` Phase 2 ships HTML-only from `analysis_runs`. Phase 3 reads the `exports/` filesystem folder for CSV / JSON / XLS artifacts (with sizes from `os.stat()`).
+
+**Embedded product decision:** where on the VM does the export pipeline write to? Currently variable per caller — multiple callsites write to different paths. Until that's standardized, every Phase 3 wiring task that touches deliverables has to either pick a path (creating a fourth variant) or special-case the existing variants (carrying tech debt forward). One meeting establishes the canonical path; subsequent Phase 3 tasks write against the standard.
+
+### Q3.6 — Scroll-aid affordance (only if needed)
+
+Phase 2 ships /app as single-flat-scroll matching the reference HTML (per W4 push-back). `app_page.py` carries a `# TODO(phase 3): consider scroll-aid affordance (sticky TOC? scroll-spy?) IF post-launch usage shows partners getting lost` comment. This is conditional — only acts on real usage signal, not pre-emptive. Run last.
 
 ---
 

@@ -85,6 +85,7 @@ Every destination listed below has been verified as having a wired server-side r
 
 | Topnav label | Canonical route | Notes |
 |---|---|---|
+| Command center | `/app` | **NEW (Phase 2):** editorial dashboard. Editorial-only — legacy `?ui=v2` users 303 to `/dashboard`. Placed above `/dashboard` to signal intended canonical (Phase 4 will resolve which alias path 302s to which) |
 | Dashboard (current `/`) | `/dashboard` | Phase 4 will resolve `/` vs `/dashboard` vs `/home` — see Open Question #12 |
 | Home | `/home` | Phase 4 cutover decision pending |
 | Engagements | `/engagements` | Pending investigation — see Open Question #15 |
@@ -154,6 +155,12 @@ Four items surfaced during the IA pass that are real product decisions, not IA d
 The legacy codebase has all three. Spec §2 reroutes `/` → marketing landing in v3. **Risk:** rerouting `/` is a behavior change visible to every user. Bookmarks break. External monitors that hit `/` for an auth challenge see HTML instead. Partner muscle memory (years of typing the bare domain to get the dashboard) breaks.
 
 **Resolution:** Phase 4's first open question. Cannot be deferred further. Required: explicit decision + a contract test (`test_authenticated_user_lands_on_dashboard_at_root`) before merge to `main`. See `UI_REWORK_PLAN.md` Phase 4 section.
+
+**Update from Phase 2 (2026-04-26):** the editorial dashboard now lives at `/app` (Phase 2 keystone, commit `a3ad808`). Legacy `/dashboard` survives unchanged. Q4.1 is now specifically:
+
+- Does `/` redirect to `/app` for authenticated v3 users?
+- Does `/dashboard` 302 → `/app` for editorial requests, or stay as the legacy alias indefinitely?
+- Editorial requests to `/app` already work (verified by `test_v3_app_route_renders_for_authenticated_user`); legacy requests to `/app` 303 to `/dashboard` (verified by `test_v3_app_legacy_request_redirects_to_dashboard`). The redirect is logged via `logger.info("redirect path=/app ui_choice=...")` so volume becomes a measurable Phase 4 input.
 
 ### #13 — `/diligence/deal` slug-input form (Phase 2 decision)
 

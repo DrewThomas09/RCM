@@ -426,10 +426,15 @@ class TestUIReworkContract(unittest.TestCase):
             urllib.request.HTTPCookieProcessor(cj),
             _NoRedirectHandler(),
         )
-        # Default ui_choice = legacy, no ?ui=v3 query.
+        # Force ui=v2 explicitly so the test asserts "legacy users
+        # redirect" rather than relying on env-default behavior. When
+        # the env has CHARTIS_UI_V2=1 set globally (e.g. running this
+        # suite in editorial mode for cross-mode verification), the
+        # request-default would otherwise be editorial, not legacy,
+        # and the redirect wouldn't fire.
         try:
             resp = nofollow_opener.open(
-                f"http://127.0.0.1:{self.port}/app", timeout=10
+                f"http://127.0.0.1:{self.port}/app?ui=v2", timeout=10
             )
             code = resp.status
             location = resp.headers.get("Location", "")
