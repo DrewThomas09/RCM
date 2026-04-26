@@ -720,4 +720,7 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         title="Home",
         active_nav="/home",
         subtitle=subtitle,
+        breadcrumbs=[
+            ("Home", None),
+        ],
     )

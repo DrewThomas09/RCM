@@ -596,6 +596,11 @@ def render_partner_review(
             body,
             title=f"Partner Review · {deal_label}",
             active_nav="/pe-intelligence",
+            breadcrumbs=[
+                ("Home", "/app"),
+                ("Analysis", "/analysis"),
+                ("Partner Review", None),
+            ],
             subtitle=f"Partner review unavailable for {deal_label}",
         )
 
@@ -706,4 +711,9 @@ def render_partner_review(
         title=f"Partner Review · {deal_label}",
         active_nav="/pe-intelligence",
         subtitle=subtitle,
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Analysis", "/analysis"),
+            ("Partner Review", None),
+        ],
     )
