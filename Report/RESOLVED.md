@@ -14,3 +14,4 @@ e624c0c | 2026-04-26 | HIGH     | Report-0249 | get_member_role public-by-use, p
 127a9f9 | 2026-04-26 | HIGH     | Report-0250 | vendor/ChartisDrewIntel/ inspected — Tuva Project (Apache 2.0 dbt), closed in Report-0255
 2fc6715 | 2026-04-26 | HIGH     | Report-0162 | hash_inputs missing actual.yaml/benchmark.yaml content fingerprints — added optional kwargs + analysis_store wires through deal_sim_inputs paths
 8d355d2 | 2026-04-26 | MEDIUM   | Report-0253 | 6 untested public helpers in infra/config.py — added 17 focused tests (is_multi_site, expand_multi_site, canonical_payer_name, export/import_config_json, flatten_config); also pins MR1049 alias contract
+110f2cf | 2026-04-26 | HIGH×2   | Report-0001 | extras graph fixes — added [stats] for scipy (MR17) + folded [diligence] into [all] so `pip install ".[all]"` is genuinely complete (MR18)
