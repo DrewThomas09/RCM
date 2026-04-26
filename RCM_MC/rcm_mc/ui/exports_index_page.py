@@ -60,7 +60,7 @@ def _export_rows(rows: List[Tuple[str, str, str]]) -> List[List[str]]:
     out: List[List[str]] = []
     for label, href, desc in rows:
         link = (f'<a href="{_html.escape(href)}" '
-                f'style="color:#1F4E78;font-weight:500;">'
+                f'style="color:#155752;font-weight:500;">'
                 f'{_html.escape(label)}</a>')
         out.append([link, _html.escape(desc)])
     return out
@@ -95,7 +95,7 @@ def _deal_format_guide() -> str:
         rows.append([
             (f'<code>?format={_html.escape(name)}</code>'),
             _html.escape(desc),
-            f'<span style="color:#6b7280;font-family:monospace;'
+            f'<span style="color:#5C6878;font-family:monospace;'
             f'font-size:11px;">{_html.escape(size)}</span>',
         ])
     intro = (
