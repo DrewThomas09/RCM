@@ -193,6 +193,12 @@ def render_app_page(
         show_chrome=True,
         show_phi_banner=True,
         phi_mode=phi_mode,
+        # Spec §7.4 — left-rail sidebar with the 28 module list.
+        # active_path="" means no module is highlighted (we're on
+        # the dashboard root); per-module pages would pass their own
+        # canonical path.
+        show_sidebar=True,
+        sidebar_active_path="",
     )
 
 

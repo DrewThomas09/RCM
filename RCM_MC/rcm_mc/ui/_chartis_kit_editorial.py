@@ -651,6 +651,101 @@ def sparkline_svg(
     )
 
 
+# ── Sidebar (editorial spec §7.4) ──────────────────────────────────
+
+# 28 modules per spec §7.4, with their canonical destinations from
+# IA_MAP.md / the route audit. Tuple shape: (label, href, group).
+# Groups separate the rail visually:
+#   diligence   — per-deal analytical modules (most of the list)
+#   market      — cross-portfolio market intel
+#   screening   — pre-deal scans
+#   ops         — engagements + workflow
+#
+# Active state: callers pass active_path as the current route; the
+# helper highlights any module whose href matches as a prefix.
+_SIDEBAR_MODULES: List[Tuple[str, str, str]] = [
+    # Diligence — per-deal analytical surfaces
+    ("Deal Profile",      "/diligence/deal",                "diligence"),
+    ("Thesis Pipeline",   "/diligence/thesis-pipeline",     "diligence"),
+    ("Checklist",         "/diligence/diligence-checklist", "diligence"),
+    ("Ingestion",         "/import",                        "diligence"),
+    ("Benchmarks",        "/diligence/benchmarks",          "diligence"),
+    ("HCRIS X-Ray",       "/diligence/hcris-xray",          "diligence"),
+    ("Root Cause",        "/diligence/root-cause",          "diligence"),
+    ("Value Creation",    "/diligence/value",               "diligence"),
+    ("Risk Workbench",    "/diligence/risk-workbench",      "diligence"),
+    ("Counterfactual",    "/diligence/counterfactual",      "diligence"),
+    ("Compare",           "/diligence/compare",             "diligence"),
+    ("QoE Memo",          "/diligence/qoe-memo",            "diligence"),
+    ("Denial Predict",    "/diligence/denial-prediction",   "diligence"),
+    ("Deal Autopsy",      "/diligence/deal-autopsy",        "diligence"),
+    ("Physician Attrition", "/diligence/physician-attrition", "diligence"),
+    ("Provider Economics", "/diligence/physician-eu",       "diligence"),
+    ("Management",        "/diligence/management",          "diligence"),
+    ("Deal MC",           "/diligence/deal-mc",             "diligence"),
+    ("Exit Timing",       "/diligence/exit-timing",         "diligence"),
+    ("Reg Calendar",      "/diligence/regulatory-calendar", "diligence"),
+    ("Covenant Stress",   "/diligence/covenant-stress",     "diligence"),
+    ("Bridge Audit",      "/diligence/bridge-audit",        "diligence"),
+    ("Bear Case",         "/diligence/bear-case",           "diligence"),
+    ("Payer Stress",      "/diligence/payer-stress",        "diligence"),
+    ("IC Packet",         "/diligence/ic-packet",           "diligence"),
+    # Market intel
+    ("Market Intel",      "/market-intel",                  "market"),
+    ("Seeking Alpha",     "/market-intel/seeking-alpha",    "market"),
+    # Screening
+    ("Bankruptcy Scan",   "/screening/bankruptcy-survivor", "screening"),
+    # Operations
+    ("Engagements",       "/engagements",                   "ops"),
+]
+
+_SIDEBAR_GROUP_LABELS: Mapping[str, str] = {
+    "diligence": "RCM DILIGENCE",
+    "market":    "MARKET INTEL",
+    "screening": "PRE-SCREENING",
+    "ops":       "OPERATIONS",
+}
+
+
+def editorial_sidebar(active_path: Optional[str] = None) -> str:
+    """Render the editorial left-rail sidebar per spec §7.4.
+
+    28 modules grouped by category (diligence / market / screening /
+    ops). Active link is highlighted by prefix-match against
+    ``active_path`` — if the current route starts with a module's
+    href, that module gets the .active class (teal left border + bold
+    label).
+
+    All hrefs route through ``editorial_link()`` so the ``?ui=v3``
+    flag stays sticky as the user navigates between modules.
+
+    Sidebar opt-in via ``chartis_shell(show_sidebar=True)`` — defaults
+    to off so existing callers don't get an unexpected layout shift.
+    """
+    active_lower = (active_path or "").lower()
+
+    sections: List[str] = []
+    last_group: Optional[str] = None
+    for label, href, group in _SIDEBAR_MODULES:
+        if group != last_group:
+            heading = _SIDEBAR_GROUP_LABELS.get(group, group.upper())
+            sections.append(f'<div class="rail-h">{_html.escape(heading)}</div>')
+            last_group = group
+
+        is_active = (
+            active_lower.startswith(href.lower()) and len(href) > 1
+        )
+        cls = "active" if is_active else ""
+        v3_href = editorial_link(href)
+        sections.append(
+            f'<a href="{_html.escape(v3_href)}" class="{cls}">'
+            f'<span class="rail-label">{_html.escape(label)}</span>'
+            f'</a>'
+        )
+
+    return f'<aside class="rail">{"".join(sections)}</aside>'
+
+
 # ── The shell ──────────────────────────────────────────────────────
 
 def chartis_shell(
@@ -666,6 +761,8 @@ def chartis_shell(
     show_chrome: bool = True,
     show_phi_banner: bool = True,
     phi_mode: Optional[str] = None,
+    show_sidebar: bool = False,
+    sidebar_active_path: Optional[str] = None,
 ) -> str:
     """Editorial page shell.
 
@@ -721,6 +818,31 @@ def chartis_shell(
     banner_html = phi_banner(phi_mode) if show_phi_banner else ""
     extra_css_block = f"<style>{extra_css}</style>" if extra_css else ""
     extra_js_block = f"<script>{extra_js}</script>" if extra_js else ""
+
+    # Sidebar opt-in — when show_sidebar=True, wrap (crumbs + banner +
+    # main) in a 2-column flex layout with the editorial rail on the
+    # left. Sidebar lives BELOW the topbar and SPANS only the main
+    # content area below it. Default off; existing callers see no
+    # layout change.
+    if show_sidebar:
+        sidebar_html = editorial_sidebar(sidebar_active_path)
+        layout_html = (
+            f'<div class="layout-with-rail">'
+            f'{sidebar_html}'
+            f'<div class="layout-main">'
+            f'{crumbs_html}'
+            f'{banner_html}'
+            f'<main>{body}</main>'
+            f'</div>'
+            f'</div>'
+        )
+    else:
+        layout_html = (
+            f'{crumbs_html}'
+            f'{banner_html}'
+            f'<main>{body}</main>'
+        )
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -734,11 +856,7 @@ def chartis_shell(
 </head>
 <body>
 {chrome}
-{crumbs_html}
-{banner_html}
-<main>
-{body}
-</main>
+{layout_html}
 {extra_js_block}
 </body>
 </html>"""
@@ -749,8 +867,8 @@ __all__ = [
     "P", "_CORPUS_NAV", "_LEGACY_NAV", "_MONO", "_SANS",
     # Shell
     "chartis_shell", "editorial_topbar", "editorial_crumbs",
-    "editorial_page_head", "editorial_link", "phi_banner",
-    "_resolve_active_section",
+    "editorial_page_head", "editorial_link", "editorial_sidebar",
+    "phi_banner", "_resolve_active_section",
     # Pair pattern
     "pair_block",
     # Atoms

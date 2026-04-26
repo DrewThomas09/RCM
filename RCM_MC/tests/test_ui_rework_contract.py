@@ -822,6 +822,55 @@ class TestUIReworkContract(unittest.TestCase):
             "no-match state missing for unknown query",
         )
 
+    def test_v3_app_renders_editorial_sidebar(self) -> None:
+        """Per spec §7.4: ``/app`` ships with a left-rail sidebar
+        listing the 28 module destinations. Sidebar is opt-in via
+        ``chartis_shell(show_sidebar=True)``; this test asserts the
+        opt-in is wired on the dashboard route.
+        """
+        body = self._fetch_body("/app?ui=v3")
+        # The sidebar wrapper element + at least a few module labels
+        self.assertIn(
+            'class="layout-with-rail"', body,
+            "sidebar layout wrapper missing — show_sidebar opt-in "
+            "not applied to /app",
+        )
+        self.assertIn(
+            'class="rail"', body,
+            "sidebar element missing — editorial_sidebar() not called",
+        )
+        # Spot-check a handful of spec §7.4 modules
+        for module in ("Deal Profile", "Bridge Audit", "IC Packet",
+                       "Market Intel", "Bankruptcy Scan"):
+            self.assertIn(
+                f">{module}</span>", body,
+                f"sidebar missing module: {module}",
+            )
+        # Group headings render
+        for group in ("RCM DILIGENCE", "MARKET INTEL"):
+            self.assertIn(
+                group, body,
+                f"sidebar missing group heading: {group}",
+            )
+
+    def test_editorial_sidebar_helper_classifies_active_module(self) -> None:
+        """``editorial_sidebar()`` should highlight the module whose
+        href is a prefix-match of ``active_path``."""
+        from rcm_mc.ui._chartis_kit_editorial import editorial_sidebar
+        # Active highlighting on a deep path
+        html = editorial_sidebar("/diligence/bridge-audit")
+        # Bridge Audit module should be active; others should not
+        self.assertIn(
+            'class="active"', html,
+            "active class missing when path matches a module",
+        )
+        # Empty/None active_path → no active class
+        html_empty = editorial_sidebar("")
+        self.assertNotIn(
+            'class="active"', html_empty,
+            "empty active_path should not highlight any module",
+        )
+
     def test_v3_app_canonical_export_path_helpers_exist(self) -> None:
         """Per Phase 3 commit 1 (Q3.5 + Q2 push-back):
         canonical_deal_export_path + canonical_portfolio_export_path

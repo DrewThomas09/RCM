@@ -1052,3 +1052,68 @@ footer.editorial em { color: var(--ink); font-style: italic; }
   .app-kpi-strip { grid-template-columns: repeat(4, 1fr); }
   .app-kpi-strip .kpi-cell:nth-child(4n) { border-right: none; }
 }
+
+/* ── Sidebar (editorial spec §7.4) ──────────────────────────────────
+   Opt-in via chartis_shell(show_sidebar=True). Renders a 240px-wide
+   left rail of editorial-styled module links inside chrome'd pages.
+   Used by /app dashboard; other partner-visible pages can opt in. */
+
+.layout-with-rail {
+  display: flex;
+  align-items: stretch;
+  min-height: calc(100vh - 72px);  /* viewport minus topbar */
+}
+
+.layout-with-rail .rail {
+  flex: 0 0 240px;
+  background: var(--paper-pure);
+  border-right: 1px solid var(--rule);
+  padding: 1.5rem 0;
+  overflow-y: auto;
+}
+
+.layout-with-rail .layout-main {
+  flex: 1 1 auto;
+  min-width: 0;  /* critical for grids inside main not to overflow */
+}
+
+.rail-h {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 1.5rem;
+  margin: 1.25rem 0 .75rem 0;
+}
+.rail-h:first-child { margin-top: 0; }
+
+.rail a {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .55rem 1.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: .85rem;
+  color: var(--ink);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.rail a:hover {
+  background: var(--bg-tint);
+  text-decoration: none;
+}
+.rail a.active {
+  border-left-color: var(--teal);
+  background: var(--bg-tint);
+  font-weight: 600;
+  color: var(--teal-deep);
+}
+
+@media (max-width: 1100px) {
+  /* On narrow viewports, collapse the sidebar — Phase 4 polish can
+     replace with a hamburger toggle. For now, hide it so the main
+     content gets full width. */
+  .layout-with-rail .rail { display: none; }
+}

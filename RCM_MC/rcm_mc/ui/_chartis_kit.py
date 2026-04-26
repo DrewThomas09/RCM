@@ -183,6 +183,7 @@ else:
     _EDITORIAL_ONLY_KWARGS = (
         "breadcrumbs", "active_nav", "code",
         "show_chrome", "show_phi_banner", "phi_mode",
+        "show_sidebar", "sidebar_active_path",
     )
 
     def chartis_shell(body: str, title: str, **kwargs) -> str:  # type: ignore[misc]
