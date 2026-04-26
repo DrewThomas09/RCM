@@ -4493,6 +4493,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_login_page()
         if path == "/forgot":
             return self._route_forgot_page()
+        if path == "/app":
+            return self._route_app_page()
         if path == "/audit":
             return self._route_audit()
         if path == "/users":
@@ -14437,6 +14439,50 @@ class RCMHandler(BaseHTTPRequestHandler):
         return self._send_html(render_forgot_page(
             success=True,
             submitted_email=email,
+        ))
+
+    def _route_app_page(self) -> None:
+        """Editorial dashboard at /app.
+
+        Editorial-only — /app didn't exist pre-Phase-2, so legacy
+        users (?ui=v2 or default) get a 303 to /dashboard. The
+        redirect is logged so we can measure how many legacy users
+        try /app — that signal informs the Phase 4 cutover decision
+        (Q4.1 — does / redirect to /app for authenticated users?).
+        """
+        if getattr(self, "_ui_choice", "legacy") != "editorial":
+            # Single log line per redirect — match the existing
+            # logger pattern from do_GET / do_POST error handlers.
+            logger.info(
+                "redirect path=/app ui_choice=%s redirected_to=/dashboard",
+                getattr(self, "_ui_choice", "legacy"),
+            )
+            self.send_response(HTTPStatus.SEE_OTHER)
+            self.send_header("Location", "/dashboard")
+            self.end_headers()
+            return
+
+        from .ui.chartis.app_page import render_app_page, validate_stage
+
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        focused_deal_id = (qs.get("deal") or [None])[0]
+        selected_stage = validate_stage((qs.get("stage") or [None])[0])
+
+        # PHI mode read here, in the handler — passed down as kwarg.
+        # (Per Phase 1 correction: helpers don't read globals.)
+        phi_mode = (
+            os.environ.get("RCM_MC_PHI_MODE") or ""
+        ).strip().lower() or None
+
+        store = PortfolioStore(self.config.db_path)
+        user = self._current_user()
+
+        self._send_html(render_app_page(
+            store=store,
+            focused_deal_id=focused_deal_id,
+            selected_stage=selected_stage,
+            phi_mode=phi_mode,
+            user=user,
         ))
 
     def _route_upload_page(self) -> None:
