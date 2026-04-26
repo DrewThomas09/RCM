@@ -213,6 +213,59 @@ def _render_signal_counts_table(rows: List[Dict[str, Any]]) -> str:
     )
 
 
+def _render_cross_portfolio_rows(df: pd.DataFrame) -> str:
+    """Render the cross-portfolio playbook-signals view.
+
+    Per Phase 3 commit 8: when no deal is focused, the initiative
+    tracker pivots to "top variances across the portfolio" — one
+    row per initiative (NOT per deal-initiative pair), tagged as
+    a "playbook gap" when mean variance ≤ -10% across ≥ 2 deals.
+    """
+    head = (
+        '<div class="app-init-row head">'
+        '<div></div>'
+        '<div>Initiative</div>'
+        '<div>Deals</div>'
+        '<div>Total $</div>'
+        '<div>Mean variance</div>'
+        '<div>Signal</div>'
+        '</div>'
+    )
+    if df.empty:
+        return head + (
+            '<div class="app-init-empty">'
+            'No initiative actuals recorded in the trailing 4 quarters. '
+            '<a href="/diligence/thesis-pipeline" '
+            'style="color:var(--teal-deep);text-decoration:underline">'
+            'Run the analysis pipeline</a> to populate.'
+            '</div>'
+        )
+    body_rows: List[str] = []
+    for _, r in df.iterrows():
+        var = float(r["mean_variance_pct"]) * 100
+        icon, icon_cls = _status_icon(var)
+        var_color = _variance_color(var)
+        sign = "+" if var >= 0 else ""
+        actual_html = number_maybe(float(r["total_actual_M"]), format="ev")
+        gap_marker = (
+            '<span class="pill amber">PLAYBOOK GAP</span>'
+            if bool(r.get("is_playbook_gap")) else ""
+        )
+        body_rows.append(
+            '<div class="app-init-row">'
+            f'<div class="ico {icon_cls}">{icon}</div>'
+            f'<div class="name">{_html.escape(str(r["initiative_name"]))}</div>'
+            f'<div class="deal">{int(r["n_deals"])} deal'
+            f'{"s" if int(r["n_deals"]) != 1 else ""}</div>'
+            f'<div class="actual">{actual_html}</div>'
+            f'<div class="variance" style="color:{var_color}">'
+            f'{sign}{var:.1f}%</div>'
+            f'<div>{gap_marker}</div>'
+            '</div>'
+        )
+    return head + "".join(body_rows)
+
+
 def render_initiative_tracker(
     store: PortfolioStore,
     deal_id: Optional[str],
@@ -223,36 +276,85 @@ def render_initiative_tracker(
         store: PortfolioStore handle. (Per Convention #1: justified
             because initiative variance computation needs per-deal
             actuals + plan derivation, narrow query that doesn't batch.)
-        deal_id: Focused-deal id from ``?deal=<id>``. None → empty state.
+        deal_id: Focused-deal id from ``?deal=<id>``. None → cross-
+            portfolio playbook-signals view (Phase 3 commit 8).
     """
     if not deal_id:
+        # Cross-portfolio mode (Phase 3 wired). Default trailing 4Q
+        # window per C3 push-back — no-window default surfaces stale
+        # signals as current playbook gaps.
+        try:
+            from rcm_mc.rcm.initiative_tracking import (
+                cross_portfolio_initiative_variance,
+            )
+            xp_df = cross_portfolio_initiative_variance(store)
+        except Exception:  # noqa: BLE001 — block must not break the page
+            xp_df = pd.DataFrame()
+
+        # Build dot-plot data from the cross-portfolio rows
+        if not xp_df.empty:
+            dot_rows = [
+                {"variance": float(r["mean_variance_pct"]) * 100,
+                 "name": str(r["initiative_name"])}
+                for _, r in xp_df.iterrows()
+            ]
+        else:
+            dot_rows = []
+
         viz_html = (
             '<div class="app-init">'
-            '<div class="app-init-empty">'
-            'Select a deal above to see initiative variance. '
-            '<span style="color:var(--faint);font-style:normal">'
-            '(Cross-portfolio playbook signals — Phase 3.)</span>'
-            '</div>'
+            f'{_render_cross_portfolio_rows(xp_df)}'
             '</div>'
         )
-        empty_table = (
-            '<table>'
-            '<thead><tr><th>Signal</th><th class="r">Count</th></tr></thead>'
-            '<tbody>'
-            '<tr><td class="lbl">Behind plan (≤ −10%)</td>'
-            '<td class="r">—</td></tr>'
-            '<tr><td class="lbl">Watch (−10% to +5%)</td>'
-            '<td class="r">—</td></tr>'
-            '<tr><td class="lbl">Ahead (≥ +5%)</td>'
-            '<td class="r">—</td></tr>'
-            '</tbody>'
-            '</table>'
-        )
+
+        # Right-side paired counts: signal classification of the
+        # cross-portfolio rows
+        if xp_df.empty:
+            counts_table = (
+                '<table>'
+                '<thead><tr><th>Signal</th><th class="r">Count</th></tr></thead>'
+                '<tbody>'
+                '<tr><td class="lbl">Playbook gap (≤ −10%, ≥2 deals)</td>'
+                '<td class="r">—</td></tr>'
+                '<tr><td class="lbl">Behind plan (single deal)</td>'
+                '<td class="r">—</td></tr>'
+                '<tr><td class="lbl">Ahead (≥ +5%)</td>'
+                '<td class="r">—</td></tr>'
+                '</tbody>'
+                '</table>'
+            )
+        else:
+            playbook = int(xp_df["is_playbook_gap"].sum())
+            behind_single = int(
+                ((xp_df["mean_variance_pct"] <= -0.10) &
+                 (xp_df["n_deals"] == 1)).sum()
+            )
+            ahead = int((xp_df["mean_variance_pct"] >= 0.05).sum())
+            plot = _render_variance_dot_plot(dot_rows) if dot_rows else ""
+            plot_block = (
+                f'<div style="padding:1rem 0 .5rem">{plot}</div>'
+                if plot else ""
+            )
+            counts_table = (
+                f'{plot_block}'
+                '<table>'
+                '<thead><tr><th>Signal</th><th class="r">Count</th></tr></thead>'
+                '<tbody>'
+                '<tr><td class="lbl">Playbook gap (≤ −10%, ≥2 deals)</td>'
+                f'<td class="r">{playbook}</td></tr>'
+                '<tr><td class="lbl">Behind plan (single deal)</td>'
+                f'<td class="r">{behind_single}</td></tr>'
+                '<tr><td class="lbl">Ahead (≥ +5%)</td>'
+                f'<td class="r">{ahead}</td></tr>'
+                '</tbody>'
+                '</table>'
+            )
+
         return pair_block(
             viz_html,
-            label="INITIATIVE VARIANCE · SORTED ABS",
+            label="CROSS-PORTFOLIO INITIATIVE VARIANCE · 4Q TRAIL",
             source="initiative_actuals",
-            data_table=empty_table,
+            data_table=counts_table,
         )
 
     rows = _fetch_initiative_rows(store, deal_id)
