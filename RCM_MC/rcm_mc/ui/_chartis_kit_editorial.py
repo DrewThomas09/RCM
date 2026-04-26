@@ -299,19 +299,41 @@ def editorial_link(path: str) -> str:
 def editorial_topbar(active_nav: Optional[str] = None) -> str:
     """Render the editorial topbar per spec §6.1.
 
-    5-button topnav (DEALS / ANALYSIS / PORTFOLIO / MARKET / TOOLS)
+    5-section topnav (DEALS / ANALYSIS / PORTFOLIO / MARKET / TOOLS)
     with teal underline on the active item, ⌘K search, SIGN OUT.
 
     Brand link points at ``/app?ui=v3`` so clicking the logo from any
     chrome'd v3 page lands the authenticated user on the canonical
     home, not legacy ``/``. Per the 2026-04-25 local-test §1 finding.
+
+    Topnav items are anchors (Phase 3 nav-polish, 2026-04-26). Each
+    section maps to its primary destination — confirmed 200 OK in the
+    route audit. Caret removed because the spec'd dropdown UI isn't
+    wired; showing a caret on an anchor that doesn't open a menu is a
+    false affordance. Phase 4 wires real dropdowns when destinations
+    are fully ported.
+
+    Destination map (defaults from existing IA_MAP; revise as Phase 2b
+    completes per-section):
+        DEALS     → /deals          (deals list)
+        ANALYSIS  → /analysis       (analysis landing)
+        PORTFOLIO → /app?ui=v3      (Tier-0 editorial dashboard)
+        MARKET    → /market-intel   (market intelligence hub)
+        TOOLS     → /methodology    (methodology + reference catalogue)
     """
-    nav_items = ("DEALS", "ANALYSIS", "PORTFOLIO", "MARKET", "TOOLS")
+    nav_items = (
+        ("DEALS",     "/deals"),
+        ("ANALYSIS",  "/analysis"),
+        ("PORTFOLIO", "/app"),
+        ("MARKET",    "/market-intel"),
+        ("TOOLS",     "/methodology"),
+    )
     active_upper = (active_nav or "").upper()
     nav_html = "".join(
-        f'<button class="{"active" if item == active_upper else ""}">'
-        f'{item} <span class="caret">▾</span></button>'
-        for item in nav_items
+        f'<a href="{_html.escape(editorial_link(href))}" '
+        f'class="{"active" if label == active_upper else ""}">'
+        f'{label}</a>'
+        for label, href in nav_items
     )
     return (
         '<header class="topbar">'

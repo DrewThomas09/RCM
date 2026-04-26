@@ -590,6 +590,49 @@ class TestUIReworkContract(unittest.TestCase):
             f"Add them as aliases in _chartis_kit_editorial.py P dict.",
         )
 
+    def test_v3_topnav_sections_are_navigable_anchors(self) -> None:
+        """Editorial topnav sections must be navigable anchors, not
+        decorative buttons.
+
+        Phase 3 nav-polish (2026-04-26): converted the 5 topnav
+        sections (DEALS / ANALYSIS / PORTFOLIO / MARKET / TOOLS) from
+        ``<button>`` placeholders to ``<a>`` anchors targeting the
+        primary destination per section. Locks in the contract so a
+        future refactor can't silently revert to non-functional
+        buttons.
+
+        Per-section destination map (assertions match the helper's
+        nav_items table; update both together):
+            DEALS     → /deals?ui=v3
+            ANALYSIS  → /analysis?ui=v3
+            PORTFOLIO → /app?ui=v3
+            MARKET    → /market-intel?ui=v3
+            TOOLS     → /methodology?ui=v3
+        """
+        body = self._fetch_body("/app?ui=v3")
+        # Each section is a real anchor, not a button
+        for label, href in (
+            ("DEALS",     "/deals?ui=v3"),
+            ("ANALYSIS",  "/analysis?ui=v3"),
+            ("PORTFOLIO", "/app?ui=v3"),
+            ("MARKET",    "/market-intel?ui=v3"),
+            ("TOOLS",     "/methodology?ui=v3"),
+        ):
+            self.assertIn(
+                f'href="{href}"', body,
+                f"topnav {label} link missing or wrong destination",
+            )
+            self.assertIn(
+                f">{label}</a>", body,
+                f"topnav {label} should be an anchor, not a button",
+            )
+        # No pretend-dropdown carets — Phase 3 nav-polish dropped them
+        # because anchors don't open menus.
+        self.assertNotIn(
+            'class="caret"', body,
+            "topnav still rendering caret affordance for non-existent dropdowns",
+        )
+
     def test_v3_brand_link_preserves_editorial_flag(self) -> None:
         """The SeekingChartis logo on any v3 page must NOT drop the user
         back into the legacy shell when clicked.
