@@ -69,7 +69,10 @@ from ._app_ebitda_drag import render_ebitda_drag
 from ._app_focused_deal_bar import render_focused_deal_bar
 from ._app_initiative_tracker import render_initiative_tracker
 from ._app_kpi_strip import render_kpi_strip
+from ._app_metric_catalog import render_metric_catalog
 from ._app_pipeline_funnel import render_pipeline_funnel
+from ._app_what_block import render_what_block
+
 
 
 def render_app_page(
@@ -147,12 +150,38 @@ def render_app_page(
         ],
     )
 
-    # Single flat scroll — 9 blocks in spec §6 order.
-    # No section headers (per W4 push-back).
+    # Single flat scroll — page-head, what-block, KPI, catalog, then
+    # the 9 marquee blocks in spec §6 order.
     body_parts = [
         page_head_html,
+        # Per cc-app.jsx PageHead → WhatBlock → KPIStrip → MetricCatalog
+        # ordering. WhatBlock orients the reader; MetricCatalog is the
+        # cross-reference table that gives every number on the page a home.
+        render_what_block(
+            summary=(
+                "Weighted MOIC & IRR · pipeline funnel · covenant "
+                "heatmap · EBITDA drag decomposition · initiative "
+                "variance · cross-deal playbook signals. The complete "
+                "hold-period view in one place."
+            ),
+            sources=[
+                "portfolio.db",
+                "deal_snapshots",
+                "covenant_metrics",
+                "initiative_actuals",
+                "analysis_runs",
+                "generated_exports",
+            ],
+        ),
         # Top: portfolio rollup
         render_kpi_strip(rollup, deals_df=deals_df),
+        # Cross-reference catalog — every number on this page, with its
+        # source level (FUND / DEAL).
+        render_metric_catalog(
+            rollup=rollup,
+            focused_packet=focused_packet,
+        ),
+
         render_pipeline_funnel(
             rollup,
             selected_stage=selected_stage,
@@ -198,6 +227,7 @@ def render_app_page(
         # the dashboard root); per-module pages would pass their own
         # canonical path.
         show_sidebar=True,
+
         sidebar_active_path="",
     )
 

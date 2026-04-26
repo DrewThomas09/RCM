@@ -370,30 +370,30 @@ _TT_CSS = """
 .metric-tt{position:relative;display:inline-flex;
   align-items:center;gap:6px;}
 .metric-tt-icon{display:inline-block;width:14px;height:14px;
-  border-radius:50%;background:#374151;color:#9ca3af;
+  border-radius:50%;background:var(--border);color:var(--faint);
   font-size:10px;font-weight:600;line-height:14px;
   text-align:center;cursor:help;font-family:system-ui;
   user-select:none;}
-.metric-tt:hover .metric-tt-icon{background:#1e3a8a;
-  color:#bfdbfe;}
+.metric-tt:hover .metric-tt-icon{background:var(--blue);
+  color:var(--blue-soft);}
 .metric-tt-card{position:absolute;display:none;left:0;
-  top:calc(100% + 6px);background:#0f172a;
-  border:1px solid #374151;border-radius:6px;padding:12px 14px;
+  top:calc(100% + 6px);background:var(--bg);
+  border:1px solid var(--border);border-radius:6px;padding:12px 14px;
   width:280px;font-size:12px;line-height:1.5;
   box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:1000;
-  color:#f3f4f6;font-weight:normal;}
+  color:var(--ink);font-weight:normal;}
 .metric-tt:hover .metric-tt-card{display:block;}
 .metric-tt-card h4{margin:0 0 6px 0;font-size:12px;
-  color:#bfdbfe;text-transform:uppercase;
+  color:var(--blue-soft);text-transform:uppercase;
   letter-spacing:0.06em;font-weight:600;}
-.metric-tt-card p{margin:0 0 8px 0;color:#d1d5db;}
+.metric-tt-card p{margin:0 0 8px 0;color:var(--border);}
 .metric-tt-card .tt-section{margin-top:8px;}
 .metric-tt-card .tt-section-label{font-size:10px;
   text-transform:uppercase;letter-spacing:0.06em;
-  color:#60a5fa;font-weight:600;margin-bottom:2px;}
+  color:var(--teal);font-weight:600;margin-bottom:2px;}
 .metric-tt-card .tt-range{display:block;margin-top:6px;
-  padding-top:6px;border-top:1px solid #374151;
-  color:#9ca3af;font-size:11px;}
+  padding-top:6px;border-top:1px solid var(--border);
+  color:var(--faint);font-size:11px;}
 </style>"""
 
 

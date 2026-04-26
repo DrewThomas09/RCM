@@ -50,6 +50,15 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
     """Seed 5 deals spanning green / amber / red + all workflow pieces."""
     # Stage PE artifacts for each deal so evaluators have something real
     import json
+    # Friendly display names — the analysis-landing + deals-table show
+    # these instead of the raw 3-letter deal_id slug.
+    deal_names = {
+        "ccf": "Cypress Crossing Health",
+        "mgh": "Magnolia Grove Hospital",
+        "nyp": "Northvale Physician Partners",
+        "buh": "Beacon Urban Health",
+        "sth": "Sterling Heights Medical",
+    }
     for deal_id, headroom, concerning in [
         ("ccf",  -0.5,  0),   # covenant TRIPPED → red alert
         ("mgh",   0.3,  2),   # covenant TIGHT → amber alert
@@ -57,6 +66,7 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
         ("buh",   2.0,  0),   # healthy
         ("sth",   2.0,  1),   # healthy
     ]:
+        store.upsert_deal(deal_id, name=deal_names[deal_id])
         ddir = os.path.join(run_dir, deal_id + "_run")
         os.makedirs(ddir, exist_ok=True)
         with open(os.path.join(ddir, "pe_bridge.json"), "w") as f:

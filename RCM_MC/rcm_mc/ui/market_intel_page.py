@@ -46,17 +46,18 @@ def _target_scatter_chart(
     comps_dicts: List[Dict[str, Any]],
     target_revenue_usd: Optional[float] = None,
     target_ev_usd: Optional[float] = None,
-    width: int = 640, height: int = 240,
+    width: int = 1100, height: int = 420,
 ) -> str:
     """SVG scatter: EV/EBITDA (y) vs Revenue TTM (x) for the peer
     set, with the target highlighted if revenue + EV supplied.
 
     Clean layout — no axes noise, tight tick labels, peer labels
-    only on hover (via <title>).
+    only on hover (via <title>). Default size enlarged 2026-04-26
+    per UX feedback (was 640x240, scatter was unreadably small).
     """
     if not comps_dicts:
         return ""
-    pad_l, pad_r, pad_t, pad_b = 56, 20, 20, 36
+    pad_l, pad_r, pad_t, pad_b = 80, 32, 36, 52
     inner_w = max(1, width - pad_l - pad_r)
     inner_h = max(1, height - pad_t - pad_b)
 

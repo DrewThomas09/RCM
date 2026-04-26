@@ -115,50 +115,61 @@ def render_analysis_landing(
         f'{deal_cards}'
     )
 
-    # Market-level tools (no deal required)
+    # Market-level tools (no deal required) — compact 6-tile grid.
+    # Tightened per UX feedback: the original cards took too much vertical
+    # space and used a saturated turquoise heading color that read as garish
+    # against the parchment background.
+    tools = [
+        ("/market-data/map",       "Market Heatmap", "National hospital data with regression"),
+        ("/portfolio/regression",  "Regression",     "OLS on HCRIS data or portfolio"),
+        ("/screen",                "Screener",       "Filter 6,000+ hospitals by metrics"),
+        ("/source",                "Deal Sourcing",  "Thesis-driven hospital matching"),
+        ("/scenarios",             "Scenarios",      "Preset payer shock scenarios"),
+        ("/news",                  "News",           "Healthcare PE market intelligence"),
+    ]
+    tools_html = "".join(
+        f'<a href="{href}" class="market-tool-card">'
+        f'<div class="mt-title">{html.escape(title)}</div>'
+        f'<div class="mt-desc">{html.escape(desc)}</div>'
+        f'</a>'
+        for href, title, desc in tools
+    )
     market_tools = (
-        f'<div style="margin-top:20px;">'
-        f'<h2 class="cad-h1" style="font-size:16px;margin-bottom:12px;">Market Tools (No Deal Required)</h2>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">'
-
-        f'<a href="/market-data/map" class="cad-card" style="text-decoration:none;color:inherit;">'
-        f'<h3 style="color:{PALETTE["brand_accent"]};">Market Heatmap</h3>'
-        f'<div style="font-size:12px;color:{PALETTE["text_secondary"]};">'
-        f'National hospital data with regression</div></a>'
-
-        f'<a href="/portfolio/regression" class="cad-card" style="text-decoration:none;color:inherit;">'
-        f'<h3 style="color:{PALETTE["brand_accent"]};">Regression</h3>'
-        f'<div style="font-size:12px;color:{PALETTE["text_secondary"]};">'
-        f'OLS on HCRIS data or portfolio</div></a>'
-
-        f'<a href="/screen" class="cad-card" style="text-decoration:none;color:inherit;">'
-        f'<h3 style="color:{PALETTE["brand_accent"]};">Screener</h3>'
-        f'<div style="font-size:12px;color:{PALETTE["text_secondary"]};">'
-        f'Filter 6,000+ hospitals by metrics</div></a>'
-
-        f'<a href="/source" class="cad-card" style="text-decoration:none;color:inherit;">'
-        f'<h3 style="color:{PALETTE["brand_accent"]};">Deal Sourcing</h3>'
-        f'<div style="font-size:12px;color:{PALETTE["text_secondary"]};">'
-        f'Thesis-driven hospital matching</div></a>'
-
-        f'<a href="/scenarios" class="cad-card" style="text-decoration:none;color:inherit;">'
-        f'<h3 style="color:{PALETTE["brand_accent"]};">Scenarios</h3>'
-        f'<div style="font-size:12px;color:{PALETTE["text_secondary"]};">'
-        f'Preset payer shock scenarios</div></a>'
-
-        f'<a href="/news" class="cad-card" style="text-decoration:none;color:inherit;">'
-        f'<h3 style="color:{PALETTE["brand_accent"]};">News</h3>'
-        f'<div style="font-size:12px;color:{PALETTE["text_secondary"]};">'
-        f'Healthcare PE market intelligence</div></a>'
-
-        f'</div></div>'
+        '<div class="sect" style="padding:1.5rem 0 .85rem;">'
+        '<div>'
+        '<div class="micro">MARKET TOOLS</div>'
+        '<h2 style="font-size:1.5rem;">No deal <em>required</em>.</h2>'
+        '</div>'
+        '<p class="desc" style="font-size:.9rem;">'
+        'Cross-portfolio analytics that operate on the public HCRIS / APCD '
+        'corpus — useful for sourcing, sector context, scenarios, and news.'
+        '</p>'
+        '</div>'
+        f'<div class="market-tools-grid">{tools_html}</div>'
     )
 
-    body = f'{deals_section}{market_tools}'
-
     n = len(deals) if not deals.empty else 0
+    deals_label = f"{n} deal" + ("s" if n != 1 else "")
+
+    # Editorial section header — eyebrow + serif h2 + descriptor
+    page_head = (
+        '<div class="sect">'
+        '<div>'
+        '<div class="micro">ANALYSIS HUB</div>'
+        '<h2>Pick a deal,<br/><em>run any model</em>.</h2>'
+        '</div>'
+        '<p class="desc">'
+        f'{deals_label} in the workspace. Click a model badge for a single '
+        'analysis, or <strong>Full Analysis</strong> to open the 7-tab '
+        'workbench. Market tools below run without a selected deal.'
+        '</p>'
+        '</div>'
+    )
+
+    body = f'{page_head}{deals_section}{market_tools}'
+
     return chartis_shell(
         body, "Analysis",
         active_nav="/analysis",
-        subtitle=f"{n} deals — click any model to run it instantly",
+        subtitle=f"{deals_label} — click any model to run it instantly",
     )

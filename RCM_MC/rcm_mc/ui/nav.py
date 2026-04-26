@@ -81,13 +81,13 @@ def breadcrumb(
     css = (
         '<style>'
         '.bc{display:flex;align-items:center;gap:6px;'
-        'flex-wrap:wrap;font-size:12px;color:#9ca3af;'
+        'flex-wrap:wrap;font-size:12px;color:var(--faint);'
         'margin-bottom:18px;}'
-        '.bc a{color:#60a5fa;text-decoration:none;'
+        '.bc a{color:var(--teal);text-decoration:none;'
         'transition:color 0.1s;}'
-        '.bc a:hover{color:#93c5fd;}'
-        '.bc .bc-current{color:#f3f4f6;font-weight:500;}'
-        '.bc .bc-sep{color:#4b5563;font-size:11px;}'
+        '.bc a:hover{color:var(--blue-soft);}'
+        '.bc .bc-current{color:var(--ink);font-weight:500;}'
+        '.bc .bc-sep{color:var(--muted);font-size:11px;}'
         '</style>') if inject_css else ""
 
     parts: List[str] = []
@@ -245,11 +245,11 @@ def keyboard_shortcuts(
 
     rows = "".join([
         f'<tr><td style="padding:6px 14px;">'
-        f'<kbd style="background:#374151;color:#f3f4f6;'
+        f'<kbd style="background:var(--border);color:var(--ink);'
         f'padding:2px 8px;border-radius:4px;font-family:'
-        f'monospace;font-size:11px;border:1px solid #4b5563;">'
+        f'monospace;font-size:11px;border:1px solid var(--muted);">'
         f'{_html.escape(binding)}</kbd></td>'
-        f'<td style="padding:6px 14px;color:#d1d5db;'
+        f'<td style="padding:6px 14px;color:var(--border);'
         f'font-size:13px;">{_html.escape(label)}</td>'
         f'</tr>' for binding, label, _ in all_shortcuts
     ])
@@ -257,27 +257,27 @@ def keyboard_shortcuts(
     css = (
         '<style>'
         '#kbd-leader-ind{position:fixed;bottom:20px;'
-        'left:20px;background:#1f2937;border:1px solid '
-        '#374151;border-radius:6px;padding:6px 14px;'
-        'color:#60a5fa;font-family:monospace;font-size:12px;'
+        'left:20px;background:var(--paper-pure);border:1px solid '
+        'var(--border);border-radius:6px;padding:6px 14px;'
+        'color:var(--teal);font-family:monospace;font-size:12px;'
         'font-weight:600;display:none;z-index:1000;}'
         '#kbd-help{position:fixed;top:0;left:0;right:0;'
         'bottom:0;background:rgba(0,0,0,0.7);'
         'display:none;align-items:center;justify-content:'
         'center;z-index:2000;}'
-        '#kbd-help-card{background:#0f172a;border:1px solid '
-        '#374151;border-radius:8px;padding:24px;'
+        '#kbd-help-card{background:var(--bg);border:1px solid '
+        'var(--border);border-radius:8px;padding:24px;'
         'max-width:540px;width:90%;'
         'box-shadow:0 12px 40px rgba(0,0,0,0.6);}'
         '#kbd-help-card h3{margin:0 0 12px 0;'
-        'color:#f3f4f6;font-size:16px;}'
-        '#kbd-help-card .kbd-hint{color:#9ca3af;'
+        'color:var(--ink);font-size:16px;}'
+        '#kbd-help-card .kbd-hint{color:var(--faint);'
         'font-size:12px;margin-bottom:14px;}'
         '#kbd-help-card table{width:100%;'
         'border-collapse:collapse;}'
         '#kbd-help-card .kbd-close{display:block;'
-        'margin-top:14px;background:#374151;border:none;'
-        'border-radius:6px;padding:8px 14px;color:#f3f4f6;'
+        'margin-top:14px;background:var(--border);border:none;'
+        'border-radius:6px;padding:8px 14px;color:var(--ink);'
         'font-size:12px;cursor:pointer;width:100%;}'
         '</style>') if inject_css else ""
 

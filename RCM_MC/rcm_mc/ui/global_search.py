@@ -347,7 +347,7 @@ _SEARCH_JS = """
         if (!rows.length) {
           dropdown.innerHTML =
             '<div style="padding:14px 16px;' +
-            'color:#9ca3af;font-size:13px;">' +
+            'color:var(--faint);font-size:13px;">' +
             'No matches for ' +
             escapeHtml('"' + q + '"') + '.</div>';
           show();
@@ -357,19 +357,19 @@ _SEARCH_JS = """
           return (
             '<a href="' + encodeURI(r.url) + '" ' +
             'style="display:block;padding:10px 14px;' +
-            'border-bottom:1px solid #374151;' +
-            'color:#f3f4f6;text-decoration:none;' +
+            'border-bottom:1px solid var(--border);' +
+            'color:var(--ink);text-decoration:none;' +
             'font-size:13px;">' +
             '<span style="display:inline-block;' +
             'padding:1px 8px;border-radius:4px;' +
-            'background:#374151;color:#9ca3af;' +
+            'background:var(--border);color:var(--faint);' +
             'font-size:10px;text-transform:uppercase;' +
             'letter-spacing:0.05em;margin-right:8px;">' +
             escapeHtml(r.category) + '</span>' +
             escapeHtml(r.label) +
             (r.sublabel ?
               '<div style="font-size:11px;' +
-              'color:#9ca3af;margin-top:2px;' +
+              'color:var(--faint);margin-top:2px;' +
               'margin-left:0;">' +
               escapeHtml(r.sublabel) + '</div>' : '') +
             '</a>');
@@ -414,21 +414,21 @@ def render_search_bar(*, inject_css: bool = True) -> str:
         '<style>'
         '.global-search-wrap{position:relative;'
         'min-width:240px;flex:1 1 auto;max-width:480px;}'
-        '#global-search-input{width:100%;background:#1f2937;'
-        'border:1px solid #374151;border-radius:6px;'
-        'padding:6px 12px;color:#f3f4f6;font-size:13px;'
+        '#global-search-input{width:100%;background:var(--paper-pure);'
+        'border:1px solid var(--border);border-radius:6px;'
+        'padding:6px 12px;color:var(--ink);font-size:13px;'
         'box-sizing:border-box;font-family:system-ui;}'
-        '#global-search-input::placeholder{color:#6b7280;}'
+        '#global-search-input::placeholder{color:var(--muted);}'
         '#global-search-input:focus{outline:none;'
-        'border-color:#60a5fa;}'
+        'border-color:var(--teal);}'
         '#global-search-dropdown{display:none;'
         'position:absolute;top:calc(100% + 4px);'
-        'left:0;right:0;background:#0f172a;'
-        'border:1px solid #374151;border-radius:6px;'
+        'left:0;right:0;background:var(--bg);'
+        'border:1px solid var(--border);border-radius:6px;'
         'box-shadow:0 8px 24px rgba(0,0,0,0.5);'
         'max-height:480px;overflow-y:auto;z-index:1500;}'
         '#global-search-dropdown a:hover{'
-        'background:#1f2937;}'
+        'background:var(--paper-pure);}'
         '</style>') if inject_css else ""
     return (
         css

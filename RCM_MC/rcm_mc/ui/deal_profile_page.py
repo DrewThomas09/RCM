@@ -492,66 +492,67 @@ _LANDING_JS = r"""<script>
     var deals = loadSavedDeals();
     if (deals.length === 0) {
       root.innerHTML =
-        '<div style="padding:14px 16px;background:var(--ck-panel,#111827);' +
-        'border:1px dashed var(--ck-border,#1e293b);border-radius:4px;' +
-        'color:var(--ck-text-dim,#94a3b8);font-size:12px;line-height:1.6;' +
-        'font-style:italic;">No saved deals yet. Enter a slug above to ' +
+        '<div style="padding:1rem 1.25rem;background:var(--paper);' +
+        'border:1px dashed var(--border);border-radius:3px;' +
+        'color:var(--muted);font-size:.85rem;line-height:1.5;' +
+        'font-family:\'Source Serif 4\',Georgia,serif;font-style:italic;">' +
+        'No saved deals yet. Enter a slug above to ' +
         'create your first profile — it will appear here on subsequent ' +
         'visits.</div>';
       return;
     }
     var cards = deals.map(function(d) {
       var completion = Math.min(100, Math.round(d.filled / 24 * 100));
-      var barColor = completion >= 75 ? '#10b981' :
-        completion >= 40 ? '#f59e0b' : '#94a3b8';
+      var barColor = completion >= 75 ? 'var(--green)' :
+        completion >= 40 ? 'var(--amber)' : 'var(--muted)';
       var name = (d.name || d.slug).replace(/</g, '&lt;');
       var slug = d.slug.replace(/</g, '&lt;');
       var safeSlug = encodeURIComponent(d.slug);
       return (
-        '<div style="background:#111827;border:1px solid #1e293b;' +
+        '<div style="background:var(--bg);border:1px solid var(--paper-pure);' +
         'border-radius:4px;padding:14px 16px;' +
         'transition:border-color 140ms ease, box-shadow 140ms ease;" ' +
-        'onmouseover="this.style.borderColor=\'#64748b\';' +
+        'onmouseover="this.style.borderColor=\'var(--muted)\';' +
         'this.style.boxShadow=\'0 4px 14px rgba(0,0,0,0.35)\'" ' +
-        'onmouseout="this.style.borderColor=\'#1e293b\';' +
+        'onmouseout="this.style.borderColor=\'var(--paper-pure)\';' +
         'this.style.boxShadow=\'none\'">' +
         '<div style="display:flex;justify-content:space-between;' +
         'align-items:baseline;gap:10px;margin-bottom:6px;">' +
-        '<div style="font-size:9px;color:#64748b;letter-spacing:1.3px;' +
+        '<div style="font-size:9px;color:var(--muted);letter-spacing:1.3px;' +
         'text-transform:uppercase;font-family:\'JetBrains Mono\',monospace;">' +
         slug + '</div>' +
-        '<div style="font-size:9px;color:#64748b;">' +
+        '<div style="font-size:9px;color:var(--muted);">' +
         fmtRelative(d.saved_at) + '</div>' +
         '</div>' +
-        '<div style="font-size:15px;color:#e2e8f0;font-weight:600;' +
+        '<div style="font-size:15px;color:var(--ink);font-weight:600;' +
         'line-height:1.25;margin-bottom:8px;">' + name + '</div>' +
-        '<div style="height:4px;background:#0f1a2e;border-radius:2px;' +
+        '<div style="height:4px;background:var(--ink);border-radius:2px;' +
         'overflow:hidden;margin:8px 0 4px 0;">' +
         '<div style="height:100%;width:' + completion + '%;' +
         'background:' + barColor + ';"></div></div>' +
-        '<div style="font-size:10px;color:#64748b;margin-bottom:10px;">' +
+        '<div style="font-size:10px;color:var(--muted);margin-bottom:10px;">' +
         d.filled + ' of 24 fields · ' + completion + '% complete</div>' +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
         '<a href="/diligence/deal/' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:#3b82f6;color:#0a0e17;' +
+        'style="padding:5px 10px;background:var(--teal);color:var(--bg);' +
         'border:0;font-size:9px;letter-spacing:1.2px;' +
         'text-transform:uppercase;font-weight:700;text-decoration:none;' +
         'border-radius:3px;">Open</a>' +
         '<button type="button" data-rcm-duplicate="' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:transparent;color:#3b82f6;' +
-        'border:1px solid #1e293b;font-size:9px;letter-spacing:1.2px;' +
+        'style="padding:5px 10px;background:transparent;color:var(--teal);' +
+        'border:1px solid var(--paper-pure);font-size:9px;letter-spacing:1.2px;' +
         'text-transform:uppercase;font-weight:600;cursor:pointer;' +
         'border-radius:3px;">Duplicate</button>' +
         '<button type="button" data-rcm-delete="' + safeSlug + '" ' +
-        'style="padding:5px 10px;background:transparent;color:#ef4444;' +
-        'border:1px solid #1e293b;font-size:9px;letter-spacing:1.2px;' +
+        'style="padding:5px 10px;background:transparent;color:var(--red);' +
+        'border:1px solid var(--paper-pure);font-size:9px;letter-spacing:1.2px;' +
         'text-transform:uppercase;font-weight:600;cursor:pointer;' +
         'border-radius:3px;">Delete</button>' +
         '</div></div>'
       );
     }).join('');
     root.innerHTML =
-      '<div style="font-size:10px;color:#64748b;' +
+      '<div style="font-size:10px;color:var(--muted);' +
       'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;' +
       'margin-bottom:10px;">Your saved deals · ' + deals.length +
       ' local profile' + (deals.length === 1 ? '' : 's') + '</div>' +
@@ -596,44 +597,47 @@ _LANDING_JS = r"""<script>
 
 
 def _landing_slugs() -> str:
+    """Editorial deal-profile landing — eyebrow + serif h2 + intro,
+    then a slug-entry card and (JS-populated) recent-deals grid.
+    Lifted to match the .sect + cad-card patterns used across /app.
+    """
     body = (
-        f'<div style="padding:24px 0 12px 0;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;'
-        f'font-weight:600;">Deal Profile</div>'
-        f'<div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:4px;">One source of truth per deal</div>'
-        f'<div style="font-size:12px;color:{P["text_dim"]};max-width:720px;'
-        f'line-height:1.6;">Each deal gets a unique URL — '
-        f'<code>/diligence/deal/&lt;slug&gt;</code>. Pick a slug '
-        f'(e.g., <code>aurora</code>), enter the deal parameters once, '
-        f'and every downstream analytic opens with those parameters '
-        f'pre-filled. Deal state persists locally (browser '
-        f'localStorage) so a refresh or returning tomorrow picks up '
-        f'where you left off.</div>'
-        f'</div>'
-        f'<form onsubmit="const slug = this.slug.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, \'-\'); if (slug) window.location.href = \'/diligence/deal/\' + slug; return false;" '
-        f'style="background:{P["panel"]};border:1px solid {P["border"]};'
-        f'border-radius:4px;padding:20px;max-width:480px;margin-top:20px;">'
-        f'<label style="font-size:9px;color:{P["text_faint"]};'
-        f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
-        f'display:block;margin-bottom:4px;">Deal slug</label>'
-        f'<input name="slug" required placeholder="e.g. aurora" '
-        f'pattern="[a-zA-Z0-9-]+" '
-        f'style="width:100%;padding:6px 8px;background:{P["panel_alt"]};'
-        f'color:{P["text"]};border:1px solid {P["border"]};'
-        f'font-family:inherit;">'
-        f'<div style="font-size:10px;color:{P["text_faint"]};'
-        f'margin-top:6px;line-height:1.5;">Letters, digits, and '
-        f'hyphens only. Bookmarkable. Open the same slug from any '
-        f'browser to pick up your profile.</div>'
-        f'<button type="submit" style="margin-top:16px;padding:8px 20px;'
-        f'background:{P["accent"]};color:{P["panel"]};border:0;'
-        f'font-size:10px;letter-spacing:1.5px;text-transform:uppercase;'
-        f'font-weight:700;cursor:pointer;">Open profile</button></form>'
+        # Editorial section header — matches .sect pattern in chartis.css
+        '<div class="sect">'
+        '<div>'
+        '<div class="micro">DEAL PROFILE</div>'
+        '<h2>One source of truth<br/><em>per deal</em>.</h2>'
+        '</div>'
+        '<p class="desc">'
+        'Each deal gets a unique URL — <code>/diligence/deal/&lt;slug&gt;</code>. '
+        'Pick a slug (e.g., <code>aurora</code>), enter the deal parameters '
+        'once, and every downstream analytic opens with them pre-filled. '
+        'Deal state persists locally so a refresh or returning tomorrow '
+        'picks up where you left off.'
+        '</p>'
+        '</div>'
+        # Slug-entry card — editorial cad-card pattern
+        '<form class="cad-card" '
+        'style="max-width:480px;"'
+        'onsubmit="const slug = this.slug.value.trim().toLowerCase()'
+        ".replace(/[^a-z0-9-]/g, '-'); if (slug) "
+        'window.location.href = \'/diligence/deal/\' + slug; return false;">'
+        '<div class="cad-field">'
+        '<label>Deal slug</label>'
+        '<input class="cad-input" name="slug" required '
+        'placeholder="e.g. aurora" pattern="[a-zA-Z0-9-]+">'
+        '</div>'
+        '<div style="font-size:.78rem;color:var(--muted);'
+        'font-family:\'Inter\',sans-serif;margin-top:.5rem;line-height:1.5;">'
+        'Letters, digits, and hyphens only. Bookmarkable. Open the same '
+        'slug from any browser to pick up your profile.'
+        '</div>'
+        '<button type="submit" class="cad-btn cad-btn-primary" '
+        'style="margin-top:1rem;">Open profile</button>'
+        '</form>'
         # Recent deals block — JS populates from localStorage.
-        f'<div style="margin-top:28px;max-width:960px;" '
-        f'data-rcm-recent-deals></div>'
+        '<div style="margin-top:1.75rem;max-width:960px;" '
+        'data-rcm-recent-deals></div>'
         f'{_LANDING_JS}'
     )
     return chartis_shell(
@@ -1219,16 +1223,16 @@ def _inline_js(slug: str) -> str:
       var completion = keys.length;
       if (completion === 0) {
         badge.textContent = 'Awaiting inputs';
-        badge.style.color = '#64748b';
-        badge.style.borderColor = '#1e293b';
+        badge.style.color = 'var(--muted)';
+        badge.style.borderColor = 'var(--paper-pure)';
       } else if (ev != null && rev != null && ebitda != null) {
         badge.textContent = 'Ready for pipeline';
-        badge.style.color = '#10b981';
-        badge.style.borderColor = '#10b981';
+        badge.style.color = 'var(--green)';
+        badge.style.borderColor = 'var(--green)';
       } else {
         badge.textContent = completion + ' of 24 fields';
-        badge.style.color = '#f59e0b';
-        badge.style.borderColor = '#f59e0b';
+        badge.style.color = 'var(--amber)';
+        badge.style.borderColor = 'var(--amber)';
       }
     }
   }
@@ -1306,12 +1310,12 @@ def _inline_js(slug: str) -> str:
     if (deltaEl) {
       if (snap.delta_vs_median_turns == null) {
         deltaEl.textContent = '—';
-        deltaEl.style.color = '#94a3b8';
+        deltaEl.style.color = 'var(--muted)';
       } else {
         var dv = snap.delta_vs_median_turns;
         deltaEl.textContent = (dv > 0 ? '+' : '') + dv.toFixed(2) + 'x';
-        deltaEl.style.color = dv > 0.5 ? '#ef4444'
-          : dv < -0.5 ? '#10b981' : '#94a3b8';
+        deltaEl.style.color = dv > 0.5 ? 'var(--red)'
+          : dv < -0.5 ? 'var(--green)' : 'var(--muted)';
       }
     }
     var peerNames = (snap.peers || []).map(function(p) {
@@ -1323,10 +1327,10 @@ def _inline_js(slug: str) -> str:
     if (asEl) {
       asEl.textContent = snap.assessment || '—';
       asEl.style.color = {
-        'DISCOUNT': '#10b981',
-        'IN-LINE': '#3b82f6',
-        'PREMIUM': '#ef4444',
-      }[snap.assessment] || '#94a3b8';
+        'DISCOUNT': 'var(--green)',
+        'IN-LINE': 'var(--teal)',
+        'PREMIUM': 'var(--red)',
+      }[snap.assessment] || 'var(--muted)';
     }
   }
 

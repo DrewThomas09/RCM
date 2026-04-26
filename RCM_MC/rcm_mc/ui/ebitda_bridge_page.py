@@ -940,8 +940,23 @@ def render_ebitda_bridge(
         n_seller_metrics=len(dr_overrides),
     )
 
+    # Editorial section header — eyebrow + serif h2 + lede above the body.
+    page_head = (
+        '<div class="sect">'
+        '<div>'
+        f'<div class="micro">EBITDA BRIDGE &nbsp;·&nbsp; CCN {_html.escape(ccn)}</div>'
+        f'<h2>{_html.escape(name)}<br/><em>value-creation walk</em>.</h2>'
+        '</div>'
+        '<p class="desc">'
+        '7-lever RCM bridge from current EBITDA to pro-forma — denial / '
+        'underpay / DAR / coding / contract / cost discipline / cash '
+        'acceleration. Each lever shows current vs benchmark target with '
+        'data provenance.'
+        '</p>'
+        '</div>'
+    )
     body = (
-        f'{provenance_banner}{kpis}{realization_section}{waterfall_section}'
+        f'{page_head}{provenance_banner}{kpis}{realization_section}{waterfall_section}'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         f'<div>{detail_section}{timing_section}</div>'
         f'<div>{grid_section}{covenant_section}</div></div>'

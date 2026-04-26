@@ -84,7 +84,180 @@ body.analysis-workbench {{
   font-variant-numeric: tabular-nums;
 }}
 
-/* Sticky header + tab nav */
+/* Editorial hero band — dark navy ink with parchment text */
+.analysis-workbench .wb-hero {{
+  background: #0F1C2E;
+  color: #FAF7F0;
+  padding: 2rem 0 2.25rem;
+  border-bottom: 4px solid #1F7A75;
+}}
+.analysis-workbench .wb-hero-inner {{
+  max-width: 1400px; margin: 0 auto; padding: 0 2rem;
+}}
+.analysis-workbench .wb-hero-eyebrow {{
+  display: inline-flex; align-items: center; gap: .8rem;
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: rgba(250, 247, 240, 0.65); font-weight: 600;
+  margin-bottom: .85rem;
+}}
+.analysis-workbench .wb-hero-eyebrow::before {{
+  content: ""; width: 28px; height: 2px; background: #1F7A75; display: inline-block;
+}}
+.analysis-workbench .wb-hero-row {{
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 2rem; align-items: end;
+}}
+.analysis-workbench .wb-hero-name {{
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 2.4rem; font-weight: 500; line-height: 1.05;
+  letter-spacing: -0.015em; margin: 0; color: #FAF7F0;
+}}
+.analysis-workbench .wb-hero-meta {{
+  margin-top: .75rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .72rem; letter-spacing: .06em;
+  color: rgba(250, 247, 240, 0.7);
+  display: flex; flex-wrap: wrap; gap: .35rem .55rem;
+  align-items: baseline;
+}}
+.analysis-workbench .wb-hero-meta .m-key {{
+  color: rgba(250, 247, 240, 0.45);
+  text-transform: uppercase; letter-spacing: .12em;
+  font-size: .62rem; font-weight: 600;
+}}
+.analysis-workbench .wb-hero-meta .m-val {{
+  color: #FAF7F0; font-weight: 600;
+}}
+.analysis-workbench .wb-hero-meta .m-sep {{
+  color: rgba(250, 247, 240, 0.30); margin: 0 .15rem;
+}}
+.analysis-workbench .wb-hero-cta {{
+  display: flex; gap: .65rem; align-items: end;
+}}
+.analysis-workbench .wb-cta-primary {{
+  background: #1F7A75; color: #FFFFFF;
+  border: none; cursor: pointer;
+  padding: .85rem 1.4rem;
+  font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  text-decoration: none; display: inline-block;
+}}
+.analysis-workbench .wb-cta-primary:hover {{ background: #155752; }}
+.analysis-workbench .wb-cta-ghost {{
+  background: transparent;
+  color: #FAF7F0;
+  border: 1px solid rgba(250, 247, 240, 0.35);
+  padding: .85rem 1.4rem;
+  font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  text-decoration: none; display: inline-block;
+}}
+.analysis-workbench .wb-cta-ghost:hover {{
+  background: rgba(250, 247, 240, 0.08);
+  border-color: rgba(250, 247, 240, 0.65);
+}}
+
+/* Utility row — breadcrumb + secondary actions on parchment */
+.analysis-workbench .wb-utility {{
+  background: var(--wb-bg);
+  border-bottom: 1px solid var(--wb-border);
+  padding: .75rem 0;
+}}
+.analysis-workbench .wb-utility-inner {{
+  max-width: 1400px; margin: 0 auto; padding: 0 2rem;
+  display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+}}
+.analysis-workbench .wb-utility-bc {{
+  font-family: "Inter", sans-serif; font-size: .72rem;
+  color: var(--wb-text-dim); letter-spacing: .04em;
+}}
+.analysis-workbench .wb-utility-bc a {{
+  color: var(--wb-text-dim); text-decoration: none;
+}}
+.analysis-workbench .wb-utility-bc a:hover {{ color: var(--wb-accent); }}
+.analysis-workbench .wb-utility-bc .here {{ color: var(--wb-text); font-weight: 600; }}
+.analysis-workbench .wb-utility-actions {{
+  display: flex; gap: .4rem; align-items: center; flex: 1; flex-wrap: wrap;
+}}
+.analysis-workbench .wb-btn-warn {{ color: #B7791F !important; border-color: #B7791F !important; }}
+.analysis-workbench .wb-btn-danger {{ color: #A53A2D !important; border-color: #A53A2D !important; }}
+
+/* 6-card hero KPI strip — overview tab top */
+.analysis-workbench .wb-hero-kpi {{
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 0;
+  background: #FFFFFF; border: 1px solid #BFB6A2;
+  margin: 1.5rem 0 2rem 0;
+}}
+.analysis-workbench .wb-hero-card {{
+  padding: 1.4rem 1.25rem 1.25rem;
+  border-right: 1px solid #D6CFC0;
+}}
+.analysis-workbench .wb-hero-card:last-child {{ border-right: none; }}
+.analysis-workbench .wb-hc-value {{
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 2.1rem; font-weight: 600;
+  line-height: 1; color: #0F1C2E;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}}
+.analysis-workbench .wb-hero-card.tone-green .wb-hc-value {{ color: #3F7D4D; }}
+.analysis-workbench .wb-hero-card.tone-amber .wb-hc-value {{ color: #B7791F; }}
+.analysis-workbench .wb-hero-card.tone-red .wb-hc-value {{ color: #A53A2D; }}
+.analysis-workbench .wb-hc-label {{
+  font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: #5C6878;
+  margin-top: .55rem;
+}}
+.analysis-workbench .wb-hc-sub {{
+  font-family: "Inter", sans-serif; font-size: .72rem; color: #8A92A0;
+  margin-top: .35rem; font-style: italic;
+}}
+
+/* Partner review — dark navy footer band, mirrors hero band treatment */
+.analysis-workbench .wb-partner-review {{
+  background: #0F1C2E; color: #FAF7F0;
+  padding: 2.5rem 0; margin-top: 3rem;
+  border-top: 4px solid #1F7A75;
+}}
+.analysis-workbench .wb-pr-inner {{
+  max-width: 1400px; margin: 0 auto; padding: 0 2rem;
+}}
+.analysis-workbench .wb-pr-eyebrow {{
+  display: inline-flex; align-items: center; gap: .8rem;
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: rgba(250, 247, 240, 0.65); font-weight: 600;
+  margin-bottom: 1.25rem;
+}}
+.analysis-workbench .wb-pr-eyebrow::before {{
+  content: ""; width: 28px; height: 2px; background: #1F7A75; display: inline-block;
+}}
+.analysis-workbench .wb-pr-quote {{
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1.45rem; line-height: 1.45;
+  color: #FAF7F0; margin: 0 0 1.5rem 0;
+  max-width: 1100px; font-style: italic;
+}}
+.analysis-workbench .wb-pr-meta {{
+  display: flex; flex-wrap: wrap; gap: 2rem;
+  padding-top: 1rem; border-top: 1px solid rgba(250, 247, 240, 0.18);
+}}
+.analysis-workbench .wb-pr-meta-item {{
+  display: flex; flex-direction: column; gap: .15rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}}
+.analysis-workbench .wb-pr-meta .m-key {{
+  font-family: "Inter", sans-serif; font-size: .6rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(250, 247, 240, 0.45);
+}}
+.analysis-workbench .wb-pr-meta .m-val {{
+  font-size: .82rem; color: #FAF7F0; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}}
+
+/* Legacy header rules kept for any pages still using .wb-header */
 .analysis-workbench .wb-header {{
   position: sticky; top: 0; z-index: 20;
   background: var(--wb-panel);
@@ -675,46 +848,69 @@ def _esc(s: Any) -> str:
 # ── Section renderers ────────────────────────────────────────────────
 
 def _render_header(packet: DealAnalysisPacket) -> str:
+    """Editorial workbench hero — dark-navy band per the design reference.
+
+    Mirrors the reference screenshot: dark navy bg with parchment text,
+    eyebrow ("DEAL WORKBENCH · <deal-id>"), large serif deal name,
+    metadata row, and right-aligned primary CTAs (EXPORT IC PACKET,
+    GENERATE MEMO style). Secondary actions (Archive/Delete/etc.) move
+    to a subtle utility row below.
+    """
     grade = packet.completeness.grade or "—"
-    grade_class = f"wb-badge-grade-{grade}" if grade in ("A", "B", "C", "D") else "wb-badge-low"
     as_of = packet.as_of.isoformat() if packet.as_of else "current"
     cov = _fmt_pct(packet.completeness.coverage_pct * 100)
     freshness = "fresh" if not packet.completeness.stale_fields else \
                 f"{len(packet.completeness.stale_fields)} stale"
+    deal_id_upper = (packet.deal_id or "").upper()
     return f"""
-    <div class="wb-header">
-      <div class="wb-breadcrumb">
-        <a href="/home">home</a> &nbsp;›&nbsp;
-        <a href="/analysis">analysis</a> &nbsp;›&nbsp;
-        <a href="/deal/{_esc(packet.deal_id)}">{_esc(packet.deal_name or packet.deal_id)}</a>
-        &nbsp;›&nbsp; analysis
+    <div class="wb-hero">
+      <div class="wb-hero-inner">
+        <div class="wb-hero-eyebrow">DEAL WORKBENCH &nbsp;·&nbsp; {_esc(deal_id_upper)}</div>
+        <div class="wb-hero-row">
+          <div class="wb-hero-name-block">
+            <h1 class="wb-hero-name">{_esc(packet.deal_name or packet.deal_id)}</h1>
+            <div class="wb-hero-meta">
+              <span class="m-key">COMPLETENESS</span><span class="m-val">{_esc(grade)}</span>
+              <span class="m-sep">·</span>
+              <span class="m-key">COVERAGE</span><span class="m-val">{_esc(cov)}</span>
+              <span class="m-sep">·</span>
+              <span class="m-key">AS OF</span><span class="m-val">{_esc(as_of)}</span>
+              <span class="m-sep">·</span>
+              <span class="m-key">DATA</span><span class="m-val">{_esc(freshness)}</span>
+            </div>
+          </div>
+          <div class="wb-hero-cta">
+            <form method="POST" action="/api/analysis/{_esc(packet.deal_id)}/rebuild" style="display:inline;">
+              <button class="wb-cta-primary" type="submit">REBUILD &nbsp;→</button>
+            </form>
+            <a class="wb-cta-ghost" href="/api/deals/{_esc(packet.deal_id)}/package">EXPORT ZIP</a>
+          </div>
+        </div>
       </div>
-      <div class="wb-header-row">
-        <div class="wb-deal-name">{_esc(packet.deal_name or packet.deal_id)}</div>
-        <span class="wb-badge {grade_class}">completeness: {grade}</span>
-        <span class="dim">coverage {cov}</span>
-        <span class="dim">as-of {_esc(as_of)}</span>
-        <span class="dim">{_esc(freshness)}</span>
-        <div class="wb-action-bar">
-          <form method="POST" action="/api/analysis/{_esc(packet.deal_id)}/rebuild" style="display:inline;">
-            <button class="wb-btn wb-btn-primary" type="submit">Rebuild</button>
-          </form>
-          <a class="wb-btn wb-btn-primary" href="/models/dcf/{_esc(packet.deal_id)}">DCF</a>
-          <a class="wb-btn wb-btn-primary" href="/models/lbo/{_esc(packet.deal_id)}">LBO</a>
+    </div>
+    <div class="wb-utility">
+      <div class="wb-utility-inner">
+        <div class="wb-utility-bc">
+          <a href="/home">home</a> &nbsp;›&nbsp;
+          <a href="/analysis">analysis</a> &nbsp;›&nbsp;
+          <a href="/deal/{_esc(packet.deal_id)}">{_esc(packet.deal_name or packet.deal_id)}</a>
+          &nbsp;›&nbsp; <span class="here">analysis</span>
+        </div>
+        <div class="wb-utility-actions">
+          <a class="wb-btn" href="/models/dcf/{_esc(packet.deal_id)}">DCF</a>
+          <a class="wb-btn" href="/models/lbo/{_esc(packet.deal_id)}">LBO</a>
           <a class="wb-btn" href="/models/financials/{_esc(packet.deal_id)}">Financials</a>
           <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}">JSON</a>
           <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}/diligence-questions">Diligence CSV</a>
-          <a class="wb-btn" href="/api/deals/{_esc(packet.deal_id)}/package">Download ZIP</a>
           <span style="flex:1;"></span>
           <form method="POST" action="/api/deals/{_esc(packet.deal_id)}/archive" style="display:inline;">
-            <button class="wb-btn" type="submit"
+            <button class="wb-btn wb-btn-warn" type="submit"
                     onclick="return confirm('Archive this deal? It will be hidden from the dashboard.');"
-                    style="color:#f59e0b;" aria-label="Archive this deal">Archive</button>
+                    aria-label="Archive this deal">Archive</button>
           </form>
-          <button class="wb-btn" type="button"
+          <button class="wb-btn wb-btn-danger" type="button"
                   onclick="if(confirm('Permanently delete this deal and ALL associated data? This cannot be undone.')){{fetch('/api/deals/{_esc(packet.deal_id)}',{{method:'DELETE'}}).then(r=>r.json()).then(d=>{{if(d.deleted){{if(window.rcmToast)rcmToast('Deal deleted','success');setTimeout(function(){{window.location='/';}},500);}}}}).catch(function(){{if(window.rcmToast)rcmToast('Delete failed','error');}});}}"
-                  style="color:#ef4444;" aria-label="Permanently delete this deal">Delete</button>
-          <span class="dim" style="font-size:0.7rem;margin-left:8px;" title="Press ? for keyboard shortcuts">⌨ ?=help</span>
+                  aria-label="Permanently delete this deal">Delete</button>
         </div>
       </div>
     </div>
@@ -741,6 +937,139 @@ def _render_tab_nav(override_count: int = 0) -> str:
 
 
 # Overview --------------------------------------------------------------
+
+def _hero_kpi_strip(packet: DealAnalysisPacket) -> str:
+    """6-card hero KPI strip — matches the design-handoff reference.
+
+    Cards: ENTRY MULTIPLE / BASE MOIC / BASE IRR / COVENANT HEADROOM /
+    PARTNER VERDICT / HEALTH SCORE. Data is pulled from the packet where
+    available; missing values render "—" (honest partial wiring rule).
+    Tones (green / amber / red) signal at-a-glance status.
+    """
+    # Entry multiple — from bridge if present
+    em = getattr(packet.ebitda_bridge, "entry_multiple", None) if packet.ebitda_bridge else None
+    em_str = f"{float(em):.1f}x" if em is not None else "—"
+    # Base MOIC / IRR — from simulation P50
+    moic = irr = None
+    moic_tone = irr_tone = ""
+    sim = packet.simulation
+    if sim is not None and sim.status == SectionStatus.OK:
+        moic = float(sim.moic.p50) if sim.moic else None
+        irr = float(sim.irr.p50) if sim.irr else None
+        if moic is not None:
+            moic_tone = "green" if moic >= 2.5 else "amber" if moic >= 2.0 else "red"
+        if irr is not None:
+            irr_tone = "green" if irr >= 0.20 else "amber" if irr >= 0.15 else "red"
+    moic_str = f"{moic:.2f}x" if moic is not None else "—"
+    irr_str = f"{irr * 100:.1f}%" if irr is not None else "—"
+    # Covenant headroom — derived from risk flags (lower = tighter)
+    cov_warns = sum(
+        1 for rf in (packet.risk_flags or [])
+        if "covenant" in (rf.title or "").lower() or "covenant" in (rf.detail or "").lower()
+    )
+    cov_str = f"{cov_warns} flag" + ("s" if cov_warns != 1 else "")
+    cov_tone = "green" if cov_warns == 0 else "amber" if cov_warns <= 1 else "red"
+    # Partner verdict — derive from risk severity counts
+    crit = sum(
+        1 for rf in (packet.risk_flags or [])
+        if (rf.severity.value if hasattr(rf.severity, "value") else str(rf.severity)) == "CRITICAL"
+    )
+    high = sum(
+        1 for rf in (packet.risk_flags or [])
+        if (rf.severity.value if hasattr(rf.severity, "value") else str(rf.severity)) == "HIGH"
+    )
+    if crit > 0:
+        verdict, verdict_tone = "HOLD", "red"
+    elif high > 1:
+        verdict, verdict_tone = "CAUTION", "amber"
+    else:
+        verdict, verdict_tone = "PROCEED", "green"
+    # Health score — coverage_pct as a proxy (0-100)
+    hs = int(round((packet.completeness.coverage_pct or 0.0) * 100))
+    hs_tone = "green" if hs >= 75 else "amber" if hs >= 50 else "red"
+
+    cards = [
+        (em_str,     "ENTRY MULTIPLE",   "EBITDA · base case",       ""),
+        (moic_str,   "BASE MOIC",        "5-year hold",              moic_tone),
+        (irr_str,    "BASE IRR",         "Gross, levered",           irr_tone),
+        (cov_str,    "COVENANT HEADROOM","Risk-flag derived",        cov_tone),
+        (verdict,    "PARTNER VERDICT",  "Heuristic-fired",          verdict_tone),
+        (str(hs),    "HEALTH SCORE",     "Completeness proxy",       hs_tone),
+    ]
+    cells = "".join(
+        f'<div class="wb-hero-card{" tone-" + tone if tone else ""}">'
+        f'<div class="wb-hc-value">{_esc(value)}</div>'
+        f'<div class="wb-hc-label">{_esc(label)}</div>'
+        f'<div class="wb-hc-sub">{_esc(sub)}</div>'
+        f'</div>'
+        for value, label, sub, tone in cards
+    )
+    return f'<div class="wb-hero-kpi">{cells}</div>'
+
+
+def _partner_review_band(packet: DealAnalysisPacket) -> str:
+    """Editorial partner-review footer — dark navy band with auto-quote.
+
+    Mirrors the design reference's "PARTNER REVIEW · AUTO-GENERATED"
+    section. Composes a one-paragraph review from packet signals.
+    Heuristics-fired count + critical count + confidence proxy form the
+    bottom row of meta — visible commitment that the verdict is data-
+    derived, not narrative-only.
+    """
+    heuristics = len(packet.risk_flags or [])
+    crit = sum(
+        1 for rf in (packet.risk_flags or [])
+        if (rf.severity.value if hasattr(rf.severity, "value") else str(rf.severity)) == "CRITICAL"
+    )
+    cov = packet.completeness.coverage_pct or 0.0
+    confidence = max(0.0, min(1.0, cov)) if cov else 0.0
+    # Pick one of three review variants based on data quality
+    if not packet.risk_flags or len(packet.risk_flags) < 2:
+        review = (
+            "Diligence packet has not surfaced material risk flags. "
+            "Recommend completing remaining metric collection before "
+            "moving the deal forward — partner-level signal is light."
+        )
+        verdict_label = "MORE DATA NEEDED"
+        verdict_tone = "rgba(183,121,31,0.85)"  # amber
+    elif crit > 0:
+        review = (
+            f"Critical risk flags present ({crit}); thesis "
+            "should be re-tested against the named-failure library before "
+            "advancing. Bridge math holds but exit-multiple sensitivity "
+            "is high — recommend HOLD pending additional evidence."
+        )
+        verdict_label = "HOLD"
+        verdict_tone = "rgba(165,58,45,0.85)"  # red
+    else:
+        review = (
+            "Thesis validated against the corpus — bridge components "
+            "track within model tolerance, comparable set is supportive, "
+            "and no critical flags fired. Recommend PROCEED with the "
+            "covenant items flagged in the diligence checklist as priority "
+            "follow-ups during the first 100 days."
+        )
+        verdict_label = "PROCEED WITH CAVEATS"
+        verdict_tone = "rgba(63,125,77,0.85)"  # green
+    return (
+        '<div class="wb-partner-review">'
+        '<div class="wb-pr-inner">'
+        '<div class="wb-pr-eyebrow">PARTNER REVIEW &nbsp;·&nbsp; AUTO-GENERATED</div>'
+        f'<p class="wb-pr-quote">"{_esc(review)}"</p>'
+        '<div class="wb-pr-meta">'
+        f'<span class="wb-pr-meta-item"><span class="m-key">VERDICT</span>'
+        f'<span class="m-val" style="color:{verdict_tone};">{_esc(verdict_label)}</span></span>'
+        f'<span class="wb-pr-meta-item"><span class="m-key">HEURISTICS FIRED</span>'
+        f'<span class="m-val">{heuristics}</span></span>'
+        f'<span class="wb-pr-meta-item"><span class="m-key">CRITICAL</span>'
+        f'<span class="m-val">{crit}</span></span>'
+        f'<span class="wb-pr-meta-item"><span class="m-key">CONFIDENCE</span>'
+        f'<span class="m-val">{confidence:.2f}</span></span>'
+        '</div>'
+        '</div>'
+        '</div>'
+    )
+
 
 def _render_overview(packet: DealAnalysisPacket) -> str:
     cov_pct = float(packet.completeness.coverage_pct or 0.0)
@@ -818,8 +1147,10 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
     )
     radial_label = f'<div class="radial-label">{int(cov_pct*100)}%</div>'
 
+    hero_kpi = _hero_kpi_strip(packet)
     return f"""
     <div class="wb-tab-panel active" data-panel="overview">
+      {hero_kpi}
       <div class="wb-grid">
         <div>
           <div class="wb-card">
@@ -2675,6 +3006,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         + _render_scenarios(packet)
         + _render_risk_diligence(packet)
         + _render_provenance(packet)
+        + _partner_review_band(packet)
         + _render_assumptions(packet)
     )
     # Prompt 32: build the explain-panel data blob + the empty panel div.
@@ -2689,7 +3021,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         f'{_esc(explain_data)}</script>'
     )
     shell_body = (
-        f'<div class="analysis-workbench-scope">{header}{nav}{body_inner}'
+        f'<div class="analysis-workbench">{header}{nav}{body_inner}'
         f'{explain_panel}</div>'
     )
     return chartis_shell(

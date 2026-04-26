@@ -88,7 +88,7 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
         + _field("net_collection_rate", "Net Collection (%)", placeholder="94.5", type_="number", step="0.1")
         + _field("clean_claim_rate", "Clean Claim (%)", placeholder="88", type_="number", step="0.1")
         + _field("cost_to_collect", "Cost to Collect (%)", placeholder="5.1", type_="number", step="0.1")
-        + _field("claims_volume", "Claims Volume", placeholder="180000", type_="number", step="1000")
+        + _field("claims_volume", "Claims Volume", placeholder="180,000", type_="text")
         + '</div>'
     )
 
@@ -101,7 +101,7 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
         f'letter-spacing:0.1em;color:{PALETTE["text_muted"]};text-transform:uppercase;">Optional</span>'
         f'</div>'
         f'<div class="cad-form-row" style="margin-bottom:18px;">'
-        + _field("net_revenue", "Net Revenue ($)", placeholder="386000000", type_="number", step="1000000")
+        + _field("net_revenue", "Net Revenue ($)", placeholder="386,000,000", type_="text")
         + _field("bed_count", "Bed Count", placeholder="332", type_="number", step="1")
         + _field("state", "State", placeholder="AL", maxlength="2")
         + '</div>'
@@ -148,7 +148,45 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
         f'</div></form></div>'
     )
 
+    # Auto-format the large-number text inputs with commas as the user
+    # types, and strip commas back to plain integers right before submit
+    # (server expects clean numerics). Targets net_revenue + claims_volume.
+    comma_js = """
+(function(){
+  var ids = ['net_revenue', 'claims_volume'];
+  function fmt(v) {
+    var clean = (v || '').replace(/[^0-9]/g, '');
+    if (!clean) return '';
+    return clean.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
+  }
+  ids.forEach(function(name){
+    var el = document.querySelector('input[name="' + name + '"]');
+    if (!el) return;
+    el.addEventListener('input', function(){
+      var caret = el.selectionStart;
+      var before = el.value;
+      var formatted = fmt(before);
+      if (formatted !== before) {
+        el.value = formatted;
+        // Best-effort caret restoration
+        try { el.setSelectionRange(formatted.length, formatted.length); } catch(e){}
+      }
+    });
+    var form = el.form;
+    if (form && !form.__commaStripBound) {
+      form.__commaStripBound = true;
+      form.addEventListener('submit', function(){
+        ids.forEach(function(n){
+          var x = form.querySelector('input[name="' + n + '"]');
+          if (x) x.value = (x.value || '').replace(/,/g, '');
+        });
+      });
+    }
+  });
+})();
+"""
     return chartis_shell(
         form, "Import Deals",
         subtitle="Create deals directly in your browser",
+        extra_js=comma_js,
     )

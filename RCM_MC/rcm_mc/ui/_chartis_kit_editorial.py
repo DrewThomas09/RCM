@@ -602,7 +602,27 @@ def number_maybe(
     elif format == "pct":
         s = f"{f * 100:.1f}%"
     elif format == "ev":
-        s = f"${int(f)}M"
+        # Unit-aware: callers pass either raw dollars (450000000) or
+        # already-scaled millions (450.0). Strip trailing ".0" so a
+        # round value renders "$450M" not "$450.0M".
+        def _trim(v: float, suffix: str) -> str:
+            t = f"{v:.1f}"
+            if t.endswith(".0"):
+                t = t[:-2]
+            return f"${t}{suffix}"
+        af = abs(f)
+        if af >= 1_000_000_000:
+            s = _trim(f / 1_000_000_000, "B")
+        elif af >= 1_000_000:
+            s = _trim(f / 1_000_000, "M")
+        elif af >= 1_000:
+            # 1k–999k: assume already-scaled millions (the dev/seed.py
+            # convention). 999k raw dollars is below PE-EV magnitude
+            # so this branch effectively means "value is in millions".
+            s = _trim(f, "M")
+        else:
+            s = f"${f:,.0f}"
+
     elif format == "drift":
         s = f"{'+' if f >= 0 else ''}{f:.1f}%"
     else:
@@ -819,6 +839,7 @@ def chartis_shell(
     extra_css_block = f"<style>{extra_css}</style>" if extra_css else ""
     extra_js_block = f"<script>{extra_js}</script>" if extra_js else ""
 
+
     # Sidebar opt-in — when show_sidebar=True, wrap (crumbs + banner +
     # main) in a 2-column flex layout with the editorial rail on the
     # left. Sidebar lives BELOW the topbar and SPANS only the main
@@ -857,6 +878,7 @@ def chartis_shell(
 <body>
 {chrome}
 {layout_html}
+
 {extra_js_block}
 </body>
 </html>"""

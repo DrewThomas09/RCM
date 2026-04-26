@@ -109,9 +109,9 @@ def _format_cell(value: Any, kind: str) -> str:
 
 
 def _color_for_kind(kind: str) -> str:
-    return ("#d1d5db" if kind in
+    return ("var(--border)" if kind in
             ("number", "money", "pct", "int")
-            else "#f3f4f6")
+            else "var(--ink)")
 
 
 # Inline JS — namespaced by table_id so multiple tables coexist.
@@ -208,7 +208,7 @@ _TABLE_JS = """
     var html = "";
     if (displayed.length === 0) {
       html = '<tr><td colspan="' + visible.length +
-        '" style="padding:24px;color:#9ca3af;' +
+        '" style="padding:24px;color:var(--faint);' +
         'text-align:center;font-size:13px;">' +
         'No rows match the current filters.</td></tr>';
     } else {
@@ -220,10 +220,10 @@ _TABLE_JS = """
             r["_fmt_" + c.key] :
             (v == null ? "" : String(v));
           html += '<td style="padding:10px 14px;' +
-            'border-bottom:1px solid #374151;' +
+            'border-bottom:1px solid var(--border);' +
             'text-align:' + (c.align || "left") + ';' +
             'color:' + (isNumeric(c.kind) ?
-              "#d1d5db" : "#f3f4f6") + ';' +
+              "var(--border)" : "var(--ink)") + ';' +
             'font-variant-numeric:' +
             (isNumeric(c.kind) ?
               "tabular-nums" : "normal") + ';">' +
@@ -431,14 +431,14 @@ def render_power_table(
         toolbar_parts.append(
             f'<input id="{table_id}-search" type="search" '
             f'placeholder="Search…" '
-            f'style="background:#1f2937;border:1px solid '
-            f'#374151;border-radius:6px;padding:6px 10px;'
-            f'color:#f3f4f6;font-size:13px;flex:1;'
+            f'style="background:var(--paper-pure);border:1px solid '
+            f'var(--border);border-radius:6px;padding:6px 10px;'
+            f'color:var(--ink);font-size:13px;flex:1;'
             f'min-width:180px;">')
     if show_column_toggle:
         toggle_items = "".join([
             f'<label style="display:flex;align-items:center;'
-            f'gap:8px;padding:6px 10px;color:#f3f4f6;'
+            f'gap:8px;padding:6px 10px;color:var(--ink);'
             f'font-size:13px;cursor:pointer;">'
             f'<input type="checkbox" '
             f'data-col-key="{_html.escape(c.key)}" '
@@ -450,28 +450,28 @@ def render_power_table(
             f'<div style="position:relative;">'
             f'<button id="{table_id}-cols-btn" '
             f'type="button" '
-            f'style="background:#1f2937;border:1px solid '
-            f'#374151;border-radius:6px;padding:6px 12px;'
-            f'color:#f3f4f6;font-size:13px;cursor:pointer;">'
+            f'style="background:var(--paper-pure);border:1px solid '
+            f'var(--border);border-radius:6px;padding:6px 12px;'
+            f'color:var(--ink);font-size:13px;cursor:pointer;">'
             f'Columns ▾</button>'
             f'<div id="{table_id}-cols-menu" '
             f'style="display:none;position:absolute;top:100%;'
-            f'right:0;margin-top:4px;background:#111827;'
-            f'border:1px solid #374151;border-radius:6px;'
+            f'right:0;margin-top:4px;background:var(--bg);'
+            f'border:1px solid var(--border);border-radius:6px;'
             f'padding:4px;min-width:180px;z-index:10;">'
             f'{toggle_items}</div></div>')
     if show_export:
         toolbar_parts.append(
             f'<button id="{table_id}-export" '
             f'type="button" '
-            f'style="background:#1f2937;border:1px solid '
-            f'#374151;border-radius:6px;padding:6px 12px;'
-            f'color:#f3f4f6;font-size:13px;cursor:pointer;">'
+            f'style="background:var(--paper-pure);border:1px solid '
+            f'var(--border);border-radius:6px;padding:6px 12px;'
+            f'color:var(--ink);font-size:13px;cursor:pointer;">'
             f'Export CSV</button>')
 
     counter_html = (
         f'<span id="{table_id}-count" '
-        f'style="color:#9ca3af;font-size:12px;'
+        f'style="color:var(--faint);font-size:12px;'
         f'font-variant-numeric:tabular-nums;">'
         f'{len(rows_list):,} of {len(rows_list):,}</span>')
 
@@ -494,8 +494,8 @@ def render_power_table(
             f'style="padding:10px 14px;text-align:'
             f'{c.align};font-size:11px;text-transform:'
             f'uppercase;letter-spacing:0.05em;'
-            f'color:#9ca3af;background:#111827;'
-            f'border-bottom:1px solid #374151;'
+            f'color:var(--faint);background:var(--bg);'
+            f'border-bottom:1px solid var(--border);'
             f'{"display:none;" if not c.visible else ""}">'
             f'{_html.escape(c.label)}{sort_ind}</th>')
 
@@ -506,29 +506,29 @@ def render_power_table(
             filter_cells.append(
                 f'<th data-col="{_html.escape(c.key)}" '
                 f'style="padding:6px 14px;'
-                f'background:#1f2937;'
-                f'border-bottom:1px solid #374151;'
+                f'background:var(--paper-pure);'
+                f'border-bottom:1px solid var(--border);'
                 f'{"display:none;" if not c.visible else ""}">'
                 f'<input type="text" '
                 f'data-filter-key="{_html.escape(c.key)}" '
                 f'placeholder="filter…" '
-                f'style="width:100%;background:#0f172a;'
-                f'border:1px solid #374151;border-radius:'
-                f'4px;padding:3px 6px;color:#f3f4f6;'
+                f'style="width:100%;background:var(--bg);'
+                f'border:1px solid var(--border);border-radius:'
+                f'4px;padding:3px 6px;color:var(--ink);'
                 f'font-size:11px;"></th>')
         else:
             filter_cells.append(
                 f'<th data-col="{_html.escape(c.key)}" '
                 f'style="padding:6px 14px;'
-                f'background:#1f2937;'
-                f'border-bottom:1px solid #374151;'
+                f'background:var(--paper-pure);'
+                f'border-bottom:1px solid var(--border);'
                 f'{"display:none;" if not c.visible else ""}">'
                 f'</th>')
 
     table_html = (
         f'<div class="rs-table-wrap" '
-        f'style="background:#1f2937;border:1px solid '
-        f'#374151;border-radius:8px;'
+        f'style="background:var(--paper-pure);border:1px solid '
+        f'var(--border);border-radius:8px;'
         f'overflow:hidden;overflow-x:auto;'
         f'-webkit-overflow-scrolling:touch;">'
         f'<table style="width:100%;border-collapse:collapse;'
@@ -539,15 +539,15 @@ def render_power_table(
         f'</thead>'
         f'<tbody>'
         + "".join(
-            f'<tr>{"".join(f"<td style=padding:10px-14px;border-bottom:1px-solid-#374151;>"+"X"+"</td>" for _ in range(len(columns)))}</tr>'
+            f'<tr>{"".join(f"<td style=padding:10px-14px;border-bottom:1px-solid-var(--border);>"+"X"+"</td>" for _ in range(len(columns)))}</tr>'
             for _ in range(0))  # placeholder; replaced below
         + ''.join(
             '<tr>' + ''.join(
                 f'<td style="padding:10px 14px;'
-                f'border-bottom:1px solid #374151;">'
+                f'border-bottom:1px solid var(--border);">'
                 f'<span style="display:block;'
                 f'background:linear-gradient(90deg,'
-                f'#374151 0%,#4b5563 50%,#374151 100%);'
+                f'var(--border) 0%,var(--muted) 50%,var(--border) 100%);'
                 f'background-size:200% 100%;'
                 f'animation:skeleton-shimmer 1.4s '
                 f'linear infinite;border-radius:4px;'
