@@ -25,16 +25,11 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from .colors import STATUS
-from .global_search import render_search_bar
-from .loading import page_progress_bar
-from .nav import breadcrumb, keyboard_shortcuts
-from .responsive import (
-    responsive_stylesheet, viewport_meta,
-)
-from .theme import (
-    theme_init_script, theme_stylesheet, theme_toggle,
-)
+# Editorial port (2026-04-27): dropped imports for .colors / .loading /
+# .nav / .responsive / .theme — chartis_shell() now provides all the
+# editorial chrome + responsive layout + theme cascade. The .global_search
+# render_search_bar dropped too — chartis_shell's editorial topbar
+# already includes the editorial server-rendered search input.
 
 logger = logging.getLogger(__name__)
 
@@ -251,16 +246,18 @@ def _load_recent_activity(
 
 # ── Section renderers ───────────────────────────────────────
 
-_BG_PRIMARY = "#0f172a"
-_BG_SURFACE = "#1f2937"
-_BG_ELEVATED = "#111827"
-_BORDER = "#374151"
-_TEXT = "#f3f4f6"
-_TEXT_DIM = STATUS["neutral"]
-_ACCENT = STATUS["info"]
-_GREEN = STATUS["positive"]
-_AMBER = STATUS["watch"]
-_RED = STATUS["negative"]
+# Editorial port (2026-04-27): dark-shell palette → editorial palette
+# Same mapping as deal_profile_v2.py port (b283a04).
+_BG_PRIMARY = "#FFFFFF"   # was #0f172a → paper-pure
+_BG_SURFACE = "#FFFFFF"   # was #1f2937 → paper-pure
+_BG_ELEVATED = "#FAF7F0"  # was #111827 → paper
+_BORDER = "#D6CFC0"       # was #374151 → editorial border
+_TEXT = "#0F1C2E"         # was #f3f4f6 → ink (dark on light)
+_TEXT_DIM = "#5C6878"     # was STATUS["neutral"] → muted
+_ACCENT = "#155752"       # was STATUS["info"] → teal-deep
+_GREEN = "#3F7D4D"        # editorial green
+_AMBER = "#B7791F"        # editorial amber
+_RED = "#A53A2D"          # editorial red
 
 
 def _hero_strip(summary: Dict[str, Any]) -> str:
@@ -538,44 +535,40 @@ def _activity_section(
 # ── Main render ─────────────────────────────────────────────
 
 def render_dashboard_v3(store: Any) -> str:
-    """Render the story-driven dashboard."""
+    """Render the story-driven dashboard.
+
+    Editorial port (2026-04-27): drop the page's own <!doctype>,
+    theme_init_script, theme_stylesheet, theme_toggle, and the
+    page-progress-bar / keyboard-shortcuts JS. chartis_shell()
+    provides the editorial parchment + topbar + breadcrumbs +
+    PHI banner + sidebar + responsive layout. Per-section helpers
+    (_hero_strip / _opportunities_section / _alerts_section /
+    _activity_section) keep their existing markup; the page's
+    inline-styled action links convert to editorial-typed anchors.
+    """
     summary = _load_portfolio_summary(store)
     opportunities = _load_top_opportunities(store)
     alerts = _load_alerts(store)
     activity = _load_recent_activity(store)
 
-    return (
-        f'<!doctype html><html><head>'
-        f'<meta charset="utf-8">'
-        + theme_init_script()
-        + viewport_meta()
-        + f'<title>Portfolio · Morning view</title>'
-        + theme_stylesheet()
-        + responsive_stylesheet()
-        + f'<style>body{{margin:0;font-family:system-ui,'
-        f'-apple-system,sans-serif;}}</style></head><body>'
-        + page_progress_bar()
-        + f'<div class="rs-container" '
-        f'style="max-width:1100px;">'
-        + breadcrumb([("Dashboard", None)])
-        + f'<div style="display:flex;justify-content:'
+    page_body = (
+        f'<div class="rs-container" '
+        f'style="max-width:1100px;margin:0 auto;padding:1.5rem 1rem;">'
+        f'<div style="display:flex;justify-content:'
         f'space-between;align-items:baseline;'
-        f'margin-bottom:8px;">'
-        f'<h1 style="font-size:22px;color:{_TEXT};margin:0;">'
+        f'margin-bottom:.5rem;">'
+        f'<h1 style="font-size:1.5rem;color:{_TEXT};margin:0;'
+        f'font-family:\'Source Serif 4\',Georgia,serif;font-weight:400;">'
         f'Morning view</h1>'
-        + render_search_bar()
-        + f'<div style="display:flex;gap:14px;font-size:12px;'
+        f'<div style="display:flex;gap:14px;font-size:12px;'
         f'align-items:center;">'
-        f'<a href="/data/catalog" style="color:{_ACCENT};">'
+        f'<a href="/data/catalog?ui=v3" style="color:{_ACCENT};">'
         f'Data →</a>'
-        f'<a href="/models/quality" style="color:{_ACCENT};">'
+        f'<a href="/models/quality?ui=v3" style="color:{_ACCENT};">'
         f'Models →</a>'
-        f'<a href="/?v2=1" style="color:{_TEXT_DIM};">'
-        f'Legacy v2</a>'
-        + theme_toggle()
-        + f'</div></div>'
+        f'</div></div>'
         f'<p style="color:{_TEXT_DIM};font-size:13px;'
-        f'margin:0 0 24px 0;">Today\'s read on the '
+        f'margin:0 0 1.5rem 0;">Today\'s read on the '
         f'portfolio — what\'s working, what needs your '
         f'attention, what changed.</p>'
         + _hero_strip(summary)
@@ -583,6 +576,15 @@ def render_dashboard_v3(store: Any) -> str:
         + _alerts_section(alerts)
         + _activity_section(activity)
         + '</div>'
-        + keyboard_shortcuts()
-        + '</body></html>'
+    )
+
+    from ._chartis_kit import chartis_shell
+    return chartis_shell(
+        page_body,
+        title="Portfolio · Morning view",
+        active_nav="PORTFOLIO",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Dashboard", None),
+        ],
     )
