@@ -296,6 +296,57 @@ def editorial_link(path: str) -> str:
     return f"{path}?ui=v3"
 
 
+# Section-classifier prefix table — maps URL prefixes to topnav
+# section names. Used by ``_resolve_active_section`` so callers can
+# pass a route path (legacy convention) OR a section name (post-2026-04-26
+# convention) and the active-state matching just works. Audit
+# 2026-04-26 found that 200+ pages were passing route paths like
+# "/rcm-benchmarks" to ``active_nav`` — those never matched the
+# section-name comparison (DEALS/ANALYSIS/PORTFOLIO/MARKET/TOOLS), so
+# no page ever showed an active state. This table closes the gap.
+_SECTION_PREFIXES: dict = {
+    "DEALS":     ("/deals", "/diligence/", "/deal/", "/screening", "/screen", "/find-comps"),
+    "ANALYSIS":  ("/analysis", "/insights", "/ml-insights", "/quant-lab"),
+    "PORTFOLIO": ("/app", "/dashboard", "/home", "/portfolio", "/lp-",
+                   "/cohorts", "/alerts", "/pipeline"),
+    "MARKET":    ("/market", "/payer-intelligence", "/payer-intel",
+                   "/competitive-intel", "/sponsor-", "/seeking-alpha",
+                   "/sector-"),
+    "TOOLS":     ("/methodology", "/library", "/tools/", "/rcm-benchmarks",
+                   "/exports", "/backtest", "/benchmarks", "/calibration",
+                   "/models/", "/data/", "/data-", "/admin/", "/audit",
+                   "/api", "/conferences", "/news"),
+}
+
+_SECTION_NAMES = ("DEALS", "ANALYSIS", "PORTFOLIO", "MARKET", "TOOLS")
+
+
+def _resolve_active_section(active_nav: Optional[str]) -> str:
+    """Map an ``active_nav`` value to a topnav section name.
+
+    Accepts either:
+      - A section name (DEALS / ANALYSIS / PORTFOLIO / MARKET / TOOLS),
+        case-insensitive
+      - A route path (e.g. "/rcm-benchmarks", "/diligence/deal-mc"),
+        classified via _SECTION_PREFIXES
+
+    Returns "" when no section matches — caller renders no active
+    underline. Empty/None input returns "".
+    """
+    if not active_nav:
+        return ""
+    upper = active_nav.upper()
+    if upper in _SECTION_NAMES:
+        return upper
+    # Route-path classifier
+    lower = active_nav.lower()
+    for section, prefixes in _SECTION_PREFIXES.items():
+        for prefix in prefixes:
+            if lower.startswith(prefix):
+                return section
+    return ""
+
+
 def editorial_topbar(active_nav: Optional[str] = None) -> str:
     """Render the editorial topbar per spec §6.1.
 
@@ -313,6 +364,12 @@ def editorial_topbar(active_nav: Optional[str] = None) -> str:
     false affordance. Phase 4 wires real dropdowns when destinations
     are fully ported.
 
+    ``active_nav`` may be either a section name (DEALS/ANALYSIS/etc.)
+    or a route path ("/rcm-benchmarks", "/diligence/..."). The latter
+    is classified to a section via _SECTION_PREFIXES — preserves the
+    legacy calling convention used by 200+ pages without forcing a
+    sweep. See _resolve_active_section.
+
     Destination map (defaults from existing IA_MAP; revise as Phase 2b
     completes per-section):
         DEALS     → /deals          (deals list)
@@ -328,10 +385,10 @@ def editorial_topbar(active_nav: Optional[str] = None) -> str:
         ("MARKET",    "/market-intel"),
         ("TOOLS",     "/methodology"),
     )
-    active_upper = (active_nav or "").upper()
+    active_section = _resolve_active_section(active_nav)
     nav_html = "".join(
         f'<a href="{_html.escape(editorial_link(href))}" '
-        f'class="{"active" if label == active_upper else ""}">'
+        f'class="{"active" if label == active_section else ""}">'
         f'{label}</a>'
         for label, href in nav_items
     )
@@ -691,6 +748,7 @@ __all__ = [
     # Shell
     "chartis_shell", "editorial_topbar", "editorial_crumbs",
     "editorial_page_head", "editorial_link", "phi_banner",
+    "_resolve_active_section",
     # Pair pattern
     "pair_block",
     # Atoms

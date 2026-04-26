@@ -590,6 +590,49 @@ class TestUIReworkContract(unittest.TestCase):
             f"Add them as aliases in _chartis_kit_editorial.py P dict.",
         )
 
+    def test_resolve_active_section_classifies_legacy_route_paths(self) -> None:
+        """``_resolve_active_section`` must accept BOTH section names
+        and route paths. Audit 2026-04-26 found 200+ pages passed
+        legacy route paths like ``"/rcm-benchmarks"`` to ``active_nav``;
+        the topbar previously matched only against
+        DEALS/ANALYSIS/PORTFOLIO/MARKET/TOOLS, so no page ever showed
+        an active state. This test locks in the new resolver
+        contract."""
+        from rcm_mc.ui._chartis_kit_editorial import _resolve_active_section
+        # Section names pass through (case-insensitive)
+        self.assertEqual(_resolve_active_section("DEALS"), "DEALS")
+        self.assertEqual(_resolve_active_section("deals"), "DEALS")
+        self.assertEqual(_resolve_active_section("PORTFOLIO"), "PORTFOLIO")
+        # Route paths classified by prefix
+        self.assertEqual(
+            _resolve_active_section("/rcm-benchmarks"), "TOOLS",
+            "/rcm-benchmarks should classify to TOOLS",
+        )
+        self.assertEqual(
+            _resolve_active_section("/diligence/deal-mc"), "DEALS",
+            "/diligence/* should classify to DEALS",
+        )
+        self.assertEqual(
+            _resolve_active_section("/app?ui=v3"), "PORTFOLIO",
+            "/app should classify to PORTFOLIO",
+        )
+        self.assertEqual(
+            _resolve_active_section("/market-intel"), "MARKET",
+        )
+        self.assertEqual(
+            _resolve_active_section("/payer-intelligence"), "MARKET",
+        )
+        self.assertEqual(
+            _resolve_active_section("/methodology"), "TOOLS",
+        )
+        # Unknown / empty → no active section (no crash)
+        self.assertEqual(_resolve_active_section(None), "")
+        self.assertEqual(_resolve_active_section(""), "")
+        self.assertEqual(
+            _resolve_active_section("/some-unknown-route-xyz"), "",
+            "unrecognized routes should return empty (no false-positive active state)",
+        )
+
     def test_v3_topnav_sections_are_navigable_anchors(self) -> None:
         """Editorial topnav sections must be navigable anchors, not
         decorative buttons.
