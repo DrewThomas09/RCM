@@ -24,11 +24,16 @@ Public surface::
     )
 
 Note: ``MetricReimbursementSensitivity`` was previously named
-``ReimbursementProfile``. The old name is still exported as a
-back-compat alias, but new code should use the explicit one —
-``rcm_mc.finance.reimbursement_engine`` also defines a
-``ReimbursementProfile`` with different semantics (hospital-level
-revenue exposure, not per-metric sensitivity).
+``ReimbursementProfile``. The old name remains accessible via
+``rcm_mc.domain.ReimbursementProfile`` for back-compat, but it now
+emits a ``DeprecationWarning`` on access (PEP 562 module ``__getattr__``)
+because ``rcm_mc.finance.reimbursement_engine`` also defines a
+``ReimbursementProfile`` class with different semantics (hospital-level
+revenue exposure, not per-metric sensitivity). The two share a name
+but the type system cannot distinguish them; new code should import
+``MetricReimbursementSensitivity`` from this package or
+``ReimbursementProfile`` from ``finance.reimbursement_engine`` —
+never the deprecated alias.
 """
 from .econ_ontology import (  # noqa: F401
     CausalGraph,
@@ -40,7 +45,6 @@ from .econ_ontology import (  # noqa: F401
     MechanismEdge,
     MetricDefinition,
     MetricReimbursementSensitivity,
-    ReimbursementProfile,   # back-compat alias for MetricReimbursementSensitivity
     ReimbursementType,
     causal_graph,
     classify_metric,
@@ -53,6 +57,27 @@ __all__ = [
     "ConfidenceClass", "ReimbursementType",
     "MetricDefinition", "MechanismEdge", "CausalGraph",
     "MetricReimbursementSensitivity",
-    "ReimbursementProfile",   # deprecated alias
     "classify_metric", "explain_causal_path", "causal_graph",
 ]
+
+
+def __getattr__(name: str):
+    # PEP 562: lazy back-compat shim. Imports of
+    # ``rcm_mc.domain.ReimbursementProfile`` keep working but warn so
+    # the name-collision with ``finance.reimbursement_engine.ReimbursementProfile``
+    # is surfaced at runtime instead of silently shipping the wrong class.
+    # Cross-link Report 0094 MR516.
+    if name == "ReimbursementProfile":
+        import warnings as _w
+        _w.warn(
+            "rcm_mc.domain.ReimbursementProfile is a deprecated back-compat "
+            "alias for MetricReimbursementSensitivity. It collides by name "
+            "with finance.reimbursement_engine.ReimbursementProfile, which "
+            "has different semantics. Import MetricReimbursementSensitivity "
+            "explicitly, or import ReimbursementProfile from "
+            "rcm_mc.finance.reimbursement_engine if that is what you want.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return MetricReimbursementSensitivity
+    raise AttributeError(f"module 'rcm_mc.domain' has no attribute {name!r}")
