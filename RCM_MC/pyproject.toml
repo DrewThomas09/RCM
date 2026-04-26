@@ -50,6 +50,16 @@ diligence = [
     "dbt-duckdb>=1.10,<2.0",
     "pyarrow>=18.1,<19.0",
 ]
+# scipy is a soft optional used only for KDE smoothing in
+# rcm_mc/reports/reporting.py and truncated-normal moments in
+# rcm_mc/core/distributions.py. Both call sites are wrapped in
+# try/except ImportError with histogram / unbounded-normal fallbacks,
+# so the package runs on default install. Listed here to make
+# ``pip install seekingchartis[stats]`` opt-in for nicer charts.
+stats = ["scipy>=1.11"]
+# ``[all]`` should mean genuinely everything — including
+# ``[diligence]`` and ``[stats]`` — so a single ``pip install -e ".[all]"``
+# yields a fully-featured dev environment. (Report 0001 MR18.)
 all = [
     "openpyxl>=3.1",
     "plotly>=5.0",
@@ -57,6 +67,10 @@ all = [
     "fastapi>=0.100",
     "uvicorn>=0.23",
     "scipy>=1.11",
+    "duckdb>=1.0,<2.0",
+    "dbt-core>=1.10,<2.0",
+    "dbt-duckdb>=1.10,<2.0",
+    "pyarrow>=18.1,<19.0",
 ]
 dev = [
     "pytest>=7.0",
