@@ -166,6 +166,20 @@ Partner-facing operations:
   the docstring explains the constraint or the prior incident that
   drove the decision.
 
+### Delete-policy matrix
+
+The audit chain (Reports 0167, 0181, 0211, MR982) found five distinct delete behaviors across the SQLite layer with no single source of truth. Pick one *deliberately* when adding a new child table; do not let `_ensure_table` defaults choose for you.
+
+| Behavior | When to use it | Examples on disk | Operator UX |
+|---|---|---|---|
+| **`ON DELETE CASCADE`** | Child rows are derivative analytics that have no meaning without the parent. Deleting the deal must remove them in one transaction. | `analysis_runs`, `mc_simulation_runs`, `deal_overrides` | Best — single `DELETE FROM deals WHERE …` succeeds atomically. |
+| **`ON DELETE SET NULL`** | Child row outlives the parent because it is an audit/export artifact you want to keep, but its FK column should null out. | `generated_exports.deal_id` | Good — historical exports stay browsable; the column just shows `NULL`. |
+| **`ON DELETE NO ACTION` (the default)** | Child row must be cleared explicitly by the operator before the parent goes. Use only when deletion is genuinely a multi-step admin operation. | `sessions`, `initiative_actuals`, `engagement_*` (4 tables) | Worst — `DELETE FROM deals` raises `sqlite3.IntegrityError`; partner has to clear children manually. Document the cleanup order. |
+| **Soft-delete (status flag)** | Row is logically gone but partner may need to undelete or audit-trail. Add a `deleted_at` (or `archived` boolean) column; readers filter it out. | `deal_notes` | Reversible. Forces every reader to JOIN/filter — easy to forget. |
+| **Hard-delete (no FK)** | Sibling table where the parent is conceptual, not a row, OR write-only audit log. | `deal_overrides` (also has CASCADE for the deal-FK side) | Final — cannot recover. |
+
+**Rule of thumb:** prefer **CASCADE** for derivative analytics, **SET NULL** for audit artifacts, **soft-delete** for partner-visible records. Reach for **NO ACTION** only when the operator-visible cleanup step is intentional, and document the cleanup order in the same migration that introduces the FK.
+
 ### Testing
 - **Each feature has a `test_<feature>.py` file** in `tests/`.
 - **Bug fixes have `test_bug_fixes_b<N>.py`** and a corresponding
