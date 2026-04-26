@@ -16,3 +16,4 @@ e624c0c | 2026-04-26 | HIGH     | Report-0249 | get_member_role public-by-use, p
 8d355d2 | 2026-04-26 | MEDIUM   | Report-0253 | 6 untested public helpers in infra/config.py — added 17 focused tests (is_multi_site, expand_multi_site, canonical_payer_name, export/import_config_json, flatten_config); also pins MR1049 alias contract
 110f2cf | 2026-04-26 | HIGH×2   | Report-0001 | extras graph fixes — added [stats] for scipy (MR17) + folded [diligence] into [all] so `pip install ".[all]"` is genuinely complete (MR18)
 d3f23b3 | 2026-04-26 | HIGH     | Report-0094 | ReimbursementProfile name-collision (domain alias vs finance class) — deprecated the domain alias via PEP 562 __getattr__ with DeprecationWarning; back-compat preserved
+442bb98 | 2026-04-26 | HIGH     | Report-0212 | ai/document_qa.answer_question hardened against prompt injection — 2000-char question cap + <document>/<question> tagged delimiters + defensive system prompt
