@@ -615,6 +615,16 @@ The legacy codebase serves the dashboard at `/`. Spec §2 reroutes `/` to the ma
 
 ### Q4.2 — Existing `/dashboard` and `/home` routes
 
+**Status:** ✅ Resolved (2026-04-27, commit pending). Same shape as Q4.1: when v3 mode is active AND user is authenticated, both `/dashboard` and `/home` (plus the `/caduceus` and `/seekingchartis` aliases on `/home`) 303-redirect to `/app`. Anonymous v3 + legacy mode (`?ui=v2`) keep their existing renderers — no surprise redirect for legacy users.
+
+This means legacy partners hitting `/dashboard` continue to see the legacy dashboard until the env-default flips to `CHARTIS_UI_V2=1` at Phase 4 cutover; v3-authenticated partners get the editorial unification immediately.
+
+**Resolved-by:**
+
+1. Decision: v3 + authenticated → `/app`; everyone else → existing renderer.
+2. Contract tests shipped: `test_q4_2_dashboard_redirects_to_app_for_authenticated_v3_users`, `test_q4_2_home_redirects_to_app_for_authenticated_v3_users`, `test_q4_2_legacy_dashboard_does_not_redirect` (negative test guards against accidental legacy regression).
+3. Same comms-plan note as Q4.1 — partners must know the bare-domain + `/dashboard` + `/home` behavior changes once env-default flips.
+
 If `/` reroutes, do `/dashboard` and `/home` stay as legacy aliases (302), get repurposed, or 410? Decide alongside Q4.1.
 
 ### Q4.3 — `/engagements` (must resolve before Phase 2 begins)

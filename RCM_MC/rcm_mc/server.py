@@ -1982,12 +1982,39 @@ class RCMHandler(BaseHTTPRequestHandler):
             # Private-app landing page (Heroku / small-team deployments).
             # Composes: curated analyses · recent runs · system status ·
             # data freshness. See ui/dashboard_page.py.
+            #
+            # Q4.2 cutover (2026-04-27): when v3 mode is active AND the
+            # user is authenticated, redirect to /app (the editorial
+            # dashboard). The legacy /dashboard render survives for
+            # legacy mode + when explicitly requested via ?ui=v2.
+            # Mirrors Q4.1 behavior on /.
+            from .ui._chartis_kit import UI_V2_ENABLED
+            v3_active = (
+                UI_V2_ENABLED
+                or getattr(self, "_ui_choice", "legacy") == "editorial"
+            )
+            if v3_active and self._current_user() is not None:
+                return self._redirect("/app")
             from .ui.dashboard_page import render_dashboard
             return self._send_html(render_dashboard(
                 self.config.db_path,
                 started_at=getattr(type(self), "_process_started_at", None),
             ))
         if path == "/home" or path == "/caduceus" or path == "/seekingchartis":
+            # Q4.2 cutover (2026-04-27): /home is a chartis-namespaced
+            # landing surface that pre-Q4 served as the partner home.
+            # When v3 is active AND the user is authenticated, redirect
+            # to /app (the editorial dashboard). /caduceus and
+            # /seekingchartis are legacy aliases that follow the same
+            # rule. Anonymous v3 + legacy mode keep the existing
+            # behavior (chartis home renderer).
+            from .ui._chartis_kit import UI_V2_ENABLED
+            v3_active = (
+                UI_V2_ENABLED
+                or getattr(self, "_ui_choice", "legacy") == "editorial"
+            )
+            if v3_active and self._current_user() is not None:
+                return self._redirect("/app")
             return self._route_seekingchartis_home()
         if path == "/" or path == "/index.html":
             # Phase 13 of the UI v2 editorial rework: when

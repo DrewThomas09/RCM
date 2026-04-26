@@ -871,6 +871,90 @@ class TestUIReworkContract(unittest.TestCase):
             "empty active_path should not highlight any module",
         )
 
+    def test_q4_2_dashboard_redirects_to_app_for_authenticated_v3_users(self) -> None:
+        """Q4.2 cutover (2026-04-27): /dashboard mirrors /'s Q4.1
+        behavior — when v3 active AND authenticated, redirect to /app.
+
+        Anonymous v3 + legacy mode keep the existing /dashboard
+        renderer. Same trigger logic as Q4.1 (env CHARTIS_UI_V2=1 OR
+        per-request ?ui=v3).
+        """
+        cj = http.cookiejar.CookieJar()
+        login_opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj)
+        )
+        _login(login_opener, self.port)
+        nofollow = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj),
+            _NoRedirectHandler(),
+        )
+        try:
+            resp = nofollow.open(
+                f"http://127.0.0.1:{self.port}/dashboard?ui=v3", timeout=10,
+            )
+            code = resp.status
+            location = resp.headers.get("Location", "")
+        except urllib.error.HTTPError as e:
+            code = e.code
+            location = e.headers.get("Location", "")
+        self.assertIn(
+            code, (302, 303),
+            f"v3 /dashboard should redirect, got {code}",
+        )
+        self.assertEqual(
+            location, "/app",
+            f"redirect target should be /app, got {location!r}",
+        )
+
+    def test_q4_2_home_redirects_to_app_for_authenticated_v3_users(self) -> None:
+        """Q4.2 cutover (2026-04-27): /home (and aliases /caduceus,
+        /seekingchartis) mirror /'s Q4.1 behavior — when v3 active
+        AND authenticated, redirect to /app."""
+        cj = http.cookiejar.CookieJar()
+        login_opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj)
+        )
+        _login(login_opener, self.port)
+        nofollow = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj),
+            _NoRedirectHandler(),
+        )
+        try:
+            resp = nofollow.open(
+                f"http://127.0.0.1:{self.port}/home?ui=v3", timeout=10,
+            )
+            code = resp.status
+            location = resp.headers.get("Location", "")
+        except urllib.error.HTTPError as e:
+            code = e.code
+            location = e.headers.get("Location", "")
+        self.assertIn(
+            code, (302, 303),
+            f"v3 /home should redirect, got {code}",
+        )
+        self.assertEqual(
+            location, "/app",
+            f"redirect target should be /app, got {location!r}",
+        )
+
+    def test_q4_2_legacy_dashboard_does_not_redirect(self) -> None:
+        """The Q4.2 redirect must NOT fire when ui=v2 is explicitly
+        requested OR when no v3 mode is active. Legacy users keep
+        seeing the legacy /dashboard render — no surprise redirect."""
+        cj = http.cookiejar.CookieJar()
+        login_opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj)
+        )
+        _login(login_opener, self.port)
+        # Explicit ?ui=v2 forces legacy
+        resp = login_opener.open(
+            f"http://127.0.0.1:{self.port}/dashboard?ui=v2", timeout=10,
+        )
+        self.assertEqual(
+            resp.status, 200,
+            "explicit ?ui=v2 should render /dashboard, not redirect",
+        )
+
     def test_q4_1_root_redirects_to_app_for_authenticated_v3_users(self) -> None:
         """Q4.1 cutover (2026-04-27): when v3 is active (env
         CHARTIS_UI_V2=1 OR per-request ?ui=v3) AND user is
