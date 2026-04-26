@@ -225,10 +225,102 @@ def export_partner_brief(
     return canonical
 
 
+# ── Facade functions (3 packet/zip exporters — Phase 3 commit 3) ──
+
+
+def export_diligence_memo(
+    store: Any,
+    *,
+    deal_id: str,
+    packet: Any,
+    fmt: str = "html",                # "html" | "pptx"
+    analysis_run_id: Optional[str] = None,
+    generated_by: Optional[str] = None,
+) -> Path:
+    """Canonical-path facade for PacketRenderer.render_diligence_memo_*.
+
+    Renders the packet's diligence memo in the requested format.
+    fmt=='html' calls render_diligence_memo_html; fmt=='pptx' calls
+    render_diligence_memo_pptx.
+    """
+    from rcm_mc.exports.packet_renderer import PacketRenderer
+
+    if fmt not in ("html", "pptx"):
+        raise ValueError(f"fmt must be 'html' or 'pptx', got {fmt!r}")
+    filename = f"diligence_memo.{fmt}"
+    canonical = canonical_deal_export_path(deal_id, filename)
+    with tempfile.TemporaryDirectory(prefix="rcm_diligence_memo_") as tmp:
+        renderer = PacketRenderer(out_dir=Path(tmp))
+        if fmt == "html":
+            produced = renderer.render_diligence_memo_html(packet)
+        else:
+            produced = renderer.render_diligence_memo_pptx(packet)
+        _move_to_canonical(Path(produced), canonical)
+    _record(store, deal_id=deal_id, canonical=canonical, fmt=fmt,
+            analysis_run_id=analysis_run_id, generated_by=generated_by)
+    return canonical
+
+
+def export_diligence_package_zip(
+    store: Any,
+    *,
+    deal_id: str,
+    packet: Any,
+    inputs_hash: str = "",
+    analysis_run_id: Optional[str] = None,
+    generated_by: Optional[str] = None,
+) -> Path:
+    """Canonical-path facade for diligence_package.generate_package.
+
+    Wraps the 9+ documents into a zip and writes to the canonical
+    location. The package's INNER manifest path naming (the names of
+    files inside the zip) is unchanged — only the zip's location on
+    disk is canonicalized.
+    """
+    from rcm_mc.exports.diligence_package import generate_package
+
+    canonical = canonical_deal_export_path(deal_id, "diligence_package.zip")
+    with tempfile.TemporaryDirectory(prefix="rcm_diligence_package_") as tmp:
+        produced = generate_package(packet, Path(tmp), inputs_hash=inputs_hash)
+        _move_to_canonical(Path(produced), canonical)
+    _record(store, deal_id=deal_id, canonical=canonical, fmt="zip",
+            analysis_run_id=analysis_run_id, generated_by=generated_by)
+    return canonical
+
+
+def export_exit_package_zip(
+    store: Any,
+    *,
+    deal_id: str,
+    analysis_run_id: Optional[str] = None,
+    generated_by: Optional[str] = None,
+) -> Path:
+    """Canonical-path facade for exit_package.generate_exit_package.
+
+    The underlying writer takes ``store`` + ``deal_id`` + optional
+    ``out_dir``; the facade threads its tmp dir as out_dir, then
+    moves the produced zip to canonical.
+    """
+    from rcm_mc.exports.exit_package import generate_exit_package
+
+    canonical = canonical_deal_export_path(deal_id, "exit_package.zip")
+    with tempfile.TemporaryDirectory(prefix="rcm_exit_package_") as tmp:
+        produced = generate_exit_package(store, deal_id, out_dir=Path(tmp))
+        _move_to_canonical(Path(produced), canonical)
+    _record(store, deal_id=deal_id, canonical=canonical, fmt="zip",
+            analysis_run_id=analysis_run_id, generated_by=generated_by)
+    return canonical
+
+
 __all__ = [
+    # Reports (commit 2)
     "export_full_html_report",
     "export_html_report",
     "export_markdown_report",
     "export_exit_memo",
     "export_partner_brief",
+    # Packet/zip (commit 3)
+    "export_diligence_memo",
+    "export_diligence_package_zip",
+    "export_exit_package_zip",
 ]
