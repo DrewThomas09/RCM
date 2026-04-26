@@ -1189,3 +1189,81 @@ footer.editorial em { color: var(--ink); font-style: italic; }
   .module-card { border-right: none !important; }
   .module-card:not(:last-child) { border-bottom: 1px solid var(--border) !important; }
 }
+
+/* ── Legacy ck-* classes — editorial overrides ──────────────────────
+   4 chartis-namespaced pages (rcm_benchmarks, partner_review,
+   deal_screening, home) emit class="ck-panel" / "ck-table" / etc.
+   These classes are defined in _chartis_kit_legacy.py's inline style
+   block and load with the legacy shell. Under CHARTIS_UI_V2=1 the
+   editorial dispatcher loads chartis.css instead, where these classes
+   were not defined — so the affected panels rendered unstyled.
+
+   Verified 2026-04-27 via grep:
+     - rcm_mc/ui/chartis/{rcm_benchmarks,partner_review,deal_screening,
+       home}_page.py emit ck-* classes
+     - rcm_mc/ui/static/v3/chartis.css had no matching rules
+   This block ports the legacy classes to editorial palette equivalents
+   so those pages render coherently in editorial mode. Phase 5 cleanup
+   sweeps the ck-* classes out of those pages entirely; until then,
+   these editorial overrides keep them from looking unstyled. */
+
+.ck-panel {
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.ck-panel-title {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+  padding: .65rem 1rem .55rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--paper);
+}
+
+.ck-table-wrap {
+  overflow-x: auto;
+}
+table.ck-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: "Inter", sans-serif;
+  font-size: .82rem;
+  table-layout: auto;
+  background: var(--paper-pure);
+}
+table.ck-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--paper);
+}
+table.ck-table th {
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+  padding: .55rem .8rem;
+  font-family: "Inter", sans-serif;
+  font-size: .65rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  text-align: left;
+}
+table.ck-table th.num { text-align: right; }
+table.ck-table td {
+  padding: .55rem .8rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+table.ck-table tr:nth-child(even) td { background: var(--bg-tint); }
+table.ck-table td.num {
+  text-align: right;
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+table.ck-table tr:hover td { background: var(--bg-tint); }
