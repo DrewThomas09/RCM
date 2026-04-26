@@ -6,6 +6,7 @@ industry events relevant to hospital M&A diligence teams.
 from __future__ import annotations
 
 import html as _html
+import urllib.parse as _urlparse
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import chartis_shell
@@ -283,8 +284,14 @@ def render_conference_roadmap(category: str = "all") -> str:
     )
     for cat in categories:
         active = " cad-tab-active" if category.lower() == cat.lower() else ""
+        # URL-encode the category for the query string. Categories like
+        # "Health IT" contain spaces that html.escape() leaves as literal
+        # spaces — those land in the href as "Health IT" and produce a
+        # malformed URL. urllib.parse.quote_plus produces "Health+IT".
+        # Visible-text rendering still uses html.escape (XSS guard).
+        cat_url = _urlparse.quote_plus(cat.lower())
         cat_tabs += (
-            f'<a href="/conferences?cat={_html.escape(cat.lower())}" '
+            f'<a href="/conferences?cat={cat_url}" '
             f'class="cad-tab{active}" style="text-decoration:none;">{_html.escape(cat)}</a>'
         )
 

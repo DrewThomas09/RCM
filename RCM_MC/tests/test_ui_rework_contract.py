@@ -563,6 +563,33 @@ class TestUIReworkContract(unittest.TestCase):
             "Q3.7 trim regressed — verbose legacy copy returned",
         )
 
+    def test_editorial_palette_has_all_legacy_keys(self) -> None:
+        """Editorial palette must contain every key the legacy palette does.
+
+        Audit 2026-04-25 found 193 of 291 routes 500'd in editorial mode
+        because pages from the dark-shell era reach for ``P["panel"]``,
+        ``P["positive"]``, etc. — keys that exist in the legacy palette
+        but NOT in editorial. The dispatcher swaps `P` between palettes,
+        so a missing key crashes the page with KeyError.
+
+        This contract is the discipline gate: any future palette refactor
+        that drops a key from the editorial palette without verifying no
+        page reaches for it will fail this test before reaching CI. The
+        editorial palette is a SUPERSET of legacy + its own native keys.
+
+        Phase 5 cleanup will sweep the legacy keys out of all pages,
+        removing the need for this superset; until then, this is the
+        load-bearing invariant.
+        """
+        from rcm_mc.ui._chartis_kit_legacy import P as P_legacy
+        from rcm_mc.ui._chartis_kit_editorial import P as P_editorial
+        missing = set(P_legacy.keys()) - set(P_editorial.keys())
+        self.assertEqual(
+            missing, set(),
+            f"Editorial palette missing legacy keys: {sorted(missing)}. "
+            f"Add them as aliases in _chartis_kit_editorial.py P dict.",
+        )
+
     def test_v3_brand_link_preserves_editorial_flag(self) -> None:
         """The SeekingChartis logo on any v3 page must NOT drop the user
         back into the legacy shell when clicked.

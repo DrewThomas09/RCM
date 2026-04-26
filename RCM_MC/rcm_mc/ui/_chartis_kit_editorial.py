@@ -178,9 +178,32 @@ P: dict = {
     "red_soft":      "#EBD3CD",
     "blue":          "#2C5C84",
     "blue_soft":     "#D6E1EB",
-    # legacy aliases (callers that read P["accent"] — Phase 5 sweeps these)
+    # legacy aliases — callers from the dark-shell era reach for P["panel"],
+    # P["positive"] etc. Editorial doesn't conceptualize the same way (no
+    # dark cards, no separate "positive" status), but the keys must
+    # resolve to SOMETHING or every dark-era page crashes with KeyError
+    # when CHARTIS_UI_V2=1 flips the dispatcher. Each alias maps to the
+    # closest editorial visual role.
+    #
+    # Phase 5 cleanup sweeps these once every page has been ported to
+    # native editorial keys (Q5.1, registered in UI_REWORK_PLAN.md when
+    # Phase 5 begins).
+    #
+    # Audit 2026-04-25 found 193 of 291 routes 500'd in editorial mode
+    # with KeyError on these keys. Adding the alias block fixed it.
     "accent":        "#155752",      # → teal_deep
     "accent_soft":   "#D4E4E2",      # → teal_soft
+    "panel":         "#FFFFFF",      # → paper_pure (white card on parchment)
+    "panel_alt":     "#FAF7F0",      # → paper (slightly off-white)
+    "border_dim":    "#D6CFC0",      # → border (editorial has one border weight)
+    "text":          "#0F1C2E",      # → ink (primary editorial text)
+    "text_dim":      "#5C6878",      # → muted
+    "text_faint":    "#8A92A0",      # → faint
+    "positive":      "#3F7D4D",      # → green
+    "negative":      "#A53A2D",      # → red
+    "warning":       "#B7791F",      # → amber
+    "critical":      "#A53A2D",      # → red (editorial has one severity-red, not two)
+    "row_stripe":    "#E8E0D0",      # → bg_tint (subtle parchment stripe)
 }
 
 
