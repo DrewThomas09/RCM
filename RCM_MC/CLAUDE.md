@@ -20,8 +20,11 @@ required for local use.
 
 ## Tech stack
 
-- **Python 3.14** (stdlib-heavy; pandas + numpy + matplotlib are the
-  only runtime deps beyond stdlib)
+- **Python 3.10+** (stdlib-heavy; pandas + numpy + matplotlib are the
+  only runtime deps beyond stdlib). `pyproject.toml` declares
+  `requires-python = ">=3.10"` and classifies for 3.10–3.14; ruff and
+  mypy both target `py310` as the lowest supported syntax. Tested
+  locally on 3.14, but contributors on 3.10–3.13 are supported.
 - **SQLite** via `sqlite3` stdlib — ~89 tables across all subpackages
   (core portfolio + data_public/ CMS loaders + ml/ audit/predictions +
   engagement/ + ai/ caching), `busy_timeout=5000`, idempotent
