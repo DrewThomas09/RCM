@@ -21,10 +21,11 @@ Per Phase 2 review (W4): section-header IA aid was DROPPED. Reasoning:
      render meaningfully. A section break between them would impose
      a false visual separation between cause and effect.
 
-# TODO(phase 3): consider scroll-aid affordance (sticky TOC?
+# TODO(phase 4): consider scroll-aid affordance (sticky TOC?
 # scroll-spy?) IF post-launch usage shows partners getting lost in
-# the dashboard. Don't pre-emptively add IA structure that wasn't
-# asked for; add it informed by real usage data.
+# the dashboard. Q3.6 deferred per Phase 3 review — add only when
+# real usage data shows it's needed; don't pre-emptively impose IA
+# structure that wasn't asked for. Tracked in docs/UI_REWORK_PLAN.md.
 
 Routing notes (W2 — focused_row vs deal_id):
 

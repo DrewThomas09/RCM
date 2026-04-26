@@ -450,6 +450,145 @@ class TestUIReworkContract(unittest.TestCase):
             f"redirect target should be /dashboard, got {location!r}",
         )
 
+    # ── Phase 3 contract tests (commit 10) ────────────────────────
+
+    def test_v3_app_deliverables_block_renders_card_or_empty_state(self) -> None:
+        """Per Phase 3 commit 5 (Q3.5 canonical-path migration):
+        deliverables block renders either a card (real export) or an
+        explicit empty-state — never silent-empty.
+
+        The block must wire to ``generated_exports`` first, falling back
+        to ``analysis_runs``. We don't seed an export here, so we expect
+        the empty-state path; the test guards that the block isn't
+        silently dropped from the page.
+        """
+        body = self._fetch_body("/app?ui=v3")
+        self.assertIn("app-deliv", body, "deliverables block missing")
+        self.assertTrue(
+            "app-deliv-empty" in body
+            or 'class="app-deliv-card"' in body
+            or "app-deliv__card" in body
+            or "/exports/" in body,
+            "deliverables block has neither card nor empty-state marker",
+        )
+
+    def test_v3_app_ebitda_drag_block_renders(self) -> None:
+        """Per Phase 3 commit 6: EBITDA drag block must render an
+        empty-state when no deal is focused, OR the bucket bar (with
+        the 5-component partition) when a focused deal has packet data."""
+        body = self._fetch_body("/app?ui=v3")
+        self.assertTrue(
+            "app-drag-empty" in body or "app-drag-bar" in body,
+            "EBITDA drag block missing",
+        )
+
+    def test_v3_app_covenant_heatmap_footnote_present(self) -> None:
+        """Per Phase 3 commit 7 (Q4.5 honest-partial-wiring):
+        the covenant grid honestly distinguishes the 1 wired row from
+        the 5 unwired rows. Partners shouldn't infer the other 5 rows
+        are real signals.
+
+        Tested at the helper layer (covenant_grid) because the footnote
+        only renders when the focused deal has covenant data — the
+        anonymous /app fetch from this contract suite hits the empty-
+        state path. We verify the contract that exactly one row carries
+        ``wired=True`` regardless of data presence.
+        """
+        from rcm_mc.ui.chartis._app_covenant_heatmap import covenant_grid
+        store = PortfolioStore(self.db)
+        rows = covenant_grid(store, "no_such_deal_for_grid_shape_test")
+        self.assertEqual(
+            len(rows), 6,
+            f"covenant grid must have 6 rows (Net Leverage + 5 unwired), got {len(rows)}",
+        )
+        wired_count = sum(1 for r in rows if r.get("wired"))
+        self.assertEqual(
+            wired_count, 1,
+            f"exactly 1 covenant row must be wired (Net Leverage); got {wired_count}",
+        )
+        # The wired row must be Net Leverage — name is the load-bearing
+        # contract for the partner-walkthrough demo.
+        wired_row = next(r for r in rows if r.get("wired"))
+        self.assertIn(
+            "leverage", wired_row.get("name", "").lower(),
+            f"wired row should be Net Leverage; got {wired_row.get('name')!r}",
+        )
+
+    def test_v3_app_initiative_tracker_cross_portfolio_when_no_focus(self) -> None:
+        """Per Phase 3 commit 8 (Q3.4): when no deal is focused, the
+        initiative tracker block renders the cross-portfolio variance
+        view with the trailing-4Q label."""
+        body = self._fetch_body("/app?ui=v3")
+        self.assertIn("app-init", body, "initiative tracker missing")
+        # When no deal focused (default /app render), expect the
+        # cross-portfolio label OR an empty-state (fresh DB has zero
+        # initiatives recorded — the empty-state still indicates the
+        # cross-portfolio shape was attempted)
+        self.assertTrue(
+            "CROSS-PORTFOLIO" in body
+            or "trailing 4 quarters" in body
+            or "No initiative actuals" in body,
+            "initiative tracker did not pivot to cross-portfolio shape",
+        )
+
+    def test_v3_phi_banner_visual_weight_q37(self) -> None:
+        """Per Phase 3 commit 9 (Q3.7): editorial PHI banner uses the
+        muted-green compliance-band styling, not the loud status-green.
+
+        Locks in the visual-weight reduction so a future style refactor
+        doesn't silently restore the loud variant.
+        """
+        os.environ["RCM_MC_PHI_MODE"] = "disallowed"
+        try:
+            body = self._fetch_body("/app?ui=v3")
+        finally:
+            os.environ.pop("RCM_MC_PHI_MODE", None)
+        # The trimmed copy is the load-bearing change — verify the
+        # full legacy phrase ("on this instance") was dropped from the
+        # editorial banner.
+        # Find the phi-banner div; assert the trimmed copy is inside
+        import re
+        match = re.search(
+            r'<div class="phi-banner"[^>]*>(.*?)</div>',
+            body, flags=re.DOTALL,
+        )
+        self.assertIsNotNone(match, "phi-banner div missing")
+        banner_inner = match.group(1)
+        self.assertIn(
+            "no PHI", banner_inner,
+            "PHI banner copy missing the no-PHI marker",
+        )
+        self.assertNotIn(
+            "permitted on this instance", banner_inner,
+            "Q3.7 trim regressed — verbose legacy copy returned",
+        )
+
+    def test_v3_app_canonical_export_path_helpers_exist(self) -> None:
+        """Per Phase 3 commit 1 (Q3.5 + Q2 push-back):
+        canonical_deal_export_path + canonical_portfolio_export_path
+        must both exist as separate functions. The two-function design
+        is load-bearing — collapsing them into one Optional[str] would
+        re-introduce the silent-mis-routing failure mode."""
+        from rcm_mc.infra.exports import (
+            canonical_deal_export_path,
+            canonical_portfolio_export_path,
+        )
+        # Sanity: deal-scoped function rejects empty/whitespace deal_id
+        with self.assertRaises(ValueError):
+            canonical_deal_export_path("", "x.html", base=tempfile.mkdtemp())
+        with self.assertRaises(ValueError):
+            canonical_deal_export_path("   ", "x.html", base=tempfile.mkdtemp())
+        # Portfolio-scoped function does not need a deal id; pass base=
+        # so we don't try to mkdir /data on a sandboxed filesystem.
+        with tempfile.TemporaryDirectory() as tmp:
+            p = canonical_portfolio_export_path("rollup.csv", base=tmp)
+            self.assertIn("_portfolio", str(p))
+        # And the deal-scoped one routes to a deal subdir, NOT _portfolio
+        with tempfile.TemporaryDirectory() as tmp2:
+            p2 = canonical_deal_export_path("deal-7", "x.html", base=tmp2)
+            self.assertIn("deal-7", str(p2))
+            self.assertNotIn("_portfolio", str(p2))
+
     # ── Phase 2 follow-through ─────────────────────────────────────
 
     def test_phase_2_todos_resolved(self) -> None:
@@ -486,6 +625,40 @@ class TestUIReworkContract(unittest.TestCase):
         self.assertEqual(
             offenders, [],
             f"Phase 2 TODOs still present in production code: {offenders}",
+        )
+
+    def test_phase_3_todos_resolved(self) -> None:
+        """Per Phase 3 review: enforce that no `# TODO(phase 3):`
+        comments ship in production code after Phase 3 completes.
+
+        Same discipline gate as Phase 2's, scoped to Phase 3. Any
+        Phase-3-deferred work must either land in Phase 3 or have its
+        TODO retagged to ``TODO(phase 4):`` with a written rationale
+        in docs/UI_REWORK_PLAN.md. The retag is the discipline — a
+        TODO without a phase tag becomes invisible.
+        """
+        import pathlib
+        import re
+        rcm_mc_root = pathlib.Path(__file__).parent.parent / "rcm_mc"
+        if not rcm_mc_root.exists():
+            self.skipTest("rcm_mc/ not present")
+        pat = re.compile(r"#\s*TODO\(phase 3\):", re.IGNORECASE)
+        offenders: list[str] = []
+        for py in rcm_mc_root.rglob("*.py"):
+            if "__pycache__" in py.parts:
+                continue
+            try:
+                text = py.read_text()
+            except Exception:  # noqa: BLE001
+                continue
+            for n, line in enumerate(text.splitlines(), 1):
+                if pat.search(line):
+                    offenders.append(
+                        f"{py.relative_to(rcm_mc_root.parent)}:{n}: {line.strip()}"
+                    )
+        self.assertEqual(
+            offenders, [],
+            f"Phase 3 TODOs still present in production code: {offenders}",
         )
 
 

@@ -42,12 +42,14 @@ Empty / sparse states for THIS block (per Phase 2 review):
   - Empty fund (zero deals) → all 8 cells render `—` and the eyebrow
     shows "No deals tracked yet"
 
-# TODO(phase 3): KPI cell hover/click interaction. Phase 2 ships
-# static-but-rendered per the Phase 2 review: replacing the spec's
+# TODO(phase 4): KPI cell hover/click interaction. Phase 2 shipped
+# static-but-rendered per the Phase 2 review (replacing the spec's
 # hover with click would silently change UX semantics; adding hover
-# via JS would expand the test surface beyond Phase 2's scope. The
-# right-side table is fixed to the headline KPI's history. Phase 3
-# can deliberately decide hover / click / small-multiples / palette.
+# via JS would expand the test surface). Q3.1 deferred per Phase 3
+# review — the partner-walkthrough demo doesn't depend on it, and
+# the right-side table being fixed to the headline KPI's history is
+# acceptable until UX research informs hover-vs-click. Tracked in
+# docs/UI_REWORK_PLAN.md (Q3.1 → Phase 4 polish).
 """
 from __future__ import annotations
 

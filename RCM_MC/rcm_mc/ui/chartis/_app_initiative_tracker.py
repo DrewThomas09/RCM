@@ -17,16 +17,12 @@ Justification for taking ``store`` directly (per Convention #1):
 
 See module-level conventions in _app_kpi_strip.py docstring (1-6).
 
-Empty / sparse states (per Phase 2 review):
+Empty / sparse states:
   - No focused deal → cross-portfolio playbook signals (top variances
-    across deals). Phase 2 stub: shows empty-state pointing to thesis
-    pipeline since cross-portfolio aggregation is Phase 3 work.
+    across deals; trailing 4Q window). Phase 3 commit 8 wired this
+    against ``initiative_actuals`` via ``cross_portfolio_initiative_variance``.
   - Focused deal with zero initiatives → "No initiatives recorded yet
     for this deal" + link to add via /diligence/thesis-pipeline.
-
-# TODO(phase 3): cross-portfolio playbook-signal aggregation when
-# no deal is focused (top variances across all held deals).
-# Phase 2 ships the chrome with placeholder empty-state.
 """
 from __future__ import annotations
 
