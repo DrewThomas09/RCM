@@ -1,6 +1,11 @@
 # TRIAGE — Bug Fix & Push Loop
 
-Built: 2026-04-26 | Source: 254 audit reports (Report-0001.md through Report-0254.md), ~1056 MR-tagged risks scanned. This list captures the highest-leverage actionable items; lower-severity inventory/discovery items remain catalogued in the source reports.
+Built: 2026-04-26 (iter 1) | Refreshed: 2026-04-26 (iter 21, after 19 fix-loop iterations).
+Source: 255 audit reports (Report-0001.md through Report-0255.md), ~1056 unique MR-tagged risks. This list captures the highest-leverage actionable items; the rest stay catalogued in source reports as inventory/discovery.
+
+**Status counters (verified via awk over the file):** 4/4 CRITICAL closed; 16/22 HIGH closed (6 open); 0/21 MEDIUM closed (1 partial = MR1046, 20 open); 0/13 LOW closed (1 partial = MR1049, 12 open — added MR1056 + RCM_MM/-Q2 follow-up from Report-0255 in this refresh). See Report/RESOLVED.md for the chronological commit list (20 entries) and Report/PROGRESS-19.md for the rollup.
+
+Marker legend: `[ ]` open · `[x]` resolved (commit hash inline) · `[~]` partially mitigated · `[!]` reopened · `[?]` needs-repro.
 
 ## CRITICAL
 
@@ -71,12 +76,36 @@ Built: 2026-04-26 | Source: 254 audit reports (Report-0001.md through Report-025
 - [ ] LOW | Report-0251 | `profiles.example.yml` shipped via package-data — real `profiles.yml` glob-match risk. | pyproject.toml:80-85 | MR1041
 - [ ] LOW | Report-0244 | `llm_client` likely instantiated 4× by sibling ai/ modules — 4× env-var reads. | rcm_mc/ai/* | MR1010
 - [ ] LOW | Report-0245 | Possible `ai/memo_writer` → `pe_intelligence/ic_memo` cross-package call. | rcm_mc/ai/memo_writer.py | MR1013
+- [ ] LOW | Report-0255 | Tuva Project (Apache 2.0) vendor copy — verify NOTICE file presence + license attribution in repo LICENSE/README. | vendor/ChartisDrewIntel/ | MR1056
+- [ ] LOW | Report-0255 | `RCM_MM/` empty 0-byte scratch dir at repo root — decide: delete vs. gitignore vs. leave (carried follow-up Q2). | RCM_MM/ | (no MR — Q2)
 
 ## Backlog (not yet triaged)
 
-The full report set surfaces ~1056 MR-tagged risks across 254 reports. Items below are catalogued in the source reports but not yet promoted to this triage list:
-- Pre-Report-0085 MRs (MR1-MR475) — early audit findings; many superseded or carried through later reports with updated severity
-- Inventory/discovery items (subpackage maps, never-mapped modules) — handled by audit-loop task rather than fix-loop
-- Open-questions (Q1/Q2/etc.) — tracked in source reports' Open questions sections
+The full report set surfaces ~1056 unique MR-tagged risks across 255 reports. Items below are catalogued in the source reports but not yet promoted to this triage list:
 
-When a fix lands, append to `Report/RESOLVED.md` with format: `<commit-hash> | <ISO date> | <SEVERITY> | <Report-NNNN> | <one-line summary>`.
+- Pre-Report-0085 MRs (MR1–MR475) — early audit findings; many superseded or carried through later reports with updated severity. Re-promotion candidates: re-grep `'\| (Critical|High)'` in old reports if a HIGH burndown stalls.
+- Inventory/discovery items (subpackage maps, never-mapped modules) — handled by audit-loop task rather than fix-loop. Carried follow-ups: 5/7 unaudited CMS data-loaders (MR985), `pe_intelligence/` 270+ submodules, `data_public/` 313 files, ~10 small subpackages from Report 0190.
+- Open-questions (Q1/Q2/etc.) — tracked in source reports' Open questions sections; promote to TRIAGE only when blocking a fix.
+
+## Process / open blockers (need human review)
+
+These four came out of the iter-19 progress report and are NOT severity-classified — they need human direction before the loop can act on them:
+
+1. **Merge ownership of `feat/ui-rework-v3`** (+13.7K LOC, 51 files). Audit branch documents the merge risks (MR1015 in MERGE-CONFLICTS.md; MR1017 / MR1018 / MR855 / MR708 carried) but cannot resolve them without the merge author's input.
+2. **Origin/main divergence**: local main is 145 commits ahead of origin/main and 4 behind; iter-1 push to main was rejected (non-fast-forward). Audit branch is the canonical preserved copy. **Question:** rebase, merge-back, or PR?
+3. **FK survey ground truth** for ~10 deal-child tables (MR929/MR971). Audit-loop or one-shot script?
+4. **Auto-deploy + secret rotation** when `feat/ui-rework-v3` lands on main (MR917). AZURE_VM_HOST/USER/SSH_KEY must be set on the GH repo before merge.
+
+## How to add an entry
+
+Format (one line per entry):
+
+```
+- [ ] SEVERITY | Report-NNNN | one-line summary | file:line if known | MRxxx
+```
+
+When a fix lands, replace `[ ]` with `[x]` and append `| <commit-hash> | <ISO-date> | <one-line note>` to that same row, then append to `Report/RESOLVED.md`:
+
+```
+<commit-hash> | <ISO date> | <SEVERITY> | <Report-NNNN> | <one-line summary>
+```
