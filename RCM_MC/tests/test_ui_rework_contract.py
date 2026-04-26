@@ -871,6 +871,49 @@ class TestUIReworkContract(unittest.TestCase):
             "empty active_path should not highlight any module",
         )
 
+    def test_q4_1_root_redirects_to_app_for_authenticated_v3_users(self) -> None:
+        """Q4.1 cutover (2026-04-27): when v3 is active (env
+        CHARTIS_UI_V2=1 OR per-request ?ui=v3) AND user is
+        authenticated, GET / redirects to /app (the editorial
+        dashboard). Anonymous visitors still see the marketing splash.
+
+        This is the load-bearing pre-merge-to-main decision per
+        UI_REWORK_PLAN.md Q4.1: authenticated partners typing the bare
+        domain land on the editorial dashboard, not the marketing
+        splash designed for acquisition.
+
+        Uses per-request ?ui=v3 (not env) to avoid module-import
+        ordering issues — env-CHARTIS_UI_V2 is read at module import
+        time; mid-test mutation has no effect on the already-imported
+        UI_V2_ENABLED. The handler accepts EITHER trigger.
+        """
+        cj = http.cookiejar.CookieJar()
+        login_opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj)
+        )
+        _login(login_opener, self.port)
+        nofollow = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj),
+            _NoRedirectHandler(),
+        )
+        try:
+            resp = nofollow.open(
+                f"http://127.0.0.1:{self.port}/?ui=v3", timeout=10,
+            )
+            code = resp.status
+            location = resp.headers.get("Location", "")
+        except urllib.error.HTTPError as e:
+            code = e.code
+            location = e.headers.get("Location", "")
+        self.assertIn(
+            code, (302, 303),
+            f"authenticated v3 user GET /?ui=v3 should 303 to /app, got {code}",
+        )
+        self.assertEqual(
+            location, "/app",
+            f"redirect target should be /app, got {location!r}",
+        )
+
     def test_v3_app_canonical_export_path_helpers_exist(self) -> None:
         """Per Phase 3 commit 1 (Q3.5 + Q2 push-back):
         canonical_deal_export_path + canonical_portfolio_export_path

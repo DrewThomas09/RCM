@@ -1994,8 +1994,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             # CHARTIS_UI_V2=1, the public marketing landing renders at
             # "/". Under the legacy flag (default), "/" continues to
             # serve the signed-in dashboard so existing partners see
-            # no change. A signed-in user hitting "/" on the v2 marketing
-            # page can click "Open Platform" to reach /home.
+            # no change.
+            #
+            # Q4.1 cutover (2026-04-27): when CHARTIS_UI_V2=1 AND the
+            # user is authenticated, "/" redirects to "/app" (the
+            # editorial dashboard). Anonymous visitors still see the
+            # marketing splash. This preserves the public landing for
+            # acquisition while sending logged-in partners straight to
+            # the dashboard — matching the design intent of "/" being
+            # both a marketing surface AND a dashboard entry point
+            # depending on auth state.
             #
             # Web deployments (Heroku/Azure) usually want the new
             # private-app /dashboard as the home — set
@@ -2003,8 +2011,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             home = (os.environ.get("RCM_MC_HOMEPAGE") or "").strip().lower()
             if home == "dashboard":
                 return self._redirect("/dashboard")
+            # v3 mode is active either via env (CHARTIS_UI_V2=1 →
+            # UI_V2_ENABLED) or per-request override (?ui=v3 →
+            # self._ui_choice == "editorial"). Either triggers Q4.1.
             from .ui._chartis_kit import UI_V2_ENABLED
-            if UI_V2_ENABLED:
+            v3_active = (
+                UI_V2_ENABLED
+                or getattr(self, "_ui_choice", "legacy") == "editorial"
+            )
+            if v3_active:
+                # Q4.1 cutover: authenticated v3 users → /app dashboard
+                # Anonymous visitors → marketing splash (preserves
+                # public landing for acquisition)
+                if self._current_user() is not None:
+                    return self._redirect("/app")
                 from .ui.chartis.marketing_page import render_marketing_page
                 return self._send_html(render_marketing_page())
             return self._route_dashboard()

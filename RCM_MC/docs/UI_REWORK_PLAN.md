@@ -596,15 +596,22 @@ Surfaced during the Phase 1 IA pass; need explicit decisions before Phase 4 cuto
 
 ### Q4.1 — `/` reroute (the cutover decision)
 
+**Status:** ✅ Resolved (2026-04-27, commit pending). When v3 mode is active (env `CHARTIS_UI_V2=1` OR per-request `?ui=v3`):
+
+- **Authenticated users** → 303 redirect to `/app` (the editorial dashboard)
+- **Anonymous visitors** → marketing splash (preserves the public landing for acquisition)
+
+This is the nuanced split from option 1's "redirect / to /app" framing — the design intent of `/` being **both** a marketing surface AND a dashboard entry point depending on auth state. Authenticated partners typing the bare domain land on the dashboard; anonymous visitors see the splash.
+
 The legacy codebase serves the dashboard at `/`. Spec §2 reroutes `/` to the marketing landing page in v3. **This is the single most user-visible change in the entire rework.**
 
-**Risk:** Bookmarks break. External monitors that hit `/` for an auth challenge see HTML instead. Partner muscle memory (years of typing the bare domain to get the dashboard) breaks.
+**Risk:** Bookmarks break. External monitors that hit `/` for an auth challenge see HTML instead. Partner muscle memory (years of typing the bare domain to get the dashboard) breaks. → **Mitigated**: authenticated partners still land on a dashboard (just `/app` instead of legacy `/dashboard`), so muscle memory carries through. Anonymous monitors still see HTML.
 
-**Required before Phase 4 merge:**
+**Resolved-by:**
 
-1. Explicit decision: does `/` redirect to `/app`? Or does `/` stay as the dashboard for authenticated users and only render marketing for anonymous users?
-2. New contract test: `test_authenticated_user_lands_on_dashboard_at_root` — when authenticated, GET `/` returns the dashboard or 302s to it. Locks the chosen behavior so a future commit can't silently regress it.
-3. Comms plan: if `/` → marketing, partners must be told before merge, with the new dashboard URL in the announcement.
+1. Decision: authenticated v3 → `/app`; anonymous v3 → marketing splash.
+2. Contract test shipped: `test_q4_1_root_redirects_to_app_for_authenticated_v3_users` locks the redirect behavior.
+3. Comms plan: needed before merge to main — partners must know `/` will redirect to `/app` after the env-default flips to `CHARTIS_UI_V2=1`.
 
 ### Q4.2 — Existing `/dashboard` and `/home` routes
 
