@@ -509,6 +509,110 @@ def _seed_analysis_packets(store: Any, *, result: SeedResult) -> None:
             result.deals_skipped.append(deal_id)
 
 
+# ── Generated exports seeder (block 9 — deliverables) ──────────────
+
+# Per SEEDER_PROPOSAL §4.6 — 2-3 placeholder export files per held +
+# exit deal across formats (HTML / CSV / JSON / XLSX) so the editorial
+# deliverables block has cards to display, not the empty-state.
+
+# (deal_id, filename, format) triples. Filenames mirror what the real
+# canonical_facade writers produce (full_html_report.html etc.) so
+# the rendered card labels look authentic.
+_EXPORT_SEEDS: List[Tuple[str, str, str]] = [
+    # Flagship deal — 3 deliverables across formats
+    ("ccf_2026", "full_html_report.html",   "html"),
+    ("ccf_2026", "ic_packet.html",          "html"),
+    ("ccf_2026", "deal_export.xlsx",        "xlsx"),
+    # Held watch-list deal — 2 deliverables
+    ("arr_2025", "full_html_report.html",   "html"),
+    ("arr_2025", "diligence_memo.html",     "html"),
+    # Strong-hold deal — 2 deliverables
+    ("pma_2024", "full_html_report.html",   "html"),
+    ("pma_2024", "exit_memo.html",          "html"),
+    # Exit deal — 1 closing deliverable
+    ("tlc_2023", "exit_memo.html",          "html"),
+]
+
+
+_PLACEHOLDER_HTML = """\
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>{title}</title></head>
+<body style="font-family:system-ui;padding:32px;max-width:720px;margin:0 auto">
+<h1 style="color:#155752">Demo seed file — not a real export</h1>
+<p>This is a placeholder file created by <code>rcm_mc.dev.seed</code> so the
+editorial dashboard's deliverables block has something to display during
+demos. Real exports come from the canonical facade writers in
+<code>rcm_mc/exports/canonical_facade.py</code>.</p>
+<p><strong>Deal:</strong> {deal_id}<br>
+<strong>Format:</strong> {fmt}<br>
+<strong>Generated:</strong> demo-seeded</p>
+</body></html>
+"""
+
+_PLACEHOLDER_CSV = "deal_id,note\n{deal_id},demo seed placeholder\n"
+_PLACEHOLDER_JSON = '{{"deal_id":"{deal_id}","note":"demo seed placeholder"}}\n'
+
+
+def _seed_generated_exports(
+    store: Any, *, base_dir: Path, write_files: bool, result: SeedResult,
+) -> None:
+    """Insert generated_exports rows + (optionally) write placeholder
+    files at canonical paths.
+
+    Per the canonical-path discipline (Phase 3 commit 1, Q3.5): files
+    land at ``<base>/<deal_id>/<timestamp>_<filename>``. The
+    canonical_deal_export_path helper enforces the path shape; we use
+    its ``base=`` kwarg to land in the demo dir instead of /data/.
+    """
+    from rcm_mc.exports.export_store import record_export
+    from rcm_mc.infra.exports import canonical_deal_export_path
+
+    # Per-deal timestamp offset so files cluster in time but don't
+    # collide on the second.
+    for i, (deal_id, filename, fmt) in enumerate(_EXPORT_SEEDS):
+        # Stagger timestamps by hours so the deliverables block's
+        # "newest first" sort produces a deterministic order.
+        # Pre-format using the canonical FS-safe format ("%Y-%m-%dT%H-%M-%S")
+        # — the helper expects a string, not a datetime, so spaces and
+        # colons don't leak into the filename.
+        ts_dt = _REF_DATETIME - timedelta(hours=i + 1)
+        ts = ts_dt.strftime("%Y-%m-%dT%H-%M-%S")
+        path = canonical_deal_export_path(
+            deal_id, filename, timestamp=ts, base=base_dir,
+        )
+        size_bytes = 0
+        if write_files:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            content: str
+            if fmt in ("html",):
+                content = _PLACEHOLDER_HTML.format(
+                    title=filename, deal_id=deal_id, fmt=fmt,
+                )
+            elif fmt in ("csv",):
+                content = _PLACEHOLDER_CSV.format(deal_id=deal_id)
+            elif fmt in ("json",):
+                content = _PLACEHOLDER_JSON.format(deal_id=deal_id)
+            else:
+                # xlsx etc. — write a minimal byte payload so file_size
+                # is non-zero. Not a valid xlsx; the deliverables block
+                # only links to it, doesn't open it.
+                content = f"demo seed placeholder for {deal_id}/{filename}\n"
+            path.write_text(content, encoding="utf-8")
+            size_bytes = path.stat().st_size
+            result.export_files_written += 1
+
+        record_export(
+            store,
+            deal_id=deal_id,
+            analysis_run_id=None,
+            format=fmt,
+            filepath=str(path),
+            file_size_bytes=size_bytes if size_bytes > 0 else None,
+            generated_by="dev.seed",
+        )
+        result.exports_inserted += 1
+
+
 # ── Public API skeleton ─────────────────────────────────────────────
 
 def seed_demo_db(
@@ -597,6 +701,12 @@ def seed_demo_db(
 
     # Seed step 3: analysis_runs via real packet builder (block 6)
     _seed_analysis_packets(store, result=result)
+
+    # Seed step 4: generated_exports + placeholder files (block 9)
+    _seed_generated_exports(
+        store, base_dir=base_dir, write_files=write_export_files,
+        result=result,
+    )
 
     result.duration_seconds = time.monotonic() - started
     return result
