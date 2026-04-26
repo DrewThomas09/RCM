@@ -152,7 +152,11 @@ def render_app_page(
         page_head_html,
         # Top: portfolio rollup
         render_kpi_strip(rollup, deals_df=deals_df),
-        render_pipeline_funnel(rollup, selected_stage=selected_stage),
+        render_pipeline_funnel(
+            rollup,
+            selected_stage=selected_stage,
+            focused_deal_id=focused_deal_id,
+        ),
         # Middle: deals + focus
         render_deals_table(
             table_df,

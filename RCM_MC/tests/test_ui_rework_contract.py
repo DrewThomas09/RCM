@@ -299,7 +299,9 @@ class TestUIReworkContract(unittest.TestCase):
     # contract as Phase 3+ adds dashboard pages. Add to V3_CHARTED_PAGES
     # when you ship a v3 page that contains <svg>/<canvas>.
 
-    V3_CHARTED_PAGES: List[str] = []
+    # Activated in Phase 2 (commit 10) — /app is the first authenticated
+    # v3 page with charts (sparklines, dot-plots, heatmap cells).
+    V3_CHARTED_PAGES: List[str] = ["/app"]
 
     def test_pair_pattern_when_v3_page_renders_a_chart(self) -> None:
         """Every <svg>/<canvas> on a v3 charted page must sit inside a
@@ -333,12 +335,162 @@ class TestUIReworkContract(unittest.TestCase):
                 )
         self.assertEqual(failures, [], f"pair-pattern violations: {failures}")
 
-    # TODO(phase 2): add test_v3_authenticated_pages_render_phi_banner.
-    # Deferred from Phase 1 because no authenticated v3 page ships in
-    # this phase — /forgot and /login are unauthenticated. Re-introducing
-    # the test now would either pass for the wrong reason (legacy shell
-    # rendering on /dashboard) or fail in a misleading way. Add it in
-    # Phase 2 alongside the first authenticated v3 page port.
+    # ── Phase 2 editorial /app contract tests ─────────────────────
+
+    def test_v3_authenticated_pages_render_phi_banner(self) -> None:
+        """Per spec §7.5: every authenticated v3 page renders the PHI banner.
+
+        Activated in Phase 2 (this commit) — /app is the first
+        authenticated v3 page; before this commit there was no
+        non-trivial place to test the banner against.
+        """
+        os.environ["RCM_MC_PHI_MODE"] = "disallowed"
+        try:
+            body = self._fetch_body("/app?ui=v3")
+            self.assertIn(
+                'class="phi-banner"', body,
+                "PHI banner missing on authenticated v3 page",
+            )
+            self.assertIn(
+                'data-phi-mode="disallowed"', body,
+                "PHI banner mode attribute missing",
+            )
+            self.assertIn(
+                "Public data only", body,
+                "PHI banner copy missing",
+            )
+        finally:
+            os.environ.pop("RCM_MC_PHI_MODE", None)
+
+    def test_v3_app_route_renders_for_authenticated_user(self) -> None:
+        """GET /app?ui=v3 returns 200 with all 9 paired-block markers."""
+        body = self._fetch_body("/app?ui=v3")
+        # Editorial markers
+        self.assertIn("/static/v3/chartis.css", body,
+                      "editorial CSS link missing")
+        self.assertIn("Command center", body,
+                      "page title missing")
+        # All 9 helper blocks present (per spec §6.3-6.11)
+        self.assertIn("app-kpi-strip", body, "KPI strip block missing")
+        self.assertIn("app-pipeline-funnel", body, "pipeline funnel missing")
+        self.assertIn("app-deals-table", body, "deals table missing")
+        self.assertIn("app-cov-heat", body, "covenant heatmap missing")
+        # EBITDA drag empty state OR bar present (depends on focused deal)
+        self.assertTrue(
+            "app-drag-empty" in body or "app-drag-bar" in body,
+            "EBITDA drag block missing in some form",
+        )
+        self.assertIn("app-init", body, "initiative tracker missing")
+        # Alerts: either active cards or all-clear card
+        self.assertTrue(
+            "app-alerts" in body or "app-alerts-clear" in body,
+            "alerts block missing",
+        )
+        self.assertIn("app-deliv", body, "deliverables missing")
+
+    def test_v3_app_handles_invalid_focused_deal_id(self) -> None:
+        """?deal=<garbage> falls through to empty-state rather than 500."""
+        code = self._fetch("/app?ui=v3&deal=does_not_exist_12345")
+        self.assertEqual(
+            code, 200,
+            "/app should empty-state on unknown deal, not 500",
+        )
+
+    def test_v3_app_handles_invalid_stage_filter(self) -> None:
+        """?stage=<garbage> validates against DEAL_STAGES + falls through."""
+        code = self._fetch("/app?ui=v3&stage=does_not_exist")
+        self.assertEqual(
+            code, 200,
+            "/app should ignore bad stage filter, not 500",
+        )
+
+    def test_v3_app_legacy_request_redirects_to_dashboard(self) -> None:
+        """Legacy ?ui=v2 (or default) GET /app → 303 to /dashboard.
+
+        /app is editorial-only; legacy users land on the existing
+        /dashboard. The redirect is logged so signal is captured for
+        the Phase 4 cutover decision (Q4.1).
+        """
+        # Log in with a regular (redirect-following) opener so the
+        # /api/login → 303 → / chain completes cleanly. Then build a
+        # second opener that REUSES the cookie jar but refuses to
+        # follow redirects, so the /app → 303 → /dashboard hop can be
+        # inspected directly.
+        cj = http.cookiejar.CookieJar()
+        login_opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj)
+        )
+        _login(login_opener, self.port)
+
+        nofollow_opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cj),
+            _NoRedirectHandler(),
+        )
+        # Default ui_choice = legacy, no ?ui=v3 query.
+        try:
+            resp = nofollow_opener.open(
+                f"http://127.0.0.1:{self.port}/app", timeout=10
+            )
+            code = resp.status
+            location = resp.headers.get("Location", "")
+        except urllib.error.HTTPError as e:
+            code = e.code
+            location = e.headers.get("Location", "")
+        self.assertIn(
+            code, (302, 303),
+            f"legacy /app should 303-redirect to /dashboard, got {code}",
+        )
+        self.assertIn(
+            "/dashboard", location,
+            f"redirect target should be /dashboard, got {location!r}",
+        )
+
+    # ── Phase 2 follow-through ─────────────────────────────────────
+
+    def test_phase_2_todos_resolved(self) -> None:
+        """Per Phase 2 review: enforce that no `# TODO(phase 2):` comments
+        ship in production code after Phase 2 completes.
+
+        ``rcm_mc/`` is the production code tree. Tests + docs may
+        carry phase-N TODOs as historical markers.
+
+        This test is the discipline gate that prevents Phase 2 work
+        from silently slipping into Phase 3 — every TODO comment
+        documenting deferred-to-Phase-2 work must be resolved before
+        Phase 2 is "done."
+        """
+        import pathlib
+        import re
+        rcm_mc_root = pathlib.Path(__file__).parent.parent / "rcm_mc"
+        if not rcm_mc_root.exists():
+            self.skipTest("rcm_mc/ not present")
+        pat = re.compile(r"#\s*TODO\(phase 2\):", re.IGNORECASE)
+        offenders: list[str] = []
+        for py in rcm_mc_root.rglob("*.py"):
+            if "__pycache__" in py.parts:
+                continue
+            try:
+                text = py.read_text()
+            except Exception:  # noqa: BLE001
+                continue
+            for n, line in enumerate(text.splitlines(), 1):
+                if pat.search(line):
+                    offenders.append(
+                        f"{py.relative_to(rcm_mc_root.parent)}:{n}: {line.strip()}"
+                    )
+        self.assertEqual(
+            offenders, [],
+            f"Phase 2 TODOs still present in production code: {offenders}",
+        )
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """urllib redirect handler that surfaces 3xx as HTTPError instead of
+    transparently following. Used by the legacy /app redirect test to
+    inspect the actual 303 status + Location header."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D401
+        return None  # signals "do not follow"
 
 
 if __name__ == "__main__":

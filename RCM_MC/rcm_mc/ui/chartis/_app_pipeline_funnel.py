@@ -82,6 +82,7 @@ def _render_funnel_viz(
     funnel: Dict[str, int],
     *,
     selected_stage: Optional[str] = None,
+    focused_deal_id: Optional[str] = None,
 ) -> str:
     """7-stage horizontal grid with clickable links.
 
@@ -89,25 +90,29 @@ def _render_funnel_viz(
     A stage with the highest count anchors the bar; others scale
     proportionally. Zero-deal stages render a 0% bar (visually invisible)
     so the row stays consistent.
+
+    Stage clicks preserve the focused-deal context (?deal=<id>) when
+    one is active so cycling stages doesn't drop the partner's
+    selected deal — covenant heatmap + EBITDA drag + initiative
+    tracker keep rendering for the same deal as the table re-filters.
     """
     max_count = max((int(v) for v in funnel.values()), default=0)
     cells: List[str] = []
+    # Pre-compute the query-string suffix that preserves focused-deal
+    # context. Empty when no deal is focused.
+    deal_suffix = (
+        f"&deal={_html.escape(focused_deal_id)}"
+        if focused_deal_id else ""
+    )
     for stage in DEAL_STAGES:
         n = int(funnel.get(stage, 0))
         pct = (n / max_count * 100) if max_count else 0
         is_active = (selected_stage == stage)
         active_cls = " active" if is_active else ""
-        # Linking: ?stage=<id> — clicking again from active stage returns
-        # to "all deals". Achieved with selected_stage logic in the
-        # orchestrator: when ?stage matches the click target, drop the
-        # query param. For Phase 2 we keep it simple — every click sets;
-        # a "Clear filter" affordance in the deals table provides the
-        # exit path.
-        href = f'/app?stage={_html.escape(stage)}'
-        # If we have a focused-deal context, preserve it in the link.
-        # That's a future commit's concern — orchestrator will pass it
-        # via a kwarg. # TODO(phase 2): preserve ?deal=<id> across stage
-        # clicks once the orchestrator threads it through.
+        # Linking: ?stage=<id> + optional ?deal=<id> to preserve focus.
+        # Clicking the active stage doesn't toggle off — partner uses
+        # the deals-table "clear filter" affordance to drop the stage.
+        href = f'/app?stage={_html.escape(stage)}{deal_suffix}'
         label = _STAGE_LABEL.get(stage, stage.title())
         count_html = (
             f'<div class="count num">{n}</div>'
@@ -129,6 +134,7 @@ def render_pipeline_funnel(
     rollup: Dict[str, Any],
     *,
     selected_stage: Optional[str] = None,
+    focused_deal_id: Optional[str] = None,
 ) -> str:
     """7-stage funnel + paired conversion-percentage table.
 
@@ -136,6 +142,9 @@ def render_pipeline_funnel(
         rollup: ``portfolio_rollup(store)`` output. Reads ``stage_funnel``.
         selected_stage: Currently-active stage filter from ``?stage=<id>``.
             Passed through from the orchestrator. None = no filter.
+        focused_deal_id: Currently-focused deal from ``?deal=<id>``.
+            Preserved across stage clicks so the partner's selected
+            deal context isn't dropped when filtering the funnel.
 
     Returns:
         Complete <div class="pair">…</div> ready to drop into /app.
@@ -155,7 +164,7 @@ def render_pipeline_funnel(
 
     viz_html = (
         f'{eyebrow}'
-        f'{_render_funnel_viz(funnel, selected_stage=selected_stage)}'
+        f'{_render_funnel_viz(funnel, selected_stage=selected_stage, focused_deal_id=focused_deal_id)}'
     )
 
     return pair_block(
