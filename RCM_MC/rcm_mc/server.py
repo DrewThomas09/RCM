@@ -5186,10 +5186,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             source = form.get("source", "")[:100]
             analyst = form.get("analyst", "")[:20]
             from .data.data_room import save_entry
-            con = sqlite3.connect(self.config.db_path)
-            save_entry(con, ccn, metric, value, sample_size, source, analyst)
-            con.commit()
-            con.close()
+            # Report 0124 MR708: route through PortfolioStore so this
+            # write inherits PRAGMA foreign_keys = ON + busy_timeout =
+            # 5000 + row_factory rather than running on a bare
+            # sqlite3.connect that misses all three.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                save_entry(con, ccn, metric, value, sample_size, source, analyst)
+                con.commit()
             self.send_response(HTTPStatus.FOUND)
             self.send_header("Location", f"/data-room/{ccn}")
             self.end_headers()
