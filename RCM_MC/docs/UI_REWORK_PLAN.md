@@ -403,6 +403,90 @@ Phase 3 makes a deliberate UX call: hover via vanilla JS / click toggle / small-
 
 Phase 2 ships /app as single-flat-scroll matching the reference HTML (per W4 push-back). `app_page.py` carries a `# TODO(phase 3): consider scroll-aid affordance (sticky TOC? scroll-spy?) IF post-launch usage shows partners getting lost` comment. This is conditional — only acts on real usage signal, not pre-emptive. Run last.
 
+### Q3.7 — PHI banner visual weight reduction
+
+**Type:** Polish · CSS-only · Low risk
+**Status:** Registered, not started
+**Trigger:** Address before next stakeholder demo OR during Phase 3 polish pass, whichever comes first.
+
+#### Problem
+
+The current PHI banner is functionally correct but visually dominant. At ~50px tall with full-saturation green and the verbose copy "🛡️ Public data only — no PHI permitted on this instance.", it occupies disproportionate visual real estate on every page and competes with the editorial design system's restrained aesthetic.
+
+User feedback (informal, 2026-04-26): "can we make this more lowkey." The banner remains a non-negotiable compliance surface but its current visual weight exceeds what's needed to communicate the constraint.
+
+#### Constraints (non-negotiable)
+
+- Banner MUST remain present on every authenticated page
+- Banner MUST NOT be dismissible (no close button, no cookie-based dismissal, no `RCM_MC_PHI_BANNER_HIDDEN` env override)
+- Banner MUST remain visible without scrolling on standard viewports (≥768px wide)
+- Compliance signal strength is non-negotiable: anyone viewing any page must see the disclaimer without action
+
+These constraints exist because:
+
+1. The banner is the system's documented disclaimer that this instance does not accept PHI. Removing prominence weakens the legal posture (HIPAA-adjacent system + healthcare PE diligence platform = audit-relevant surface).
+2. Users most likely to make a PHI mistake are also most likely to dismiss/ignore reduced-visibility warnings. Permanence is a feature.
+3. Existing contract test `test_v3_authenticated_pages_render_phi_banner` asserts the banner's presence in rendered HTML — must continue passing.
+
+#### Proposed implementation
+
+**File:** `RCM_MC/rcm_mc/ui/static/v3/chartis.css`
+**Section:** `.phi-banner` (search the file for the existing rule block)
+
+| Property | Current | Proposed |
+|---|---|---|
+| height (or padding) | ~50px total visual height | ~28px total visual height (reduce vertical padding) |
+| background | `var(--green-deep)` (full saturation forest green) | `var(--green-muted)` — new token, ~30% less saturation |
+| font-size | ~14–16px | 12px |
+| font-weight | bold | medium (500) |
+| text content | "🛡️ Public data only — no PHI permitted on this instance." | "🛡️ Public data only — no PHI" |
+| letter-spacing | normal | 0.02em (slight, for legibility at small size) |
+
+**New token to add to `:root` block in same file:**
+
+```css
+--green-muted: #4A7A52;  /* darker, less saturated than --green-deep */
+```
+
+(Verify exact hex against the editorial palette in `chartis_tokens.css`. The goal is "still recognizably green and authoritative, but ~30% less optical weight than the current bar.")
+
+#### What NOT to do
+
+- Do not add a dismiss button or close icon (×)
+- Do not implement cookie-based or session-based dismissal
+- Do not reduce contrast below WCAG AA (4.5:1 for body text on the banner background)
+- Do not move the banner below the fold
+- Do not make it conditional on any user state, role, or env flag (other than the existing `RCM_MC_PHI_MODE` which controls whether PHI is allowed at all, not whether the banner shows)
+- Do not change anything in the Python rendering layer — `phi_banner(mode)` helper signature stays identical
+
+#### Acceptance criteria
+
+1. Visual diff against current state shows the banner is meaningfully less visually dominant (~40% reduction in optical weight). Eyeball test against `04-command-center.html` or any current `?ui=v3` page.
+2. Contract test `test_v3_authenticated_pages_render_phi_banner` continues to pass without modification.
+3. Banner remains visible on the dashboard at `/app?ui=v3` at 1280px viewport without scrolling.
+4. WCAG AA contrast verified for the new green against white text (any contrast checker; ratio must be ≥4.5:1).
+5. No JavaScript added; pure CSS change.
+
+#### Estimated effort
+
+15–30 minutes. Single CSS file edit, ~6 line changes. No tests to write (existing contract test guards the requirement that matters). No Python changes.
+
+#### Dependencies / blocks
+
+- **Blocks:** none — can ship anytime in Phase 3
+- **Blocked by:** none — no other Phase 3 question depends on this resolving first
+- **Adjacent:** if Phase 3 also tackles Q3.1 (KPI hover/click) at the same time, do this one first — KPI hover changes are bigger surface area; PHI banner is a 30-min warmup that doesn't risk scope contamination
+
+#### Decision authority
+
+- Visual style call (exact green hex, exact height, exact text): user (Andrew)
+- Implementation: Claude Code can ship without further architectural review, since it's CSS-only inside an established component
+- Compliance posture changes (dismissibility, permanence, content): require explicit user decision documented in `UI_REWORK_PLAN.md` — none requested here
+
+#### Notes for future contributors
+
+If this ticket gets reopened in a future phase asking for further visual reduction or dismissibility, refer back to the "Constraints (non-negotiable)" section above. The current visual treatment was deliberately reduced from a more aggressive baseline; further reduction past this point starts trading compliance signal for aesthetics. That trade requires explicit product + legal input, not just a visual preference.
+
 ---
 
 ## Phase 4 — registered open questions before that phase begins
