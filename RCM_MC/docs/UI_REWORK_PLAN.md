@@ -299,6 +299,14 @@ Same rule as Phase 2: env-flag flip is silent, code revert is loud. If you rever
 
 ## Discovered during local testing 2026-04-25
 
+> **Status update 2026-04-26:** Issues #1, #3, and #4 below are resolved. #2 remains as Phase 2b/2c/2d destination work.
+>
+> - **#1** `?ui=v3` flag propagation: ✅ Fixed via `editorial_link()` helper (commit `cddde6a`) + brand-href fix
+> - **#2** Topnav non-functional: ✅ Anchors with sensible defaults (commit `aacff1b`); destinations remain Phase 2b/2c/2d
+> - **#3** No demo seed script: ✅ `rcm_mc/dev/seed.py` ships (commits `0db3e13`–`b2a2bf0`); see SEEDER_PROPOSAL.md resolution summary
+> - **#4** Verification commands never validated: ✅ `--verify` flag runs them programmatically + integration tests in `tests/test_dev_seed_integration.py` exercise all 5 checks against a seeded DB
+
+
 First end-to-end load of `/app?ui=v3` against an empty local DB surfaced four gaps that the per-helper unit tests + the contract suite did not catch (and were not designed to). Captured here as context preservation, **not as a work plan** — fixes attach to existing phases (Phase 2b/2c/2d for cross-cutting nav, separate seeder ticket for data, no-phase polish for the verification commands).
 
 ### 1. `?ui=v3` query flag does not propagate across navigation

@@ -1,8 +1,9 @@
 # SEEDER_PROPOSAL — Demo database seed script
 
-**Status:** Proposal · Pre-Phase-2b infrastructure work
-**Authored:** 2026-04-25 (overnight, against a tired-but-disciplined ask)
-**Decision required:** Andrew — review with coffee, greenlight or course-correct before implementation
+**Status:** ✅ **Shipped 2026-04-26** — implementation in `rcm_mc/dev/seed.py`
+**Authored:** 2026-04-25
+**Resolved:** Andrew delegated decisions ("you make the call"); C1–C6 resolved per recommendations below
+**Implementation commits:** `0db3e13` skeleton · `e49b5d4` deals+snapshots · `6725a3e` initiatives · `26c94f0` packets · `b0b542e` exports · `24b88c7` --verify · `03babe9` unit tests · `b2a2bf0` integration tests + NaN fix
 
 ---
 
@@ -208,6 +209,8 @@ If `write_export_files=False`: still write the `generated_exports` rows but skip
 
 ## Step 5 — Conflicts and questions list
 
+✅ **All 6 questions resolved 2026-04-26.** Decision summary at the bottom of this section.
+
 Same format as PHASE_3_PROPOSAL. Each must be resolved before implementation.
 
 ### C1 — Where do the seeded export files actually live?
@@ -264,6 +267,19 @@ Bikeshed but worth resolving once:
 **Recommend `seed_demo_db()`** to match the file name `rcm_mc/dev/seed.py` — function name is `seed.seed_demo_db()` from import shape.
 
 ---
+
+### Resolution summary (2026-04-26)
+
+| Q | Decision | Implementation |
+|---|---|---|
+| C1 | `tempfile.gettempdir() / "rcm_mc_demo_exports"` default | `seed_demo_db(base_dir=...)` kwarg + `--export-base` CLI |
+| C2 | **C2.a** — real `get_or_build_packet` synchronous | `_seed_analysis_packets()`; ~0.4s for 4 deals on curated data (faster than expected) |
+| C3 | `deal_count` keeps first N curated; `>7` extends with `extra_NNN` at sourced | Implementation matches recommendation |
+| C4 | `--verify` flag in first commit | Body added in `24b88c7` (5 checks) |
+| C5 | Both unit + integration in separate commits | `03babe9` (16 unit) + `b2a2bf0` (6 integration) |
+| C6 | `seed_demo_db()` in `rcm_mc/dev/seed.py` | Implementation matches recommendation |
+
+**Bug surfaced by C5 integration tests:** `number_maybe()` crashed with `cannot convert float NaN to integer` on seeded DB (pandas serializes missing values as NaN; helper checked None but not NaN). Fixed in `b2a2bf0`. Empty-DB contract suite never tripped this — load-bearing reason to ship integration tests.
 
 ## Step 6 — Estimated commit plan
 
