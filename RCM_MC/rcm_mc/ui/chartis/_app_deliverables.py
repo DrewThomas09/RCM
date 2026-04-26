@@ -6,32 +6,30 @@ Reference: docs/design-handoff/reference/04-command-center.html (deliverables se
 4-column grid of artifacts (HTML / CSV / JSON / XLS), each with kind
 pill, filename, size + date. Paired with a manifest counts table.
 
-Source-swap (per Phase 2 conflict C2): the reference HTML pointed at
-``output v1/`` but that directory was deleted in the front-page cleanup.
-This helper reads from:
+Source (per Phase 3 commit 5): reads from ``generated_exports``
+SQLite table (the canonical manifest, populated by the
+canonical-path facades in rcm_mc/exports/canonical_facade.py).
+Each row in generated_exports has deal_id + format + filepath +
+generated_at + file_size_bytes — exactly what each deliverable card
+needs.
 
-  - ``analysis_runs`` SQLite table — most recent runs per deal, gives
-    deal_id + run_id + as_of timestamp
-  - ``exports/`` filesystem folder (best-effort) — listing of generated
-    HTML / XLS / CSV / JSON artifacts
+Falls back to ``analysis_runs`` when ``generated_exports`` is empty
+(early-deployment state, before any export has been produced via
+the canonical facades). The fallback ships HTML-only cards pointing
+at the analysis preview at /analysis/<id>?run=<run_id>.
 
 Justification for taking ``store`` directly (per Convention #1):
 
-  Reading ``analysis_runs`` is a narrow query (latest N rows) used
-  only by this helper. Pre-computing in the orchestrator wouldn't
-  save work since no other helper needs it.
+  Reading ``generated_exports`` is a narrow query (latest N rows
+  scoped to a deal_id when one is focused, or cross-deal otherwise)
+  used only by this helper. Pre-computing in the orchestrator
+  wouldn't save work since no other helper needs it.
 
 See module-level conventions in _app_kpi_strip.py docstring (1-6).
 
 Empty / sparse states (per Phase 2 review):
-  - Zero artifacts → "No deliverables generated yet. Run an analysis
-    to populate." with link to /diligence/thesis-pipeline
-
-# TODO(phase 3): wire to live exports/ folder + per-deal artifact
-# resolution. Phase 2 ships from analysis_runs only — every recorded
-# run becomes one deliverable card pointing at the HTML preview. File-
-# system exports (XLS / CSV / JSON) come online once the export
-# pipeline writes back to a known location.
+  - Zero artifacts in either table → "No deliverables generated yet.
+    Run an analysis to populate." with link to /diligence/thesis-pipeline
 """
 from __future__ import annotations
 
@@ -43,16 +41,63 @@ from rcm_mc.portfolio.store import PortfolioStore
 from rcm_mc.ui._chartis_kit_editorial import pair_block
 
 
-def _fetch_recent_runs(
+def _fetch_generated_exports(
+    store: PortfolioStore,
+    *,
+    deal_id: Optional[str] = None,
+    limit: int = 8,
+) -> List[Dict[str, Any]]:
+    """Phase 3 primary source: pull recent generated_exports rows.
+
+    Each row was written by a canonical-path facade in
+    rcm_mc/exports/canonical_facade.py — has deal_id + format +
+    filepath + generated_at + file_size_bytes. Per-deal scoped
+    when ``deal_id`` is passed; cross-deal otherwise.
+
+    Returns:
+        List of dicts: {deal_id, format, filepath, generated_at,
+        file_size_bytes, kind, name}.
+        Empty list when zero exports OR the table is missing.
+    """
+    try:
+        from rcm_mc.exports.export_store import list_exports
+        rows = list_exports(store, deal_id=deal_id, limit=limit)
+    except Exception:  # noqa: BLE001 — table may not exist yet
+        return []
+
+    out: List[Dict[str, Any]] = []
+    for r in rows:
+        # list_exports returns dicts already
+        filepath = str(r.get("filepath") or "")
+        # Derive a friendly filename: prefer basename of filepath,
+        # fall back to f"<format>_export"
+        name = filepath.rsplit("/", 1)[-1] if filepath else f"{r.get('format', 'file')}_export"
+        out.append({
+            "deal_id": r.get("deal_id") or "",
+            "run_id": r.get("analysis_run_id") or "",
+            "format": (r.get("format") or "").lower(),
+            "filepath": filepath,
+            "size": r.get("file_size_bytes"),
+            "created_at": r.get("generated_at") or "",
+            "kind": (r.get("format") or "html").upper(),
+            "name": name,
+        })
+    return out
+
+
+def _fetch_analysis_runs_fallback(
     store: PortfolioStore,
     *,
     limit: int = 8,
 ) -> List[Dict[str, Any]]:
-    """Pull the most recent analysis_runs rows.
+    """Phase 3 fallback: pull from analysis_runs when generated_exports
+    is empty.
 
-    Returns:
-        List of dicts: {deal_id, run_id, as_of, created_at, kind}.
-        Empty list when zero runs exist or the table is missing.
+    This handles the early-deployment state — before any export has
+    been produced via the canonical-path facades, generated_exports
+    is empty but analysis_runs has rows. Showing the analysis preview
+    cards is better than rendering an empty deliverables block on a
+    fund that's done analyses but no exports.
     """
     try:
         with store.connect() as con:
@@ -65,7 +110,7 @@ def _fetch_recent_runs(
                 """,
                 (limit,),
             ).fetchall()
-    except Exception:  # noqa: BLE001 — table may not exist yet
+    except Exception:  # noqa: BLE001
         return []
 
     out: List[Dict[str, Any]] = []
@@ -77,9 +122,13 @@ def _fetch_recent_runs(
         out.append({
             "deal_id": deal_id,
             "run_id": run_id,
-            "as_of": as_of or "",
+            "format": "html",
+            "filepath": "",
+            "size": None,
             "created_at": created_at or "",
-            "kind": "HTML",          # Phase 2: every run is an HTML packet preview
+            "kind": "HTML",
+            "name": run_id or deal_id or "(unnamed run)",
+            "as_of": as_of or "",
         })
     return out
 
@@ -101,22 +150,53 @@ def _format_size_date(created_at: str) -> str:
         return created_at[:10]  # best-effort YYYY-MM-DD prefix
 
 
+def _format_size_human(size: Optional[int]) -> str:
+    """Human-readable file size: 1.2 KB / 348 B / 12.4 MB."""
+    if size is None or size < 0:
+        return ""
+    if size < 1024:
+        return f"{size} B"
+    if size < 1024 * 1024:
+        return f"{size / 1024:.1f} KB"
+    return f"{size / (1024 * 1024):.1f} MB"
+
+
 def _render_card(item: Dict[str, Any]) -> str:
     kind = (item.get("kind") or "html").lower()
     deal_id = str(item.get("deal_id") or "")
     run_id = str(item.get("run_id") or "")
-    href = (
-        f"/analysis/{_html.escape(deal_id)}?run={_html.escape(run_id)}"
-        if deal_id else "#"
-    )
-    name = run_id or deal_id or "(unnamed run)"
+    filepath = str(item.get("filepath") or "")
+    name = str(item.get("name") or run_id or deal_id or "(unnamed)")
+
+    # Link target: prefer the canonical filepath when present (the
+    # generated_exports row links to a real artifact on disk); fall
+    # back to the analysis preview when no filepath (the
+    # analysis_runs fallback path).
+    if filepath:
+        # Server.py serves /exports/<deal_id>/<filename> from
+        # /data/exports/. Caller URL is /exports/<rest-of-path>.
+        rel = filepath
+        for prefix in ("/data/exports/", "/data/exports"):
+            if rel.startswith(prefix):
+                rel = rel[len(prefix):].lstrip("/")
+                break
+        href = f"/exports/{_html.escape(rel)}"
+    elif deal_id:
+        href = f"/analysis/{_html.escape(deal_id)}?run={_html.escape(run_id)}"
+    else:
+        href = "#"
+
+    size_html = _format_size_human(item.get("size"))
+    date_html = _format_size_date(str(item.get("created_at") or ""))
+    meta_right = " · ".join(s for s in (size_html, date_html) if s)
+
     return (
         f'<a class="app-deliv" href="{href}">'
         f'<span class="kind {kind}">{_html.escape(kind.upper())}</span>'
         f'<div class="nm">{_html.escape(name)}</div>'
         '<div class="meta">'
         f'<span>{_html.escape(deal_id)}</span>'
-        f'<span>{_html.escape(_format_size_date(str(item.get("created_at") or "")))}</span>'
+        f'<span>{_html.escape(meta_right)}</span>'
         '</div>'
         '</a>'
     )
@@ -148,14 +228,28 @@ def _render_counts_table(items: List[Dict[str, Any]]) -> str:
     )
 
 
-def render_deliverables(store: PortfolioStore) -> str:
+def render_deliverables(
+    store: PortfolioStore,
+    *,
+    deal_id: Optional[str] = None,
+) -> str:
     """4-column manifest grid + paired counts table.
 
     Args:
         store: PortfolioStore handle. Per Convention #1: justified
-            because analysis_runs is a narrow query single-use.
+            because list_exports is a narrow query single-use.
+        deal_id: When set (focused-deal mode), scopes the manifest to
+            this deal's artifacts. None → cross-deal latest exports.
+
+    Source priority:
+        1. generated_exports (canonical manifest, populated by the
+           canonical-path facades — Phase 3 commits 2-4)
+        2. analysis_runs (early-deployment fallback before any
+           canonical export has been produced)
     """
-    items = _fetch_recent_runs(store)
+    items = _fetch_generated_exports(store, deal_id=deal_id)
+    if not items:
+        items = _fetch_analysis_runs_fallback(store)
 
     if not items:
         viz_html = (

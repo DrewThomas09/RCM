@@ -174,7 +174,10 @@ def render_app_page(
         render_initiative_tracker(store, focused_deal_id),
         # Cross-deal
         render_alerts(store),
-        render_deliverables(store),
+        # Deliverables scoped to focused deal when one is selected;
+        # cross-deal latest otherwise. Phase 3 wired generated_exports
+        # as the primary source (per Q3.5 canonical-path migration).
+        render_deliverables(store, deal_id=focused_deal_id),
     ]
 
     return editorial_chartis_shell(
