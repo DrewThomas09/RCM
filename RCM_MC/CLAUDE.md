@@ -22,8 +22,12 @@ required for local use.
 
 - **Python 3.14** (stdlib-heavy; pandas + numpy + matplotlib are the
   only runtime deps beyond stdlib)
-- **SQLite** via `sqlite3` stdlib — 17 tables, `busy_timeout=5000`,
-  idempotent `CREATE TABLE IF NOT EXISTS` migrations
+- **SQLite** via `sqlite3` stdlib — ~89 tables across all subpackages
+  (core portfolio + data_public/ CMS loaders + ml/ audit/predictions +
+  engagement/ + ai/ caching), `busy_timeout=5000`, idempotent
+  `CREATE TABLE IF NOT EXISTS` migrations. To enumerate the live
+  registry: `grep -rh "CREATE TABLE IF NOT EXISTS" rcm_mc/ | grep -oE
+  "EXISTS [a-z_][a-z0-9_]*" | sort -u`
 - **HTTP** via `http.server.ThreadingHTTPServer` — no Flask / FastAPI
 - **HTML** server-rendered (string concatenation + a shared shell).
   No SPA, no client-side framework. One small vanilla-JS shim for
