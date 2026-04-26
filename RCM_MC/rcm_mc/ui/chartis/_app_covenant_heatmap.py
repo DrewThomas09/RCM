@@ -3,35 +3,57 @@
 Spec: docs/design-handoff/EDITORIAL_STYLE_PORT.md §6.7
 Reference: docs/design-handoff/reference/04-command-center.html (covenants section)
 
-Per-deal heatmap. Each cell colored by ``safe`` / ``watch`` / ``trip`` band
-backed by the deal's underlying metric (Net Leverage, Interest Coverage,
-Days Cash, EBITDA / Plan, Denial Rate, A/R Days). Trend column on the
+Per-deal heatmap. Each cell colored by ``safe`` / ``watch`` / ``trip``
+band backed by the deal's underlying metric. Trend column on the
 right shows movement from Q-1 → Q.
+
+──────────────────────────────────────────────────────────────────────
+Phase 3 commit 7: HONEST PARTIAL WIRING (per Q3.2 + Decision C1)
+──────────────────────────────────────────────────────────────────────
+
+The data-model gap surfaced during Phase 3 inventory:
+``deal_snapshots`` schema only carries 1 of the 6 spec covenants —
+``covenant_leverage`` (Net Leverage) + ``covenant_status`` (a single
+band string). The other 5 spec covenants (Interest Coverage, Days
+Cash on Hand, EBITDA / Plan, Denial Rate, A/R Days) have no per-
+quarter columns in the DB.
+
+Phase 3 wires the 1 row that has real data; the other 5 stay as `—`
+cells with a footnote explaining what's tracked vs. what isn't.
+
+Why this over synthesizing the missing 5 from related metrics:
+
+  A demo is the wrong place to invent data. Five honest "—" cells
+  with a clear footnote communicate trustworthiness, not
+  incompleteness. Synthesizing covenant numbers from
+  ``observed_metrics`` would let a partner make a decision based on
+  a derived "Coverage Ratio" they thought was real, then later
+  ask "where did that come from?" — that's a credibility-ending
+  moment.
+
+Q4.5 (registered in commit 11 of UI_REWORK_PLAN.md) tracks the
+schema work: add ``covenant_metrics`` table or extend
+``deal_snapshots`` with named covenant columns.
 
 Justification for taking ``store`` directly (per Convention #1):
 
-  This helper takes ``store`` because covenant cell derivation requires
-  per-quarter snapshot lookups for the focused deal (8 quarters × 6
-  metrics = up to 48 lookups). Pre-computing this in the orchestrator
-  would mean fetching ALL deals' quarterly snapshots even when only
-  one deal is focused — wasted I/O. The narrow per-focused-deal query
-  pattern is the right shape for this helper.
+  Covenant cell derivation requires per-quarter snapshot lookups
+  for the focused deal. Pre-computing this in the orchestrator
+  would mean fetching ALL deals' quarterly snapshots even when
+  only one deal is focused — wasted I/O. The narrow
+  per-focused-deal query pattern is the right shape for this
+  helper.
 
 See module-level conventions in _app_kpi_strip.py docstring (1-6).
 
-Empty / sparse states (per Phase 2 review):
+Empty / sparse states:
   - No focused deal → grid hidden; eyebrow shows
     "Select a deal in the table above to populate."
-  - Pre-snapshot deal (zero quarterly rows) → 6×8 grid with all `—`
-    cells + eyebrow "Awaiting first quarterly snapshot."
-  - Partial data → known cells colored; missing cells render `—` in faint
-
-# TODO(phase 3): wire covenant_grid() to real per-deal snapshot data.
-# Phase 2 ships the chrome with placeholder `—` cells (the data shape
-# exists in quarterly_snapshots; we're not deriving the bands yet).
-# Activating real bands needs the threshold mapping per covenant
-# (Net Leverage cap from deal_sim_inputs, Interest Coverage floor,
-# etc.) which is per-deal config data not yet surfaced for v3.
+  - Pre-snapshot deal (zero deal_snapshots rows) → 6×8 grid with
+    all `—` cells + eyebrow "Awaiting first quarterly snapshot."
+  - Net Leverage row populates with real bands when 1+ snapshots
+    exist; the other 5 rows always render `—` until the schema
+    grows (Q4.5).
 """
 from __future__ import annotations
 
@@ -62,11 +84,106 @@ _PLACEHOLDER_QUARTERS: List[str] = [
 ]
 
 
+# Net Leverage band thresholds. Conservative defaults per spec §6.7
+# (≤ 6.5x trip floor). Watch zone is 0.5x of cushion below trip.
+# Per-deal overrides via covenant_thresholds() — Phase 3 ships
+# spec defaults; Q4.5 wires per-deal config when the schema grows.
+_NET_LEVERAGE_TRIP = 6.5
+_NET_LEVERAGE_WATCH = 6.0
+
+
+def _band_for_net_leverage(value: Optional[float]) -> Tuple[str, str]:
+    """Map a net-leverage ratio to (band, label) for a heatmap cell.
+
+    Returns ("empty", "—") for None/missing. Otherwise:
+      ratio ≤ 6.0x → safe
+      6.0x <  ratio ≤ 6.5x → watch
+      ratio > 6.5x → trip
+    """
+    if value is None:
+        return ("empty", "—")
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return ("empty", "—")
+    label = f"{v:.1f}x"
+    if v <= _NET_LEVERAGE_WATCH:
+        return ("safe", label)
+    if v <= _NET_LEVERAGE_TRIP:
+        return ("watch", label)
+    return ("trip", label)
+
+
+def _quarter_label_from_iso(iso_str: str) -> str:
+    """Compress an ISO timestamp like '2026-04-15T...' into 'Q2'26'.
+
+    Defensive — bad inputs fall back to the raw string. Phase 3 keeps
+    this helper local; if other helpers need quarter labels Phase 4
+    can promote it to infra/.
+    """
+    try:
+        from datetime import datetime
+        dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+        q = (dt.month - 1) // 3 + 1
+        return f"Q{q}'{dt.year % 100:02d}"
+    except Exception:  # noqa: BLE001 — bad input → fall back
+        return (iso_str[:7] if iso_str else "—")
+
+
+def _fetch_leverage_history(
+    store: PortfolioStore,
+    deal_id: str,
+) -> List[Tuple[str, Optional[float]]]:
+    """Last 8 quarterly net-leverage points for the focused deal.
+
+    Reads from ``deal_snapshots.covenant_leverage`` ordered by
+    ``created_at`` DESC, takes the 8 most recent, then re-orders
+    chronologically (oldest → newest) so the heatmap reads
+    left-to-right in time order.
+
+    Returns:
+        List of (quarter_label, ratio_or_None) — exactly 8 entries
+        when 8+ snapshots exist; fewer entries when the deal has
+        less history. Caller pads with empties if fewer than 8.
+    """
+    try:
+        with store.connect() as con:
+            rows = con.execute(
+                """
+                SELECT created_at, covenant_leverage
+                  FROM deal_snapshots
+                 WHERE deal_id = ?
+                 ORDER BY created_at DESC
+                 LIMIT 8
+                """,
+                (deal_id,),
+            ).fetchall()
+    except Exception:  # noqa: BLE001 — table may not exist
+        return []
+
+    # Re-order chronologically and unpack
+    history: List[Tuple[str, Optional[float]]] = []
+    for row in reversed(list(rows)):
+        created_at = row[0] if not hasattr(row, "keys") else row["created_at"]
+        cov_lev = row[1] if not hasattr(row, "keys") else row["covenant_leverage"]
+        history.append((
+            _quarter_label_from_iso(str(created_at) if created_at else ""),
+            float(cov_lev) if cov_lev is not None else None,
+        ))
+    return history
+
+
 def covenant_grid(
     store: PortfolioStore,
     deal_id: str,
 ) -> List[Dict[str, Any]]:
     """Derive the 6-covenant × 8-quarter grid for a focused deal.
+
+    Phase 3: Net Leverage row wired from deal_snapshots.covenant_leverage.
+    Other 5 rows (Interest Coverage / Days Cash / EBITDA-Plan /
+    Denial Rate / A/R Days) stay as `—` cells until the schema grows
+    (Q4.5). The footnote ``rendered_below_grid()`` surfaces the
+    incomplete tracking honestly.
 
     Returns:
         List of 6 dicts (one per covenant) shaped:
@@ -76,22 +193,52 @@ def covenant_grid(
               "cells": List[Tuple[band, label]] — 8 entries, band in
                        {"safe", "watch", "trip", "empty"},
               "trend": str (e.g. "+0.2x" or "—"),
+              "wired": bool (True for Net Leverage in Phase 3,
+                             False for the other 5),
             }
-
-    Phase 2 stub: returns 6 covenant rows with all-empty cells until
-    the per-deal threshold mapping is wired. This keeps the heatmap
-    chrome rendering correctly while flagging the unfinished derivation.
-    See module-level # TODO(phase 3) — same comment lives there.
     """
-    # TODO(phase 3): wire to quarterly_snapshots + per-deal thresholds.
+    # Net Leverage — real wiring
+    history = _fetch_leverage_history(store, deal_id)
+    if history:
+        # Pad to 8 quarters from the left (oldest end) with empty cells
+        leverage_cells: List[Tuple[str, str]] = []
+        if len(history) < 8:
+            leverage_cells.extend(
+                [("empty", "—")] * (8 - len(history))
+            )
+        for _, ratio in history:
+            leverage_cells.append(_band_for_net_leverage(ratio))
+        # Trend: latest two non-empty values
+        nonempty = [r for _, r in history if r is not None]
+        if len(nonempty) >= 2:
+            delta = nonempty[-1] - nonempty[-2]
+            sign = "+" if delta >= 0 else ""
+            trend = f"{sign}{delta:.1f}x"
+        else:
+            trend = "—"
+    else:
+        leverage_cells = [("empty", "—") for _ in range(8)]
+        trend = "—"
+
     rows: List[Dict[str, Any]] = []
     for cov in _COVENANTS:
-        rows.append({
-            "name": cov["name"],
-            "sub": cov["sub"],
-            "cells": [("empty", "—") for _ in range(8)],
-            "trend": "—",
-        })
+        if cov["name"] == "Net Leverage":
+            rows.append({
+                "name": cov["name"],
+                "sub": cov["sub"],
+                "cells": leverage_cells,
+                "trend": trend,
+                "wired": True,
+            })
+        else:
+            # Phase 3 partial — Q4.5 schema migration unblocks these
+            rows.append({
+                "name": cov["name"],
+                "sub": cov["sub"],
+                "cells": [("empty", "—") for _ in range(8)],
+                "trend": "—",
+                "wired": False,
+            })
     return rows
 
 
@@ -215,12 +362,31 @@ def render_covenant_heatmap(
 
     rows = covenant_grid(store, deal_id)
 
-    # Pre-snapshot detection: if every cell is empty, show the
-    # "Awaiting first quarterly snapshot" eyebrow.
+    # Determine quarter labels: Net Leverage row's history if available,
+    # else placeholder quarters. Same labels apply to every row (the
+    # heatmap is a single time axis across all covenants).
+    history = _fetch_leverage_history(store, deal_id)
+    if history:
+        # Pad-left with placeholder quarters when fewer than 8 snapshots
+        actual_labels = [q for q, _ in history]
+        if len(actual_labels) < 8:
+            quarters = (
+                _PLACEHOLDER_QUARTERS[: 8 - len(actual_labels)]
+                + actual_labels
+            )
+        else:
+            quarters = actual_labels
+    else:
+        quarters = _PLACEHOLDER_QUARTERS
+
+    # Pre-snapshot detection: every cell is empty (no Net Leverage data
+    # AND the other 5 rows are inherently empty in Phase 3). Eyebrow
+    # surfaces this distinctly from the "5 of 6 not tracked" footnote.
     all_empty = all(
         all(band == "empty" for band, _ in row["cells"])
         for row in rows
     )
+
     eyebrow = ""
     if all_empty:
         eyebrow = (
@@ -230,14 +396,33 @@ def render_covenant_heatmap(
             f'{_html.escape(deal_id)}</span>. Run an analysis to populate.</div>'
         )
 
+    # Q4.5 footnote — surface the partial-wiring honestly. Counts the
+    # "wired" rows so the copy stays accurate if Phase 4 adds the
+    # missing covenants one at a time.
+    wired_count = sum(1 for r in rows if r.get("wired"))
+    total_count = len(rows)
+    footnote = ""
+    if wired_count < total_count and not all_empty:
+        unwired_count = total_count - wired_count
+        footnote = (
+            '<div class="micro" style="color:var(--muted);'
+            'padding:1rem 0 .5rem;font-style:italic;">'
+            f'{wired_count} of {total_count} covenants tracked '
+            '(Net Leverage). Remaining covenants render `—` until '
+            'the schema grows — see Q4.5 in <code style="font-style:normal">'
+            'docs/UI_REWORK_PLAN.md</code>.'
+            '</div>'
+        )
+
     viz_html = (
         f'{eyebrow}'
-        f'{_render_heat_grid(rows, quarters=_PLACEHOLDER_QUARTERS)}'
+        f'{_render_heat_grid(rows, quarters=quarters)}'
+        f'{footnote}'
     )
 
     return pair_block(
         viz_html,
         label="COVENANT BANDS · 6 × 8Q",
-        source="quarterly_snapshots",
+        source="deal_snapshots",
         data_table=_render_state_counts_table(rows),
     )
