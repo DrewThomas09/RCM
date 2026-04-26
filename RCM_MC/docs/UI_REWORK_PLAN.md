@@ -629,7 +629,26 @@ If `/` reroutes, do `/dashboard` and `/home` stay as legacy aliases (302), get r
 
 ### Q4.3 — `/engagements` (must resolve before Phase 2 begins)
 
-Surface unknown. Listed in `_CORPUS_NAV` but no obvious purpose from the route name. Action: visit it on a running instance, identify what it does. If real, place in PORTFOLIO. If dead, drop. If unanswered when Phase 2 begins, default to dropping (route returns 410).
+**Status:** ✅ Resolved (2026-04-27, commit pending). Decision: **KEEP** — and ported to editorial chrome.
+
+Inspection found `/engagements` is real partner-facing functionality, not a stub:
+
+- **Engagement model** (`rcm_mc/engagement/`) — 707 LOC store + 76 LOC public API. Per-engagement RBAC layered on top of app-level RBAC: PARTNER / LEAD / ANALYST / CLIENT_VIEWER roles isolate cross-engagement access (an analyst from another deal cannot publish on this one; a client's CLIENT_VIEWER cannot see drafts).
+- **Comment threads** + **draft → published deliverable state machine** with `can_publish` / `can_view_draft` permission helpers.
+- **Diligence integration**: `rcm_mc/diligence/_pages.py` integrates engagement so when an IC memo is created with `engagement_id` + `created_by`, the memo auto-attaches as a DRAFT engagement deliverable in the engagement's deliverable list.
+- **Test surface**: 34 tests across `tests/test_engagement.py` (392 LOC) + `tests/test_engagement_pages.py` (270 LOC), exercising all the RBAC paths end-to-end.
+- **HTTP surface**: 30+ engagement references in `server.py` covering `/engagements` list, `/engagements/<id>` detail, POST endpoints for create / add member / comment / publish.
+- **Sidebar entry**: already in spec §7.4 sidebar under OPERATIONS group (shipped in `fbda136`).
+
+410'ing this would break working partner functionality + cascade-fail the diligence-memo flow.
+
+**Resolved-by:**
+
+1. Decision: KEEP — load-bearing functionality with full test coverage.
+2. Editorial port: `engagement_pages.py` already passes through `chartis_shell` cleanly. Added `active_nav="/engagements"` (classified to OPERATIONS by the sidebar resolver) + breadcrumbs to all 3 renderers (list / detail / client portal).
+3. No 410 needed.
+
+The original "if dead, drop" framing was based on the route name being opaque from `_CORPUS_NAV` alone. Inspection showed it's anything but dead — it's the cross-engagement RBAC layer the partner cares about.
 
 ### Q4.4 — Phase 5 legacy-nav archive
 

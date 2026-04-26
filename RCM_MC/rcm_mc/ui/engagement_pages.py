@@ -115,8 +115,15 @@ def render_engagement_list(
         f'<tbody>{"".join(rows)}{empty_msg}</tbody></table>'
         f'{create_form}'
     )
-    return chartis_shell(body, "RCM Diligence — Engagements",
-                         subtitle="Cross-engagement workspace")
+    return chartis_shell(
+        body, "RCM Diligence — Engagements",
+        subtitle="Cross-engagement workspace",
+        active_nav="/engagements",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Engagements", None),
+        ],
+    )
 
 
 # ── Detail (internal view) ─────────────────────────────────────────
@@ -157,6 +164,12 @@ def render_engagement_detail(
         "\n".join(body_parts),
         f"Engagement — {engagement.engagement_id}",
         subtitle=f"{engagement.name} · {engagement.client_name}",
+        active_nav="/engagements",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Engagements", "/engagements"),
+            (engagement.name, None),
+        ],
     )
 
 
@@ -449,4 +462,11 @@ def render_client_portal(
     return chartis_shell(
         body, f"Client Portal — {engagement.name}",
         subtitle="Published deliverables",
+        active_nav="/engagements",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Engagements", "/engagements"),
+            (engagement.name, f"/engagements/{engagement.engagement_id}"),
+            ("Client portal", None),
+        ],
     )
