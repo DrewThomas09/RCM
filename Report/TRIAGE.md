@@ -34,7 +34,7 @@ Marker legend: `[ ]` open · `[x]` resolved (commit hash inline) · `[~]` partia
 - [x] HIGH | Report-0181 | Project lacks unified delete-policy: soft-delete (deal_notes), hard-delete (deal_overrides), CASCADE×3, SET NULL×1, NO ACTION×many. Document a delete-policy matrix in CLAUDE.md. | CLAUDE.md | MR982 | 488e3c8 | 2026-04-26 (5-row matrix added between Python-style + Testing sections, with one-line rule of thumb + on-disk examples per behavior)
 - [ ] HIGH | Report-0247 | NEW `rcm_mc/dev/seed.py` (896 LOC) lands as a unit on `feat/ui-rework-v3` — never read. | rcm_mc/dev/seed.py (on feat/ui-rework-v3) | MR1017
 - [ ] HIGH | Report-0247 | NEW `rcm_mc/exports/canonical_facade.py` (424 LOC) — coupling to `infra/exports.py` unknown. | rcm_mc/exports/canonical_facade.py | MR1018
-- [ ] HIGH | Report-0102 | 5 of 7 CMS data-loaders unaudited. | rcm_mc/data/cms_*.py | MR985
+- [x] HIGH | Report-0102 | 5 of 7 CMS data-loaders unaudited. | rcm_mc/data/cms_*.py | MR985 | 4a79bf1 | 2026-04-26 (Report-0257: walked all 13 cms_* modules; single download seam at _cms_download.py; no trust-boundary or secret findings; surfaced MR1060 LOW for ma_enrollment 712-LOC split)
 - [x] HIGH | Report-0212 | `document_qa.py` (355L) is largest in `ai/` — RAG implementation hits trust boundary (user-supplied document text → LLM). | rcm_mc/ai/document_qa.py | MR1000 | 442bb98 | 2026-04-26 (added 3-layer prompt-injection mitigation: 2000-char question cap, <document>/<question> delimiters, defensive system prompt; 40 phase-P + e2e tests pass)
 - [x] HIGH | Report-0001 | `scipy>=1.11` only in `[all]` extras — any branch adding `import scipy` to a hot path breaks default install with `ImportError`. | pyproject.toml:59 | MR17 | 110f2cf | 2026-04-26 (added dedicated [stats] extras group + comment documenting lazy-import pattern across the 3 prod sites)
 - [x] HIGH | Report-0001 | `[all]` does not include `[diligence]` deps (duckdb/dbt-core/dbt-duckdb/pyarrow). | pyproject.toml | MR18 | 110f2cf | 2026-04-26 (folded [diligence] deps into [all]; verified diligence ⊂ all and stats ⊂ all programmatically)
@@ -79,6 +79,7 @@ Marker legend: `[ ]` open · `[x]` resolved (commit hash inline) · `[~]` partia
 - [ ] LOW | Report-0251 | `profiles.example.yml` shipped via package-data — real `profiles.yml` glob-match risk. | pyproject.toml:80-85 | MR1041
 - [ ] LOW | Report-0244 | `llm_client` likely instantiated 4× by sibling ai/ modules — 4× env-var reads. | rcm_mc/ai/* | MR1010
 - [ ] LOW | Report-0245 | Possible `ai/memo_writer` → `pe_intelligence/ic_memo` cross-package call. | rcm_mc/ai/memo_writer.py | MR1013
+- [ ] LOW | Report-0257 | `cms_ma_enrollment.py` is 712 LOC — possibly bundling enrollment + Star ratings + benchmarks; consider split or confirm single-dataset shape. | rcm_mc/data/cms_ma_enrollment.py | MR1060
 - [ ] LOW | Report-0255 | Tuva Project (Apache 2.0) vendor copy — verify NOTICE file presence + license attribution in repo LICENSE/README. | vendor/ChartisDrewIntel/ | MR1056
 - [ ] LOW | Report-0255 | `RCM_MM/` empty 0-byte scratch dir at repo root — decide: delete vs. gitignore vs. leave (carried follow-up Q2). | RCM_MM/ | (no MR — Q2)
 
