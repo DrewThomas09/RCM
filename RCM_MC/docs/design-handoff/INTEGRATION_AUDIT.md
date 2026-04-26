@@ -1,0 +1,187 @@
+# INTEGRATION_AUDIT — Editorial design system coverage
+
+**Status:** Audit · 2026-04-25
+**Scope:** Inventory of every HTML-rendering page in `rcm_mc/ui/` and its current relationship to the editorial design system. Maps which pages are fully-ported, partially-ported, chrome-only, or untouched. Output is a phase-assignment matrix the user can use to prioritize Phase 2b/2c/2d/4 work.
+
+**This document does not change any code.** It is reference material for the morning planning session.
+
+---
+
+## TL;DR — the integration is further along than tonight's empty-DB load suggested
+
+Three counts that reframe what "fully integrated" means:
+
+- **289 of 334** page files in `rcm_mc/ui/` import `chartis_shell` from the dispatcher → chrome flips automatically when `CHARTIS_UI_V2=1` is set in the environment. This part of the integration is **already done at the architectural level**.
+- **20** files in `rcm_mc/ui/chartis/` are dedicated editorial-namespaced renderers, all wired into server routes (verified — `from .ui.chartis.<page> import render_<page>` appears in 19 distinct route handlers in `server.py`).
+- **10 files** use the editorial-native body primitives (`pair_block`, `editorial_page_head`). All 10 are the `/app` dashboard + its 9 helpers — Phase 3 work.
+
+The gap is **not** "port pages to editorial chrome" — that's broadly done. The gap is **deeper-than-chrome editorial body markup** on the 19 Tier-1 chartis pages, plus the 4 cross-cutting nav issues from tonight's local test.
+
+## Tier breakdown
+
+### Tier 0 — Fully editorial-native (chrome + body + paired blocks)
+
+| Route | File | LOC | Status |
+|---|---|---|---|
+| `/app?ui=v3` | `chartis/app_page.py` + 9 `_app_*.py` | 255 + ~2,500 | Phase 3 complete (commits in feat/ui-rework-v3, tests 25/25) |
+
+**1 page surface.** Uses `pair_block`, `editorial_page_head`, `editorial_topbar`. This is the canonical editorial render and the partner-walkthrough target.
+
+### Tier 1 — Chartis-namespaced, chartis_shell chrome, body NOT yet paired-block
+
+19 pages that are wired into server routes (confirmed via `grep "from .ui.chartis" rcm_mc/server.py`) and use `chartis_shell()` for chrome, but their bodies use chartis-local `_panel()` helpers, raw HTML, or `ck_table()` — not the editorial `pair_block` / `editorial_page_head` primitives.
+
+| Topnav section | Route (likely) | File | LOC |
+|---|---|---|---|
+| (header/landing) | `/` (marketing) | `chartis/marketing_page.py` | 477 |
+| (auth) | `/login` | `chartis/login_page.py` | 352 |
+| (auth) | `/forgot` | `chartis/forgot_page.py` | 132 |
+| HOME | `/home` (legacy alias) | `chartis/home_page.py` | 723 |
+| ANALYSIS | `/analysis/partner-review` | `chartis/partner_review_page.py` | 709 |
+| DEALS | `/diligence/archetype` | `chartis/archetype_page.py` | 413 |
+| DEALS | `/diligence/investability` | `chartis/investability_page.py` | 375 |
+| DEALS | `/diligence/red-flags` | `chartis/red_flags_page.py` | 472 |
+| DEALS | `/diligence/stress` | `chartis/stress_page.py` | 261 |
+| DEALS | `/diligence/ic-packet` | `chartis/ic_packet_page.py` | 569 |
+| DEALS | `/diligence/screening` | `chartis/deal_screening_page.py` | 390 |
+| MARKET | `/market/structure` | `chartis/market_structure_page.py` | 285 |
+| MARKET | `/market/payer-intelligence` | `chartis/payer_intelligence_page.py` | 358 |
+| MARKET | `/market/sponsor-track-record` | `chartis/sponsor_track_record_page.py` | 307 |
+| MARKET | `/market/white-space` | `chartis/white_space_page.py` | 314 |
+| TOOLS | `/tools/rcm-benchmarks` | `chartis/rcm_benchmarks_page.py` | 356 |
+| TOOLS | `/tools/corpus-backtest` | `chartis/corpus_backtest_page.py` | 414 |
+| TOOLS | `/tools/pe-intelligence-hub` | `chartis/pe_intelligence_hub_page.py` | 383 |
+| PORTFOLIO | `/portfolio/analytics` | `chartis/portfolio_analytics_page.py` | 507 |
+
+**19 pages, ~7,800 LOC.** These are the marquee partner-facing surfaces beyond `/app`. Phase 2b/2c/2d work is **upgrading their bodies** from local `_panel`-style markup to the editorial `pair_block` + `editorial_page_head` primitives — same pattern that worked for the `/app` blocks.
+
+**Routes verified:** routes for these 19 pages were confirmed by grepping `rcm_mc/server.py` for `from .ui.chartis.<filename> import render_*`. Specific path strings (e.g. `/diligence/archetype`) are inferred from filename + `_route_*` handler names; double-check exact paths during Phase 2b kickoff.
+
+### Tier 2 — Legacy pages, chartis_shell chrome via dispatcher
+
+~270 page files in `rcm_mc/ui/*.py` (root) and `rcm_mc/ui/data_public/*.py`. These import `chartis_shell` from the dispatcher (`_chartis_kit.py`), so chrome flips when `CHARTIS_UI_V2=1` is set, BUT their bodies are legacy markup (ck_table, ck_kpi_block, raw HTML).
+
+**Visual state:** parchment topbar + serif title, dark-styled body content. Mixed-state acceptable per the dispatcher's docstring (line 64-71 of `_chartis_kit_editorial.py`): *"the editorial shell + .pair pattern produces the visual identity; the older helpers render their cells with legacy ck_* CSS that the editorial CSS doesn't fight."*
+
+**Implication:** these pages **work** in editorial mode — they don't crash, they don't visually break. They're just not partner-walkthrough quality. Many of them aren't partner-walkthrough surfaces at all (data browser, calibration, audit log) and the cost-vs-benefit of porting their bodies is low.
+
+**Recommendation:** do not blanket-port. Cherry-pick the 5-10 highest-traffic Tier-2 pages and elevate them to Tier 1 in Phase 2c or 2d. Leave the rest at chrome-only adoption indefinitely. Phase 5 cleanup (deleting `_chartis_kit_legacy`) is the forcing function for the long tail.
+
+### Tier 3 — Pure legacy (`_ui_kit.shell`, dispatcher-bypass)
+
+4 files: `csv_to_html.py`, `json_to_html.py`, `sensitivity_dashboard.py`, `text_to_html.py`.
+
+These are utility renderers (CSV → HTML preview, JSON → HTML, etc.), not partner-facing pages. Out of scope for the editorial port; touching them buys nothing for partner walkthrough readiness.
+
+### Detritus — 29 Finder duplicate files
+
+Files literally named `<original> 2.py` (with the space). macOS Finder duplicate artifacts. Examples:
+
+```
+rcm_mc/ui/_chartis_kit_legacy 2.py
+rcm_mc/ui/_chartis_kit_v2 2.py
+rcm_mc/ui/bankruptcy_survivor_page 2.py
+rcm_mc/ui/bear_case_page 2.py
+... (25 more)
+```
+
+**Verified `rg -l " 2\.py"` returns 29 matches in rcm_mc/ui/.** They don't appear to shadow imports (Python doesn't import filenames with spaces) but they triple-count grep results and confuse audits like this one.
+
+**Recommendation:** single cleanup commit — `git rm` all 29. Zero risk; safe to do at any time, including a tired-Andrew morning. Worth doing before Phase 2b begins so subsequent grep-driven audits give honest counts.
+
+---
+
+## What "fully integrated" actually means in priority order
+
+Per your message: *"continue planning the full integration of the claude design and HTML, map out which pages still need updating and update them."*
+
+Decomposed in honest priority order:
+
+### P0 — Cross-cutting nav (small, high-leverage, pre-Phase-2b)
+
+The 4 issues from tonight's gap doc (`UI_REWORK_PLAN.md` "Discovered during local testing 2026-04-25"). Implementation is bounded; risk is low; payoff is the v3 surface stops feeling like an island.
+
+| Issue | Fix shape | Approx LOC | Risk |
+|---|---|---|---|
+| `?ui=v3` flag propagation | Add `editorial_link()` helper in `_chartis_kit_editorial.py`; wire through `editorial_topbar` brand href + `editorial_crumbs` internal hrefs | ~30 | Low (additive, contract test guards) |
+| Topnav buttons non-functional | Convert `<button>` elements to `<a>` with hrefs to Tier 1 pages above | ~15 | Low (additive) |
+| Logo drops to legacy | Already covered by P0 #1 (the brand href change) | (folded above) | — |
+| DEMO_CHECKLIST verification commands never validated | Run them against a seeded DB after seeder lands; correct any drift | ~0 (no code) | None |
+
+**Total: 1 commit, ~50 LOC, contract suite extends 25 → 27.** Could land alongside the seeder commits in Phase 2b kickoff.
+
+### P1 — Demo seeder (already proposed)
+
+`docs/design-handoff/SEEDER_PROPOSAL.md` (commit `e27c5de`, local-only). Resolves the empty-DB demo failure mode. C1-C6 questions need decisions. Implementation is ~720 LOC across 8 commits. **This is the unblocker for everything else** — until you can see the dashboard with realistic data, you can't visually evaluate Tier-0 polish or Tier-1 body ports.
+
+### P2 — Phase 2b: marquee surface body ports (5 pages)
+
+The 5 highest-leverage Tier-1 pages to upgrade from local `_panel` markup to editorial `pair_block` + `editorial_page_head`. Recommended set:
+
+| Priority | File | Why |
+|---|---|---|
+| 1 | `chartis/home_page.py` | Authenticated home; first thing partners see post-login |
+| 2 | `chartis/deal_screening_page.py` | DEALS section primary destination |
+| 3 | `chartis/ic_packet_page.py` | Highest partner-decision-criticality (IC committee artifact) |
+| 4 | `chartis/portfolio_analytics_page.py` | PORTFOLIO section primary destination |
+| 5 | `chartis/red_flags_page.py` | Diligence-side marquee — pair-block pattern fits the alert/finding shape naturally |
+
+Each page is ~300-700 LOC; body port is roughly 2-3x the LOC because pair_block makes existing markup more verbose. Estimated: **5 weeks of focused work** (1 week per page) at the pace Phase 3 moved. Each can ship as its own phase-numbered series.
+
+### P3 — Phase 2c: secondary surfaces (5-7 pages)
+
+Next set: `archetype_page`, `investability_page`, `market_structure_page`, `payer_intelligence_page`, `stress_page`, `corpus_backtest_page`, `sponsor_track_record_page`. ~3-4 weeks.
+
+### P4 — Phase 2d: long tail (7 pages)
+
+Remaining Tier-1 pages: `partner_review_page`, `pe_intelligence_hub_page`, `marketing_page`, `rcm_benchmarks_page`, `white_space_page`, `forgot_page`, `login_page`. ~2-3 weeks. (Login + forgot are already passable; lower priority.)
+
+### P5 — Phase 4: cutover decisions (Q4.1-Q4.6 in UI_REWORK_PLAN.md)
+
+`/` reroute, `/dashboard` aliases, `/engagements` resolution, legacy-nav archive, covenant schema, `net_collection_rate` decomposition. Pre-merge-to-main work. ~1 week + comms.
+
+### P6 — Phase 5: legacy delete
+
+`_chartis_kit_legacy.py`, the dispatcher in `_chartis_kit.py`, the 29 Finder duplicates, the 4 Tier-3 utility files (consolidate or delete). Cleanup commit. ~half a day.
+
+---
+
+## What I'd touch first if given carte blanche tomorrow
+
+In your shoes, tomorrow morning, after coffee:
+
+1. **Greenlight the seeder** by answering C1-C6 in `SEEDER_PROPOSAL.md` (~10 min). Seeder lands by EOD tomorrow.
+2. **Do the P0 cross-cutting nav fix** as a single commit (~1 hour). The `editorial_link()` helper + brand href fixes + 2 contract tests. Closes 3 of the 4 gaps from tonight's local test.
+3. **Run the seeder + verification commands.** Loads the dashboard with realistic data. Closes the 4th gap (verification commands validated).
+4. **Do the partner-walkthrough rehearsal** against the seeded dashboard. Pass 1 (solo), Pass 2 (hostile-partner with me), Pass 3 (with a human).
+5. **Decide Phase 2b vs. cutover sequencing** based on what you observed in rehearsal.
+
+Items 1-4 fit in a single working day. Item 5 is the strategic call that should wait for the partner walkthrough itself.
+
+---
+
+## What I am NOT recommending
+
+- Do not start Phase 2b body ports tonight or tomorrow morning. The seeder + nav fix are higher-leverage and ship in hours, not weeks.
+- Do not attempt to port all 19 Tier-1 pages in one phase. Even at the "5 pages = 5 weeks" estimate, a single-phase 19-page port would be 4 months of work — that's not a phase, that's a quarter.
+- Do not blanket-port Tier-2 pages. The chrome already adapts; the body cost-vs-benefit is unfavorable for most. Cherry-pick instead.
+- Do not skip the partner walkthrough rehearsal even if the seeder + nav fix go smoothly. The walkthrough is what tells you what to prioritize next; without it you're guessing.
+
+---
+
+## Open questions for the morning
+
+1. **P0 implementation:** the hook denied autonomous production-code edits tonight. The `editorial_link()` helper + brand href fix is small (~50 LOC) and has obvious value — do you want to authorize that as a single commit before bed, or keep it for morning review?
+2. **Finder-duplicate cleanup:** 29 files `git rm` is risk-free. Bundle with the nav fix commit, or separate?
+3. **Tier-1 body-port sequencing:** I recommended 5 pages for Phase 2b. Confirm the order, or substitute based on partner-walkthrough priorities?
+4. **Tier-2 cherry-pick list:** which 5-10 of the ~270 Tier-2 pages get elevated to Tier 1 in Phase 2c? Right now I don't have data on partner usage frequency to recommend this.
+
+---
+
+## See also
+
+- [`UI_REWORK_PLAN.md`](../UI_REWORK_PLAN.md) — phase plan, conventions, rollback, Q4.1-Q4.6
+- [`SEEDER_PROPOSAL.md`](SEEDER_PROPOSAL.md) — pre-Phase-2b infrastructure (C1-C6 questions)
+- [`PHASE_3_PROPOSAL.md`](PHASE_3_PROPOSAL.md) — pattern to follow for Phase 2b proposal
+- [`IA_MAP.md`](IA_MAP.md) — full nav inventory; Tier-1 routes here are the topnav destinations
+- [`DEMO_CHECKLIST.md`](../DEMO_CHECKLIST.md) — partner-walkthrough script
