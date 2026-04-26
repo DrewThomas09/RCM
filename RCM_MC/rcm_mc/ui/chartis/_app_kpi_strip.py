@@ -72,14 +72,22 @@ from rcm_mc.ui._chartis_kit_editorial import (
 #   spark   — function (deals_df) → list[float] OR None when sparkline not applicable
 #   format  — passthrough format hint to number_maybe (informational only here)
 _KPI_ROWS: List[Dict[str, Any]] = [
-    {"id": "deals",   "label": "Active deals"},
-    {"id": "moic",    "label": "Weighted MOIC"},     # headline — paired table follows this one
-    {"id": "irr",     "label": "Weighted IRR"},
-    {"id": "atrisk",  "label": "Covenants at risk"},
-    {"id": "drag",    "label": "Avg EBITDA drag"},
-    {"id": "dar",     "label": "Avg DAR drag"},
-    {"id": "init",    "label": "Initiatives tracked"},
-    {"id": "cash",    "label": "Avg days cash"},
+    {"id": "deals",   "label": "Active deals",
+     "tip": "Count of deals not in the closed/exit terminal stages"},
+    {"id": "moic",    "label": "Weighted MOIC",     # headline — paired table follows this one
+     "tip": "Multiple on Invested Capital, weighted by entry equity across the active portfolio"},
+    {"id": "irr",     "label": "Weighted IRR",
+     "tip": "Internal Rate of Return, weighted by entry equity across the active portfolio"},
+    {"id": "atrisk",  "label": "Covenants at risk",
+     "tip": "Deals whose latest covenant_leverage snapshot is in WATCH or TRIPPED bands"},
+    {"id": "drag",    "label": "Avg EBITDA drag",
+     "tip": "Average EBITDA bridge variance vs underwriting plan, in dollars"},
+    {"id": "dar",     "label": "Avg DAR drag",
+     "tip": "Average days-in-A/R variance vs benchmark"},
+    {"id": "init",    "label": "Initiatives tracked",
+     "tip": "Distinct initiative_id values with at least one actual recorded in the trailing 4 quarters"},
+    {"id": "cash",    "label": "Avg days cash",
+     "tip": "Average operating-days-cash-on-hand across the active portfolio"},
 ]
 
 
@@ -166,11 +174,16 @@ def _render_kpi_cell(
         if delta_html else '<div class="delta">&nbsp;</div>'
     )
     headline_marker = ' aria-current="true"' if is_headline else ''
+    # title="" tooltip — partner-readable definition of what the KPI
+    # actually measures. Keeps the cell compact while letting hover
+    # surface the precise meaning. Pulled from the _KPI_ROWS table.
+    tip = kpi.get("tip") or kpi["label"]
+    tip_attr = f' title="{_html.escape(tip, quote=True)}"'
     # Inline-style on the value ensures tone color carries through even
     # when a tone is None (default ink). number_maybe already adds tone
     # color when tone is set.
     return (
-        f'<div class="kpi-cell"{headline_marker}>'
+        f'<div class="kpi-cell"{headline_marker}{tip_attr}>'
         f'<div class="value mono num">{value_html}</div>'
         f'<div class="label">{_html.escape(kpi["label"])}</div>'
         f'{delta_block}'
