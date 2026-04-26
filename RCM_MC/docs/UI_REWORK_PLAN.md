@@ -660,16 +660,22 @@ This preserves institutional memory at zero ongoing cost and makes the deletion 
 
 ### Q4.5 — Covenant schema expansion
 
-**Trigger:** Phase 3 commit 7 (`45fda05`) wired Net Leverage from real data (`covenant_leverage` column on `deal_snapshots`). The other 5 spec covenants (Interest Coverage, Days Cash on Hand, Fixed Charge Coverage, DSCR, Debt-to-EBITDA peer) render `—` honestly with a footnote.
+**Status:** ✅ Resolved (2026-04-27, commit pending). Decision: **Option B** — new `covenant_metrics` table. The named-column path was rejected because covenants are a true 1-many from snapshots and named columns would force a migration every time the spec covenant set changes.
 
-**Required before Phase 4 merge:**
+Implementation:
+- `rcm_mc/portfolio/covenant_metrics.py` — new module with `covenant_metrics` table (`deal_id`, `snapshot_id` (nullable FK), `covenant_name`, `value`, `threshold`, `direction`, `watch_threshold`, `created_at`, `notes`), `record_covenant_metric` writer, `list_covenant_history` reader, `band_for_metric` direction-aware classifier, `format_value` per-covenant unit formatter. `SPEC_COVENANT_DEFAULTS` carries per-covenant threshold + watch + direction.
+- `_app_covenant_heatmap.covenant_grid()` — reads ALL 6 covenants from the new table. Net Leverage retains a legacy fallback to `deal_snapshots.covenant_leverage` for pre-Q4.5 deals; new writes go to covenant_metrics. `wired=True` whenever ≥1 cell is non-empty.
+- Seeder — `_seed_covenant_metrics` writes 8-quarter trajectories per held + exit deal across all 6 covenants. Curated to demonstrate distinct outcomes (ccf_2026 drifts safe→watch; arr_2025 trips Net Leverage; pma_2024 deleverages cleanly).
+- Contract tests — `test_v3_app_covenant_heatmap_grid_shape` (replaces the old 1-wired test) asserts the canonical 6-row order. `test_v3_app_covenant_heatmap_q45_six_of_six_when_seeded` asserts post-seed `wired_count == 6`.
 
-1. Decision: extend `deal_snapshots` with named columns vs. introduce a `covenant_metrics(snapshot_id, covenant_name, value, threshold)` table. Recommendation: the second option — covenants are a true 1-many from snapshots, and the named-column path forces a migration every time the spec covenant set changes. Per-deal threshold config lives there too (resolves the threshold half of Q3.2).
-2. Migration: add the table + a backfill that derives the 5 missing covenants from existing `deal_sim_inputs` where possible.
-3. Update `covenant_grid()` to read from the new table; remove the "1 of 6 covenants tracked" footnote when `wired_count == 6`.
-4. Contract test extension: assert `wired_count == 6` post-migration. Update `test_v3_app_covenant_heatmap_footnote_present` accordingly.
+**Resolved-by:**
 
-**Estimated effort:** ~half a day (migration + helper rewrite + 2 tests).
+1. ✅ Decision: covenant_metrics table, not column extension.
+2. ✅ Migration: `_ensure_table` is idempotent; pre-Q4.5 deals fall through to the legacy column for Net Leverage.
+3. ✅ `covenant_grid()` reads the new table. The "1 of 6 tracked" footnote auto-removes via the existing `wired_count < total_count` predicate (footnote shipped in Phase 3, never removed).
+4. ✅ Contract tests updated.
+
+The "Phase 3 ships partial" footnote is now structurally inert — when seeded data is present, `wired_count == 6` and the `wired_count < total_count` branch never fires.
 
 ### Q4.6 — `net_collection_rate` composite decomposition
 

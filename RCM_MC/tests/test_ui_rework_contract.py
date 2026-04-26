@@ -482,37 +482,55 @@ class TestUIReworkContract(unittest.TestCase):
             "EBITDA drag block missing",
         )
 
-    def test_v3_app_covenant_heatmap_footnote_present(self) -> None:
-        """Per Phase 3 commit 7 (Q4.5 honest-partial-wiring):
-        the covenant grid honestly distinguishes the 1 wired row from
-        the 5 unwired rows. Partners shouldn't infer the other 5 rows
-        are real signals.
+    def test_v3_app_covenant_heatmap_grid_shape(self) -> None:
+        """Q4.5 (2026-04-27): the covenant grid always returns 6 rows
+        in the canonical spec §6.7 order (Net Leverage / Interest
+        Coverage / Days Cash on Hand / EBITDA per Plan / Denial Rate /
+        Days in A/R). When a deal has no covenant_metrics rows, every
+        row's ``wired=False`` (empty state); when seeded, every row
+        is wired.
 
-        Tested at the helper layer (covenant_grid) because the footnote
-        only renders when the focused deal has covenant data — the
-        anonymous /app fetch from this contract suite hits the empty-
-        state path. We verify the contract that exactly one row carries
-        ``wired=True`` regardless of data presence.
+        Pre-Q4.5 this test asserted "exactly 1 row wired" — that
+        contract was correct for Phase 3 (only Net Leverage had a
+        backing column on deal_snapshots). Q4.5 added the
+        covenant_metrics table so all 6 covenants share the same
+        wiring path.
         """
         from rcm_mc.ui.chartis._app_covenant_heatmap import covenant_grid
         store = PortfolioStore(self.db)
+        # Empty-DB test: all 6 rows but no wiring (the contract suite
+        # runs against an unseeded test DB).
         rows = covenant_grid(store, "no_such_deal_for_grid_shape_test")
         self.assertEqual(
             len(rows), 6,
-            f"covenant grid must have 6 rows (Net Leverage + 5 unwired), got {len(rows)}",
+            f"covenant grid must have 6 rows, got {len(rows)}",
         )
-        wired_count = sum(1 for r in rows if r.get("wired"))
-        self.assertEqual(
-            wired_count, 1,
-            f"exactly 1 covenant row must be wired (Net Leverage); got {wired_count}",
-        )
-        # The wired row must be Net Leverage — name is the load-bearing
-        # contract for the partner-walkthrough demo.
-        wired_row = next(r for r in rows if r.get("wired"))
-        self.assertIn(
-            "leverage", wired_row.get("name", "").lower(),
-            f"wired row should be Net Leverage; got {wired_row.get('name')!r}",
-        )
+        # Canonical order matches spec §6.7
+        names = [r.get("name") for r in rows]
+        self.assertEqual(names, [
+            "Net Leverage", "Interest Coverage", "Days Cash on Hand",
+            "EBITDA / Plan", "Denial Rate", "Days in A/R",
+        ])
+
+    def test_v3_app_covenant_heatmap_q45_six_of_six_when_seeded(self) -> None:
+        """Q4.5 acceptance criterion: when covenant_metrics is
+        populated for a deal, all 6 covenant rows render with
+        ``wired=True``. This is the post-Q4.5 invariant the audit
+        listed: ``wired_count == 6 post-migration``."""
+        import tempfile
+        from rcm_mc.dev.seed import seed_demo_db
+        from rcm_mc.ui.chartis._app_covenant_heatmap import covenant_grid
+        with tempfile.TemporaryDirectory() as t:
+            db = os.path.join(t, "q45.db")
+            seed_demo_db(db, base_dir=os.path.join(t, "exports"))
+            store = PortfolioStore(db)
+            rows = covenant_grid(store, "ccf_2026")
+            self.assertEqual(len(rows), 6)
+            wired = sum(1 for r in rows if r.get("wired"))
+            self.assertEqual(
+                wired, 6,
+                f"Q4.5 expects 6/6 covenants wired post-seed; got {wired}",
+            )
 
     def test_v3_app_initiative_tracker_cross_portfolio_when_no_focus(self) -> None:
         """Per Phase 3 commit 8 (Q3.4): when no deal is focused, the

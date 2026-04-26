@@ -179,11 +179,12 @@ def covenant_grid(
 ) -> List[Dict[str, Any]]:
     """Derive the 6-covenant × 8-quarter grid for a focused deal.
 
-    Phase 3: Net Leverage row wired from deal_snapshots.covenant_leverage.
-    Other 5 rows (Interest Coverage / Days Cash / EBITDA-Plan /
-    Denial Rate / A/R Days) stay as `—` cells until the schema grows
-    (Q4.5). The footnote ``rendered_below_grid()`` surfaces the
-    incomplete tracking honestly.
+    Q4.5 expansion (2026-04-27): all 6 covenants now read from the
+    new ``covenant_metrics`` table via ``list_covenant_history``.
+    Net Leverage retains its legacy ``deal_snapshots.covenant_leverage``
+    fallback for deals migrated pre-Q4.5 — when no covenant_metrics
+    rows exist for Net Leverage, the legacy column wins. New writes
+    must go to covenant_metrics; the legacy column is read-only.
 
     Returns:
         List of 6 dicts (one per covenant) shaped:
@@ -193,52 +194,77 @@ def covenant_grid(
               "cells": List[Tuple[band, label]] — 8 entries, band in
                        {"safe", "watch", "trip", "empty"},
               "trend": str (e.g. "+0.2x" or "—"),
-              "wired": bool (True for Net Leverage in Phase 3,
-                             False for the other 5),
+              "wired": bool (True when ≥1 cell in cells is non-empty),
             }
     """
-    # Net Leverage — real wiring
-    history = _fetch_leverage_history(store, deal_id)
-    if history:
-        # Pad to 8 quarters from the left (oldest end) with empty cells
-        leverage_cells: List[Tuple[str, str]] = []
-        if len(history) < 8:
-            leverage_cells.extend(
-                [("empty", "—")] * (8 - len(history))
-            )
-        for _, ratio in history:
-            leverage_cells.append(_band_for_net_leverage(ratio))
-        # Trend: latest two non-empty values
-        nonempty = [r for _, r in history if r is not None]
-        if len(nonempty) >= 2:
-            delta = nonempty[-1] - nonempty[-2]
-            sign = "+" if delta >= 0 else ""
-            trend = f"{sign}{delta:.1f}x"
-        else:
-            trend = "—"
-    else:
-        leverage_cells = [("empty", "—") for _ in range(8)]
-        trend = "—"
+    from rcm_mc.portfolio.covenant_metrics import (
+        band_for_metric, format_value, list_covenant_history,
+    )
 
     rows: List[Dict[str, Any]] = []
     for cov in _COVENANTS:
-        if cov["name"] == "Net Leverage":
+        name = cov["name"]
+        history = list_covenant_history(store, deal_id, name, limit=8)
+
+        # Legacy fallback: pre-Q4.5 deals stored Net Leverage in
+        # deal_snapshots.covenant_leverage. If no covenant_metrics
+        # rows exist for this covenant, fall back to that column.
+        if not history and name == "Net Leverage":
+            legacy = _fetch_leverage_history(store, deal_id)
+            if legacy:
+                cells: List[Tuple[str, str]] = []
+                if len(legacy) < 8:
+                    cells.extend([("empty", "—")] * (8 - len(legacy)))
+                for _, ratio in legacy:
+                    cells.append(_band_for_net_leverage(ratio))
+                nonempty = [r for _, r in legacy if r is not None]
+                trend = "—"
+                if len(nonempty) >= 2:
+                    delta = nonempty[-1] - nonempty[-2]
+                    sign = "+" if delta >= 0 else ""
+                    trend = f"{sign}{delta:.1f}x"
+                rows.append({
+                    "name": name, "sub": cov["sub"],
+                    "cells": cells, "trend": trend, "wired": True,
+                })
+                continue
+
+        if not history:
             rows.append({
-                "name": cov["name"],
-                "sub": cov["sub"],
-                "cells": leverage_cells,
-                "trend": trend,
-                "wired": True,
-            })
-        else:
-            # Phase 3 partial — Q4.5 schema migration unblocks these
-            rows.append({
-                "name": cov["name"],
-                "sub": cov["sub"],
+                "name": name, "sub": cov["sub"],
                 "cells": [("empty", "—") for _ in range(8)],
-                "trend": "—",
-                "wired": False,
+                "trend": "—", "wired": False,
             })
+            continue
+
+        # Q4.5 path: render from covenant_metrics history
+        cells: List[Tuple[str, str]] = []
+        if len(history) < 8:
+            cells.extend([("empty", "—")] * (8 - len(history)))
+        for m in history:
+            band = band_for_metric(
+                m.value, m.threshold, m.watch_threshold, m.direction,
+            )
+            cells.append((band, format_value(m.value, name)))
+        # Trend: latest two non-empty values
+        nonempty_vals = [m.value for m in history if m.value is not None]
+        trend = "—"
+        if len(nonempty_vals) >= 2:
+            delta = nonempty_vals[-1] - nonempty_vals[-2]
+            sign = "+" if delta >= 0 else ""
+            # Format the delta in the covenant's natural unit
+            if name in ("Net Leverage", "Interest Coverage"):
+                trend = f"{sign}{delta:.1f}x"
+            elif name in ("Days Cash on Hand", "Days in A/R"):
+                trend = f"{sign}{delta:.0f}d"
+            elif name in ("EBITDA / Plan", "Denial Rate"):
+                trend = f"{sign}{delta * 100:.1f}%"
+            else:
+                trend = f"{sign}{delta:.2f}"
+        rows.append({
+            "name": name, "sub": cov["sub"],
+            "cells": cells, "trend": trend, "wired": True,
+        })
     return rows
 
 

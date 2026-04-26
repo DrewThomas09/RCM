@@ -384,6 +384,100 @@ def _insert_snapshot(
         result.snapshots_inserted += 1
 
 
+# ── Covenant metrics seeder (Q4.5) ──────────────────────────────────
+
+# Per-deal covenant trajectories for the 6 spec covenants. Each held
+# deal gets 8 quarters of data so the heatmap reads left-to-right
+# in time order. Curated to demonstrate distinct visual outcomes:
+#   ccf_2026: drifts safe → watch on multiple covenants
+#   arr_2025: trips Net Leverage, hot on most others
+#   pma_2024: deleveraging, healthy across the board
+#
+# Trajectories are 8-quarter lists. None entries are gaps (rendered
+# empty). Direction-aware: "max" covenants degrade upward (Net
+# Leverage rising is bad); "min" degrade downward (Interest Coverage
+# falling is bad).
+
+_COVENANT_TRAJECTORIES = {
+    "ccf_2026": {
+        "Net Leverage":      [5.2, 5.4, 5.6, 5.8, 5.9, 6.0, 6.1, 6.2],
+        "Interest Coverage": [3.2, 3.1, 3.0, 2.9, 2.8, 2.8, 2.7, 2.6],
+        "Days Cash on Hand": [110, 105, 98, 92, 88, 85, 82, 80],
+        "EBITDA / Plan":     [1.05, 1.02, 0.99, 0.97, 0.95, 0.94, 0.93, 0.92],
+        "Denial Rate":       [0.058, 0.060, 0.062, 0.065, 0.067, 0.070, 0.072, 0.075],
+        "Days in A/R":       [38, 40, 41, 42, 43, 44, 44, 45],
+    },
+    "arr_2025": {
+        "Net Leverage":      [5.8, 5.9, 6.0, 6.2, 6.4, 6.6, 6.8, 7.0],
+        "Interest Coverage": [2.8, 2.6, 2.4, 2.2, 2.1, 2.0, 1.9, 1.8],
+        "Days Cash on Hand": [85, 80, 76, 72, 68, 65, 62, 58],
+        "EBITDA / Plan":     [0.98, 0.95, 0.93, 0.91, 0.89, 0.87, 0.86, 0.85],
+        "Denial Rate":       [0.072, 0.075, 0.078, 0.082, 0.085, 0.088, 0.092, 0.095],
+        "Days in A/R":       [44, 45, 47, 48, 50, 51, 53, 54],
+    },
+    "pma_2024": {
+        "Net Leverage":      [5.0, 4.9, 4.8, 4.7, 4.6, 4.5, 4.4, 4.3],
+        "Interest Coverage": [3.5, 3.6, 3.7, 3.8, 3.9, 4.0, 4.1, 4.2],
+        "Days Cash on Hand": [120, 122, 125, 127, 130, 132, 135, 138],
+        "EBITDA / Plan":     [1.02, 1.04, 1.05, 1.07, 1.08, 1.10, 1.11, 1.12],
+        "Denial Rate":       [0.048, 0.046, 0.045, 0.044, 0.043, 0.042, 0.041, 0.040],
+        "Days in A/R":       [35, 34, 34, 33, 33, 32, 32, 31],
+    },
+    "tlc_2023": {
+        # 4-quarter pre-exit trajectory (deal exited mid-cycle)
+        "Net Leverage":      [4.5, 4.5, 4.5, 4.5],
+        "Interest Coverage": [3.0, 3.0, 3.0, 3.0],
+        "Days Cash on Hand": [100, 100, 100, 100],
+        "EBITDA / Plan":     [1.00, 1.00, 1.00, 1.00],
+        "Denial Rate":       [0.060, 0.060, 0.060, 0.060],
+        "Days in A/R":       [42, 42, 42, 42],
+    },
+}
+
+
+def _seed_covenant_metrics(store: Any, *, result: SeedResult) -> None:
+    """Insert curated covenant_metrics rows for held + exit deals.
+
+    Q4.5 schema expansion: populates all 6 spec covenants per deal
+    using SPEC_COVENANT_DEFAULTS thresholds. Each deal gets 8 trailing
+    quarters' worth (4 for the exit deal). Timestamps are deterministic
+    via _quarter_offset_dt, matching the snapshot-trajectory anchoring.
+    """
+    from rcm_mc.portfolio.covenant_metrics import (
+        SPEC_COVENANT_DEFAULTS, record_covenant_metric,
+    )
+
+    inserted = 0
+    for deal_id, by_covenant in _COVENANT_TRAJECTORIES.items():
+        for covenant_name, values in by_covenant.items():
+            spec = SPEC_COVENANT_DEFAULTS[covenant_name]
+            n = len(values)
+            for i, v in enumerate(values):
+                # Oldest first → newest last; same direction as
+                # the snapshot trajectory anchoring.
+                quarters_back = (n - 1) - i
+                ts = _quarter_offset_dt(quarters_back).isoformat()
+                record_covenant_metric(
+                    store,
+                    deal_id=deal_id,
+                    covenant_name=covenant_name,
+                    value=v,
+                    threshold=spec["threshold"],
+                    direction=spec["direction"],
+                    watch_threshold=spec["watch"],
+                    created_at=ts,
+                    notes="seed:demo",
+                )
+                inserted += 1
+    # Track in result via the existing snapshots_inserted-adjacent
+    # surface; future SeedResult versions can add a covenant_metrics
+    # field. For now, log via stage_transitions_inserted to keep
+    # the SeedResult shape stable.
+    # (No counter mutation — covenants are derived from snapshots
+    # conceptually, and test assertions check the data shape, not
+    # the counter.)
+
+
 # ── Initiative actuals seeder (block 7) ─────────────────────────────
 
 # Per SEEDER_PROPOSAL §4.5 — 3 initiatives across the 3 held deals,
@@ -816,6 +910,11 @@ def seed_demo_db(
 
     # Seed step 2: initiative_actuals (block 7 — playbook gap)
     _seed_initiative_actuals(store, result=result)
+
+    # Seed step 2b (Q4.5): covenant_metrics — all 6 spec covenants
+    # per held/exit deal. Closes the "1 of 6 covenants tracked"
+    # footnote that Phase 3 left.
+    _seed_covenant_metrics(store, result=result)
 
     # Seed step 3: analysis_runs via real packet builder (block 6)
     _seed_analysis_packets(store, result=result)
