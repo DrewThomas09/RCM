@@ -4818,6 +4818,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_json({
                 "results": [r.to_dict()
                             for r in results]})
+        if path == "/global-search":
+            # Server-rendered HTML results page — destination of the
+            # editorial topbar's <form action="/global-search"> submit.
+            # Reuses the same search() backend as the JSON endpoint
+            # above; just renders results into editorial chrome.
+            # Per UI_REWORK_PLAN.md Phase 1: URL round-trips, no JS.
+            from .ui.global_search import search, render_global_search_page
+            qs = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query)
+            q = (qs.get("q") or [""])[0]
+            results = search(
+                PortfolioStore(self.config.db_path), q) if q.strip() else []
+            return self._send_html(
+                render_global_search_page(q, results))
         if path == "/data/catalog":
             from .ui.data_catalog_page import render_data_catalog_page
             return self._send_html(render_data_catalog_page(

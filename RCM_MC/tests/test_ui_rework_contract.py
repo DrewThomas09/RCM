@@ -762,6 +762,66 @@ class TestUIReworkContract(unittest.TestCase):
         # Empty deal_id → empty string (no buttons; defensive)
         self.assertEqual(_render_export_buttons(""), "")
 
+    def test_v3_topbar_search_form_submits_to_global_search(self) -> None:
+        """The editorial topbar's search input must be wrapped in a
+        form that submits via GET to /global-search with name=q.
+
+        Per UI_REWORK_PLAN.md Phase 1 architecture: URL round-trips,
+        no client-side state. The form-GET pattern matches that —
+        Enter on the input → /global-search?q=… → server-rendered
+        results page. No JS dropdown, no SPA, no client state store.
+        """
+        body = self._fetch_body("/app?ui=v3")
+        self.assertIn(
+            'class="search"', body,
+            "topbar search affordance missing",
+        )
+        # Must be a form, not a bare input
+        import re
+        m = re.search(
+            r'<form[^>]*class="search"[^>]*>',
+            body,
+        )
+        self.assertIsNotNone(
+            m, "search input not wrapped in <form>",
+        )
+        form_open = m.group(0)
+        self.assertIn(
+            'method="GET"', form_open,
+            "search form must GET (URL round-trip), not POST",
+        )
+        self.assertIn(
+            'action="/global-search"', form_open,
+            "search form must target /global-search HTML route",
+        )
+        # Input must have name=q so the query lands in the URL
+        self.assertIn(
+            'name="q"', body,
+            "search input missing name=q",
+        )
+
+    def test_v3_global_search_page_renders(self) -> None:
+        """``/global-search`` returns a 200 page with appropriate
+        empty / no-match / results states. The chrome adapts to the
+        env flag (legacy or editorial); content shape is asserted
+        independent of which shell ships."""
+        # Empty query → 200 with the "Enter a query" empty-state
+        body = self._fetch_body("/global-search")
+        self.assertIn(
+            "Search", body,
+            "search results page missing 'Search' heading",
+        )
+        self.assertIn(
+            "Enter a query", body,
+            "empty-query empty-state missing prompt copy",
+        )
+        # Query with no matches against the empty test DB → no-match
+        body = self._fetch_body("/global-search?q=nonexistent_xyz_12345")
+        self.assertIn(
+            "No matches", body,
+            "no-match state missing for unknown query",
+        )
+
     def test_v3_app_canonical_export_path_helpers_exist(self) -> None:
         """Per Phase 3 commit 1 (Q3.5 + Q2 push-back):
         canonical_deal_export_path + canonical_portfolio_export_path

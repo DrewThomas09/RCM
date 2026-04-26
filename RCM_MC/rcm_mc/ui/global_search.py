@@ -447,3 +447,102 @@ def render_search_results_json(
     """Serialize results for the /api/search endpoint."""
     return json.dumps({
         "results": [r.to_dict() for r in results]})
+
+
+def render_global_search_page(
+    query: str, results: List[SearchResult],
+) -> str:
+    """Editorial server-rendered search results page.
+
+    Per UI_REWORK_PLAN.md Phase 1 architecture decision (URL round-
+    trips, no client-side state): search submits via a normal form
+    GET to ``/global-search?q=…`` and the server returns a fully-
+    rendered HTML page. No JS dropdown.
+
+    Wraps the body in ``chartis_shell()`` so the editorial topbar +
+    breadcrumbs + PHI banner render around the results list.
+    """
+    import html as _html
+    from ._chartis_kit import chartis_shell
+
+    q_safe = _html.escape(query or "")
+    if not query or not query.strip():
+        body = (
+            '<div class="search-results">'
+            '<h1 class="search-h1">Search</h1>'
+            '<p class="search-empty">Enter a query in the topbar — '
+            'searches deals, packets, metrics, and pages.</p>'
+            '</div>'
+        )
+    elif not results:
+        body = (
+            '<div class="search-results">'
+            f'<h1 class="search-h1">No matches for &ldquo;{q_safe}&rdquo;</h1>'
+            '<p class="search-empty">No results across deals, packets, '
+            'metrics, or pages. Try a shorter query or different keywords.</p>'
+            '</div>'
+        )
+    else:
+        rows: List[str] = []
+        for r in results:
+            cat = _html.escape(r.category)
+            label = _html.escape(r.label)
+            sub = _html.escape(r.sublabel) if r.sublabel else ""
+            url = _html.escape(r.url, quote=True)
+            sub_html = (
+                f'<div class="sub">{sub}</div>' if sub else ""
+            )
+            rows.append(
+                f'<a class="hit" href="{url}">'
+                f'<span class="cat">{cat}</span>'
+                f'<span class="label">{label}</span>'
+                f'{sub_html}'
+                f'</a>'
+            )
+        body = (
+            '<div class="search-results">'
+            f'<h1 class="search-h1">Results for &ldquo;{q_safe}&rdquo;</h1>'
+            f'<p class="search-meta">{len(results)} match'
+            f'{"es" if len(results) != 1 else ""} across deals, '
+            'packets, metrics, and pages.</p>'
+            '<div class="hits">' + "".join(rows) + '</div>'
+            '</div>'
+        )
+
+    extra_css = """
+    .search-results { max-width: 960px; margin: 1.5rem auto;
+                       padding: 0 2rem; }
+    .search-h1 { font-family: 'Source Serif 4', Georgia, serif;
+                  font-weight: 400; font-size: 1.75rem;
+                  color: var(--ink); margin-bottom: .5rem; }
+    .search-meta { color: var(--muted); font-size: .85rem;
+                    margin-bottom: 1.5rem; }
+    .search-empty { color: var(--muted); font-size: .95rem;
+                     padding: 2rem 0; }
+    .hits { display: flex; flex-direction: column; gap: .5rem; }
+    .hit { display: grid; grid-template-columns: 8rem 1fr;
+           grid-template-rows: auto auto; gap: .15rem .9rem;
+           padding: .75rem 1rem; border: 1px solid var(--border);
+           background: var(--paper-pure); text-decoration: none;
+           color: var(--ink); transition: border-color 140ms ease; }
+    .hit:hover { border-color: var(--teal-deep); }
+    .hit .cat { grid-row: 1 / 3; align-self: start;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: .65rem; letter-spacing: .14em;
+                text-transform: uppercase; color: var(--muted);
+                padding: .15rem .5rem; border: 1px solid var(--border);
+                background: var(--paper); height: fit-content; }
+    .hit .label { font-size: .95rem; font-weight: 500; color: var(--ink); }
+    .hit .sub { font-size: .8rem; color: var(--muted); }
+    """
+
+    return chartis_shell(
+        body,
+        title=f"Search · {query}" if query else "Search",
+        active_nav="",
+        extra_css=extra_css,
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Search", None),
+        ],
+    )
