@@ -244,13 +244,13 @@ A second pass — probing the 4 user-named marquee routes (`dashboard`, `deal pr
 
 Full list of renderers that build own HTML (case-insensitive `<!DOCTYPE` grep):
 
-- `rcm_mc/ui/analysis_workbench.py` — Bloomberg-style workbench at `/analysis/<deal_id>`
+- ~~`rcm_mc/ui/analysis_workbench.py`~~ — **NOT a bypass** (verified 2026-04-27): the original `<!doctype>` grep was case-insensitive and matched the literal string "doctype html" inside this file's docstring (which describes what the function used to do). The actual `render_workbench()` already wraps in `chartis_shell()` (since some prior commit). Ship status: ✅ correctly dispatched.
 - ~~`rcm_mc/ui/bankruptcy_survivor_page.py`~~ — **legitimate bypass** (verified 2026-04-26): docstring states *"The result page is intentionally standalone — no Chartis shell — so partners can print it cleanly"*. Uses `@page{size:Letter}` + `@media print` rules. Designed to print as IC-packet PDF attachment. Wrapping it in `chartis_shell` would print the topbar/breadcrumbs/PHI banner on the artifact. **DO NOT port.**
-- `rcm_mc/ui/dashboard_v2.py` — old reskin attempt (probably unused; verify before delete)
-- `rcm_mc/ui/dashboard_v3.py` — another reskin attempt (probably unused; verify)
-- `rcm_mc/ui/deal_profile_v2.py` — `/deal/<id>/profile` — partner-visible; large (646 LOC); has its own `theme.py` system. Wrapper port would clash with editorial parchment. **Needs full rewrite, not port.**
-- `rcm_mc/ui/onboarding_wizard.py` — first-time setup
-- `rcm_mc/ui/sensitivity_dashboard.py` — utility page
+- ~~`rcm_mc/ui/dashboard_v2.py`~~ — **NOT a bypass** (verified 2026-04-27): already passes through `chartis_shell()`. Ship status: ✅ correctly dispatched. Phase 4 cutover decides whether `?v2=1` survives at all.
+- `rcm_mc/ui/dashboard_v3.py` — **bypass confirmed**: line 548 emits `<!doctype html><html><head>` directly. Opt-in via `?v3=1`. Phase 4 cutover decides retire-vs-port; if port, same pattern as screening + deal_profile_v2.
+- ~~`rcm_mc/ui/deal_profile_v2.py`~~ — **PORTED 2026-04-27 (commit `b283a04`)**. The "needs full rewrite" warning was wrong — the screening port pattern (palette swap + strip doctype + chartis_shell wrap) applied cleanly.
+- `rcm_mc/ui/onboarding_wizard.py` — **bypass confirmed**: line 173 emits `<!DOCTYPE html>`. First-time setup wizard, low partner-visibility. Lower priority than dashboard_v3.
+- `rcm_mc/ui/sensitivity_dashboard.py` — **bypass confirmed**: emits `<!doctype>` in a return statement. Utility page, low partner-visibility. Lower priority than dashboard_v3.
 - `rcm_mc/ui/chartis/marketing_page.py` — public landing page (legitimate bypass; this is the marketing splash and intentionally has its own shell)
 - ~~`rcm_mc/screening/dashboard.py`~~ — **PORTED 2026-04-26 (commit `c3d8e5f`)**. Now passes through `chartis_shell()`.
 
