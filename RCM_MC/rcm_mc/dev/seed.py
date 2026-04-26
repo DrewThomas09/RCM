@@ -670,12 +670,15 @@ def verify_seeded_db(db_path: Union[str, Path]) -> VerifyResult:
         ))
 
     # Check 2: ≥2 snapshots per held deal (covenant heatmap trend)
-    with store.connect() as con:
-        rows = con.execute(
-            "SELECT deal_id, COUNT(*) AS n FROM deal_snapshots "
-            "WHERE stage='hold' GROUP BY deal_id HAVING n >= 2"
-        ).fetchall()
-    n_with_history = len(rows)
+    try:
+        with store.connect() as con:
+            rows = con.execute(
+                "SELECT deal_id, COUNT(*) AS n FROM deal_snapshots "
+                "WHERE stage='hold' GROUP BY deal_id HAVING n >= 2"
+            ).fetchall()
+        n_with_history = len(rows)
+    except Exception:  # noqa: BLE001 — table may not exist on un-seeded DB
+        n_with_history = 0
     result.checks.append((
         "≥2 snapshots per held deal", n_with_history >= 3,
         f"{n_with_history} held deals with snapshot history",
@@ -693,13 +696,19 @@ def verify_seeded_db(db_path: Union[str, Path]) -> VerifyResult:
     ))
 
     # Check 4: ≥1 generated_exports row pointing at a real file
-    with store.connect() as con:
-        rows = con.execute(
-            "SELECT filepath FROM generated_exports "
-            "WHERE filepath IS NOT NULL AND deal_id IS NOT NULL LIMIT 5"
-        ).fetchall()
-    n_exports = len(rows)
-    n_files_exist = sum(1 for r in rows if Path(r["filepath"]).is_file())
+    try:
+        with store.connect() as con:
+            rows = con.execute(
+                "SELECT filepath FROM generated_exports "
+                "WHERE filepath IS NOT NULL AND deal_id IS NOT NULL LIMIT 5"
+            ).fetchall()
+        n_exports = len(rows)
+        n_files_exist = sum(
+            1 for r in rows if Path(r["filepath"]).is_file()
+        )
+    except Exception:  # noqa: BLE001 — generated_exports may not exist
+        n_exports = 0
+        n_files_exist = 0
     result.checks.append((
         "≥1 generated_exports row with deal_id", n_exports >= 1,
         f"{n_exports} export rows, {n_files_exist} have files on disk",
