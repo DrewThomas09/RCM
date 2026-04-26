@@ -389,10 +389,27 @@ def render_portfolio_overview(
         f'{tiles_html}</div>'
     )
 
-    body = f'{kpis}{health_bar}{opportunity}{synergy_section}{table}{regression}{nav_links}'
+    # Editorial section header — eyebrow + serif h2 + lede.
+    deals_label = f"{n} active deal" + ("s" if n != 1 else "")
+    page_head = (
+        '<div class="sect">'
+        '<div>'
+        '<div class="micro">PORTFOLIO &nbsp;·&nbsp; OVERVIEW</div>'
+        '<h2>Active deals,<br/><em>at a glance</em>.</h2>'
+        '</div>'
+        '<p class="desc">'
+        f'{deals_label} across the fund. KPI roll-ups across denial / DAR / '
+        'collection rate, health distribution, opportunity ranking, and '
+        'cross-portfolio synergy signals — every value linked to the deal '
+        'page that owns it.'
+        '</p>'
+        '</div>'
+    )
+
+    body = f'{page_head}{kpis}{health_bar}{opportunity}{synergy_section}{table}{regression}{nav_links}'
 
     return chartis_shell(
         body, "Portfolio",
         active_nav="/portfolio",
-        subtitle=f"{n} active deals — portfolio analytics & intelligence",
+        subtitle=f"{deals_label} — portfolio analytics & intelligence",
     )

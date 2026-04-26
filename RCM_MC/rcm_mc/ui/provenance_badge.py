@@ -80,10 +80,10 @@ def _confidence_kind(conf: Optional[float]) -> str:
 def _confidence_color(conf: Optional[float]) -> str:
     """Hex color matching the kind."""
     return {
-        "positive": "#10b981",
-        "watch": "#f59e0b",
-        "negative": "#ef4444",
-        "neutral": "#9ca3af",
+        "positive": "var(--green)",
+        "watch": "var(--amber)",
+        "negative": "var(--red)",
+        "neutral": "var(--faint)",
     }[_confidence_kind(conf)]
 
 
@@ -93,41 +93,41 @@ _CSS = """
 <style>
 .pv{display:inline-flex;align-items:baseline;gap:4px;}
 .pv-icon{display:inline-block;width:14px;height:14px;
-  border-radius:50%;background:#374151;color:#9ca3af;
+  border-radius:50%;background:var(--border);color:var(--faint);
   font-size:10px;font-weight:600;line-height:14px;
   text-align:center;cursor:pointer;font-family:system-ui;
   user-select:none;border:none;padding:0;}
-.pv-icon:hover{background:#1e3a8a;color:#bfdbfe;}
+.pv-icon:hover{background:var(--blue);color:var(--blue-soft);}
 details.pv-details{display:inline;}
 details.pv-details > summary{display:inline-block;
   list-style:none;cursor:pointer;}
 details.pv-details > summary::-webkit-details-marker{
   display:none;}
 .pv-card{position:absolute;display:block;
-  background:#0f172a;border:1px solid #374151;
+  background:var(--bg);border:1px solid var(--border);
   border-radius:6px;padding:14px 16px;width:320px;
   font-size:12px;line-height:1.5;
   box-shadow:0 8px 24px rgba(0,0,0,0.55);z-index:1500;
-  color:#f3f4f6;font-weight:normal;
+  color:var(--ink);font-weight:normal;
   text-align:left;}
 .pv-card h4{margin:0 0 8px 0;font-size:11px;
-  color:#bfdbfe;text-transform:uppercase;
+  color:var(--blue-soft);text-transform:uppercase;
   letter-spacing:0.06em;font-weight:600;
   display:flex;align-items:center;gap:8px;}
 .pv-card-row{display:flex;justify-content:space-between;
-  margin-top:6px;color:#9ca3af;font-size:11px;}
-.pv-card-row > strong{color:#f3f4f6;font-weight:500;
+  margin-top:6px;color:var(--faint);font-size:11px;}
+.pv-card-row > strong{color:var(--ink);font-weight:500;
   font-variant-numeric:tabular-nums;}
-.pv-card .pv-detail{color:#d1d5db;margin:8px 0 0 0;}
+.pv-card .pv-detail{color:var(--border);margin:8px 0 0 0;}
 .pv-conf{display:inline-block;padding:1px 8px;
   border-radius:4px;font-size:10px;font-weight:600;
   font-variant-numeric:tabular-nums;}
 .pv-upstream{margin-top:10px;padding-top:8px;
-  border-top:1px solid #374151;}
-.pv-upstream-label{font-size:10px;color:#60a5fa;
+  border-top:1px solid var(--border);}
+.pv-upstream-label{font-size:10px;color:var(--teal);
   text-transform:uppercase;letter-spacing:0.06em;
   margin-bottom:4px;}
-.pv-upstream li{font-size:11px;color:#9ca3af;
+.pv-upstream li{font-size:11px;color:var(--faint);
   margin-left:14px;}
 </style>
 """
@@ -178,16 +178,16 @@ def _render_card(dp: Any) -> str:
     if conf is not None:
         kind = _confidence_kind(conf)
         bg = {
-            "positive": "#065f46",
-            "watch": "#92400e",
-            "negative": "#7f1d1d",
-            "neutral": "#374151",
+            "positive": "var(--green)",
+            "watch": "var(--amber)",
+            "negative": "var(--red)",
+            "neutral": "var(--border)",
         }[kind]
         fg = {
-            "positive": "#a7f3d0",
-            "watch": "#fde68a",
-            "negative": "#fecaca",
-            "neutral": "#9ca3af",
+            "positive": "var(--green-soft)",
+            "watch": "var(--amber-soft)",
+            "negative": "var(--red-soft)",
+            "neutral": "var(--faint)",
         }[kind]
         rows.append(
             f'<div class="pv-card-row">'

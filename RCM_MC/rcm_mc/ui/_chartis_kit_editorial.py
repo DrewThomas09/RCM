@@ -347,51 +347,124 @@ def _resolve_active_section(active_nav: Optional[str]) -> str:
     return ""
 
 
+# ── Mega-menu dropdown data ──────────────────────────────────────────
+#
+# Each top-level section opens a panel listing its surfaces with a
+# brief 2-4-word descriptor. The "All [SECTION] surfaces →" footer link
+# routes to the section's primary landing page. Surface order = priority
+# order (most-used first). When adding a surface: keep the descriptor
+# under ~40 chars so the panel doesn't blow out width.
+_DROPDOWN_SURFACES: Dict[str, List[Tuple[str, str, str]]] = {
+    "DEALS": [
+        ("Screener",            "/screen",                       "discover targets"),
+        ("Source",              "/import",                       "ingested deals"),
+        ("New deal",            "/diligence/deal",               "start diligence"),
+        ("Deal dashboard",      "/portfolio",                    "active portfolio"),
+        ("Pipeline",            "/pipeline",                     "funnel & stages"),
+        ("Predictive screener", "/diligence/denial-prediction",  "ML sourcing"),
+        ("Thesis card",         "/diligence/thesis-pipeline",    "30-sec answer"),
+        ("Compare",             "/diligence/compare",            "side-by-side"),
+    ],
+    "ANALYSIS": [
+        ("Workbench",           "/analysis",                     "deal-level diligence"),
+        ("EBITDA bridge",       "/diligence/bridge-audit",       "value-creation walk"),
+        ("Monte Carlo",         "/diligence/deal-mc",            "probabilistic outcomes"),
+        ("Scenarios",           "/scenarios",                    "shock-and-recover"),
+        ("Risk workbench",      "/diligence/risk-workbench",     "named-failure scan"),
+        ("Counterfactual",      "/diligence/counterfactual",     "what-if surrogate"),
+        ("HCRIS X-Ray",         "/diligence/hcris-xray",         "Medicare cost-report"),
+        ("ML insights",         "/ml-insights",                  "predictor diagnostics"),
+    ],
+    "PORTFOLIO": [
+        ("Command center",      "/app",                          "hold-period rollup"),
+        ("Alerts",              "/alerts",                       "fire / ack / age"),
+        ("Cohorts",             "/cohorts",                      "peer comparisons"),
+        ("LP update",           "/lp-update",                    "partner-ready memo"),
+        ("Health score",        "/portfolio/risk-scan",          "cross-deal scan"),
+        ("Engagements",         "/engagements",                  "ops workspace"),
+        ("Pipeline bridge",     "/pipeline/bridge",              "cross-portfolio"),
+        ("Fund learning",       "/fund-learning",                "post-close miss-rate"),
+    ],
+    "MARKET": [
+        ("Market intel",        "/market-intel",                 "PE deal flow"),
+        ("Seeking Alpha",       "/market-intel/seeking-alpha",   "public-eq diligence"),
+        ("Payer intelligence",  "/payer-intelligence",           "rate-shock map"),
+        ("Competitive intel",   "/competitive-intel",            "sponsor tracking"),
+        ("Sector heatmap",      "/portfolio/regression",         "national OLS"),
+        ("Conferences",         "/conferences",                  "PE event calendar"),
+        ("News",                "/news",                         "deal-flow feed"),
+        ("Sector library",      "/library",                      "playbook archive"),
+    ],
+    "TOOLS": [
+        ("Methodology",         "/methodology",                  "model reference"),
+        ("Calibration",         "/calibration",                  "prior posteriors"),
+        ("Backtest harness",    "/models/quality",               "ML model quality"),
+        ("Data catalog",        "/data/catalog",                 "public-data ingest"),
+        ("Exports",             "/exports",                      "report manifest"),
+        ("API",                 "/api",                          "OpenAPI surface"),
+        ("Audit log",           "/audit",                        "user activity"),
+        ("Admin",               "/admin",                        "users + settings"),
+    ],
+}
+
+# Primary landing for each section's "All <SECTION> surfaces →" link.
+# Diverges from `nav_items` defaults only where a curated landing
+# exists — falls back to the section's first dropdown surface.
+_SECTION_LANDING: Dict[str, str] = {
+    "DEALS":     "/screen",
+    "ANALYSIS":  "/analysis",
+    "PORTFOLIO": "/app",
+    "MARKET":    "/market-intel",
+    "TOOLS":     "/methodology",
+}
+
+
 def editorial_topbar(active_nav: Optional[str] = None) -> str:
-    """Render the editorial topbar per spec §6.1.
+    """Render the editorial topbar with mega-menu dropdowns.
 
-    5-section topnav (DEALS / ANALYSIS / PORTFOLIO / MARKET / TOOLS)
-    with teal underline on the active item, ⌘K search, SIGN OUT.
+    5-section topnav (DEALS / ANALYSIS / PORTFOLIO / MARKET / TOOLS).
+    Each section opens a dropdown listing its surfaces with brief
+    descriptors — replaces the left-sidebar pattern per the 2026-04-26
+    design direction (top-nav dropdowns are more functional than a
+    left rail because every page gets the full width).
 
-    Brand link points at ``/app?ui=v3`` so clicking the logo from any
-    chrome'd v3 page lands the authenticated user on the canonical
-    home, not legacy ``/``. Per the 2026-04-25 local-test §1 finding.
-
-    Topnav items are anchors (Phase 3 nav-polish, 2026-04-26). Each
-    section maps to its primary destination — confirmed 200 OK in the
-    route audit. Caret removed because the spec'd dropdown UI isn't
-    wired; showing a caret on an anchor that doesn't open a menu is a
-    false affordance. Phase 4 wires real dropdowns when destinations
-    are fully ported.
+    Click to toggle, click outside or Escape to close, no hover-open
+    (avoids accidental opens; matches the screenshot reference).
 
     ``active_nav`` may be either a section name (DEALS/ANALYSIS/etc.)
-    or a route path ("/rcm-benchmarks", "/diligence/..."). The latter
-    is classified to a section via _SECTION_PREFIXES — preserves the
-    legacy calling convention used by 200+ pages without forcing a
-    sweep. See _resolve_active_section.
-
-    Destination map (defaults from existing IA_MAP; revise as Phase 2b
-    completes per-section):
-        DEALS     → /deals          (deals list)
-        ANALYSIS  → /analysis       (analysis landing)
-        PORTFOLIO → /app?ui=v3      (Tier-0 editorial dashboard)
-        MARKET    → /market-intel   (market intelligence hub)
-        TOOLS     → /methodology    (methodology + reference catalogue)
+    or a route path — see _resolve_active_section.
     """
-    nav_items = (
-        ("DEALS",     "/deals"),
-        ("ANALYSIS",  "/analysis"),
-        ("PORTFOLIO", "/app"),
-        ("MARKET",    "/market-intel"),
-        ("TOOLS",     "/methodology"),
-    )
     active_section = _resolve_active_section(active_nav)
-    nav_html = "".join(
-        f'<a href="{_html.escape(editorial_link(href))}" '
-        f'class="{"active" if label == active_section else ""}">'
-        f'{label}</a>'
-        for label, href in nav_items
-    )
+    nav_buttons: List[str] = []
+    for section in _SECTION_NAMES:
+        surfaces = _DROPDOWN_SURFACES.get(section, [])
+        landing = editorial_link(_SECTION_LANDING.get(section, "/"))
+        active_class = "active" if section == active_section else ""
+        # Surface list inside the panel
+        surface_html = "".join(
+            f'<a class="dd-item" href="{_html.escape(editorial_link(href))}">'
+            f'<span class="dd-label">{_html.escape(label)}</span>'
+            f'<span class="dd-desc">{_html.escape(desc)}</span>'
+            f'</a>'
+            for label, href, desc in surfaces
+        )
+        count_text = f"{len(surfaces)} surface" + ("s" if len(surfaces) != 1 else "")
+        nav_buttons.append(
+            f'<div class="topnav-item {active_class}">'
+            f'<button type="button" class="topnav-trigger" '
+            f'aria-haspopup="true" aria-expanded="false" '
+            f'data-section="{section}">'
+            f'{section}<span class="caret">▾</span>'
+            f'</button>'
+            f'<div class="topnav-dropdown" role="menu">'
+            f'<div class="dd-eyebrow">{section} · {count_text}</div>'
+            f'<div class="dd-list">{surface_html}</div>'
+            f'<a class="dd-all" href="{_html.escape(landing)}">'
+            f'All {section.lower()} surfaces →</a>'
+            f'</div>'
+            f'</div>'
+        )
+    nav_html = "".join(nav_buttons)
     return (
         '<header class="topbar">'
         '<a href="/app?ui=v3" class="brand">'
@@ -602,7 +675,26 @@ def number_maybe(
     elif format == "pct":
         s = f"{f * 100:.1f}%"
     elif format == "ev":
-        s = f"${int(f)}M"
+        # Unit-aware: callers pass either raw dollars (450000000) or
+        # already-scaled millions (450.0). Strip trailing ".0" so a
+        # round value renders "$450M" not "$450.0M".
+        def _trim(v: float, suffix: str) -> str:
+            t = f"{v:.1f}"
+            if t.endswith(".0"):
+                t = t[:-2]
+            return f"${t}{suffix}"
+        af = abs(f)
+        if af >= 1_000_000_000:
+            s = _trim(f / 1_000_000_000, "B")
+        elif af >= 1_000_000:
+            s = _trim(f / 1_000_000, "M")
+        elif af >= 1_000:
+            # 1k–999k: assume already-scaled millions (the dev/seed.py
+            # convention). 999k raw dollars is below PE-EV magnitude
+            # so this branch effectively means "value is in millions".
+            s = _trim(f, "M")
+        else:
+            s = f"${f:,.0f}"
     elif format == "drift":
         s = f"{'+' if f >= 0 else ''}{f:.1f}%"
     else:
@@ -818,6 +910,33 @@ def chartis_shell(
     banner_html = phi_banner(phi_mode) if show_phi_banner else ""
     extra_css_block = f"<style>{extra_css}</style>" if extra_css else ""
     extra_js_block = f"<script>{extra_js}</script>" if extra_js else ""
+    # Built-in JS — runs on every editorial page. Currently:
+    # 1) topnav-dropdown toggle: click to open, outside-click / Escape
+    #    to close, single-open invariant (opening one closes others).
+    builtin_js = (
+        "<script>"
+        "(function(){"
+        "var items=document.querySelectorAll('.topnav-item');"
+        "if(!items.length)return;"
+        "function closeAll(){items.forEach(function(it){it.classList.remove('open');"
+        "var t=it.querySelector('.topnav-trigger');"
+        "if(t)t.setAttribute('aria-expanded','false');});}"
+        "items.forEach(function(it){"
+        "var trig=it.querySelector('.topnav-trigger');"
+        "if(!trig)return;"
+        "trig.addEventListener('click',function(e){"
+        "e.stopPropagation();"
+        "var wasOpen=it.classList.contains('open');"
+        "closeAll();"
+        "if(!wasOpen){it.classList.add('open');trig.setAttribute('aria-expanded','true');}"
+        "});});"
+        "document.addEventListener('click',function(e){"
+        "if(!e.target.closest('.topnav-item'))closeAll();});"
+        "document.addEventListener('keydown',function(e){"
+        "if(e.key==='Escape')closeAll();});"
+        "})();"
+        "</script>"
+    )
 
     # Sidebar opt-in — when show_sidebar=True, wrap (crumbs + banner +
     # main) in a 2-column flex layout with the editorial rail on the
@@ -857,6 +976,7 @@ def chartis_shell(
 <body>
 {chrome}
 {layout_html}
+{builtin_js}
 {extra_js_block}
 </body>
 </html>"""

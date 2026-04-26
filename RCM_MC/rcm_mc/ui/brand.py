@@ -118,7 +118,7 @@ _PALETTE_V2: Dict[str, str] = {
     "text_link":      "#0f5e5a",   # dark teal
     # Brand — navy + teal
     "brand_primary":  "#0b2341",   # navy
-    "brand_accent":   "#2fb3ad",   # teal
+    "brand_accent":   "#155752",   # teal
     "accent_amber":   "#b8732a",   # editorial warning tone replaces amber
     # Status — desaturated / print-friendly
     "positive":       "#0a8a5f",
@@ -142,7 +142,7 @@ _PALETTE_V2: Dict[str, str] = {
     "text_dim":      "#465366",   # (was #94a3b8)
     "text_faint":    "#7a8699",   # (was #64748b)
     "accent":        "#0f5e5a",   # dark teal link (was blue #3b82f6)
-    "accent_bright": "#2fb3ad",   # bright teal (was #66c8c3 — same family)
+    "accent_bright": "#155752",   # bright teal (was #66c8c3 — same family)
 }
 
 

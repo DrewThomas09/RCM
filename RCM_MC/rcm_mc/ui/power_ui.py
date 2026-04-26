@@ -69,7 +69,7 @@ def benchmark_chip(
         return format(v, format_spec) + suffix
 
     # Resolve color + verdict
-    color = "#94a3b8"                     # text_faint (neutral)
+    color = "var(--muted)"                     # text_faint (neutral)
     verdict = "no peer benchmark available"
     band_str = (
         f"{_fmt(peer_low)}–{_fmt(peer_high)} {peer_label}"
@@ -79,30 +79,30 @@ def benchmark_chip(
     if peer_low is not None and peer_high is not None:
         if higher_is_better:
             if value >= peer_high:
-                color = "#10B981"
+                color = "var(--green)"
                 verdict = f"above {band_str}"
             elif value <= peer_low:
-                color = "#EF4444"
+                color = "var(--red)"
                 verdict = f"below {band_str}"
             else:
-                color = "#F59E0B"
+                color = "var(--amber)"
                 verdict = f"inside {band_str}"
         else:
             if value <= peer_low:
-                color = "#10B981"
+                color = "var(--green)"
                 verdict = f"better than {band_str}"
             elif value >= peer_high:
-                color = "#EF4444"
+                color = "var(--red)"
                 verdict = f"worse than {band_str}"
             else:
-                color = "#F59E0B"
+                color = "var(--amber)"
                 verdict = f"inside {band_str}"
 
     lbl_html = ""
     if label:
         lbl_html = (
             f'<div style="font-size:9px;letter-spacing:1.3px;'
-            f'text-transform:uppercase;color:#64748b;'
+            f'text-transform:uppercase;color:var(--muted);'
             f'font-weight:600;margin-bottom:3px;">'
             f'{html.escape(label)}</div>'
         )
@@ -115,7 +115,7 @@ def benchmark_chip(
         f'font-size:22px;font-weight:700;color:{color};'
         f'line-height:1.1;">{_fmt(value)}</div>'
         f'<div style="display:flex;align-items:center;gap:6px;'
-        f'margin-top:4px;font-size:10.5px;color:#94a3b8;">'
+        f'margin-top:4px;font-size:10.5px;color:var(--muted);">'
         f'<span style="width:8px;height:8px;border-radius:50%;'
         f'background:{color};display:inline-block;"></span>'
         f'<span>{html.escape(verdict)}</span></div>'
@@ -136,18 +136,18 @@ def interpret_callout(
     the reader absorbs the verdict before reading the words.
     """
     tone_colors = {
-        "info": "#1F4E78",
-        "good": "#10B981",
-        "warn": "#F59E0B",
-        "bad": "#EF4444",
+        "info": "var(--blue)",
+        "good": "var(--green)",
+        "warn": "var(--amber)",
+        "bad": "var(--red)",
     }
     border = tone_colors.get(tone, tone_colors["info"])
     return (
-        f'<div style="background:#0f172a;padding:12px 16px;'
+        f'<div style="background:var(--bg);padding:12px 16px;'
         f'border-left:3px solid {border};border-radius:0 3px 3px 0;'
-        f'font-size:12.5px;color:#cbd5e1;line-height:1.65;'
+        f'font-size:12.5px;color:var(--border);line-height:1.65;'
         f'max-width:900px;margin-top:12px;">'
-        f'<strong style="color:#f1f5f9;">'
+        f'<strong style="color:var(--bg-tint);">'
         f'{html.escape(title)}</strong> '
         f'<span>{body}</span>'
         f'</div>'
@@ -327,7 +327,7 @@ def deal_context_bar(
             continue
         url = base + "?" + _encode(params) if meaningful else base
         is_active = key == active_surface
-        color = "#93c5fd" if is_active else "#cbd5e1"
+        color = "var(--blue-soft)" if is_active else "var(--border)"
         weight = "700" if is_active else "500"
         cursor = (
             'default' if is_active else 'pointer'
@@ -337,7 +337,7 @@ def deal_context_bar(
             f'style="color:{color};text-decoration:none;'
             f'font-size:11px;font-weight:{weight};'
             f'letter-spacing:0.3px;padding:4px 10px;'
-            f'border:1px solid {"#3b82f6" if is_active else "#334155"};'
+            f'border:1px solid {"var(--teal)" if is_active else "var(--border)"};'
             f'border-radius:3px;background:'
             f'{"rgba(59,130,246,0.15)" if is_active else "transparent"};'
             f'transition:all 120ms;cursor:{cursor};" '
@@ -350,21 +350,21 @@ def deal_context_bar(
         return ""
 
     return (
-        f'<div style="background:#0f172a;border-top:1px solid #334155;'
-        f'border-bottom:1px solid #334155;padding:8px 16px;'
+        f'<div style="background:var(--bg);border-top:1px solid var(--border);'
+        f'border-bottom:1px solid var(--border);padding:8px 16px;'
         f'margin:0 -24px 18px -24px;'
         f'display:flex;flex-wrap:wrap;gap:10px;align-items:center;'
         f'font-family:\'Helvetica Neue\',Arial,sans-serif;">'
         f'<div style="display:flex;align-items:baseline;gap:8px;'
-        f'font-size:12px;color:#94a3b8;">'
+        f'font-size:12px;color:var(--muted);">'
         f'<span style="font-size:10px;letter-spacing:1.4px;'
-        f'text-transform:uppercase;font-weight:700;color:#64748b;">'
+        f'text-transform:uppercase;font-weight:700;color:var(--muted);">'
         f'Working deal</span>'
-        f'<span style="color:#f1f5f9;font-weight:700;font-size:13px;">'
+        f'<span style="color:var(--bg-tint);font-weight:700;font-size:13px;">'
         f'{html.escape(deal_name)}</span>'
-        f'<span style="color:#94a3b8;">·</span>'
+        f'<span style="color:var(--muted);">·</span>'
         f'<span style="font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:#cbd5e1;">{html.escape(strip)}</span>'
+        f'font-size:11px;color:var(--border);">{html.escape(strip)}</span>'
         f'</div>'
         f'<div style="flex:1 1 auto;"></div>'
         f'<div style="display:flex;flex-wrap:wrap;gap:6px;">'
@@ -443,8 +443,12 @@ def sortable_table(
         attrs.append('data-filterable')
     if exportable:
         attrs.append('data-export')
-    if table_class:
-        attrs.append(f'class="{html.escape(table_class, quote=True)}"')
+    # Default class — applies editorial cad-table rules (cells with
+    # padding, borders, tabular-num right-aligned numerics). Without
+    # this, the table renders cell-borderless and column headers
+    # visually run together.
+    final_class = table_class or "cad-table"
+    attrs.append(f'class="{html.escape(final_class, quote=True)}"')
     head_cells = "".join(
         f'<th>{html.escape(str(h))}</th>' for h in headers
     )
@@ -506,7 +510,7 @@ def bookmark_hint() -> str:
     """Small hint text (footer) telling the user about b/s shortcuts.
     Use sparingly — don't clutter every page."""
     return (
-        '<div style="font-size:10px;color:#64748b;letter-spacing:.5px;'
+        '<div style="font-size:10px;color:var(--muted);letter-spacing:.5px;'
         'text-transform:uppercase;margin-top:20px;opacity:0.7;">'
         'Press <kbd style="padding:1px 5px;border:1px solid currentColor;'
         'border-radius:2px;font-family:inherit;">?</kbd> for shortcuts · '

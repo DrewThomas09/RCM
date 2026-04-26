@@ -27,40 +27,40 @@ def _fmt_money(v: float) -> str:
 
 
 _STATUS_COLORS = {
-    "completed": "#10b981",
-    "on_track": "#3b82f6",
-    "in_progress": "#f59e0b",
-    "at_risk": "#ef4444",
-    "not_started": "#64748b",
-    "abandoned": "#374151",
+    "completed": "var(--green)",
+    "on_track": "var(--teal)",
+    "in_progress": "var(--amber)",
+    "at_risk": "var(--red)",
+    "not_started": "var(--muted)",
+    "abandoned": "var(--border)",
 }
 
 _HOLD_CSS = """
-body.hold-dash { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
+body.hold-dash { margin:0; padding:0; background:var(--bg); color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
   font-size:14px; line-height:1.5; }
 .hold-wrap { max-width:1100px; margin:0 auto; padding:24px 20px; }
 .hold-header { display:flex; align-items:center; gap:20px; margin-bottom:20px; }
 .hold-header h1 { font-size:20px; font-weight:600; margin:0; }
-.hold-header .dim { color:#94a3b8; font-size:12px; }
+.hold-header .dim { color:var(--muted); font-size:12px; }
 .hold-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
-.hold-card { background:#111827; border:1px solid #1e293b;
+.hold-card { background:var(--bg); border:1px solid var(--paper-pure);
   padding:14px 16px; border-radius:4px; }
 .hold-card-title { font-weight:600; margin-bottom:10px; font-size:13px; }
 .init-row { display:grid; grid-template-columns:180px 1fr 80px;
-  gap:10px; padding:6px 0; border-bottom:1px solid #1e293b;
+  gap:10px; padding:6px 0; border-bottom:1px solid var(--paper-pure);
   align-items:center; font-size:12px; }
-.init-bar { background:#1e293b; height:8px; border-radius:4px; overflow:hidden; }
+.init-bar { background:var(--paper-pure); height:8px; border-radius:4px; overflow:hidden; }
 .init-bar > div { height:100%; border-radius:4px; }
 .init-status { font-size:10px; text-transform:uppercase; font-weight:600;
   letter-spacing:.04em; }
 .scorecard-table { width:100%; border-collapse:collapse; font-size:12px;
   font-family:"JetBrains Mono",monospace; }
-.scorecard-table th { background:#0f172a; color:#94a3b8; padding:6px 8px;
+.scorecard-table th { background:var(--bg); color:var(--muted); padding:6px 8px;
   text-align:center; font-size:10px; text-transform:uppercase;
   letter-spacing:.04em; }
 .scorecard-table td { padding:6px 8px; text-align:center;
-  border-bottom:1px solid #1e293b; }
+  border-bottom:1px solid var(--paper-pure); }
 .cov-light { display:inline-block; width:12px; height:12px;
   border-radius:50%; margin-right:6px; }
 """
@@ -100,7 +100,7 @@ def _render_initiative_progress(plan) -> str:
         return '<div class="dim" style="padding:8px;">No value creation plan yet.</div>'
     rows: List[str] = []
     for init in plan.initiatives:
-        color = _STATUS_COLORS.get(init.status, "#64748b")
+        color = _STATUS_COLORS.get(init.status, "var(--muted)")
         # Achievement % — rough: status-based for now.
         pct = {
             "completed": 100, "on_track": 70, "in_progress": 40,
@@ -153,7 +153,7 @@ def _render_ebitda_chart(actuals_list: List[Dict[str, Any]]) -> str:
         a1, a2 = actuals[i], actuals[i + 1]
         p1, p2 = plans[i], plans[i + 1]
         above = (a1 + a2) / 2 >= (p1 + p2) / 2
-        color = "#10b98130" if above else "#ef444430"
+        color = "var(--green)30" if above else "var(--red)30"
         pts = f"{x1},{_y(a1)} {x2},{_y(a2)} {x2},{_y(p2)} {x1},{_y(p1)}"
         shading += f'<polygon points="{pts}" fill="{color}"/>'
 
@@ -166,20 +166,20 @@ def _render_ebitda_chart(actuals_list: List[Dict[str, Any]]) -> str:
     for i, q in enumerate(quarters):
         labels += (
             f'<text x="{_x(i)}" y="{h - 2}" text-anchor="middle" '
-            f'fill="#94a3b8" font-size="9">{_esc(q)}</text>'
+            f'fill="var(--muted)" font-size="9">{_esc(q)}</text>'
         )
 
     return (
         f'<svg viewBox="0 0 {w} {h}" style="width:100%;height:{h}px;">'
         f'{shading}'
-        f'<polyline points="{plan_pts}" fill="none" stroke="#64748b" '
+        f'<polyline points="{plan_pts}" fill="none" stroke="var(--muted)" '
         f'stroke-dasharray="4,3" stroke-width="1.5"/>'
-        f'<polyline points="{actual_pts}" fill="none" stroke="#3b82f6" '
+        f'<polyline points="{actual_pts}" fill="none" stroke="var(--teal)" '
         f'stroke-width="2"/>'
         f'{labels}'
-        f'<text x="{w - pad_x}" y="14" text-anchor="end" fill="#3b82f6" '
+        f'<text x="{w - pad_x}" y="14" text-anchor="end" fill="var(--teal)" '
         f'font-size="10">Actual</text>'
-        f'<text x="{w - pad_x}" y="26" text-anchor="end" fill="#64748b" '
+        f'<text x="{w - pad_x}" y="26" text-anchor="end" fill="var(--muted)" '
         f'font-size="10">Plan</text>'
         f'</svg>'
     )
@@ -201,14 +201,14 @@ def _render_scorecard(actuals_list: List[Dict[str, Any]]) -> str:
                 cells.append('<td class="dim">—</td>')
                 continue
             icon = "✓"
-            color = "#10b981"
+            color = "var(--green)"
             if plan_val is not None:
                 try:
                     var = (float(actual) - float(plan_val)) / max(abs(float(plan_val)), 1e-9)
                     if abs(var) > 0.15:
-                        icon = "✗"; color = "#ef4444"
+                        icon = "✗"; color = "var(--red)"
                     elif abs(var) > 0.05:
-                        icon = "⚠"; color = "#f59e0b"
+                        icon = "⚠"; color = "var(--amber)"
                 except (TypeError, ValueError):
                     pass
             cells.append(
@@ -242,7 +242,7 @@ def render_hold_dashboard(
         f'<div class="hold-wrap">'
         f'<div class="hold-header">'
         f'<span class="dim">{quarters_held} quarter(s) held</span>'
-        f'<a href="/analysis/{_esc(deal_id)}" style="color:#3b82f6;'
+        f'<a href="/analysis/{_esc(deal_id)}" style="color:var(--teal);'
         f'text-decoration:none;margin-left:auto;">← Workbench</a>'
         f'</div>'
         f'<div class="hold-grid">'

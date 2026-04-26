@@ -174,30 +174,45 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
     grade_colors = {"A": "var(--cad-pos)", "B": "var(--cad-accent)", "C": "var(--cad-warn)", "D": "var(--cad-neg)"}
     gc = grade_colors.get(invest_grade, "var(--cad-text3)")
 
+    # Editorial dark-navy hero band — matches the workbench treatment.
+    grade_tone_map = {
+        "A": "#7ED3A8", "B": "#A6D3F2",
+        "C": "#E8B97E", "D": "#E89478",
+    }
+    grade_color = grade_tone_map.get(invest_grade, "rgba(250, 247, 240, 0.55)")
     sections.append(
-        f'<div class="cad-card" style="border-left:4px solid var(--cad-accent);padding:24px;">'
-        f'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
-        f'<div>'
-        f'<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;'
-        f'color:var(--cad-text3);margin-bottom:4px;">Investment Committee Memorandum</div>'
-        f'<h1 style="font-size:22px;font-weight:700;margin:0 0 4px;">{_html.escape(data["name"])}</h1>'
-        f'<div style="font-size:13px;color:var(--cad-text2);">'
-        f'CCN {_html.escape(ccn)} | {_html.escape(data["county"])}, {_html.escape(data["state"])} | '
-        f'{data["beds"]:.0f} beds | {ts}</div>'
-        f'<div style="margin-top:8px;display:flex;gap:8px;" class="no-print">'
-        f'<button onclick="window.print()" class="cad-btn" '
-        f'style="font-size:11px;cursor:pointer;background:var(--cad-brand);color:#fff;border:none;">'
-        f'&#128438; Export PDF</button>'
-        f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;font-size:11px;">EBITDA Bridge</a>'
-        f'<a href="/data-room/{_html.escape(ccn)}" class="cad-btn" '
-        f'style="text-decoration:none;font-size:11px;">Data Room</a>'
-        f'</div></div>'
-        f'<div style="text-align:center;">'
-        f'<div style="font-size:32px;font-weight:700;color:{gc};font-family:var(--cad-mono);">'
-        f'{invest_grade}</div>'
-        f'<div style="font-size:10px;color:var(--cad-text3);">Investability</div></div>'
-        f'</div></div>'
+        '<div class="ic-hero">'
+        '<div class="ic-hero-inner">'
+        '<div class="ic-hero-eyebrow">'
+        f'INVESTMENT COMMITTEE MEMORANDUM &nbsp;·&nbsp; CCN {_html.escape(ccn)}'
+        '</div>'
+        '<div class="ic-hero-row">'
+        '<div class="ic-hero-name-block">'
+        f'<h1 class="ic-hero-name">{_html.escape(data["name"])}</h1>'
+        '<div class="ic-hero-meta">'
+        '<span class="m-key">LOCATION</span>'
+        f'<span class="m-val">{_html.escape(data["county"])}, {_html.escape(data["state"])}</span>'
+        '<span class="m-sep">·</span>'
+        f'<span class="m-key">BEDS</span><span class="m-val">{data["beds"]:.0f}</span>'
+        '<span class="m-sep">·</span>'
+        f'<span class="m-key">AS OF</span><span class="m-val">{_html.escape(ts)}</span>'
+        '</div>'
+        '</div>'
+        '<div class="ic-hero-grade">'
+        f'<div class="ic-grade-val" style="color:{grade_color};">{_html.escape(invest_grade)}</div>'
+        '<div class="ic-grade-label">INVESTABILITY</div>'
+        '</div>'
+        '</div>'
+        '</div>'
+        '</div>'
+        '<div class="ic-utility no-print">'
+        '<div class="ic-utility-inner">'
+        '<button onclick="window.print()" class="cad-btn cad-btn-primary">'
+        '&#128438; Export PDF</button>'
+        f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="cad-btn">EBITDA Bridge</a>'
+        f'<a href="/data-room/{_html.escape(ccn)}" class="cad-btn">Data Room</a>'
+        '</div>'
+        '</div>'
     )
 
     # ── 1. TARGET OVERVIEW & THESIS ──

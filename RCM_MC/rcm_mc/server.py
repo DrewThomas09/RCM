@@ -1704,9 +1704,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         # `/forgot` is the editorial password-recovery page — like /login it
         # must be reachable without auth (the user has no creds when they
         # land on it).
-        if pure_path in ("/health", "/healthz", "/login", "/forgot"):
+        if pure_path in ("/", "/health", "/healthz", "/login", "/forgot"):
             return True
         if pure_path == "/api/login":
+            return True
+        # Static assets (CSS / fonts / JS) ship with the package and
+        # contain no user data — must be reachable without auth so the
+        # /login page itself can load its stylesheet.
+        if pure_path.startswith("/static/"):
             return True
         # No legacy creds + no users created → open mode
         if self.config.auth_user is None and self.config.auth_pass is None:

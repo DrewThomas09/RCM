@@ -28,6 +28,7 @@ CTA strip invert to parchment-on-navy for rhythm. Teal accents
 from __future__ import annotations
 
 import html as _html
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple
 
 from ..brand import PALETTE
@@ -423,55 +424,62 @@ def _marketing_topnav() -> str:
 
 # ── Top-level render ────────────────────────────────────────────────
 
+_LANDING_HTML_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "docs" / "design-handoff" / "reference" / "01-landing.html"
+)
+
+
 def render_marketing_page() -> str:
-    """Full editorial marketing landing. Single self-contained
-    HTML document — the tokens CSS provides var(--sc-*) tokens; no
-    dependency on ``chartis_shell`` (the marketing page is its own
-    surface, editorially distinct from the signed-in app).
+    """Marketing splash served on GET / for anonymous editorial users.
+
+    Serves the Claude Design handoff's reference HTML directly
+    (docs/design-handoff/reference/01-landing.html) with relative
+    auth-flow links rewritten to absolute server paths. The handoff
+    file is the source of truth — earlier we ported it section-by-
+    section into Python helpers and the result was visibly worse than
+    the reference, so we serve the file as-is.
     """
-    fonts = (
-        '<link rel="preconnect" href="https://fonts.googleapis.com">'
-        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-        '<link href="https://fonts.googleapis.com/css2?'
-        'family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&'
-        'family=Inter+Tight:wght@400;500;600;700&'
-        'family=JetBrains+Mono:wght@400;500;700&display=swap" '
-        'rel="stylesheet">'
+    try:
+        html = _LANDING_HTML_PATH.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        # Fallback: design bundle missing (shouldn't happen in normal
+        # deployments — file ships with the repo). Render a minimal
+        # editorial-styled placeholder rather than 500.
+        return (
+            '<!doctype html><html lang="en"><head>'
+            '<meta charset="utf-8"><title>SeekingChartis</title>'
+            '<link rel="stylesheet" href="/static/v3/chartis.css">'
+            '</head><body><main style="padding:4rem 2rem;">'
+            '<h1>SeekingChartis</h1>'
+            '<p><a href="/login">Sign in →</a></p>'
+            '</main></body></html>'
+        )
+    # Rewrite the relative auth links from the design bundle to the
+    # absolute paths this server actually serves. Order matters — the
+    # quoted form catches both href= and onclick= contexts. Request
+    # Access deep-links to the login page's request tab.
+    html = html.replace(
+        'href="login.html"',
+        'href="/login"',
     )
-    return (
-        '<!doctype html><html lang="en"><head>'
-        '<meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        '<title>SeekingChartis — Healthcare PE Diligence Platform</title>'
-        '<meta name="description" content="'
-        'SeekingChartis is the diligence and portfolio-operations '
-        'platform for healthcare-focused private equity. From screening '
-        'to exit, partner-reflex modules on 6,024 HCRIS hospitals.">'
-        + fonts +
-        '<link rel="stylesheet" href="/static/v3/chartis.css">'
-        '<style>'
-        '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}'
-        'body{background:var(--bg);color:var(--ink);'
-        'font-family:\"Inter\", -apple-system, sans-serif;-webkit-font-smoothing:antialiased;}'
-        'em{font-style:italic;}'
-        '@media (max-width: 960px) {'
-        '  [style*="grid-template-columns:1.05fr 1fr"],'
-        '  [style*="grid-template-columns:1fr 2fr"],'
-        '  [style*="grid-template-columns:repeat(4,1fr)"],'
-        '  [style*="grid-template-columns:120px 1fr 200px"],'
-        '  [style*="grid-template-columns:1fr 1fr"] {'
-        '    grid-template-columns: 1fr !important; gap: 32px !important;'
-        '  }'
-        '  [style*="padding:64px 56px"] { padding: 40px 28px !important; }'
-        '}'
-        '</style>'
-        '</head><body>'
-        + _marketing_topnav()
-        + _hero()
-        + _capabilities()
-        + _modules()
-        + _stats()
-        + _cta_strip()
-        + _footer()
-        + '</body></html>'
+    # The design bundle's "Request Access" CTAs reuse login.html — but
+    # the login page has a request tab, so deep-link to ?tab=request.
+    html = html.replace(
+        'class="cta-btn">Request Access',
+        'class="cta-btn" data-cta="request">Request Access',
     )
+    html = html.replace(
+        'class="cta-outline">Request Access',
+        'class="cta-outline" data-cta="request">Request Access',
+    )
+    # Wire data-cta="request" anchors to /login?tab=request.
+    html = html.replace(
+        'href="/login" class="cta-btn" data-cta="request"',
+        'href="/login?tab=request" class="cta-btn"',
+    )
+    html = html.replace(
+        'href="/login" class="cta-outline" data-cta="request"',
+        'href="/login?tab=request" class="cta-outline"',
+    )
+    return html
