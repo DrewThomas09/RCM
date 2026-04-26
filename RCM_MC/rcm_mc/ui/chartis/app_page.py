@@ -74,6 +74,7 @@ from ._app_pipeline_funnel import render_pipeline_funnel
 from ._app_what_block import render_what_block
 
 
+
 def render_app_page(
     *,
     store: PortfolioStore,
@@ -180,6 +181,7 @@ def render_app_page(
             rollup=rollup,
             focused_packet=focused_packet,
         ),
+
         render_pipeline_funnel(
             rollup,
             selected_stage=selected_stage,
@@ -220,11 +222,12 @@ def render_app_page(
         show_chrome=True,
         show_phi_banner=True,
         phi_mode=phi_mode,
-        # 2026-04-26: switched from left-rail sidebar to top-nav
-        # mega-menu dropdowns (see editorial_topbar). The sidebar
-        # competed for horizontal space with the wide chartis blocks;
-        # dropdowns let every page use the full width.
-        show_sidebar=False,
+        # Spec §7.4 — left-rail sidebar with the 28 module list.
+        # active_path="" means no module is highlighted (we're on
+        # the dashboard root); per-module pages would pass their own
+        # canonical path.
+        show_sidebar=True,
+
         sidebar_active_path="",
     )
 

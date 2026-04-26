@@ -45,12 +45,17 @@ def _ensure_history_table(store: PortfolioStore) -> None:
     store.init_db()
     with store.connect() as con:
         con.execute(
+            # Report 0256 MR1057: add deal_id FK so historical health
+            # scores are cleared when their parent deal is deleted. New
+            # DBs only (CREATE TABLE IF NOT EXISTS no-op on existing).
             """CREATE TABLE IF NOT EXISTS deal_health_history (
                 deal_id TEXT NOT NULL,
                 at_date TEXT NOT NULL,
                 score INTEGER NOT NULL,
                 band TEXT NOT NULL,
-                PRIMARY KEY (deal_id, at_date)
+                PRIMARY KEY (deal_id, at_date),
+                FOREIGN KEY(deal_id) REFERENCES deals(deal_id)
+                    ON DELETE CASCADE
             )"""
         )
         con.execute(

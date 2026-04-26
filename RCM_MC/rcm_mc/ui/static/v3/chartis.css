@@ -83,6 +83,7 @@
   --cad-warn:     var(--amber);
   --cad-amber:    var(--amber);
   --cad-mono:     "JetBrains Mono", ui-monospace, monospace;
+
 }
 
 /* ── reset / base ───────────────────────────────────────────────── */
@@ -293,123 +294,7 @@ input:focus, textarea:focus, select:focus {
   text-decoration: none;
 }
 .topnav button.active, .topnav a.active { border-bottom-color: var(--teal); }
-.topnav .caret { color: var(--muted); font-size: .7rem; transition: transform .15s; }
-
-/* ─── Mega-menu dropdown (per 2026-04-26 design direction) ─────────── */
-.topnav-item {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-}
-.topnav-item.active .topnav-trigger { border-bottom-color: var(--teal); }
-.topnav-trigger {
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  font-family: "Inter", sans-serif;
-  font-size: .76rem;
-  font-weight: 700;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--ink);
-  padding: 0 1.1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: .35rem;
-}
-.topnav-trigger:hover { color: var(--teal-deep); }
-.topnav-item.open .topnav-trigger { color: var(--teal-deep); }
-.topnav-item.open .topnav-trigger .caret { transform: rotate(180deg); }
-.topnav-item.open .topnav-trigger { border-bottom-color: var(--teal); }
-
-.topnav-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  min-width: 380px;
-  background: var(--paper-pure);
-  border: 1px solid var(--border);
-  border-top: 2px solid var(--teal-deep);
-  box-shadow: 0 16px 32px rgba(15, 28, 46, 0.10);
-  padding: 0;
-  z-index: 100;
-  display: none;
-  flex-direction: column;
-  text-align: left;
-  /* Override the .topnav a text-transform that would otherwise cascade
-   * onto every link inside the dropdown. Editorial dropdown items use
-   * sentence case, not all-caps. */
-  text-transform: none;
-}
-.topnav-item.open .topnav-dropdown { display: flex; }
-/* Belt-and-suspenders: explicitly cancel uppercase on every dropdown
- * descendant — guards against future .topnav rules adding it back. */
-.topnav-dropdown,
-.topnav-dropdown * {
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.dd-eyebrow {
-  font-family: "Inter", sans-serif;
-  font-size: .62rem;
-  font-weight: 700;
-  letter-spacing: .14em !important;
-  color: var(--muted);
-  padding: 1rem 1.5rem .85rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-  text-transform: uppercase !important;
-  text-align: left;
-}
-.dd-list { display: flex; flex-direction: column; padding: .65rem 0; }
-.dd-item {
-  display: flex;
-  flex-direction: column;
-  gap: .15rem;
-  padding: .7rem 1.5rem;
-  text-decoration: none;
-  color: var(--ink);
-  border-left: 3px solid transparent;
-  transition: background .1s, border-color .1s;
-  text-align: left;
-}
-.dd-item:hover {
-  background: var(--bg-tint);
-  border-left-color: var(--teal);
-}
-.dd-label {
-  font-family: "Source Serif 4", Georgia, serif;
-  font-size: 1.05rem;
-  font-weight: 500;
-  color: var(--ink);
-  letter-spacing: -0.005em !important;
-  line-height: 1.2;
-}
-.dd-desc {
-  font-family: "Inter", sans-serif;
-  font-size: .76rem;
-  color: var(--muted);
-  font-weight: 400;
-  letter-spacing: .01em !important;
-  line-height: 1.35;
-}
-.dd-all {
-  margin: 0;
-  font-family: "Inter", sans-serif;
-  font-size: .65rem;
-  font-weight: 700;
-  letter-spacing: .14em !important;
-  text-transform: uppercase !important;
-  color: var(--teal-deep);
-  text-decoration: none;
-  padding: .85rem 1.5rem;
-  border-top: 1px solid var(--border);
-  background: var(--bg);
-  text-align: left;
-}
-.dd-all:hover { color: var(--teal); background: var(--bg-tint); }
-
+.topnav .caret { color: var(--muted); font-size: .7rem; }
 .topbar-right { display: flex; align-items: center; gap: 1rem; padding-left: 1rem; }
 .topbar-right .search {
   display: flex; align-items: center; gap: .5rem;
@@ -1492,6 +1377,7 @@ main {
   padding: 1.5rem 2rem 4rem 2rem;
 }
 
+
 .rail-h {
   font-family: "Inter", sans-serif;
   font-size: .68rem;
@@ -2144,3 +2030,4 @@ table.ck-table tr:hover td { background: var(--bg-tint); }
  * to opt into the cad-* design language. Editorial mode: parchment bg
  * is fine; just ensure the body itself doesn't have any leftover dark. */
 body.caduceus, .cad-compat { background: var(--bg); color: var(--ink); }
+

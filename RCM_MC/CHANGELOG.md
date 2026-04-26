@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.0.0 (2026-04-26) — Reconcile version + audit/fix loop hardening
+
+Brings the CHANGELOG in line with the install-time and runtime sources of truth: `pyproject.toml` and `rcm_mc/__init__.py` both already pin `1.0.0`. Substantive changes since v0.6.1:
+
+- **CRITICAL**: Fixed unparseable `configs/playbook.yaml` — six top-level keys had a leading space, silently breaking the Action Plan section of every HTML report since 2026-04-17. (`33fda80`)
+- **CRITICAL**: Tightened `pyarrow` pin from `>=10.0` to `>=18.1,<19.0` to close CVE-2023-47248 (RCE on user-uploaded Parquet) and CVE-2024-52338. (`cb84f07`)
+- **CRITICAL**: Restored the broken `rcm-intake` console-script — added the missing `rcm_mc/intake.py` shim mirroring `rcm_mc/lookup.py`. (`5d91bda`)
+- **HIGH**: Added a stderr advisory at server startup when bound to a non-loopback host with no auth and no DB users; default laptop flow unchanged. (`9287908`)
+- **HIGH**: Blocked future `profiles.yml` commits inside `RCM_MC/` via `.gitignore` while preserving the shipped `profiles.example.yml` template. (`b31aecd`)
+- **HIGH**: Fixed `infra/README.md` references to nonexistent `ConfigValidationError` + `write_yaml`; real names are `ConfigError` and `core/calibration.write_yaml`. (`a53321f`)
+- **HIGH**: Corrected `CLAUDE.md` SQLite table count (was 17, now ~89 with grep recipe) and Python version (was 3.14, now "Python 3.10+" matching pyproject). (`f4ffdac`, `f1039f8`)
+
 ## v0.6.1 (2026-04-25) — Repo cleanup + go-live hardening
 
 ### Front-page reorganization

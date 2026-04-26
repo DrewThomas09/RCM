@@ -72,3 +72,11 @@ dbt_target/
 dbt_logs/
 dbt_profiles/
 package-lock.yml
+
+# dbt profiles.yml may carry real credentials. Block any profiles.yml
+# from being committed inside the project; profiles.example.yml is the
+# template we ship and remains tracked. Pre-existing vendored
+# profiles.yml files in vendor/ChartisDrewIntel/integration_tests/
+# already live above this .gitignore and are unaffected.
+**/profiles.yml
+!**/profiles.example.yml

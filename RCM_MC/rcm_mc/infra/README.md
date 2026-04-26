@@ -8,7 +8,7 @@ Platform infrastructure: configuration, logging, job queuing, migrations, notifi
 
 **What it does:** Loads, validates, and normalizes simulation YAML configuration files. Provides the `load_and_validate()` function that all modules use to read deal configs.
 
-**How it works:** `load_and_validate(path)` reads the YAML, validates required keys (`hospital`, `payers`), checks numeric bounds (denial rate 0–1, DAR >0, revenue >0), normalizes payer names via `core/_calib_schema.py`, and returns a validated config dict. Raises `ConfigValidationError` with a descriptive message on failure. Also provides `write_yaml(path, config)` for writing calibrated configs.
+**How it works:** `load_and_validate(path)` reads the YAML, validates required keys (`hospital`, `payers`), checks numeric bounds (denial rate 0–1, DAR >0, revenue >0), normalizes payer names via `canonical_payer_name()` in this same module, and returns a validated config dict. Raises `ConfigError` (a `ValueError` subclass) with a descriptive message on failure. A soft companion, `validate_config_from_path(path)`, returns `(is_valid, list_of_issues)` instead of raising. Also supports `_extends:` inheritance for layered configs and `${ENV_VAR:default}` substitution. The calibrated-config writer `write_yaml()` lives in `core/calibration.py`, not here.
 
 **Data in:** YAML file path from the CLI or packet builder.
 
