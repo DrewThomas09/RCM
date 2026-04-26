@@ -106,12 +106,29 @@ _METRIC_KEY_TO_BUCKET: Dict[str, str] = {
     "days_in_ar":                 "ar_aging",
     # net_collection_rate is a composite — patient self-pay + payer
     # underpayment + write-offs. Buckets to "Other" rather than
-    # silently misattributing to Self-pay. Q4.6 tracks the eventual
-    # 6th-component decomposition. (Phase 3 Decision B.)
+    # silently misattributing to Self-pay. (Phase 3 Decision B3,
+    # Q4.6 resolved 2026-04-27.)
     "net_collection_rate":        "other",
     # cost_to_collect is an OpEx lever, not a revenue lever — fits
     # "Other" by elimination among the 5 spec components.
     "cost_to_collect":            "other",
+    # ── Q4.6 future-extension hook ──────────────────────────────────
+    # When the upstream data feed ships the split between payer
+    # underpayment and patient self-pay leakage, two NEW metric_keys
+    # arrive: "payer_underpayment_pct" and "patient_self_pay_pct".
+    # At that point: surface a 6th bucket ("payer_underpayment") and
+    # route the new keys explicitly. Until then, net_collection_rate
+    # stays in "other" — Q4.6 is resolved by deliberately NOT
+    # decomposing (the dashboard label is what partners read; a
+    # stated-assumption ⅔/⅓ split would actively mislead which lever
+    # to pull).
+    #
+    # When that day comes, replace this comment block with two lines:
+    #     "payer_underpayment_pct": "payer_underpayment",
+    #     "patient_self_pay_pct":   "self_pay",
+    # …and add "payer_underpayment" to the bucket-display list in
+    # _decompose_drag(). The unrecognized-prefix logger below will
+    # NOT fire for these keys since they'll be added explicitly.
 }
 
 

@@ -652,6 +652,10 @@ The original "if dead, drop" framing was based on the route name being opaque fr
 
 ### Q4.4 — Phase 5 legacy-nav archive
 
+**Status:** ✅ Resolved (2026-04-27, commit pending). Archive generated at [`docs/design-handoff/legacy-nav-archive.md`](design-handoff/legacy-nav-archive.md) — 171 entries dumped from `_CORPUS_NAV_LEGACY` with the spec'd header verbatim. Phase 5's deletion commit is now safely reversible: anyone looking for a deprecated nav destination can grep the archive instead of `git log -S`.
+
+The archive was generated programmatically from `rcm_mc/ui/_chartis_kit_legacy.py::_CORPUS_NAV_LEGACY` so a Phase 5 sweep that re-generates from a freshly-checked-out tree gets identical output. Generation can be re-run with the inline script in commit message of this resolution.
+
 Before deleting `_CORPUS_NAV_LEGACY` in Phase 5, dump its 171 entries to `docs/design-handoff/legacy-nav-archive.md` with a header:
 
 > *"These 171 nav entries existed in the pre-rework codebase. If you're looking for a destination that no longer appears in the topnav, search this archive — it may have been a real surface that was deprecated, or a placeholder that was never built. Removed in commit X of Phase 5."*
@@ -679,18 +683,20 @@ The "Phase 3 ships partial" footnote is now structurally inert — when seeded d
 
 ### Q4.6 — `net_collection_rate` composite decomposition
 
+**Status:** ✅ Resolved (2026-04-27, commit pending). Decision: **5-bucket model stays; net_collection_rate stays in "Other" permanently until upstream feed splits arrive.** Code hook added at the routing site for the future 6th-bucket extension; no shipping decomposition requires the feed split that doesn't exist yet, and no stated-assumption fallback (the rejected B-2 alternative) will be shipped.
+
 **Trigger:** Phase 3 commit 6 (`c51a1a1`) routed `net_collection_rate` to the "other" EBITDA-drag bucket (Decision B3). Reason: it's a composite of patient self-pay leakage + payer underpayment + write-offs. Routing it to a single component (e.g. "Self-pay leakage", which was the initial B1 proposal) would actively mislead partners about which lever to pull.
 
-**Why not ship a documented attribution assumption now (B-2 alternative considered):** the temptation to ship something like "we attribute net_collection_rate variance ⅔ to payer underpayment, ⅓ to self-pay" with a code-comment caveat *feels* responsible because it's documented, but creates the same misdirection problem as B1 with a paper trail. The dashboard label says "Self-pay 67%"; the partner reads the label, not the comment. Once shipped, the number becomes load-bearing for the next "but you told me last quarter it was 67%" conversation. Decision: stay B3 (Other) until real upstream feed split data arrives.
+**Why not ship a documented attribution assumption now (B-2 alternative rejected, permanently):** the temptation to ship something like "we attribute net_collection_rate variance ⅔ to payer underpayment, ⅓ to self-pay" with a code-comment caveat *feels* responsible because it's documented, but creates the same misdirection problem as B1 with a paper trail. The dashboard label says "Self-pay 67%"; the partner reads the label, not the comment. Once shipped, the number becomes load-bearing for the next "but you told me last quarter it was 67%" conversation. Decision: stay B3 (Other) until real upstream feed split data arrives.
 
-**Required before Phase 4 merge:**
+**Resolved-by:**
 
-1. Decision: surface a 6th drag bucket ("Payer underpayment" or "Self-pay leakage") and decompose `net_collection_rate` against it, OR keep the 5-bucket model and add a "Composite" expansion-only secondary view.
-2. If decomposing: requires the upstream payer/self-pay split from the data feed — a stated-assumption fallback is explicitly ruled out per the reasoning above.
-3. Update the unrecognized-prefix logger to no longer fire for `net_collection_rate`.
-4. Contract test extension: assert the new bucket renders when present in `per_metric_impacts`.
+1. ✅ Decision (1 of the audit checklist): keep 5-bucket; do NOT add a Composite secondary view (would imply real decomposition data exists, which it doesn't).
+2. ✅ Code hook (item 2 of checklist): `_app_ebitda_drag.py::_METRIC_KEY_TO_BUCKET` now carries an inline future-extension comment block. When the upstream feed delivers `payer_underpayment_pct` and `patient_self_pay_pct` metric_keys, the resolution is two new dict entries + adding `"payer_underpayment"` to the bucket-display list. Replacement instructions are in the comment.
+3. ✅ Logger (item 3): `net_collection_rate` is in `_METRIC_KEY_TO_BUCKET` so the unrecognized-key logger doesn't fire for it. (Was already true post Phase 3; verified.)
+4. ⏳ Contract test extension (item 4): NOT shipped now. The new bucket doesn't render until the feed delivers the new keys; an empty-rendering test would assert non-existent behavior. The test slots in alongside the dict-entry change when the feed arrives.
 
-**Estimated effort:** depends on (1). Pure UI re-routing once feed data is in is ~1 hour; the upstream feed split is a larger data-pipeline question that may need its own ticket.
+**Trigger condition for next action:** upstream data feed delivering `payer_underpayment_pct` + `patient_self_pay_pct` metric_keys. At that point: add 2 dict entries, expand the bucket-display list, add the contract test. Estimated effort once data is in: ~1 hour for UI plumbing; the feed itself is a larger data-pipeline question outside this rework's scope.
 
 ---
 
