@@ -38,3 +38,33 @@ Format: one entry per file/symbol pair. Each entry names: which branches diverge
 - The merge mechanics resolve this naturally: `feat/ui-rework-v3` is the source of truth for the editorial rework; main is the source of truth for the audit chain. The merge author owns the integration.
 
 ---
+
+## 2. `RCM_MC/rcm_mc/dev/seed.py` × audit-branch FK CASCADE additions
+
+**Triage source:** TRIAGE.md MR1017 / Report-0258.md / cross-link iter-23 commit `91097a1`.
+
+**State on `main` (after iter-23):**
+- `rcm_mc/dev/seed.py` does not exist.
+- 5 deal-child tables (`deal_sim_inputs`, `deal_owner_history`, `deal_health_history`, `deal_deadlines`, `deal_stars`) now declare `FOREIGN KEY(deal_id) REFERENCES deals(deal_id) ON DELETE CASCADE` via fresh-DB CREATE-TABLE-IF-NOT-EXISTS (commit `91097a1`). Live DBs unchanged (MR1059 covers the ALTER migration).
+
+**State on `origin/feat/ui-rework-v3`:**
+- `rcm_mc/dev/seed.py` exists (896 LOC); ships a `seed_demo_db()` orchestrator with `--overwrite` flag.
+- Has its own pre-iter-23 view of those 5 tables — DDL identical to main pre-iter-23 (no FK on deal_id). Does NOT carry the iter-23 FK additions.
+
+**Conflict at merge:**
+- Each of the 5 `deals/*.py` files modified by iter-23 (`deal_sim_inputs.py`, `deal_owners.py`, `health_score.py`, `deal_deadlines.py`, `watchlist.py`) is unmodified on `feat/ui-rework-v3`. So a 3-way merge converges on the iter-23 version — no textual conflict.
+- **Functional implication:** post-merge, `dev/seed.py --overwrite` runs against a fresh DB carrying the iter-23 FK CASCADE. Cascades fire as intended; orphan rows do NOT accumulate.
+- For live DBs (no iter-23 schema yet — MR1059 pending), `dev/seed.py --overwrite` will still leave orphan rows. Recommend MR1059 ships before any operator runs `--overwrite` against a live-shaped DB.
+
+**Cross-risks captured in Report-0258 for the merge author:**
+- MR1061 (Medium) — heuristic prod guard at `seed.py:134` matches only `/data/` and `seekingchartis.db`. Partner's `~/portfolio.db` slips through.
+- MR1062 (Low) — seeder couples to `get_or_build_packet`; iter-13 hash_inputs cache key fix (`2fc6715`) is compatible.
+- MR1063 (Medium) — `--overwrite` is partially safe post-iter-23 only on FRESH DBs.
+
+**Recommended resolution at merge time:**
+1. Accept the iter-23 versions of the 5 `deals/*.py` files (they have the FK + audit-trail comment).
+2. Take `dev/seed.py` from `feat/ui-rework-v3` unchanged.
+3. Verify with `python -m rcm_mc.dev.seed --db /tmp/demo.db --verify` after merge.
+4. Do NOT run `--overwrite` against a live DB until MR1059 (live-DB ALTER migration) ships.
+
+---
