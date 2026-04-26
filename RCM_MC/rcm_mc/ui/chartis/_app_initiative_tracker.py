@@ -279,6 +279,10 @@ def render_initiative_tracker(
         # Cross-portfolio mode (Phase 3 wired). Default trailing 4Q
         # window per C3 push-back — no-window default surfaces stale
         # signals as current playbook gaps.
+        # TODO(phase 4): make time window configurable from the UI
+        # surface (e.g. ?window=8q to look back 2 years). The C3
+        # push-back established the non-default; configurability is
+        # the open follow-up. Tracked in docs/UI_REWORK_PLAN.md (Q3.4).
         try:
             from rcm_mc.rcm.initiative_tracking import (
                 cross_portfolio_initiative_variance,

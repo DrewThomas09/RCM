@@ -238,7 +238,62 @@ Phase 2 added zero schema changes. No migrations to undo.
 
 Local revert and `/app`-specific patch both go through the auto-deploy pipeline visible to anyone watching `deploy.yml`. Env-flag flip is silent — invisible to anyone not on the VM. **Rule of thumb:** if you're using the env-flag path, no comms needed; if you're using either of the others, post a one-liner in whatever incident channel the team uses ("Reverting Phase 2 commit X due to <symptom>; ETA <minutes>").
 
-(Phase 3/4/5 each get their own rollback sections as they land.)
+(Phase 4/5 each get their own rollback sections as they land.)
+
+---
+
+## Phase 3 rollback procedure
+
+If Phase 3 ships and a regression appears post-merge to `main`:
+
+Phase 3 is **mostly** pure-additive but introduces one infrastructure change: every export writer now writes through the canonical-path facade. The facades are pure wrappers (no DB schema change), so revert is safe at either the commit level or the helper level. The discipline below is "minimum-viable-revert" — reach for the smallest blast radius first.
+
+### Tier 1: single-helper revert (smallest blast radius)
+
+Each of these 4 helper commits is independently revertable. The route handler degrades gracefully if a helper is missing — the block renders the empty-state, not a 500:
+
+- `ffbca70` (initiatives) — revert if cross-portfolio aggregation breaks
+- `fd8bd83` (PHI banner) — revert if banner contrast looks wrong on prod
+- `45fda05` (covenant heatmap) — revert if Net Leverage row is wrong
+- `c51a1a1` (EBITDA drag) — revert if bucketing surfaces a wrong number
+
+```bash
+git revert <commit-sha>
+```
+
+### Tier 2: coordinated revert (export-refactor chain)
+
+These 5 commits are a chain — reverting one without the others creates mismatched call sites between the canonical facade and the writers that depend on it. Revert as a group if the canonical-path facade itself is broken:
+
+- `87e8d5e` (deliverables wired to `generated_exports`)
+- `261d7f0` (3 misc writers facaded)
+- `9b07ff5` (3 packet/zip writers facaded)
+- `a755cb2` (5 report writers facaded)
+- `5e3e851` (`canonical_*_export_path` itself)
+
+```bash
+git revert 87e8d5e 261d7f0 9b07ff5 a755cb2 5e3e851
+```
+
+### Tier 3: full Phase 3 revert (last resort)
+
+All 10 implementation commits + `0a747f1` (the test commit) + `<commit-11-sha>` (the docs commit). Branch returns to Phase 2 close. Use only if the regression spans both helper and infra work, or if root cause is unclear.
+
+The contract suite + the `test_phase_3_todos_resolved` discipline gate will fail until the test-commit revert removes their assertions — revert `0a747f1` first or the helper-revert commits will appear to "fail tests" even though they're correct.
+
+### Production VM env-flag flip (~30 sec, no code change)
+
+Same pattern as Phase 2: set `CHARTIS_UI_V2=` (empty) on the VM. `/app` falls back to the legacy dark shell; editorial helpers stay imported but are not the default render path. Use this before any code revert if the regression is purely visual on the editorial dashboard — it's the cheapest reversible action available.
+
+### DB-side regression
+
+Phase 3 added zero schema changes. The `generated_exports` table existed before Phase 3 — Phase 3 only began *writing* through it as the canonical manifest. Existing rows are untouched. No migrations to undo.
+
+### Communication threshold
+
+Same rule as Phase 2: env-flag flip is silent, code revert is loud. If you revert any of the Phase 3 commits, post a one-liner.
+
+(Phase 4/5 each get their own rollback sections as they land.)
 
 ---
 
@@ -377,36 +432,44 @@ Surfaced during Phase 2 implementation; resolve before Phase 3 starts.
 
 ### Q3.1 — KPI cell hover/click interaction
 
-Phase 2 deferred this per the C4 push-back: replacing the spec's hover with click would silently change UX semantics; adding hover via JS would expand the test surface beyond Phase 2's scope. `_app_kpi_strip.py` carries a `# TODO(phase 3): KPI cell hover/click interaction` comment.
+**Status:** Deferred to Phase 4 polish (Phase 3 review, 2026-04-25). The partner-walkthrough demo doesn't depend on it; the right-side paired table being fixed to the headline KPI's history is acceptable until UX research informs the hover-vs-click decision. `_app_kpi_strip.py` retagged to `# TODO(phase 4):`.
 
-Phase 3 makes a deliberate UX call: hover via vanilla JS / click toggle / small-multiples view / palette-style filter. The decision drives whether the right-side paired table is fixed (today: Weighted MOIC), interactive (changes per cell), or replaced (small-multiples show all 8 KPIs simultaneously).
+Phase 2 deferred this per the C4 push-back: replacing the spec's hover with click would silently change UX semantics; adding hover via JS would expand the test surface beyond Phase 2's scope.
+
+Phase 4 makes a deliberate UX call: hover via vanilla JS / click toggle / small-multiples view / palette-style filter. The decision drives whether the right-side paired table is fixed (today: Weighted MOIC), interactive (changes per cell), or replaced (small-multiples show all 8 KPIs simultaneously).
 
 ### Q3.2 — Real `covenant_grid` wiring + per-deal threshold mapping
 
-`_app_covenant_heatmap.covenant_grid()` is a Phase 2 stub returning all-empty cells. Phase 3 wires it to `quarterly_snapshots` + per-deal threshold config. The threshold mapping is currently in `deal_sim_inputs` per-deal but not surfaced for v3 — Phase 3 needs a `covenant_thresholds(deal_id)` accessor.
+**Status:** Resolved (Phase 3 commit 7, `45fda05`). Net Leverage row wired from `deal_snapshots.covenant_leverage`; 5 unwired covenants render `—` honestly with a footnote. Per-deal threshold accessor (`covenant_thresholds(deal_id)`) falls back to spec defaults — full per-deal config tracked in **Q4.5**.
+
+`_app_covenant_heatmap.covenant_grid()` was a Phase 2 stub returning all-empty cells. Phase 3 wired the Net Leverage row to `deal_snapshots.covenant_leverage` ordered by `created_at DESC LIMIT 8` and reversed for display. Bands: ≤6.0x safe / ≤6.5x watch / >6.5x trip.
 
 ### Q3.3 — Real EBITDA-drag decomposition
 
-`_app_ebitda_drag._decompose_drag()` returns 5 uniform 20% placeholders when a packet has `ebitda_bridge` set. Phase 3 maps the `DealAnalysisPacket.ebitda_bridge` shape to the 5 spec components (Denial workflow gap / Coding-CDI miss / A/R aging / Self-pay leakage / Other) with real per-component dollar impacts. Recovery quarters table + recovery sparkline are Phase 3 too.
+**Status:** Resolved (Phase 3 commit 6, `c51a1a1`). 7 production `metric_key` strings mapped to 5 spec buckets via documented prefix table; unrecognized keys log INFO and fall through to "other". `net_collection_rate` routed to "other" (Decision B3) because it's a composite — see **Q4.6**.
+
+`_app_ebitda_drag._decompose_drag()` was 5 uniform 20% placeholders when a packet had `ebitda_bridge` set. Phase 3 maps `DealAnalysisPacket.ebitda_bridge.per_metric_impacts` to the 5 spec components via the bucketing table; uses absolute values for percentage weighting and signed values for $ display. Self-pay bucket visible at 0% (Decision C) so the spec shape is preserved even when no actuals route there.
 
 ### Q3.4 — Cross-portfolio playbook signals on /app
 
-`_app_initiative_tracker` Phase 2 stub: when no deal is focused, shows empty-state copy. Phase 3 implements cross-portfolio aggregation (top variances across all held deals). Spec §6.9 mentions "playbook gap — not a deal-specific issue" — that's the aggregation Phase 3 wires up.
+**Status:** Resolved (Phase 3 commit 8, `ffbca70`). Trailing-4Q window default per C3 push-back. "Playbook gap" = mean ≤ -10% AND n_deals ≥ 2. `held_only=False` knob preserved for future cross-portfolio analytics. Time window is currently hardcoded at trailing 4 quarters; making it configurable from the UI surface is the open follow-up — registered as `# TODO(phase 4): make time window configurable` in `_app_initiative_tracker.py`.
+
+`_app_initiative_tracker` Phase 2 stub showed empty-state copy when no deal was focused. Phase 3 implements cross-portfolio aggregation: groups by `initiative_id` across the held subset, computes mean variance + n_deals + is_playbook_gap, sorts by absolute variance, returns top 10. Held-only filter routed through `latest_per_deal` (deal_snapshots) because `list_deals` doesn't surface stage.
 
 ### Q3.5 — Live `exports/` folder for deliverables (DO FIRST)
 
-`_app_deliverables` Phase 2 ships HTML-only from `analysis_runs`. Phase 3 reads the `exports/` filesystem folder for CSV / JSON / XLS artifacts (with sizes from `os.stat()`).
+**Status:** Resolved (commits 1–5: `5e3e851`, `a755cb2`, `9b07ff5`, `261d7f0`, `87e8d5e`). Canonical path = `/data/exports/<deal_id>/<timestamp>_<filename>` (or `/_portfolio/`). 11 writers facaded; `_app_deliverables` reads from `generated_exports` first, falls back to `analysis_runs`. The "two named functions" design (Q2 push-back) is now load-bearing — collapsing into one `Optional[str]` would re-introduce the silent mis-routing failure mode.
 
-**Embedded product decision:** where on the VM does the export pipeline write to? Currently variable per caller — multiple callsites write to different paths. Until that's standardized, every Phase 3 wiring task that touches deliverables has to either pick a path (creating a fourth variant) or special-case the existing variants (carrying tech debt forward). One meeting establishes the canonical path; subsequent Phase 3 tasks write against the standard.
+`_app_deliverables` Phase 2 shipped HTML-only from `analysis_runs`. Phase 3 reads `generated_exports` as the primary manifest, with `analysis_runs` as fallback. Card href strips `/data/exports/` prefix → `/exports/<rest>`; sizes formatted as B / KB / MB.
 
 ### Q3.6 — Scroll-aid affordance (only if needed)
 
-Phase 2 ships /app as single-flat-scroll matching the reference HTML (per W4 push-back). `app_page.py` carries a `# TODO(phase 3): consider scroll-aid affordance (sticky TOC? scroll-spy?) IF post-launch usage shows partners getting lost` comment. This is conditional — only acts on real usage signal, not pre-emptive. Run last.
+**Status:** Deferred to Phase 4 (still conditional on usage signal, not pre-emptive). `app_page.py` retagged to `# TODO(phase 4):`. Re-evaluate after the demo + 30 days of partner usage. The Phase 3 review confirmed the conditional should remain conditional — pre-emptively adding sticky TOC / scroll-spy without real signal would impose IA structure that wasn't asked for.
 
 ### Q3.7 — PHI banner visual weight reduction
 
 **Type:** Polish · CSS-only · Low risk
-**Status:** Registered, not started
+**Status:** Resolved (Phase 3 commit 9, `fd8bd83`). Editorial helper only; legacy `_chartis_kit` banner copy unchanged so legacy-page assertions continue to pass. `--green-muted: #3D6F45` token added; padding `.35rem 1.5rem`, font-size `.75rem`, weight 500, letter-spacing `.02em`. Copy trimmed to "🛡 Public data only — no PHI".
 **Trigger:** Address before next stakeholder demo OR during Phase 3 polish pass, whichever comes first.
 
 #### Problem
@@ -521,11 +584,40 @@ Before deleting `_CORPUS_NAV_LEGACY` in Phase 5, dump its 171 entries to `docs/d
 
 This preserves institutional memory at zero ongoing cost and makes the deletion safely reversible. **The archive must exist before the Phase 5 deletion commit lands.**
 
+### Q4.5 — Covenant schema expansion
+
+**Trigger:** Phase 3 commit 7 (`45fda05`) wired Net Leverage from real data (`covenant_leverage` column on `deal_snapshots`). The other 5 spec covenants (Interest Coverage, Days Cash on Hand, Fixed Charge Coverage, DSCR, Debt-to-EBITDA peer) render `—` honestly with a footnote.
+
+**Required before Phase 4 merge:**
+
+1. Decision: extend `deal_snapshots` with named columns vs. introduce a `covenant_metrics(snapshot_id, covenant_name, value, threshold)` table. Recommendation: the second option — covenants are a true 1-many from snapshots, and the named-column path forces a migration every time the spec covenant set changes. Per-deal threshold config lives there too (resolves the threshold half of Q3.2).
+2. Migration: add the table + a backfill that derives the 5 missing covenants from existing `deal_sim_inputs` where possible.
+3. Update `covenant_grid()` to read from the new table; remove the "1 of 6 covenants tracked" footnote when `wired_count == 6`.
+4. Contract test extension: assert `wired_count == 6` post-migration. Update `test_v3_app_covenant_heatmap_footnote_present` accordingly.
+
+**Estimated effort:** ~half a day (migration + helper rewrite + 2 tests).
+
+### Q4.6 — `net_collection_rate` composite decomposition
+
+**Trigger:** Phase 3 commit 6 (`c51a1a1`) routed `net_collection_rate` to the "other" EBITDA-drag bucket (Decision B3). Reason: it's a composite of patient self-pay leakage + payer underpayment + write-offs. Routing it to a single component (e.g. "Self-pay leakage", which was the initial B1 proposal) would actively mislead partners about which lever to pull.
+
+**Why not ship a documented attribution assumption now (B-2 alternative considered):** the temptation to ship something like "we attribute net_collection_rate variance ⅔ to payer underpayment, ⅓ to self-pay" with a code-comment caveat *feels* responsible because it's documented, but creates the same misdirection problem as B1 with a paper trail. The dashboard label says "Self-pay 67%"; the partner reads the label, not the comment. Once shipped, the number becomes load-bearing for the next "but you told me last quarter it was 67%" conversation. Decision: stay B3 (Other) until real upstream feed split data arrives.
+
+**Required before Phase 4 merge:**
+
+1. Decision: surface a 6th drag bucket ("Payer underpayment" or "Self-pay leakage") and decompose `net_collection_rate` against it, OR keep the 5-bucket model and add a "Composite" expansion-only secondary view.
+2. If decomposing: requires the upstream payer/self-pay split from the data feed — a stated-assumption fallback is explicitly ruled out per the reasoning above.
+3. Update the unrecognized-prefix logger to no longer fire for `net_collection_rate`.
+4. Contract test extension: assert the new bucket renders when present in `per_metric_impacts`.
+
+**Estimated effort:** depends on (1). Pure UI re-routing once feed data is in is ~1 hour; the upstream feed split is a larger data-pipeline question that may need its own ticket.
+
 ---
 
 ## See also
 
 - [`docs/design-handoff/EDITORIAL_STYLE_PORT.md`](design-handoff/EDITORIAL_STYLE_PORT.md) — the spec
 - [`docs/design-handoff/IA_MAP.md`](design-handoff/IA_MAP.md) — full nav inventory + section assignments
-- [`tests/test_ui_rework_contract.py`](../tests/test_ui_rework_contract.py) — the 12 contract tests guarding this work
+- [`docs/DEMO_CHECKLIST.md`](DEMO_CHECKLIST.md) — pre-demo data + walkthrough script + recovery
+- [`tests/test_ui_rework_contract.py`](../tests/test_ui_rework_contract.py) — the 25 contract tests guarding this work
 - [`AZURE_DEPLOY.md`](../../AZURE_DEPLOY.md) — production deploy procedure

@@ -85,7 +85,7 @@ Every destination listed below has been verified as having a wired server-side r
 
 | Topnav label | Canonical route | Notes |
 |---|---|---|
-| Command center | `/app` | **NEW (Phase 2):** editorial dashboard. Editorial-only — legacy `?ui=v2` users 303 to `/dashboard`. Placed above `/dashboard` to signal intended canonical (Phase 4 will resolve which alias path 302s to which) |
+| Command center | `/app` | **Phase 2:** editorial dashboard scaffolded. **Phase 3 (2026-04-25):** functionally real — 8 of 9 blocks wired against live data; covenant heatmap is honestly partial (1 of 6 rows wired — see Q4.5). The block conventions (#1–#6 in `UI_REWORK_PLAN.md`) are load-bearing for future helpers. Editorial-only — legacy `?ui=v2` users 303 to `/dashboard` |
 | Dashboard (current `/`) | `/dashboard` | Phase 4 will resolve `/` vs `/dashboard` vs `/home` — see Open Question #12 |
 | Home | `/home` | Phase 4 cutover decision pending |
 | Engagements | `/engagements` | Pending investigation — see Open Question #15 |
