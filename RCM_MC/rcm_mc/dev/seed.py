@@ -384,6 +384,88 @@ def _insert_snapshot(
         result.snapshots_inserted += 1
 
 
+# ── Initiative actuals seeder (block 7) ─────────────────────────────
+
+# Per SEEDER_PROPOSAL §4.5 — 3 initiatives across the 3 held deals,
+# curated to demonstrate distinct outcomes on the editorial initiative-
+# tracker block:
+#
+#   prior_auth_improvement → ALL 3 held deals, all behind ≥-15%
+#       → fires the PLAYBOOK GAP pill (mean ≤ -10% AND n_deals ≥ 2)
+#   coding_cdi_improvement → ccf_2026 only, behind -20%
+#       → demonstrates "single-deal behind" vs playbook gap distinction
+#   denial_workflow_automation → pma_2024 only, ahead +12%
+#       → demonstrates the ahead/healthy state in the variance dot-plot
+#
+# Each initiative is recorded for 4 trailing quarters so the cross-
+# portfolio aggregator (cross_portfolio_initiative_variance, default
+# trailing_quarters=4) picks them up. Variance is computed against the
+# initiatives library's annual_run_rate via initiative_variance_report.
+
+# (initiative_id, deal_id, variance_pct_of_plan)
+# Variance is what the actual achieves vs plan. -0.5 = 50% behind.
+_INITIATIVE_SEEDS: List[Tuple[str, str, float]] = [
+    # prior_auth_improvement: behind on all 3 held deals (PLAYBOOK GAP)
+    ("prior_auth_improvement", "ccf_2026", -0.50),
+    ("prior_auth_improvement", "arr_2025", -0.40),
+    ("prior_auth_improvement", "pma_2024", -0.30),
+    # coding_cdi_improvement: behind on 1 deal (single-deal-behind)
+    ("coding_cdi_improvement", "ccf_2026", -0.20),
+    # denial_workflow_automation: ahead on 1 deal (healthy)
+    ("denial_workflow_automation", "pma_2024", 0.12),
+]
+
+
+def _seed_initiative_actuals(
+    store: Any, *, result: SeedResult,
+) -> None:
+    """Insert curated initiative_actuals rows that produce a clear
+    cross-portfolio playbook-gap signal in the editorial dashboard.
+
+    Records 4 trailing quarters per (initiative, deal) pair so the
+    aggregator's default trailing_quarters=4 window picks them up. The
+    per-quarter ebitda_impact is plan/4 * (1 + variance_pct), so a
+    -0.50 variance produces 50% of plan per quarter.
+    """
+    from rcm_mc.rcm.initiative_tracking import record_initiative_actual
+    from rcm_mc.rcm.initiatives import get_all_initiatives
+
+    plans_by_id = {
+        init["id"]: float(init.get("annual_run_rate", 0) or 0)
+        for init in get_all_initiatives()
+    }
+
+    # Compute the 4 trailing quarter labels relative to reference time.
+    # Q labels are the format that record_initiative_actual validates
+    # against ('YYYYQn').
+    quarters: List[str] = []
+    for q_back in range(4):
+        dt = _quarter_offset_dt(q_back)
+        q_num = (dt.month - 1) // 3 + 1
+        quarters.append(f"{dt.year}Q{q_num}")
+    # Order chronologically (oldest first)
+    quarters.reverse()
+
+    for init_id, deal_id, variance_pct in _INITIATIVE_SEEDS:
+        plan_annual = plans_by_id.get(init_id, 0)
+        if plan_annual <= 0:
+            # Initiative library entry doesn't have a dollar run-rate;
+            # variance computation needs it. Skip silently.
+            continue
+        per_quarter_plan = plan_annual / 4
+        per_quarter_actual = per_quarter_plan * (1 + variance_pct)
+        for quarter in quarters:
+            record_initiative_actual(
+                store,
+                deal_id=deal_id,
+                initiative_id=init_id,
+                quarter=quarter,
+                ebitda_impact=per_quarter_actual,
+                notes="seed:demo",
+            )
+            result.actuals_inserted += 1
+
+
 # ── Public API skeleton ─────────────────────────────────────────────
 
 def seed_demo_db(
@@ -466,6 +548,9 @@ def seed_demo_db(
         overwrite=overwrite,
         result=result,
     )
+
+    # Seed step 2: initiative_actuals (block 7 — playbook gap)
+    _seed_initiative_actuals(store, result=result)
 
     result.duration_seconds = time.monotonic() - started
     return result
