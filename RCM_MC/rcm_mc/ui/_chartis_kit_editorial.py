@@ -667,7 +667,7 @@ _SIDEBAR_MODULES: List[Tuple[str, str, str]] = [
     # Diligence — per-deal analytical surfaces
     ("Deal Profile",      "/diligence/deal",                "diligence"),
     ("Thesis Pipeline",   "/diligence/thesis-pipeline",     "diligence"),
-    ("Checklist",         "/diligence/diligence-checklist", "diligence"),
+    ("Checklist",         "/diligence/checklist",           "diligence"),
     ("Ingestion",         "/import",                        "diligence"),
     ("Benchmarks",        "/diligence/benchmarks",          "diligence"),
     ("HCRIS X-Ray",       "/diligence/hcris-xray",          "diligence"),
