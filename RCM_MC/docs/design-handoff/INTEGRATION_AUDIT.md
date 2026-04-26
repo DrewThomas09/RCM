@@ -178,6 +178,64 @@ Items 1-4 fit in a single working day. Item 5 is the strategic call that should 
 
 ---
 
+---
+
+## Addendum: CSS-token / inline-style consistency check (added 2026-04-25)
+
+Spot-survey of inline `style="…"` density across the 19 Tier-1 chartis pages, looking for hardcoded hex colors that bypass the editorial palette.
+
+### Critical: `home_page.py` is a dark-shell page in chartis chrome
+
+`rcm_mc/ui/chartis/home_page.py` has **17 distinct hex colors hardcoded inline** across 43 occurrences. None of them are in the editorial palette. They're dark-shell-era values:
+
+| Hex | Count | Likely role | Editorial equivalent |
+|---|---|---|---|
+| `#1e293b` | 6 | Dark card background | `var(--paper-pure)` (not dark — paper) |
+| `#94a3b8` | 5 | Dark-shell muted text | `var(--muted)` (#5C6878) |
+| `#f59e0b` | 5 | Dark-shell amber | `var(--amber)` (#B7791F) |
+| `#e2e8f0` | 4 | Dark-shell light text | `var(--ink)` (#0F1C2E) |
+| `#3b82f6` | 3 | Dark-shell blue accent | `var(--blue)` (#2C5C84) |
+| `#111827`, `#0f172a`, `#0a0e17` | 5 | Near-black backgrounds | **Visual rewrite** — editorial doesn't have near-black |
+| `#10b981` | 5 | Dark-shell green | `var(--green)` (#3F7D4D) |
+| `#64748b` | 3 | Dark-shell neutral | `var(--muted)` |
+| `#ec4899`, `#8b5cf6`, `#0891b2`, `#ef4444` | 6 | Decorative accents | Map to editorial blue/teal/red as appropriate |
+
+**Implication:** `home_page.py` was built for the dark shell ORIGINALLY and got `chartis_shell()` wired around it later. Setting `CHARTIS_UI_V2=1` produces a Frankenstein render: parchment topbar + serif title + dark card backgrounds with light text inside. **This is the highest-priority Tier-1 page to body-port** in Phase 2b — the visual mismatch is severe.
+
+### Good news: the other 18 Tier-1 pages are mostly palette-aware
+
+Spot-checking `red_flags_page.py`, `ic_packet_page.py`, `partner_review_page.py`: their inline styles use `f"…color:{P['ink']}"` or `f"…color:{P['muted']}"` — they reference the **palette dictionary `P`** which the dispatcher swaps between editorial and legacy. These pages adapt automatically.
+
+The 14 dark-shell-pattern matches my earlier grep flagged were all in `home_page.py`; the other pages came up clean on the same grep.
+
+**Updated Phase 2b sizing:** instead of "5 weeks for 5 pages of body port," the actual work is closer to:
+
+- `home_page.py` (1 week — visual rewrite, not just `pair_block` adoption — replace 17 hardcoded colors with editorial paper/ink + map dark backgrounds to white cards)
+- 4 other pages with `pair_block` adoption only (~3 days each, ~2.5 weeks total)
+- **Total: ~3.5 weeks for top-5 Phase 2b pages**, not 5 weeks. `home_page` is the tax payer.
+
+### Other pages with non-trivial inline-style density (FYI, not action items)
+
+| File | Inline styles | Note |
+|---|---|---|
+| `home_page.py` | 85 | The outlier — see above |
+| `partner_review_page.py` | 67 | Palette-aware via `P[…]`; volume implies pair_block port will be substantial |
+| `marketing_page.py` | 60 | Public landing page; palette-aware |
+| `ic_packet_page.py` | 56 | Palette-aware |
+| `red_flags_page.py` | 49 | Palette-aware |
+| `portfolio_analytics_page.py` | 35 | Palette-aware |
+| Others | 1-32 | Range from minimal to moderate |
+
+**Recommendation:** start Phase 2b with `home_page.py` regardless of whether it's the highest-traffic page — its dark-shell contamination makes the editorial chrome look broken. Other pages can wait.
+
+### CSS-side: `chartis.css` is internally consistent
+
+Grep of `rcm_mc/ui/static/v3/chartis.css` (820 lines) shows the palette tokens are used cleanly throughout — `var(--green)`, `var(--teal)`, `var(--ink)`, etc. The Q3.7 PHI banner work added `--green-muted: #3D6F45` cleanly. No drift from the design system inside the CSS file itself.
+
+The inconsistency is **at the page-level Python rendering**, not the CSS.
+
+---
+
 ## See also
 
 - [`UI_REWORK_PLAN.md`](../UI_REWORK_PLAN.md) — phase plan, conventions, rollback, Q4.1-Q4.6
