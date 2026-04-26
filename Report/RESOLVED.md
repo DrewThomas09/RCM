@@ -18,3 +18,4 @@ e624c0c | 2026-04-26 | HIGH     | Report-0249 | get_member_role public-by-use, p
 d3f23b3 | 2026-04-26 | HIGH     | Report-0094 | ReimbursementProfile name-collision (domain alias vs finance class) — deprecated the domain alias via PEP 562 __getattr__ with DeprecationWarning; back-compat preserved
 442bb98 | 2026-04-26 | HIGH     | Report-0212 | ai/document_qa.answer_question hardened against prompt injection — 2000-char question cap + <document>/<question> tagged delimiters + defensive system prompt
 488e3c8 | 2026-04-26 | HIGH     | Report-0181 | unified delete-policy missing — added 5-row decision matrix to CLAUDE.md (CASCADE/SET NULL/NO ACTION/soft-delete/hard-delete with on-disk examples + rule of thumb)
+c4b6421 | 2026-04-26 | HIGH     | Report-0180 | deal-child FK frontier walked — 13 tables surveyed in Report-0256 (4 CASCADE-clean, 4 NO ACTION, 5 no-FK); surfaced MR1057 (HIGH, 5 silent-orphan tables) + MR1058 (MEDIUM, 3 NO ACTION upgrades)
