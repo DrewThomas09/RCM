@@ -170,9 +170,28 @@ else:
     # alongside the existing #ck-palette-bd, both binding to Cmd-K,
     # both opening on keystroke. The legacy palette's entries are
     # extended via _PALETTE_ENTRIES in the legacy module instead.
+    #
+    # Editorial-only kwargs are filtered out before forwarding to the
+    # legacy shell. As Phase 2b ports more pages to use editorial-style
+    # kwargs (breadcrumbs, active_nav, code, show_chrome,
+    # show_phi_banner, phi_mode), the legacy wrapper must accept and
+    # silently drop those — otherwise the page crashes in legacy mode
+    # with TypeError: unexpected keyword argument. The kwargs are
+    # editorial-shell-meaningful only; in legacy mode they degrade to
+    # no-op which is acceptable visual behavior (the legacy shell has
+    # its own breadcrumb pattern that doesn't take an `items` arg).
+    _EDITORIAL_ONLY_KWARGS = (
+        "breadcrumbs", "active_nav", "code",
+        "show_chrome", "show_phi_banner", "phi_mode",
+    )
+
     def chartis_shell(body: str, title: str, **kwargs) -> str:  # type: ignore[misc]
+        legacy_kwargs = {
+            k: v for k, v in kwargs.items()
+            if k not in _EDITORIAL_ONLY_KWARGS
+        }
         return _legacy_chartis_shell(
-            _phi_banner_html() + body, title, **kwargs,
+            _phi_banner_html() + body, title, **legacy_kwargs,
         )
 
     # v2-named helpers that callers may start using in Phase 2+
