@@ -8,3 +8,7 @@ a53321f | 2026-04-26 | HIGH     | Report-0254 | infra/README.md described nonexi
 9287908 | 2026-04-26 | HIGH     | Report-0119 | RCM_MC_AUTH unset = open server — added stderr warning at server start when bound non-loopback with no auth + no DB users
 f4ffdac | 2026-04-26 | HIGH     | Report-0211 | CLAUDE.md SQLite table count drift (said 17, audit found 21, grep finds 89) — doc now says ~89 with a self-derivable grep recipe
 f1039f8 | 2026-04-26 | HIGH     | Report-0251 | Python version drift between CLAUDE.md (3.14) and pyproject (>=3.10) — doc aligned to "Python 3.10+"
+4abc310 | 2026-04-26 | HIGH     | Report-0001 | three-way version drift across pyproject/__init__/CHANGELOG — added v1.0.0 CHANGELOG entry consolidating audit/fix-loop hardening
+e624c0c | 2026-04-26 | HIGH     | Report-0249 | get_member_role public-by-use, private-by-export — added to engagement/__init__.py public __all__ (34 tests pass)
+127a9f9 | 2026-04-26 | HIGH     | Report-0250 | RCM_MM/ inspected — empty 0-byte scratch dir, closed in Report-0255
+127a9f9 | 2026-04-26 | HIGH     | Report-0250 | vendor/ChartisDrewIntel/ inspected — Tuva Project (Apache 2.0 dbt), closed in Report-0255
