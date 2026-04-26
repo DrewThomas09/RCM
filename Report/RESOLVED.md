@@ -4,3 +4,4 @@ cb84f07 | 2026-04-26 | CRITICAL | Report-0136 | pyarrow CVE-2023-47248 RCE — t
 53f67c4 | 2026-04-26 | CRITICAL | Report-0246 | audit chain stranded on laptop — pushed Reports 0001-0254 + TRIAGE.md to origin/audit/reports-and-triage (data-loss risk closed; main-merge is a separate follow-up)
 b31aecd | 2026-04-26 | HIGH     | Report-0150 | profiles.yml not in .gitignore — added **/profiles.yml block (preserves profiles.example.yml + vendor fixtures)
 a53321f | 2026-04-26 | HIGH     | Report-0254 | infra/README.md described nonexistent ConfigValidationError + write_yaml — corrected to ConfigError + cross-link to core/calibration.py
+5685af4 | 2026-04-26 | HIGH     | Report-0247 | _chartis_kit_v2 deletion on feat/ui-rework-v3 documented in MERGE-CONFLICTS.md (4 main refs at _chartis_kit.py L9/L46/L90/L190) with merge-time resolution recipe
