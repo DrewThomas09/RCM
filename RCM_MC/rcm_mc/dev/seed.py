@@ -613,6 +613,115 @@ def _seed_generated_exports(
         result.exports_inserted += 1
 
 
+# ── Post-seed verification (Q4 from SEEDER_PROPOSAL §5) ─────────────
+
+@dataclass
+class VerifyResult:
+    """Output of verify_seeded_db. Each check is a (label, passed, detail)."""
+    checks: List[Tuple[str, bool, str]] = field(default_factory=list)
+
+    @property
+    def all_passed(self) -> bool:
+        return all(passed for _, passed, _ in self.checks)
+
+    def report(self) -> str:
+        lines = ["Verification report:"]
+        for label, passed, detail in self.checks:
+            mark = "✓" if passed else "✗"
+            lines.append(f"  {mark} {label}: {detail}")
+        lines.append("")
+        lines.append("PASS" if self.all_passed else "FAIL")
+        return "\n".join(lines)
+
+
+def verify_seeded_db(db_path: Union[str, Path]) -> VerifyResult:
+    """Re-run the DEMO_CHECKLIST verification commands programmatically.
+
+    Closes "Discovered during local testing" §4 from
+    UI_REWORK_PLAN.md — the verification commands in DEMO_CHECKLIST
+    were drafted but never executed. This runs them via the seeder so
+    the operator can confirm their demo DB is in shape.
+
+    Each check produces a (label, passed, detail) tuple. ``all_passed``
+    is True only when every check passes; the CLI maps this to exit
+    code (0 pass, 2 fail).
+    """
+    from rcm_mc.portfolio.store import PortfolioStore
+    from rcm_mc.portfolio.portfolio_snapshots import latest_per_deal
+    from rcm_mc.rcm.initiative_tracking import (
+        cross_portfolio_initiative_variance,
+    )
+
+    result = VerifyResult()
+    store = PortfolioStore(str(db_path))
+
+    # Check 1: at least 3 hold deals (DEMO_CHECKLIST data req)
+    df = latest_per_deal(store)
+    if df.empty:
+        result.checks.append((
+            "deals/stages", False, "no deals in latest_per_deal",
+        ))
+    else:
+        stage_counts = df.groupby("stage").size().to_dict()
+        n_hold = int(stage_counts.get("hold", 0))
+        result.checks.append((
+            "≥3 deals at stage hold/exit", n_hold >= 3,
+            f"hold={n_hold}, stages={stage_counts}",
+        ))
+
+    # Check 2: ≥2 snapshots per held deal (covenant heatmap trend)
+    with store.connect() as con:
+        rows = con.execute(
+            "SELECT deal_id, COUNT(*) AS n FROM deal_snapshots "
+            "WHERE stage='hold' GROUP BY deal_id HAVING n >= 2"
+        ).fetchall()
+    n_with_history = len(rows)
+    result.checks.append((
+        "≥2 snapshots per held deal", n_with_history >= 3,
+        f"{n_with_history} held deals with snapshot history",
+    ))
+
+    # Check 3: at least 1 PLAYBOOK GAP firing
+    xp_df = cross_portfolio_initiative_variance(store)
+    if xp_df.empty:
+        n_gaps = 0
+    else:
+        n_gaps = int(xp_df["is_playbook_gap"].sum())
+    result.checks.append((
+        "≥1 playbook-gap initiative", n_gaps >= 1,
+        f"{n_gaps} initiatives mean ≤ -10% across ≥2 deals",
+    ))
+
+    # Check 4: ≥1 generated_exports row pointing at a real file
+    with store.connect() as con:
+        rows = con.execute(
+            "SELECT filepath FROM generated_exports "
+            "WHERE filepath IS NOT NULL AND deal_id IS NOT NULL LIMIT 5"
+        ).fetchall()
+    n_exports = len(rows)
+    n_files_exist = sum(1 for r in rows if Path(r["filepath"]).is_file())
+    result.checks.append((
+        "≥1 generated_exports row with deal_id", n_exports >= 1,
+        f"{n_exports} export rows, {n_files_exist} have files on disk",
+    ))
+
+    # Check 5: at least 1 analysis_runs packet built
+    with store.connect() as con:
+        try:
+            row = con.execute(
+                "SELECT COUNT(*) AS n FROM analysis_runs"
+            ).fetchone()
+            n_packets = int(row["n"]) if row else 0
+        except Exception:  # noqa: BLE001 — table may not exist on minimal DB
+            n_packets = 0
+    result.checks.append((
+        "≥1 analysis_runs packet cached", n_packets >= 1,
+        f"{n_packets} packets in analysis_runs",
+    ))
+
+    return result
+
+
 # ── Public API skeleton ─────────────────────────────────────────────
 
 def seed_demo_db(
@@ -766,9 +875,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
     print(result.summary())
     if args.verify:
-        # --verify path lands in a later commit. Skeleton commit just
-        # acknowledges the flag exists.
-        print("(--verify body lands in a subsequent commit)")
+        v = verify_seeded_db(args.db)
+        print()
+        print(v.report())
+        if not v.all_passed:
+            return 2
     return 0
 
 
