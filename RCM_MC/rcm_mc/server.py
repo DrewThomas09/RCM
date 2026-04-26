@@ -16342,6 +16342,32 @@ def run_server(
         sys.stdout.write(
             f"  auth:         HTTP Basic as {RCMHandler.config.auth_user}\n"
         )
+    else:
+        # Open-mode advisory. Open mode (no Basic auth + no DB users)
+        # is intentional for single-user laptop deploys on loopback. On
+        # any non-loopback bind, warn loudly so operators don't ship a
+        # public deployment without authentication. Cross-link
+        # Report-0119 MR921.
+        try:
+            from .auth.auth import _ensure_tables as _eat
+            _store = PortfolioStore(RCMHandler.config.db_path)
+            _eat(_store)
+            with _store.connect() as _con:
+                _has_users = _con.execute(
+                    "SELECT 1 FROM users LIMIT 1"
+                ).fetchone() is not None
+        except Exception:  # noqa: BLE001 — warning is best-effort
+            _has_users = False
+        _is_loopback = host in ("127.0.0.1", "localhost", "::1")
+        if not _has_users and not _is_loopback:
+            sys.stderr.write(
+                "\n[rcm-mc] WARNING: open server — no authentication configured.\n"
+                f"  host={host} is non-loopback and no users exist in the DB.\n"
+                "  Set RCM_MC_AUTH=user:pass, or create a user with:\n"
+                "    rcm-mc portfolio users create --username <u> "
+                "--password <p> --role admin\n\n"
+            )
+            sys.stderr.flush()
     sys.stdout.write(f"  API docs:     {url}api/docs\n")
     sys.stdout.write(f"  started in:   {_boot_ms}ms\n")
     sys.stdout.write("  Ctrl+C to stop\n\n")
