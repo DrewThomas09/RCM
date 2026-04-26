@@ -39,7 +39,7 @@ Marker legend: `[ ]` open · `[x]` resolved (commit hash inline) · `[~]` partia
 - [x] HIGH | Report-0212 | `document_qa.py` (355L) is largest in `ai/` — RAG implementation hits trust boundary (user-supplied document text → LLM). | rcm_mc/ai/document_qa.py | MR1000 | 442bb98 | 2026-04-26 (added 3-layer prompt-injection mitigation: 2000-char question cap, <document>/<question> delimiters, defensive system prompt; 40 phase-P + e2e tests pass)
 - [x] HIGH | Report-0001 | `scipy>=1.11` only in `[all]` extras — any branch adding `import scipy` to a hot path breaks default install with `ImportError`. | pyproject.toml:59 | MR17 | 110f2cf | 2026-04-26 (added dedicated [stats] extras group + comment documenting lazy-import pattern across the 3 prod sites)
 - [x] HIGH | Report-0001 | `[all]` does not include `[diligence]` deps (duckdb/dbt-core/dbt-duckdb/pyarrow). | pyproject.toml | MR18 | 110f2cf | 2026-04-26 (folded [diligence] deps into [all]; verified diligence ⊂ all and stats ⊂ all programmatically)
-- [ ] HIGH | Report-0119/0120 | First merge from `feat/ui-rework-v3` → main triggers auto-deploy via deploy.yml; AZURE_VM secrets must be set. | .github/workflows/deploy.yml | MR917
+- [x] HIGH | Report-0119/0120 | First merge from `feat/ui-rework-v3` → main triggers auto-deploy via deploy.yml; AZURE_VM secrets must be set. | .github/workflows/deploy.yml | MR917 | 2b9b69e | 2026-04-26 (verified main already gates push-trigger; real risk is feat-branch overwriting that gate; merge recipe captured in Report-0260 + MERGE-CONFLICTS.md entry 4)
 - [ ] HIGH | Report-0124/0157 | INTEGRATION_AUDIT.md (commit c6ab593) flagged 9 UI pages bypass dispatcher; 5+ modules bypass PortfolioStore. | rcm_mc/ui/* | MR855/MR708
 
 ## MEDIUM
