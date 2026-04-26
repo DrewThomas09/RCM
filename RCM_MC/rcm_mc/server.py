@@ -11047,10 +11047,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         if not name:
             return self._redirect("/new-deal")
         state = (form.get("state") or "").strip().upper()
-        try:
-            bed_count = int(form.get("bed_count") or 0) or None
-        except ValueError:
-            bed_count = None
+        # Report 0124 / iter-29: clamp bed_count. Negative beds make
+        # no sense; >10000 is bigger than any US hospital system. The
+        # `or None` preserves the prior "0 means unset" behaviour.
+        bed_count_clamped = self._clamp_int(
+            form.get("bed_count", ""), default=0,
+            min_v=0, max_v=10000,
+        )
+        bed_count = bed_count_clamped or None
         payer_mix: Dict[str, float] = {}
         for key_ui, key_pkt in (
             ("medicare_pct", "medicare"),
@@ -15418,8 +15422,18 @@ class RCMHandler(BaseHTTPRequestHandler):
                 reg = get_default_registry()
                 job_id = reg.submit_run(
                     actual=actual, benchmark=benchmark, outdir=outdir,
-                    n_sims=int(form.get("n_sims") or 5000),
-                    seed=int(form.get("seed") or 42),
+                    # Report 0124 / iter-29: clamp caller-supplied
+                    # n_sims so a poisoned ?n_sims=999999999 cannot
+                    # DoS the simulation worker. 1..50000 is the
+                    # operational window per CLAUDE.md / pe_math.
+                    n_sims=self._clamp_int(
+                        form.get("n_sims", ""), default=5000,
+                        min_v=1, max_v=50000,
+                    ),
+                    seed=self._clamp_int(
+                        form.get("seed", ""), default=42,
+                        min_v=0, max_v=2**31 - 1,
+                    ),
                     no_report=form.get("no_report") == "1",
                     partner_brief=form.get("partner_brief") == "1",
                 )
@@ -15649,8 +15663,17 @@ class RCMHandler(BaseHTTPRequestHandler):
                 actual=inputs["actual_path"],
                 benchmark=inputs["benchmark_path"],
                 outdir=outdir,
-                n_sims=int(form.get("n_sims") or 5000),
-                seed=int(form.get("seed") or 42),
+                # Report 0124 / iter-29: clamp Monte Carlo n_sims so
+                # caller-supplied ?n_sims=999999999 cannot DoS the
+                # worker thread. Same envelope as the /api path above.
+                n_sims=self._clamp_int(
+                    form.get("n_sims", ""), default=5000,
+                    min_v=1, max_v=50000,
+                ),
+                seed=self._clamp_int(
+                    form.get("seed", ""), default=42,
+                    min_v=0, max_v=2**31 - 1,
+                ),
             )
             accept = self.headers.get("Accept", "")
             if "application/json" in accept:
@@ -15710,7 +15733,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                     raise ValueError(
                         "kind, deal_id, and trigger_key are required"
                     )
-                snooze_days = int(form.get("snooze_days") or 0)
+                # Report 0124 / iter-29: clamp snooze_days. Negative
+                # values would unsnooze immediately (silly); >365 keeps
+                # an alert hidden for over a year, defeating the audit
+                # trail.
+                snooze_days = self._clamp_int(
+                    form.get("snooze_days", ""), default=0,
+                    min_v=0, max_v=365,
+                )
                 # B125: prefer authenticated user over self-reported
                 cu = self._current_user()
                 acked_by = (
