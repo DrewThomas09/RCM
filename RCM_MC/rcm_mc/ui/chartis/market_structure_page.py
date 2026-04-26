@@ -163,6 +163,11 @@ def render_market_structure(
             body,
             title=f"Market Structure · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Structure", None),
+        ],
             subtitle=f"Market structure unavailable for {label}",
         )
 
@@ -187,6 +192,11 @@ def render_market_structure(
             body,
             title=f"Market Structure · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Structure", None),
+        ],
             subtitle=f"{label} · add market_shares to score",
         )
 
@@ -281,5 +291,10 @@ def render_market_structure(
         body,
         title=f"Market Structure · {label}",
         active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Structure", None),
+        ],
         subtitle=f"{label} · HHI {hhi:,.0f} · {verdict}",
     )

@@ -288,6 +288,11 @@ def render_archetype(
             body,
             title=f"Archetype · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Archetype", None),
+        ],
             subtitle=f"Archetype unavailable for {label}",
         )
 
@@ -409,5 +414,10 @@ def render_archetype(
         body,
         title=f"Archetype · {label}",
         active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Archetype", None),
+        ],
         subtitle=f"{label} · archetype match + regime classification",
     )

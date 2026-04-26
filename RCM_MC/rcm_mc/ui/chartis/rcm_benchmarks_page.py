@@ -218,6 +218,11 @@ def render_rcm_benchmarks(
         return chartis_shell(
             body, title="RCM Benchmarks",
             active_nav="/rcm-benchmarks",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Tools", "/methodology"),
+            ("RCM Benchmarks", None),
+        ],
             subtitle="Module unavailable",
         )
 
@@ -232,6 +237,11 @@ def render_rcm_benchmarks(
         return chartis_shell(
             body, title="RCM Benchmarks",
             active_nav="/rcm-benchmarks",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Tools", "/methodology"),
+            ("RCM Benchmarks", None),
+        ],
             subtitle="Load raised",
         )
 
@@ -244,6 +254,11 @@ def render_rcm_benchmarks(
         return chartis_shell(
             body, title="RCM Benchmarks",
             active_nav="/rcm-benchmarks",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Tools", "/methodology"),
+            ("RCM Benchmarks", None),
+        ],
             subtitle="No benchmarks",
         )
 
@@ -352,5 +367,10 @@ def render_rcm_benchmarks(
         body,
         title="RCM Benchmarks",
         active_nav="/rcm-benchmarks",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Tools", "/methodology"),
+            ("RCM Benchmarks", None),
+        ],
         subtitle=f"{n_segments} segments · {len(_METRICS)} metrics · HFMA / Advisory Board priors",
     )

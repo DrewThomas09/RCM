@@ -144,6 +144,11 @@ def render_sponsor_track_record(
         return chartis_shell(
             body, title="Sponsor Track Record",
             active_nav="/sponsor-track-record",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Sponsor Track Record", None),
+        ],
             subtitle="Module unavailable",
         )
 
@@ -161,6 +166,11 @@ def render_sponsor_track_record(
         return chartis_shell(
             body, title="Sponsor Track Record",
             active_nav="/sponsor-track-record",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Sponsor Track Record", None),
+        ],
             subtitle="Corpus unavailable",
         )
 
@@ -302,6 +312,11 @@ def render_sponsor_track_record(
         body,
         title="Sponsor Track Record",
         active_nav="/sponsor-track-record",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Sponsor Track Record", None),
+        ],
         subtitle=f"{total_sponsors} sponsors · {total_deals} deals · "
                  f"{realized} realized",
     )

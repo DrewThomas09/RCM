@@ -284,6 +284,11 @@ def render_investability(
             body,
             title=f"Investability · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Investability", None),
+        ],
             subtitle=f"Investability unavailable for {label}",
         )
 
@@ -371,5 +376,10 @@ def render_investability(
         body,
         title=f"Investability · {label}",
         active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Investability", None),
+        ],
         subtitle=f"{label} · composite {score}/100 · exit {exit_verdict.replace('_', ' ')}",
     )

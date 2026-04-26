@@ -174,6 +174,11 @@ def render_white_space(
             body,
             title=f"White Space · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("White Space", None),
+        ],
             subtitle=f"White-space scan unavailable for {label}",
         )
 
@@ -189,6 +194,11 @@ def render_white_space(
             body,
             title=f"White Space · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("White Space", None),
+        ],
             subtitle=f"{label} · white-space scan unavailable",
         )
 
@@ -238,6 +248,11 @@ def render_white_space(
             body,
             title=f"White Space · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("White Space", None),
+        ],
             subtitle=f"{label} · no opportunities surfaced",
         )
 
@@ -310,5 +325,10 @@ def render_white_space(
         body,
         title=f"White Space · {label}",
         active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("White Space", None),
+        ],
         subtitle=f"{label} · {len(opportunities)} opportunities · top: {top_dim or '—'}",
     )
