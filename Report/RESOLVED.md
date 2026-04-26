@@ -17,3 +17,4 @@ e624c0c | 2026-04-26 | HIGH     | Report-0249 | get_member_role public-by-use, p
 110f2cf | 2026-04-26 | HIGH×2   | Report-0001 | extras graph fixes — added [stats] for scipy (MR17) + folded [diligence] into [all] so `pip install ".[all]"` is genuinely complete (MR18)
 d3f23b3 | 2026-04-26 | HIGH     | Report-0094 | ReimbursementProfile name-collision (domain alias vs finance class) — deprecated the domain alias via PEP 562 __getattr__ with DeprecationWarning; back-compat preserved
 442bb98 | 2026-04-26 | HIGH     | Report-0212 | ai/document_qa.answer_question hardened against prompt injection — 2000-char question cap + <document>/<question> tagged delimiters + defensive system prompt
+488e3c8 | 2026-04-26 | HIGH     | Report-0181 | unified delete-policy missing — added 5-row decision matrix to CLAUDE.md (CASCADE/SET NULL/NO ACTION/soft-delete/hard-delete with on-disk examples + rule of thumb)
