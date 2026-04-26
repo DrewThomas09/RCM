@@ -1248,15 +1248,28 @@ def hash_inputs(
     as_of: Optional[date] = None,
     profile: Optional[Dict[str, Any]] = None,
     analyst_overrides: Optional[Dict[str, Any]] = None,
+    actual_yaml_hash: Optional[str] = None,
+    benchmark_yaml_hash: Optional[str] = None,
 ) -> str:
     """Deterministic SHA256 over canonical input JSON.
 
     Used for dedup in the analysis_runs cache: if the same (deal,
-    scenario, as_of, observed metrics, profile, analyst overrides)
-    combination has been seen before, reuse the stored packet instead
-    of rebuilding. ``analyst_overrides`` (Prompt 18) is included so a
-    newly-written override correctly forces a cache miss on the next
-    build.
+    scenario, as_of, observed metrics, profile, analyst overrides,
+    actual.yaml content, benchmark.yaml content) combination has been
+    seen before, reuse the stored packet instead of rebuilding.
+
+    ``analyst_overrides`` (Prompt 18) is included so a newly-written
+    override forces a cache miss on the next build. ``actual_yaml_hash``
+    and ``benchmark_yaml_hash`` (Report 0148/0162 MR958) close the
+    same hole for the YAML files that drive ``_build_simulation_summary``
+    in packet_builder.py — without them, editing benchmark.yaml without
+    changing any in-DB input returned a stale cached packet.
+
+    Both hash params are Optional and default None for backward
+    compatibility. When supplied, they should be SHA256 hex digests
+    of the file bytes; the caller is responsible for computing them.
+    The first build after this change will miss the existing cache
+    once and rebuild, then cache correctly going forward.
 
     Critical: uses ``sort_keys=True`` so dict ordering doesn't produce
     spurious misses.
@@ -1278,6 +1291,8 @@ def hash_inputs(
             str(k): _clean(v)
             for k, v in (analyst_overrides or {}).items()
         },
+        "actual_yaml_hash": actual_yaml_hash,
+        "benchmark_yaml_hash": benchmark_yaml_hash,
     }
     s = json.dumps(payload, sort_keys=True, default=_json_safe)
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
