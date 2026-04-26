@@ -69,6 +69,54 @@ Format: one entry per file/symbol pair. Each entry names: which branches diverge
 
 ---
 
+## 4. `.github/workflows/deploy.yml` — auto-deploy trigger divergence
+
+**Triage source:** TRIAGE.md MR917 / Report-0119/0120 / verified iter-27.
+
+**State on `main` (HEAD `2e8a02e`):**
+- `.github/workflows/deploy.yml` last modified in commit `f3f7e7f` ("chore(repo): deep cleanup").
+- `on:` block lines 14-17:
+  ```yaml
+  on:
+    # push:
+    #   branches: [main]
+    workflow_dispatch:
+  ```
+- **Auto-deploy on push to main is DISABLED.** The workflow only fires via manual `workflow_dispatch`. Comment at lines 3-12 explicitly says "Once secrets are set and you've verified one manual deploy succeeds, uncomment the `push: branches: [main]` block below to enable auto-deploy on every push to main."
+- Uses `appleboy/ssh-action@v1.0.3` for SSH.
+- Steps: SSH → git pull → docker compose up → 12×5s health check loop → smoke test.
+
+**State on `origin/feat/ui-rework-v3`:**
+- Same file, heavily rewritten.
+- `on:` block has `push: branches: [main]` **ENABLED** (lines 4-6) alongside `workflow_dispatch`.
+- Different SSH machinery — uses `webfactory/ssh-agent` + heredoc rather than `appleboy/ssh-action`.
+- Includes a "Record start time" step for deploy-duration metrics.
+- Same secrets (`AZURE_VM_HOST/USER/SSH_KEY`).
+
+**Cross-link:** prior commits on origin/main (`3ef3aa3`, `7d5afb5`, `1c845db` per Report-0246 branch refresh) were CI hardening commits to fix the SSH/secret expansion path — likely the source of the feat-branch's improved SSH machinery.
+
+**Conflict at merge:**
+- Same file modified on both sides → guaranteed textual conflict in the `on:` block AND the SSH steps.
+- If git auto-resolves to feat-branch's version, **auto-deploy fires immediately** on the merge commit. The merge commit itself becomes a deploy without explicit operator opt-in.
+- If git asks the merge author to resolve, the choice is: keep main's manual-only (safe, audit-able) vs. take feat's auto-deploy (faster but irreversible without another commit).
+
+**Recommended resolution at merge time:**
+1. **Default to safety: keep `push:` commented out** until AZURE_VM_HOST/USER/SSH_KEY are verified set on the GH repo (`gh secret list` should show all three).
+2. Take the feat-branch's improved SSH machinery (`webfactory/ssh-agent` + heredoc) — it's the post-fix iteration of the SSH-quoting issue Report-0246 noted.
+3. Run one manual `workflow_dispatch` deploy. If it succeeds, then in a follow-up commit uncomment `push: branches: [main]` to opt into auto-deploy.
+4. Verify secrets:
+   ```
+   gh secret list -R DrewThomas09/RCM
+   ```
+   must include `AZURE_VM_HOST`, `AZURE_VM_USER`, `AZURE_VM_SSH_KEY`.
+
+**Why no preemptive fix on `audit/reports-and-triage`:**
+- `deploy.yml` is heavily rewritten on the feature branch; modifying it on main would deepen the conflict.
+- MR917's stated risk ("First merge triggers auto-deploy") is real **only if** the feature branch's auto-enabled `on:` block is what lands. Audit branch can't decide that — the merge author owns it.
+- Documenting the gating recipe here means the merge author has the right defaults pre-flighted.
+
+---
+
 ## 3. `RCM_MC/rcm_mc/exports/canonical_facade.py` × `RCM_MC/rcm_mc/infra/exports.py`
 
 **Triage source:** TRIAGE.md MR1018 / Report-0259.md / Report-0247 MR1019.
