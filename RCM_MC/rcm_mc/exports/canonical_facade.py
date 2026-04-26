@@ -312,6 +312,100 @@ def export_exit_package_zip(
     return canonical
 
 
+# ── Facade functions (3 misc writers — Phase 3 commit 4) ──────────
+
+
+def export_deal_xlsx(
+    store: Any,
+    *,
+    deal_id: str,
+    packet: Any,
+    inputs_hash: str = "",
+    analysis_run_id: Optional[str] = None,
+    generated_by: Optional[str] = None,
+) -> Path:
+    """Canonical-path facade for xlsx_renderer.render_deal_xlsx.
+
+    The 6-sheet workbook (RCM Profile / Bridge / Monte Carlo /
+    Risk Flags / Raw Data / Audit). Underlying writer takes
+    ``out_dir`` and writes ``<stem>.xlsx`` inside it; the facade
+    wraps with a tmp dir + moves to canonical.
+
+    Raises ImportError when openpyxl isn't installed (matches the
+    underlying writer's contract — callers should catch + fall back).
+    """
+    from rcm_mc.exports.xlsx_renderer import render_deal_xlsx
+
+    canonical = canonical_deal_export_path(deal_id, "deal.xlsx")
+    with tempfile.TemporaryDirectory(prefix="rcm_deal_xlsx_") as tmp:
+        produced = render_deal_xlsx(packet, Path(tmp), inputs_hash=inputs_hash)
+        _move_to_canonical(Path(produced), canonical)
+    _record(store, deal_id=deal_id, canonical=canonical, fmt="xlsx",
+            analysis_run_id=analysis_run_id, generated_by=generated_by)
+    return canonical
+
+
+def export_bridge_xlsx(
+    store: Any,
+    *,
+    deal_id: str,
+    bridge: Any,
+    hospital_name: str = "",
+    ccn: str = "",
+    returns_grid: Optional[Any] = None,
+    peer_context: Optional[Any] = None,
+    analysis_run_id: Optional[str] = None,
+    generated_by: Optional[str] = None,
+) -> Path:
+    """Canonical-path facade for bridge_export.export_bridge_xlsx.
+
+    Underlying writer returns BYTES (no path), so the facade writes
+    the bytes to canonical directly — no tmp dir needed.
+    """
+    from rcm_mc.exports.bridge_export import export_bridge_xlsx as _bridge_xlsx_bytes
+
+    canonical = canonical_deal_export_path(deal_id, "bridge.xlsx")
+    payload = _bridge_xlsx_bytes(
+        bridge,
+        hospital_name=hospital_name,
+        ccn=ccn,
+        returns_grid=returns_grid,
+        peer_context=peer_context,
+    )
+    canonical.parent.mkdir(parents=True, exist_ok=True)
+    canonical.write_bytes(payload)
+    _record(store, deal_id=deal_id, canonical=canonical, fmt="xlsx",
+            analysis_run_id=analysis_run_id, generated_by=generated_by)
+    return canonical
+
+
+def export_ic_packet_html(
+    store: Any,
+    *,
+    deal_id: str,
+    metadata: Any,
+    analysis_run_id: Optional[str] = None,
+    generated_by: Optional[str] = None,
+    **render_kwargs: Any,
+) -> Path:
+    """Canonical-path facade for ic_packet.render_ic_packet_html.
+
+    Underlying writer returns an HTML string (no path), so the
+    facade writes the string to canonical directly. ``metadata`` is
+    the only required positional arg of the underlying renderer; all
+    other inputs flow through ``**render_kwargs``.
+    """
+    from rcm_mc.exports.ic_packet import render_ic_packet_html
+
+    canonical = canonical_deal_export_path(deal_id, "ic_packet.html")
+    html = render_ic_packet_html(metadata=metadata, **render_kwargs)
+    canonical.parent.mkdir(parents=True, exist_ok=True)
+    canonical.write_text(html, encoding="utf-8")
+    _record(store, deal_id=deal_id, canonical=canonical, fmt="html",
+            analysis_run_id=analysis_run_id, generated_by=generated_by)
+    return canonical
+
+
 __all__ = [
     # Reports (commit 2)
     "export_full_html_report",
@@ -323,4 +417,8 @@ __all__ = [
     "export_diligence_memo",
     "export_diligence_package_zip",
     "export_exit_package_zip",
+    # Misc (commit 4)
+    "export_deal_xlsx",
+    "export_bridge_xlsx",
+    "export_ic_packet_html",
 ]
