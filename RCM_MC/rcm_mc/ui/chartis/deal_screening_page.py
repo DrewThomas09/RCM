@@ -219,6 +219,11 @@ def render_deal_screening(
         return chartis_shell(
             body, title="Deal Screening",
             active_nav="/deal-screening",
+            breadcrumbs=[
+                ("Home", "/app"),
+                ("Deals", "/deals"),
+                ("Screening", None),
+            ],
             subtitle="Module unavailable",
         )
 
@@ -232,6 +237,11 @@ def render_deal_screening(
         return chartis_shell(
             body, title="Deal Screening",
             active_nav="/deal-screening",
+            breadcrumbs=[
+                ("Home", "/app"),
+                ("Deals", "/deals"),
+                ("Screening", None),
+            ],
             subtitle="Corpus unavailable",
         )
 
@@ -250,6 +260,11 @@ def render_deal_screening(
         return chartis_shell(
             body, title="Deal Screening",
             active_nav="/deal-screening",
+            breadcrumbs=[
+                ("Home", "/app"),
+                ("Deals", "/deals"),
+                ("Screening", None),
+            ],
             subtitle="Screen raised",
         )
 
@@ -387,4 +402,9 @@ def render_deal_screening(
         active_nav="/deal-screening",
         subtitle=f"{counts.get('PASS',0)} pass · {counts.get('WATCH',0)} watch · "
                  f"{counts.get('FAIL',0)} fail · {len(results)} total",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Screening", None),
+        ],
     )

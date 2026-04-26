@@ -1,0 +1,1269 @@
+/* SeekingChartis editorial — base CSS
+ *
+ * Source of truth: docs/design-handoff/EDITORIAL_STYLE_PORT.md
+ * Reference HTML: docs/design-handoff/reference/{01-landing,02-login,
+ *                  03-forgot,04-command-center}.html
+ *
+ * Lifted verbatim from §3 (tokens) + §4 (type) + §8 (button/input states)
+ * of the spec. The :root block matches every reference HTML's :root
+ * for tokens they share; tokens unique to one reference (--navy in
+ * 04-command-center) are reduced to existing canonical tokens.
+ *
+ * Served at /static/v3/chartis.css. Linked from every page rendered by
+ * _chartis_kit_editorial.chartis_shell().
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* surfaces */
+  --bg:           #F2EDE3;   /* parchment page */
+  --bg-alt:       #ECE5D6;   /* deeper parchment for sources block */
+  --bg-tint:      #E8E0D0;   /* row hover, hot rows */
+  --paper:        #FAF7F0;   /* near-white panels */
+  --paper-pure:   #FFFFFF;   /* primary card surface */
+
+  /* rules */
+  --border:       #D6CFC0;   /* hairline, internal */
+  --border-strong:#C2B9A6;   /* heavier internal */
+  --rule:         #BFB6A2;   /* outer rule on cards */
+
+  /* ink */
+  --ink:          #0F1C2E;   /* near-black navy — TEXT only, never a fill */
+  --ink-2:        #1A2840;
+  --muted:        #5C6878;
+  --faint:        #8A92A0;
+
+  /* accent */
+  --teal:         #1F7A75;   /* the only accent — always 1px rule or italic */
+  --teal-soft:    #D4E4E2;
+  --teal-deep:    #155752;
+
+  /* status — sparingly, for numbers + pills */
+  --green:        #3F7D4D;
+  --green-soft:   #DCE6D9;
+  --green-muted:  #3D6F45;   /* Q3.7: muted compliance variant for chrome bands */
+  --amber:        #B7791F;
+  --amber-soft:   #EFE2BC;
+  --red:          #A53A2D;
+  --red-soft:     #EBD3CD;
+  --blue:         #2C5C84;
+  --blue-soft:    #D6E1EB;
+
+  /* alias per design decisions: --link folds into --teal-deep */
+  --link:         var(--teal-deep);
+
+  /* TEMPORARY (Phase 5 sweep removes these) ─────────────────────────
+   * server.py and many legacy renderers reference var(--accent) /
+   * var(--accent-soft) / var(--card). When a v3 page injects a
+   * legacy fragment (e.g., an HTML email-style snippet), these
+   * aliases keep the fragment tinting correctly without forcing
+   * a sweep of every callsite in this PR. Phase 5 replaces every
+   * var(--accent) with var(--teal-deep) directly and deletes these. */
+  --accent:       var(--teal-deep);
+  --accent-soft:  var(--teal-soft);
+  --card:         var(--paper-pure);
+}
+
+/* ── reset / base ───────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── type families (per §4) ─────────────────────────────────────── */
+
+.sans { font-family: "Inter", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+.mono { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; font-feature-settings: "tnum" on; }
+.num  { font-variant-numeric: tabular-nums; }
+
+/* Eyebrow micro-label per §4 */
+.micro {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── pills (status) per §8.4 ───────────────────────────────────── */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .15rem .55rem;
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+}
+.pill .dot {
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.pill.green { color: var(--green); background: var(--green-soft); }
+.pill.amber { color: var(--amber); background: var(--amber-soft); }
+.pill.red   { color: var(--red);   background: var(--red-soft); }
+.pill.blue  { color: var(--blue);  background: var(--blue-soft); }
+.pill.muted { color: var(--muted); }
+
+/* ── buttons per §8.1–§8.3 ─────────────────────────────────────── */
+
+.cta-btn {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: .8rem 1.4rem;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: background .12s;
+}
+.cta-btn:hover { background: var(--teal-deep); }
+.cta-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+.ghost-btn {
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding: .8rem 0;
+  border: none;
+  border-bottom: 1px solid var(--ink);
+  background: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+.ghost-btn:hover { color: var(--teal-deep); border-bottom-color: var(--teal-deep); }
+
+/* Tab / nav per §8.3 */
+.tab {
+  background: transparent;
+  border: none;
+  padding: .9rem 0;
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.tab.active { color: var(--ink); border-bottom-color: var(--teal); }
+
+/* ── inputs per §8.5 ───────────────────────────────────────────── */
+
+input, textarea, select {
+  padding: .9rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: "Inter", sans-serif;
+  font-size: .95rem;
+  color: var(--ink);
+  border-radius: 0;
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--teal);
+  background: var(--paper-pure);
+}
+
+/* ── PHI banner per §7.5 ───────────────────────────────────────── */
+
+.phi-banner {
+  /* Q3.7: visual-weight reduction. Compliance band, not a hero alert. */
+  background: var(--green-soft);
+  border: 1px solid var(--green-muted);
+  color: var(--green-muted);
+  padding: .35rem 1.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: .75rem;
+  font-weight: 500;
+  letter-spacing: .02em;
+  text-align: center;
+  margin: 1rem 2rem;
+}
+.phi-banner.restricted {
+  background: var(--amber-soft);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+/* ── editorial chrome — topbar + crumbs + page-head ────────────── */
+
+.topbar {
+  background: var(--paper-pure);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: stretch; gap: 1rem;
+  height: 72px;
+}
+.brand { display: flex; align-items: center; gap: .7rem; padding-right: 1rem; text-decoration: none; color: inherit; }
+.brand-mark {
+  width: 38px; height: 38px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Source Serif 4", serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper-pure);
+}
+.brand-name {
+  font-family: "Source Serif 4", serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.brand-name em { font-style: italic; font-weight: 500; }
+.brand:hover { text-decoration: none; }
+
+.topnav { display: flex; align-items: stretch; gap: 0; flex: 1; padding-left: 1.5rem; }
+/* Both <button> and <a> share styling — Phase 3 nav-polish converted
+   buttons to anchors so the topnav navigates instead of pretending. */
+.topnav button, .topnav a {
+  background: transparent;
+  border: none;
+  font-family: "Inter", sans-serif;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 0 1.1rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  display: flex; align-items: center; gap: .35rem;
+}
+.topnav button:hover, .topnav a:hover {
+  color: var(--teal-deep);
+  text-decoration: none;
+}
+.topnav button.active, .topnav a.active { border-bottom-color: var(--teal); }
+.topnav .caret { color: var(--muted); font-size: .7rem; }
+
+.topbar-right { display: flex; align-items: center; gap: 1rem; padding-left: 1rem; }
+.topbar-right .search {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .4rem .75rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: "Inter", sans-serif;
+  font-size: .82rem;
+  color: var(--muted);
+}
+.topbar-right .search input {
+  border: none;
+  padding: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink);
+  outline: none;
+  width: 16ch;
+}
+.topbar-right .search .kbd {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .68rem;
+  color: var(--faint);
+  border: 1px solid var(--border);
+  padding: .05rem .3rem;
+}
+.signin {
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+}
+.signin:hover { color: var(--ink); text-decoration: none; }
+
+.crumbs {
+  padding: .85rem 2rem;
+  font-family: "Inter", sans-serif;
+  font-size: .78rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.crumbs a { color: var(--muted); }
+.crumbs a:hover { color: var(--ink); }
+.crumbs .sep { margin: 0 .5rem; color: var(--faint); }
+.crumbs .here { color: var(--ink); }
+
+.page { max-width: 1320px; margin: 0 auto; padding: 0 2.5rem; }
+
+.pg-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 2.5rem 0 1.5rem;
+  border-bottom: 1px solid var(--rule);
+  gap: 2rem;
+}
+.pg-head .eyebrow {
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--muted);
+  margin-bottom: .5rem;
+  text-transform: uppercase;
+}
+.pg-head .eyebrow .dot { margin: 0 .35rem; color: var(--faint); }
+.pg-head .eyebrow .slug {
+  font-family: "JetBrains Mono", monospace;
+  color: var(--teal-deep);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.pg-head .title {
+  font-family: "Source Serif 4", serif;
+  font-weight: 400;
+  font-size: clamp(2.3rem, 3.6vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.022em;
+  margin: 0 0 .4rem;
+  color: var(--ink);
+}
+.pg-head .lede {
+  font-family: "Source Serif 4", serif;
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 56ch;
+  margin: 0;
+}
+.pg-head .meta-col {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .76rem;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.pg-head .meta-col .v { color: var(--ink); font-weight: 600; }
+.pg-head .meta-col .dot { margin: 0 .3rem; color: var(--faint); }
+
+/* ── signature pattern: paired viz + dataset (per §5) ──────────── */
+
+.pair {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 0;
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  margin: 1rem 0;
+}
+.pair > .viz {
+  padding: 1.25rem 1.5rem;
+  border-right: 1px solid var(--border);
+}
+.pair > .data {
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-alt);
+}
+.pair .data-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: .85rem;
+  padding-bottom: .55rem;
+  border-bottom: 1px solid var(--border);
+}
+.pair .data-h .src {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .72rem;
+  color: var(--teal-deep);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.pair .data table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+}
+.pair .data th, .pair .data td {
+  padding: .4rem 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.pair .data th.r, .pair .data td.r { text-align: right; }
+.pair .data td.lbl { color: var(--muted); font-family: "Inter", sans-serif; }
+.pair .data td.r {
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.pair .data tr.hot td { background: var(--bg-tint); }
+.pair .data tr.hot td:first-child { border-left: 3px solid var(--amber); }
+
+/* ── editorial card form (used by /forgot, /login) ─────────────── */
+
+.card-wrap {
+  max-width: 520px;
+  margin: 4rem auto;
+  padding: 0 1.5rem;
+}
+.card {
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  padding: 2.5rem 2rem;
+}
+.card .eyebrow {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--teal-deep);
+  margin-bottom: .75rem;
+}
+.card h1 {
+  font-family: "Source Serif 4", serif;
+  font-weight: 400;
+  font-size: 2rem;
+  letter-spacing: -0.018em;
+  margin: 0 0 .8rem;
+  color: var(--ink);
+}
+.card .lede {
+  font-family: "Source Serif 4", serif;
+  font-size: 1rem;
+  color: var(--muted);
+  margin: 0 0 1.75rem;
+}
+.card .field {
+  margin-bottom: 1rem;
+}
+.card .field label {
+  display: block;
+  font-family: "Inter", sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .4rem;
+}
+.card .field input {
+  width: 100%;
+}
+.card .field-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: .85rem 0 1.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: .82rem;
+  color: var(--muted);
+}
+.card .field-row label.check {
+  display: flex; align-items: center; gap: .4rem;
+}
+.card .field-row a { color: var(--teal-deep); }
+.card button.submit {
+  width: 100%;
+}
+.card .success {
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 1rem 1.25rem;
+  font-family: "Inter", sans-serif;
+  font-size: .9rem;
+  margin-top: 1rem;
+}
+
+/* ── editorial panel (ck_panel) ────────────────────────────────────
+ *
+ * Namespaced .editorial-panel rather than .panel so the editorial
+ * card chrome doesn't collide with the .panel class used elsewhere
+ * in the dashboard reference HTML (04-command-center.html line 398:
+ * .panel { padding: 1.25rem 1.5rem; ... }). Both can coexist on the
+ * same page; consumers pick which one.
+ */
+
+.editorial-panel {
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  margin: 1rem 0;
+}
+.editorial-panel > .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: .85rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.editorial-panel > .head .ttl {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.editorial-panel > .head .src {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .72rem;
+  color: var(--teal-deep);
+}
+.editorial-panel > .body {
+  padding: 1.25rem 1.5rem;
+}
+.editorial-panel:hover {
+  /* hover state available; default no-op so existing pages don't
+   * suddenly get hover lift. Overriders can add background tint
+   * via a more specific selector. */
+}
+
+/* ── footer ────────────────────────────────────────────────────── */
+
+footer.editorial {
+  margin-top: 4rem;
+  padding: 2rem 2rem 3rem;
+  border-top: 1px solid var(--rule);
+  font-family: "Inter", sans-serif;
+  font-size: .8rem;
+  color: var(--muted);
+}
+footer.editorial em { color: var(--ink); font-style: italic; }
+
+/* === /app dashboard blocks ====================================
+ *
+ * Phase 2 of the editorial port. Each block helper in
+ * rcm_mc/ui/chartis/_app_*.py owns a section below. Class names are
+ * block-prefixed (`.app-kpi-strip-*`, `.app-pipeline-funnel-*`) so
+ * conflicts with shared chrome (`.pair`, `.crumbs`, etc.) are
+ * impossible by construction.
+ *
+ * Why these live in chartis.css (single static asset) rather than
+ * inline per-helper: cacheability + overrideability. A single
+ * /static/v3/chartis.css is cached by the browser after first hit;
+ * inline <style> blocks accreting per render would re-send ~5KB on
+ * every /app load. And future high-contrast / print / density modes
+ * can override these rules with one media query — inline styles
+ * would force !important or JS mutation.
+ *
+ * Convention for adding new blocks (Phase 2b/2c/2d):
+ *   - Section header comment with the block name + helper file
+ *   - All class names prefixed with the helper's slug
+ *   - Group rules tightly so the section can be deleted in one diff
+ *     when a helper is retired
+ */
+
+/* --- Deliverables (rcm_mc/ui/chartis/_app_deliverables.py) --- */
+
+.app-deliv-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  background: var(--paper-pure); border: 1px solid var(--rule);
+}
+.app-deliv {
+  padding: 1.1rem 1.25rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-decoration: none; color: var(--ink);
+  display: block;
+  transition: background .12s;
+}
+.app-deliv:nth-child(4n) { border-right: none; }
+.app-deliv:nth-last-child(-n+4) { border-bottom: none; }
+.app-deliv:hover { background: var(--bg); text-decoration: none; }
+.app-deliv .kind {
+  display: inline-block;
+  font-family: "Inter", sans-serif; font-size: .62rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--teal-deep);
+  padding: 1px 6px;
+  border: 1px solid var(--teal);
+  margin-bottom: .55rem;
+}
+.app-deliv .kind.csv  { color: var(--amber); border-color: var(--amber); }
+.app-deliv .kind.json { color: var(--blue); border-color: var(--blue); }
+.app-deliv .kind.xls  { color: var(--green); border-color: var(--green); }
+.app-deliv .kind.html { color: var(--teal-deep); border-color: var(--teal); }
+.app-deliv .nm {
+  font-family: "JetBrains Mono", monospace; font-size: .85rem;
+  color: var(--ink); word-break: break-word;
+}
+.app-deliv .meta {
+  font-family: "Inter", sans-serif; font-size: .72rem;
+  color: var(--muted); margin-top: .55rem;
+  display: flex; justify-content: space-between;
+}
+.app-deliv-empty {
+  padding: 2rem; text-align: center;
+  color: var(--muted); font-family: "Source Serif 4", serif;
+  font-style: italic;
+}
+.app-deliv-empty a { color: var(--teal-deep); text-decoration: underline; }
+
+/* --- Alerts (rcm_mc/ui/chartis/_app_alerts.py) --- */
+
+.app-alerts { display: grid; gap: .55rem; }
+.app-alert {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 1rem; align-items: center;
+  padding: 1rem 1.25rem;
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--muted);
+}
+.app-alert.amber  { border-left-color: var(--amber); }
+.app-alert.red    { border-left-color: var(--red); }
+.app-alert.info   { border-left-color: var(--blue); }
+.app-alert .ico {
+  font-family: "Source Serif 4", serif; font-size: 1.4rem;
+  text-align: center;
+}
+.app-alert.amber .ico { color: var(--amber); }
+.app-alert.red   .ico { color: var(--red); }
+.app-alert.info  .ico { color: var(--blue); }
+.app-alert .body .title {
+  font-family: "Source Serif 4", serif; font-size: 1rem;
+  color: var(--ink); margin-bottom: .25rem;
+}
+.app-alert .body .desc {
+  font-family: "Inter", sans-serif; font-size: .85rem;
+  color: var(--muted); line-height: 1.4;
+}
+.app-alert .body .meta {
+  font-family: "JetBrains Mono", monospace; font-size: .72rem;
+  color: var(--teal-deep); margin-top: .35rem;
+}
+.app-alert .cta {
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--teal-deep);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.app-alert .cta:hover { text-decoration: underline; }
+.app-alerts-clear {
+  padding: 1.5rem; text-align: center;
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  font-family: "Source Serif 4", serif; font-style: italic;
+  color: var(--green);
+}
+
+/* --- Initiative tracker (rcm_mc/ui/chartis/_app_initiative_tracker.py) --- */
+
+.app-init { background: var(--paper-pure); }
+.app-init-row {
+  display: grid;
+  grid-template-columns: 24px 1fr 1fr auto auto 100px;
+  gap: .9rem; align-items: center;
+  padding: .7rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-family: "Inter", sans-serif; font-size: .88rem;
+}
+.app-init-row:last-child { border-bottom: none; }
+.app-init-row.head {
+  background: var(--bg);
+  font-size: .68rem; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+}
+.app-init-row .ico {
+  font-family: "Source Serif 4", serif; font-size: 1.1rem;
+  text-align: center;
+}
+.app-init-row .ico.ok { color: var(--green); }
+.app-init-row .ico.warn { color: var(--amber); }
+.app-init-row .ico.fail { color: var(--red); }
+.app-init-row .name { color: var(--ink); }
+.app-init-row .deal {
+  font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  color: var(--teal-deep);
+}
+.app-init-row .actual {
+  font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.app-init-row .variance {
+  font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  font-variant-numeric: tabular-nums;
+}
+.app-init-row .progress {
+  height: 6px; background: var(--border); position: relative;
+}
+.app-init-row .progress > .fill {
+  position: absolute; top: 0; left: 0; bottom: 0;
+  background: var(--teal-deep);
+}
+.app-init-empty {
+  padding: 2rem; text-align: center;
+  color: var(--muted); font-family: "Source Serif 4", serif;
+  font-style: italic;
+}
+
+/* --- EBITDA drag (rcm_mc/ui/chartis/_app_ebitda_drag.py) --- */
+
+.app-drag-bar {
+  display: flex;
+  height: 26px;
+  border: 1px solid var(--border);
+  margin: .5rem 0 1rem;
+  background: var(--paper-pure);
+}
+.app-drag-bar > .seg {
+  height: 100%;
+  border-right: 1px solid var(--paper-pure);
+  font-family: "JetBrains Mono", monospace; font-size: .68rem;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--paper-pure);
+  font-variant-numeric: tabular-nums;
+}
+.app-drag-bar > .seg:last-child { border-right: none; }
+.app-drag-rows { display: grid; gap: .55rem; }
+.app-drag-rows .row {
+  display: grid;
+  grid-template-columns: 16px 1fr auto auto;
+  gap: .65rem;
+  align-items: center;
+  font-family: "Inter", sans-serif; font-size: .85rem;
+}
+.app-drag-rows .row .swatch {
+  width: 12px; height: 12px;
+}
+.app-drag-rows .row .label { color: var(--ink); }
+.app-drag-rows .row .pct {
+  font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.app-drag-rows .row .v {
+  font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  color: var(--ink); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.app-drag-empty {
+  padding: 1.5rem; text-align: center;
+  color: var(--muted); font-family: "Source Serif 4", serif;
+  font-style: italic;
+}
+.app-drag-empty a { color: var(--teal-deep); text-decoration: underline; }
+
+/* --- Covenant heatmap (rcm_mc/ui/chartis/_app_covenant_heatmap.py) --- */
+
+.app-cov-heat {
+  background: var(--paper-pure);
+  font-family: "Inter", sans-serif;
+}
+.app-cov-heat .row {
+  display: grid;
+  grid-template-columns: 200px repeat(8, 1fr) 80px;
+  border-bottom: 1px solid var(--border);
+}
+.app-cov-heat .row:last-child { border-bottom: none; }
+.app-cov-heat .row.head {
+  background: var(--bg);
+  font-size: .68rem; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+}
+.app-cov-heat .row.head .cell { padding: .65rem .5rem; text-align: center; }
+.app-cov-heat .row.head .cell.first { text-align: left; padding-left: 1rem; }
+.app-cov-heat .row.head .cell.trend { text-align: right; padding-right: 1rem; }
+.app-cov-heat .name {
+  padding: .65rem 1rem;
+  font-family: "Source Serif 4", serif; font-size: .9rem; color: var(--ink);
+}
+.app-cov-heat .name .sub {
+  display: block;
+  font-family: "JetBrains Mono", monospace; font-size: .7rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.app-cov-heat .cell {
+  padding: .55rem .35rem; text-align: center;
+  font-family: "JetBrains Mono", monospace; font-size: .76rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  border-left: 1px solid var(--border);
+}
+.app-cov-heat .cell.safe  { background: var(--green-soft); }
+.app-cov-heat .cell.watch { background: var(--amber-soft); color: var(--amber); }
+.app-cov-heat .cell.trip  { background: var(--red-soft);   color: var(--red); }
+.app-cov-heat .cell.empty { color: var(--faint); }
+.app-cov-heat .trend {
+  padding: .65rem 1rem; text-align: right;
+  font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid var(--border);
+}
+.app-cov-heat .empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted);
+  font-family: "Source Serif 4", serif;
+  font-style: italic;
+}
+
+/* --- Deals table + focused-deal bar
+       (rcm_mc/ui/chartis/_app_deals_table.py +
+        rcm_mc/ui/chartis/_app_focused_deal_bar.py) --- */
+
+.app-deals-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+}
+.app-deals-table thead th {
+  text-align: left;
+  padding: .85rem 1rem;
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.app-deals-table thead th.r { text-align: right; }
+.app-deals-table tbody td {
+  padding: .7rem 1rem;
+  font-size: .9rem;
+  color: var(--ink);
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.app-deals-table tbody td.r {
+  text-align: right;
+  font-family: "JetBrains Mono", monospace;
+}
+.app-deals-table tbody tr:last-child td { border-bottom: none; }
+.app-deals-table tbody tr:hover td { background: var(--bg); cursor: pointer; }
+.app-deals-table tbody tr.focused td { background: var(--bg-tint); }
+.app-deals-table tbody tr.focused td:first-child {
+  border-left: 3px solid var(--teal);
+}
+.app-deals-table tbody tr.focused td:first-child::before {
+  content: "● ";
+  color: var(--teal);
+  margin-right: .2rem;
+}
+.app-deals-table .id {
+  font-family: "JetBrains Mono", monospace;
+  color: var(--teal-deep);
+  font-size: .85rem;
+}
+.app-deals-table .name {
+  font-family: "Source Serif 4", serif;
+  font-weight: 500;
+  margin-left: .35rem;
+}
+.app-deals-table tbody td a {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+.app-deals-table .empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted);
+  font-family: "Source Serif 4", serif;
+  font-style: italic;
+}
+
+.app-focused-deal-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-top: none;
+  margin-bottom: 1rem;
+}
+.app-focused-deal-bar .ctx {
+  display: flex; align-items: baseline; gap: 1.5rem;
+}
+.app-focused-deal-bar .ctx .id {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .85rem;
+  color: var(--teal-deep);
+}
+.app-focused-deal-bar .ctx .name {
+  font-family: "Source Serif 4", serif;
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+.app-focused-deal-bar .ctx .meta {
+  font-family: "Inter", sans-serif;
+  font-size: .76rem;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+.app-focused-deal-bar .ctx .meta .v {
+  color: var(--ink);
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  margin-left: .35rem;
+}
+.app-focused-deal-bar .switch {
+  display: flex; gap: .5rem;
+}
+.app-focused-deal-bar .switch a {
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  padding: .35rem .65rem;
+  border: 1px solid var(--border);
+}
+.app-focused-deal-bar .switch a:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+/* Export buttons (3-button group: HTML / Excel / JSON) — sit between
+   the ctx column and the prev/next switcher on the focused-deal bar.
+   Match the .switch a anchor treatment but accent on hover with the
+   editorial teal so the action affordance is distinct from navigation. */
+.app-focused-deal-bar .exports {
+  display: flex; gap: .35rem; margin-right: .75rem;
+}
+.app-focused-deal-bar .exports .exp-btn {
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--teal-deep);
+  text-decoration: none;
+  padding: .35rem .65rem;
+  border: 1px solid var(--teal-soft);
+  background: var(--paper-pure);
+}
+.app-focused-deal-bar .exports .exp-btn:hover {
+  color: var(--paper-pure);
+  background: var(--teal-deep);
+  border-color: var(--teal-deep);
+}
+
+/* --- Pipeline funnel (rcm_mc/ui/chartis/_app_pipeline_funnel.py) --- */
+
+.app-pipeline-funnel {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 0;
+  background: var(--paper-pure);
+}
+.app-pipeline-funnel .stage {
+  padding: 1rem .9rem;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: .35rem;
+  text-decoration: none; color: var(--ink);
+  cursor: pointer;
+}
+.app-pipeline-funnel .stage:last-child { border-right: none; }
+.app-pipeline-funnel .stage:hover { background: var(--bg); }
+.app-pipeline-funnel .stage.active {
+  background: var(--bg-tint);
+  box-shadow: inset 0 -2px 0 var(--teal);
+}
+.app-pipeline-funnel .stage .name {
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.app-pipeline-funnel .stage .count {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.4rem; line-height: 1.05; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.app-pipeline-funnel .stage .bar {
+  height: 4px; background: var(--teal-soft);
+  margin-top: .35rem;
+  position: relative;
+}
+.app-pipeline-funnel .stage .bar > .fill {
+  position: absolute; top: 0; left: 0; bottom: 0;
+  background: var(--teal-deep);
+}
+.app-pipeline-funnel .stage.active .bar { background: var(--teal); }
+.app-pipeline-funnel .stage.active .bar > .fill { background: var(--teal-deep); }
+@media (max-width: 1100px) {
+  .app-pipeline-funnel { grid-template-columns: repeat(4, 1fr); }
+  .app-pipeline-funnel .stage:nth-child(4n) { border-right: none; }
+}
+
+/* --- KPI strip (rcm_mc/ui/chartis/_app_kpi_strip.py) --- */
+
+.app-kpi-pair > .viz { padding: 0; }
+.app-kpi-strip {
+  display: grid; grid-template-columns: repeat(8, 1fr);
+  background: var(--paper-pure);
+}
+.app-kpi-strip .kpi-cell {
+  padding: 1.25rem 1rem;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: .15rem;
+}
+.app-kpi-strip .kpi-cell:last-child { border-right: none; }
+.app-kpi-strip .kpi-cell[aria-current="true"] {
+  background: var(--bg-tint);
+}
+.app-kpi-strip .kpi-cell .value {
+  font-size: 1.8rem; line-height: 1.05; color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.app-kpi-strip .kpi-cell .label {
+  font-family: "Inter", sans-serif; font-size: .68rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.app-kpi-strip .kpi-cell .delta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: .72rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 1100px) {
+  .app-kpi-strip { grid-template-columns: repeat(4, 1fr); }
+  .app-kpi-strip .kpi-cell:nth-child(4n) { border-right: none; }
+}
+
+/* ── Sidebar (editorial spec §7.4) ──────────────────────────────────
+   Opt-in via chartis_shell(show_sidebar=True). Renders a 240px-wide
+   left rail of editorial-styled module links inside chrome'd pages.
+   Used by /app dashboard; other partner-visible pages can opt in. */
+
+.layout-with-rail {
+  display: flex;
+  align-items: stretch;
+  min-height: calc(100vh - 72px);  /* viewport minus topbar */
+}
+
+.layout-with-rail .rail {
+  flex: 0 0 240px;
+  background: var(--paper-pure);
+  border-right: 1px solid var(--rule);
+  padding: 1.5rem 0;
+  overflow-y: auto;
+}
+
+.layout-with-rail .layout-main {
+  flex: 1 1 auto;
+  min-width: 0;  /* critical for grids inside main not to overflow */
+}
+
+.rail-h {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 1.5rem;
+  margin: 1.25rem 0 .75rem 0;
+}
+.rail-h:first-child { margin-top: 0; }
+
+.rail a {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .55rem 1.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: .85rem;
+  color: var(--ink);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.rail a:hover {
+  background: var(--bg-tint);
+  text-decoration: none;
+}
+.rail a.active {
+  border-left-color: var(--teal);
+  background: var(--bg-tint);
+  font-weight: 600;
+  color: var(--teal-deep);
+}
+
+@media (max-width: 1100px) {
+  /* On narrow viewports, collapse the sidebar — Phase 4 polish can
+     replace with a hamburger toggle. For now, hide it so the main
+     content gets full width. */
+  .layout-with-rail .rail { display: none; }
+}
+
+/* ── Module cards (editorial spec §7.6) ─────────────────────────────
+   4-column grid of action-tile cards, used on the home dashboard's
+   "New Diligence Modules" surface. Visual treatment matches
+   .app-deliv-grid (deliverables block) — same border / hover /
+   spacing — but the .kind pill is always teal (per spec). */
+
+.module-section { margin: 1rem 0 1.25rem 0; }
+
+.module-eyebrow {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin: 0 .25rem .6rem .25rem;
+}
+.module-eyebrow-h {
+  font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.module-eyebrow-sub {
+  font-family: "Inter", sans-serif; font-size: .72rem;
+  color: var(--muted);
+}
+
+.module-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  background: var(--paper-pure); border: 1px solid var(--rule);
+}
+
+.module-card {
+  padding: 1.1rem 1.25rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-decoration: none; color: var(--ink);
+  display: block;
+  transition: background .12s;
+}
+.module-card:nth-child(4n) { border-right: none; }
+.module-card:nth-last-child(-n+4) { border-bottom: none; }
+.module-card:hover { background: var(--bg); text-decoration: none; }
+
+.module-card .kind {
+  display: inline-block;
+  font-family: "Inter", sans-serif; font-size: .62rem;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--teal-deep);
+  padding: 1px 6px;
+  border: 1px solid var(--teal);
+  margin-bottom: .55rem;
+}
+.module-card .nm {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1rem; font-weight: 500;
+  color: var(--ink); margin-bottom: .2rem;
+}
+.module-card .sub {
+  font-family: "Inter", sans-serif; font-size: .78rem;
+  color: var(--muted); line-height: 1.4;
+}
+
+/* Responsive: collapse to 2 columns on tablet, 1 on phone */
+@media (max-width: 1100px) {
+  .module-grid { grid-template-columns: repeat(2, 1fr); }
+  .module-card:nth-child(4n) { border-right: 1px solid var(--border); }
+  .module-card:nth-child(2n) { border-right: none; }
+  .module-card:nth-last-child(-n+4):not(:nth-last-child(-n+2)) {
+    border-bottom: 1px solid var(--border);
+  }
+}
+@media (max-width: 600px) {
+  .module-grid { grid-template-columns: 1fr; }
+  .module-card { border-right: none !important; }
+  .module-card:not(:last-child) { border-bottom: 1px solid var(--border) !important; }
+}
+
+/* ── Legacy ck-* classes — editorial overrides ──────────────────────
+   4 chartis-namespaced pages (rcm_benchmarks, partner_review,
+   deal_screening, home) emit class="ck-panel" / "ck-table" / etc.
+   These classes are defined in _chartis_kit_legacy.py's inline style
+   block and load with the legacy shell. Under CHARTIS_UI_V2=1 the
+   editorial dispatcher loads chartis.css instead, where these classes
+   were not defined — so the affected panels rendered unstyled.
+
+   Verified 2026-04-27 via grep:
+     - rcm_mc/ui/chartis/{rcm_benchmarks,partner_review,deal_screening,
+       home}_page.py emit ck-* classes
+     - rcm_mc/ui/static/v3/chartis.css had no matching rules
+   This block ports the legacy classes to editorial palette equivalents
+   so those pages render coherently in editorial mode. Phase 5 cleanup
+   sweeps the ck-* classes out of those pages entirely; until then,
+   these editorial overrides keep them from looking unstyled. */
+
+.ck-panel {
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.ck-panel-title {
+  font-family: "Inter", sans-serif;
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+  padding: .65rem 1rem .55rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--paper);
+}
+
+.ck-table-wrap {
+  overflow-x: auto;
+}
+table.ck-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: "Inter", sans-serif;
+  font-size: .82rem;
+  table-layout: auto;
+  background: var(--paper-pure);
+}
+table.ck-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--paper);
+}
+table.ck-table th {
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+  padding: .55rem .8rem;
+  font-family: "Inter", sans-serif;
+  font-size: .65rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  text-align: left;
+}
+table.ck-table th.num { text-align: right; }
+table.ck-table td {
+  padding: .55rem .8rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+table.ck-table tr:nth-child(even) td { background: var(--bg-tint); }
+table.ck-table td.num {
+  text-align: right;
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+table.ck-table tr:hover td { background: var(--bg-tint); }

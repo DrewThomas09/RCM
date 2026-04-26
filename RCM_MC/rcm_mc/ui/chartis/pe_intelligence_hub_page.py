@@ -380,4 +380,9 @@ def render_pe_intelligence_hub(
         title="PE Intelligence",
         active_nav="/pe-intelligence",
         subtitle=subtitle,
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Analysis", "/analysis"),
+            ("PE Intelligence", None),
+        ],
     )

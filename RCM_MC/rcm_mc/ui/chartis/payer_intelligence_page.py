@@ -183,6 +183,11 @@ def render_payer_intelligence(
         return chartis_shell(
             body, title="Payer Intelligence",
             active_nav="/payer-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Payer Intelligence", None),
+        ],
             subtitle="Module unavailable",
         )
 
@@ -196,6 +201,11 @@ def render_payer_intelligence(
         return chartis_shell(
             body, title="Payer Intelligence",
             active_nav="/payer-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Payer Intelligence", None),
+        ],
             subtitle="Corpus unavailable",
         )
 
@@ -210,6 +220,11 @@ def render_payer_intelligence(
         return chartis_shell(
             body, title="Payer Intelligence",
             active_nav="/payer-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Payer Intelligence", None),
+        ],
             subtitle="Analysis raised",
         )
 
@@ -353,6 +368,11 @@ def render_payer_intelligence(
         body,
         title="Payer Intelligence",
         active_nav="/payer-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Market", "/market-intel"),
+            ("Payer Intelligence", None),
+        ],
         subtitle=f"{len(corpus)} corpus deals · {len(pi.regime_stats)} regimes · "
                  f"commercial-MOIC corr {pi.commercial_moic_corr:.3f}",
     )

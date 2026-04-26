@@ -87,72 +87,72 @@ def _esc(s: Any) -> str:
 # ── Shared wizard chrome ───────────────────────────────────────────
 
 _WIZARD_CSS = """
-body.wizard { margin:0; padding:0; background:#0a0e17; color:#e2e8f0;
+body.wizard { margin:0; padding:0; background:#0F1C2E; color:#0F1C2E;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   font-size: 14px; line-height: 1.5; }
 .wizard .skip-link { position:absolute; left:16px; top:-48px; z-index:1000;
-  background:#1f4e78; color:#fff; padding:10px 14px; border-radius:4px;
+  background:#155752; color:#fff; padding:10px 14px; border-radius:4px;
   text-decoration:none; font-weight:600; }
 .wizard .skip-link:focus { top:16px; }
 .wizard .wrap { max-width:960px; margin:0 auto; padding:32px 24px; }
 .wizard .steps { display:flex; gap:6px; margin-bottom:24px;
   font-size: 11px; text-transform:uppercase; letter-spacing:.08em; }
-.wizard .steps .step { padding:6px 12px; border:1px solid #1e293b;
-  border-radius:3px; color:#64748b; }
-.wizard .steps .step.active { background:#1f4e78; color:#fff;
-  border-color:#1f4e78; }
+.wizard .steps .step { padding:6px 12px; border:1px solid #D6CFC0;
+  border-radius:3px; color:#8A92A0; }
+.wizard .steps .step.active { background:#155752; color:#fff;
+  border-color:#155752; }
 .wizard h1 { font-size: 22px; font-weight:600; margin: 0 0 6px; }
-.wizard .sub { color:#94a3b8; margin-bottom: 24px; font-size: 13px; }
-.wizard .card { background:#111827; border:1px solid #1e293b;
+.wizard .sub { color:#5C6878; margin-bottom: 24px; font-size: 13px; }
+.wizard .card { background:#FFFFFF; border:1px solid #D6CFC0;
   padding:18px; border-radius:4px; margin-bottom:16px; }
-.wizard .match-card { background:#0f172a; border:1px solid #1e293b;
+.wizard .match-card { background:#FAF7F0; border:1px solid #D6CFC0;
   padding:12px 14px; margin-bottom:8px; cursor:pointer;
   border-radius:3px; transition:border-color 0.1s; }
-.wizard .match-card:hover { border-color:#3b82f6; }
-.wizard .match-card:focus-visible { border-color:#3b82f6; outline:3px solid #3b82f6; outline-offset:2px; }
+.wizard .match-card:hover { border-color:#2C5C84; }
+.wizard .match-card:focus-visible { border-color:#2C5C84; outline:3px solid #2C5C84; outline-offset:2px; }
 .wizard .match-name { font-weight:600; }
-.wizard .match-meta { color:#94a3b8; font-size:12px; margin-top:2px; }
-.wizard .match-conf { float:right; color:#10b981;
+.wizard .match-meta { color:#5C6878; font-size:12px; margin-top:2px; }
+.wizard .match-conf { float:right; color:#3F7D4D;
   font-family: "JetBrains Mono", monospace; }
 .wizard input[type=text], .wizard input[type=number], .wizard input[type=search] {
-  background:#0f172a; color:#e2e8f0; border:1px solid #1e293b;
+  background:#FAF7F0; color:#0F1C2E; border:1px solid #D6CFC0;
   padding:8px 12px; font-size:14px; border-radius:3px;
   font-family:inherit; width:100%; box-sizing:border-box; }
-.wizard input[type=file] { color:#e2e8f0; padding:8px 0; }
-.wizard .btn { background:#1f4e78; color:#fff; border:none;
+.wizard input[type=file] { color:#0F1C2E; padding:8px 0; }
+.wizard .btn { background:#155752; color:#fff; border:none;
   padding:10px 18px; border-radius:3px; cursor:pointer;
   font-weight:600; font-size:13px; }
-.wizard .btn.secondary { background:#0f172a; border:1px solid #1e293b;
-  color:#e2e8f0; }
-.wizard .btn:hover { background:#2563eb; }
+.wizard .btn.secondary { background:#FAF7F0; border:1px solid #D6CFC0;
+  color:#0F1C2E; }
+.wizard .btn:hover { background:#2C5C84; }
 .wizard .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .wizard .field-row { display:grid; grid-template-columns:180px 1fr auto;
-  gap:8px; padding:4px 0; border-bottom:1px solid #1e293b;
+  gap:8px; padding:4px 0; border-bottom:1px solid #D6CFC0;
   font-size:13px; align-items:baseline; }
-.wizard .source-pill { background:#1e293b; color:#94a3b8;
+.wizard .source-pill { background:#D6CFC0; color:#5C6878;
   font-size:10px; padding:1px 6px; border-radius:2px;
   font-family: "JetBrains Mono", monospace; text-transform: uppercase;
   letter-spacing:.04em; }
 .wizard .gap-row { display:grid; grid-template-columns:40px 1fr;
-  gap:10px; padding:6px 0; border-bottom:1px solid #1e293b;
+  gap:10px; padding:6px 0; border-bottom:1px solid #D6CFC0;
   font-size:12px; }
-.wizard .gap-rank { color:#f59e0b; font-family: "JetBrains Mono", monospace; }
-.wizard .gap-why { color:#94a3b8; font-size:11px; margin-top:2px; }
-.wizard .bar { background:#0f172a; height:6px; border-radius:3px;
+.wizard .gap-rank { color:#B7791F; font-family: "JetBrains Mono", monospace; }
+.wizard .gap-why { color:#5C6878; font-size:11px; margin-top:2px; }
+.wizard .bar { background:#FAF7F0; height:6px; border-radius:3px;
   overflow:hidden; margin-top:6px; }
-.wizard .bar > div { background:#10b981; height:100%; }
-.wizard .grade-A { color:#10b981; }
-.wizard .grade-B { color:#3b82f6; }
-.wizard .grade-C { color:#f59e0b; }
-.wizard .grade-D { color:#ef4444; }
+.wizard .bar > div { background:#3F7D4D; height:100%; }
+.wizard .grade-A { color:#3F7D4D; }
+.wizard .grade-B { color:#2C5C84; }
+.wizard .grade-C { color:#B7791F; }
+.wizard .grade-D { color:#A53A2D; }
 .wizard .pill { display:inline-block; padding:2px 8px;
-  font-size:11px; border-radius:2px; background:#1e293b;
-  color:#94a3b8; margin-right:6px; text-transform:uppercase;
+  font-size:11px; border-radius:2px; background:#D6CFC0;
+  color:#5C6878; margin-right:6px; text-transform:uppercase;
   letter-spacing: 0.04em; }
-.wizard .empty-hint { color:#94a3b8; padding:8px; font-size:12px; }
-.wizard hr { border:none; border-top:1px solid #1e293b; margin:16px 0; }
+.wizard .empty-hint { color:#5C6878; padding:8px; font-size:12px; }
+.wizard hr { border:none; border-top:1px solid #D6CFC0; margin:16px 0; }
 .wizard a:focus-visible, .wizard button:focus-visible,
-.wizard input:focus-visible { outline:3px solid #3b82f6; outline-offset:2px; }
+.wizard input:focus-visible { outline:3px solid #2C5C84; outline-offset:2px; }
 """
 
 
@@ -169,16 +169,29 @@ def _render_step_nav(current: int) -> str:
 
 
 def _shell(body: str, *, title: str = "New Deal", step: int = 1) -> str:
-    return (
-        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<title>{_esc(title)} · RCM-MC</title>'
-        f'<style>{_WIZARD_CSS}</style></head>'
-        '<body class="wizard"><a class="skip-link" href="#main-content">'
-        'Skip to content</a><div class="wrap">'
+    """Editorial port (2026-04-27): drop the page's own <!DOCTYPE> +
+    <head> + <body> scaffolding and pass through chartis_shell()
+    instead. The wizard-local CSS goes via extra_css. The
+    skip-to-content anchor + step nav stay inside the body wrapper.
+    """
+    from ._chartis_kit import chartis_shell
+    page_body = (
+        '<a class="skip-link" href="#main-content">Skip to content</a>'
+        '<div class="wrap">'
         + _render_step_nav(step)
         + '<main id="main-content" tabindex="-1">' + body + '</main>'
-        + '</div></body></html>'
+        + '</div>'
+    )
+    return chartis_shell(
+        page_body,
+        title=f"{title} · New Deal Wizard",
+        active_nav="DEALS",
+        extra_css=_WIZARD_CSS,
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("New Deal", None),
+        ],
     )
 
 
@@ -326,7 +339,7 @@ def render_step2(session: WizardSession) -> str:
             )
         populated_html.append(
             f'<div style="margin-bottom:14px;">'
-            f'<div style="font-weight:600;margin-bottom:6px;color:#10b981;">'
+            f'<div style="font-weight:600;margin-bottom:6px;color:#3F7D4D;">'
             f'✓ {_esc(label)} ({len(bucket)})</div>'
             + "".join(rows) + '</div>'
         )
@@ -365,7 +378,7 @@ def render_step2(session: WizardSession) -> str:
         <div style="font-weight:600;margin-bottom:10px;">
           Still needed ({len(session.gaps)})
         </div>
-        <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">
+        <div style="font-size:12px;color:#5C6878;margin-bottom:8px;">
           Sorted by EBITDA sensitivity. Top gaps are the highest-value
           things to ask the seller for.
         </div>
@@ -414,7 +427,7 @@ def render_step3(session: WizardSession) -> str:
         Files processed so far ({len(session.uploaded_files)})
       </div>
       <div>{''.join(uploaded_html) or '<div class="empty-hint">No uploads yet.</div>'}</div>
-      <div style="margin-top:8px;font-size:12px;color:#94a3b8;">
+      <div style="margin-top:8px;font-size:12px;color:#5C6878;">
         Extracted {extracted_count} metric(s) total.
       </div>
     </div>
@@ -486,7 +499,7 @@ def render_step4(session: WizardSession) -> str:
             f'<div>{_esc(c["display_name"])}</div>'
             f'<input type="number" step="0.01" name="override_{_esc(c["metric_key"])}" '
             f'value="{val_str}"/>'
-            f'<div style="color:#64748b;font-size:11px;">#{c["rank"]}</div>'
+            f'<div style="color:#8A92A0;font-size:11px;">#{c["rank"]}</div>'
             f'</div>'
         )
     overrides_block = "".join(rows) or (
@@ -529,7 +542,7 @@ def render_step4(session: WizardSession) -> str:
       <div style="font-weight:600;margin-bottom:10px;">
         Editable overrides (top {len(override_candidates)})
       </div>
-      <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;">
+      <div style="font-size:12px;color:#5C6878;margin-bottom:10px;">
         Adjust any pre-filled value; leave blank to keep the
         auto-populated / registry default.
       </div>

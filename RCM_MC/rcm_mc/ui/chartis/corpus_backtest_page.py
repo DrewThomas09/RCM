@@ -277,6 +277,11 @@ def render_corpus_backtest(
         return chartis_shell(
             body, title="Corpus Backtest",
             active_nav="/corpus-backtest",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Tools", "/methodology"),
+            ("Corpus Backtest", None),
+        ],
             subtitle="Corpus unavailable",
         )
 
@@ -406,6 +411,11 @@ def render_corpus_backtest(
         body,
         title="Corpus Backtest",
         active_nav="/corpus-backtest",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Tools", "/methodology"),
+            ("Corpus Backtest", None),
+        ],
         subtitle=(
             f"{len(corpus)} corpus deals · "
             f"{self_summary['n_realized']} realized · "

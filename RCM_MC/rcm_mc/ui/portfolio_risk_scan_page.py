@@ -38,6 +38,21 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 
+def _safe_status_str(v: object) -> str:
+    """Coerce a possibly-NaN covenant_status to a string safely.
+    Same shape as dashboard_page._safe_status_str — pandas converts
+    NULL covenant_status DB values to NaN (float), which is truthy so
+    the `(v or "")` idiom doesn't catch it; .upper() then crashes.
+    Surfaced 2026-04-26 by the seeded-DB integration test.
+    """
+    if v is None:
+        return ""
+    if isinstance(v, float) and v != v:  # NaN check
+        return ""
+    s = str(v)
+    return "" if s.lower() == "nan" else s
+
+
 def _safe_int(v: Any, default: int = 0) -> int:
     try:
         return int(v)
@@ -305,9 +320,9 @@ def _gather_per_deal(db_path: str) -> List[Dict[str, Any]]:
 
 def _priority_rank(deal: Dict[str, Any]) -> int:
     score = 0
-    if (deal.get("covenant_status") or "").upper() == "TRIPPED":
+    if _safe_status_str(deal.get("covenant_status")).upper() == "TRIPPED":
         score += 100
-    elif (deal.get("covenant_status") or "").upper() == "TIGHT":
+    elif _safe_status_str(deal.get("covenant_status")).upper() == "TIGHT":
         score += 30
     score += 20 * int(deal.get("overdue_deadlines") or 0)
     score += 5 * int(deal.get("alerts") or 0)
@@ -392,7 +407,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     # Summary strip: counts across the portfolio for the 3
     # most-actionable categories.
     tripped = sum(1 for d in deals
-                  if (d.get("covenant_status") or "").upper() == "TRIPPED")
+                  if _safe_status_str(d.get("covenant_status")).upper() == "TRIPPED")
     any_alerts = sum(1 for d in deals if (d.get("alerts") or 0) > 0)
     any_overdue = sum(1 for d in deals
                       if (d.get("overdue_deadlines") or 0) > 0)

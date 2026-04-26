@@ -1701,7 +1701,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         # like "/api/login/../users/create" can't bypass the gate.
         pure_path = urllib.parse.urlparse(self.path).path
         # `/healthz` is a convention alias used by Heroku + Kubernetes probes.
-        if pure_path in ("/health", "/healthz", "/login"):
+        # `/forgot` is the editorial password-recovery page — like /login it
+        # must be reachable without auth (the user has no creds when they
+        # land on it).
+        if pure_path in ("/health", "/healthz", "/login", "/forgot"):
             return True
         if pure_path == "/api/login":
             return True
@@ -1899,6 +1902,50 @@ class RCMHandler(BaseHTTPRequestHandler):
         except Exception:  # noqa: BLE001
             pass
 
+    # ── UI version (per-request override) ─────────────────────────
+    #
+    # Editorial v3 vs legacy dark shell. Resolution order:
+    #
+    #   1. ?ui=v3 / ?ui=editorial / ?ui=v2 / ?ui=legacy in the query string
+    #   2. RCM_MC_UI_VERSION env var (v3 / editorial / 1 / true → editorial)
+    #   3. CHARTIS_UI_V2 env var (1 / true → editorial)
+    #   4. default: legacy
+    #
+    # Per-request override means a partner can preview the editorial
+    # render by appending ?ui=v3 to any URL without changing server
+    # config. Page renderers branch on self._ui_choice to pick which
+    # render function to call.
+    _UI_EDITORIAL_VALUES: tuple = ("v3", "editorial", "1", "true", "yes")
+    _UI_LEGACY_VALUES: tuple = ("v2", "legacy", "0", "false", "no")
+
+    def _compute_ui_choice(self) -> None:
+        """Set ``self._ui_choice`` to 'editorial' or 'legacy' for this request."""
+        try:
+            qs = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query
+            )
+        except Exception:  # noqa: BLE001
+            qs = {}
+        ui_q = (qs.get("ui") or [""])[0].lower().strip()
+        if ui_q in self._UI_EDITORIAL_VALUES:
+            self._ui_choice = "editorial"
+            return
+        if ui_q in self._UI_LEGACY_VALUES:
+            self._ui_choice = "legacy"
+            return
+        ui_v3 = os.environ.get("RCM_MC_UI_VERSION", "").lower().strip()
+        if ui_v3 in self._UI_EDITORIAL_VALUES:
+            self._ui_choice = "editorial"
+            return
+        if ui_v3 in self._UI_LEGACY_VALUES:
+            self._ui_choice = "legacy"
+            return
+        ui_v2 = os.environ.get("CHARTIS_UI_V2", "").lower().strip()
+        if ui_v2 in self._UI_EDITORIAL_VALUES:
+            self._ui_choice = "editorial"
+            return
+        self._ui_choice = "legacy"
+
     def do_GET(self) -> None:
         if not self._auth_ok():
             return self._send_401()
@@ -1909,6 +1956,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             self._audit_sensitive_view(parsed.path)
         except Exception:  # noqa: BLE001
             pass
+        # Per-request UI choice (editorial v3 vs legacy dark shell).
+        # Set early so any handler can branch on self._ui_choice.
+        self._compute_ui_choice()
         try:
             self._do_get_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary
@@ -1932,20 +1982,55 @@ class RCMHandler(BaseHTTPRequestHandler):
             # Private-app landing page (Heroku / small-team deployments).
             # Composes: curated analyses · recent runs · system status ·
             # data freshness. See ui/dashboard_page.py.
+            #
+            # Q4.2 cutover (2026-04-27): when v3 mode is active AND the
+            # user is authenticated, redirect to /app (the editorial
+            # dashboard). The legacy /dashboard render survives for
+            # legacy mode + when explicitly requested via ?ui=v2.
+            # Mirrors Q4.1 behavior on /.
+            from .ui._chartis_kit import UI_V2_ENABLED
+            v3_active = (
+                UI_V2_ENABLED
+                or getattr(self, "_ui_choice", "legacy") == "editorial"
+            )
+            if v3_active and self._current_user() is not None:
+                return self._redirect("/app")
             from .ui.dashboard_page import render_dashboard
             return self._send_html(render_dashboard(
                 self.config.db_path,
                 started_at=getattr(type(self), "_process_started_at", None),
             ))
         if path == "/home" or path == "/caduceus" or path == "/seekingchartis":
+            # Q4.2 cutover (2026-04-27): /home is a chartis-namespaced
+            # landing surface that pre-Q4 served as the partner home.
+            # When v3 is active AND the user is authenticated, redirect
+            # to /app (the editorial dashboard). /caduceus and
+            # /seekingchartis are legacy aliases that follow the same
+            # rule. Anonymous v3 + legacy mode keep the existing
+            # behavior (chartis home renderer).
+            from .ui._chartis_kit import UI_V2_ENABLED
+            v3_active = (
+                UI_V2_ENABLED
+                or getattr(self, "_ui_choice", "legacy") == "editorial"
+            )
+            if v3_active and self._current_user() is not None:
+                return self._redirect("/app")
             return self._route_seekingchartis_home()
         if path == "/" or path == "/index.html":
             # Phase 13 of the UI v2 editorial rework: when
             # CHARTIS_UI_V2=1, the public marketing landing renders at
             # "/". Under the legacy flag (default), "/" continues to
             # serve the signed-in dashboard so existing partners see
-            # no change. A signed-in user hitting "/" on the v2 marketing
-            # page can click "Open Platform" to reach /home.
+            # no change.
+            #
+            # Q4.1 cutover (2026-04-27): when CHARTIS_UI_V2=1 AND the
+            # user is authenticated, "/" redirects to "/app" (the
+            # editorial dashboard). Anonymous visitors still see the
+            # marketing splash. This preserves the public landing for
+            # acquisition while sending logged-in partners straight to
+            # the dashboard — matching the design intent of "/" being
+            # both a marketing surface AND a dashboard entry point
+            # depending on auth state.
             #
             # Web deployments (Heroku/Azure) usually want the new
             # private-app /dashboard as the home — set
@@ -1953,8 +2038,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             home = (os.environ.get("RCM_MC_HOMEPAGE") or "").strip().lower()
             if home == "dashboard":
                 return self._redirect("/dashboard")
+            # v3 mode is active either via env (CHARTIS_UI_V2=1 →
+            # UI_V2_ENABLED) or per-request override (?ui=v3 →
+            # self._ui_choice == "editorial"). Either triggers Q4.1.
             from .ui._chartis_kit import UI_V2_ENABLED
-            if UI_V2_ENABLED:
+            v3_active = (
+                UI_V2_ENABLED
+                or getattr(self, "_ui_choice", "legacy") == "editorial"
+            )
+            if v3_active:
+                # Q4.1 cutover: authenticated v3 users → /app dashboard
+                # Anonymous visitors → marketing splash (preserves
+                # public landing for acquisition)
+                if self._current_user() is not None:
+                    return self._redirect("/app")
                 from .ui.chartis.marketing_page import render_marketing_page
                 return self._send_html(render_marketing_page())
             return self._route_dashboard()
@@ -4441,6 +4538,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_upload_page()
         if path == "/login":
             return self._route_login_page()
+        if path == "/forgot":
+            return self._route_forgot_page()
+        if path == "/app":
+            return self._route_app_page()
         if path == "/audit":
             return self._route_audit()
         if path == "/users":
@@ -4764,6 +4865,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_json({
                 "results": [r.to_dict()
                             for r in results]})
+        if path == "/global-search":
+            # Server-rendered HTML results page — destination of the
+            # editorial topbar's <form action="/global-search"> submit.
+            # Reuses the same search() backend as the JSON endpoint
+            # above; just renders results into editorial chrome.
+            # Per UI_REWORK_PLAN.md Phase 1: URL round-trips, no JS.
+            from .ui.global_search import search, render_global_search_page
+            qs = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query)
+            q = (qs.get("q") or [""])[0]
+            results = search(
+                PortfolioStore(self.config.db_path), q) if q.strip() else []
+            return self._send_html(
+                render_global_search_page(q, results))
         if path == "/data/catalog":
             from .ui.data_catalog_page import render_data_catalog_page
             return self._send_html(render_data_catalog_page(
@@ -10195,6 +10310,7 @@ class RCMHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         if not self._auth_ok():
             return self._send_401()
+        self._compute_ui_choice()
         try:
             self._do_post_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary
@@ -10259,6 +10375,24 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_login_post()
         if path == "/api/logout":
             return self._route_logout_post()
+        if path == "/forgot":
+            # Unauthenticated POST — no session, so the CSRF gate
+            # above doesn't apply. The handler placeholder-accepts
+            # any well-formed email and re-renders with success.
+            return self._route_forgot_submit()
+        if path == "/login":
+            # POST /login?tab=request — Request Access form submission.
+            # POST /login (no tab) falls through to /api/login which is
+            # the canonical sign-in endpoint.
+            qs = urllib.parse.parse_qs(parsed.query)
+            if (qs.get("tab") or [""])[0].lower() == "request":
+                return self._route_login_request_submit()
+            # else: legacy clients sometimes POST /login directly; redirect
+            # to /api/login to keep the canonical endpoint single.
+            self.send_response(HTTPStatus.TEMPORARY_REDIRECT)
+            self.send_header("Location", "/api/login")
+            self.end_headers()
+            return
         if path == "/api/upload-actuals":
             return self._route_upload_post()
         if path == "/api/upload-initiatives":
@@ -13909,6 +14043,62 @@ class RCMHandler(BaseHTTPRequestHandler):
         ))
 
     def _route_login_page(self) -> None:
+        """Login page — editorial when ``self._ui_choice == 'editorial'``,
+        else the legacy Bloomberg-style terminal login.
+
+        The form's POST target (``/api/login``) is identical in both
+        shells, so the auth round-trip contract test stays green
+        whichever shell rendered the form.
+        """
+        if getattr(self, "_ui_choice", "legacy") == "editorial":
+            return self._route_login_page_editorial()
+        return self._route_login_page_legacy()
+
+    def _route_login_page_editorial(self) -> None:
+        """Editorial /login — split layout with Sign In / Request Access tabs."""
+        from .ui.chartis.login_page import render_login_page
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        tab = (qs.get("tab") or ["signin"])[0].lower()
+        if tab not in ("signin", "request"):
+            tab = "signin"
+        err = (qs.get("err") or [""])[0]
+        nxt = (qs.get("next") or ["/"])[0]
+        request_success = (qs.get("request_success") or [""])[0] == "1"
+        self._send_html(render_login_page(
+            tab=tab,
+            error=err or None,
+            request_success=request_success,
+            next_url=nxt,
+        ))
+
+    def _route_login_request_submit(self) -> None:
+        """POST /login?tab=request — Request Access form submission.
+
+        Phase 1 placeholder: validates the basic shape and re-renders
+        the request tab with the success block. Actual triage / email
+        handling is out of scope.
+        """
+        from .ui.chartis.login_page import render_login_page
+        try:
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(length).decode("utf-8", errors="replace")
+            form = urllib.parse.parse_qs(raw)
+        except Exception:  # noqa: BLE001
+            form = {}
+        email = (form.get("email") or [""])[0].strip()
+        firm = (form.get("firm") or [""])[0].strip()
+        if not email or "@" not in email or not firm:
+            return self._send_html(render_login_page(
+                tab="request",
+                error="Please provide a valid work email and firm name.",
+            ))
+        # Placeholder: would write a triage record to the DB.
+        return self._send_html(render_login_page(
+            tab="request",
+            request_success=True,
+        ))
+
+    def _route_login_page_legacy(self) -> None:
         """Bloomberg-style terminal login — the SeekingChartis trust gate.
 
         Dark near-black background, amber accent, security/trust indicators,
@@ -14269,6 +14459,92 @@ class RCMHandler(BaseHTTPRequestHandler):
             '</body></html>'
         )
         self._send_html(page)
+
+    def _route_forgot_page(self) -> None:
+        """Editorial password-recovery page at /forgot.
+
+        Editorial-only — there is no legacy /forgot. Self.ui_choice is
+        ignored here because the route was added in v3 and has no
+        legacy counterpart.
+        """
+        from .ui.chartis.forgot_page import render_forgot_page
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        success = (qs.get("success") or [""])[0] == "1"
+        submitted = (qs.get("email") or [None])[0]
+        self._send_html(render_forgot_page(
+            success=success,
+            submitted_email=submitted,
+        ))
+
+    def _route_forgot_submit(self) -> None:
+        """POST /forgot — accepts an email, re-renders with success=True.
+
+        Phase 1 placeholder: actual recovery-email dispatch is out of
+        scope. Re-rendering (instead of redirecting) means a refresh
+        won't accidentally double-submit.
+        """
+        from .ui.chartis.forgot_page import render_forgot_page
+        try:
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(length).decode("utf-8", errors="replace")
+            form = urllib.parse.parse_qs(raw)
+        except Exception:  # noqa: BLE001
+            form = {}
+        email = (form.get("email") or [""])[0].strip()
+        if not email or "@" not in email:
+            return self._send_html(render_forgot_page(
+                error="Enter a valid email address.",
+                submitted_email=email,
+            ))
+        # Placeholder: would enqueue a recovery email here.
+        return self._send_html(render_forgot_page(
+            success=True,
+            submitted_email=email,
+        ))
+
+    def _route_app_page(self) -> None:
+        """Editorial dashboard at /app.
+
+        Editorial-only — /app didn't exist pre-Phase-2, so legacy
+        users (?ui=v2 or default) get a 303 to /dashboard. The
+        redirect is logged so we can measure how many legacy users
+        try /app — that signal informs the Phase 4 cutover decision
+        (Q4.1 — does / redirect to /app for authenticated users?).
+        """
+        if getattr(self, "_ui_choice", "legacy") != "editorial":
+            # Single log line per redirect — match the existing
+            # logger pattern from do_GET / do_POST error handlers.
+            logger.info(
+                "redirect path=/app ui_choice=%s redirected_to=/dashboard",
+                getattr(self, "_ui_choice", "legacy"),
+            )
+            self.send_response(HTTPStatus.SEE_OTHER)
+            self.send_header("Location", "/dashboard")
+            self.end_headers()
+            return
+
+        from .ui.chartis.app_page import render_app_page, validate_stage
+
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        focused_deal_id = (qs.get("deal") or [None])[0]
+        selected_stage = validate_stage((qs.get("stage") or [None])[0])
+
+        # PHI mode read here, in the handler — passed down as kwarg.
+        # (Per Phase 1 correction: helpers don't read globals.)
+        phi_mode = (
+            os.environ.get("RCM_MC_PHI_MODE") or ""
+        ).strip().lower() or None
+
+        store = PortfolioStore(self.config.db_path)
+        user = self._current_user()
+
+        self._send_html(render_app_page(
+            store=store,
+            focused_deal_id=focused_deal_id,
+            selected_stage=selected_stage,
+            phi_mode=phi_mode,
+            user=user,
+        ))
 
     def _route_upload_page(self) -> None:
         """Drop-target form for bulk CSV ingest of actuals or initiatives."""

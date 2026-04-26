@@ -418,6 +418,11 @@ def render_ic_packet(
             body,
             title=f"IC Packet · {label}",
             active_nav="/pe-intelligence",
+            breadcrumbs=[
+                ("Home", "/app"),
+                ("Deals", "/deals"),
+                ("IC Packet", None),
+            ],
             subtitle=f"IC packet unavailable for {label}",
         )
 
@@ -431,6 +436,11 @@ def render_ic_packet(
         return chartis_shell(
             body, title=f"IC Packet · {label}",
             active_nav="/pe-intelligence",
+            breadcrumbs=[
+                ("Home", "/app"),
+                ("Deals", "/deals"),
+                ("IC Packet", None),
+            ],
             subtitle=f"{label} · IC packet unavailable",
         )
 
@@ -566,4 +576,9 @@ def render_ic_packet(
         title=f"IC Packet · {label}",
         active_nav="/pe-intelligence",
         subtitle=f"{label} · {rec} · {populated}/{len(_SECTION_DEFS)} sections",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("IC Packet", None),
+        ],
     )

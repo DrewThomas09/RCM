@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SeekingChartis — Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2EDE3;
+    --bg-alt: #ECE5D6;
+    --bg-tint: #E8E0D0;
+    --paper: #FAF7F0;
+    --paper-pure: #FFFFFF;
+    --border: #D6CFC0;
+    --rule: #BFB6A2;
+    --ink: #0F1C2E;
+    --muted: #5C6878;
+    --faint: #8A92A0;
+    --teal: #1F7A75;
+    --teal-soft: #D4E4E2;
+    --teal-deep: #155752;
+    --green: #3F7D4D;
+    --amber: #B7791F;
+    --red: #A53A2D;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif; font-size: 16px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+  .topbar {
+    background: var(--paper-pure); border-bottom: 1px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center; height: 72px;
+  }
+  .brand { display:flex; align-items:center; gap:.7rem; }
+  .brand-mark {
+    width: 38px; height: 38px; border: 1.5px solid var(--ink); border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Source Serif 4", serif; font-size: 1rem; font-weight: 600;
+  }
+  .brand-name { font-family: "Source Serif 4", serif; font-size: 1.4rem; font-weight: 600; }
+  .brand-name em { font-style: italic; font-weight: 500; }
+  .topbar-right { margin-left: auto; }
+  .topbar-right a {
+    font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none;
+  }
+  .topbar-right a:hover { color: var(--ink); }
+
+  .crumbs {
+    background: var(--bg); padding: .9rem 2rem; border-bottom: 1px solid var(--border);
+    font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .crumbs .sep { margin: 0 .55rem; color: var(--faint); }
+  .crumbs .here { color: var(--ink); font-weight: 600; }
+  .crumbs a { color: var(--muted); text-decoration: none; }
+  .crumbs a:hover { color: var(--ink); }
+
+  /* ---- LAYOUT — split editorial ---- */
+  .stage {
+    display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 72px - 41px);
+    max-width: 1500px; margin: 0 auto;
+  }
+  .panel-l {
+    padding: 4rem 3rem; border-right: 1px solid var(--rule);
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .eyebrow {
+    font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600;
+    display: flex; align-items: center; gap: .6rem; margin-bottom: 1.5rem;
+  }
+  .eyebrow .dot { color: var(--faint); }
+  .eyebrow .slug { font-family: "JetBrains Mono", monospace; color: var(--teal-deep); }
+  h1.title {
+    font-family: "Source Serif 4", serif; font-weight: 400;
+    font-size: clamp(2.6rem, 4.8vw, 4rem); line-height: 1; letter-spacing: -0.022em;
+    color: var(--ink); margin: 0 0 1.5rem;
+  }
+  h1.title em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
+  .lede {
+    font-family: "Source Serif 4", serif; font-size: 1.15rem; line-height: 1.5;
+    color: var(--muted); max-width: 460px; margin: 0 0 2rem;
+  }
+
+  .meta-stack {
+    border-top: 1px solid var(--rule); padding-top: 1.5rem;
+    display: flex; flex-direction: column; gap: .85rem;
+    font-family: "JetBrains Mono", monospace; font-size: .8rem; color: var(--muted);
+  }
+  .meta-stack .row { display: flex; gap: .8rem; }
+  .meta-stack .row .k { color: var(--faint); width: 90px; }
+  .meta-stack .row .v { color: var(--ink); font-weight: 600; }
+
+  /* ---- FORM PANEL ---- */
+  .panel-r {
+    padding: 4rem 3rem; background: var(--paper-pure);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .form-wrap { width: 100%; max-width: 420px; }
+  .micro {
+    font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-bottom: .9rem;
+  }
+  h2.form-h {
+    font-family: "Source Serif 4", serif; font-weight: 400; font-size: 2rem;
+    line-height: 1.1; letter-spacing: -0.012em; color: var(--ink); margin: 0 0 .5rem;
+  }
+  h2.form-h em { font-style: italic; color: var(--teal-deep); }
+  .form-sub {
+    font-family: "Source Serif 4", serif; font-size: .98rem; color: var(--muted);
+    margin: 0 0 2rem; line-height: 1.5;
+  }
+
+  .tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    background: transparent; border: none; padding: .9rem 0; cursor: pointer;
+    font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab.active { color: var(--ink); border-bottom-color: var(--teal); }
+
+  .field { margin-bottom: 1.25rem; }
+  .field label {
+    display: block; font-family: "Inter", sans-serif; font-size: .68rem;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+    font-weight: 600; margin-bottom: .5rem;
+  }
+  .field input {
+    width: 100%; padding: .9rem 1rem; border: 1px solid var(--border);
+    background: var(--bg); font-family: "Inter", sans-serif; font-size: .95rem;
+    color: var(--ink); border-radius: 0; outline: none; transition: border-color .15s;
+  }
+  .field input:focus { border-color: var(--teal); background: var(--paper-pure); }
+  .field .help {
+    font-family: "Source Serif 4", serif; font-size: .82rem; font-style: italic;
+    color: var(--faint); margin-top: .4rem;
+  }
+
+  .field-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  .check { display: flex; align-items: center; gap: .5rem; font-family: "Inter", sans-serif; font-size: .82rem; color: var(--muted); }
+  .check input { accent-color: var(--teal); }
+  .field-row a {
+    font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--teal-deep);
+    text-decoration: none; border-bottom: 1px solid var(--teal); padding-bottom: 1px;
+  }
+  .field-row a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .submit {
+    width: 100%; background: var(--ink); color: var(--paper);
+    font-family: "Inter", sans-serif; font-size: .76rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+    padding: 1rem; border: none; cursor: pointer; transition: background .15s;
+  }
+  .submit:hover { background: var(--teal-deep); }
+
+  .divider {
+    margin: 1.75rem 0; display: flex; align-items: center; gap: 1rem;
+    font-family: "Inter", sans-serif; font-size: .68rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--faint);
+  }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  .sso { display: flex; flex-direction: column; gap: .5rem; }
+  .sso button {
+    width: 100%; padding: .85rem; background: var(--paper-pure);
+    border: 1px solid var(--border); cursor: pointer; transition: all .15s;
+    font-family: "Inter", sans-serif; font-size: .82rem; font-weight: 600;
+    color: var(--ink); display: flex; align-items: center; gap: .75rem; justify-content: center;
+  }
+  .sso button:hover { background: var(--bg); border-color: var(--rule); }
+  .sso button .ico {
+    width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center;
+    font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--teal-deep);
+  }
+
+  .footnote {
+    margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+    font-family: "Source Serif 4", serif; font-style: italic; font-size: .85rem;
+    color: var(--muted); line-height: 1.5;
+  }
+  .footnote a { color: var(--teal-deep); text-decoration: underline; }
+
+  /* sample console card teaser */
+  .console-teaser {
+    background: var(--paper-pure); border: 1px solid var(--rule); padding: 1.5rem;
+    margin: 1.5rem 0; max-width: 460px;
+  }
+  .console-teaser .teaser-h {
+    font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: .9rem;
+    display: flex; justify-content: space-between;
+  }
+  .console-teaser .teaser-h .src {
+    font-family: "JetBrains Mono", monospace; text-transform: none; letter-spacing: 0;
+    color: var(--teal-deep); font-size: .72rem;
+  }
+  .teaser-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: .55rem 0; border-bottom: 1px solid var(--border);
+    font-family: "JetBrains Mono", monospace; font-size: .82rem;
+  }
+  .teaser-row:last-child { border-bottom: none; }
+  .teaser-row .lbl { font-family: "Inter", sans-serif; color: var(--muted); font-size: .85rem; }
+  .teaser-row .v { color: var(--ink); font-weight: 600; }
+  .teaser-row .v.green { color: var(--green); }
+  .teaser-row .v.amber { color: var(--amber); }
+
+  footer {
+    padding: 1rem 2rem; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: "Inter", sans-serif; font-size: .78rem; color: var(--muted);
+  }
+  footer em { font-style: italic; color: var(--teal-deep); }
+
+  @media (max-width: 900px) {
+    .stage { grid-template-columns: 1fr; }
+    .panel-l { border-right: none; border-bottom: 1px solid var(--rule); padding: 3rem 1.5rem; }
+    .panel-r { padding: 3rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="SeekingChartis.html" style="text-decoration:none; color:inherit;">
+    <div class="brand">
+      <div class="brand-mark">SC</div>
+      <div class="brand-name">Seeking<em>Chartis</em></div>
+    </div>
+  </a>
+  <div class="topbar-right">
+    <a href="SeekingChartis.html">← Back to home</a>
+  </div>
+</header>
+
+<div class="crumbs">
+  <a href="SeekingChartis.html">Home</a>
+  <span class="sep">›</span>
+  <span class="here">Sign in</span>
+</div>
+
+<div class="stage">
+  <div class="panel-l">
+    <div>
+      <div class="eyebrow">
+        <span>PARTNER ACCESS</span>
+        <span class="dot">·</span>
+        <span>FUND&nbsp;II</span>
+        <span class="dot">·</span>
+        <span class="slug">/v1.0.0</span>
+      </div>
+      <h1 class="title">Open the<br/><em>console</em>.</h1>
+      <p class="lede">
+        Each partner gets a dedicated instance. State persists locally — refresh
+        or return tomorrow and pick up exactly where you left off.
+      </p>
+
+      <div class="console-teaser">
+        <div class="teaser-h"><span>YOUR LAST SESSION</span><span class="src">ccf_2026</span></div>
+        <div class="teaser-row"><span class="lbl">Weighted MOIC</span><span class="v green">2.69x</span></div>
+        <div class="teaser-row"><span class="lbl">Weighted IRR</span><span class="v amber">21.9%</span></div>
+        <div class="teaser-row"><span class="lbl">Covenants on watch</span><span class="v amber">2 of 6</span></div>
+        <div class="teaser-row"><span class="lbl">EBITDA drag identified</span><span class="v">$24.4M</span></div>
+        <div class="teaser-row"><span class="lbl">Last accessed</span><span class="v">2026-04-15</span></div>
+      </div>
+    </div>
+
+    <div class="meta-stack">
+      <div class="row"><span class="k">INSTANCE</span><span class="v">CCF-FUND2</span></div>
+      <div class="row"><span class="k">REGION</span><span class="v">us-east-1</span></div>
+      <div class="row"><span class="k">DATA</span><span class="v">Public only — no PHI</span></div>
+      <div class="row"><span class="k">STATUS</span><span class="v" style="color:var(--green)">● OPERATIONAL</span></div>
+    </div>
+  </div>
+
+  <div class="panel-r">
+    <div class="form-wrap">
+      <div class="micro">PARTNER LOGIN</div>
+      <h2 class="form-h">Sign in to your<br/><em>instance</em>.</h2>
+      <p class="form-sub">Use your partner credentials, or continue with single sign-on.</p>
+
+      <div class="tabs">
+        <button class="tab active" id="tabSignIn" onclick="document.getElementById('signInForm').style.display='block'; document.getElementById('requestForm').style.display='none'; document.getElementById('tabSignIn').classList.add('active'); document.getElementById('tabRequest').classList.remove('active');">Sign In</button>
+        <button class="tab" id="tabRequest" onclick="document.getElementById('signInForm').style.display='none'; document.getElementById('requestForm').style.display='block'; document.getElementById('tabRequest').classList.add('active'); document.getElementById('tabSignIn').classList.remove('active');">Request Access</button>
+      </div>
+
+      <div id="signInForm">
+      <form onsubmit="event.preventDefault(); window.location='SeekingChartis Command Center.html';">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" placeholder="partner@firm.com" required/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" placeholder="••••••••••••" required/>
+        </div>
+        <div class="field-row">
+          <label class="check"><input type="checkbox"/> Remember this device</label>
+          <a href="forgot.html">Forgot password?</a>
+        </div>
+        <button type="submit" class="submit">Open Command Center →</button>
+      </form>
+
+      <div class="divider">or continue with</div>
+      <div class="sso">
+        <button onclick="window.location='SeekingChartis Command Center.html'">
+          <span class="ico">G</span> Google Workspace
+        </button>
+        <button onclick="window.location='SeekingChartis Command Center.html'">
+          <span class="ico">M</span> Microsoft Entra ID
+        </button>
+        <button onclick="window.location='SeekingChartis Command Center.html'">
+          <span class="ico">S</span> SAML SSO
+        </button>
+      </div>
+      </div>
+
+      <div id="requestForm" style="display:none">
+        <form onsubmit="event.preventDefault(); document.getElementById('reqOk').style.display='block';">
+          <div class="field">
+            <label>Work email</label>
+            <input type="email" placeholder="partner@firm.com" required/>
+          </div>
+          <div class="field">
+            <label>Firm</label>
+            <input type="text" placeholder="Healthcare Opportunity Fund II" required/>
+          </div>
+          <div class="field">
+            <label>Role</label>
+            <input type="text" placeholder="Partner · Operating Partner · Analyst"/>
+          </div>
+          <button type="submit" class="submit">Request Access →</button>
+        </form>
+        <div id="reqOk" style="display:none; margin-top:1.5rem; padding:1rem 1.25rem; background:var(--teal-soft); border-left:3px solid var(--teal); font-family:'Source Serif 4', serif; font-style:italic; color:var(--teal-deep);">
+          Request received. We'll be in touch within one business day.
+        </div>
+      </div>
+
+      <p class="footnote">
+        Public data only — no PHI permitted on this instance. Partners with
+        private feeds: see your <a href="#">deployment runbook</a> to enable
+        connectors after sign-in.
+      </p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Seeking<em>Chartis</em> v1.0.0</span>
+  <span class="mono" style="font-family:'JetBrains Mono', monospace; font-size:.72rem">HCRIS · APCD · CMS-MA · simulations.csv · portfolio.db</span>
+</footer>
+</body>
+</html>

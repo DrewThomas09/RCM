@@ -1,7 +1,6 @@
-"""Deal-screening dashboard renderer — Bloomberg-like surface.
+"""Deal-screening dashboard renderer — editorial-style surface.
 
-Self-contained HTML page (no external CSS/JS) showing the
-filterable deal universe. Layout:
+Filterable deal universe. Layout:
 
   • Cover row: KPI tiles (universe size, median uplift,
     high-confidence count, top sector by uplift)
@@ -11,33 +10,40 @@ filterable deal universe. Layout:
     predicted uplift, confidence band, risk factors
   • Each row click-throughs to /diligence/synthesis/<deal_id>
     (the IC binder route)
+
+Editorial port (2026-04-26): previously this file built its own
+``<!DOCTYPE>...</html>`` scaffolding with dark-shell ``--c-*``
+palette variables, bypassing the editorial dispatcher entirely.
+Per INTEGRATION_AUDIT.md Tier-3.5 finding, it now passes through
+``chartis_shell()`` like every other page; the page-local CSS
+variables stay (self-contained styling) but their VALUES map to
+editorial palette equivalents.
 """
 from __future__ import annotations
 
 import html as _html
 from typing import List, Optional
 
+from ..ui._chartis_kit import chartis_shell
 from .filter import DealFilter
 from .predict import ScreeningResult
 
 
+# Page-local CSS — keeps the ``--c-*`` variable shape so the rest of
+# the page rules don't need rewriting, but the VALUES are editorial
+# palette equivalents. body{} bg/color overrides removed so editorial
+# parchment chrome shows through; * reset removed because chartis_shell
+# provides the global wrapper.
 _CSS = """
 :root {
-  --c-bg: #0a0e17; --c-panel: #111827; --c-panel-alt: #0f172a;
-  --c-border: #1e293b; --c-text: #e2e8f0; --c-dim: #94a3b8;
-  --c-faint: #64748b; --c-accent: #3b82f6;
-  --c-pos: #10b981; --c-neg: #ef4444; --c-warn: #f59e0b;
+  --c-bg: transparent; --c-panel: #FFFFFF; --c-panel-alt: #FAF7F0;
+  --c-border: #D6CFC0; --c-text: #0F1C2E; --c-dim: #5C6878;
+  --c-faint: #8A92A0; --c-accent: #155752;
+  --c-pos: #3F7D4D; --c-neg: #A53A2D; --c-warn: #B7791F;
   --c-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--c-bg); color: var(--c-text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont,
-                'Segoe UI', Roboto, sans-serif;
-  font-size: 12px; padding: 24px;
-  font-variant-numeric: tabular-nums;
-}
-.scr-wrap { max-width: 1500px; margin: 0 auto; }
+.scr-wrap { max-width: 1500px; margin: 0 auto; padding: 1.5rem 2rem;
+            font-size: 12px; font-variant-numeric: tabular-nums; }
 .scr-title {
   font-family: var(--c-mono); font-size: 11px;
   text-transform: uppercase; letter-spacing: 0.18em;
@@ -109,12 +115,9 @@ table.scr-tbl td.num { text-align: right; }
   text-transform: uppercase; letter-spacing: 0.1em;
   padding: 2px 6px; border-radius: 2px; font-weight: 700;
 }
-.scr-band.high   { background: rgba(16,185,129,0.15);
-                   color: var(--c-pos); }
-.scr-band.medium { background: rgba(245,158,11,0.15);
-                   color: var(--c-warn); }
-.scr-band.low    { background: rgba(239,68,68,0.15);
-                   color: var(--c-neg); }
+.scr-band.high   { background: #DCE6D9; color: var(--c-pos); }
+.scr-band.medium { background: #EFE2BC; color: var(--c-warn); }
+.scr-band.low    { background: #EBD3CD; color: var(--c-neg); }
 .scr-risks {
   font-size: 10px; color: var(--c-dim); line-height: 1.5;
 }
@@ -171,11 +174,10 @@ def render_screening_dashboard(
             top_sector = "—"
 
     # ── Body assembly ──────────────────────────────────────
+    # Editorial port: emit only the body content; chartis_shell()
+    # wraps with editorial chrome (parchment, topbar, breadcrumbs,
+    # PHI banner). Page-local CSS goes via extra_css kwarg.
     parts: List[str] = []
-    parts.append("<!DOCTYPE html>")
-    parts.append('<html lang="en"><head><meta charset="utf-8">')
-    parts.append(f"<title>{_html.escape(title)}</title>")
-    parts.append(f"<style>{_CSS}</style></head><body>")
     parts.append('<div class="scr-wrap">')
     parts.append('<div class="scr-title">RCM-MC SCREENING</div>')
     parts.append(f'<h1 class="scr-h1">{_html.escape(title)}</h1>')
@@ -287,5 +289,16 @@ def render_screening_dashboard(
                 f'</tr>')
         parts.append('</tbody></table>')
 
-    parts.append('</div></body></html>')
-    return "\n".join(parts)
+    parts.append('</div>')
+    body = "\n".join(parts)
+    return chartis_shell(
+        body,
+        title=title,
+        active_nav="DEALS",
+        extra_css=_CSS,
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Screening", None),
+        ],
+    )

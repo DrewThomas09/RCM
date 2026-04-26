@@ -29,6 +29,26 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 
+def _safe_status_str(v: object) -> str:
+    """Coerce a possibly-NaN covenant_status value to a string safely.
+
+    pandas serializes NULL DB columns as float('nan'), which is truthy
+    so the common `(value or "")` idiom doesn't catch it, and calling
+    `.upper()` on the float then crashes. This helper canonicalizes
+    None and NaN to empty string.
+
+    Same pattern as the number_maybe NaN fix in
+    _chartis_kit_editorial.py — surfaced by the seeded-DB integration
+    test 2026-04-26.
+    """
+    if v is None:
+        return ""
+    if isinstance(v, float) and v != v:  # NaN: x != x is True only for NaN
+        return ""
+    s = str(v)
+    return "" if s.lower() == "nan" else s
+
+
 # ── Curated analyses catalog ───────────────────────────────────────
 # Not the full 40-module module_index — a focused subset of the
 # highest-signal user-triggerable analyses. Each entry is a single
@@ -129,9 +149,9 @@ def _freshness_bucket(last_refreshed_iso: Optional[str]) -> tuple[str, str]:
 
 
 def _dot(level: str) -> str:
-    colors = {"ok": "#10b981", "stale": "#f59e0b",
-              "cold": "#ef4444", "never": "#6b7280"}
-    c = colors.get(level, "#6b7280")
+    colors = {"ok": "#3F7D4D", "stale": "#B7791F",
+              "cold": "#A53A2D", "never": "#5C6878"}
+    c = colors.get(level, "#5C6878")
     return (f'<span style="display:inline-block;width:8px;height:8px;'
             f'border-radius:50%;background:{c};margin-right:6px;"></span>')
 
@@ -162,21 +182,21 @@ def _render_analyses_section() -> str:
             f'<input type="hidden" name="redirect" value="/dashboard">'
             f'<button type="submit" '
             f'title="Save as template for one-click relaunch" '
-            f'style="background:transparent;border:0;color:#9ca3af;'
+            f'style="background:transparent;border:0;color:#8A92A0;'
             f'cursor:pointer;font-size:14px;padding:0;'
             f'transition:color 0.1s;" '
-            f'onmouseover="this.style.color=\'#1F4E78\';" '
-            f'onmouseout="this.style.color=\'#9ca3af\';">★</button>'
+            f'onmouseover="this.style.color=\'#155752\';" '
+            f'onmouseout="this.style.color=\'#8A92A0\';">★</button>'
             f'</form>'
         )
         rows.append([
             (f'<a href="{_html.escape(a["route"])}" '
-             f'style="color:#1F4E78;font-weight:500;">'
+             f'style="color:#155752;font-weight:500;">'
              f'{_html.escape(a["name"])}</a>'
              f'&nbsp;{save_form}'),
-            f'<span style="color:#6b7280;">{_html.escape(a["category"])}</span>',
+            f'<span style="color:#5C6878;">{_html.escape(a["category"])}</span>',
             _html.escape(a["desc"]),
-            (f'<span style="color:#6b7280;">'
+            (f'<span style="color:#5C6878;">'
              f'{_html.escape(a["runtime"])}</span>'),
         ])
     table = _wc.sortable_table(
@@ -187,7 +207,7 @@ def _render_analyses_section() -> str:
     return _wc.section_card(
         "What you can run", table, pad=False,
         actions_html=(
-            '<span style="font-size:11px;color:#6b7280;'
+            '<span style="font-size:11px;color:#5C6878;'
             'font-weight:normal;">click ★ to save as template</span>'
         ),
     )
@@ -249,10 +269,10 @@ def _badge(n: Optional[int], *, level: str = "neutral") -> str:
     if n is None or n <= 0:
         return ""
     palette = {
-        "ok": ("#d1fae5", "#065f46"),
-        "warn": ("#fef3c7", "#92400e"),
-        "alert": ("#fee2e2", "#991b1b"),
-        "neutral": ("#e0e7ff", "#3730a3"),
+        "ok": ("#DCE6D9", "#3F7D4D"),
+        "warn": ("#EFE2BC", "#B7791F"),
+        "alert": ("#EBD3CD", "#A53A2D"),
+        "neutral": ("#D6E1EB", "#2C5C84"),
     }
     bg, fg = palette.get(level, palette["neutral"])
     return (
@@ -476,7 +496,7 @@ def _covenant_insights(
     warning that 3+ deals are within 1 turn of breach."""
     out: List[Dict[str, Any]] = []
     tripped = [d for d in deals
-               if (d.get("covenant_status") or "").upper() == "TRIPPED"]
+               if _safe_status_str(d.get("covenant_status")).upper() == "TRIPPED"]
     if tripped:
         t = tripped[0]
         rest = (
@@ -493,7 +513,7 @@ def _covenant_insights(
             "score": 100,
         })
     tight = [d for d in deals
-             if (d.get("covenant_status") or "").upper() == "TIGHT"]
+             if _safe_status_str(d.get("covenant_status")).upper() == "TIGHT"]
     if len(tight) >= 3:
         names = ", ".join(d["name"] for d in tight[:3])
         out.append({
@@ -582,7 +602,7 @@ def _attention_pileup_insights(
     flagged = [d for d in deals
                if (d.get("alerts") or 0) > 0
                or (d.get("overdue_deadlines") or 0) > 0
-               or (d.get("covenant_status") or "").upper() == "TRIPPED"]
+               or _safe_status_str(d.get("covenant_status")).upper() == "TRIPPED"]
     if len(flagged) >= 3 and len(deals) >= 5:
         pct = int(100 * len(flagged) / len(deals))
         return [{
@@ -728,7 +748,7 @@ def _quiet_morning_insights(
     no_flags = [d for d in deals
                 if (d.get("alerts") or 0) == 0
                 and (d.get("overdue_deadlines") or 0) == 0
-                and (d.get("covenant_status") or "").upper()
+                and _safe_status_str(d.get("covenant_status")).upper()
                     not in ("TRIPPED", "TIGHT")]
     if len(deals) >= 3 and len(no_flags) == len(deals):
         return [{
@@ -934,9 +954,10 @@ def _portfolio_pulse_inputs(
             f"year. Discount the bid book accordingly."
         )
     else:
-        tripped = sum(1 for d in rows
-                      if (d.get("covenant_status") or "").upper()
-                      == "TRIPPED")
+        tripped = sum(
+            1 for d in rows
+            if _safe_status_str(d.get("covenant_status")).upper() == "TRIPPED"
+        )
         if tripped >= 1:
             syn = (
                 f"{tripped} deal{'s' if tripped != 1 else ''} have "
@@ -975,11 +996,11 @@ def _portfolio_pulse_inputs(
 def _band_color(band: str) -> str:
     """Map health bands to the visual palette for the mosaic."""
     return {
-        "great": "#10b981",
-        "good":  "#3b82f6",
-        "fair":  "#f59e0b",
-        "poor":  "#ef4444",
-    }.get(band or "unknown", "#9ca3af")
+        "great": "#3F7D4D",
+        "good":  "#2C5C84",
+        "fair":  "#B7791F",
+        "poor":  "#A53A2D",
+    }.get(band or "unknown", "#8A92A0")
 
 
 def _format_money_compact(mm: float) -> str:
@@ -1071,14 +1092,14 @@ def _render_portfolio_pulse_hero(
             'border-top:1px solid rgba(255,255,255,0.18);">'
             '<div style="font-size:10px;font-weight:600;'
             'text-transform:uppercase;letter-spacing:0.08em;'
-            'color:#cbd5f5;flex-shrink:0;">'
+            'color:#D6E1EB;flex-shrink:0;">'
             'Predicted exit MOIC<br/>(corpus)</div>'
             f'<div style="font-size:28px;font-weight:700;'
             f'color:#fff;font-variant-numeric:tabular-nums;'
             f'flex-shrink:0;">{moic_med:.2f}x</div>'
             f'<div style="background:#fff;padding:6px 10px;'
             f'border-radius:6px;flex-shrink:0;">{bar}</div>'
-            f'<div style="font-size:11px;color:#cbd5f5;'
+            f'<div style="font-size:11px;color:#D6E1EB;'
             f'font-variant-numeric:tabular-nums;">'
             f'p25 {moic_p25:.2f}x · p75 {moic_p75:.2f}x'
             f'</div></div>'
@@ -1088,7 +1109,7 @@ def _render_portfolio_pulse_hero(
     legend_chip = (
         lambda c, label, n: (
             f'<span style="display:inline-flex;align-items:center;'
-            f'gap:4px;font-size:11px;color:#cbd5f5;'
+            f'gap:4px;font-size:11px;color:#D6E1EB;'
             f'font-variant-numeric:tabular-nums;">'
             f'<span style="display:inline-block;width:10px;'
             f'height:10px;background:{c};border-radius:2px;"></span>'
@@ -1098,10 +1119,10 @@ def _render_portfolio_pulse_hero(
     legend = (
         '<div style="display:flex;gap:14px;margin-top:8px;'
         'flex-wrap:wrap;">'
-        + legend_chip("#10b981", "great", bands["great"])
-        + legend_chip("#3b82f6", "good", bands["good"])
-        + legend_chip("#f59e0b", "fair", bands["fair"])
-        + legend_chip("#ef4444", "poor", bands["poor"])
+        + legend_chip("#3F7D4D", "great", bands["great"])
+        + legend_chip("#2C5C84", "good", bands["good"])
+        + legend_chip("#B7791F", "fair", bands["fair"])
+        + legend_chip("#A53A2D", "poor", bands["poor"])
         + '</div>'
     )
 
@@ -1114,7 +1135,7 @@ def _render_portfolio_pulse_hero(
             f'letter-spacing:-0.02em;">{big}</div>'
             f'<div style="font-size:10px;font-weight:600;'
             f'text-transform:uppercase;letter-spacing:0.1em;'
-            f'color:#cbd5f5;margin-top:6px;">{small}</div>'
+            f'color:#D6E1EB;margin-top:6px;">{small}</div>'
             '</div>'
         )
 
@@ -1131,11 +1152,11 @@ def _render_portfolio_pulse_hero(
     syn_text = _html.escape(pulse["headline_synthesis"])
     synthesis = (
         '<div style="background:rgba(255,255,255,0.08);'
-        'border-left:3px solid #fbbf24;padding:12px 16px;'
+        'border-left:3px solid #B7791F;padding:12px 16px;'
         'border-radius:6px;margin:18px 0 0;">'
         '<div style="font-size:10px;font-weight:600;'
         'text-transform:uppercase;letter-spacing:0.1em;'
-        'color:#fbbf24;margin-bottom:4px;">'
+        'color:#B7791F;margin-bottom:4px;">'
         'The synthesis you\'d miss</div>'
         f'<div style="font-size:14px;color:#fff;line-height:1.5;">'
         f'{syn_text}</div>'
@@ -1150,11 +1171,11 @@ def _render_portfolio_pulse_hero(
         'text-transform:uppercase;letter-spacing:0.18em;color:#fff;">'
         'Portfolio pulse</div>'
         '<span style="display:inline-flex;align-items:center;gap:6px;'
-        'font-size:10px;color:#86efac;font-weight:600;'
+        'font-size:10px;color:#DCE6D9;font-weight:600;'
         'text-transform:uppercase;letter-spacing:0.12em;">'
         '<span class="wc-pulse-dot" style="display:inline-block;'
-        'width:8px;height:8px;background:#22c55e;border-radius:50%;'
-        'box-shadow:0 0 6px #22c55e;"></span> live</span>'
+        'width:8px;height:8px;background:#3F7D4D;border-radius:50%;'
+        'box-shadow:0 0 6px #3F7D4D;"></span> live</span>'
         '</div>'
     )
 
@@ -1170,14 +1191,14 @@ def _render_portfolio_pulse_hero(
     return (
         pulse_anim
         + '<section style="background:linear-gradient(135deg,'
-        '#0f172a 0%,#1F4E78 100%);color:#fff;padding:22px 26px;'
+        '#FAF7F0 0%,#155752 100%);color:#fff;padding:22px 26px;'
         'border-radius:12px;margin:6px 0 18px;'
         'box-shadow:0 8px 24px rgba(15,23,42,0.18);">'
         + label_row
         + stats
         + '<div style="font-size:10px;font-weight:600;'
         'text-transform:uppercase;letter-spacing:0.08em;'
-        'color:#cbd5f5;margin:8px 0 4px;">'
+        'color:#D6E1EB;margin:8px 0 4px;">'
         'Deals (sorted by health, hover for name)</div>'
         + mosaic
         + legend
@@ -1204,10 +1225,10 @@ def _render_headline_insight_section(
     # affirming green, warn is attention-grabbing amber, neutral
     # is the brand navy.
     palette = {
-        "alert":    ("#fef2f2", "#fee2e2", "#991b1b", "⚠"),
-        "warn":     ("#fffbeb", "#fef3c7", "#92400e", "●"),
-        "positive": ("#f0fdf4", "#d1fae5", "#065f46", "✓"),
-        "neutral":  ("#f0f6fc", "#d0e3f0", "#1F4E78", "◆"),
+        "alert":    ("#EBD3CD", "#EBD3CD", "#A53A2D", "⚠"),
+        "warn":     ("#EFE2BC", "#EFE2BC", "#B7791F", "●"),
+        "positive": ("#DCE6D9", "#DCE6D9", "#3F7D4D", "✓"),
+        "neutral":  ("#FAF7F0", "#D6E1EB", "#155752", "◆"),
     }
     bg, border, fg, icon = palette.get(
         ins.get("tone", "neutral"), palette["neutral"])
@@ -1268,7 +1289,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
 
     if not events:
         body = (
-            '<p style="margin:0;color:#6b7280;">'
+            '<p style="margin:0;color:#5C6878;">'
             'Nothing happened in the last 24 hours. '
             'When alerts fire, data refreshes, or a teammate runs a '
             'packet, the summary shows up here.</p>'
@@ -1283,7 +1304,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
         href = ev.get("href") or ""
         if href:
             label = (f'<a href="{_html.escape(href)}" '
-                     f'style="color:#1F4E78;text-decoration:none;">'
+                     f'style="color:#155752;text-decoration:none;">'
                      f'{label}</a>')
 
         # Inline ack + snooze controls for alert rows. Two
@@ -1300,8 +1321,8 @@ def _render_since_yesterday_section(db_path: str) -> str:
             t = _html.escape(ev.get("alert_trigger_key") or "")
             if k and d and t:
                 btn_style = (
-                    "background:transparent;border:1px solid #d0e3f0;"
-                    "color:#1F4E78;padding:2px 8px;border-radius:4px;"
+                    "background:transparent;border:1px solid #D6E1EB;"
+                    "color:#155752;padding:2px 8px;border-radius:4px;"
                     "font-size:11px;cursor:pointer;font-weight:500;"
                 )
                 hidden = (
@@ -1331,18 +1352,18 @@ def _render_since_yesterday_section(db_path: str) -> str:
                     f'<input type="hidden" name="snooze_days" value="7">'
                     f'<button type="submit" '
                     f'title="Snooze for 7 days — remind me later" '
-                    f'style="{btn_style}background:#fafbfc;">'
+                    f'style="{btn_style}background:#FFFFFF;">'
                     f'Snooze 7d</button></form>'
                     f'</span>'
                 )
 
         rows.append(
-            f'<li style="padding:6px 0;border-bottom:1px solid #f3f4f6;'
+            f'<li style="padding:6px 0;border-bottom:1px solid #FAF7F0;'
             f'display:flex;gap:10px;align-items:center;">'
             f'<span style="flex-shrink:0;font-size:14px;width:20px;">{icon}</span>'
-            f'<span style="flex:1;color:#1f2937;">{label}</span>'
+            f'<span style="flex:1;color:#FFFFFF;">{label}</span>'
             f'{ack_form}'
-            f'<span style="flex-shrink:0;color:#6b7280;font-size:11px;'
+            f'<span style="flex-shrink:0;color:#5C6878;font-size:11px;'
             f'font-family:monospace;white-space:nowrap;">{ts}</span>'
             f'</li>'
         )
@@ -1351,7 +1372,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
     # priority ordering. 20-event cap also surfaced so they know
     # older-than-top might exist off-page.
     hint = (
-        f'<p style="margin:0 0 10px;color:#6b7280;font-size:11px;">'
+        f'<p style="margin:0 0 10px;color:#5C6878;font-size:11px;">'
         f'{len(events)} event{"s" if len(events) != 1 else ""} · '
         f'newest first · past 24 hours'
         f'{" · older events in /audit" if len(events) >= 20 else ""}'
@@ -1367,7 +1388,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
 
 def _sparkline_svg(scores: List[int], *,
                    width: int = 80, height: int = 20,
-                   stroke: str = "#1F4E78") -> str:
+                   stroke: str = "#155752") -> str:
     """Tiny inline SVG — one score per point, oldest-first.
 
     Returns empty string when there are <2 points (a single point
@@ -1447,7 +1468,7 @@ def _render_saved_templates_section(db_path: str) -> str:
         desc = t.get("description") or ""
         name = t.get("name") or "unnamed"
         pinned_chip = (
-            '<span style="margin-left:6px;font-size:10px;color:#1F4E78;">'
+            '<span style="margin-left:6px;font-size:10px;color:#155752;">'
             '📌</span>'
         ) if t.get("pinned") else ""
         # Clone button — copy this template's route + params under a
@@ -1461,11 +1482,11 @@ def _render_saved_templates_section(db_path: str) -> str:
             f'<button type="submit" '
             f'title="Clone — duplicate this template under a new name '
             f'so you can tweak it (e.g. swap the CCN)" '
-            f'style="background:transparent;border:0;color:#9ca3af;'
+            f'style="background:transparent;border:0;color:#8A92A0;'
             f'cursor:pointer;font-size:14px;padding:0 6px;'
             f'transition:color 0.1s;" '
-            f'onmouseover="this.style.color=\'#1F4E78\';" '
-            f'onmouseout="this.style.color=\'#9ca3af\';">⎘</button>'
+            f'onmouseover="this.style.color=\'#155752\';" '
+            f'onmouseout="this.style.color=\'#8A92A0\';">⎘</button>'
             f'</form>'
         )
         delete_form = (
@@ -1475,23 +1496,23 @@ def _render_saved_templates_section(db_path: str) -> str:
             f'{_html.escape(name)}?\');">'
             f'<input type="hidden" name="redirect" value="/dashboard">'
             f'<button type="submit" title="Delete template" '
-            f'style="background:transparent;border:0;color:#9ca3af;'
+            f'style="background:transparent;border:0;color:#8A92A0;'
             f'cursor:pointer;font-size:14px;padding:0 4px;">×</button>'
             f'</form>'
         )
         rows.append(
-            f'<li style="padding:8px 12px;border-bottom:1px solid #f3f4f6;'
+            f'<li style="padding:8px 12px;border-bottom:1px solid #FAF7F0;'
             f'display:flex;align-items:center;gap:12px;">'
             f'<a href="/api/saved-analyses/{t["id"]}/run" '
-            f'style="flex:1;color:#1f2937;text-decoration:none;" '
+            f'style="flex:1;color:#FFFFFF;text-decoration:none;" '
             f'title="Click to launch"'
             f' onclick="if(!event.metaKey&&!event.ctrlKey){{'
             f'fetch(this.href,{{method:\'POST\',credentials:\'same-origin\'}})'
             f'.then(()=>window.location=\'{_html.escape(href)}\');'
             f'event.preventDefault();}}">'
-            f'<span style="font-weight:500;color:#1F4E78;">'
+            f'<span style="font-weight:500;color:#155752;">'
             f'{_html.escape(name)}</span>{pinned_chip}'
-            f'<div style="font-size:11px;color:#6b7280;margin-top:2px;">'
+            f'<div style="font-size:11px;color:#5C6878;margin-top:2px;">'
             f'{_html.escape(desc) if desc else _html.escape(href)}'
             f' · ran {run_count}×</div>'
             f'</a>'
@@ -1501,9 +1522,9 @@ def _render_saved_templates_section(db_path: str) -> str:
     body = (
         f'<ul style="list-style:none;padding:0;margin:0;">'
         f'{"".join(rows)}</ul>'
-        f'<p style="margin:10px 0 0;font-size:11px;color:#6b7280;">'
+        f'<p style="margin:10px 0 0;font-size:11px;color:#5C6878;">'
         f'Click any template to launch — run count updates automatically. '
-        f'<a href="/api/saved-analyses" style="color:#1F4E78;">API</a>'
+        f'<a href="/api/saved-analyses" style="color:#155752;">API</a>'
         f'</p>'
     )
     return _wc.section_card(
@@ -1551,7 +1572,7 @@ def _render_needs_attention_section(
         # instead of a card full of nothing.
         return _wc.section_card(
             "Needs attention today",
-            '<p style="margin:0;color:#065f46;">'
+            '<p style="margin:0;color:#3F7D4D;">'
             '✓ Everything looks healthy. No deals are flagging '
             'covenant, alert, or deadline risks right now.'
             '</p>',
@@ -1566,41 +1587,41 @@ def _render_needs_attention_section(
     for d, priority in top:
         # Build a compact "why" string — which factors are firing.
         reasons: List[str] = []
-        cov = (d.get("covenant_status") or "").upper()
+        cov = _safe_status_str(d.get("covenant_status")).upper()
         if cov == "TRIPPED":
             reasons.append(
-                '<span style="color:#991b1b;font-weight:600;">'
+                '<span style="color:#A53A2D;font-weight:600;">'
                 'covenant TRIPPED</span>')
         elif cov == "TIGHT":
             reasons.append(
-                '<span style="color:#92400e;">covenant TIGHT</span>')
+                '<span style="color:#B7791F;">covenant TIGHT</span>')
         if (d.get("overdue_deadlines") or 0) > 0:
             reasons.append(
-                f'<span style="color:#991b1b;">'
+                f'<span style="color:#A53A2D;">'
                 f'{d["overdue_deadlines"]} overdue '
                 f'deadline{"s" if d["overdue_deadlines"] != 1 else ""}</span>')
         if (d.get("alerts") or 0) > 0:
             reasons.append(
-                f'<span style="color:#92400e;">'
+                f'<span style="color:#B7791F;">'
                 f'{d["alerts"]} open alert{"s" if d["alerts"] != 1 else ""}</span>')
         score = d.get("score")
         if isinstance(score, int) and score < 60:
             reasons.append(
-                f'<span style="color:#92400e;">'
+                f'<span style="color:#B7791F;">'
                 f'health {score}</span>')
         if d.get("snap_age_days") is not None and d["snap_age_days"] > 30:
             reasons.append(
-                f'<span style="color:#6b7280;">'
+                f'<span style="color:#5C6878;">'
                 f'snapshot {d["snap_age_days"]}d stale</span>')
 
         rows.append(
-            f'<li style="padding:10px 0;border-bottom:1px solid #f3f4f6;'
+            f'<li style="padding:10px 0;border-bottom:1px solid #FAF7F0;'
             f'display:flex;align-items:center;gap:12px;">'
             f'<span style="flex-shrink:0;font-family:monospace;font-size:11px;'
-            f'color:#6b7280;text-transform:uppercase;min-width:100px;">'
+            f'color:#5C6878;text-transform:uppercase;min-width:100px;">'
             f'{_html.escape(d["deal_id"])}</span>'
             f'<a href="/deal/{_html.escape(d["deal_id"])}" '
-            f'style="flex:1;color:#1F4E78;font-weight:500;'
+            f'style="flex:1;color:#155752;font-weight:500;'
             f'text-decoration:none;">{_html.escape(d["name"])}</a>'
             f'<span style="flex-shrink:0;font-size:12px;'
             f'display:flex;flex-wrap:wrap;gap:12px;">'
@@ -1608,17 +1629,17 @@ def _render_needs_attention_section(
             f'</li>'
         )
     more_link = (
-        f'<p style="margin:10px 0 0;font-size:12px;color:#6b7280;">'
+        f'<p style="margin:10px 0 0;font-size:12px;color:#5C6878;">'
         f'Showing top 3 of {len(scored)} deals with active risk flags. '
         f'See all on <a href="/portfolio/risk-scan" '
-        f'style="color:#1F4E78;">Portfolio risk scan</a>.'
+        f'style="color:#155752;">Portfolio risk scan</a>.'
         f'</p>'
         if len(scored) > 3 else
-        f'<p style="margin:10px 0 0;font-size:12px;color:#6b7280;">'
+        f'<p style="margin:10px 0 0;font-size:12px;color:#5C6878;">'
         f'Showing {len(scored)} deal{"s" if len(scored) != 1 else ""} '
         f'with active risk flags. See all on '
         f'<a href="/portfolio/risk-scan" '
-        f'style="color:#1F4E78;">Portfolio risk scan</a>.'
+        f'style="color:#155752;">Portfolio risk scan</a>.'
         f'</p>'
     )
     body = (
@@ -1666,10 +1687,10 @@ def _render_exposure_section(
     total = len(deals)
 
     def _bar_chart(items: Dict[str, int], *, top_n: int = 6,
-                   color: str = "#1F4E78") -> str:
+                   color: str = "#155752") -> str:
         if not items:
             return (
-                '<p style="margin:0;color:#9ca3af;font-size:12px;'
+                '<p style="margin:0;color:#8A92A0;font-size:12px;'
                 'font-style:italic;">No data yet.</p>'
             )
         # Sort descending, cap at top_n, lump the rest into "Other"
@@ -1687,34 +1708,34 @@ def _render_exposure_section(
                 f'<div style="display:grid;grid-template-columns:'
                 f'140px 1fr 70px;align-items:center;gap:10px;'
                 f'padding:4px 0;font-size:12px;">'
-                f'<span style="color:#374151;white-space:nowrap;'
+                f'<span style="color:#0F1C2E;white-space:nowrap;'
                 f'overflow:hidden;text-overflow:ellipsis;" '
                 f'title="{_html.escape(label)}">'
                 f'{_html.escape(label)}</span>'
-                f'<div style="background:#f3f4f6;border-radius:3px;'
+                f'<div style="background:#FAF7F0;border-radius:3px;'
                 f'height:14px;overflow:hidden;">'
                 f'<div style="background:{color};height:100%;'
                 f'width:{bar_w}%;transition:width 0.2s;"></div></div>'
-                f'<span style="color:#6b7280;font-variant-numeric:'
+                f'<span style="color:#5C6878;font-variant-numeric:'
                 f'tabular-nums;text-align:right;">'
                 f'{count} · {pct:.0f}%</span></div>'
             )
         return "".join(rows)
 
     sector_block = (
-        '<div style="font-size:11px;font-weight:600;color:#374151;'
+        '<div style="font-size:11px;font-weight:600;color:#0F1C2E;'
         'text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">'
         'By sector</div>'
-        + _bar_chart(sector_counts, color="#1F4E78")
+        + _bar_chart(sector_counts, color="#155752")
     )
     chain_block = (
-        '<div style="font-size:11px;font-weight:600;color:#374151;'
+        '<div style="font-size:11px;font-weight:600;color:#0F1C2E;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin:14px 0 6px;">By chain '
-        '<span style="font-weight:normal;color:#9ca3af;">'
+        '<span style="font-weight:normal;color:#8A92A0;">'
         '— deals where CMS POS knows the parent</span></div>'
-        + (_bar_chart(chain_counts, color="#92400e") if chain_counts
-           else '<p style="margin:0;color:#9ca3af;font-size:12px;'
+        + (_bar_chart(chain_counts, color="#B7791F") if chain_counts
+           else '<p style="margin:0;color:#8A92A0;font-size:12px;'
                 'font-style:italic;">No chain-affiliated deals — '
                 'either all independent or POS data not loaded.</p>')
     )
@@ -1757,20 +1778,20 @@ def _moic_range_bar(p25: Optional[float],
         f'style="vertical-align:middle;">'
         # Background track
         f'<rect x="0" y="{height/2 - 2}" width="{width}" height="4" '
-        f'fill="#f3f4f6"/>'
+        f'fill="#FAF7F0"/>'
         # 1.0x cost-of-capital reference line
         f'<line x1="{cost_x}" y1="2" x2="{cost_x}" y2="{height-2}" '
-        f'stroke="#d1d5db" stroke-width="1" stroke-dasharray="2,2"/>'
+        f'stroke="#D6CFC0" stroke-width="1" stroke-dasharray="2,2"/>'
         # 2.5x "good deal" reference line
         f'<line x1="{bar_x}" y1="2" x2="{bar_x}" y2="{height-2}" '
-        f'stroke="#10b981" stroke-width="1" stroke-dasharray="2,2"/>'
+        f'stroke="#3F7D4D" stroke-width="1" stroke-dasharray="2,2"/>'
         # p25-p75 whisker
         f'<rect x="{p25_x}" y="{height/2 - 4}" '
         f'width="{max(2, p75_x - p25_x)}" height="8" '
-        f'fill="#1F4E78" opacity="0.35" rx="2"/>'
+        f'fill="#155752" opacity="0.35" rx="2"/>'
         # Median dot
         f'<circle cx="{med_x}" cy="{height/2}" r="4" '
-        f'fill="#1F4E78" stroke="#fff" stroke-width="1.5"/>'
+        f'fill="#155752" stroke="#fff" stroke-width="1.5"/>'
         f'</svg>'
     )
 
@@ -1937,26 +1958,26 @@ def _render_predicted_outcomes_section(
         comp_href = f"/diligence/comparable-outcomes?{comp_qs}"
 
         rows.append(
-            f'<li style="padding:10px 0;border-bottom:1px solid #f3f4f6;'
+            f'<li style="padding:10px 0;border-bottom:1px solid #FAF7F0;'
             f'display:flex;align-items:center;gap:14px;">'
             f'<a href="/deal/{_html.escape(deal_id)}" '
-            f'style="color:#1f2937;text-decoration:none;'
+            f'style="color:#FFFFFF;text-decoration:none;'
             f'min-width:160px;flex-shrink:0;">'
-            f'<div style="font-weight:500;color:#1F4E78;font-size:13px;">'
+            f'<div style="font-weight:500;color:#155752;font-size:13px;">'
             f'{_html.escape(name)}</div>'
             f'<div style="font-family:monospace;font-size:10px;'
-            f'color:#6b7280;text-transform:uppercase;margin-top:2px;">'
+            f'color:#5C6878;text-transform:uppercase;margin-top:2px;">'
             f'{_html.escape(deal_id)}</div></a>'
             f'<div style="flex-shrink:0;">{bar}</div>'
-            f'<div style="flex:1;font-size:12px;color:#374151;'
+            f'<div style="flex:1;font-size:12px;color:#0F1C2E;'
             f'font-variant-numeric:tabular-nums;white-space:nowrap;">'
             f'<a href="{_html.escape(comp_href)}" '
             f'title="See the comparable deals that drove this prediction" '
             f'style="text-decoration:none;color:inherit;">'
-            f'<span style="font-weight:600;color:#1F4E78;'
-            f'font-size:14px;border-bottom:1px dotted #1F4E78;">'
+            f'<span style="font-weight:600;color:#155752;'
+            f'font-size:14px;border-bottom:1px dotted #155752;">'
             f'{median:.2f}x</span>'
-            f'<span style="color:#6b7280;"> median · '
+            f'<span style="color:#5C6878;"> median · '
             f'p25 {p25:.2f}x · p75 {p75:.2f}x · '
             f'{win_pct} clear 2.5x</span>'
             f'</a></div>'
@@ -1968,32 +1989,32 @@ def _render_predicted_outcomes_section(
 
     legend = (
         '<div style="display:flex;align-items:center;gap:14px;'
-        'font-size:11px;color:#6b7280;margin-bottom:10px;'
+        'font-size:11px;color:#5C6878;margin-bottom:10px;'
         'flex-wrap:wrap;">'
         '<span style="display:inline-flex;align-items:center;gap:5px;">'
         '<svg width="20" height="10" viewBox="0 0 20 10">'
-        '<rect x="0" y="3" width="20" height="4" fill="#f3f4f6"/>'
-        '<line x1="3" y1="0" x2="3" y2="10" stroke="#d1d5db" '
+        '<rect x="0" y="3" width="20" height="4" fill="#FAF7F0"/>'
+        '<line x1="3" y1="0" x2="3" y2="10" stroke="#D6CFC0" '
         'stroke-width="1" stroke-dasharray="2,2"/>'
-        '<line x1="9" y1="0" x2="9" y2="10" stroke="#10b981" '
+        '<line x1="9" y1="0" x2="9" y2="10" stroke="#3F7D4D" '
         'stroke-width="1" stroke-dasharray="2,2"/>'
         '</svg>scale 0–6×</span>'
         '<span style="display:inline-flex;align-items:center;gap:4px;">'
         '<span style="display:inline-block;width:14px;height:6px;'
-        'background:#1F4E78;opacity:0.35;border-radius:2px;"></span>'
+        'background:#155752;opacity:0.35;border-radius:2px;"></span>'
         'p25–p75 range</span>'
         '<span style="display:inline-flex;align-items:center;gap:4px;">'
         '<span style="display:inline-block;width:8px;height:8px;'
-        'background:#1F4E78;border-radius:50%;border:1.5px solid #fff;'
-        'box-shadow:0 0 0 1px #1F4E78;"></span>'
+        'background:#155752;border-radius:50%;border:1.5px solid #fff;'
+        'box-shadow:0 0 0 1px #155752;"></span>'
         'median predicted MOIC</span>'
-        '<span style="color:#10b981;">— —</span>'
+        '<span style="color:#3F7D4D;">— —</span>'
         '<span>2.5× "good deal" bar</span>'
         '</div>'
     )
 
     body = (
-        '<p style="margin:0 0 10px;font-size:12px;color:#6b7280;">'
+        '<p style="margin:0 0 10px;font-size:12px;color:#5C6878;">'
         'Predicted exit MOIC for each watchlisted deal, computed '
         'live by matching against the realized PE deals in the '
         'corpus.</p>'
@@ -2099,22 +2120,22 @@ def _render_quiet_too_long_section(db_path: str) -> str:
         days = d["days_quiet"]
         if days is None:
             quiet_label = "never viewed"
-            tone = "#fee2e2"
-            fg = "#991b1b"
+            tone = "#EBD3CD"
+            fg = "#A53A2D"
         elif days >= 60:
             quiet_label = f"{days}d quiet"
-            tone, fg = "#fee2e2", "#991b1b"
+            tone, fg = "#EBD3CD", "#A53A2D"
         elif days >= 30:
             quiet_label = f"{days}d quiet"
-            tone, fg = "#fef3c7", "#92400e"
+            tone, fg = "#EFE2BC", "#B7791F"
         else:
             quiet_label = f"{days}d quiet"
-            tone, fg = "#e0e7ff", "#3730a3"
+            tone, fg = "#D6E1EB", "#2C5C84"
         rows.append(
-            f'<li style="padding:8px 0;border-bottom:1px solid #f3f4f6;'
+            f'<li style="padding:8px 0;border-bottom:1px solid #FAF7F0;'
             f'display:flex;align-items:center;gap:14px;">'
             f'<a href="/deal/{_html.escape(d["deal_id"])}" '
-            f'style="flex:1;color:#1F4E78;font-weight:500;'
+            f'style="flex:1;color:#155752;font-weight:500;'
             f'text-decoration:none;font-family:monospace;font-size:12px;'
             f'text-transform:uppercase;letter-spacing:0.03em;">'
             f'{_html.escape(d["deal_id"])}</a>'
@@ -2125,7 +2146,7 @@ def _render_quiet_too_long_section(db_path: str) -> str:
             f'</li>'
         )
     body = (
-        '<p style="margin:0 0 8px;font-size:12px;color:#6b7280;">'
+        '<p style="margin:0 0 8px;font-size:12px;color:#5C6878;">'
         'Watchlisted deals you haven\'t opened in a while. The '
         'one nobody is yelling at might need your fresh eyes more '
         'than the one pinging you daily.</p>'
@@ -2166,12 +2187,12 @@ def _render_pinned_deals_section(db_path: str) -> str:
 
     # Colors per band — aligned with the existing severity palette.
     band_palette = {
-        "excellent": ("#d1fae5", "#065f46"),
-        "good":      ("#d1fae5", "#065f46"),
-        "fair":      ("#fef3c7", "#92400e"),
-        "poor":      ("#fee2e2", "#991b1b"),
-        "critical":  ("#fee2e2", "#991b1b"),
-        "unknown":   ("#f3f4f6", "#6b7280"),
+        "excellent": ("#DCE6D9", "#3F7D4D"),
+        "good":      ("#DCE6D9", "#3F7D4D"),
+        "fair":      ("#EFE2BC", "#B7791F"),
+        "poor":      ("#EBD3CD", "#A53A2D"),
+        "critical":  ("#EBD3CD", "#A53A2D"),
+        "unknown":   ("#FAF7F0", "#5C6878"),
     }
 
     try:
@@ -2215,7 +2236,7 @@ def _render_pinned_deals_section(db_path: str) -> str:
                     # Color the spark the same as the score chip —
                     # a tight visual tie between the number and the
                     # line.
-                    spark_color = fg if band != "unknown" else "#6b7280"
+                    spark_color = fg if band != "unknown" else "#5C6878"
                     spark = _sparkline_svg(scores, stroke=spark_color)
             except Exception:  # noqa: BLE001
                 spark = ""
@@ -2224,13 +2245,13 @@ def _render_pinned_deals_section(db_path: str) -> str:
         cards.append(
             f'<a href="/deal/{_html.escape(deal_id)}" '
             f'style="display:block;text-decoration:none;color:inherit;'
-            f'background:#fff;border:1px solid #e5e7eb;border-radius:8px;'
+            f'background:#fff;border:1px solid #D6CFC0;border-radius:8px;'
             f'padding:10px 12px;min-width:160px;flex:1 1 160px;'
             f'transition:border-color 0.1s;">'
             f'<div style="display:flex;align-items:baseline;'
             f'justify-content:space-between;gap:6px;">'
             f'<span style="font-family:monospace;font-size:11px;'
-            f'color:#6b7280;text-transform:uppercase;letter-spacing:0.03em;">'
+            f'color:#5C6878;text-transform:uppercase;letter-spacing:0.03em;">'
             f'{_html.escape(deal_id)}</span>'
             f'<span style="padding:1px 8px;background:{bg};color:{fg};'
             f'border-radius:9999px;font-size:11px;font-weight:600;'
@@ -2238,7 +2259,7 @@ def _render_pinned_deals_section(db_path: str) -> str:
             f'</div>'
             f'<div style="display:flex;align-items:center;gap:8px;'
             f'margin-top:4px;">'
-            f'<span style="flex:1;font-size:12px;color:#4b5563;'
+            f'<span style="flex:1;font-size:12px;color:#5C6878;'
             f'white-space:nowrap;overflow:hidden;'
             f'text-overflow:ellipsis;">{reason or "&nbsp;"}</span>'
             f'<span style="flex-shrink:0;">{spark}</span>'
@@ -2309,9 +2330,9 @@ def _render_workflow_shortcuts_section(db_path: str) -> str:
     for label, href, desc, badge in items:
         rows.append([
             (f'<a href="{_html.escape(href)}" '
-             f'style="color:#1F4E78;font-weight:500;">'
+             f'style="color:#155752;font-weight:500;">'
              f'{_html.escape(label)}</a>{badge}'),
-            f'<span style="color:#6b7280;">{_html.escape(desc)}</span>',
+            f'<span style="color:#5C6878;">{_html.escape(desc)}</span>',
         ])
     table = _wc.sortable_table(
         ["Open", "Why you'd come here today"], rows,
@@ -2333,10 +2354,10 @@ def _render_recent_results_section(db_path: str) -> str:
         jobs = reg.list_recent(n=5)
         for j in jobs:
             badge = {
-                "done": '<span style="color:#10b981;">●</span> done',
-                "running": '<span style="color:#f59e0b;">●</span> running',
-                "queued": '<span style="color:#6b7280;">●</span> queued',
-                "failed": '<span style="color:#ef4444;">●</span> failed',
+                "done": '<span style="color:#3F7D4D;">●</span> done',
+                "running": '<span style="color:#B7791F;">●</span> running',
+                "queued": '<span style="color:#5C6878;">●</span> queued',
+                "failed": '<span style="color:#A53A2D;">●</span> failed',
             }.get(j.status, _html.escape(j.status))
             ts = _html.escape(j.created_at or "")
             job_id = _html.escape(j.job_id or "")
@@ -2345,7 +2366,7 @@ def _render_recent_results_section(db_path: str) -> str:
                 f'<code>{job_id[:8]}</code>',
                 kind,
                 badge,
-                f'<span style="color:#6b7280;">{ts}</span>',
+                f'<span style="color:#5C6878;">{ts}</span>',
             ])
     except Exception:  # noqa: BLE001
         pass
@@ -2355,10 +2376,10 @@ def _render_recent_results_section(db_path: str) -> str:
             '<p style="margin:0 0 8px;"><strong>No runs yet — '
             'first time here?</strong> Try one of the curated analyses '
             'above. <a href="/diligence/thesis-pipeline?dataset=hospital_04_mixed_payer" '
-            'style="color:#1F4E78;font-weight:500;">Thesis Pipeline</a> '
+            'style="color:#155752;font-weight:500;">Thesis Pipeline</a> '
             'runs in ~170 ms on a fixture and walks you through 19 '
             'diligence steps end-to-end.</p>'
-            '<p style="margin:0;color:#6b7280;font-size:12px;">'
+            '<p style="margin:0;color:#5C6878;font-size:12px;">'
             'Async jobs (data refresh, packet rebuild) appear here once '
             'submitted, with status badges that update automatically.</p>'
         )
@@ -2430,10 +2451,10 @@ def _render_system_status_section(db_path: str,
     cards = []
     for label, level, value in items:
         cards.append(
-            f'<div style="background:#f9fafb;border:1px solid #e5e7eb;'
+            f'<div style="background:#FAF7F0;border:1px solid #D6CFC0;'
             f'border-radius:6px;padding:10px 12px;min-width:140px;'
             f'flex:1 1 140px;">'
-            f'<div style="font-size:11px;color:#6b7280;text-transform:uppercase;'
+            f'<div style="font-size:11px;color:#5C6878;text-transform:uppercase;'
             f'letter-spacing:0.05em;">{_html.escape(label)}</div>'
             f'<div style="font-size:13px;color:#111;margin-top:4px;font-weight:500;">'
             f'{_dot(level)}{_html.escape(value)}</div>'
@@ -2459,7 +2480,7 @@ def _render_data_freshness_section(db_path: str) -> str:
             f'<p>Status table unavailable '
             f'(<code>{_html.escape(type(exc).__name__)}</code>). '
             f'Run <code>rcm-mc data refresh</code> to populate, or open '
-            f'<a href="/data/refresh" style="color:#1F4E78;">'
+            f'<a href="/data/refresh" style="color:#155752;">'
             f'Data refresh</a>.</p>',
         )
 
@@ -2468,7 +2489,7 @@ def _render_data_freshness_section(db_path: str) -> str:
             "Data freshness",
             '<p>No data sources registered yet. Run a data refresh via the '
             '<code>rcm-mc data refresh</code> CLI or open '
-            '<a href="/data/refresh" style="color:#1F4E78;">Data refresh</a> '
+            '<a href="/data/refresh" style="color:#155752;">Data refresh</a> '
             'and click a Refresh button.</p>',
         )
 
@@ -2481,7 +2502,7 @@ def _render_data_freshness_section(db_path: str) -> str:
         rows.append([
             name,
             f'{_dot(level)}{_html.escape(label)}',
-            f'<span style="color:#6b7280;">{status}</span>',
+            f'<span style="color:#5C6878;">{status}</span>',
         ])
     table = _wc.sortable_table(
         ["Source", "Last refreshed", "Status"], rows,
@@ -2532,14 +2553,14 @@ def render_dashboard(db_path: str, *,
     # this as a standalone strip below the header.
     cmdk_hint = (
         '<div class="wc-cmdk-hint-bar" style="margin:4px 0 16px;'
-        'padding:8px 12px;background:#f0f6fc;border:1px solid #d0e3f0;'
-        'border-radius:6px;font-size:12px;color:#1e40af;">'
+        'padding:8px 12px;background:#FAF7F0;border:1px solid #D6E1EB;'
+        'border-radius:6px;font-size:12px;color:#2C5C84;">'
         'Tip: press '
         '<kbd style="font-family:monospace;padding:1px 5px;background:#fff;'
-        'color:#374151;border:1px solid #e5e7eb;border-radius:3px;'
+        'color:#0F1C2E;border:1px solid #D6CFC0;border-radius:3px;'
         'font-size:11px;">⌘K</kbd> '
         '(or <kbd style="font-family:monospace;padding:1px 5px;'
-        'background:#fff;color:#374151;border:1px solid #e5e7eb;'
+        'background:#fff;color:#0F1C2E;border:1px solid #D6CFC0;'
         'border-radius:3px;font-size:11px;">Ctrl-K</kbd>) '
         'anywhere on this page to open the command palette — '
         'jump to a deal, open any page, or launch an analysis.'

@@ -34,16 +34,12 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from .colors import STATUS
 from .empty_states import empty_state, EmptyAction
-from .loading import page_progress_bar
-from .nav import breadcrumb, keyboard_shortcuts
-from .responsive import (
-    responsive_stylesheet, viewport_meta,
-)
-from .theme import (
-    theme_init_script, theme_stylesheet, theme_toggle,
-)
+# .colors / .loading / .nav / .responsive / .theme imports removed
+# in the 2026-04-27 editorial port — chartis_shell() now provides
+# the editorial chrome + responsive layout + theme cascade. The
+# page-local _BG/_TEXT/_ACCENT constants below carry editorial hex
+# values directly.
 
 logger = logging.getLogger(__name__)
 
@@ -70,17 +66,21 @@ def _fmt_pct(v: Optional[float], digits: int = 1) -> str:
     return f"{v * 100:+.{digits}f}%"
 
 
-# Color palette — semantic colors come from rcm_mc.ui.colors
-_BG_PRIMARY = "#0f172a"
-_BG_SURFACE = "#1f2937"
-_BG_ELEVATED = "#111827"
-_BORDER = "#374151"
-_TEXT = "#f3f4f6"
-_TEXT_DIM = STATUS["neutral"]
-_ACCENT = STATUS["info"]
-_GREEN = STATUS["positive"]
-_AMBER = STATUS["watch"]
-_RED = STATUS["negative"]
+# Color palette — editorial port (2026-04-27): replaced dark-shell
+# defaults with editorial palette values per EDITORIAL_STYLE_PORT.md
+# §3 tokens. The page now passes through chartis_shell() so the
+# editorial parchment background + topbar + sidebar render around
+# this content; these values style the body content within.
+_BG_PRIMARY = "#FFFFFF"   # was #0f172a (slate-900) → paper-pure
+_BG_SURFACE = "#FFFFFF"   # was #1f2937 (gray-800) → white card
+_BG_ELEVATED = "#FAF7F0"  # was #111827 (gray-900) → paper (off-white)
+_BORDER = "#D6CFC0"       # was #374151 (gray-700) → editorial border
+_TEXT = "#0F1C2E"         # was #f3f4f6 (gray-100) → ink (dark on light)
+_TEXT_DIM = "#5C6878"     # was STATUS["neutral"] (~#94a3b8) → muted
+_ACCENT = "#155752"       # was STATUS["info"] (Tailwind blue) → teal-deep
+_GREEN = "#3F7D4D"        # editorial green
+_AMBER = "#B7791F"        # editorial amber
+_RED = "#A53A2D"          # editorial red
 
 
 def _section_header(
@@ -608,39 +608,39 @@ def render_deal_profile_v2(
             + _risks_section(packet)
             + _actions_section(packet))
 
-    return (
-        f'<!doctype html><html><head><meta charset="utf-8">'
-        + theme_init_script()
-        + viewport_meta()
-        + f'<title>Deal · {_esc(deal_name)}</title>'
-        + theme_stylesheet()
-        + responsive_stylesheet()
-        + f'<style>body{{margin:0;font-family:system-ui,'
-        f'-apple-system,sans-serif;}}</style></head><body>'
-        + page_progress_bar()
-        + f'<div style="max-width:1100px;margin:0 auto;'
-        f'padding:32px 24px;">'
-        + breadcrumb([
-            ("Dashboard", "/?v3=1"),
-            ("Deals", "/?v3=1"),
-            (deal_name, None),
-        ])
-        + f'<div style="display:flex;justify-content:'
+    # Editorial port (2026-04-27): drop the page's own <!doctype> +
+    # theme_init_script() + theme_stylesheet() + theme_toggle() + body
+    # tags. chartis_shell() now wraps the editorial chrome (parchment
+    # topbar + breadcrumbs + PHI banner) and the editorial CSS via
+    # /static/v3/chartis.css provides the body type/spacing.
+    page_body = (
+        f'<div style="max-width:1100px;margin:0 auto;'
+        f'padding:1.5rem 1rem;">'
+        f'<div style="display:flex;justify-content:'
         f'space-between;align-items:baseline;'
-        f'margin-bottom:8px;">'
-        f'<h1 style="font-size:24px;color:{_TEXT};margin:0;">'
+        f'margin-bottom:.5rem;">'
+        f'<h1 style="font-size:1.5rem;color:{_TEXT};margin:0;'
+        f'font-family:\'Source Serif 4\',Georgia,serif;font-weight:400;">'
         f'{_esc(deal_name)}</h1>'
         f'<div style="display:flex;gap:14px;font-size:12px;">'
-        f'<a href="/deal/{_esc(deal_id)}" '
+        f'<a href="/deal/{_esc(deal_id)}?ui=v3" '
         f'style="color:{_ACCENT};">Detail →</a>'
-        f'<a href="/?v3=1" '
-        f'style="color:{_TEXT_DIM};">Dashboard</a>'
-        + theme_toggle()
-        + f'</div></div>'
+        f'</div></div>'
         f'<p style="color:{_TEXT_DIM};font-size:13px;'
-        f'margin:0 0 8px 0;">Top-to-bottom investment '
+        f'margin:0 0 1rem 0;">Top-to-bottom investment '
         f'narrative — read sequentially.</p>'
-        + body + '</div>'
-        + keyboard_shortcuts()
-        + '</body></html>'
+        f'{body}'
+        f'</div>'
+    )
+
+    from ._chartis_kit import chartis_shell
+    return chartis_shell(
+        page_body,
+        title=f"Deal · {deal_name}",
+        active_nav="DEALS",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            (deal_name, None),
+        ],
     )

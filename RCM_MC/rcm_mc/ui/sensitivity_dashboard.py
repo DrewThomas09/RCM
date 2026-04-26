@@ -155,14 +155,14 @@ def compute_sensitivity_grid(params: SensitivityParams) -> SensitivityResult:
 def _moic_color(moic: float) -> str:
     """Color-code MOIC cells: green > 2x, amber 1-2x, red < 1x."""
     if moic >= 3.0:
-        return "#10B981"
+        return "#3F7D4D"
     if moic >= 2.0:
-        return "#34D399"
+        return "#3F7D4D"
     if moic >= 1.5:
-        return "#F59E0B"
+        return "#B7791F"
     if moic >= 1.0:
-        return "#FB923C"
-    return "#EF4444"
+        return "#B7791F"
+    return "#A53A2D"
 
 
 def render_sensitivity_page(
@@ -198,22 +198,22 @@ def render_sensitivity_page(
 
     body = f"""
 <div style="padding:20px; max-width:1200px; margin:0 auto;">
-  <h2 style="color:#e2e8f0; margin-bottom:4px;">
+  <h2 style="color:#0F1C2E; margin-bottom:4px;">
     Sensitivity Analysis{' &mdash; ' + html.escape(deal_id) if deal_id else ''}
   </h2>
-  <p style="color:#94a3b8; margin-top:0;">
+  <p style="color:#5C6878; margin-top:0;">
     Deterministic MOIC grid across hold periods and exit multiples.
     Adjust sliders to re-compute.
   </p>
 
-  <div style="background:#111827; border:1px solid #1e293b; border-radius:4px;
+  <div style="background:#FFFFFF; border:1px solid #D6CFC0; border-radius:4px;
               padding:16px; margin-bottom:20px;">
-    <h3 style="color:#e2e8f0; margin-top:0;">Parameters</h3>
+    <h3 style="color:#0F1C2E; margin-top:0;">Parameters</h3>
     <form id="sens-form" method="POST"
           action="/api/analysis/{qd}/sensitivity"
           style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
 
-      <label style="color:#94a3b8;">
+      <label style="color:#5C6878;">
         Exit Multiple Range: <span id="em-val">
           {params.exit_multiple_range[0]:.0f}x &ndash; {params.exit_multiple_range[1]:.0f}x
         </span><br>
@@ -225,14 +225,14 @@ def render_sensitivity_page(
                style="width:100%;">
       </label>
 
-      <label style="color:#94a3b8;">
+      <label style="color:#5C6878;">
         Achievement: <span id="ach-val">{params.achievement_pct * 100:.0f}%</span><br>
         <input type="range" name="achievement_pct" min="0" max="100" step="5"
                value="{params.achievement_pct * 100:.0f}"
                style="width:100%;">
       </label>
 
-      <label style="color:#94a3b8;">
+      <label style="color:#5C6878;">
         Hold Years: <span id="hy-val">
           {params.hold_years_range[0]} &ndash; {params.hold_years_range[1]}
         </span><br>
@@ -244,33 +244,33 @@ def render_sensitivity_page(
                style="width:100%;">
       </label>
 
-      <label style="color:#94a3b8;">
+      <label style="color:#5C6878;">
         Entry EBITDA ($M):
         <input type="number" name="entry_ebitda" step="0.1"
                value="{params.entry_ebitda:.1f}"
-               style="width:100%; background:#0a0e17; color:#e2e8f0;
-                      border:1px solid #1e293b; padding:4px;">
+               style="width:100%; background:#FAF7F0; color:#0F1C2E;
+                      border:1px solid #D6CFC0; padding:4px;">
       </label>
 
-      <label style="color:#94a3b8;">
+      <label style="color:#5C6878;">
         Entry Multiple (x):
         <input type="number" name="entry_multiple" step="0.5"
                value="{params.entry_multiple:.1f}"
-               style="width:100%; background:#0a0e17; color:#e2e8f0;
-                      border:1px solid #1e293b; padding:4px;">
+               style="width:100%; background:#FAF7F0; color:#0F1C2E;
+                      border:1px solid #D6CFC0; padding:4px;">
       </label>
 
-      <label style="color:#94a3b8;">
+      <label style="color:#5C6878;">
         Planned Uplift ($M):
         <input type="number" name="planned_uplift" step="0.5"
                value="{params.planned_uplift:.1f}"
-               style="width:100%; background:#0a0e17; color:#e2e8f0;
-                      border:1px solid #1e293b; padding:4px;">
+               style="width:100%; background:#FAF7F0; color:#0F1C2E;
+                      border:1px solid #D6CFC0; padding:4px;">
       </label>
 
       <div style="grid-column: span 3; text-align:right;">
         <button type="submit"
-                style="background:#1F4E78; color:#e2e8f0; border:none;
+                style="background:#155752; color:#0F1C2E; border:none;
                        padding:8px 20px; border-radius:4px; cursor:pointer;">
           Re-compute Grid
         </button>
@@ -278,9 +278,9 @@ def render_sensitivity_page(
     </form>
   </div>
 
-  <div style="background:#111827; border:1px solid #1e293b; border-radius:4px;
+  <div style="background:#FFFFFF; border:1px solid #D6CFC0; border-radius:4px;
               padding:16px;">
-    <h3 style="color:#e2e8f0; margin-top:0;">
+    <h3 style="color:#0F1C2E; margin-top:0;">
       MOIC Grid (Hold Years x Exit Multiple)
     </h3>
     {table_html}
@@ -291,22 +291,28 @@ def render_sensitivity_page(
   </script>
 </div>
 """
-    # Use the shared shell if available
-    try:
-        from ._ui_kit import shell
-        return shell(body, "Sensitivity Analysis", extra_css=_EXTRA_CSS)
-    except (ImportError, Exception):
-        return f"""<!DOCTYPE html>
-<html><head><title>Sensitivity Analysis</title>
-<style>{_EXTRA_CSS}</style></head>
-<body style="background:#0a0e17; color:#e2e8f0; font-family:system-ui;">
-{body}</body></html>"""
+    # Editorial port (2026-04-27): drop the legacy _ui_kit.shell call
+    # + the standalone <!DOCTYPE> fallback. chartis_shell() handles
+    # both modes via the dispatcher (editorial when CHARTIS_UI_V2=1,
+    # legacy otherwise) — no per-page fallback needed.
+    from ._chartis_kit import chartis_shell
+    return chartis_shell(
+        body,
+        title=f"Sensitivity Analysis{' · ' + deal_id if deal_id else ''}",
+        active_nav="DEALS",
+        extra_css=_EXTRA_CSS,
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Sensitivity", None),
+        ],
+    )
 
 
 def _build_grid_table(result: SensitivityResult) -> str:
     """Build the HTML table for the MOIC grid."""
     if not result.grid:
-        return "<p style='color:#94a3b8;'>No grid data.</p>"
+        return "<p style='color:#5C6878;'>No grid data.</p>"
 
     # Index cells by (hold_years, exit_multiple)
     lookup: Dict[tuple, GridCell] = {}
@@ -315,14 +321,14 @@ def _build_grid_table(result: SensitivityResult) -> str:
 
     rows = []
     # Header row
-    hdr = "<tr><th style='padding:6px 10px; color:#94a3b8;'>Hold \\ Exit</th>"
+    hdr = "<tr><th style='padding:6px 10px; color:#5C6878;'>Hold \\ Exit</th>"
     for em in result.exit_multiples:
-        hdr += f"<th style='padding:6px 10px; color:#94a3b8;'>{em:.1f}x</th>"
+        hdr += f"<th style='padding:6px 10px; color:#5C6878;'>{em:.1f}x</th>"
     hdr += "</tr>"
     rows.append(hdr)
 
     for hy in result.hold_years_list:
-        row = f"<tr><td style='padding:6px 10px; color:#94a3b8; font-weight:bold;'>{hy}yr</td>"
+        row = f"<tr><td style='padding:6px 10px; color:#5C6878; font-weight:bold;'>{hy}yr</td>"
         for em in result.exit_multiples:
             cell = lookup.get((hy, em))
             if cell:
@@ -335,7 +341,7 @@ def _build_grid_table(result: SensitivityResult) -> str:
                     f"{cell.moic:.2f}x</td>"
                 )
             else:
-                row += "<td style='padding:6px 10px; color:#4b5563;'>-</td>"
+                row += "<td style='padding:6px 10px; color:#5C6878;'>-</td>"
         row += "</tr>"
         rows.append(row)
 
@@ -349,13 +355,13 @@ def _build_grid_table(result: SensitivityResult) -> str:
 
 _EXTRA_CSS = """
 table td, table th {
-    border: 1px solid #1e293b;
+    border: 1px solid #D6CFC0;
 }
 table tr:hover td {
-    background: #1e293b;
+    background: #D6CFC0;
 }
 input[type=range] {
-    accent-color: #1F4E78;
+    accent-color: #155752;
 }
 """
 

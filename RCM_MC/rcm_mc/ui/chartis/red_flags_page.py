@@ -390,6 +390,11 @@ def render_red_flags(
             body,
             title=f"Red Flags · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Red Flags", None),
+        ],
             subtitle=f"Red-flag scan unavailable for {label}",
         )
 
@@ -468,5 +473,10 @@ def render_red_flags(
         body,
         title=f"Red Flags · {label}",
         active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Red Flags", None),
+        ],
         subtitle=subtitle,
     )

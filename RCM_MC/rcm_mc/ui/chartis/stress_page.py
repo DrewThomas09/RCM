@@ -146,6 +146,11 @@ def render_stress(
             body,
             title=f"Stress Grid · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Stress Grid", None),
+        ],
             subtitle=f"Stress grid unavailable for {label}",
         )
 
@@ -161,6 +166,11 @@ def render_stress(
             body,
             title=f"Stress Grid · {label}",
             active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Stress Grid", None),
+        ],
             subtitle=f"{label} · stress grid unavailable",
         )
 
@@ -247,6 +257,11 @@ def render_stress(
         body,
         title=f"Stress Grid · {label}",
         active_nav="/pe-intelligence",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Deals", "/deals"),
+            ("Stress Grid", None),
+        ],
         subtitle=f"{label} · grade {grade} · {pass_rate*100:.0f}% downside pass · "
                  f"{n_breaches} breach{'es' if n_breaches != 1 else ''}",
     )

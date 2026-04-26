@@ -501,22 +501,22 @@ def _try_the_tool_quickstart() -> str:
          "Healthy reference hospital",
          "Baseline profile — denial rate ~4%, A/R ~42 days. "
          "Run this first to see a clean output.",
-         "BASELINE", "#10B981"),
+         "BASELINE", "#3F7D4D"),
         ("hospital_02_denial_heavy", "Denial-heavy outpatient",
          "High audit-recovery opportunity",
          "Denial rate ~20%, systematic-misses drive the bridge. "
          "Shows denial prediction + counterfactual in action.",
-         "OPPORTUNITY", "#F59E0B"),
+         "OPPORTUNITY", "#B7791F"),
         ("hospital_07_waterfall_concordant", "QoR concordant",
          "Low-divergence reference",
          "Management revenue agrees with claims-side accrual within "
          "IMMATERIAL threshold — clean QoE target.",
-         "CLEAN QoR", "#10B981"),
+         "CLEAN QoR", "#3F7D4D"),
         ("hospital_08_waterfall_critical", "QoR critical divergence",
          "7% revenue overstatement — walkaway candidate",
          "Management revenue overstates claims-side accrual by ~7%. "
          "Triggers CRITICAL QoR + IC walkaway memo.",
-         "CRITICAL", "#EF4444"),
+         "CRITICAL", "#A53A2D"),
     ]
     base_qs = (
         "&deal_name=Demo+Target&specialty=HOSPITAL&states=TX"
@@ -533,59 +533,59 @@ def _try_the_tool_quickstart() -> str:
         pipeline_url = f'/diligence/thesis-pipeline?dataset={fx_id}{base_qs}'
         bench_url = f'/diligence/benchmarks?dataset={fx_id}'
         cards.append(
-            f'<div style="background:#111827;border:1px solid #1e293b;'
+            f'<div style="background:#FFFFFF;border:1px solid #D6CFC0;'
             f'border-radius:4px;padding:16px 18px;display:flex;'
             f'flex-direction:column;gap:10px;'
             f'transition:border-color 140ms ease;" '
             f'onmouseover="this.style.borderColor=\'{color}\'" '
-            f'onmouseout="this.style.borderColor=\'#1e293b\'">'
+            f'onmouseout="this.style.borderColor=\'#D6CFC0\'">'
             f'<div style="display:inline-block;width:fit-content;'
             f'font-size:10px;letter-spacing:1.4px;text-transform:uppercase;'
             f'font-weight:700;color:{color};border:1px solid {color};'
             f'padding:2px 8px;border-radius:3px;">{_html.escape(badge)}</div>'
             f'<div>'
-            f'<div style="font-size:15px;color:#e2e8f0;font-weight:600;'
+            f'<div style="font-size:15px;color:#0F1C2E;font-weight:600;'
             f'line-height:1.25;">{_html.escape(name)}</div>'
-            f'<div style="font-size:11px;color:#94a3b8;margin-top:2px;'
+            f'<div style="font-size:11px;color:#5C6878;margin-top:2px;'
             f'font-style:italic;">{_html.escape(tagline)}</div>'
             f'</div>'
-            f'<div style="font-size:11.5px;color:#94a3b8;line-height:1.55;'
+            f'<div style="font-size:11.5px;color:#5C6878;line-height:1.55;'
             f'flex-grow:1;">{_html.escape(desc)}</div>'
             f'<div style="display:flex;gap:8px;margin-top:4px;">'
             f'<a href="{_html.escape(pipeline_url)}" '
-            f'style="padding:7px 14px;background:#f59e0b;color:#0a0e17;'
+            f'style="padding:7px 14px;background:#B7791F;color:#0F1C2E;'
             f'border:0;font-size:10px;letter-spacing:1.3px;'
             f'text-transform:uppercase;font-weight:700;text-decoration:none;'
             f'border-radius:3px;">▶ Run Pipeline</a>'
             f'<a href="{_html.escape(bench_url)}" '
-            f'style="padding:7px 14px;background:transparent;color:#3b82f6;'
-            f'border:1px solid #1e293b;font-size:10px;letter-spacing:1.3px;'
+            f'style="padding:7px 14px;background:transparent;color:#2C5C84;'
+            f'border:1px solid #D6CFC0;font-size:10px;letter-spacing:1.3px;'
             f'text-transform:uppercase;font-weight:600;text-decoration:none;'
             f'border-radius:3px;">Benchmarks Only</a>'
             f'</div>'
             f'</div>'
         )
     return (
-        f'<div style="background:#111827;border:1px solid #f59e0b;'
+        f'<div style="background:#FFFFFF;border:1px solid #B7791F;'
         f'border-radius:4px;padding:18px 22px;margin-bottom:18px;'
         f'position:relative;overflow:hidden;">'
         f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,#f59e0b,#10b981);"></div>'
+        f'background:linear-gradient(90deg,#B7791F,#3F7D4D);"></div>'
         f'<div style="display:flex;justify-content:space-between;'
         f'align-items:center;margin-bottom:6px;">'
         f'<div style="display:flex;align-items:center;gap:10px;">'
-        f'<h2 style="margin:0;font-size:15px;color:#e2e8f0;">Try the tool</h2>'
+        f'<h2 style="margin:0;font-size:15px;color:#0F1C2E;">Try the tool</h2>'
         f'<span style="font-size:10px;letter-spacing:1.4px;'
-        f'text-transform:uppercase;font-weight:700;color:#64748b;">QSX</span>'
+        f'text-transform:uppercase;font-weight:700;color:#8A92A0;">QSX</span>'
         f'</div>'
         f'<span style="font-size:10.5px;letter-spacing:1px;'
-        f'text-transform:uppercase;color:#64748b;">'
+        f'text-transform:uppercase;color:#8A92A0;">'
         f'no portfolio data yet</span></div>'
-        f'<div style="font-size:13px;color:#94a3b8;line-height:1.6;'
+        f'<div style="font-size:13px;color:#5C6878;line-height:1.6;'
         f'max-width:880px;margin-bottom:14px;">'
         f'Your portfolio is empty. Run the full diligence chain against '
         f'one of four demo hospitals to see what the tool produces. '
-        f'<strong style="color:#e2e8f0;">▶ Run Pipeline</strong> executes '
+        f'<strong style="color:#0F1C2E;">▶ Run Pipeline</strong> executes '
         f'bankruptcy scan → CCD ingest → HFMA benchmarks → denial '
         f'prediction → physician attrition → counterfactual → Steward → '
         f'cyber → deal autopsy → Deal MC and emits every headline '
@@ -608,74 +608,46 @@ def _portfolio_is_empty(store: Any) -> bool:
 
 
 def _new_modules_index() -> str:
-    """Panel-style index of the new analytic modules — gives a
-    first-time visitor a single row of "what's new in the stack"
-    with one-click entries into each standalone surface.  Sits
-    between the KPI strip and the seven panel grid."""
+    """Module-card grid of the analytic modules per spec §7.6.
+
+    Editorial port (2026-04-27): refactored from the inline-styled
+    column-of-tiles shape (with dark-shell-era differentiator colors)
+    to the spec's 4-column .module-grid + .module-card pattern.
+    Each card has a teal .kind pill, a name, and a sub-tagline —
+    matching the .deliv-grid visual treatment used elsewhere.
+    """
     tiles = [
-        ("HCRIS Peer X-Ray", "/diligence/hcris-xray",
-         "17,000 filed Medicare cost reports",
-         "#10b981", "◎"),
-        ("Reg Calendar", "/diligence/regulatory-calendar",
-         "CMS / OIG × thesis kill-switch",
-         "#ef4444", "▤"),
-        ("Covenant Stress", "/diligence/covenant-stress",
-         "Capital stack × breach probability",
-         "#f59e0b", "▥"),
-        ("Bridge Auto-Audit", "/diligence/bridge-audit",
-         "Banker bridge × 21 realization priors",
-         "#3b82f6", "◉"),
-        ("Payer Stress", "/diligence/payer-stress",
-         "19-payer rate-shock MC",
-         "#8b5cf6", "▤"),
-        ("Bear Case Auto-Gen", "/diligence/bear-case",
-         "IC memo counter-narrative from 8 sources",
-         "#ec4899", "▣"),
-        ("Seeking Alpha", "/market-intel/seeking-alpha",
-         "Public comps + PE transactions",
-         "#0891b2", "◉"),
+        ("HCRIS",  "Peer X-Ray",       "/diligence/hcris-xray",
+         "17,000 filed Medicare cost reports"),
+        ("REG",    "Reg Calendar",     "/diligence/regulatory-calendar",
+         "CMS / OIG × thesis kill-switch"),
+        ("COV",    "Covenant Stress",  "/diligence/covenant-stress",
+         "Capital stack × breach probability"),
+        ("BRIDGE", "Auto-Audit",       "/diligence/bridge-audit",
+         "Banker bridge × 21 realization priors"),
+        ("PAYER",  "Payer Stress",     "/diligence/payer-stress",
+         "19-payer rate-shock MC"),
+        ("BEAR",   "Auto-Gen",         "/diligence/bear-case",
+         "IC memo counter-narrative from 8 sources"),
+        ("MARKET", "Seeking Alpha",    "/market-intel/seeking-alpha",
+         "Public comps + PE transactions"),
     ]
     cards = "".join(
-        f'<a href="{href}" '
-        f'style="display:flex;flex-direction:column;gap:4px;'
-        f'padding:10px 12px;background:#111827;'
-        f'border:1px solid #1e293b;border-left:3px solid {color};'
-        f'border-radius:0 3px 3px 0;text-decoration:none;'
-        f'transition:border-color 140ms, transform 120ms;" '
-        f'onmouseover="this.style.borderColor=\'{color}\';'
-        f'this.style.transform=\'translateX(2px)\'" '
-        f'onmouseout="this.style.borderColor=\'#1e293b\';'
-        f'this.style.transform=\'translateX(0)\'">'
-        f'<div style="display:flex;align-items:baseline;gap:8px;">'
-        f'<span style="font-size:14px;color:{color};">{icon}</span>'
-        f'<span style="font-size:13px;color:#e2e8f0;'
-        f'font-weight:600;">{_html.escape(name)}</span>'
-        f'</div>'
-        f'<div style="font-size:10.5px;color:#94a3b8;'
-        f'line-height:1.35;margin-left:22px;">'
-        f'{_html.escape(tagline)}</div>'
+        f'<a href="{_html.escape(href)}" class="module-card">'
+        f'<span class="kind">{_html.escape(kind)}</span>'
+        f'<div class="nm">{_html.escape(name)}</div>'
+        f'<div class="sub">{_html.escape(tagline)}</div>'
         f'</a>'
-        for name, href, tagline, color, icon in tiles
+        for kind, name, href, tagline in tiles
     )
     return (
-        f'<div style="background:#0f172a;border:1px solid #1e293b;'
-        f'border-radius:4px;padding:14px 18px;margin-bottom:14px;'
-        f'position:relative;overflow:hidden;">'
-        f'<div style="position:absolute;top:0;left:0;right:0;height:2px;'
-        f'background:linear-gradient(90deg,#10b981,#3b82f6,'
-        f'#8b5cf6,#ec4899);"></div>'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:10px;">'
-        f'<div style="font-size:11px;color:#64748b;letter-spacing:1.5px;'
-        f'text-transform:uppercase;font-weight:700;">'
-        f'New Diligence Modules · this cycle</div>'
-        f'<div style="font-size:10.5px;color:#94a3b8;">'
-        f'Point-and-click surfaces · no setup · live data</div>'
-        f'</div>'
-        f'<div style="display:grid;'
-        f'grid-template-columns:repeat(auto-fit,minmax(220px,1fr));'
-        f'gap:8px;">{cards}</div>'
-        f'</div>'
+        '<section class="module-section">'
+        '<div class="module-eyebrow">'
+        '<div class="module-eyebrow-h">New Diligence Modules · this cycle</div>'
+        '<div class="module-eyebrow-sub">Point-and-click surfaces · no setup · live data</div>'
+        '</div>'
+        f'<div class="module-grid">{cards}</div>'
+        '</section>'
     )
 
 
@@ -720,4 +692,7 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         title="Home",
         active_nav="/home",
         subtitle=subtitle,
+        breadcrumbs=[
+            ("Home", None),
+        ],
     )

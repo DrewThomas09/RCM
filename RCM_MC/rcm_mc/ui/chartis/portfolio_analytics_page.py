@@ -359,6 +359,11 @@ def render_portfolio_analytics(
         return chartis_shell(
             body, title="Portfolio Analytics",
             active_nav="/portfolio-analytics",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Portfolio", None),
+            ("Analytics", None),
+        ],
             subtitle="Module unavailable",
         )
 
@@ -372,6 +377,11 @@ def render_portfolio_analytics(
         return chartis_shell(
             body, title="Portfolio Analytics",
             active_nav="/portfolio-analytics",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Portfolio", None),
+            ("Analytics", None),
+        ],
             subtitle="Corpus unavailable",
         )
 
@@ -388,6 +398,11 @@ def render_portfolio_analytics(
         return chartis_shell(
             body, title="Portfolio Analytics",
             active_nav="/portfolio-analytics",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Portfolio", None),
+            ("Analytics", None),
+        ],
             subtitle="Analysis raised",
         )
 
@@ -500,6 +515,11 @@ def render_portfolio_analytics(
         body,
         title="Portfolio Analytics",
         active_nav="/portfolio-analytics",
+        breadcrumbs=[
+            ("Home", "/app"),
+            ("Portfolio", None),
+            ("Analytics", None),
+        ],
         subtitle=f"{sc.get('total_deals',0)} deals · "
                  f"median {fmt_multiple(sc.get('moic_p50'))} · "
                  f"HR {fmt_pct(sc.get('home_run_rate'))} · "
