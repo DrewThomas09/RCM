@@ -466,6 +466,49 @@ def _seed_initiative_actuals(
             result.actuals_inserted += 1
 
 
+# ── Packet builder seeder (block 6 — EBITDA drag) ───────────────────
+
+# Build packets only for held + exit deals — the focused-deal analytics
+# blocks render against these. Pre-hold deals (spa/loi/ioi) don't have
+# enough operational data for a meaningful packet.
+_PACKET_DEAL_IDS = ("ccf_2026", "arr_2025", "pma_2024", "tlc_2023")
+
+
+def _seed_analysis_packets(store: Any, *, result: SeedResult) -> None:
+    """Run the real get_or_build_packet pipeline for the held + exit
+    deals so block 6 (EBITDA drag) renders against actual bridge math.
+
+    Per C2 decision (SEEDER_PROPOSAL §5): we don't write a fake bridge
+    JSON to analysis_runs. We run the 12-step packet builder
+    synchronously. ~2-8 sec per deal; ~10-30 sec total. The slowness is
+    the operator's tax for not inventing numbers — same principle as
+    Q4.6 (no documented attribution assumption).
+
+    Failures are absorbed silently: a deal that can't build a packet
+    just won't have one cached. The dashboard renders an empty-state
+    for that deal's EBITDA-drag block, which is honest. The
+    deals_skipped list captures the failures for the operator's view.
+    """
+    try:
+        from rcm_mc.analysis.analysis_store import get_or_build_packet
+    except ImportError:
+        # Analysis subsystem not available — skip. Shouldn't happen in
+        # a correctly-installed RCM-MC, but the seeder shouldn't crash
+        # on import-time issues.
+        logger.warning("analysis_store unavailable; skipping packet seed")
+        return
+
+    for deal_id in _PACKET_DEAL_IDS:
+        try:
+            get_or_build_packet(store, deal_id)
+            result.packets_built += 1
+        except Exception as exc:  # noqa: BLE001
+            logger.info(
+                "packet build skipped for %s: %s", deal_id, exc
+            )
+            result.deals_skipped.append(deal_id)
+
+
 # ── Public API skeleton ─────────────────────────────────────────────
 
 def seed_demo_db(
@@ -551,6 +594,9 @@ def seed_demo_db(
 
     # Seed step 2: initiative_actuals (block 7 — playbook gap)
     _seed_initiative_actuals(store, result=result)
+
+    # Seed step 3: analysis_runs via real packet builder (block 6)
+    _seed_analysis_packets(store, result=result)
 
     result.duration_seconds = time.monotonic() - started
     return result
