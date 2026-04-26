@@ -37,7 +37,7 @@ Built: 2026-04-26 | Source: 254 audit reports (Report-0001.md through Report-025
 ## MEDIUM
 
 - [ ] MEDIUM | Report-0254 | `infra/cache.py` and `infra/morning_digest.py` undocumented in `infra/README.md` (28 modules, 26 sections). | rcm_mc/infra/README.md | MR1053
-- [ ] MEDIUM | Report-0253 | `rcm_mc/infra/config.py` has no `__all__` — every non-underscore name is implicit public surface; renames silently break callers. | rcm_mc/infra/config.py | MR1046
+- [~] MEDIUM | Report-0253 | `rcm_mc/infra/config.py` has no `__all__` — every non-underscore name is implicit public surface; renames silently break callers. | rcm_mc/infra/config.py | MR1046 | 8d355d2 | 2026-04-26 (partially mitigated by test_config_public_helpers.py covering 6 helpers; __all__ declaration still pending)
 - [ ] MEDIUM | Report-0253 | `_extends` recursion in `infra/config.py:66` has no cycle detection → self-extending YAML → RecursionError. | rcm_mc/infra/config.py:66 | MR1047
 - [ ] MEDIUM | Report-0253 | `_resolve_env_vars` silently passes unset env vars (literal `${UNSET}` in cfg). | rcm_mc/infra/config.py:48 | MR1048
 - [ ] MEDIUM | Report-0249 | `_audit` private writer in `engagement/store.py:221` untested; audit trails could break silently. | rcm_mc/engagement/store.py:221 | MR1024
@@ -61,7 +61,7 @@ Built: 2026-04-26 | Source: 254 audit reports (Report-0001.md through Report-025
 ## LOW
 
 - [ ] LOW | Report-0253 | `MANDATORY_PAYERS` constant unused per comment ("Step 31: Kept for backward compatibility but no longer enforced"). Deletion candidate. | rcm_mc/infra/config.py:16 | MR1051
-- [ ] LOW | Report-0253 | `canonical_payer_name` undocumented + non-obvious aliases (Self-Pay→SelfPay, Private/PHI→Commercial). | rcm_mc/infra/config.py:80 | MR1049
+- [~] LOW | Report-0253 | `canonical_payer_name` undocumented + non-obvious aliases (Self-Pay→SelfPay, Private/PHI→Commercial). | rcm_mc/infra/config.py:80 | MR1049 | 8d355d2 | 2026-04-26 (alias contract pinned by 4 tests in test_config_public_helpers.py; docstring still pending)
 - [ ] LOW | Report-0253 | Two contracts for same op: `load_and_validate` (raises) vs `validate_config_from_path` (returns tuple). | rcm_mc/infra/config.py:436+469 | MR1050
 - [ ] LOW | Report-0249 | `remove_member` only 2 external refs — not dead, but worth verifying coverage. | rcm_mc/engagement/store.py:369 | MR1029
 - [ ] LOW | Report-0250 | `scripts/run_all.sh` + `run_everything.sh` — no test, no CI ref. | scripts/run_*.sh | MR1034
