@@ -5301,10 +5301,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             source = form.get("source", "")[:100]
             analyst = form.get("analyst", "")[:20]
             from .data.data_room import save_entry
-            con = sqlite3.connect(self.config.db_path)
-            save_entry(con, ccn, metric, value, sample_size, source, analyst)
-            con.commit()
-            con.close()
+            # Report 0124 MR708: route through PortfolioStore so this
+            # write inherits PRAGMA foreign_keys = ON + busy_timeout =
+            # 5000 + row_factory rather than running on a bare
+            # sqlite3.connect that misses all three.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                save_entry(con, ccn, metric, value, sample_size, source, analyst)
+                con.commit()
             self.send_response(HTTPStatus.FOUND)
             self.send_header("Location", f"/data-room/{ccn}")
             self.end_headers()
@@ -11178,10 +11181,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         if not name:
             return self._redirect("/new-deal")
         state = (form.get("state") or "").strip().upper()
-        try:
-            bed_count = int(form.get("bed_count") or 0) or None
-        except ValueError:
-            bed_count = None
+        # Report 0124 / iter-29: clamp bed_count. Negative beds make
+        # no sense; >10000 is bigger than any US hospital system. The
+        # `or None` preserves the prior "0 means unset" behaviour.
+        bed_count_clamped = self._clamp_int(
+            form.get("bed_count", ""), default=0,
+            min_v=0, max_v=10000,
+        )
+        bed_count = bed_count_clamped or None
         payer_mix: Dict[str, float] = {}
         for key_ui, key_pkt in (
             ("medicare_pct", "medicare"),
@@ -15691,8 +15698,18 @@ class RCMHandler(BaseHTTPRequestHandler):
                 reg = get_default_registry()
                 job_id = reg.submit_run(
                     actual=actual, benchmark=benchmark, outdir=outdir,
-                    n_sims=int(form.get("n_sims") or 5000),
-                    seed=int(form.get("seed") or 42),
+                    # Report 0124 / iter-29: clamp caller-supplied
+                    # n_sims so a poisoned ?n_sims=999999999 cannot
+                    # DoS the simulation worker. 1..50000 is the
+                    # operational window per CLAUDE.md / pe_math.
+                    n_sims=self._clamp_int(
+                        form.get("n_sims", ""), default=5000,
+                        min_v=1, max_v=50000,
+                    ),
+                    seed=self._clamp_int(
+                        form.get("seed", ""), default=42,
+                        min_v=0, max_v=2**31 - 1,
+                    ),
                     no_report=form.get("no_report") == "1",
                     partner_brief=form.get("partner_brief") == "1",
                 )
@@ -15922,8 +15939,17 @@ class RCMHandler(BaseHTTPRequestHandler):
                 actual=inputs["actual_path"],
                 benchmark=inputs["benchmark_path"],
                 outdir=outdir,
-                n_sims=int(form.get("n_sims") or 5000),
-                seed=int(form.get("seed") or 42),
+                # Report 0124 / iter-29: clamp Monte Carlo n_sims so
+                # caller-supplied ?n_sims=999999999 cannot DoS the
+                # worker thread. Same envelope as the /api path above.
+                n_sims=self._clamp_int(
+                    form.get("n_sims", ""), default=5000,
+                    min_v=1, max_v=50000,
+                ),
+                seed=self._clamp_int(
+                    form.get("seed", ""), default=42,
+                    min_v=0, max_v=2**31 - 1,
+                ),
             )
             accept = self.headers.get("Accept", "")
             if "application/json" in accept:
@@ -15983,7 +16009,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                     raise ValueError(
                         "kind, deal_id, and trigger_key are required"
                     )
-                snooze_days = int(form.get("snooze_days") or 0)
+                # Report 0124 / iter-29: clamp snooze_days. Negative
+                # values would unsnooze immediately (silly); >365 keeps
+                # an alert hidden for over a year, defeating the audit
+                # trail.
+                snooze_days = self._clamp_int(
+                    form.get("snooze_days", ""), default=0,
+                    min_v=0, max_v=365,
+                )
                 # B125: prefer authenticated user over self-reported
                 cu = self._current_user()
                 acked_by = (
@@ -16618,6 +16651,32 @@ def run_server(
         sys.stdout.write(
             f"  auth:         HTTP Basic as {RCMHandler.config.auth_user}\n"
         )
+    else:
+        # Open-mode advisory. Open mode (no Basic auth + no DB users)
+        # is intentional for single-user laptop deploys on loopback. On
+        # any non-loopback bind, warn loudly so operators don't ship a
+        # public deployment without authentication. Cross-link
+        # Report-0119 MR921.
+        try:
+            from .auth.auth import _ensure_tables as _eat
+            _store = PortfolioStore(RCMHandler.config.db_path)
+            _eat(_store)
+            with _store.connect() as _con:
+                _has_users = _con.execute(
+                    "SELECT 1 FROM users LIMIT 1"
+                ).fetchone() is not None
+        except Exception:  # noqa: BLE001 — warning is best-effort
+            _has_users = False
+        _is_loopback = host in ("127.0.0.1", "localhost", "::1")
+        if not _has_users and not _is_loopback:
+            sys.stderr.write(
+                "\n[rcm-mc] WARNING: open server — no authentication configured.\n"
+                f"  host={host} is non-loopback and no users exist in the DB.\n"
+                "  Set RCM_MC_AUTH=user:pass, or create a user with:\n"
+                "    rcm-mc portfolio users create --username <u> "
+                "--password <p> --role admin\n\n"
+            )
+            sys.stderr.flush()
     sys.stdout.write(f"  API docs:     {url}api/docs\n")
     sys.stdout.write(f"  started in:   {_boot_ms}ms\n")
     sys.stdout.write("  Ctrl+C to stop\n\n")

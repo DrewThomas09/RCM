@@ -40,12 +40,19 @@ def _ensure_table(store: PortfolioStore) -> None:
     store.init_db()
     with store.connect() as con:
         con.execute(
+            # Report 0256 MR1057: deal_id has no FK declared; deleting
+            # a deal would orphan this row silently. New DBs get the
+            # FK + ON DELETE CASCADE (CREATE TABLE IF NOT EXISTS is a
+            # no-op on existing DBs; live deployments need a one-shot
+            # orphan-purge + ALTER migration before this fires for them).
             """CREATE TABLE IF NOT EXISTS deal_sim_inputs (
                 deal_id TEXT PRIMARY KEY,
                 actual_path TEXT NOT NULL,
                 benchmark_path TEXT NOT NULL,
                 outdir_base TEXT NOT NULL DEFAULT '',
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY(deal_id) REFERENCES deals(deal_id)
+                    ON DELETE CASCADE
             )"""
         )
         con.commit()

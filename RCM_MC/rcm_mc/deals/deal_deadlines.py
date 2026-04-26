@@ -56,6 +56,9 @@ def _ensure_table(store: PortfolioStore) -> None:
     store.init_db()
     with store.connect() as con:
         con.execute(
+            # Report 0256 MR1057: add deal_id FK so deadlines are
+            # cleared when their parent deal is deleted. New DBs only
+            # (CREATE TABLE IF NOT EXISTS no-op on existing schemas).
             """CREATE TABLE IF NOT EXISTS deal_deadlines (
                 deadline_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 deal_id TEXT NOT NULL,
@@ -65,7 +68,9 @@ def _ensure_table(store: PortfolioStore) -> None:
                 created_at TEXT NOT NULL,
                 completed_at TEXT,
                 notes TEXT NOT NULL DEFAULT '',
-                owner TEXT NOT NULL DEFAULT ''
+                owner TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY(deal_id) REFERENCES deals(deal_id)
+                    ON DELETE CASCADE
             )"""
         )
         # Back-compat migration for DBs created before B116 added owner

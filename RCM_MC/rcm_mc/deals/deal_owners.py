@@ -54,12 +54,17 @@ def _ensure_owners_table(store: PortfolioStore) -> None:
     store.init_db()
     with store.connect() as con:
         con.execute(
+            # Report 0256 MR1057: add deal_id FK so owner-history is
+            # cleared when its parent deal is deleted. New DBs only
+            # (CREATE TABLE IF NOT EXISTS no-op on existing schemas).
             """CREATE TABLE IF NOT EXISTS deal_owner_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 deal_id TEXT NOT NULL,
                 owner TEXT NOT NULL,
                 assigned_at TEXT NOT NULL,
-                note TEXT NOT NULL DEFAULT ''
+                note TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY(deal_id) REFERENCES deals(deal_id)
+                    ON DELETE CASCADE
             )"""
         )
         con.execute(

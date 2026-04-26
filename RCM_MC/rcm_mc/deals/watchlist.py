@@ -37,9 +37,14 @@ def _ensure_stars_table(store: PortfolioStore) -> None:
     store.init_db()
     with store.connect() as con:
         con.execute(
+            # Report 0256 MR1057: add deal_id FK so the star is cleared
+            # when the parent deal is deleted. New DBs only (CREATE
+            # TABLE IF NOT EXISTS no-op on existing schemas).
             """CREATE TABLE IF NOT EXISTS deal_stars (
                 deal_id TEXT PRIMARY KEY,
-                starred_at TEXT NOT NULL
+                starred_at TEXT NOT NULL,
+                FOREIGN KEY(deal_id) REFERENCES deals(deal_id)
+                    ON DELETE CASCADE
             )"""
         )
         con.commit()

@@ -253,6 +253,33 @@ def get_or_build_packet(
         overrides_for_hash = _get_overrides(store, deal_id) or {}
     except Exception:  # noqa: BLE001
         overrides_for_hash = {}
+    # Report 0148/0162 MR958: include actual.yaml + benchmark.yaml
+    # content hashes so editing those files invalidates the cache. The
+    # YAMLs are loaded in packet_builder._build_simulation_summary via
+    # deal_sim_inputs, so we look them up the same way here. Best-
+    # effort: any failure (table missing, file missing, IO error) just
+    # leaves the hash as None and falls back to the prior behaviour.
+    actual_yaml_hash: Optional[str] = None
+    benchmark_yaml_hash: Optional[str] = None
+    try:
+        from ..deals.deal_sim_inputs import get_inputs as _get_sim_inputs
+        _sim_inputs = _get_sim_inputs(store, deal_id) or {}
+        import hashlib as _h
+        from pathlib import Path as _P
+        for _key, _slot in (
+            ("actual_path", "actual_yaml_hash"),
+            ("benchmark_path", "benchmark_yaml_hash"),
+        ):
+            _path = _sim_inputs.get(_key)
+            if _path and _P(_path).is_file():
+                with open(_path, "rb") as _f:
+                    _digest = _h.sha256(_f.read()).hexdigest()
+                if _slot == "actual_yaml_hash":
+                    actual_yaml_hash = _digest
+                else:
+                    benchmark_yaml_hash = _digest
+    except Exception:  # noqa: BLE001 — best-effort; never block build
+        pass
     h = hash_inputs(
         deal_id=deal_id,
         observed_metrics=observed_override,
@@ -260,6 +287,8 @@ def get_or_build_packet(
         as_of=as_of,
         profile=profile_override if isinstance(profile_override, dict) else None,
         analyst_overrides=overrides_for_hash,
+        actual_yaml_hash=actual_yaml_hash,
+        benchmark_yaml_hash=benchmark_yaml_hash,
     )
 
     if not force_rebuild:
