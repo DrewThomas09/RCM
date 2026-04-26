@@ -6,7 +6,7 @@ Built: 2026-04-26 | Source: 254 audit reports (Report-0001.md through Report-025
 
 - [x] CRITICAL | Report-0131 | `configs/playbook.yaml` unparseable YAML (6 of 8 keys have leading space → `ParserError`); silent production bug since 2026-04-17. All action-plan sections in HTML reports degrade to empty. | configs/playbook.yaml | MR744 | 33fda80 | 2026-04-26
 - [x] CRITICAL | Report-0101/0107/0251 | `pyarrow>=10.0` pin allows CVE-2023-47248 RCE; code reads user-uploaded parquet → **RCE attack surface**. Tighten to `pyarrow>=18.1,<19.0`. | pyproject.toml:51 | MR770/MR1038 | cb84f07 | 2026-04-26
-- [ ] CRITICAL | Report-0001/0251 | `rcm-intake` console-script broken — `pyproject.toml:70` points to nonexistent `rcm_mc/intake.py`; real `main()` at `rcm_mc/data/intake.py:619`. After `pip install`, `rcm-intake` raises `ModuleNotFoundError`. Fix: add 12-line shim mirroring `rcm_mc/lookup.py`. | pyproject.toml:70 / rcm_mc/intake.py (missing) | MR14/MR1035
+- [x] CRITICAL | Report-0001/0251 | `rcm-intake` console-script broken — `pyproject.toml:70` points to nonexistent `rcm_mc/intake.py`; real `main()` at `rcm_mc/data/intake.py:619`. After `pip install`, `rcm-intake` raises `ModuleNotFoundError`. Fix: add 12-line shim mirroring `rcm_mc/lookup.py`. | pyproject.toml:70 / rcm_mc/intake.py (missing) | MR14/MR1035 | 5d91bda | 2026-04-26
 - [ ] CRITICAL | Report-0246 | Local `main` 144 commits ahead of `origin/main`; entire audit chain (Reports 0001-0254) never pushed. Single-laptop-loss risk. | (git state) | MR1014
 
 ## HIGH
