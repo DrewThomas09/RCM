@@ -11,7 +11,7 @@ Built: 2026-04-26 | Source: 254 audit reports (Report-0001.md through Report-025
 
 ## HIGH
 
-- [ ] HIGH | Report-0150/0145 | `profiles.yml` not in `.gitignore` — dbt credentials may leak if committed under `rcm_mc_diligence/connectors/seekingchartis/`. Fix: add `**/profiles.yml` + keep `!**/profiles.example.yml`. | .gitignore | MR829
+- [x] HIGH | Report-0150/0145 | `profiles.yml` not in `.gitignore` — dbt credentials may leak if committed under `rcm_mc_diligence/connectors/seekingchartis/`. Fix: add `**/profiles.yml` + keep `!**/profiles.example.yml`. | .gitignore | MR829 | b31aecd | 2026-04-26
 - [ ] HIGH | Report-0254 | `infra/README.md:10` references `ConfigValidationError` (actual class: `ConfigError`) AND `write_yaml` (actually in `core/calibration.py`, not `config.py`). New contributors writing `except ConfigValidationError:` will silently miss real failures. | rcm_mc/infra/README.md:10 | MR1052
 - [ ] HIGH | Report-0247 | `_chartis_kit_v2.py` deleted on `feat/ui-rework-v3` (-600 LOC). Pre-merge grep needed for any importer on `main` referencing it. | rcm_mc/ui/_chartis_kit_v2.py | MR1015
 - [ ] HIGH | Report-0207/0211 | CLAUDE.md says SQLite has 17 tables — actual count is 21 (Reports 0167/0183/0211 confirmed initiative_actuals + 4 engagement tables). Stale by 4. | RCM_MC/CLAUDE.md | MR1028
