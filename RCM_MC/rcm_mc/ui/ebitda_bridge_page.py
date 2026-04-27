@@ -19,7 +19,10 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import chartis_shell
+from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
+from .provenance import build_provenance_graph
+from ..provenance.graph import NodeType, ProvenanceNode
 
 
 def _safe_float(val: Any, default: float = 0.0) -> float:
@@ -460,6 +463,47 @@ def render_ebitda_bridge(
     bridge = _compute_bridge(rev, current_ebitda, medicare_pct=mc,
                               overrides=dr_overrides, peer_targets=peer_tgts)
 
+    # Phase 4C: build a ProvenanceGraph for "explain this number"
+    # tooltips on the Lever Detail table's current-value cells.
+    # Start from the hospital row (HCRIS-derived margin / NPR /
+    # opex / etc.), then manually add one OBSERVED node per
+    # lever-current value at id `observed:<glossary_key>` with
+    # source = SELLER if the value came from the data room or
+    # DEFAULT (model config) otherwise. The cmi -> case_mix_index
+    # alias from loop 106 means lev["metric"]=="cmi" maps to
+    # glossary key case_mix_index — same alias drives both the
+    # 4A label link and the 4C value tooltip.
+    prov_graph = build_provenance_graph(
+        ccn=str(ccn),
+        hcris_profile=dict(hospital),
+        ml_predictions={},
+    )
+    for _lev in bridge["levers"]:
+        _m_key = _LEVER_METRIC_TO_GLOSSARY.get(
+            _lev.get("metric", ""), _lev.get("metric", ""),
+        )
+        if not _m_key:
+            continue
+        _node_id = f"observed:{_m_key}"
+        if _node_id in prov_graph.nodes:
+            # Hospital-row already provided this metric; don't
+            # overwrite the SOURCE node with a lever-default.
+            continue
+        _is_seller = (
+            f"{_lev.get('metric', '')}_current" in dr_overrides
+        )
+        prov_graph.add_node(ProvenanceNode(
+            id=_node_id,
+            label=_lev["name"],
+            node_type=NodeType.OBSERVED if _is_seller
+                else NodeType.PREDICTED,
+            value=float(_lev["current"]),
+            unit="pct" if _lev["current"] < 2 else "",
+            source="SELLER" if _is_seller else "MODEL_DEFAULT",
+            source_detail=("Data room" if _is_seller
+                else "Lever config default"),
+        ))
+
     # Data provenance banner
     provenance_banner = ""
     if has_seller_data:
@@ -599,6 +643,7 @@ def render_ebitda_bridge(
 
     # ── Lever detail table ──
     detail_rows = ""
+    _first_tooltip = True
     for lev in bridge["levers"]:
         current_str = f"{lev['current']:.1%}" if lev["current"] < 2 else f"{lev['current']:.2f}"
         target_str = f"{lev['target']:.1%}" if lev["target"] < 2 else f"{lev['target']:.2f}"
@@ -607,10 +652,23 @@ def render_ebitda_bridge(
         is_from_seller = f"{metric_key}_current" in dr_overrides
         cur_tag = source_tag(Source.SELLER, "Data room") if is_from_seller else source_tag(Source.DEFAULT, "Model default")
         tgt_tag = source_tag(Source.BENCHMARK, "P75 peers")
+        # Phase 4C: hover the current-value cell for the
+        # provenance card (node type, prose, upstream).
+        # Resolves through the same cmi -> case_mix_index alias
+        # used for the 4A label link.
+        _current_tt = provenance_tooltip(
+            label=lev["name"], value=current_str,
+            graph=prov_graph,
+            metric_key=_LEVER_METRIC_TO_GLOSSARY.get(
+                metric_key, metric_key,
+            ),
+            inject_css=_first_tooltip,
+        )
+        _first_tooltip = False
         detail_rows += (
             f'<tr>'
             f'<td style="font-weight:500;">{_lever_label_link(lev["name"], lev.get("metric", ""))}</td>'
-            f'<td class="num">{current_str} {cur_tag}</td>'
+            f'<td class="num">{_current_tt} {cur_tag}</td>'
             f'<td class="num" style="color:var(--cad-pos);">{target_str} {tgt_tag}</td>'
             f'<td class="num" style="color:var(--cad-pos);">{_fm(lev["revenue_impact"])}</td>'
             f'<td class="num" style="color:var(--cad-pos);">{_fm(lev["cost_impact"])}</td>'
