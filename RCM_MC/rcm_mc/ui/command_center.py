@@ -11,13 +11,13 @@ Always shows: data estate summary, model health, and market pulse.
 from __future__ import annotations
 
 import html as _html
-import sqlite3
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
+from ..portfolio.store import PortfolioStore
 from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 from .provenance import source_tag, Source
@@ -43,43 +43,45 @@ def render_command_center(
     now = datetime.now(timezone.utc)
 
     # ── Load portfolio state ──
+    # Route through PortfolioStore so the connection inherits the
+    # canonical PRAGMA foreign_keys=ON, busy_timeout=5000, and
+    # row_factory=sqlite3.Row. Closes one of the 8 documented
+    # dispatcher bypasses (campaign target 4E).
+    store = PortfolioStore(db_path)
     deals = []
     alerts = []
     try:
-        con = sqlite3.connect(db_path)
-        con.row_factory = sqlite3.Row
-        deal_rows = con.execute(
-            "SELECT deal_id, name, profile_json, created_at "
-            "FROM deals WHERE archived_at IS NULL "
-            "ORDER BY created_at DESC"
-        ).fetchall()
-        for r in deal_rows:
-            deals.append({"deal_id": r["deal_id"], "name": r["name"],
-                           "created_at": r["created_at"]})
-        try:
-            alert_rows = con.execute(
-                "SELECT deal_id, severity, kind, message, fired_at "
-                "FROM alerts WHERE acked_at IS NULL "
-                "ORDER BY fired_at DESC LIMIT 5"
+        with store.connect() as con:
+            deal_rows = con.execute(
+                "SELECT deal_id, name, profile_json, created_at "
+                "FROM deals WHERE archived_at IS NULL "
+                "ORDER BY created_at DESC"
             ).fetchall()
-            alerts = [dict(r) for r in alert_rows]
-        except Exception:
-            pass
-        con.close()
-    except Exception:
+            for r in deal_rows:
+                deals.append({"deal_id": r["deal_id"], "name": r["name"],
+                               "created_at": r["created_at"]})
+            try:
+                alert_rows = con.execute(
+                    "SELECT deal_id, severity, kind, message, fired_at "
+                    "FROM alerts WHERE acked_at IS NULL "
+                    "ORDER BY fired_at DESC LIMIT 5"
+                ).fetchall()
+                alerts = [dict(r) for r in alert_rows]
+            except Exception:  # noqa: BLE001 — alerts table is optional
+                pass
+    except Exception:  # noqa: BLE001 — empty/unbuilt DB falls through
         pass
 
-    # Load pipeline data
+    # Load pipeline data through the same canonical seam.
     pipeline_hospitals = []
     saved_searches = []
     try:
         from ..data.pipeline import list_pipeline, list_searches, pipeline_summary
-        con = sqlite3.connect(db_path)
-        pipeline_hospitals = list_pipeline(con)
-        saved_searches = list_searches(con)
-        pipe_summary = pipeline_summary(con)
-        con.close()
-    except Exception:
+        with store.connect() as con:
+            pipeline_hospitals = list_pipeline(con)
+            saved_searches = list_searches(con)
+            pipe_summary = pipeline_summary(con)
+    except Exception:  # noqa: BLE001 — pipeline tables are optional
         pipe_summary = {}
 
     has_portfolio = len(deals) > 0
