@@ -1983,6 +1983,15 @@ class RCMHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
+        if path == "/v3-status":
+            # Internal campaign-progress dashboard. Reads
+            # docs/V3_ROUTE_INVENTORY.md and renders the compliance
+            # counts via chartis_shell. Documented exception to the
+            # DealAnalysisPacket invariant — it is metadata about the
+            # migration, not analytical content about a deal.
+            from .ui.v3_status_page import render_v3_status
+            return self._send_html(render_v3_status())
+
         if path == "/dashboard":
             # Private-app landing page (Heroku / small-team deployments).
             # Composes: curated analyses · recent runs · system status ·
