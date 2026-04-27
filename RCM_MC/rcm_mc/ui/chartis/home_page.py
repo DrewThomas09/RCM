@@ -11,10 +11,10 @@ to an empty state rather than crashing the whole page.
 from __future__ import annotations
 
 import html as _html
-import sqlite3
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
+from ...portfolio.store import PortfolioStore
 from .._chartis_kit import (
     P,
     chartis_shell,
@@ -101,14 +101,15 @@ def _pipeline_funnel(store: Any) -> str:
 
 def _alerts(db_path: str) -> str:
     try:
-        con = sqlite3.connect(db_path)
-        con.row_factory = sqlite3.Row
-        rows = con.execute(
-            "SELECT deal_id, severity, kind, message, fired_at "
-            "FROM alerts WHERE acked_at IS NULL "
-            "ORDER BY fired_at DESC LIMIT 6"
-        ).fetchall()
-        con.close()
+        # Route through PortfolioStore (campaign target 4E) — provides
+        # Row factory + busy_timeout + foreign_keys, so the manual
+        # row_factory assignment is no longer needed.
+        with PortfolioStore(db_path).connect() as con:
+            rows = con.execute(
+                "SELECT deal_id, severity, kind, message, fired_at "
+                "FROM alerts WHERE acked_at IS NULL "
+                "ORDER BY fired_at DESC LIMIT 6"
+            ).fetchall()
     except Exception:
         rows = []
     if not rows:
@@ -149,13 +150,11 @@ def _alerts(db_path: str) -> str:
 
 def _health_distribution(db_path: str) -> str:
     try:
-        con = sqlite3.connect(db_path)
-        con.row_factory = sqlite3.Row
-        rows = con.execute(
-            "SELECT score FROM deal_health_scores "
-            "WHERE score IS NOT NULL"
-        ).fetchall()
-        con.close()
+        with PortfolioStore(db_path).connect() as con:
+            rows = con.execute(
+                "SELECT score FROM deal_health_scores "
+                "WHERE score IS NOT NULL"
+            ).fetchall()
     except Exception:
         rows = []
     if not rows:
@@ -224,18 +223,16 @@ def _recent_deals(store: Any) -> str:
 
 def _deadlines(db_path: str) -> str:
     try:
-        con = sqlite3.connect(db_path)
-        con.row_factory = sqlite3.Row
-        today = date.today().isoformat()
-        week_out = (date.today() + timedelta(days=7)).isoformat()
-        rows = con.execute(
-            "SELECT deal_id, title, due_date, owner "
-            "FROM deal_deadlines "
-            "WHERE completed_at IS NULL AND due_date <= ? "
-            "ORDER BY due_date ASC LIMIT 6",
-            (week_out,),
-        ).fetchall()
-        con.close()
+        with PortfolioStore(db_path).connect() as con:
+            today = date.today().isoformat()
+            week_out = (date.today() + timedelta(days=7)).isoformat()
+            rows = con.execute(
+                "SELECT deal_id, title, due_date, owner "
+                "FROM deal_deadlines "
+                "WHERE completed_at IS NULL AND due_date <= ? "
+                "ORDER BY due_date ASC LIMIT 6",
+                (week_out,),
+            ).fetchall()
     except Exception:
         rows = []
     if not rows:
@@ -470,11 +467,10 @@ def _kpi_strip(store: Any, db_path: str) -> str:
         n_deals = 0
     n_alerts = 0
     try:
-        con = sqlite3.connect(db_path)
-        (n_alerts,) = con.execute(
-            "SELECT COUNT(*) FROM alerts WHERE acked_at IS NULL"
-        ).fetchone()
-        con.close()
+        with PortfolioStore(db_path).connect() as con:
+            (n_alerts,) = con.execute(
+                "SELECT COUNT(*) FROM alerts WHERE acked_at IS NULL"
+            ).fetchone()
     except Exception:
         n_alerts = 0
     n_corpus = len(_load_all_seed_deals())
