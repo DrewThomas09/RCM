@@ -198,27 +198,31 @@ def build_provenance_profile(
     calibrations: Dict[str, float] = {}
     if db_path:
         try:
-            import sqlite3
-            con = sqlite3.connect(db_path)
-            # Raw entries
-            rows = con.execute(
-                "SELECT metric, value FROM data_room_entries "
-                "WHERE hospital_ccn = ? AND superseded_by IS NULL",
-                (ccn,),
-            ).fetchall()
-            for m, v in rows:
-                if m not in seller_data:
-                    seller_data[m] = v
-            # Calibrations
-            rows = con.execute(
-                "SELECT metric, bayesian_posterior FROM data_room_calibrations "
-                "WHERE hospital_ccn = ? ORDER BY computed_at DESC",
-                (ccn,),
-            ).fetchall()
-            for m, v in rows:
-                if m not in calibrations:
-                    calibrations[m] = v
-            con.close()
+            # Late local import keeps the bypass cleanup contained
+            # (campaign target 4E) — the module top doesn't need
+            # PortfolioStore otherwise. Routes the read through
+            # the canonical seam so it inherits busy_timeout=5000,
+            # foreign_keys=ON, and Row factory.
+            from ..portfolio.store import PortfolioStore
+            with PortfolioStore(db_path).connect() as con:
+                # Raw entries
+                rows = con.execute(
+                    "SELECT metric, value FROM data_room_entries "
+                    "WHERE hospital_ccn = ? AND superseded_by IS NULL",
+                    (ccn,),
+                ).fetchall()
+                for m, v in rows:
+                    if m not in seller_data:
+                        seller_data[m] = v
+                # Calibrations
+                rows = con.execute(
+                    "SELECT metric, bayesian_posterior FROM data_room_calibrations "
+                    "WHERE hospital_ccn = ? ORDER BY computed_at DESC",
+                    (ccn,),
+                ).fetchall()
+                for m, v in rows:
+                    if m not in calibrations:
+                        calibrations[m] = v
         except Exception:
             pass
 
