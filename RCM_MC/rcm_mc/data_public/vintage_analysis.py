@@ -25,9 +25,10 @@ from __future__ import annotations
 
 import json
 import math
-import sqlite3
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
+
+from ..portfolio.store import PortfolioStore
 
 
 # ---------------------------------------------------------------------------
@@ -173,13 +174,15 @@ def _build_stats(
 
 
 def _load_corpus(corpus_db_path: str) -> List[Dict[str, Any]]:
-    con = sqlite3.connect(corpus_db_path)
-    con.row_factory = sqlite3.Row
-    rows = con.execute(
-        "SELECT deal_name, year, ev_mm, ebitda_at_entry_mm, hold_years, "
-        "realized_moic, realized_irr, buyer FROM public_deals"
-    ).fetchall()
-    con.close()
+    # Route through PortfolioStore (campaign target 4E, data_public
+    # sweep): inherits busy_timeout=5000, foreign_keys=ON, and
+    # row_factory=Row — replacing the prior bare-connect plus
+    # manual row_factory assignment.
+    with PortfolioStore(corpus_db_path).connect() as con:
+        rows = con.execute(
+            "SELECT deal_name, year, ev_mm, ebitda_at_entry_mm, hold_years, "
+            "realized_moic, realized_irr, buyer FROM public_deals"
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
