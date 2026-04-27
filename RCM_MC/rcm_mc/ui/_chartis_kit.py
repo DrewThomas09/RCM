@@ -69,6 +69,24 @@ P = {
     "critical": "#8a1e0e",
 }
 
+# Compatibility aliases — every renderer that was written against
+# the legacy P dict (border, accent, brand, etc.) keeps working
+# without 500ing on KeyError. The aliases map to the closest
+# editorial-palette equivalent. Adding new aliases here is the
+# right way to unblock pages that were partially-migrated.
+P.update({
+    "border":        P["rule"],        # legacy hairline → editorial rule
+    "border_dim":    P["rule_2"],
+    "accent":        P["teal"],        # legacy accent → editorial teal
+    "brand":         P["navy"],        # legacy brand   → editorial navy
+    "brand_accent":  P["teal"],        # second legacy alias for brand accent
+    "bg_secondary":  P["panel_alt"],
+    "row_stripe":    P["panel_alt"],
+    # Text aliases used by older renderers
+    "text_secondary": P["text_dim"],
+    "text_muted":    P["text_dim"],
+})
+
 # ---------------------------------------------------------------------------
 # Navigation — top bar primary + Platform Index secondary
 # ---------------------------------------------------------------------------
