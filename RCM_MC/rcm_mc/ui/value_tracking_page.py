@@ -10,8 +10,30 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import chartis_shell
+from ._glossary_link import metric_label_link
 from ..portfolio.store import PortfolioStore
 from .brand import PALETTE
+
+
+# ── Phase 4A: lever-name → /metric-glossary anchor link ──
+# pe.value_tracker stores lever NAMES (not metric keys) because
+# the helper module is in the restricted package list. Build a
+# name→glossary-key reverse table by reading _LEVER_CONFIG from
+# the bridge module — single source of truth, computed once at
+# import. The bridge's "cmi" maps to glossary "case_mix_index".
+def _build_lever_name_index() -> Dict[str, str]:
+    from .ebitda_bridge_page import (
+        _LEVER_CONFIG,
+        _LEVER_METRIC_TO_GLOSSARY,
+    )
+    out: Dict[str, str] = {}
+    for cfg in _LEVER_CONFIG:
+        m = cfg["metric"]
+        out[cfg["name"]] = _LEVER_METRIC_TO_GLOSSARY.get(m, m)
+    return out
+
+
+_LEVER_NAME_TO_GLOSSARY_KEY: Dict[str, str] = _build_lever_name_index()
 
 
 def _fm(val: float) -> str:
@@ -114,7 +136,7 @@ def render_value_tracker(
             bar_color = "var(--cad-pos)" if r_pct >= 0.85 else ("var(--cad-warn)" if r_pct >= 0.6 else "var(--cad-neg)")
             lever_rows += (
                 f'<tr>'
-                f'<td style="font-weight:500;">{_html.escape(lev["lever"][:25])}</td>'
+                f'<td style="font-weight:500;">{metric_label_link(lev["lever"][:25], _LEVER_NAME_TO_GLOSSARY_KEY.get(lev["lever"], ""))}</td>'
                 f'<td class="num">{_fm(lev["planned"])}</td>'
                 f'<td class="num" style="font-weight:600;">{_fm(lev["actual"])}</td>'
                 f'<td class="num" style="color:{bar_color};font-weight:600;">{r_pct:.0%}</td>'
@@ -146,7 +168,7 @@ def render_value_tracker(
             continue
         bridge_levers += (
             f'<tr>'
-            f'<td>{_html.escape(lev["name"][:25])}</td>'
+            f'<td>{metric_label_link(lev["name"][:25], _LEVER_NAME_TO_GLOSSARY_KEY.get(lev["name"], ""))}</td>'
             f'<td class="num">{_fm(lev["ebitda_impact"])}</td>'
             f'<td class="num">{lev["ramp_months"]}mo</td>'
             f'</tr>'
