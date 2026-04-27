@@ -14,7 +14,9 @@ import pandas as pd
 
 from ._chartis_kit import chartis_shell
 from ._glossary_link import metric_label_link
+from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
+from .provenance import build_provenance_graph
 
 
 def _safe_float(val, default: float = 0.0) -> float:
@@ -207,6 +209,21 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
     metric_rows = ""
     gap_opportunities = []
 
+    # Phase 4C: build a ProvenanceGraph once per render so per-
+    # row value cells can render a "where did this number come
+    # from?" tooltip. The hospital is a pandas Series; convert
+    # to dict so the graph constructor can iterate it. ml_
+    # predictions is empty here (this page reads HCRIS-derived
+    # values directly from the dataframe).
+    prov_graph = build_provenance_graph(
+        ccn=str(ccn),
+        hcris_profile=dict(hospital),
+        ml_predictions={},
+    )
+    # Track first-call so only the first per-row tooltip
+    # injects the <style> block — avoids 11 duplicate styles.
+    _first_tooltip = True
+
     for col, label, fmt, direction in _METRIC_DEFS:
         if col not in df.columns:
             continue
@@ -220,7 +237,17 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         # are direct matches today; the helper falls through to
         # plain text for the other 8 columns).
         cells = f'<td style="font-weight:500;">{metric_label_link(label, col)}</td>'
-        cells += f'<td class="num" style="font-weight:600;">{_fmt_val(val, fmt)}</td>'
+        # Phase 4C: wrap the value cell in provenance_tooltip.
+        # 11 of 12 _METRIC_DEFS cols resolve to glossary entries
+        # post-loop-114; the 12th (beds) falls through to plain
+        # text via the helper's "unknown key" path.
+        _tip = provenance_tooltip(
+            label=label, value=_fmt_val(val, fmt),
+            graph=prov_graph, metric_key=col,
+            inject_css=_first_tooltip,
+        )
+        _first_tooltip = False
+        cells += f'<td class="num" style="font-weight:600;">{_tip}</td>'
 
         for gname in group_names:
             gdf = peer_groups[gname]
