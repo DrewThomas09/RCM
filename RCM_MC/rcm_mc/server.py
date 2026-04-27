@@ -3645,18 +3645,26 @@ class RCMHandler(BaseHTTPRequestHandler):
             rollup["request_count"] = RCMHandler._request_counter
             return self._send_json(rollup)
         if path == "/api/backup":
-            import sqlite3 as _sqlite3
             import io as _io
             import tempfile as _tmpf
             store = PortfolioStore(self.config.db_path)
             with _tmpf.NamedTemporaryFile(suffix=".db", delete=False) as tf:
                 backup_path = tf.name
             try:
-                src = _sqlite3.connect(self.config.db_path)
-                dst = _sqlite3.connect(backup_path)
-                src.backup(dst)
-                src.close()
-                dst.close()
+                # Route both ends of the online sqlite backup
+                # through PortfolioStore (campaign target 4E) so
+                # src + dst connections inherit busy_timeout=5000,
+                # foreign_keys=ON, and Row factory. The native
+                # Connection.backup(target) API is preserved
+                # verbatim; both with-blocks close cleanly via the
+                # context manager so the manual src.close()/
+                # dst.close() are gone. Parenthesized
+                # multi-context-manager form (Python 3.14).
+                with (
+                    PortfolioStore(self.config.db_path).connect() as src,
+                    PortfolioStore(backup_path).connect() as dst,
+                ):
+                    src.backup(dst)
                 with open(backup_path, "rb") as f:
                     body = f.read()
                 self.send_response(HTTPStatus.OK)
