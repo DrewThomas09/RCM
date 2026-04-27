@@ -17,8 +17,10 @@ import pandas as pd
 
 from ._chartis_kit import chartis_shell
 from ._glossary_link import metric_label_link
+from ._provenance_tooltip import provenance_tooltip
 from ..portfolio.store import PortfolioStore
 from .brand import PALETTE
+from .provenance import build_provenance_graph
 
 
 def _fm(val: float) -> str:
@@ -139,9 +141,25 @@ def render_data_room(
         f'</form></div>'
     )
 
+    # Phase 4C: build a ProvenanceGraph for the calibration
+    # table's posterior-value tooltips. build_provenance_graph
+    # auto-loads the data_room_calibrations table via db_path
+    # and produces CALCULATED nodes at observed:<metric> for
+    # every metric whose Bayesian posterior was computed —
+    # exactly the cells we're about to wrap. ml_predictions is
+    # passed through so PREDICTED parents appear when no
+    # calibration exists.
+    prov_graph = build_provenance_graph(
+        ccn=str(ccn),
+        hcris_profile=dict(hcris_profile or {}),
+        ml_predictions=dict(ml_predictions or {}),
+        db_path=db_path,
+    )
+
     # ── Calibration table — the money section ──
     cal_rows = ""
     surprises = []
+    _first_tooltip = True
     for cal in sorted(calibrations, key=lambda c: c.label):
         defn = _METRIC_DEFINITIONS.get(cal.metric, {})
         mtype = defn.get("type", "rate")
@@ -194,12 +212,22 @@ def render_data_room(
                 ) else "worse"
                 surprises.append((cal.label, delta, direction))
 
+        # Phase 4C: hover the posterior cell to see the
+        # CALCULATED node's prose + upstream (ML prior +
+        # seller observation feeding the Bayesian blend).
+        _post_tt = provenance_tooltip(
+            label=cal.label, value=post_str,
+            graph=prov_graph,
+            metric_key=getattr(cal, "metric", ""),
+            inject_css=_first_tooltip,
+        )
+        _first_tooltip = False
         cal_rows += (
             f'<tr>'
             f'<td style="font-weight:500;">{metric_label_link(cal.label, getattr(cal, "metric", ""))}</td>'
             f'<td class="num">{ml_str}</td>'
             f'<td class="num">{seller_str}</td>'
-            f'<td class="num" style="font-weight:600;">{post_str}</td>'
+            f'<td class="num" style="font-weight:600;">{_post_tt}</td>'
             f'<td class="num" style="font-size:11px;">{ci_str}</td>'
             f'<td class="num">{delta_str}</td>'
             f'<td>{shrink_bar}</td>'
