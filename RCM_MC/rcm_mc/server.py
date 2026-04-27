@@ -4756,75 +4756,16 @@ class RCMHandler(BaseHTTPRequestHandler):
                 import pandas as _pd_pres
                 deals_for_pressure = _pd_pres.DataFrame()
             return self._send_html(_rpp(deals_for_pressure, deal_id, pkt))
-        if path == "/calibration":
-            from .ui._chartis_kit import chartis_shell as _shell_cal
+        if path == "/calibration" or path == "/calibrate":
+            # Per-payer prior-calibration page (Phase 3 / 3D). Lifted
+            # out of an inlined 70-LOC server.py block on the
+            # saving-seeking-chartis branch (loop 31) so the page
+            # can be tested + wears the v3 utility classes uniformly.
+            # /calibrate is an alias of /calibration since the brief
+            # used the shorter name.
+            from .ui.calibration_page import render_calibration_page
             store = PortfolioStore(self.config.db_path)
-            try:
-                runs_df = store.list_runs()
-            except Exception:
-                import pandas as _pd_cal
-                runs_df = _pd_cal.DataFrame()
-            if runs_df.empty:
-                body = (
-                    '<div class="cad-card">'
-                    '<p style="color:var(--cad-text3);">No simulation runs yet. '
-                    'Run an analysis first to populate calibration priors.</p>'
-                    '<a href="/analysis" class="cad-btn cad-btn-primary" '
-                    'style="text-decoration:none;margin-top:8px;display:inline-block;">'
-                    'Go to Analysis &rarr;</a></div>'
-                )
-                return self._send_html(_shell_cal(body, "Calibration",
-                                                   subtitle="Per-payer prior calibration"))
-            import json as _cjson
-            payer_data: Dict[str, list] = {}
-            for _, r in runs_df.iterrows():
-                try:
-                    prim = _cjson.loads(r.get("primitives_json") or "{}")
-                except Exception:
-                    continue
-                for payer, vals in prim.get("payers", {}).items():
-                    payer_data.setdefault(payer, []).append(vals)
-            sliders = ""
-            for payer, entries in sorted(payer_data.items()):
-                idr_vals = [e.get("idr_mean") for e in entries if e.get("idr_mean") is not None]
-                fwr_vals = [e.get("fwr_mean") for e in entries if e.get("fwr_mean") is not None]
-                dar_vals = [e.get("dar_clean_days_mean") for e in entries if e.get("dar_clean_days_mean") is not None]
-                idr_m = sum(idr_vals) / len(idr_vals) if idr_vals else 0
-                fwr_m = sum(fwr_vals) / len(fwr_vals) if fwr_vals else 0
-                dar_m = sum(dar_vals) / len(dar_vals) if dar_vals else 0
-                ep = html.escape(payer)
-                sliders += (
-                    f'<div class="cad-card">'
-                    f'<h3 style="margin-bottom:8px;">{ep}</h3>'
-                    f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">'
-                    f'<div><label style="font-size:12px;color:var(--cad-text2);">IDR Mean: '
-                    f'<span id="idr-{ep}" class="cad-mono" style="color:var(--cad-text);">{idr_m:.3f}</span></label><br>'
-                    f'<input type="range" min="0" max="0.5" step="0.005" value="{idr_m:.3f}" '
-                    f'style="width:100%;accent-color:var(--cad-accent);" '
-                    f'oninput="document.getElementById(\'idr-{ep}\').textContent=this.value"></div>'
-                    f'<div><label style="font-size:12px;color:var(--cad-text2);">FWR Mean: '
-                    f'<span id="fwr-{ep}" class="cad-mono" style="color:var(--cad-text);">{fwr_m:.3f}</span></label><br>'
-                    f'<input type="range" min="0" max="0.8" step="0.005" value="{fwr_m:.3f}" '
-                    f'style="width:100%;accent-color:var(--cad-accent);" '
-                    f'oninput="document.getElementById(\'fwr-{ep}\').textContent=this.value"></div>'
-                    f'<div><label style="font-size:12px;color:var(--cad-text2);">DAR Days: '
-                    f'<span id="dar-{ep}" class="cad-mono" style="color:var(--cad-text);">{dar_m:.0f}</span></label><br>'
-                    f'<input type="range" min="0" max="120" step="1" value="{dar_m:.0f}" '
-                    f'style="width:100%;accent-color:var(--cad-accent);" '
-                    f'oninput="document.getElementById(\'dar-{ep}\').textContent=this.value"></div>'
-                    f'</div>'
-                    f'<p style="font-size:11px;color:var(--cad-text3);margin-top:6px;">{len(entries)} run(s)</p></div>'
-                )
-            body = (
-                f'<div class="cad-card"><p style="color:var(--cad-text2);font-size:12.5px;">'
-                f'Adjust priors per payer from {len(runs_df)} run(s).</p></div>'
-                f'{sliders}'
-                f'<div class="cad-card" style="display:flex;gap:8px;">'
-                f'<a href="/api/calibration/priors" class="cad-btn" style="text-decoration:none;">'
-                f'API: GET /api/calibration/priors</a></div>'
-            )
-            return self._send_html(_shell_cal(body, "Calibration",
-                                               subtitle="Per-payer prior calibration"))
+            return self._send_html(render_calibration_page(store))
         if path == "/api/calibration/priors":
             import json as _cjson2
             store = PortfolioStore(self.config.db_path)
