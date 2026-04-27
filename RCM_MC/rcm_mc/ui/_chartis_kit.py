@@ -418,6 +418,14 @@ def chartis_shell(
     subtitle: Optional[str] = None,
     show_chrome: bool = True,
     show_sidebar: bool = False,
+    # Page-specific styles injected into <head>. login_page and
+    # forgot_page rely on this to land their grid + panel CSS;
+    # without it, content stacks as one unstyled column.
+    extra_css: Optional[str] = None,
+    # Editorial PHI-banner toggle (consumed by the editorial
+    # variant). No-op in this v2 shell.
+    show_phi_banner: bool = False,
+    phi_mode: Optional[str] = None,
     **_extra: Any,
 ) -> str:
     """Render a full page. Drop-in replacement for the legacy dark shell.
@@ -461,6 +469,12 @@ def chartis_shell(
         f'font-style:italic;">{_esc(subtitle)}</div>'
     ) if subtitle else ""
     main_class = "ck-main ck-with-sidebar" if show_sidebar else "ck-main"
+    # Page-specific CSS goes AFTER the kit's CSS so page styles
+    # win specificity ties — matches the contract login_page.py
+    # and forgot_page.py expect (grid layout, panel chrome, etc.)
+    extra_css_html = (
+        f"<style>{extra_css}</style>" if extra_css else ""
+    )
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -470,6 +484,7 @@ def chartis_shell(
         f"{fonts}"
         f"{_CSS_LINK}"
         f"{_CSS_INLINE_FALLBACK}"
+        f"{extra_css_html}"
         "</head><body>"
         f"{chrome_html}"
         f'<main class="{main_class}">{debug_tag}{subtitle_html}{body_html}</main>'
