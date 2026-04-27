@@ -4927,6 +4927,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_analysis_landing()
         if path == "/team":
             return self._route_team()
+        if path == "/metric-glossary":
+            return self._route_metric_glossary()
         if path == "/pipeline":
             return self._route_pipeline()
         if path == "/deals":
@@ -6668,6 +6670,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_team_dashboard(self.config.db_path))
         except Exception as exc:
             return self._error_page("Team Error", str(exc)[:200])
+
+    def _route_metric_glossary(self) -> None:
+        """GET /metric-glossary — canonical metric reference page.
+
+        Phase 4A target: every page that mentions a metric should
+        link to /metric-glossary#<metric_key>. This route is the
+        destination those links resolve to.
+        """
+        try:
+            from .ui.metric_glossary_page import render_metric_glossary
+            return self._send_html(render_metric_glossary())
+        except Exception as exc:
+            return self._error_page("Metric Glossary Error", str(exc)[:200])
 
     def _route_add_comment(self) -> None:
         """POST /team/comment — add a comment to an entity."""
