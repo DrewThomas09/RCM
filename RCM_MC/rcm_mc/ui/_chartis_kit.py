@@ -388,17 +388,34 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     )
 
 
-def _breadcrumbs(crumbs: Optional[Sequence[Mapping[str, str]]]) -> str:
+def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
+    """Render breadcrumb nav from either tuple-shape or dict-shape crumbs.
+
+    Callers pass either ``[("Home", "/"), ("Page", None)]`` (login_page,
+    app_page) or ``[{"label": "Home", "href": "/"}, ...]`` (older
+    convention). Normalise to a label/href pair before rendering so
+    GET /app stops 500ing on tuple-shaped breadcrumbs.
+    """
     if not crumbs:
         return ""
     parts = []
     for i, c in enumerate(crumbs):
+        # Normalise to (label, href)
+        if isinstance(c, tuple) or isinstance(c, list):
+            label = c[0] if len(c) > 0 else ""
+            href = c[1] if len(c) > 1 else None
+        elif isinstance(c, Mapping):
+            label = c.get("label", "")
+            href = c.get("href")
+        else:
+            # Unknown shape — render as plain text rather than crash
+            label, href = str(c), None
         if i:
             parts.append('<span class="sep">/</span>')
-        if c.get("href"):
-            parts.append(f'<a href="{_esc(c["href"])}">{_esc(c["label"])}</a>')
+        if href:
+            parts.append(f'<a href="{_esc(href)}">{_esc(label)}</a>')
         else:
-            parts.append(_esc(c["label"]))
+            parts.append(_esc(label))
     return f'<nav class="ck-breadcrumbs">{"".join(parts)}</nav>'
 
 

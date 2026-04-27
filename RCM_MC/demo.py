@@ -7,8 +7,9 @@ data.
 
 Usage:
     .venv/bin/python demo.py
-    # then open http://localhost:8765/login and sign in as:
-    #   username: demo  password: DemoPass!1
+    # then open http://localhost:8765/login and sign in as either:
+    #   username: andrewthomas@chartis.com  password: ChartisDemo1
+    #   username: demo                      password: DemoPass!1   (legacy)
 """
 from __future__ import annotations
 
@@ -44,6 +45,12 @@ from rcm_mc.deals.watchlist import star_deal
 PORT = 8765
 USERNAME = "demo"
 PASSWORD = "DemoPass!1"
+# Andrew's primary partner account — added so the rendered login
+# page can show a clean, real-shaped credential pair partners can
+# read off the screen. Both accounts share role=admin so either
+# lands in the same dashboard with the same nav.
+PARTNER_USERNAME = "andrewthomas@chartis.com"
+PARTNER_PASSWORD = "ChartisDemo1"
 
 
 def seed(store: PortfolioStore, run_dir: str) -> None:
@@ -211,9 +218,13 @@ def main() -> int:
     seed(store, run_dir)
 
     # Create the demo admin last — this switches the server into
-    # multi-user mode, so all subsequent access goes through /login
+    # multi-user mode, so all subsequent access goes through /login.
+    # Both accounts get role=admin so they land in the same
+    # dashboard with the same permissions.
     create_user(store, USERNAME, PASSWORD,
                 display_name="Demo Partner", role="admin")
+    create_user(store, PARTNER_USERNAME, PARTNER_PASSWORD,
+                display_name="Andrew Thomas", role="admin")
 
     # Pick a port
     port = PORT

@@ -167,6 +167,36 @@ _LOGIN_EXTRA_CSS = """
   font-family: "Inter", sans-serif; font-size: .88rem; color: var(--red);
 }
 
+/* Demo-credentials panel — visible only on the public /login.
+   Surfaces seeded admin credentials so partners running the
+   demo locally can sign in without hunting through the docs. */
+.demo-creds {
+  margin: 0 0 1.5rem; padding: .9rem 1rem;
+  background: var(--teal-soft); border-left: 3px solid var(--teal);
+  font-family: "Inter", sans-serif; font-size: .82rem;
+  color: var(--teal-deep);
+}
+.demo-creds .label {
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--teal-deep); margin-bottom: .5rem;
+}
+.demo-creds .row {
+  display: flex; gap: .6rem; align-items: baseline;
+  font-family: "JetBrains Mono", monospace; font-size: .8rem;
+  color: var(--ink); padding: .15rem 0;
+}
+.demo-creds .row .k {
+  color: var(--muted); width: 64px; font-size: .72rem;
+}
+.demo-creds .row .v { color: var(--ink); font-weight: 600; }
+.demo-creds .legacy {
+  margin-top: .5rem; padding-top: .5rem;
+  border-top: 1px dashed var(--border);
+  font-style: italic; color: var(--muted); font-size: .76rem;
+}
+.demo-creds .legacy .k { color: var(--faint); }
+
 @media (max-width: 900px) {
   .stage { grid-template-columns: 1fr; }
   .panel-l { border-right: none; border-bottom: 1px solid var(--rule); padding: 3rem 1.5rem; }
@@ -291,6 +321,27 @@ def render_login_page(
         '</div>'
     )
 
+    # Demo-credentials block: shown above the tabs so partners
+    # running `python demo.py` can sign in without hunting
+    # through the docs. Primary credential is Andrew's partner
+    # account; legacy `demo` listed below as a fallback.
+    creds_html = (
+        '<div class="demo-creds">'
+        '<div class="label">DEMO ACCESS</div>'
+        '<div class="row">'
+        '<span class="k">Email</span>'
+        '<span class="v">andrewthomas@chartis.com</span></div>'
+        '<div class="row">'
+        '<span class="k">Password</span>'
+        '<span class="v">ChartisDemo1</span></div>'
+        '<div class="legacy">'
+        '<div class="row">'
+        '<span class="k">Legacy</span>'
+        '<span class="v">demo / DemoPass!1</span></div>'
+        '</div>'
+        '</div>'
+    )
+
     panel_r = (
         '<div class="panel-r">'
         '<div class="form-wrap">'
@@ -298,6 +349,7 @@ def render_login_page(
         '<h2 class="form-h">Sign in to your<br/><em>instance</em>.</h2>'
         '<p class="form-sub">Use your partner credentials, or '
         'continue with single sign-on.</p>'
+        f'{creds_html}'
         f'{tabs_html}'
         f'{request_form if is_request_tab else signin_form}'
         '<p class="footnote">'
