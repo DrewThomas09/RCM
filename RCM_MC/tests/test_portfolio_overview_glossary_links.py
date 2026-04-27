@@ -41,8 +41,10 @@ _EXPECTED_KEYS = {
     "Avg Denial Rate":   "denial_rate",
     "Avg Days in AR":    "days_in_ar",
     "Avg Net Collection": "net_collection_rate",
+    "Total Net Revenue": "net_patient_revenue",  # added loop 116
     "Denial":            "denial_rate",
     "AR":                "days_in_ar",
+    "NPR":               "net_patient_revenue",  # added loop 116
 }
 
 
@@ -70,15 +72,18 @@ class PortfolioOverviewGlossaryLinksTests(unittest.TestCase):
         )
 
     def test_kpi_labels_no_longer_bare(self) -> None:
-        """The 3 KPI cards used to render the label as plain
-        text inside `<div class="cad-kpi-label">Avg ...
-        </div>`. After the migration, those exact bare
-        substrings should be gone."""
+        """The 4 KPI cards used to render the label as plain
+        text inside `<div class="cad-kpi-label">...</div>`.
+        After loops 110 + 116 those exact bare substrings
+        should be gone (the 4th — Total Net Revenue — was
+        added in loop 116 once the new net_patient_revenue
+        glossary entry shipped in loop 114)."""
         text = _MODULE_PATH.read_text(encoding="utf-8")
         bare_patterns = (
             '<div class="cad-kpi-label">Avg Denial Rate</div>',
             '<div class="cad-kpi-label">Avg Days in AR</div>',
             '<div class="cad-kpi-label">Avg Net Collection</div>',
+            '<div class="cad-kpi-label">Total Net Revenue</div>',
         )
         for pat in bare_patterns:
             with self.subTest(pat=pat):
@@ -90,24 +95,36 @@ class PortfolioOverviewGlossaryLinksTests(unittest.TestCase):
 
     def test_table_column_headers_no_longer_bare(self) -> None:
         """The deal-table used to render `<th>Denial</th>
-        <th>AR</th>` as adjacent plain headers. After the
-        migration, the combined-string form should no longer
-        appear."""
+        <th>AR</th>` and `<th>NPR</th>` as plain headers.
+        After loops 110 + 116, none of those exact bare
+        substrings should remain (NPR was wrapped in loop
+        116 once net_patient_revenue was added to the
+        glossary in loop 114)."""
         text = _MODULE_PATH.read_text(encoding="utf-8")
         self.assertNotIn(
             "<th>Denial</th><th>AR</th>", text,
             "portfolio_overview deal table still has un-linked "
             "<th>Denial</th><th>AR</th> column headers",
         )
+        # NPR header should now also be wrapped (loop 116)
+        self.assertNotIn(
+            "<th>NPR</th>", text,
+            "portfolio_overview deal table still has un-linked "
+            "<th>NPR</th> column header — should now wrap to "
+            "/metric-glossary#net_patient_revenue",
+        )
 
-    def test_helper_referenced_at_least_5_times(self) -> None:
-        """5 wrap sites = 5 calls to metric_label_link."""
+    def test_helper_referenced_at_least_7_times(self) -> None:
+        """After loops 110 + 116, 7 wrap sites total: 4 KPI
+        cards (Avg Denial, Avg AR, Avg Net Collection, Total
+        Net Revenue) + 3 deal-table headers (Denial, AR,
+        NPR)."""
         text = _MODULE_PATH.read_text(encoding="utf-8")
         ref_count = len(re.findall(r"metric_label_link\(", text))
         self.assertGreaterEqual(
-            ref_count, 5,
-            f"metric_label_link should be called ≥5 times "
-            f"(3 KPI cards + 2 table headers); found {ref_count}",
+            ref_count, 7,
+            f"metric_label_link should be called ≥7 times "
+            f"(4 KPI cards + 3 table headers); found {ref_count}",
         )
 
 

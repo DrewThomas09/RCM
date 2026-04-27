@@ -24,8 +24,10 @@ _LABEL_TO_GLOSSARY_KEY = {
     "Avg Denial Rate":   "denial_rate",
     "Avg Days in AR":    "days_in_ar",
     "Avg Net Collection": "net_collection_rate",
+    "Total Net Revenue": "net_patient_revenue",
     "Denial":            "denial_rate",
     "AR":                "days_in_ar",
+    "NPR":               "net_patient_revenue",
 }
 
 
@@ -184,7 +186,7 @@ def render_portfolio_overview(
         f'<div class="cad-kpi-label">Active Deals</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
         f'{_fmt_money(total_rev) if total_rev else "—"}</div>'
-        f'<div class="cad-kpi-label">Total Net Revenue</div></div>'
+        f'<div class="cad-kpi-label">{metric_label_link("Total Net Revenue", _LABEL_TO_GLOSSARY_KEY["Total Net Revenue"])}</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
         f'{_fmt_pct(avg_denial) if avg_denial else "—"}</div>'
         f'<div class="cad-kpi-label">{metric_label_link("Avg Denial Rate", _LABEL_TO_GLOSSARY_KEY["Avg Denial Rate"])}</div></div>'
@@ -307,7 +309,8 @@ def render_portfolio_overview(
         f'<th>ID</th><th>Name</th><th>Stage</th>'
         f'<th>{metric_label_link("Denial", _LABEL_TO_GLOSSARY_KEY["Denial"])}</th>'
         f'<th>{metric_label_link("AR", _LABEL_TO_GLOSSARY_KEY["AR"])}</th>'
-        f'<th>NPR</th><th>Actions</th></tr></thead>'
+        f'<th>{metric_label_link("NPR", _LABEL_TO_GLOSSARY_KEY["NPR"])}</th>'
+        f'<th>Actions</th></tr></thead>'
         f'<tbody>{rows}</tbody></table></div>'
     )
 
