@@ -38,8 +38,8 @@ def _safe_float(val: Any, default: float = 0.0) -> float:
 # ── Phase 4A: lever-name → /metric-glossary anchor link ──
 # Most lever metrics (denial_rate, days_in_ar, etc.) match the
 # glossary key 1:1; the bridge's "cmi" is the glossary's
-# "case_mix_index". Map any divergent keys here. Unknown keys
-# fall through to render as plain text rather than a 404 link.
+# "case_mix_index". Map any divergent keys here. The shared
+# helper falls through to plain escaped text for unknown keys.
 _LEVER_METRIC_TO_GLOSSARY = {
     "cmi": "case_mix_index",
 }
@@ -47,19 +47,12 @@ _LEVER_METRIC_TO_GLOSSARY = {
 
 def _lever_label_link(name: str, metric_key: str) -> str:
     """Wrap a lever's display name in an anchor link to the
-    canonical /metric-glossary entry. The metric_glossary
-    module is the source of truth for keys; if the lever's
-    metric_key isn't registered there, fall back to plain
-    escaped text so we don't ship a dead link."""
-    from .metric_glossary import get_metric_definition
-    g_key = _LEVER_METRIC_TO_GLOSSARY.get(metric_key, metric_key)
-    if get_metric_definition(g_key) is None:
-        return _html.escape(name)
-    return (
-        f'<a href="/metric-glossary#{_html.escape(g_key)}" '
-        f'style="color:inherit;text-decoration:none;'
-        f'border-bottom:1px dotted var(--cad-text3);">'
-        f'{_html.escape(name)}</a>'
+    canonical /metric-glossary entry. Thin wrapper around the
+    shared helper — preserves the bridge-specific alias table
+    so call sites don't need to know about it."""
+    from ._glossary_link import metric_label_link
+    return metric_label_link(
+        name, metric_key, alias=_LEVER_METRIC_TO_GLOSSARY,
     )
 
 

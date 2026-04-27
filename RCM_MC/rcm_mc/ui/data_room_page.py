@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import chartis_shell
+from ._glossary_link import metric_label_link
 from ..portfolio.store import PortfolioStore
 from .brand import PALETTE
 
@@ -195,7 +196,7 @@ def render_data_room(
 
         cal_rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{_html.escape(cal.label)}</td>'
+            f'<td style="font-weight:500;">{metric_label_link(cal.label, getattr(cal, "metric", ""))}</td>'
             f'<td class="num">{ml_str}</td>'
             f'<td class="num">{seller_str}</td>'
             f'<td class="num" style="font-weight:600;">{post_str}</td>'
@@ -251,7 +252,7 @@ def render_data_room(
         mtype = defn.get("type", "rate")
         history_rows += (
             f'<tr>'
-            f'<td>{_html.escape(defn.get("label", e.metric))}</td>'
+            f'<td>{metric_label_link(defn.get("label", e.metric), e.metric)}</td>'
             f'<td class="num">{_fmt_metric(e.value, mtype)}</td>'
             f'<td class="num">{e.sample_size}</td>'
             f'<td style="font-size:11px;">{_html.escape(e.source[:30])}</td>'
