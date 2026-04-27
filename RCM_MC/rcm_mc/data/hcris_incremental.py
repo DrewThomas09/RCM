@@ -31,12 +31,13 @@ effects beyond detecting new amendments.
 from __future__ import annotations
 
 import logging
-import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional
+
+from ..portfolio.store import PortfolioStore
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ class IngestReport:
 
 # ── Schema ─────────────────────────────────────────────────────
 
-def _ensure_schema(con: sqlite3.Connection) -> None:
+def _ensure_schema(con: Any) -> None:
     """Create the load-log table if it doesn't exist."""
     con.execute(
         """
@@ -112,16 +113,18 @@ def _ensure_schema(con: sqlite3.Connection) -> None:
 
 
 @contextmanager
-def _connect(db_path: str) -> Iterator[sqlite3.Connection]:
+def _connect(db_path: str) -> Iterator[Any]:
+    # Route through PortfolioStore (campaign target 4E): inherits
+    # busy_timeout=5000, foreign_keys=ON, and row_factory=Row.
+    # The parent-dir mkdir is preserved (PortfolioStore expects
+    # the directory to exist; only its init_db helper mkdir's,
+    # and we don't call that here). _ensure_schema runs once per
+    # connect — idempotent CREATE TABLE / CREATE INDEX IF NOT
+    # EXISTS, same as before.
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(db_path)
-    con.row_factory = sqlite3.Row
-    con.execute("PRAGMA busy_timeout = 5000")
-    try:
+    with PortfolioStore(db_path).connect() as con:
         _ensure_schema(con)
         yield con
-    finally:
-        con.close()
 
 
 # ── Core: update_load_log ─────────────────────────────────────
@@ -155,7 +158,7 @@ def _row_hash(row: Dict[str, Any]) -> str:
 
 
 def _decide_action(
-    existing: Optional[sqlite3.Row],
+    existing: Optional[Any],
     new_rank: int,
     new_hash: str,
 ) -> str:
