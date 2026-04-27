@@ -5265,7 +5265,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_data_room_add(self, ccn: str) -> None:
         """POST /data-room/{ccn}/add — add a seller data point."""
-        import sqlite3
         ccn = self._sanitize_ccn(ccn)
         try:
             form = self._read_form_body()
@@ -6672,7 +6671,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_add_comment(self) -> None:
         """POST /team/comment — add a comment to an entity."""
-        import sqlite3 as _sql_cm
         form = self._read_form_body()
         entity_type = form.get("entity_type", "hospital")[:20]
         entity_id = self._sanitize_ccn(form.get("entity_id", ""))
@@ -6682,9 +6680,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Missing Data", "Comment body and entity ID required.")
         try:
             from .data.team import add_comment
-            con = _sql_cm.connect(self.config.db_path)
-            add_comment(con, entity_type, entity_id, author, body_text)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E)
+            # so the comment write inherits the canonical PRAGMAs.
+            # Explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                add_comment(con, entity_type, entity_id, author, body_text)
+                con.commit()
         except Exception as exc:
             return self._error_page("Comment Error", str(exc)[:200])
         redirect = form.get("redirect", f"/hospital/{entity_id}")
@@ -6713,7 +6714,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_pipeline_add(self) -> None:
         """POST /pipeline/add — add a hospital to the pipeline."""
-        import sqlite3 as _sql_pa
         form = self._read_form_body()
         ccn = self._sanitize_ccn(form.get("ccn", ""))
         if not ccn:
@@ -6726,9 +6726,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             beds = 0
         try:
             from .data.pipeline import add_to_pipeline
-            con = _sql_pa.connect(self.config.db_path)
-            add_to_pipeline(con, ccn, name, state, beds)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E).
+            # Explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                add_to_pipeline(con, ccn, name, state, beds)
+                con.commit()
         except Exception as exc:
             return self._error_page("Pipeline Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)
@@ -6737,7 +6739,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_save_search(self) -> None:
         """POST /pipeline/save-search — save a screener filter set."""
-        import sqlite3 as _sql_ss
         form = self._read_form_body()
         name = form.get("name", "Untitled Search")[:50]
         filters = {
@@ -6750,9 +6751,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         }
         try:
             from .data.pipeline import save_search
-            con = _sql_ss.connect(self.config.db_path)
-            save_search(con, name, filters)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E).
+            # Explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                save_search(con, name, filters)
+                con.commit()
         except Exception as exc:
             return self._error_page("Save Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)
@@ -6761,16 +6764,17 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_pipeline_stage(self) -> None:
         """POST /pipeline/stage/{ccn} — update pipeline stage."""
-        import sqlite3 as _sql_ps
         path = urllib.parse.urlparse(self.path).path
         ccn = self._sanitize_ccn(path.replace("/pipeline/stage/", "").strip("/"))
         form = self._read_form_body()
         new_stage = form.get("stage", "screening")[:20]
         try:
             from .data.pipeline import update_stage
-            con = _sql_ps.connect(self.config.db_path)
-            update_stage(con, ccn, new_stage)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E).
+            # Explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                update_stage(con, ccn, new_stage)
+                con.commit()
         except Exception as exc:
             return self._error_page("Stage Update Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)
