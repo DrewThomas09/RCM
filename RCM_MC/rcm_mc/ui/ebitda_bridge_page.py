@@ -35,6 +35,34 @@ def _safe_float(val: Any, default: float = 0.0) -> float:
         return default
 
 
+# ── Phase 4A: lever-name → /metric-glossary anchor link ──
+# Most lever metrics (denial_rate, days_in_ar, etc.) match the
+# glossary key 1:1; the bridge's "cmi" is the glossary's
+# "case_mix_index". Map any divergent keys here. Unknown keys
+# fall through to render as plain text rather than a 404 link.
+_LEVER_METRIC_TO_GLOSSARY = {
+    "cmi": "case_mix_index",
+}
+
+
+def _lever_label_link(name: str, metric_key: str) -> str:
+    """Wrap a lever's display name in an anchor link to the
+    canonical /metric-glossary entry. The metric_glossary
+    module is the source of truth for keys; if the lever's
+    metric_key isn't registered there, fall back to plain
+    escaped text so we don't ship a dead link."""
+    from .metric_glossary import get_metric_definition
+    g_key = _LEVER_METRIC_TO_GLOSSARY.get(metric_key, metric_key)
+    if get_metric_definition(g_key) is None:
+        return _html.escape(name)
+    return (
+        f'<a href="/metric-glossary#{_html.escape(g_key)}" '
+        f'style="color:inherit;text-decoration:none;'
+        f'border-bottom:1px dotted var(--cad-text3);">'
+        f'{_html.escape(name)}</a>'
+    )
+
+
 def _fm(val: float) -> str:
     if abs(val) >= 1e9:
         return f"${val/1e9:.2f}B"
@@ -546,7 +574,7 @@ def render_ebitda_bridge(
             f'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;'
             f'border-bottom:1px solid var(--cad-border);">'
             f'<div style="width:180px;flex-shrink:0;">'
-            f'<div style="font-weight:500;font-size:12.5px;">{_html.escape(lev["name"])}</div>'
+            f'<div style="font-weight:500;font-size:12.5px;">{_lever_label_link(lev["name"], lev.get("metric", ""))}</div>'
             f'<div style="font-size:10px;color:var(--cad-text3);">{cat_badge} | '
             f'{lev["ramp_months"]}mo ramp</div></div>'
             f'<div style="flex:1;display:flex;align-items:center;gap:8px;">'
@@ -588,7 +616,7 @@ def render_ebitda_bridge(
         tgt_tag = source_tag(Source.BENCHMARK, "P75 peers")
         detail_rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{_html.escape(lev["name"])}</td>'
+            f'<td style="font-weight:500;">{_lever_label_link(lev["name"], lev.get("metric", ""))}</td>'
             f'<td class="num">{current_str} {cur_tag}</td>'
             f'<td class="num" style="color:var(--cad-pos);">{target_str} {tgt_tag}</td>'
             f'<td class="num" style="color:var(--cad-pos);">{_fm(lev["revenue_impact"])}</td>'
@@ -621,7 +649,7 @@ def render_ebitda_bridge(
     for lev in bridge["levers"]:
         if lev["ebitda_impact"] == 0:
             continue
-        timing_rows += f'<tr><td style="font-weight:500;">{_html.escape(lev["name"])}</td>'
+        timing_rows += f'<tr><td style="font-weight:500;">{_lever_label_link(lev["name"], lev.get("metric", ""))}</td>'
         for m in months:
             ramp = lev["ramp_months"]
             pct = min(1.0, m / ramp) if ramp > 0 else 1.0
@@ -746,7 +774,7 @@ def render_ebitda_bridge(
     for lev in bridge["levers"]:
         if lev["ebitda_impact"] == 0:
             continue
-        ach_rows += f'<tr><td style="font-weight:500;">{_html.escape(lev["name"][:20])}</td>'
+        ach_rows += f'<tr><td style="font-weight:500;">{_lever_label_link(lev["name"][:20], lev.get("metric", ""))}</td>'
         for pct in (50, 75, 100, 120):
             val = lev["ebitda_impact"] * pct / 100
             ach_totals[pct] += val
