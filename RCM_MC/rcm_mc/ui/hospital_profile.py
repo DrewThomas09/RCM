@@ -9,7 +9,9 @@ import html
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import chartis_shell
+from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
+from .provenance import build_provenance_graph
 
 
 def render_hospital_profile(
@@ -33,6 +35,20 @@ def render_hospital_profile(
     med_pct = float(hospital.get("medicare_day_pct", 0))
     mcd_pct = float(hospital.get("medicaid_day_pct", 0))
     comm_pct = max(0, 1.0 - med_pct - mcd_pct)
+
+    # Phase 4C: build a ProvenanceGraph for "explain this number"
+    # tooltips. Operating Margin is computed locally above so it
+    # isn't in the raw hospital dict — splice it in alongside the
+    # raw HCRIS values before building the graph. ml_predictions
+    # is empty here (this page reads HCRIS-derived hospital
+    # records directly, not packet-driven predictions).
+    _prov_profile = {**hospital, "operating_margin": margin}
+    prov_graph = build_provenance_graph(
+        ccn=str(hospital.get("ccn", "")),
+        hcris_profile=_prov_profile,
+        ml_predictions={},
+        db_path=db_path,
+    )
 
     grade = score.grade if hasattr(score, "grade") else "—"
     score_val = score.score if hasattr(score, "score") else 0
@@ -116,7 +132,9 @@ def render_hospital_profile(
         f'<div class="cad-kpi-grid">'
         f'<div class="cad-kpi"><div class="cad-kpi-value">${npr/1e6:,.1f}M</div>'
         f'<div class="cad-kpi-label">Net Patient Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{margin:.1%}</div>'
+        f'<div class="cad-kpi"><div class="cad-kpi-value">'
+        f'{provenance_tooltip(label="Operating Margin", value=f"{margin:.1%}", graph=prov_graph, metric_key="operating_margin")}'
+        f'</div>'
         f'<div class="cad-kpi-label">Operating Margin</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">${ni/1e6:,.1f}M</div>'
         f'<div class="cad-kpi-label">Net Income</div></div>'
