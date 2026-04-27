@@ -353,42 +353,47 @@ def _load_data_room_overrides(db_path: Optional[str], ccn: str) -> Dict[str, flo
     """
     if not db_path:
         return {}
+    # Late local import keeps the bypass cleanup contained to this
+    # function — the module top doesn't need PortfolioStore otherwise.
+    from ..portfolio.store import PortfolioStore
     try:
-        import sqlite3
-        con = sqlite3.connect(db_path)
-        seen: Dict[str, float] = {}
+        # Route through PortfolioStore (campaign target 4E) so the
+        # connection inherits PRAGMA foreign_keys=ON, busy_timeout=
+        # 5000, and row_factory=Row instead of running on a bare
+        # sqlite3.connect that misses all three.
+        with PortfolioStore(db_path).connect() as con:
+            seen: Dict[str, float] = {}
 
-        # Try calibrations first (best: Bayesian posterior)
-        try:
-            rows = con.execute(
-                "SELECT metric, bayesian_posterior FROM data_room_calibrations "
-                "WHERE hospital_ccn = ? ORDER BY computed_at DESC",
-                (ccn,),
-            ).fetchall()
-            for metric, value in rows:
-                if metric not in seen and value is not None:
-                    seen[f"{metric}_current"] = value
-        except Exception:
-            pass
-
-        # Fall back to raw entries if no calibrations yet
-        if not seen:
+            # Try calibrations first (best: Bayesian posterior)
             try:
                 rows = con.execute(
-                    "SELECT metric, value FROM data_room_entries "
-                    "WHERE hospital_ccn = ? AND superseded_by IS NULL "
-                    "ORDER BY entered_at DESC",
+                    "SELECT metric, bayesian_posterior FROM data_room_calibrations "
+                    "WHERE hospital_ccn = ? ORDER BY computed_at DESC",
                     (ccn,),
                 ).fetchall()
                 for metric, value in rows:
-                    key = f"{metric}_current"
-                    if key not in seen and value is not None:
-                        seen[key] = value
+                    if metric not in seen and value is not None:
+                        seen[f"{metric}_current"] = value
             except Exception:
                 pass
 
-        con.close()
-        return seen
+            # Fall back to raw entries if no calibrations yet
+            if not seen:
+                try:
+                    rows = con.execute(
+                        "SELECT metric, value FROM data_room_entries "
+                        "WHERE hospital_ccn = ? AND superseded_by IS NULL "
+                        "ORDER BY entered_at DESC",
+                        (ccn,),
+                    ).fetchall()
+                    for metric, value in rows:
+                        key = f"{metric}_current"
+                        if key not in seen and value is not None:
+                            seen[key] = value
+                except Exception:
+                    pass
+
+            return seen
     except Exception:
         return {}
 
