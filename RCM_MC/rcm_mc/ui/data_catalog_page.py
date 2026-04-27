@@ -1,8 +1,15 @@
-"""Data catalog UI — `/data/catalog`.
+"""Data catalog UI — ``/data/catalog``.
 
-Surfaces every public-data source we've ingested. Top-of-page
-KPI strip (sources / records / avg quality / fresh count), then a
-table grouped by category.
+Surfaces every public-data source the platform has ingested. Top-of-
+page KPI strip (sources / records / avg quality / fresh / stale),
+then a table grouped by category.
+
+Why this page is exempt from the DealAnalysisPacket invariant:
+    The catalog is portfolio-wide infrastructure metadata, not deal
+    analytics. There is no deal_id; the source of truth is the
+    PortfolioStore's data-source inventory. Per the campaign brief,
+    pages of this shape are ones where the packet invariant doesn't
+    apply (the equivalent of /v3-status — internal/admin metadata).
 
 Public API::
 
@@ -18,6 +25,8 @@ from ..data.catalog import (
     compute_data_estate_summary,
     inventory_data_sources,
 )
+from ._chartis_kit import chartis_shell
+from ._ui_kit import fmt_num
 
 
 _CATEGORY_ORDER = [
@@ -33,207 +42,193 @@ _CATEGORY_ORDER = [
 ]
 
 
-def _quality_badge(q: Optional[float]) -> str:
+def _quality_pill(q: Optional[float]) -> str:
+    """Status-pill rendering of the 0..1 quality score.
+
+    Uses the v3 ``.pill`` utility class (declared in
+    /static/v3/chartis.css §8.4) plus a status-color modifier so the
+    pill picks up the editorial palette automatically.
+    """
     if q is None:
-        return ('<span style="display:inline-block;padding:2px 8px;'
-                'border-radius:4px;background:#374151;color:#9ca3af;'
-                'font-size:11px;">no data</span>')
+        return '<span class="pill" style="color:var(--muted,#9ca3af);">no data</span>'
     if q >= 0.7:
-        bg, fg = "#065f46", "#a7f3d0"
-        label = "high"
+        cls, label = "pill pill-good", "high"
     elif q >= 0.4:
-        bg, fg = "#92400e", "#fde68a"
-        label = "medium"
+        cls, label = "pill pill-warn", "medium"
     else:
-        bg, fg = "#7f1d1d", "#fecaca"
-        label = "low"
+        cls, label = "pill pill-bad", "low"
     return (
-        f'<span style="display:inline-block;padding:2px 8px;'
-        f'border-radius:4px;background:{bg};color:{fg};'
-        f'font-size:11px;font-variant-numeric:tabular-nums;">'
-        f'{label} · {q:.2f}</span>')
+        f'<span class="{cls}">'
+        f'<span class="num mono">{q:.2f}</span> · {label}'
+        f'</span>'
+    )
 
 
-def _freshness_badge(days: Optional[int]) -> str:
+def _freshness_pill(days: Optional[int]) -> str:
+    """Days-since-refresh pill. Falls back to v3 ``.pill`` chrome
+    plus the .num utility class on the numeric."""
     if days is None:
-        return ('<span style="color:#9ca3af;font-size:11px;">'
-                'never</span>')
+        return '<span class="pill" style="color:var(--muted,#9ca3af);">never</span>'
     if days <= 7:
-        bg, fg = "#065f46", "#a7f3d0"
+        cls = "pill pill-good"
     elif days <= 30:
-        bg, fg = "#92400e", "#fde68a"
+        cls = "pill pill-warn"
     elif days <= 90:
-        bg, fg = "#78350f", "#fed7aa"
+        cls = "pill pill-warn"
     else:
-        bg, fg = "#7f1d1d", "#fecaca"
-    return (
-        f'<span style="display:inline-block;padding:2px 8px;'
-        f'border-radius:4px;background:{bg};color:{fg};'
-        f'font-size:11px;font-variant-numeric:tabular-nums;">'
-        f'{days}d</span>')
+        cls = "pill pill-bad"
+    return f'<span class="{cls}"><span class="num">{days}</span>d</span>'
 
 
-def _kpi_card(label: str, value: str,
-              sub: str = "") -> str:
+def _kpi_card(label: str, value_html: str, sub: str = "") -> str:
+    """Editorial KPI card — paper background, border, eyebrow label.
+
+    Pulls visual tokens from /static/v3/chartis.css via CSS custom-
+    property fallbacks so the same card renders correctly under
+    either the legacy dark shell (which sets --ck-* tokens) or the
+    editorial parchment shell (which sets --paper, --border, --ink).
+    """
+    sub_html = (
+        f'<div class="micro" style="margin-top:.35rem;color:var(--muted,#9ca3af);">'
+        f'{_html.escape(sub)}</div>' if sub else ""
+    )
     return (
-        '<div style="background:#1f2937;border:1px solid #374151;'
-        'border-radius:8px;padding:14px 18px;flex:1;'
-        'min-width:180px;">'
-        f'<div style="font-size:11px;text-transform:uppercase;'
-        f'letter-spacing:0.05em;color:#9ca3af;margin-bottom:6px;">'
-        f'{_html.escape(label)}</div>'
-        f'<div class="kpi-value" style="font-size:24px;'
-        f'font-weight:600;color:#f3f4f6;'
-        f'font-variant-numeric:tabular-nums;">'
-        f'{_html.escape(value)}</div>'
-        + (f'<div style="font-size:11px;color:#6b7280;'
-           f'margin-top:4px;">{_html.escape(sub)}</div>'
-           if sub else "")
-        + "</div>")
+        '<div style="border:1px solid var(--border,#374151);'
+        'background:var(--paper,#1f2937);'
+        'border-radius:8px;padding:14px 18px;flex:1;min-width:180px;">'
+        f'<div class="micro">{_html.escape(label)}</div>'
+        f'<div style="font-size:1.5rem;font-weight:600;margin-top:.4rem;">'
+        f'{value_html}</div>'
+        f'{sub_html}</div>'
+    )
 
 
 def _source_row(entry: DataSourceEntry) -> str:
     return (
         "<tr>"
-        f'<td style="padding:10px 14px;color:#f3f4f6;">'
-        f'<div style="font-weight:500;">'
-        f'{_html.escape(entry.name)}</div>'
-        f'<div style="font-size:11px;color:#9ca3af;'
-        f'margin-top:2px;">{_html.escape(entry.description)}'
-        f'</div></td>'
-        f'<td style="padding:10px 14px;color:#d1d5db;'
-        f'font-variant-numeric:tabular-nums;text-align:right;">'
-        f'{entry.record_count:,}</td>'
-        f'<td style="padding:10px 14px;color:#d1d5db;'
-        f'font-size:11px;">'
+        '<td style="padding:.7rem 1rem;">'
+        f'<div style="font-weight:500;">{_html.escape(entry.name)}</div>'
+        '<div class="micro" style="margin-top:.15rem;font-weight:400;'
+        'letter-spacing:.04em;text-transform:none;">'
+        f'{_html.escape(entry.description)}</div>'
+        '</td>'
+        f'<td style="padding:.7rem 1rem;text-align:right;">'
+        f'{fmt_num(entry.record_count)}</td>'
+        f'<td style="padding:.7rem 1rem;font-size:.85rem;">'
         f'{_html.escape(entry.coverage_summary or "—")}</td>'
-        f'<td style="padding:10px 14px;text-align:center;">'
-        f'{_freshness_badge(entry.freshness_days)}</td>'
-        f'<td style="padding:10px 14px;text-align:center;">'
-        f'{_quality_badge(entry.quality_score)}</td>'
-        f"</tr>")
+        f'<td style="padding:.7rem 1rem;text-align:center;">'
+        f'{_freshness_pill(entry.freshness_days)}</td>'
+        f'<td style="padding:.7rem 1rem;text-align:center;">'
+        f'{_quality_pill(entry.quality_score)}</td>'
+        '</tr>'
+    )
 
 
 def _empty_state_html() -> str:
     return (
-        '<div style="background:#111827;border:1px solid #374151;'
-        'border-radius:8px;padding:40px;text-align:center;'
-        'color:#9ca3af;">'
-        '<div style="font-size:16px;color:#f3f4f6;'
-        'margin-bottom:8px;">No data sources loaded yet</div>'
-        '<div style="font-size:13px;">'
+        '<div style="border:1px solid var(--border,#374151);'
+        'background:var(--paper,#111827);border-radius:8px;'
+        'padding:2.5rem;text-align:center;">'
+        '<div style="font-size:1rem;margin-bottom:.5rem;">'
+        'No data sources loaded yet</div>'
+        '<div class="micro" style="font-weight:400;letter-spacing:.04em;'
+        'text-transform:none;">'
         'Run <code>rcm-mc data refresh</code> or visit '
-        '<a href="/data/refresh" style="color:#60a5fa;">'
-        '/data/refresh</a> to load public-data sources.'
-        '</div></div>')
+        '<a href="/data/refresh">/data/refresh</a> to load '
+        'public-data sources.</div></div>'
+    )
 
 
 def render_data_catalog_page(store: Any) -> str:
-    """Render the full data catalog page."""
+    """Render the full data catalog page.
+
+    Returns a complete HTML document via ``chartis_shell``. The shell
+    supplies the dark/editorial chrome, the v3 chartis.css link, and
+    the chartis-blue / teal accent — this renderer only emits body
+    content.
+    """
     entries = inventory_data_sources(store)
     summary = compute_data_estate_summary(entries)
 
-    # KPI strip
     kpi_html = (
-        '<div style="display:flex;gap:12px;flex-wrap:wrap;'
-        'margin-bottom:18px;">'
-        + _kpi_card("Sources",
-                    str(summary["n_sources"]))
-        + _kpi_card("Total records",
-                    f"{summary['total_records']:,}")
+        '<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin:.75rem 0 1.25rem 0;">'
+        + _kpi_card("Sources", fmt_num(summary["n_sources"]))
+        + _kpi_card("Total records", fmt_num(summary["total_records"]))
         + _kpi_card(
             "Avg quality",
-            (f"{summary['avg_quality']:.2f}"
+            (f'<span class="num mono">{summary["avg_quality"]:.2f}</span>'
              if summary["avg_quality"] is not None
-             else "—"))
+             else '<span class="num">—</span>'),
+        )
         + _kpi_card(
             "Fresh sources",
-            f"{summary['fresh_sources']} / "
-            f"{summary['n_sources']}",
-            "loaded ≤30 days")
+            f'{fmt_num(summary["fresh_sources"])} / {fmt_num(summary["n_sources"])}',
+            sub="loaded ≤30 days",
+        )
         + _kpi_card(
             "Stale sources",
-            f"{summary['stale_sources']} / "
-            f"{summary['n_sources']}",
-            "loaded >90 days")
-        + "</div>"
+            f'{fmt_num(summary["stale_sources"])} / {fmt_num(summary["n_sources"])}',
+            sub="loaded >90 days",
+        )
+        + '</div>'
     )
 
-    # Group entries by category
     by_cat: Dict[str, List[DataSourceEntry]] = {}
     for e in entries:
         by_cat.setdefault(e.category, []).append(e)
 
     if not entries:
-        body = _empty_state_html()
+        catalog_body = _empty_state_html()
     else:
         sections: List[str] = []
         for cat_id, cat_label in _CATEGORY_ORDER:
             cat_entries = by_cat.get(cat_id, [])
             if not cat_entries:
                 continue
-            cat_entries.sort(
-                key=lambda e: -(e.record_count or 0))
-            rows = "".join(_source_row(e)
-                           for e in cat_entries)
+            cat_entries.sort(key=lambda e: -(e.record_count or 0))
+            rows = "".join(_source_row(e) for e in cat_entries)
             sections.append(
-                f'<section style="margin-bottom:24px;">'
-                f'<h2 style="font-size:14px;'
-                f'text-transform:uppercase;'
-                f'letter-spacing:0.06em;color:#9ca3af;'
-                f'margin:0 0 10px 0;">'
+                '<section style="margin-bottom:1.5rem;">'
+                f'<h2 class="micro" style="margin:0 0 .5rem 0;">'
                 f'{_html.escape(cat_label)}</h2>'
-                f'<table style="width:100%;border-collapse:'
-                f'collapse;background:#1f2937;'
-                f'border:1px solid #374151;border-radius:8px;'
-                f'overflow:hidden;">'
-                f'<thead>'
-                f'<tr style="background:#111827;'
-                f'border-bottom:1px solid #374151;">'
-                f'<th style="padding:10px 14px;'
-                f'text-align:left;font-size:11px;'
-                f'text-transform:uppercase;letter-spacing:'
-                f'0.05em;color:#9ca3af;">Source</th>'
-                f'<th style="padding:10px 14px;'
-                f'text-align:right;font-size:11px;'
-                f'text-transform:uppercase;letter-spacing:'
-                f'0.05em;color:#9ca3af;">Records</th>'
-                f'<th style="padding:10px 14px;'
-                f'text-align:left;font-size:11px;'
-                f'text-transform:uppercase;letter-spacing:'
-                f'0.05em;color:#9ca3af;">Coverage</th>'
-                f'<th style="padding:10px 14px;'
-                f'text-align:center;font-size:11px;'
-                f'text-transform:uppercase;letter-spacing:'
-                f'0.05em;color:#9ca3af;">Freshness</th>'
-                f'<th style="padding:10px 14px;'
-                f'text-align:center;font-size:11px;'
-                f'text-transform:uppercase;letter-spacing:'
-                f'0.05em;color:#9ca3af;">Quality</th>'
-                f'</tr></thead><tbody>{rows}</tbody>'
-                f'</table></section>')
-        body = "".join(sections)
+                '<table style="width:100%;border-collapse:collapse;'
+                'border:1px solid var(--border,#374151);'
+                'background:var(--paper,#1f2937);border-radius:8px;'
+                'overflow:hidden;">'
+                '<thead>'
+                '<tr style="border-bottom:1px solid var(--border,#374151);">'
+                '<th class="micro" style="padding:.6rem 1rem;text-align:left;">Source</th>'
+                '<th class="micro" style="padding:.6rem 1rem;text-align:right;">Records</th>'
+                '<th class="micro" style="padding:.6rem 1rem;text-align:left;">Coverage</th>'
+                '<th class="micro" style="padding:.6rem 1rem;text-align:center;">Freshness</th>'
+                '<th class="micro" style="padding:.6rem 1rem;text-align:center;">Quality</th>'
+                '</tr></thead>'
+                f'<tbody>{rows}</tbody></table></section>'
+            )
+        catalog_body = "".join(sections)
 
-    page_html = (
-        '<div style="max-width:1200px;margin:0 auto;'
-        'padding:24px;">'
+    body = (
+        '<section style="max-width:80rem;">'
         '<div style="display:flex;justify-content:space-between;'
-        'align-items:baseline;margin-bottom:16px;">'
-        '<h1 style="font-size:24px;color:#f3f4f6;'
-        'margin:0;">Data Catalog</h1>'
-        '<a href="/data/refresh" style="color:#60a5fa;'
-        'font-size:13px;">Refresh sources →</a>'
+        'align-items:baseline;margin-bottom:.75rem;">'
+        '<h1 style="margin:0;">Data Catalog</h1>'
+        '<a href="/data/refresh" class="micro" style="font-weight:400;'
+        'letter-spacing:.04em;text-transform:none;">'
+        'Refresh sources →</a>'
         '</div>'
-        '<p style="color:#9ca3af;font-size:13px;'
-        'margin:0 0 18px 0;max-width:720px;">'
-        'Every public-data source the platform ingests, with '
-        'live record counts, refresh dates, and a composite '
-        'quality score (volume × coverage × freshness). '
-        'Auto-discovered from live SQL — no hand-maintained '
-        'registry to drift.'
-        '</p>'
+        '<p style="max-width:48rem;color:var(--muted,#9ca3af);'
+        'margin:0 0 1rem 0;">'
+        'Every public-data source the platform ingests, with live '
+        'record counts, refresh dates, and a composite quality score '
+        '(volume × coverage × freshness). Auto-discovered from live '
+        'SQL — no hand-maintained registry to drift.</p>'
         + kpi_html
-        + body
-        + '</div>')
+        + catalog_body
+        + '</section>'
+    )
 
-    return page_html
+    return chartis_shell(
+        body,
+        "Data Catalog",
+        subtitle="public-data inventory",
+    )

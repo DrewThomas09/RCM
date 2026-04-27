@@ -10,14 +10,17 @@ This is the flywheel: every deal's seller data improves future predictions.
 from __future__ import annotations
 
 import html as _html
-import sqlite3
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
 from ._chartis_kit import chartis_shell
+from ._glossary_link import metric_label_link
+from ._provenance_tooltip import provenance_tooltip
+from ..portfolio.store import PortfolioStore
 from .brand import PALETTE
+from .provenance import build_provenance_graph
 
 
 def _fm(val: float) -> str:
@@ -55,12 +58,16 @@ def render_data_room(
         get_entries, calibrate_metrics,
     )
 
-    con = sqlite3.connect(db_path)
-    _ensure_tables(con)
-    entries = get_entries(con, ccn)
-    calibrations = calibrate_metrics(con, ccn, ml_predictions, beds=beds)
-    con.commit()
-    con.close()
+    # Route through PortfolioStore (campaign target 4E) so the read +
+    # calibrate write inherit busy_timeout=5000, foreign_keys=ON, and
+    # row_factory=Row. PortfolioStore.connect() closes the connection
+    # on exit but does NOT auto-commit, so the explicit con.commit()
+    # is preserved inside the with-block.
+    with PortfolioStore(db_path).connect() as con:
+        _ensure_tables(con)
+        entries = get_entries(con, ccn)
+        calibrations = calibrate_metrics(con, ccn, ml_predictions, beds=beds)
+        con.commit()
 
     n_seller = sum(1 for c in calibrations if c.data_quality != "ml_only")
     n_ml_only = sum(1 for c in calibrations if c.data_quality == "ml_only")
@@ -134,9 +141,25 @@ def render_data_room(
         f'</form></div>'
     )
 
+    # Phase 4C: build a ProvenanceGraph for the calibration
+    # table's posterior-value tooltips. build_provenance_graph
+    # auto-loads the data_room_calibrations table via db_path
+    # and produces CALCULATED nodes at observed:<metric> for
+    # every metric whose Bayesian posterior was computed —
+    # exactly the cells we're about to wrap. ml_predictions is
+    # passed through so PREDICTED parents appear when no
+    # calibration exists.
+    prov_graph = build_provenance_graph(
+        ccn=str(ccn),
+        hcris_profile=dict(hcris_profile or {}),
+        ml_predictions=dict(ml_predictions or {}),
+        db_path=db_path,
+    )
+
     # ── Calibration table — the money section ──
     cal_rows = ""
     surprises = []
+    _first_tooltip = True
     for cal in sorted(calibrations, key=lambda c: c.label):
         defn = _METRIC_DEFINITIONS.get(cal.metric, {})
         mtype = defn.get("type", "rate")
@@ -189,12 +212,22 @@ def render_data_room(
                 ) else "worse"
                 surprises.append((cal.label, delta, direction))
 
+        # Phase 4C: hover the posterior cell to see the
+        # CALCULATED node's prose + upstream (ML prior +
+        # seller observation feeding the Bayesian blend).
+        _post_tt = provenance_tooltip(
+            label=cal.label, value=post_str,
+            graph=prov_graph,
+            metric_key=getattr(cal, "metric", ""),
+            inject_css=_first_tooltip,
+        )
+        _first_tooltip = False
         cal_rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{_html.escape(cal.label)}</td>'
+            f'<td style="font-weight:500;">{metric_label_link(cal.label, getattr(cal, "metric", ""))}</td>'
             f'<td class="num">{ml_str}</td>'
             f'<td class="num">{seller_str}</td>'
-            f'<td class="num" style="font-weight:600;">{post_str}</td>'
+            f'<td class="num" style="font-weight:600;">{_post_tt}</td>'
             f'<td class="num" style="font-size:11px;">{ci_str}</td>'
             f'<td class="num">{delta_str}</td>'
             f'<td>{shrink_bar}</td>'
@@ -247,7 +280,7 @@ def render_data_room(
         mtype = defn.get("type", "rate")
         history_rows += (
             f'<tr>'
-            f'<td>{_html.escape(defn.get("label", e.metric))}</td>'
+            f'<td>{metric_label_link(defn.get("label", e.metric), e.metric)}</td>'
             f'<td class="num">{_fmt_metric(e.value, mtype)}</td>'
             f'<td class="num">{e.sample_size}</td>'
             f'<td style="font-size:11px;">{_html.escape(e.source[:30])}</td>'

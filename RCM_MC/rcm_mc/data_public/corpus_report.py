@@ -236,17 +236,25 @@ def corpus_summary_report(corpus_db_path: str) -> str:
     lines.append(_hr("═"))
 
     # Corpus stats
-    import sqlite3
     try:
-        con = sqlite3.connect(corpus_db_path)
-        total = con.execute("SELECT COUNT(*) FROM public_deals").fetchone()[0]
-        with_moic = con.execute(
-            "SELECT COUNT(*) FROM public_deals WHERE realized_moic IS NOT NULL"
-        ).fetchone()[0]
-        with_irr = con.execute(
-            "SELECT COUNT(*) FROM public_deals WHERE realized_irr IS NOT NULL"
-        ).fetchone()[0]
-        con.close()
+        # Late local import keeps the bypass cleanup contained
+        # (campaign target 4E, data_public sweep) — the module
+        # top doesn't need PortfolioStore otherwise. Routes
+        # through the canonical seam so this read inherits
+        # busy_timeout=5000, foreign_keys=ON, and Row factory.
+        from ..portfolio.store import PortfolioStore
+        with PortfolioStore(corpus_db_path).connect() as con:
+            total = con.execute(
+                "SELECT COUNT(*) FROM public_deals"
+            ).fetchone()[0]
+            with_moic = con.execute(
+                "SELECT COUNT(*) FROM public_deals "
+                "WHERE realized_moic IS NOT NULL"
+            ).fetchone()[0]
+            with_irr = con.execute(
+                "SELECT COUNT(*) FROM public_deals "
+                "WHERE realized_irr IS NOT NULL"
+            ).fetchone()[0]
         lines.append(f"\n  Total deals   : {total}")
         lines.append(f"  With MOIC     : {with_moic}")
         lines.append(f"  With IRR      : {with_irr}")

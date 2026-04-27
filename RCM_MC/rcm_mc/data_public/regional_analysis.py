@@ -30,9 +30,10 @@ Public API:
 from __future__ import annotations
 
 import json
-import sqlite3
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
+
+from ..portfolio.store import PortfolioStore
 
 
 # ---------------------------------------------------------------------------
@@ -241,10 +242,12 @@ def _build_stats(deals: List[Dict[str, Any]], region: str) -> RegionStats:
 
 
 def _load_corpus(corpus_db_path: str) -> List[Dict[str, Any]]:
-    con = sqlite3.connect(corpus_db_path)
-    con.row_factory = sqlite3.Row
-    rows = con.execute("SELECT * FROM public_deals").fetchall()
-    con.close()
+    # Route through PortfolioStore (campaign target 4E, data_public
+    # sweep): inherits busy_timeout=5000, foreign_keys=ON, and
+    # row_factory=Row — replacing the prior bare-connect plus
+    # manual row_factory assignment.
+    with PortfolioStore(corpus_db_path).connect() as con:
+        rows = con.execute("SELECT * FROM public_deals").fetchall()
     deals = []
     for row in rows:
         d = dict(row)

@@ -8,10 +8,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import sqlite3
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from ..portfolio.store import PortfolioStore
 from .logger import logger
 
 
@@ -66,8 +66,14 @@ def record_run(
     db_path = _get_db_path(outdir)
     os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
 
-    conn = sqlite3.connect(db_path)
-    try:
+    # Route through PortfolioStore (campaign target 4E) so the
+    # CLI run-history write inherits busy_timeout=5000,
+    # foreign_keys=ON, and Row factory consistent with every
+    # other store in the codebase. PortfolioStore.connect()
+    # closes the connection on exit but does NOT auto-commit,
+    # so the explicit conn.commit() is preserved inside the
+    # with-block.
+    with PortfolioStore(db_path).connect() as conn:
         conn.execute(_DB_SCHEMA)
         conn.execute(
             """INSERT INTO runs (timestamp, actual_config_hash, benchmark_config_hash,
@@ -85,8 +91,6 @@ def record_run(
         )
         conn.commit()
         logger.info("Run recorded to %s", db_path)
-    finally:
-        conn.close()
 
 
 def list_runs(outdir: str, limit: int = 20) -> List[Dict[str, Any]]:
@@ -95,12 +99,10 @@ def list_runs(outdir: str, limit: int = 20) -> List[Dict[str, Any]]:
     if not os.path.exists(db_path):
         return []
 
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    try:
+    # Read path also routes through PortfolioStore — Row factory
+    # is provided by default so the manual assignment is dropped.
+    with PortfolioStore(db_path).connect() as conn:
         rows = conn.execute(
             "SELECT * FROM runs ORDER BY id DESC LIMIT ?", (limit,)
         ).fetchall()
         return [dict(r) for r in rows]
-    finally:
-        conn.close()

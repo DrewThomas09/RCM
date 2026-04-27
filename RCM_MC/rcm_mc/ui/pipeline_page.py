@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import html as _html
 import json
-import sqlite3
 from typing import Any, Dict, List, Optional
 
+from ..portfolio.store import PortfolioStore
 from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
@@ -50,12 +50,15 @@ def render_pipeline(db_path: str) -> str:
         pipeline_summary, get_activity,
     )
 
-    con = sqlite3.connect(db_path)
-    searches = list_searches(con)
-    hospitals = list_pipeline(con)
-    summary = pipeline_summary(con)
-    activity = get_activity(con, limit=15)
-    con.close()
+    # Route through PortfolioStore (campaign target 4E) so the
+    # connection inherits PRAGMA foreign_keys=ON, busy_timeout=
+    # 5000, and row_factory=Row instead of running on a bare
+    # sqlite3.connect that misses all three.
+    with PortfolioStore(db_path).connect() as con:
+        searches = list_searches(con)
+        hospitals = list_pipeline(con)
+        summary = pipeline_summary(con)
+        activity = get_activity(con, limit=15)
 
     total = len(hospitals)
     active = sum(1 for h in hospitals if h.stage not in ("closed", "passed"))

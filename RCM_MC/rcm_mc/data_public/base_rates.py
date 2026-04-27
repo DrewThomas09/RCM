@@ -28,9 +28,10 @@ from __future__ import annotations
 
 import json
 import math
-import sqlite3
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
+
+from ..portfolio.store import PortfolioStore
 
 
 # ---------------------------------------------------------------------------
@@ -110,13 +111,6 @@ def _safe_mean(values: List[float]) -> Optional[float]:
     return sum(values) / len(values)
 
 
-def _connect(db_path: str) -> sqlite3.Connection:
-    con = sqlite3.connect(db_path)
-    con.execute("PRAGMA busy_timeout = 5000")
-    con.row_factory = sqlite3.Row
-    return con
-
-
 def _dominant_payer(payer_mix_json: Optional[str]) -> Optional[str]:
     """Return the payer category with the highest share."""
     if not payer_mix_json:
@@ -140,7 +134,7 @@ def _size_bucket(ev_mm: Optional[float]) -> str:
     return "large"
 
 
-def _compute_benchmarks(rows: List[sqlite3.Row], filters: Dict[str, Any]) -> Benchmarks:
+def _compute_benchmarks(rows: List[Any], filters: Dict[str, Any]) -> Benchmarks:
     moic_vals = [r["realized_moic"] for r in rows if r["realized_moic"] is not None]
     irr_vals  = [r["realized_irr"]  for r in rows if r["realized_irr"]  is not None]
     ev_vals   = [r["ev_mm"]         for r in rows if r["ev_mm"]          is not None]
@@ -164,12 +158,13 @@ def _compute_benchmarks(rows: List[sqlite3.Row], filters: Dict[str, Any]) -> Ben
     )
 
 
-def _query_all(db_path: str) -> List[sqlite3.Row]:
-    con = _connect(db_path)
-    try:
+def _query_all(db_path: str) -> List[Any]:
+    # Route through PortfolioStore (campaign target 4E, data_public
+    # sweep): inherits busy_timeout=5000, foreign_keys=ON, and
+    # row_factory=Row — exactly what the prior _connect() helper
+    # set up by hand.
+    with PortfolioStore(db_path).connect() as con:
         return con.execute("SELECT * FROM public_deals").fetchall()
-    finally:
-        con.close()
 
 
 # ---------------------------------------------------------------------------

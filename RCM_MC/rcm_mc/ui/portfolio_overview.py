@@ -13,7 +13,24 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import chartis_shell
+from ._glossary_link import metric_label_link
+from ._provenance_tooltip import provenance_tooltip
+from ..provenance.graph import NodeType, ProvenanceGraph, ProvenanceNode
 from .brand import PALETTE
+
+
+# Phase 4A: portfolio-overview label → glossary-key reverse map.
+# Three KPI cards and two table column headers reference RCM
+# metrics that have canonical /metric-glossary entries.
+_LABEL_TO_GLOSSARY_KEY = {
+    "Avg Denial Rate":   "denial_rate",
+    "Avg Days in AR":    "days_in_ar",
+    "Avg Net Collection": "net_collection_rate",
+    "Total Net Revenue": "net_patient_revenue",
+    "Denial":            "denial_rate",
+    "AR":                "days_in_ar",
+    "NPR":               "net_patient_revenue",
+}
 
 
 def _health_badge(score: float) -> str:
@@ -165,22 +182,67 @@ def render_portfolio_overview(
     total_rev = deals["net_revenue"].dropna().sum() if "net_revenue" in deals.columns else None
     avg_ncr = deals["net_collection_rate"].dropna().mean() if "net_collection_rate" in deals.columns else None
 
+    # Phase 4C: build a portfolio-level provenance graph by hand —
+    # build_provenance_graph is per-deal HCRIS-shaped so it isn't
+    # the right constructor here. Each KPI is an AGGREGATED node
+    # (cohort mean / sum across deals) keyed at observed:<metric>
+    # so the explainer's resolver finds it. Only nodes whose KPI
+    # has a real (non-None) value get added — the helper falls
+    # through to plain text for KPIs that show "—".
+    prov_graph = ProvenanceGraph()
+    if total_rev is not None and total_rev > 0:
+        prov_graph.add_node(ProvenanceNode(
+            id="observed:net_patient_revenue",
+            label="Total Net Revenue (Portfolio Sum)",
+            node_type=NodeType.AGGREGATED,
+            value=float(total_rev), unit="USD",
+            source="PORTFOLIO",
+            source_detail=f"sum across {n} deal(s)",
+        ))
+    if avg_denial is not None:
+        prov_graph.add_node(ProvenanceNode(
+            id="observed:denial_rate",
+            label="Avg Denial Rate (Portfolio Mean)",
+            node_type=NodeType.AGGREGATED,
+            value=float(avg_denial), unit="pct",
+            source="PORTFOLIO",
+            source_detail=f"mean across {n} deal(s)",
+        ))
+    if avg_ar is not None:
+        prov_graph.add_node(ProvenanceNode(
+            id="observed:days_in_ar",
+            label="Avg Days in AR (Portfolio Mean)",
+            node_type=NodeType.AGGREGATED,
+            value=float(avg_ar), unit="days",
+            source="PORTFOLIO",
+            source_detail=f"mean across {n} deal(s)",
+        ))
+    if avg_ncr is not None:
+        prov_graph.add_node(ProvenanceNode(
+            id="observed:net_collection_rate",
+            label="Avg Net Collection Rate (Portfolio Mean)",
+            node_type=NodeType.AGGREGATED,
+            value=float(avg_ncr), unit="pct",
+            source="PORTFOLIO",
+            source_detail=f"mean across {n} deal(s)",
+        ))
+
     kpis = (
         f'<div class="cad-kpi-grid">'
         f'<div class="cad-kpi"><div class="cad-kpi-value">{n}</div>'
         f'<div class="cad-kpi-label">Active Deals</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{_fmt_money(total_rev) if total_rev else "—"}</div>'
-        f'<div class="cad-kpi-label">Total Net Revenue</div></div>'
+        f'{provenance_tooltip(label="Total Net Revenue", value=(_fmt_money(total_rev) if total_rev else "—"), graph=prov_graph, metric_key="net_patient_revenue")}</div>'
+        f'<div class="cad-kpi-label">{metric_label_link("Total Net Revenue", _LABEL_TO_GLOSSARY_KEY["Total Net Revenue"])}</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{_fmt_pct(avg_denial) if avg_denial else "—"}</div>'
-        f'<div class="cad-kpi-label">Avg Denial Rate</div></div>'
+        f'{provenance_tooltip(label="Avg Denial Rate", value=(_fmt_pct(avg_denial) if avg_denial else "—"), graph=prov_graph, metric_key="denial_rate", inject_css=False)}</div>'
+        f'<div class="cad-kpi-label">{metric_label_link("Avg Denial Rate", _LABEL_TO_GLOSSARY_KEY["Avg Denial Rate"])}</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{avg_ar:.0f}' if avg_ar else '—'
-        f'</div><div class="cad-kpi-label">Avg Days in AR</div></div>'
+        f'{provenance_tooltip(label="Avg Days in AR", value=(f"{avg_ar:.0f}" if avg_ar else "—"), graph=prov_graph, metric_key="days_in_ar", inject_css=False)}'
+        f'</div><div class="cad-kpi-label">{metric_label_link("Avg Days in AR", _LABEL_TO_GLOSSARY_KEY["Avg Days in AR"])}</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{_fmt_pct(avg_ncr) if avg_ncr else "—"}</div>'
-        f'<div class="cad-kpi-label">Avg Net Collection</div></div>'
+        f'{provenance_tooltip(label="Avg Net Collection", value=(_fmt_pct(avg_ncr) if avg_ncr else "—"), graph=prov_graph, metric_key="net_collection_rate", inject_css=False)}</div>'
+        f'<div class="cad-kpi-label">{metric_label_link("Avg Net Collection", _LABEL_TO_GLOSSARY_KEY["Avg Net Collection"])}</div></div>'
         f'</div>'
     )
 
@@ -291,8 +353,11 @@ def render_portfolio_overview(
         f'<a href="/import" class="cad-btn cad-btn-primary" style="text-decoration:none;">+ New Deal</a>'
         f'</div></div>'
         f'<table class="cad-table crosshair"><thead><tr>'
-        f'<th>ID</th><th>Name</th><th>Stage</th><th>Denial</th><th>AR</th>'
-        f'<th>NPR</th><th>Actions</th></tr></thead>'
+        f'<th>ID</th><th>Name</th><th>Stage</th>'
+        f'<th>{metric_label_link("Denial", _LABEL_TO_GLOSSARY_KEY["Denial"])}</th>'
+        f'<th>{metric_label_link("AR", _LABEL_TO_GLOSSARY_KEY["AR"])}</th>'
+        f'<th>{metric_label_link("NPR", _LABEL_TO_GLOSSARY_KEY["NPR"])}</th>'
+        f'<th>Actions</th></tr></thead>'
         f'<tbody>{rows}</tbody></table></div>'
     )
 

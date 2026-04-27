@@ -14,6 +14,36 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional, Tuple
 
+from ..provenance.graph import (
+    NodeType,
+    ProvenanceGraph,
+    ProvenanceNode,
+)
+
+
+# Source string (Source.HCRIS, Source.SELLER, etc.) → ProvenanceGraph
+# NodeType. The graph's NodeType vocabulary is broader than this
+# module's source classification; we map to the closest match.
+_SOURCE_TO_NODE_TYPE = {
+    "hcris":      NodeType.SOURCE,       # external raw input
+    "ml":         NodeType.PREDICTED,    # ridge / regression output
+    "seller":     NodeType.OBSERVED,     # analyst-entered
+    "calibrated": NodeType.CALCULATED,   # Bayesian posterior
+    "benchmark":  NodeType.BENCHMARK,
+    "computed":   NodeType.CALCULATED,
+}
+
+# Format hint → graph unit string. The unit field on a
+# ProvenanceNode is consumed by explain.py's _fmt helper, which
+# recognizes "pct", "USD", "days", "fraction", "index". The
+# "count" hint maps to "" (no unit suffix in the explainer).
+_FMT_TO_UNIT = {
+    "dollars": "USD",
+    "pct":     "pct",
+    "days":    "days",
+    "count":   "",
+}
+
 
 # ── Source definitions ──
 
@@ -198,27 +228,31 @@ def build_provenance_profile(
     calibrations: Dict[str, float] = {}
     if db_path:
         try:
-            import sqlite3
-            con = sqlite3.connect(db_path)
-            # Raw entries
-            rows = con.execute(
-                "SELECT metric, value FROM data_room_entries "
-                "WHERE hospital_ccn = ? AND superseded_by IS NULL",
-                (ccn,),
-            ).fetchall()
-            for m, v in rows:
-                if m not in seller_data:
-                    seller_data[m] = v
-            # Calibrations
-            rows = con.execute(
-                "SELECT metric, bayesian_posterior FROM data_room_calibrations "
-                "WHERE hospital_ccn = ? ORDER BY computed_at DESC",
-                (ccn,),
-            ).fetchall()
-            for m, v in rows:
-                if m not in calibrations:
-                    calibrations[m] = v
-            con.close()
+            # Late local import keeps the bypass cleanup contained
+            # (campaign target 4E) — the module top doesn't need
+            # PortfolioStore otherwise. Routes the read through
+            # the canonical seam so it inherits busy_timeout=5000,
+            # foreign_keys=ON, and Row factory.
+            from ..portfolio.store import PortfolioStore
+            with PortfolioStore(db_path).connect() as con:
+                # Raw entries
+                rows = con.execute(
+                    "SELECT metric, value FROM data_room_entries "
+                    "WHERE hospital_ccn = ? AND superseded_by IS NULL",
+                    (ccn,),
+                ).fetchall()
+                for m, v in rows:
+                    if m not in seller_data:
+                        seller_data[m] = v
+                # Calibrations
+                rows = con.execute(
+                    "SELECT metric, bayesian_posterior FROM data_room_calibrations "
+                    "WHERE hospital_ccn = ? ORDER BY computed_at DESC",
+                    (ccn,),
+                ).fetchall()
+                for m, v in rows:
+                    if m not in calibrations:
+                        calibrations[m] = v
         except Exception:
             pass
 
@@ -289,3 +323,165 @@ def build_provenance_profile(
         }
 
     return result
+
+
+# ── Phase 4C: ProvenanceGraph constructor ─────────────────────────
+#
+# Companion to build_provenance_profile. Same inputs, same metric
+# coverage, but emits a ProvenanceGraph keyed by `observed:<metric>`
+# so callers can pass it to provenance.explain.explain_for_ui or
+# the rcm_mc/ui/_provenance_tooltip.provenance_tooltip helper. The
+# resolver (explain.py:_resolve_metric_id) tries `observed:<key>`
+# first among its prefix list, so this is the natural place to
+# anchor the canonical-value node for each metric.
+
+
+def _hcris_metric_format_hints() -> Dict[str, Tuple[str, str]]:
+    """Same metric→(label, fmt) table that build_provenance_profile
+    uses internally. Lifted into a helper so build_provenance_graph
+    can stay in step without forking the list."""
+    return {
+        "net_patient_revenue": ("Net Patient Revenue", "dollars"),
+        "operating_expenses": ("Operating Expenses", "dollars"),
+        "net_income": ("Net Income", "dollars"),
+        "beds": ("Beds", "count"),
+        "medicare_day_pct": ("Medicare Day %", "pct"),
+        "medicaid_day_pct": ("Medicaid Day %", "pct"),
+        "total_patient_days": ("Total Patient Days", "count"),
+        "occupancy_rate": ("Occupancy Rate", "pct"),
+        "operating_margin": ("Operating Margin", "pct"),
+        "revenue_per_bed": ("Revenue per Bed", "dollars"),
+        "net_to_gross_ratio": ("Net-to-Gross Ratio", "pct"),
+    }
+
+
+def _rcm_metric_label_hints() -> Dict[str, Tuple[str, str]]:
+    """RCM metrics — predicted from HCRIS features unless seller
+    or calibrated data is available."""
+    return {
+        "denial_rate":         ("Denial Rate", "pct"),
+        "days_in_ar":          ("Days in AR", "days"),
+        "clean_claim_rate":    ("Clean Claim Rate", "pct"),
+        "collection_rate":     ("Net Collection Rate", "pct"),
+    }
+
+
+def build_provenance_graph(
+    ccn: str,
+    hcris_profile: Dict[str, Any],
+    ml_predictions: Dict[str, float],
+    db_path: Optional[str] = None,
+) -> ProvenanceGraph:
+    """Build a ProvenanceGraph for a hospital's metric profile.
+
+    Inputs mirror build_provenance_profile; the graph emitted has
+    one canonical node per metric at id ``observed:<metric>`` —
+    the form recognized by provenance.explain._resolve_metric_id.
+    The node_type reflects the chosen source (HCRIS → SOURCE,
+    ML → PREDICTED, SELLER → OBSERVED, CALIBRATED → CALCULATED).
+    For metrics where multiple source signals are available, the
+    losing signals are added as parent nodes with input_to edges
+    so the explainer's upstream walk can show the full picture.
+    """
+    g = ProvenanceGraph()
+
+    # Load seller data + calibrations from the data room (same as
+    # build_provenance_profile). Read-only and silent on failure.
+    seller_data: Dict[str, float] = {}
+    calibrations: Dict[str, float] = {}
+    if db_path:
+        try:
+            from ..portfolio.store import PortfolioStore
+            with PortfolioStore(db_path).connect() as con:
+                rows = con.execute(
+                    "SELECT metric, value FROM data_room_entries "
+                    "WHERE hospital_ccn = ? AND superseded_by IS NULL",
+                    (ccn,),
+                ).fetchall()
+                for m, v in rows:
+                    if m not in seller_data:
+                        seller_data[m] = v
+                rows = con.execute(
+                    "SELECT metric, bayesian_posterior "
+                    "FROM data_room_calibrations "
+                    "WHERE hospital_ccn = ? "
+                    "ORDER BY computed_at DESC",
+                    (ccn,),
+                ).fetchall()
+                for m, v in rows:
+                    if m not in calibrations:
+                        calibrations[m] = v
+        except Exception:
+            pass
+
+    # Combine HCRIS-coverage metrics + RCM-coverage metrics into
+    # one walk so each becomes a canonical node.
+    metric_meta: Dict[str, Tuple[str, str]] = {}
+    metric_meta.update(_hcris_metric_format_hints())
+    metric_meta.update(_rcm_metric_label_hints())
+
+    for metric, (label, fmt) in metric_meta.items():
+        hcris_val = hcris_profile.get(metric)
+        if hcris_val is not None:
+            try:
+                hcris_val = float(hcris_val)
+                if hcris_val != hcris_val:  # NaN
+                    hcris_val = None
+            except (TypeError, ValueError):
+                hcris_val = None
+        ml_val = ml_predictions.get(metric)
+        seller_val = seller_data.get(metric)
+        calib_val = calibrations.get(metric)
+
+        src, val, detail = classify_metric_source(
+            metric,
+            hcris_value=hcris_val,
+            ml_predicted=ml_val,
+            seller_value=seller_val,
+            calibrated_value=calib_val,
+        )
+        if src == Source.DEFAULT or val is None:
+            # No real signal for this metric — skip rather than
+            # add an empty node that confuses the explainer.
+            continue
+
+        node_type = _SOURCE_TO_NODE_TYPE.get(src, NodeType.OBSERVED)
+        unit = _FMT_TO_UNIT.get(fmt, "")
+        canonical_id = f"observed:{metric}"
+        g.add_node(ProvenanceNode(
+            id=canonical_id,
+            label=label,
+            node_type=node_type,
+            value=float(val),
+            unit=unit,
+            source=src.upper() if isinstance(src, str) else "",
+            source_detail=detail,
+        ))
+
+        # Add parent nodes for all OTHER signals available so the
+        # explainer's upstream walk can show the full picture.
+        # Parents are added BEFORE the canonical so add_edge
+        # tolerates ordering, but we add them explicitly anyway.
+        if hcris_val is not None and src != Source.HCRIS:
+            pid = f"hcris:{metric}"
+            g.add_node(ProvenanceNode(
+                id=pid, label=label, node_type=NodeType.SOURCE,
+                value=float(hcris_val), unit=unit,
+                source="HCRIS", source_detail="CMS Cost Report"))
+            g.add_edge(pid, canonical_id)
+        if ml_val is not None and src != Source.ML_PREDICTION:
+            pid = f"ml:{metric}"
+            g.add_node(ProvenanceNode(
+                id=pid, label=label, node_type=NodeType.PREDICTED,
+                value=float(ml_val), unit=unit,
+                source="ML", source_detail="Model prediction"))
+            g.add_edge(pid, canonical_id)
+        if seller_val is not None and src != Source.SELLER:
+            pid = f"seller:{metric}"
+            g.add_node(ProvenanceNode(
+                id=pid, label=label, node_type=NodeType.OBSERVED,
+                value=float(seller_val), unit=unit,
+                source="SELLER", source_detail="Data room"))
+            g.add_edge(pid, canonical_id)
+
+    return g

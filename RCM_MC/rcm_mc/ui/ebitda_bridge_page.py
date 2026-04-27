@@ -19,7 +19,10 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import chartis_shell
+from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
+from .provenance import build_provenance_graph
+from ..provenance.graph import NodeType, ProvenanceNode
 
 
 def _safe_float(val: Any, default: float = 0.0) -> float:
@@ -33,6 +36,27 @@ def _safe_float(val: Any, default: float = 0.0) -> float:
         return f
     except (TypeError, ValueError):
         return default
+
+
+# ── Phase 4A: lever-name → /metric-glossary anchor link ──
+# Most lever metrics (denial_rate, days_in_ar, etc.) match the
+# glossary key 1:1; the bridge's "cmi" is the glossary's
+# "case_mix_index". Map any divergent keys here. The shared
+# helper falls through to plain escaped text for unknown keys.
+_LEVER_METRIC_TO_GLOSSARY = {
+    "cmi": "case_mix_index",
+}
+
+
+def _lever_label_link(name: str, metric_key: str) -> str:
+    """Wrap a lever's display name in an anchor link to the
+    canonical /metric-glossary entry. Thin wrapper around the
+    shared helper — preserves the bridge-specific alias table
+    so call sites don't need to know about it."""
+    from ._glossary_link import metric_label_link
+    return metric_label_link(
+        name, metric_key, alias=_LEVER_METRIC_TO_GLOSSARY,
+    )
 
 
 def _fm(val: float) -> str:
@@ -353,42 +377,47 @@ def _load_data_room_overrides(db_path: Optional[str], ccn: str) -> Dict[str, flo
     """
     if not db_path:
         return {}
+    # Late local import keeps the bypass cleanup contained to this
+    # function — the module top doesn't need PortfolioStore otherwise.
+    from ..portfolio.store import PortfolioStore
     try:
-        import sqlite3
-        con = sqlite3.connect(db_path)
-        seen: Dict[str, float] = {}
+        # Route through PortfolioStore (campaign target 4E) so the
+        # connection inherits PRAGMA foreign_keys=ON, busy_timeout=
+        # 5000, and row_factory=Row instead of running on a bare
+        # sqlite3.connect that misses all three.
+        with PortfolioStore(db_path).connect() as con:
+            seen: Dict[str, float] = {}
 
-        # Try calibrations first (best: Bayesian posterior)
-        try:
-            rows = con.execute(
-                "SELECT metric, bayesian_posterior FROM data_room_calibrations "
-                "WHERE hospital_ccn = ? ORDER BY computed_at DESC",
-                (ccn,),
-            ).fetchall()
-            for metric, value in rows:
-                if metric not in seen and value is not None:
-                    seen[f"{metric}_current"] = value
-        except Exception:
-            pass
-
-        # Fall back to raw entries if no calibrations yet
-        if not seen:
+            # Try calibrations first (best: Bayesian posterior)
             try:
                 rows = con.execute(
-                    "SELECT metric, value FROM data_room_entries "
-                    "WHERE hospital_ccn = ? AND superseded_by IS NULL "
-                    "ORDER BY entered_at DESC",
+                    "SELECT metric, bayesian_posterior FROM data_room_calibrations "
+                    "WHERE hospital_ccn = ? ORDER BY computed_at DESC",
                     (ccn,),
                 ).fetchall()
                 for metric, value in rows:
-                    key = f"{metric}_current"
-                    if key not in seen and value is not None:
-                        seen[key] = value
+                    if metric not in seen and value is not None:
+                        seen[f"{metric}_current"] = value
             except Exception:
                 pass
 
-        con.close()
-        return seen
+            # Fall back to raw entries if no calibrations yet
+            if not seen:
+                try:
+                    rows = con.execute(
+                        "SELECT metric, value FROM data_room_entries "
+                        "WHERE hospital_ccn = ? AND superseded_by IS NULL "
+                        "ORDER BY entered_at DESC",
+                        (ccn,),
+                    ).fetchall()
+                    for metric, value in rows:
+                        key = f"{metric}_current"
+                        if key not in seen and value is not None:
+                            seen[key] = value
+                except Exception:
+                    pass
+
+            return seen
     except Exception:
         return {}
 
@@ -433,6 +462,47 @@ def render_ebitda_bridge(
 
     bridge = _compute_bridge(rev, current_ebitda, medicare_pct=mc,
                               overrides=dr_overrides, peer_targets=peer_tgts)
+
+    # Phase 4C: build a ProvenanceGraph for "explain this number"
+    # tooltips on the Lever Detail table's current-value cells.
+    # Start from the hospital row (HCRIS-derived margin / NPR /
+    # opex / etc.), then manually add one OBSERVED node per
+    # lever-current value at id `observed:<glossary_key>` with
+    # source = SELLER if the value came from the data room or
+    # DEFAULT (model config) otherwise. The cmi -> case_mix_index
+    # alias from loop 106 means lev["metric"]=="cmi" maps to
+    # glossary key case_mix_index — same alias drives both the
+    # 4A label link and the 4C value tooltip.
+    prov_graph = build_provenance_graph(
+        ccn=str(ccn),
+        hcris_profile=dict(hospital),
+        ml_predictions={},
+    )
+    for _lev in bridge["levers"]:
+        _m_key = _LEVER_METRIC_TO_GLOSSARY.get(
+            _lev.get("metric", ""), _lev.get("metric", ""),
+        )
+        if not _m_key:
+            continue
+        _node_id = f"observed:{_m_key}"
+        if _node_id in prov_graph.nodes:
+            # Hospital-row already provided this metric; don't
+            # overwrite the SOURCE node with a lever-default.
+            continue
+        _is_seller = (
+            f"{_lev.get('metric', '')}_current" in dr_overrides
+        )
+        prov_graph.add_node(ProvenanceNode(
+            id=_node_id,
+            label=_lev["name"],
+            node_type=NodeType.OBSERVED if _is_seller
+                else NodeType.PREDICTED,
+            value=float(_lev["current"]),
+            unit="pct" if _lev["current"] < 2 else "",
+            source="SELLER" if _is_seller else "MODEL_DEFAULT",
+            source_detail=("Data room" if _is_seller
+                else "Lever config default"),
+        ))
 
     # Data provenance banner
     provenance_banner = ""
@@ -541,7 +611,7 @@ def render_ebitda_bridge(
             f'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;'
             f'border-bottom:1px solid var(--cad-border);">'
             f'<div style="width:180px;flex-shrink:0;">'
-            f'<div style="font-weight:500;font-size:12.5px;">{_html.escape(lev["name"])}</div>'
+            f'<div style="font-weight:500;font-size:12.5px;">{_lever_label_link(lev["name"], lev.get("metric", ""))}</div>'
             f'<div style="font-size:10px;color:var(--cad-text3);">{cat_badge} | '
             f'{lev["ramp_months"]}mo ramp</div></div>'
             f'<div style="flex:1;display:flex;align-items:center;gap:8px;">'
@@ -573,6 +643,7 @@ def render_ebitda_bridge(
 
     # ── Lever detail table ──
     detail_rows = ""
+    _first_tooltip = True
     for lev in bridge["levers"]:
         current_str = f"{lev['current']:.1%}" if lev["current"] < 2 else f"{lev['current']:.2f}"
         target_str = f"{lev['target']:.1%}" if lev["target"] < 2 else f"{lev['target']:.2f}"
@@ -581,10 +652,23 @@ def render_ebitda_bridge(
         is_from_seller = f"{metric_key}_current" in dr_overrides
         cur_tag = source_tag(Source.SELLER, "Data room") if is_from_seller else source_tag(Source.DEFAULT, "Model default")
         tgt_tag = source_tag(Source.BENCHMARK, "P75 peers")
+        # Phase 4C: hover the current-value cell for the
+        # provenance card (node type, prose, upstream).
+        # Resolves through the same cmi -> case_mix_index alias
+        # used for the 4A label link.
+        _current_tt = provenance_tooltip(
+            label=lev["name"], value=current_str,
+            graph=prov_graph,
+            metric_key=_LEVER_METRIC_TO_GLOSSARY.get(
+                metric_key, metric_key,
+            ),
+            inject_css=_first_tooltip,
+        )
+        _first_tooltip = False
         detail_rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{_html.escape(lev["name"])}</td>'
-            f'<td class="num">{current_str} {cur_tag}</td>'
+            f'<td style="font-weight:500;">{_lever_label_link(lev["name"], lev.get("metric", ""))}</td>'
+            f'<td class="num">{_current_tt} {cur_tag}</td>'
             f'<td class="num" style="color:var(--cad-pos);">{target_str} {tgt_tag}</td>'
             f'<td class="num" style="color:var(--cad-pos);">{_fm(lev["revenue_impact"])}</td>'
             f'<td class="num" style="color:var(--cad-pos);">{_fm(lev["cost_impact"])}</td>'
@@ -616,7 +700,7 @@ def render_ebitda_bridge(
     for lev in bridge["levers"]:
         if lev["ebitda_impact"] == 0:
             continue
-        timing_rows += f'<tr><td style="font-weight:500;">{_html.escape(lev["name"])}</td>'
+        timing_rows += f'<tr><td style="font-weight:500;">{_lever_label_link(lev["name"], lev.get("metric", ""))}</td>'
         for m in months:
             ramp = lev["ramp_months"]
             pct = min(1.0, m / ramp) if ramp > 0 else 1.0
@@ -741,7 +825,7 @@ def render_ebitda_bridge(
     for lev in bridge["levers"]:
         if lev["ebitda_impact"] == 0:
             continue
-        ach_rows += f'<tr><td style="font-weight:500;">{_html.escape(lev["name"][:20])}</td>'
+        ach_rows += f'<tr><td style="font-weight:500;">{_lever_label_link(lev["name"][:20], lev.get("metric", ""))}</td>'
         for pct in (50, 75, 100, 120):
             val = lev["ebitda_impact"] * pct / 100
             ach_totals[pct] += val

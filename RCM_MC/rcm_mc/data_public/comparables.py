@@ -25,9 +25,10 @@ from __future__ import annotations
 
 import json
 import math
-import sqlite3
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
+
+from ..portfolio.store import PortfolioStore
 
 
 @dataclass
@@ -139,10 +140,12 @@ def _distance_to_score(dist: float, max_dist: float = 10.0) -> float:
 # ---------------------------------------------------------------------------
 
 def _load_corpus(corpus_db_path: str) -> List[Dict[str, Any]]:
-    con = sqlite3.connect(corpus_db_path)
-    con.row_factory = sqlite3.Row
-    rows = con.execute("SELECT * FROM public_deals").fetchall()
-    con.close()
+    # Route through PortfolioStore (campaign target 4E, data_public
+    # sweep): inherits busy_timeout=5000, foreign_keys=ON, and
+    # row_factory=Row — exactly what the prior bare-connect + manual
+    # row_factory assignment provided before.
+    with PortfolioStore(corpus_db_path).connect() as con:
+        rows = con.execute("SELECT * FROM public_deals").fetchall()
     deals = []
     for row in rows:
         d = dict(row)

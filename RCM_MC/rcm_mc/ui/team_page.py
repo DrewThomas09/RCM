@@ -6,10 +6,10 @@ and comment threads on pipeline hospitals.
 from __future__ import annotations
 
 import html as _html
-import sqlite3
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import chartis_shell
+from ..portfolio.store import PortfolioStore
 from .brand import PALETTE
 
 
@@ -20,13 +20,16 @@ def render_team_dashboard(db_path: str) -> str:
     )
     from ..data.pipeline import list_pipeline, _ensure_tables as _pipe_ensure
 
-    con = sqlite3.connect(db_path)
-    _ensure_tables(con)
-    _pipe_ensure(con)
+    # Route through PortfolioStore (campaign target 4E) so this
+    # portfolio-scope read inherits busy_timeout=5000,
+    # foreign_keys=ON, and Row factory the same way every other
+    # deal-aware UI page does. Read-only — no commit needed.
+    with PortfolioStore(db_path).connect() as con:
+        _ensure_tables(con)
+        _pipe_ensure(con)
 
-    activity = get_activity_feed(con, limit=30)
-    hospitals = list_pipeline(con)
-    con.close()
+        activity = get_activity_feed(con, limit=30)
+        hospitals = list_pipeline(con)
 
     # Unique actors
     actors = sorted(set(a["actor"] for a in activity if a["actor"]))

@@ -1983,6 +1983,30 @@ class RCMHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
+        if path == "/v3-status":
+            # Internal campaign-progress dashboard. Reads
+            # docs/V3_ROUTE_INVENTORY.md and renders the compliance
+            # counts via chartis_shell. Documented exception to the
+            # DealAnalysisPacket invariant — it is metadata about the
+            # migration, not analytical content about a deal.
+            from .ui.v3_status_page import render_v3_status
+            return self._send_html(render_v3_status())
+        if path == "/cli-runs":
+            # CLI run-history browser (campaign target 3C). Reads
+            # <outdir>/runs.sqlite via infra.run_history.list_runs.
+            # Disambiguated from the existing /runs route, which
+            # surfaces PortfolioStore.analysis_runs (per-deal packet
+            # cache) — different feature, similar URL.
+            from .ui.cli_runs_page import render_cli_runs_page
+            qs_cli = urllib.parse.parse_qs(parsed.query)
+            limit_cli = self._clamp_int(
+                (qs_cli.get("limit") or ["50"])[0],
+                default=50, min_v=1, max_v=500,
+            )
+            return self._send_html(
+                render_cli_runs_page(self.config.outdir, limit=limit_cli)
+            )
+
         if path == "/dashboard":
             # Private-app landing page (Heroku / small-team deployments).
             # Composes: curated analyses · recent runs · system status ·
@@ -3621,18 +3645,26 @@ class RCMHandler(BaseHTTPRequestHandler):
             rollup["request_count"] = RCMHandler._request_counter
             return self._send_json(rollup)
         if path == "/api/backup":
-            import sqlite3 as _sqlite3
             import io as _io
             import tempfile as _tmpf
             store = PortfolioStore(self.config.db_path)
             with _tmpf.NamedTemporaryFile(suffix=".db", delete=False) as tf:
                 backup_path = tf.name
             try:
-                src = _sqlite3.connect(self.config.db_path)
-                dst = _sqlite3.connect(backup_path)
-                src.backup(dst)
-                src.close()
-                dst.close()
+                # Route both ends of the online sqlite backup
+                # through PortfolioStore (campaign target 4E) so
+                # src + dst connections inherit busy_timeout=5000,
+                # foreign_keys=ON, and Row factory. The native
+                # Connection.backup(target) API is preserved
+                # verbatim; both with-blocks close cleanly via the
+                # context manager so the manual src.close()/
+                # dst.close() are gone. Parenthesized
+                # multi-context-manager form (Python 3.14).
+                with (
+                    PortfolioStore(self.config.db_path).connect() as src,
+                    PortfolioStore(backup_path).connect() as dst,
+                ):
+                    src.backup(dst)
                 with open(backup_path, "rb") as f:
                     body = f.read()
                 self.send_response(HTTPStatus.OK)
@@ -4732,75 +4764,16 @@ class RCMHandler(BaseHTTPRequestHandler):
                 import pandas as _pd_pres
                 deals_for_pressure = _pd_pres.DataFrame()
             return self._send_html(_rpp(deals_for_pressure, deal_id, pkt))
-        if path == "/calibration":
-            from .ui._chartis_kit import chartis_shell as _shell_cal
+        if path == "/calibration" or path == "/calibrate":
+            # Per-payer prior-calibration page (Phase 3 / 3D). Lifted
+            # out of an inlined 70-LOC server.py block on the
+            # saving-seeking-chartis branch (loop 31) so the page
+            # can be tested + wears the v3 utility classes uniformly.
+            # /calibrate is an alias of /calibration since the brief
+            # used the shorter name.
+            from .ui.calibration_page import render_calibration_page
             store = PortfolioStore(self.config.db_path)
-            try:
-                runs_df = store.list_runs()
-            except Exception:
-                import pandas as _pd_cal
-                runs_df = _pd_cal.DataFrame()
-            if runs_df.empty:
-                body = (
-                    '<div class="cad-card">'
-                    '<p style="color:var(--cad-text3);">No simulation runs yet. '
-                    'Run an analysis first to populate calibration priors.</p>'
-                    '<a href="/analysis" class="cad-btn cad-btn-primary" '
-                    'style="text-decoration:none;margin-top:8px;display:inline-block;">'
-                    'Go to Analysis &rarr;</a></div>'
-                )
-                return self._send_html(_shell_cal(body, "Calibration",
-                                                   subtitle="Per-payer prior calibration"))
-            import json as _cjson
-            payer_data: Dict[str, list] = {}
-            for _, r in runs_df.iterrows():
-                try:
-                    prim = _cjson.loads(r.get("primitives_json") or "{}")
-                except Exception:
-                    continue
-                for payer, vals in prim.get("payers", {}).items():
-                    payer_data.setdefault(payer, []).append(vals)
-            sliders = ""
-            for payer, entries in sorted(payer_data.items()):
-                idr_vals = [e.get("idr_mean") for e in entries if e.get("idr_mean") is not None]
-                fwr_vals = [e.get("fwr_mean") for e in entries if e.get("fwr_mean") is not None]
-                dar_vals = [e.get("dar_clean_days_mean") for e in entries if e.get("dar_clean_days_mean") is not None]
-                idr_m = sum(idr_vals) / len(idr_vals) if idr_vals else 0
-                fwr_m = sum(fwr_vals) / len(fwr_vals) if fwr_vals else 0
-                dar_m = sum(dar_vals) / len(dar_vals) if dar_vals else 0
-                ep = html.escape(payer)
-                sliders += (
-                    f'<div class="cad-card">'
-                    f'<h3 style="margin-bottom:8px;">{ep}</h3>'
-                    f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">'
-                    f'<div><label style="font-size:12px;color:var(--cad-text2);">IDR Mean: '
-                    f'<span id="idr-{ep}" class="cad-mono" style="color:var(--cad-text);">{idr_m:.3f}</span></label><br>'
-                    f'<input type="range" min="0" max="0.5" step="0.005" value="{idr_m:.3f}" '
-                    f'style="width:100%;accent-color:var(--cad-accent);" '
-                    f'oninput="document.getElementById(\'idr-{ep}\').textContent=this.value"></div>'
-                    f'<div><label style="font-size:12px;color:var(--cad-text2);">FWR Mean: '
-                    f'<span id="fwr-{ep}" class="cad-mono" style="color:var(--cad-text);">{fwr_m:.3f}</span></label><br>'
-                    f'<input type="range" min="0" max="0.8" step="0.005" value="{fwr_m:.3f}" '
-                    f'style="width:100%;accent-color:var(--cad-accent);" '
-                    f'oninput="document.getElementById(\'fwr-{ep}\').textContent=this.value"></div>'
-                    f'<div><label style="font-size:12px;color:var(--cad-text2);">DAR Days: '
-                    f'<span id="dar-{ep}" class="cad-mono" style="color:var(--cad-text);">{dar_m:.0f}</span></label><br>'
-                    f'<input type="range" min="0" max="120" step="1" value="{dar_m:.0f}" '
-                    f'style="width:100%;accent-color:var(--cad-accent);" '
-                    f'oninput="document.getElementById(\'dar-{ep}\').textContent=this.value"></div>'
-                    f'</div>'
-                    f'<p style="font-size:11px;color:var(--cad-text3);margin-top:6px;">{len(entries)} run(s)</p></div>'
-                )
-            body = (
-                f'<div class="cad-card"><p style="color:var(--cad-text2);font-size:12.5px;">'
-                f'Adjust priors per payer from {len(runs_df)} run(s).</p></div>'
-                f'{sliders}'
-                f'<div class="cad-card" style="display:flex;gap:8px;">'
-                f'<a href="/api/calibration/priors" class="cad-btn" style="text-decoration:none;">'
-                f'API: GET /api/calibration/priors</a></div>'
-            )
-            return self._send_html(_shell_cal(body, "Calibration",
-                                               subtitle="Per-payer prior calibration"))
+            return self._send_html(render_calibration_page(store))
         if path == "/api/calibration/priors":
             import json as _cjson2
             store = PortfolioStore(self.config.db_path)
@@ -4954,6 +4927,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_analysis_landing()
         if path == "/team":
             return self._route_team()
+        if path == "/metric-glossary":
+            return self._route_metric_glossary()
         if path == "/pipeline":
             return self._route_pipeline()
         if path == "/deals":
@@ -5292,7 +5267,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_data_room_add(self, ccn: str) -> None:
         """POST /data-room/{ccn}/add — add a seller data point."""
-        import sqlite3
         ccn = self._sanitize_ccn(ccn)
         try:
             form = self._read_form_body()
@@ -5387,7 +5361,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_value_tracker_record(self, deal_id: str) -> None:
         """POST /value-tracker/{deal_id}/record — record quarterly actual."""
-        import sqlite3 as _sql_vtr
         deal_id = self._sanitize_ccn(deal_id)
         form = self._read_form_body()
         quarter = form.get("quarter", "")[:10]
@@ -5398,10 +5371,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Invalid Amount", "Could not parse the impact amount.")
         try:
             from .pe.value_tracker import record_quarterly_lever
-            con = _sql_vtr.connect(self.config.db_path)
-            record_quarterly_lever(con, deal_id, quarter, lever, actual,
-                                    notes=form.get("notes", "")[:200])
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E) so
+            # the quarterly-actual write inherits busy_timeout=5000,
+            # foreign_keys=ON, and Row factory. PortfolioStore.
+            # connect() closes on exit but does NOT auto-commit, so
+            # the explicit con.commit() is preserved inside the
+            # with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                record_quarterly_lever(con, deal_id, quarter, lever, actual,
+                                        notes=form.get("notes", "")[:200])
+                con.commit()
         except Exception as exc:
             return self._error_page("Record Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)
@@ -5410,7 +5389,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_value_tracker_freeze(self, deal_id: str) -> None:
         """POST /value-tracker/{deal_id}/freeze — freeze bridge as plan."""
-        import sqlite3 as _sql_vtf
         deal_id = self._sanitize_ccn(deal_id)
         try:
             from .data.hcris import _get_latest_per_ccn
@@ -5433,9 +5411,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             dr = _load_data_room_overrides(self.config.db_path, deal_id)
             pt = compute_peer_targets(hcris, beds, state)
             bridge = _compute_bridge(rev, ebitda, medicare_pct=mc, overrides=dr, peer_targets=pt)
-            con = _sql_vtf.connect(self.config.db_path)
-            freeze_bridge_as_plan(con, deal_id, deal_id, name, bridge)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E) — the
+            # freeze-as-plan write inherits the canonical PRAGMAs;
+            # explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                freeze_bridge_as_plan(con, deal_id, deal_id, name, bridge)
+                con.commit()
         except Exception as exc:
             return self._error_page("Freeze Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)
@@ -6690,9 +6671,21 @@ class RCMHandler(BaseHTTPRequestHandler):
         except Exception as exc:
             return self._error_page("Team Error", str(exc)[:200])
 
+    def _route_metric_glossary(self) -> None:
+        """GET /metric-glossary — canonical metric reference page.
+
+        Phase 4A target: every page that mentions a metric should
+        link to /metric-glossary#<metric_key>. This route is the
+        destination those links resolve to.
+        """
+        try:
+            from .ui.metric_glossary_page import render_metric_glossary
+            return self._send_html(render_metric_glossary())
+        except Exception as exc:
+            return self._error_page("Metric Glossary Error", str(exc)[:200])
+
     def _route_add_comment(self) -> None:
         """POST /team/comment — add a comment to an entity."""
-        import sqlite3 as _sql_cm
         form = self._read_form_body()
         entity_type = form.get("entity_type", "hospital")[:20]
         entity_id = self._sanitize_ccn(form.get("entity_id", ""))
@@ -6702,9 +6695,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Missing Data", "Comment body and entity ID required.")
         try:
             from .data.team import add_comment
-            con = _sql_cm.connect(self.config.db_path)
-            add_comment(con, entity_type, entity_id, author, body_text)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E)
+            # so the comment write inherits the canonical PRAGMAs.
+            # Explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                add_comment(con, entity_type, entity_id, author, body_text)
+                con.commit()
         except Exception as exc:
             return self._error_page("Comment Error", str(exc)[:200])
         redirect = form.get("redirect", f"/hospital/{entity_id}")
@@ -6733,7 +6729,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_pipeline_add(self) -> None:
         """POST /pipeline/add — add a hospital to the pipeline."""
-        import sqlite3 as _sql_pa
         form = self._read_form_body()
         ccn = self._sanitize_ccn(form.get("ccn", ""))
         if not ccn:
@@ -6746,9 +6741,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             beds = 0
         try:
             from .data.pipeline import add_to_pipeline
-            con = _sql_pa.connect(self.config.db_path)
-            add_to_pipeline(con, ccn, name, state, beds)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E).
+            # Explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                add_to_pipeline(con, ccn, name, state, beds)
+                con.commit()
         except Exception as exc:
             return self._error_page("Pipeline Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)
@@ -6757,7 +6754,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_save_search(self) -> None:
         """POST /pipeline/save-search — save a screener filter set."""
-        import sqlite3 as _sql_ss
         form = self._read_form_body()
         name = form.get("name", "Untitled Search")[:50]
         filters = {
@@ -6770,9 +6766,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         }
         try:
             from .data.pipeline import save_search
-            con = _sql_ss.connect(self.config.db_path)
-            save_search(con, name, filters)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E).
+            # Explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                save_search(con, name, filters)
+                con.commit()
         except Exception as exc:
             return self._error_page("Save Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)
@@ -6781,16 +6779,17 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_pipeline_stage(self) -> None:
         """POST /pipeline/stage/{ccn} — update pipeline stage."""
-        import sqlite3 as _sql_ps
         path = urllib.parse.urlparse(self.path).path
         ccn = self._sanitize_ccn(path.replace("/pipeline/stage/", "").strip("/"))
         form = self._read_form_body()
         new_stage = form.get("stage", "screening")[:20]
         try:
             from .data.pipeline import update_stage
-            con = _sql_ps.connect(self.config.db_path)
-            update_stage(con, ccn, new_stage)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E).
+            # Explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                update_stage(con, ccn, new_stage)
+                con.commit()
         except Exception as exc:
             return self._error_page("Stage Update Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)

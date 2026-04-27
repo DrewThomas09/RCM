@@ -4,6 +4,15 @@ Pure SVG, no JS chart libraries. Each feature gets a horizontal
 bar with magnitude proportional to relative importance and color
 encoding the sign (green = positive driver, red = negative).
 
+Why this page is exempt from the DealAnalysisPacket invariant:
+    Feature importance is a property of trained ML predictors, not
+    of any specific deal. The page surfaces model coefficients
+    across the codebase's three ridge predictors (denial rate,
+    days-in-AR, collection rate). There is no deal_id; the source
+    of truth is the trained-model state from rcm_mc/ml/. Same shape
+    as /v3-status and /data/catalog — portfolio-wide / model-wide
+    metadata pages exempt from the per-deal packet invariant.
+
 Public API::
 
     render_importance_bar_chart(importances, title) -> str
@@ -16,6 +25,7 @@ import html as _html
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..ml.feature_importance import FeatureImportance
+from ._chartis_kit import chartis_shell
 from .colors import STATUS
 
 
@@ -53,10 +63,11 @@ def render_importance_bar_chart(
     """
     if not importances:
         return (
-            f'<div style="background:{_BG_COLOR};'
-            f'border:1px solid {_AXIS_COLOR};border-radius:8px;'
-            f'padding:24px;text-align:center;color:#9ca3af;'
-            f'font-size:13px;">No feature importance data.</div>')
+            '<div style="background:var(--paper,#1f2937);'
+            'border:1px solid var(--border,#374151);'
+            'border-radius:8px;padding:1.5rem;text-align:center;'
+            'color:var(--muted,#9ca3af);font-size:.85rem;">'
+            'No feature importance data.</div>')
 
     items = importances[:max_bars]
     label_col_w = 200
@@ -122,9 +133,9 @@ def render_importance_bar_chart(
         f'stroke="{_AXIS_COLOR}" stroke-width="1" />')
 
     return (
-        f'<div style="background:{_BG_COLOR};'
-        f'border:1px solid {_AXIS_COLOR};border-radius:8px;'
-        f'padding:14px;margin-bottom:14px;">'
+        '<div style="background:var(--paper,#1f2937);'
+        'border:1px solid var(--border,#374151);'
+        'border-radius:8px;padding:.9rem;margin-bottom:.9rem;">'
         f'<svg viewBox="0 0 {width} {height}" '
         f'width="{width}" height="{height}">'
         f'{title_html}{axis}'
@@ -138,8 +149,8 @@ def render_importance_panel(
     """Render a panel of importance charts, one per model."""
     if not model_importances:
         return (
-            '<div style="color:#9ca3af;">No models to '
-            'visualize.</div>')
+            '<div style="color:var(--muted,#9ca3af);">'
+            'No models to visualize.</div>')
     sections = []
     for model_name, imps in model_importances.items():
         sections.append(render_importance_bar_chart(
@@ -151,38 +162,53 @@ def render_feature_importance_page(
     model_importances: Dict[
         str, List[FeatureImportance]],
 ) -> str:
-    """Render the full /models/importance page."""
-    if not model_importances:
-        body = (
-            f'<div style="background:#111827;'
-            f'border:1px solid {_AXIS_COLOR};'
-            f'border-radius:8px;padding:40px;'
-            f'text-align:center;color:#9ca3af;">'
-            f'No model importance data — train models '
-            f'and build importance via '
-            f'<code>importance_from_trained_ridge(...)</code> '
-            f'first.</div>')
-    else:
-        body = render_importance_panel(model_importances)
+    """Render the full /models/importance page.
 
-    return (
-        '<div style="max-width:1200px;margin:0 auto;'
-        'padding:24px;">'
-        '<div style="display:flex;'
-        'justify-content:space-between;'
-        'align-items:baseline;margin-bottom:16px;">'
-        '<h1 style="font-size:24px;color:#f3f4f6;'
-        'margin:0;">Feature Importance</h1>'
-        '<a href="/models/quality" '
-        'style="color:#60a5fa;font-size:13px;">'
-        'Model quality →</a></div>'
-        '<p style="color:#9ca3af;font-size:13px;'
-        'margin:0 0 18px 0;max-width:720px;">'
-        'What drives each model\'s predictions. Bars extend '
-        'right (positive drivers) or left (negative). Length '
-        'proportional to |coefficient|; relative '
-        'importance shown as percent.</p>'
-        + body + '</div>')
+    Wraps the SVG bar charts in chartis_shell so the page picks up
+    the canonical chrome (nav, theme, accent) and the v3 utility
+    classes from /static/v3/chartis.css. The SVG markup itself
+    keeps its inline fill/stroke colors — those are semantic status
+    colors from the colors.STATUS palette and are unrelated to the
+    page chrome.
+    """
+    if not model_importances:
+        catalog_body = (
+            '<div style="background:var(--paper,#111827);'
+            'border:1px solid var(--border,#374151);'
+            'border-radius:8px;padding:2.5rem;text-align:center;'
+            'color:var(--muted,#9ca3af);">'
+            'No model importance data — train models and build '
+            'importance via '
+            '<code>importance_from_trained_ridge(...)</code> '
+            'first.</div>'
+        )
+    else:
+        catalog_body = render_importance_panel(model_importances)
+
+    body = (
+        '<section style="max-width:80rem;">'
+        '<div style="display:flex;justify-content:space-between;'
+        'align-items:baseline;margin-bottom:.75rem;">'
+        '<h1 style="margin:0;">Feature Importance</h1>'
+        '<a href="/models/quality" class="micro" '
+        'style="font-weight:400;letter-spacing:.04em;'
+        'text-transform:none;">Model quality →</a>'
+        '</div>'
+        '<p style="max-width:48rem;color:var(--muted,#9ca3af);'
+        'margin:0 0 1rem 0;">'
+        'What drives each model\'s predictions. Bars extend right '
+        '(positive drivers) or left (negative). Length proportional '
+        'to |coefficient|; relative importance shown as percent.'
+        '</p>'
+        + catalog_body
+        + '</section>'
+    )
+
+    return chartis_shell(
+        body,
+        "Feature Importance",
+        subtitle="trained-model coefficients",
+    )
 
 
 from ..infra.cache import ttl_cache

@@ -35,11 +35,12 @@ Public API:
 from __future__ import annotations
 
 import json
-import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
+
+from ..portfolio.store import PortfolioStore
 
 
 def _utcnow() -> str:
@@ -658,16 +659,19 @@ class DealsCorpus:
         self._ensure_table()
 
     @contextmanager
-    def _connect(self) -> Iterator[sqlite3.Connection]:
-        con = sqlite3.connect(self.db_path)
-        con.execute("PRAGMA journal_mode = WAL")
-        con.execute("PRAGMA foreign_keys = ON")
-        con.execute("PRAGMA busy_timeout = 5000")
-        con.row_factory = sqlite3.Row
-        try:
+    def _connect(self) -> Iterator[Any]:
+        # Route through PortfolioStore (campaign target 4E,
+        # data_public sweep) so the corpus reader inherits the
+        # canonical busy_timeout=5000, foreign_keys=ON, and
+        # row_factory=Row. journal_mode=WAL is set explicitly
+        # inside the with-block — the corpus relies on WAL for
+        # read/write concurrency between ingest writers and
+        # analyzer readers, and PortfolioStore doesn't apply
+        # WAL by default. WAL is a database-file-level setting,
+        # so this PRAGMA is idempotent across connections.
+        with PortfolioStore(self.db_path).connect() as con:
+            con.execute("PRAGMA journal_mode = WAL")
             yield con
-        finally:
-            con.close()
 
     def _ensure_table(self) -> None:
         with self._connect() as con:
@@ -1057,7 +1061,7 @@ class DealsCorpus:
         }
 
 
-def _row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
+def _row_to_dict(row: Mapping[str, Any]) -> Dict[str, Any]:
     d = dict(row)
     pm = d.get("payer_mix")
     if pm and isinstance(pm, str):
