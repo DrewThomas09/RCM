@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import chartis_shell
+from ._glossary_link import metric_label_link
 from .brand import PALETTE
 
 
@@ -213,7 +214,12 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         if val == 0 and col not in ("medicaid_day_pct",):
             continue
 
-        cells = f'<td style="font-weight:500;">{_html.escape(label)}</td>'
+        # Phase 4A: wrap label in /metric-glossary anchor when
+        # `col` is a registered glossary key (operating_margin,
+        # occupancy_rate, medicare_day_pct, medicaid_day_pct
+        # are direct matches today; the helper falls through to
+        # plain text for the other 8 columns).
+        cells = f'<td style="font-weight:500;">{metric_label_link(label, col)}</td>'
         cells += f'<td class="num" style="font-weight:600;">{_fmt_val(val, fmt)}</td>'
 
         for gname in group_names:
@@ -228,6 +234,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
             if "Size" in gname and stats["gap_to_p75"] > 0 and direction != "neutral":
                 gap_opportunities.append({
                     "metric": label,
+                    "col": col,
                     "current": val,
                     "p75": stats["p75"],
                     "gap": stats["gap_to_p75"],
@@ -280,7 +287,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
         pct_color = _pctile_color(g["pctile"], g["direction"])
         gap_rows += (
             f'<tr>'
-            f'<td style="font-weight:500;">{_html.escape(g["metric"])}</td>'
+            f'<td style="font-weight:500;">{metric_label_link(g["metric"], g.get("col", ""))}</td>'
             f'<td class="num">{_fmt_val(g["current"], g["fmt"])}</td>'
             f'<td class="num" style="color:var(--cad-pos);">{_fmt_val(g["p75"], g["fmt"])}</td>'
             f'<td class="num" style="color:var(--cad-pos);font-weight:600;">{improvement}</td>'
