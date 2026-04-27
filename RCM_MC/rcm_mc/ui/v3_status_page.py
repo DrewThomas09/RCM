@@ -59,13 +59,18 @@ _PACKET_RE = re.compile(r"\*\*Packet-driven[^*]*?\*\*[^|]*?(\d+)\s+of\s+(\d+)")
 _ROW_RE = re.compile(r"^\|\s+([^|]+?)\s+\|\s+(\d+)\s+\|", re.M)
 
 
-def parse_inventory(text: str) -> StatusCounts:
+def parse_inventory(text: str, *, chrome_prefix: str = "v3") -> StatusCounts:
     """Pull the four campaign numbers out of the inventory markdown.
 
     Resilient to caveat-text drift but assumes the compliance-summary
-    table rows still start with the canonical labels (``v3``,
-    ``legacy``, ``bespoke``, ``redirect``, ``unknown``) — those are
-    what the generator emits and what 1B's regression test pins.
+    table rows still start with the canonical labels (``v3`` or
+    ``v5`` for the chartis bucket, ``legacy``, ``bespoke``,
+    ``redirect``, ``unknown``) — those are what the generator emits
+    and what 1B's regression test pins.
+
+    ``chrome_prefix`` selects which label prefixes the chartis-route
+    count (``StatusCounts.v3`` field stores that count regardless of
+    name — it is the "chartis-classified" bucket from the inventory).
     """
     total_m = _TOTAL_RE.search(text)
     total = int(total_m.group(1)) if total_m else 0
@@ -82,7 +87,7 @@ def parse_inventory(text: str) -> StatusCounts:
 
     return StatusCounts(
         total=total,
-        v3=_lookup("v3"),
+        v3=_lookup(chrome_prefix),
         legacy=_lookup("legacy"),
         bespoke=_lookup("bespoke"),
         redirect=_lookup("redirect"),

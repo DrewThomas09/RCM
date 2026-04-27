@@ -1991,6 +1991,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             # migration, not analytical content about a deal.
             from .ui.v3_status_page import render_v3_status
             return self._send_html(render_v3_status())
+        if path == "/v5-status":
+            # v5 campaign twin of /v3-status: reads docs/V5_ROUTE_INVENTORY.md
+            # (``python3 RCM_MC/tools/v3_route_inventory.py --v5``). Same
+            # DealAnalysisPacket exemption as /v3-status.
+            from .ui.v5_status_page import render_v5_status
+            return self._send_html(render_v5_status())
         if path == "/cli-runs":
             # CLI run-history browser (campaign target 3C). Reads
             # <outdir>/runs.sqlite via infra.run_history.list_runs.

@@ -1,23 +1,6 @@
-/* SeekingChartis — design tokens (DEPRECATED — Phase 5 deletes this file)
- *
- * This is the OLD reverted reskin's token set. The values here
- * (#0b2341 navy / #2fb3ad vibrant teal / #f5f1ea parchment) were
- * superseded by the editorial spec at
- * docs/design-handoff/EDITORIAL_STYLE_PORT.md, which uses
- * deeper teal #1F7A75, ink-as-text #0F1C2E, lighter parchment #F2EDE3.
- *
- * The new tokens live at:
- *   rcm_mc/ui/static/chartis_editorial.css   (created in commit 3)
- *
- * This file stays in the tree because rcm_mc/ui/chartis/marketing_page.py
- * still <link>s to it and consumes its --sc-* tokens. Deleting it now
- * would regress the marketing page rendered at /home. The file is
- * retired in Phase 5 of the editorial port (per docs/UI_REWORK_PLAN.md),
- * after marketing_page.py is replaced by the new landing port.
- *
- * Do NOT add new --sc-* tokens here. Do NOT reference these tokens
- * from new code. The --sc-* namespace is frozen at the values below.
- */
+/* SeekingChartis — design tokens
+   Professional healthcare PE aesthetic: deep navy, teal accent,
+   warm parchment neutrals, serif display type. */
 
 :root {
   /* Navy scale (primary) */
