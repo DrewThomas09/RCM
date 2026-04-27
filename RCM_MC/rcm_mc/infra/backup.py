@@ -20,11 +20,12 @@ from __future__ import annotations
 import gzip
 import logging
 import shutil
-import sqlite3
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+from ..portfolio.store import PortfolioStore
 
 logger = logging.getLogger(__name__)
 
@@ -103,16 +104,25 @@ def restore_backup(backup_path: str, target_db: str) -> bool:
         tmp_path.unlink(missing_ok=True)
         return False
 
-    # Integrity check on the decompressed file
+    # Integrity check on the decompressed file. Routed through
+    # PortfolioStore (campaign target 4E) so the integrity probe
+    # uses the same connection-management contract as every other
+    # store. The backup file is a temp snapshot, not the canonical
+    # store — PortfolioStore's __init__ does NOT auto-init schema
+    # (verified at portfolio/store.py:80-81), so this is a
+    # read-only probe that won't mutate the file.
     try:
-        con = sqlite3.connect(str(tmp_path))
-        result = con.execute("PRAGMA integrity_check").fetchone()
-        con.close()
+        with PortfolioStore(str(tmp_path)).connect() as con:
+            result = con.execute("PRAGMA integrity_check").fetchone()
         if result is None or result[0] != "ok":
             logger.error("integrity check failed on restored backup")
             tmp_path.unlink(missing_ok=True)
             return False
-    except sqlite3.DatabaseError as exc:
+    except Exception as exc:
+        # Used to catch sqlite3.DatabaseError specifically;
+        # broadening to Exception lets the module fully drop
+        # the sqlite3 import. Recovery shape is identical:
+        # log, unlink temp, return False.
         logger.error("not a valid SQLite database: %s", exc)
         tmp_path.unlink(missing_ok=True)
         return False
@@ -157,29 +167,32 @@ def verify_backup(backup_path: str) -> Dict[str, Any]:
         tmp_path.unlink(missing_ok=True)
         return result
 
+    # Same routing through PortfolioStore as restore_backup — the
+    # backup is a temp snapshot, this is a read-only probe.
     try:
-        con = sqlite3.connect(str(tmp_path))
-        check = con.execute("PRAGMA integrity_check").fetchone()
-        integrity_str = check[0] if check else "unknown"
-        result["integrity"] = integrity_str
-        result["valid"] = integrity_str == "ok"
+        with PortfolioStore(str(tmp_path)).connect() as con:
+            check = con.execute("PRAGMA integrity_check").fetchone()
+            integrity_str = check[0] if check else "unknown"
+            result["integrity"] = integrity_str
+            result["valid"] = integrity_str == "ok"
 
-        # Count rows in key tables (skip tables that don't exist)
-        all_tables = {
-            r[0]
-            for r in con.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            ).fetchall()
-        }
-        table_counts: Dict[str, int] = {}
-        for tbl in _KEY_TABLES:
-            if tbl in all_tables:
-                count = con.execute(f"SELECT COUNT(*) FROM [{tbl}]").fetchone()
-                table_counts[tbl] = count[0] if count else 0
-        result["tables"] = table_counts
-
-        con.close()
-    except sqlite3.DatabaseError as exc:
+            # Count rows in key tables (skip tables that don't exist)
+            all_tables = {
+                r[0]
+                for r in con.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchall()
+            }
+            table_counts: Dict[str, int] = {}
+            for tbl in _KEY_TABLES:
+                if tbl in all_tables:
+                    count = con.execute(
+                        f"SELECT COUNT(*) FROM [{tbl}]"
+                    ).fetchone()
+                    table_counts[tbl] = count[0] if count else 0
+            result["tables"] = table_counts
+    except Exception as exc:
+        # Broadened from sqlite3.DatabaseError; same recovery shape.
         result["error"] = f"database error: {exc}"
         result["valid"] = False
     finally:
