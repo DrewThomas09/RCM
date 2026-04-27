@@ -315,6 +315,126 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "Medicaid patient days / total patient days."),
         units="%",
         typical_range="10-30%"),
+    # Volume + topline (added loop 114 to cover the
+    # competitive_intel and portfolio_overview surfaces that
+    # already use metric_label_link for these columns)
+    "net_patient_revenue": MetricDefinition(
+        key="net_patient_revenue",
+        label="Net Patient Revenue",
+        definition=(
+            "Patient-service revenue net of contractual "
+            "allowances and bad debt — the topline line "
+            "underwriters anchor every multiple to."),
+        why_it_matters=(
+            "Primary scale driver. Multiples (EV/NPR, "
+            "EV/EBITDA) and lever-impact estimates all "
+            "flow from NPR. Trend is the leading "
+            "indicator of demand and pricing power."),
+        how_calculated=(
+            "Gross charges − contractual allowances − "
+            "bad debt provision. Source: HCRIS Worksheet "
+            "G-3 Line 3 or partner-supplied audited "
+            "financials."),
+        units="$",
+        typical_range="varies by bed count and acuity"),
+    "revenue_per_bed": MetricDefinition(
+        key="revenue_per_bed",
+        label="Revenue per Bed",
+        definition=(
+            "Net patient revenue normalized by licensed "
+            "bed count."),
+        why_it_matters=(
+            "Captures pricing × throughput in one number. "
+            "Best-in-class acute hospitals run "
+            "$1.5-2.5M/bed; lower suggests under-occupancy "
+            "or weak payer mix; higher suggests outpatient "
+            "skew or premium markets."),
+        how_calculated=(
+            "Net patient revenue / licensed beds."),
+        units="$/bed",
+        typical_range="$0.8M-$2.5M/bed"),
+    "expense_per_bed": MetricDefinition(
+        key="expense_per_bed",
+        label="Expense per Bed",
+        definition=(
+            "Total operating expense normalized by licensed "
+            "bed count."),
+        why_it_matters=(
+            "Cost-density benchmark. High expense/bed with "
+            "low revenue/bed signals labor or supply "
+            "inefficiency — the synergy diligence target."),
+        how_calculated=(
+            "Operating expenses / licensed beds. "
+            "Source: HCRIS Worksheet G-3."),
+        units="$/bed",
+        typical_range="$0.7M-$2.0M/bed"),
+    "commercial_pct": MetricDefinition(
+        key="commercial_pct",
+        label="Commercial Payer %",
+        definition=(
+            "Share of total revenue or patient days "
+            "attributable to commercial (non-government) "
+            "payers."),
+        why_it_matters=(
+            "Highest reimbursement index (~1.0). Each pp "
+            "of commercial mix lifts NPR/charge directly. "
+            "Concentration risk if a single payer >40%."),
+        how_calculated=(
+            "Commercial revenue / total revenue (or "
+            "commercial days / total days)."),
+        units="%",
+        typical_range="20-50%"),
+    "payer_diversity": MetricDefinition(
+        key="payer_diversity",
+        label="Payer Diversity Index",
+        definition=(
+            "Inverse-Herfindahl concentration index across "
+            "the payer mix; higher = more diverse, lower = "
+            "more concentrated."),
+        why_it_matters=(
+            "Concentration is the silent risk: one "
+            "Medicare Advantage contract renegotiation can "
+            "move 20% of revenue. Higher diversity = "
+            "lower contract-renewal risk."),
+        how_calculated=(
+            "1 − Σ(payer_share²) across the mix. "
+            "Range 0 (single payer) to ~0.8 (very "
+            "diverse)."),
+        units="index (0-1)",
+        typical_range="0.55-0.78 (best-in-class >0.7)"),
+    "total_patient_days": MetricDefinition(
+        key="total_patient_days",
+        label="Total Patient Days",
+        definition=(
+            "Annual total of inpatient days across all "
+            "service lines."),
+        why_it_matters=(
+            "Volume baseline for occupancy, payer-mix "
+            "calculations, and capacity-planning. The "
+            "denominator most other partner ratios are "
+            "normalized against."),
+        how_calculated=(
+            "Sum of daily inpatient census across the "
+            "fiscal year. Source: HCRIS Worksheet S-3 "
+            "Part I."),
+        units="days",
+        typical_range="varies by bed count"),
+    "net_to_gross_ratio": MetricDefinition(
+        key="net_to_gross_ratio",
+        label="Net-to-Gross Ratio",
+        definition=(
+            "Net patient revenue as a fraction of gross "
+            "charges — the realization rate."),
+        why_it_matters=(
+            "Payer-mix-driven; highly stable within a "
+            "hospital. Sudden compression signals "
+            "contract loss or payer aggression. Wide "
+            "variance vs peers (>5pp) warrants a "
+            "contract-by-contract walk."),
+        how_calculated=(
+            "Net patient revenue / gross charges."),
+        units="%",
+        typical_range="22-38% (acute care)"),
 }
 
 
