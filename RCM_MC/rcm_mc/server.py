@@ -5360,7 +5360,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_value_tracker_record(self, deal_id: str) -> None:
         """POST /value-tracker/{deal_id}/record — record quarterly actual."""
-        import sqlite3 as _sql_vtr
         deal_id = self._sanitize_ccn(deal_id)
         form = self._read_form_body()
         quarter = form.get("quarter", "")[:10]
@@ -5371,10 +5370,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Invalid Amount", "Could not parse the impact amount.")
         try:
             from .pe.value_tracker import record_quarterly_lever
-            con = _sql_vtr.connect(self.config.db_path)
-            record_quarterly_lever(con, deal_id, quarter, lever, actual,
-                                    notes=form.get("notes", "")[:200])
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E) so
+            # the quarterly-actual write inherits busy_timeout=5000,
+            # foreign_keys=ON, and Row factory. PortfolioStore.
+            # connect() closes on exit but does NOT auto-commit, so
+            # the explicit con.commit() is preserved inside the
+            # with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                record_quarterly_lever(con, deal_id, quarter, lever, actual,
+                                        notes=form.get("notes", "")[:200])
+                con.commit()
         except Exception as exc:
             return self._error_page("Record Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)
@@ -5383,7 +5388,6 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_value_tracker_freeze(self, deal_id: str) -> None:
         """POST /value-tracker/{deal_id}/freeze — freeze bridge as plan."""
-        import sqlite3 as _sql_vtf
         deal_id = self._sanitize_ccn(deal_id)
         try:
             from .data.hcris import _get_latest_per_ccn
@@ -5406,9 +5410,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             dr = _load_data_room_overrides(self.config.db_path, deal_id)
             pt = compute_peer_targets(hcris, beds, state)
             bridge = _compute_bridge(rev, ebitda, medicare_pct=mc, overrides=dr, peer_targets=pt)
-            con = _sql_vtf.connect(self.config.db_path)
-            freeze_bridge_as_plan(con, deal_id, deal_id, name, bridge)
-            con.commit(); con.close()
+            # Route through PortfolioStore (campaign target 4E) — the
+            # freeze-as-plan write inherits the canonical PRAGMAs;
+            # explicit con.commit() preserved inside the with-block.
+            with PortfolioStore(self.config.db_path).connect() as con:
+                freeze_bridge_as_plan(con, deal_id, deal_id, name, bridge)
+                con.commit()
         except Exception as exc:
             return self._error_page("Freeze Error", str(exc)[:200])
         self.send_response(HTTPStatus.FOUND)
