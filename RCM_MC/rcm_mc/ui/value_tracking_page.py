@@ -11,7 +11,9 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import chartis_shell
 from ._glossary_link import metric_label_link
+from ._provenance_tooltip import provenance_tooltip
 from ..portfolio.store import PortfolioStore
+from ..provenance.graph import NodeType, ProvenanceGraph, ProvenanceNode
 from .brand import PALETTE
 
 
@@ -130,15 +132,53 @@ def render_value_tracker(
     # ── Lever-by-lever comparison ──
     lever_rows = ""
     if summary:
+        # Phase 4C: build a manual ProvenanceGraph with one
+        # CALCULATED node per lever realization. Each lever's
+        # `actual` value is a sum of quarterly actuals against
+        # the frozen plan — a CALCULATED node with source
+        # "VALUE_TRACKER" and detail showing the realization
+        # percentage. Reuses the loop-109 lever-name → glossary-
+        # key reverse table so the metric_key resolves through
+        # the same alias path the 4A label link uses.
+        prov_graph = ProvenanceGraph()
+        for lev in summary.levers:
+            g_key = _LEVER_NAME_TO_GLOSSARY_KEY.get(lev["lever"], "")
+            if not g_key:
+                continue
+            actual_val = float(lev.get("actual") or 0.0)
+            r_pct_val = float(lev.get("realization_pct") or 0.0)
+            prov_graph.add_node(ProvenanceNode(
+                id=f"observed:{g_key}",
+                label=f"{lev['lever']} (Realized)",
+                node_type=NodeType.CALCULATED,
+                value=actual_val, unit="USD",
+                source="VALUE_TRACKER",
+                source_detail=(
+                    f"{r_pct_val:.0%} of frozen-plan target across "
+                    f"{quarters} quarter(s)"
+                ),
+            ))
+        _first_tooltip = True
         for lev in summary.levers:
             r_pct = lev["realization_pct"]
             bar_pct = min(100, abs(r_pct) * 100)
             bar_color = "var(--cad-pos)" if r_pct >= 0.85 else ("var(--cad-warn)" if r_pct >= 0.6 else "var(--cad-neg)")
+            # Phase 4C: hover the actual-value cell to see the
+            # realization breakdown.
+            _actual_tt = provenance_tooltip(
+                label=lev["lever"], value=_fm(lev["actual"]),
+                graph=prov_graph,
+                metric_key=_LEVER_NAME_TO_GLOSSARY_KEY.get(
+                    lev["lever"], "",
+                ),
+                inject_css=_first_tooltip,
+            )
+            _first_tooltip = False
             lever_rows += (
                 f'<tr>'
                 f'<td style="font-weight:500;">{metric_label_link(lev["lever"][:25], _LEVER_NAME_TO_GLOSSARY_KEY.get(lev["lever"], ""))}</td>'
                 f'<td class="num">{_fm(lev["planned"])}</td>'
-                f'<td class="num" style="font-weight:600;">{_fm(lev["actual"])}</td>'
+                f'<td class="num" style="font-weight:600;">{_actual_tt}</td>'
                 f'<td class="num" style="color:{bar_color};font-weight:600;">{r_pct:.0%}</td>'
                 f'<td><div style="background:var(--cad-bg3);border-radius:3px;height:10px;width:80px;">'
                 f'<div style="width:{bar_pct:.0f}%;background:{bar_color};border-radius:3px;'
