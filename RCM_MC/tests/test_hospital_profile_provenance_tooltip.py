@@ -115,6 +115,48 @@ class HospitalProfileProvenanceTooltipTests(unittest.TestCase):
         )
         self.assertIn('class="prov-tt"', out)
 
+    def test_all_six_fundamentals_kpis_have_tooltips(self) -> None:
+        """Loop 138: extend the loop-131 single-cell adoption to
+        every cell in the Fundamentals KPI grid. NPR, Operating
+        Margin, Net Income, Licensed Beds, Revenue per Bed, and
+        Operating Expenses all get tooltips. Count the
+        prov-tt wrappers; should be ≥6 (one per KPI)."""
+        import re
+        out = render_hospital_profile(
+            _HOSPITAL_FULL, _FakeScore(),
+        )
+        wrapper_count = len(re.findall(r'class="prov-tt"', out))
+        self.assertGreaterEqual(
+            wrapper_count, 6,
+            f"expected ≥6 prov-tt wrappers (one per KPI in the "
+            f"Fundamentals grid); found {wrapper_count}",
+        )
+
+    def test_npr_value_is_wrapped(self) -> None:
+        """Loop 138 wrap pin: the NPR value cell ($1.5M-style)
+        renders inside a prov-tt wrapper, not bare."""
+        out = render_hospital_profile(
+            _HOSPITAL_FULL, _FakeScore(),
+        )
+        # The NPR cell formats as $150.0M for npr=1.5e8
+        self.assertIn('$150.0M', out)
+        # And the cell that shows that string is followed by the
+        # NPR label (with provenance wrapper between)
+        self.assertIn(
+            'Net Patient Revenue', out,
+        )
+        # Sanity: at least one wrapper sits before the NPR label
+        # (not just the loop-131 Operating Margin wrapper)
+        npr_label_idx = out.index(
+            '<div class="cad-kpi-label">Net Patient Revenue</div>')
+        op_margin_idx = out.index(
+            '<div class="cad-kpi-label">Operating Margin</div>')
+        # NPR card comes before Operating Margin in the grid
+        self.assertLess(npr_label_idx, op_margin_idx)
+        # And there's a prov-tt wrapper sitting in between
+        # the start-of-html and the NPR label
+        self.assertIn('class="prov-tt"', out[:npr_label_idx])
+
 
 if __name__ == "__main__":
     unittest.main()

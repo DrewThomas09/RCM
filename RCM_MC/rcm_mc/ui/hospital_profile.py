@@ -37,12 +37,18 @@ def render_hospital_profile(
     comm_pct = max(0, 1.0 - med_pct - mcd_pct)
 
     # Phase 4C: build a ProvenanceGraph for "explain this number"
-    # tooltips. Operating Margin is computed locally above so it
-    # isn't in the raw hospital dict — splice it in alongside the
-    # raw HCRIS values before building the graph. ml_predictions
-    # is empty here (this page reads HCRIS-derived hospital
-    # records directly, not packet-driven predictions).
-    _prov_profile = {**hospital, "operating_margin": margin}
+    # tooltips. operating_margin and revenue_per_bed are computed
+    # locally above so they aren't in the raw hospital dict —
+    # splice them in alongside the raw HCRIS values before
+    # building the graph. ml_predictions is empty here (this
+    # page reads HCRIS-derived hospital records directly, not
+    # packet-driven predictions).
+    _rev_per_bed = npr / beds if beds > 0 else 0
+    _prov_profile = {
+        **hospital,
+        "operating_margin": margin,
+        "revenue_per_bed": _rev_per_bed,
+    }
     prov_graph = build_provenance_graph(
         ccn=str(hospital.get("ccn", "")),
         hcris_profile=_prov_profile,
@@ -130,19 +136,29 @@ def render_hospital_profile(
     rev_per_bed = npr / beds if beds > 0 else 0
     fundamentals = (
         f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${npr/1e6:,.1f}M</div>'
+        f'<div class="cad-kpi"><div class="cad-kpi-value">'
+        f'{provenance_tooltip(label="Net Patient Revenue", value=f"${npr/1e6:,.1f}M", graph=prov_graph, metric_key="net_patient_revenue")}'
+        f'</div>'
         f'<div class="cad-kpi-label">Net Patient Revenue</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
         f'{provenance_tooltip(label="Operating Margin", value=f"{margin:.1%}", graph=prov_graph, metric_key="operating_margin")}'
         f'</div>'
         f'<div class="cad-kpi-label">Operating Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${ni/1e6:,.1f}M</div>'
+        f'<div class="cad-kpi"><div class="cad-kpi-value">'
+        f'{provenance_tooltip(label="Net Income", value=f"${ni/1e6:,.1f}M", graph=prov_graph, metric_key="net_income")}'
+        f'</div>'
         f'<div class="cad-kpi-label">Net Income</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{beds}</div>'
+        f'<div class="cad-kpi"><div class="cad-kpi-value">'
+        f'{provenance_tooltip(label="Licensed Beds", value=f"{beds}", graph=prov_graph, metric_key="beds")}'
+        f'</div>'
         f'<div class="cad-kpi-label">Licensed Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${rev_per_bed/1e3:,.0f}K</div>'
+        f'<div class="cad-kpi"><div class="cad-kpi-value">'
+        f'{provenance_tooltip(label="Revenue per Bed", value=f"${rev_per_bed/1e3:,.0f}K", graph=prov_graph, metric_key="revenue_per_bed")}'
+        f'</div>'
         f'<div class="cad-kpi-label">Revenue per Bed</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${opex/1e6:,.1f}M</div>'
+        f'<div class="cad-kpi"><div class="cad-kpi-value">'
+        f'{provenance_tooltip(label="Operating Expenses", value=f"${opex/1e6:,.1f}M", graph=prov_graph, metric_key="operating_expenses")}'
+        f'</div>'
         f'<div class="cad-kpi-label">Operating Expenses</div></div>'
         f'</div>'
     )
