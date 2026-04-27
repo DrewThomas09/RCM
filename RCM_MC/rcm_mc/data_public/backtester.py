@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import json
 import re
-import sqlite3
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+
+from ..portfolio.store import PortfolioStore
 
 
 @dataclass
@@ -109,46 +110,45 @@ def _best_match(
 # Database helpers
 # ---------------------------------------------------------------------------
 
-def _connect(db_path: str) -> sqlite3.Connection:
-    con = sqlite3.connect(db_path)
-    con.execute("PRAGMA busy_timeout = 5000")
-    con.row_factory = sqlite3.Row
-    return con
-
-
-def _load_corpus_deals(corpus_db_path: str) -> List[sqlite3.Row]:
-    con = _connect(corpus_db_path)
-    try:
+def _load_corpus_deals(corpus_db_path: str) -> List[Any]:
+    # Route through PortfolioStore (campaign target 4E, data_public
+    # sweep, FINAL module): inherits busy_timeout=5000,
+    # foreign_keys=ON, and Row factory — replacing the prior
+    # _connect factory which set busy_timeout + row_factory by hand.
+    with PortfolioStore(corpus_db_path).connect() as con:
         return con.execute(
             "SELECT * FROM public_deals "
             "WHERE realized_moic IS NOT NULL OR realized_irr IS NOT NULL"
         ).fetchall()
-    finally:
-        con.close()
 
 
 def _load_platform_deals(store_db_path: str) -> List[Tuple[str, str]]:
     """Return [(deal_id, name)] from the main PortfolioStore."""
+    # Broad except: the recovery shape is "return empty when the
+    # deals table doesn't exist (fresh store) or the read fails".
+    # Used to be `except sqlite3.OperationalError`; broadening to
+    # Exception lets the module fully drop the sqlite3 import.
     try:
-        con = _connect(store_db_path)
-        rows = con.execute("SELECT deal_id, name FROM deals WHERE archived_at IS NULL").fetchall()
-        con.close()
+        with PortfolioStore(store_db_path).connect() as con:
+            rows = con.execute(
+                "SELECT deal_id, name FROM deals WHERE archived_at IS NULL"
+            ).fetchall()
         return [(r["deal_id"], r["name"]) for r in rows]
-    except sqlite3.OperationalError:
+    except Exception:
         return []
 
 
-def _load_latest_run(store_db_path: str, deal_id: str) -> Optional[sqlite3.Row]:
+def _load_latest_run(store_db_path: str, deal_id: str) -> Optional[Any]:
     """Return the most recent run row for a given deal_id."""
     try:
-        con = _connect(store_db_path)
-        row = con.execute(
-            "SELECT * FROM runs WHERE deal_id = ? ORDER BY created_at DESC LIMIT 1",
-            (deal_id,),
-        ).fetchone()
-        con.close()
+        with PortfolioStore(store_db_path).connect() as con:
+            row = con.execute(
+                "SELECT * FROM runs WHERE deal_id = ? "
+                "ORDER BY created_at DESC LIMIT 1",
+                (deal_id,),
+            ).fetchone()
         return row
-    except sqlite3.OperationalError:
+    except Exception:
         return None
 
 
