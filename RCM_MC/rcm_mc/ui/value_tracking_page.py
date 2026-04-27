@@ -7,10 +7,10 @@ accuracy back to the prediction ledger.
 from __future__ import annotations
 
 import html as _html
-import sqlite3
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import chartis_shell
+from ..portfolio.store import PortfolioStore
 from .brand import PALETTE
 
 
@@ -41,11 +41,13 @@ def render_value_tracker(
         get_plan, get_tracking_summary, _ensure_tables,
     )
 
-    con = sqlite3.connect(db_path)
-    _ensure_tables(con)
-    plan_data = get_plan(con, deal_id)
-    summary = get_tracking_summary(con, deal_id)
-    con.close()
+    # Route through PortfolioStore (campaign target 4E) so this read
+    # inherits busy_timeout=5000, foreign_keys=ON, and Row factory
+    # alongside every other deal-aware page.
+    with PortfolioStore(db_path).connect() as con:
+        _ensure_tables(con)
+        plan_data = get_plan(con, deal_id)
+        summary = get_tracking_summary(con, deal_id)
 
     if not plan_data:
         return chartis_shell(
