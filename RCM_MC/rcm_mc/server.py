@@ -1991,6 +1991,21 @@ class RCMHandler(BaseHTTPRequestHandler):
             # migration, not analytical content about a deal.
             from .ui.v3_status_page import render_v3_status
             return self._send_html(render_v3_status())
+        if path == "/cli-runs":
+            # CLI run-history browser (campaign target 3C). Reads
+            # <outdir>/runs.sqlite via infra.run_history.list_runs.
+            # Disambiguated from the existing /runs route, which
+            # surfaces PortfolioStore.analysis_runs (per-deal packet
+            # cache) — different feature, similar URL.
+            from .ui.cli_runs_page import render_cli_runs_page
+            qs_cli = urllib.parse.parse_qs(parsed.query)
+            limit_cli = self._clamp_int(
+                (qs_cli.get("limit") or ["50"])[0],
+                default=50, min_v=1, max_v=500,
+            )
+            return self._send_html(
+                render_cli_runs_page(self.config.outdir, limit=limit_cli)
+            )
 
         if path == "/dashboard":
             # Private-app landing page (Heroku / small-team deployments).
