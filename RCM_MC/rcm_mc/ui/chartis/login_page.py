@@ -190,10 +190,16 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
         '<form method="POST" action="/api/login">'
         f'{next_input}'
         '<div class="field">'
-        '<label for="login-email">Email</label>'
-        '<input type="email" id="login-email" name="username" '
+        '<label for="login-email">Email or Username</label>'
+        # type="text" not "email" so the seeded demo / partner
+        # accounts (literal usernames like "demo") submit
+        # cleanly. The DB column is `username` and the regex
+        # at auth/auth.py:_USERNAME_RE accepts both bare names
+        # and email-style strings. inputmode="email" keeps the
+        # mobile keyboard helpful for the typical case.
+        '<input type="text" id="login-email" name="username" '
         'placeholder="partner@firm.com" required '
-        'autocomplete="email" autofocus/>'
+        'inputmode="email" autocomplete="username" autofocus/>'
         '</div>'
         '<div class="field">'
         '<label for="login-password">Password</label>'
