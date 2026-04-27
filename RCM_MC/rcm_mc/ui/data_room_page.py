@@ -10,13 +10,13 @@ This is the flywheel: every deal's seller data improves future predictions.
 from __future__ import annotations
 
 import html as _html
-import sqlite3
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
 from ._chartis_kit import chartis_shell
+from ..portfolio.store import PortfolioStore
 from .brand import PALETTE
 
 
@@ -55,12 +55,16 @@ def render_data_room(
         get_entries, calibrate_metrics,
     )
 
-    con = sqlite3.connect(db_path)
-    _ensure_tables(con)
-    entries = get_entries(con, ccn)
-    calibrations = calibrate_metrics(con, ccn, ml_predictions, beds=beds)
-    con.commit()
-    con.close()
+    # Route through PortfolioStore (campaign target 4E) so the read +
+    # calibrate write inherit busy_timeout=5000, foreign_keys=ON, and
+    # row_factory=Row. PortfolioStore.connect() closes the connection
+    # on exit but does NOT auto-commit, so the explicit con.commit()
+    # is preserved inside the with-block.
+    with PortfolioStore(db_path).connect() as con:
+        _ensure_tables(con)
+        entries = get_entries(con, ccn)
+        calibrations = calibrate_metrics(con, ccn, ml_predictions, beds=beds)
+        con.commit()
 
     n_seller = sum(1 for c in calibrations if c.data_quality != "ml_only")
     n_ml_only = sum(1 for c in calibrations if c.data_quality == "ml_only")
