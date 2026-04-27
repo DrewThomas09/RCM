@@ -10,12 +10,12 @@ creation opportunity across the fund?"
 from __future__ import annotations
 
 import html as _html
-import sqlite3
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
+from ..portfolio.store import PortfolioStore
 from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 from .provenance import source_tag, Source, data_freshness_footer
@@ -51,10 +51,13 @@ def render_portfolio_bridge(
         _compute_bridge, _load_data_room_overrides, compute_peer_targets,
     )
 
-    con = sqlite3.connect(db_path)
-    _ensure_tables(con)
-    hospitals = list_pipeline(con)
-    con.close()
+    # Route through PortfolioStore (campaign target 4E) so the
+    # connection inherits PRAGMA foreign_keys=ON, busy_timeout=
+    # 5000, and row_factory=Row instead of running on a bare
+    # sqlite3.connect that misses all three.
+    with PortfolioStore(db_path).connect() as con:
+        _ensure_tables(con)
+        hospitals = list_pipeline(con)
 
     active = [h for h in hospitals if h.stage not in ("passed",)]
 
