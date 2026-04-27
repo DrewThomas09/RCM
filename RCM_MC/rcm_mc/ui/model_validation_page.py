@@ -7,12 +7,12 @@ data moat — the more we predict and validate, the better we get.
 from __future__ import annotations
 
 import html as _html
-import sqlite3
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
+from ..portfolio.store import PortfolioStore
 from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
@@ -40,8 +40,15 @@ def render_model_validation(
         run_synthetic_backtest,
     )
 
-    con = sqlite3.connect(db_path)
-    con.row_factory = sqlite3.Row
+    # Route through PortfolioStore (campaign target 4E) so the
+    # connection inherits PRAGMA foreign_keys=ON, busy_timeout=
+    # 5000, and row_factory=Row. Manual __enter__/__exit__ instead
+    # of a `with` block keeps the existing function body's flat
+    # structure intact (200 lines) — same exception-handling
+    # contract as the prior bare-sqlite3 form (no try/finally was
+    # there).
+    _pstore_cm = PortfolioStore(db_path).connect()
+    con = _pstore_cm.__enter__()
     _ensure_tables(con)
 
     # Check if we have any predictions
@@ -240,7 +247,7 @@ def render_model_validation(
 
     body = f'{kpis}{metric_section}{cov_analysis}{recent_section}{flywheel}{nav}'
 
-    con.close()
+    _pstore_cm.__exit__(None, None, None)
 
     return chartis_shell(
         body, "Model Validation",
