@@ -13,7 +13,20 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import chartis_shell
+from ._glossary_link import metric_label_link
 from .brand import PALETTE
+
+
+# Phase 4A: portfolio-overview label → glossary-key reverse map.
+# Three KPI cards and two table column headers reference RCM
+# metrics that have canonical /metric-glossary entries.
+_LABEL_TO_GLOSSARY_KEY = {
+    "Avg Denial Rate":   "denial_rate",
+    "Avg Days in AR":    "days_in_ar",
+    "Avg Net Collection": "net_collection_rate",
+    "Denial":            "denial_rate",
+    "AR":                "days_in_ar",
+}
 
 
 def _health_badge(score: float) -> str:
@@ -174,13 +187,13 @@ def render_portfolio_overview(
         f'<div class="cad-kpi-label">Total Net Revenue</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
         f'{_fmt_pct(avg_denial) if avg_denial else "—"}</div>'
-        f'<div class="cad-kpi-label">Avg Denial Rate</div></div>'
+        f'<div class="cad-kpi-label">{metric_label_link("Avg Denial Rate", _LABEL_TO_GLOSSARY_KEY["Avg Denial Rate"])}</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
         f'{avg_ar:.0f}' if avg_ar else '—'
-        f'</div><div class="cad-kpi-label">Avg Days in AR</div></div>'
+        f'</div><div class="cad-kpi-label">{metric_label_link("Avg Days in AR", _LABEL_TO_GLOSSARY_KEY["Avg Days in AR"])}</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">'
         f'{_fmt_pct(avg_ncr) if avg_ncr else "—"}</div>'
-        f'<div class="cad-kpi-label">Avg Net Collection</div></div>'
+        f'<div class="cad-kpi-label">{metric_label_link("Avg Net Collection", _LABEL_TO_GLOSSARY_KEY["Avg Net Collection"])}</div></div>'
         f'</div>'
     )
 
@@ -291,7 +304,9 @@ def render_portfolio_overview(
         f'<a href="/import" class="cad-btn cad-btn-primary" style="text-decoration:none;">+ New Deal</a>'
         f'</div></div>'
         f'<table class="cad-table crosshair"><thead><tr>'
-        f'<th>ID</th><th>Name</th><th>Stage</th><th>Denial</th><th>AR</th>'
+        f'<th>ID</th><th>Name</th><th>Stage</th>'
+        f'<th>{metric_label_link("Denial", _LABEL_TO_GLOSSARY_KEY["Denial"])}</th>'
+        f'<th>{metric_label_link("AR", _LABEL_TO_GLOSSARY_KEY["AR"])}</th>'
         f'<th>NPR</th><th>Actions</th></tr></thead>'
         f'<tbody>{rows}</tbody></table></div>'
     )
