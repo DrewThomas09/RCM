@@ -421,3 +421,98 @@ sector/regime/MOIC selects with the Chartis BY TOPIC eyebrow
 rail. Then ship ck_results_header (pattern 03 — N RESULTS +
 chip-clear).
 
+---
+
+## Cycle 6 build — 2026-04-28 — ck_filter_sidebar shipped + /library wired
+
+**Step 4 — ck_filter_sidebar shipped.** New helper in
+`rcm_mc/ui/_chartis_kit.py` per `CHARTIS_MATCH_NOTES.md` pattern
+02. Eyebrow-rail title with teal accent, group headers (`By sector`,
+`By regime`, `By MOIC`), checkbox- or radio-row options with
+`accent-color: var(--sc-teal)`, and a CSS-only `<details>` "More"
+expander when a group exceeds `more_threshold=8` options. CSS
+appended to `_CSS_INLINE_FALLBACK` (~30 lines) including the
+companion `.ck-rail-layout` 240px+1fr grid that pairs the rail
+with the results column on /library + future /research + /notes.
+Sticky positioning (`top:88px`) keeps the rail visible as the
+results table scrolls.
+
+**ck_search_hero extended with `extra_hidden`.** The search hero
+form now round-trips arbitrary URL state through hidden inputs.
+On /library this means submitting a new keyword preserves the
+active sector / regime / MOIC selections instead of dropping
+them. The filter rail does the symmetric round-trip for `q`,
+`sort_by`, `sort_dir` so neither form drops the other's state.
+
+**Step 4 — /library wired.** Replaced the inline-styled
+`<form class="ck-filters">` (three native `<select>` dropdowns +
+a `data-search-target` text input that wasn't connected to any
+JS) with the new sidebar in a 2-column rail layout. Search hero
+spans full width above the rail, KPIs and explainer follow, then
+the rail+content grid contains the filter sidebar (left) and the
+section header + table (right). With 98 sectors in the corpus,
+the sector group's overflow `<details>` expander surfaces — a
+genuine partner-facing improvement (the old single-select
+dropdown forced scrolling through all 98 items inline).
+
+**Steps 4 (latent fixes) — 3 pre-existing /library bugs closed.**
+While wiring the new helper, surfaced and fixed three latent
+runtime errors that had left `/library` 500ing on `design-v5`:
+- `ck_fmt_num` (doesn't exist) → `ck_fmt_number`
+- `ck_section_header("DEAL CORPUS", "all healthcare PE transactions", len(rows))`
+  passed three positionals to a one-positional helper → fixed to
+  `ck_section_header("All healthcare PE transactions", eyebrow=…)`
+- `ck_table(rows, _COLUMNS, caption="", sortable=True, id="deals-tbl")`
+  passed three unsupported kwargs → trimmed to `ck_table(rows, _COLUMNS)`
+  (the `data-search-target="#deals-tbl"` JS hook was already a
+  no-op without a client-side filter script, so no functional loss)
+
+These bugs date from the prior wiring commit (ba8847d, cycles 3-5
+batch); the page never rendered at runtime even though the commit
+landed cleanly. They were caught here because actually exercising
+the new helper required the page to render. Lesson logged: every
+new helper wired to a page should be smoke-tested with a
+`render_<page>()` call before being declared shipped.
+
+**Step 4 — focused test suite.** New `tests/test_filter_sidebar.py`
+with 18 tests pinning rail wrapper class, group head + option
+rendering, checked-attribute on selected options, radio /
+checkbox / unknown-input-type fallback, More expander threshold,
+form-action wrapping, auto-submit-on-change toggle, submit-label
+override, extra_hidden round-trip + empty-value skip + form-only
+guard, label / value HTML escape, custom title. All 18 pass.
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — `ck_filter_sidebar` + CSS for
+  `.ck-filter-rail` / `.ck-rail-layout`; `extra_hidden` kwarg
+  added to `ck_search_hero`
+- `rcm_mc/ui/data_public/deals_library_page.py` — three latent
+  bug fixes + filter sidebar wiring + rail layout + extra_hidden
+  on both forms
+- `tests/test_filter_sidebar.py` — NEW, 18 tests
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry
+
+**Compliance impact.**
+- ck_filter_sidebar helper: shipped; wired to /library
+- ck_search_hero wired sites: 1 (unchanged; same page, more state)
+- Insights pattern triplet (search hero + filter rail +
+  N-results) on /library: 2 of 3 (was 1 of 3)
+- Pre-existing latent bugs surfaced and fixed: 3
+- /library page renders end-to-end at runtime (was 500)
+
+**Test impact.** `tests/test_chartis_integration.py` baseline
+goes 22 fail → 21 fail (one /library-related test now passes).
+The remaining 21 are pre-existing `ck_kpi_block(label, value, sub)`
+3-positional calls in other chartis pages (/home, /pe-intelligence,
+/portfolio-analytics, /payer-intelligence, /sponsor-track-record,
+/rcm-benchmarks, /partner-review, /investability, /stress, etc.)
+— the same bug pattern as deals_library, but pre-existing on
+design-v5 and out of scope for this cycle. Logged for cycle 7.
+
+**Suggested next:** cycle 7 step 4 — fix the 21 latent
+`ck_kpi_block` 3-positional calls across chartis pages
+(mechanical sed-style fix, single commit). Then cycle 7 step 4b
+— ship `ck_results_header` (pattern 03 — N RESULTS + chip-clear
+active filters) and wire to /library to complete the chartis.com
+Insights pattern triplet. Forward-only.
+

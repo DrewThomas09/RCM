@@ -366,6 +366,7 @@ def ck_search_hero(
     name: str = "q",
     initial: Optional[str] = None,
     method: str = "GET",
+    extra_hidden: Optional[Mapping[str, str]] = None,
 ) -> str:
     """Navy search hero with italic-serif label + circular submit
     + teal chevron-cut bottom-right corner. Mirrors the Chartis
@@ -373,17 +374,28 @@ def ck_search_hero(
     page (``/library``, ``/research``, ``/notes``, ``/search``)
     so the partner's first read is the same as on chartis.com.
 
+    ``extra_hidden`` round-trips other URL state (current filter
+    selections etc.) through the search form so submitting the
+    keyword input doesn't drop the active filter sidebar state.
+
     Spec: ``docs/CHARTIS_MATCH_NOTES.md`` pattern 01.
     """
     initial_attr = (
         f' value="{_esc(initial)}"' if initial else ""
     )
+    hidden_html = ""
+    if extra_hidden:
+        hidden_html = "".join(
+            f'<input type="hidden" name="{_esc(k)}" value="{_esc(v)}">'
+            for k, v in extra_hidden.items() if v
+        )
     return (
         '<section class="ck-search-hero">'
         '<div class="ck-search-hero-inner">'
         f'<span class="ck-search-hero-label">{_esc(label)}</span>'
         f'<form class="ck-search-hero-form" method="{_esc(method)}" '
         f'action="{_esc(action)}" role="search">'
+        f'{hidden_html}'
         f'<input class="ck-search-hero-input" type="search" '
         f'name="{_esc(name)}" placeholder="{_esc(placeholder)}" '
         f'aria-label="{_esc(label)}"{initial_attr}>'
@@ -402,6 +414,112 @@ def ck_search_hero(
         '<span class="ck-search-hero-chevron" aria-hidden="true"></span>'
         '</section>'
     )
+
+
+def ck_filter_sidebar(
+    *,
+    groups: Sequence[Mapping[str, Any]],
+    title: str = "Filter",
+    form_action: Optional[str] = None,
+    form_method: str = "GET",
+    extra_hidden: Optional[Mapping[str, str]] = None,
+    submit_label: Optional[str] = None,
+    auto_submit: bool = True,
+    more_threshold: int = 8,
+) -> str:
+    """Editorial filter sidebar — eyebrow rail with grouped checkbox
+    or radio rows and a ``<details>`` 'More' expander when a group
+    exceeds ``more_threshold`` options. Mirrors the chartis.com
+    Insights left rail.
+
+    Each group is a mapping with:
+      - ``title`` (str) — group header label, e.g. ``"By sector"``
+      - ``name`` (str) — input ``name`` attribute
+      - ``input_type`` (str) — ``"radio"`` or ``"checkbox"``
+        (defaults to ``"checkbox"``)
+      - ``options`` (Sequence) — each ``{"label": str, "value": str,
+        "checked": bool}``
+
+    When ``form_action`` is provided the sidebar wraps in a ``<form>``
+    so the partner can change facets without leaving the page; the
+    inputs auto-submit on change unless ``submit_label`` is provided
+    or ``auto_submit=False``. Pass ``extra_hidden`` to round-trip
+    URL state that lives on a sibling form (e.g. the search hero's
+    ``q`` parameter) so toggling a filter doesn't drop the keyword.
+
+    Spec: ``docs/CHARTIS_MATCH_NOTES.md`` pattern 02.
+    """
+    title_html = f'<h2 class="ck-filter-rail-title">{_esc(title)}</h2>'
+
+    auto_attr = (
+        ' onchange="this.form.submit()"'
+        if (form_action and auto_submit and not submit_label)
+        else ""
+    )
+
+    def _render_li(opt: Mapping[str, Any], gtype: str, gname: str) -> str:
+        ovalue = _esc(opt.get("value", ""))
+        olabel = _esc(opt.get("label", ""))
+        checked = " checked" if opt.get("checked") else ""
+        return (
+            '<li><label>'
+            f'<input type="{gtype}" name="{gname}" '
+            f'value="{ovalue}"{checked}{auto_attr}>'
+            f'<span>{olabel}</span>'
+            '</label></li>'
+        )
+
+    group_parts = []
+    for grp in groups:
+        gtitle = _esc(grp.get("title", ""))
+        gname = _esc(grp.get("name", ""))
+        gtype = grp.get("input_type", "checkbox")
+        if gtype not in ("checkbox", "radio"):
+            gtype = "checkbox"
+        options = list(grp.get("options", []))
+        head = options[:more_threshold]
+        tail = options[more_threshold:]
+        head_lis = "".join(_render_li(o, gtype, gname) for o in head)
+        overflow_html = ""
+        if tail:
+            tail_lis = "".join(_render_li(o, gtype, gname) for o in tail)
+            overflow_html = (
+                '<details class="ck-filter-overflow">'
+                '<summary>More</summary>'
+                f'<ul class="ck-filter-list">{tail_lis}</ul>'
+                '</details>'
+            )
+        group_parts.append(
+            '<section class="ck-filter-group">'
+            f'<header class="ck-filter-group-head">{gtitle}</header>'
+            f'<ul class="ck-filter-list">{head_lis}</ul>'
+            f'{overflow_html}'
+            '</section>'
+        )
+
+    submit_html = (
+        f'<button class="ck-filter-submit" type="submit">{_esc(submit_label)}</button>'
+        if submit_label and form_action else ""
+    )
+
+    hidden_html = ""
+    if extra_hidden and form_action:
+        hidden_html = "".join(
+            f'<input type="hidden" name="{_esc(k)}" value="{_esc(v)}">'
+            for k, v in extra_hidden.items() if v
+        )
+
+    inner = f'{title_html}{"".join(group_parts)}{submit_html}'
+
+    if form_action:
+        return (
+            '<aside class="ck-filter-rail">'
+            f'<form method="{_esc(form_method)}" action="{_esc(form_action)}">'
+            f'{hidden_html}{inner}'
+            '</form>'
+            '</aside>'
+        )
+    return f'<aside class="ck-filter-rail">{inner}</aside>'
 
 
 def ck_affirm_empty(
@@ -578,6 +696,34 @@ _CSS_INLINE_FALLBACK = """
   .ck-search-hero-submit { background:transparent; border:1px solid var(--sc-on-navy-dim); border-radius:50%; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; color:var(--sc-on-navy); cursor:pointer; flex-shrink:0; transition:color 0.15s, border-color 0.15s; }
   .ck-search-hero-submit:hover { color:var(--sc-teal); border-color:var(--sc-teal); }
   .ck-search-hero-chevron { position:absolute; right:0; bottom:0; width:0; height:0; border-style:solid; border-width:0 0 64px 64px; border-color:transparent transparent var(--sc-teal) transparent; pointer-events:none; }
+
+  /* Filter sidebar — chartis.com/insights left rail. Eyebrow-style
+   * group headers, radio/checkbox rows, progressive-disclosure More
+   * expander when a group has more than ~8 options. Pairs with
+   * ck-search-hero (above) and ck-rail-layout (below) for the full
+   * Insights triplet on /library, /research, /notes. */
+  .ck-rail-layout { display:grid; grid-template-columns:240px 1fr; gap:var(--sc-s-7); align-items:start; margin:0 0 var(--sc-s-6); }
+  @media (max-width: 880px) { .ck-rail-layout { grid-template-columns:1fr; } }
+  .ck-filter-rail { font-family:var(--sc-sans); position:sticky; top:88px; }
+  .ck-filter-rail form { margin:0; }
+  .ck-filter-rail-title { font-family:var(--sc-mono); font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--sc-text-dim); margin:0 0 var(--sc-s-5); display:flex; align-items:center; gap:12px; }
+  .ck-filter-rail-title::before { content:''; display:inline-block; width:24px; height:2px; background:var(--sc-teal); flex-shrink:0; }
+  .ck-filter-group { margin:0 0 var(--sc-s-6); border-top:1px solid var(--sc-rule); padding-top:var(--sc-s-4); }
+  .ck-filter-group:first-of-type { border-top:0; padding-top:0; }
+  .ck-filter-group-head { font-family:var(--sc-sans); font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-navy); margin:0 0 var(--sc-s-3); }
+  .ck-filter-list { list-style:none; padding:0; margin:0; }
+  .ck-filter-list li { padding:5px 0; }
+  .ck-filter-list label { display:flex; align-items:center; gap:8px; cursor:pointer; font-family:var(--sc-sans); font-size:13px; line-height:1.35; color:var(--sc-text); }
+  .ck-filter-list label:hover { color:var(--sc-teal-ink); }
+  .ck-filter-list input[type="radio"], .ck-filter-list input[type="checkbox"] { accent-color:var(--sc-teal); cursor:pointer; flex-shrink:0; margin:0; }
+  .ck-filter-overflow { margin-top:4px; }
+  .ck-filter-overflow > summary { font-family:var(--sc-sans); font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--sc-teal-ink); cursor:pointer; padding:6px 0; list-style:none; outline:none; }
+  .ck-filter-overflow > summary::-webkit-details-marker { display:none; }
+  .ck-filter-overflow > summary::after { content:' \\25BC'; font-size:9px; margin-left:4px; }
+  .ck-filter-overflow[open] > summary::after { content:' \\25B2'; }
+  .ck-filter-overflow > summary:hover { color:var(--sc-navy); }
+  .ck-filter-submit { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; padding:8px 14px; border:1px solid var(--sc-navy); background:var(--sc-navy); color:var(--sc-on-navy); border-radius:2px; cursor:pointer; margin-top:var(--sc-s-4); width:100%; transition:background 0.15s, color 0.15s; }
+  .ck-filter-submit:hover { background:var(--sc-teal); border-color:var(--sc-teal); color:var(--sc-navy); }
 
   /* Command palette */
   .ck-palette { position:fixed; inset:0; background:rgba(6,22,38,0.4); display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; z-index:100; }

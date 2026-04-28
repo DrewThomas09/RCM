@@ -116,7 +116,7 @@ _COLUMNS = [
 
 
 def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
-    from rcm_mc.ui._chartis_kit import ck_kpi_block, ck_fmt_num
+    from rcm_mc.ui._chartis_kit import ck_kpi_block, ck_fmt_number
 
     total = len(deals)
     realized = [r for r in rows if r["moic"] is not None]
@@ -125,16 +125,16 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     loss_count = sum(1 for m in moics if m < 1.0)
     sectors = len({d.get("sector") for d in deals if d.get("sector")})
 
-    p50_html = ck_fmt_num(p50, 2, "x") if p50 else '<span class="faint">—</span>'
+    p50_html = f"{ck_fmt_number(p50, precision=2)}x" if p50 else '<span class="faint">—</span>'
     loss_pct = f"{loss_count/len(moics)*100:.1f}%" if moics else "—"
 
     return (
         f'<div class="ck-kpi-grid">'
-        + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', "in corpus")
-        + ck_kpi_block("Realized", f'<span class="mn">{len(realized)}</span>', f"{len(realized)/total*100:.0f}% of corpus")
-        + ck_kpi_block("Corpus P50 MOIC", p50_html, "realized deals")
-        + ck_kpi_block("Loss Rate", f'<span class="mn neg">{loss_pct}</span>', "MOIC < 1.0×")
-        + ck_kpi_block("Sectors", f'<span class="mn">{sectors}</span>', "covered")
+        + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', sub="in corpus")
+        + ck_kpi_block("Realized", f'<span class="mn">{len(realized)}</span>', sub=f"{len(realized)/total*100:.0f}% of corpus")
+        + ck_kpi_block("Corpus P50 MOIC", p50_html, sub="realized deals")
+        + ck_kpi_block("Loss Rate", f'<span class="mn neg">{loss_pct}</span>', sub="MOIC < 1.0×")
+        + ck_kpi_block("Sectors", f'<span class="mn">{sectors}</span>', sub="covered")
         + '</div>'
     )
 
@@ -156,7 +156,8 @@ def render_deals_library(
     moic_bucket: str = "",
 ) -> str:
     from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_table, ck_section_header, ck_search_hero,
+        chartis_shell, ck_table, ck_section_header,
+        ck_search_hero, ck_filter_sidebar,
     )
     from rcm_mc.ui.chartis._helpers import render_page_explainer
 
@@ -208,45 +209,72 @@ def render_deals_library(
     rev = sort_dir == "desc"
     rows.sort(key=lambda r: (r[sk] is None, r[sk] or 0 if isinstance(r[sk], (int, float)) else str(r[sk] or "")), reverse=rev)
 
-    # Sector <select> options
-    sec_opts = '<option value="">All Sectors</option>' + "".join(
-        f'<option value="{_html.escape(s)}" {"selected" if s==sector_filter else ""}>{_html.escape(s)}</option>'
-        for s in all_sectors
-    )
-    reg_opts = '<option value="">All Regimes</option>' + "".join(
-        f'<option value="{r}" {"selected" if r==regime_filter else ""}>{r.title()}</option>'
-        for r in all_regimes
-    )
-    moic_opts = '<option value="">All MOIC</option>' + "".join(
-        f'<option value="{key}" {"selected" if key==moic_bucket else ""}>{label}</option>'
-        for key, (label, _pred) in _MOIC_BUCKETS.items()
-    )
+    # Build chartis Insights-style filter rail groups. Single-select
+    # radio rows match the existing single-value URL state for each
+    # facet; the "All …" option is the no-filter default. q + sort
+    # round-trip through extra_hidden so toggling a facet preserves
+    # the active keyword and sort order.
+    def _sector_opts():
+        yield {"label": "All sectors", "value": "", "checked": not sector_filter}
+        for s in all_sectors:
+            yield {"label": s, "value": s, "checked": s == sector_filter}
 
-    filter_bar = f"""
-<form method="get" action="/library" class="ck-filters" style="margin-bottom:10px;">
-  <span class="ck-filter-label">Sector</span>
-  <select name="sector" class="ck-sel" onchange="this.form.submit()">{sec_opts}</select>
-  <span class="ck-filter-label">Regime</span>
-  <select name="regime" class="ck-sel" onchange="this.form.submit()">{reg_opts}</select>
-  <span class="ck-filter-label">MOIC</span>
-  <select name="moic_bucket" class="ck-sel" onchange="this.form.submit()">{moic_opts}</select>
-  <span class="ck-filter-label">Search</span>
-  <input type="text" name="q" value="{_html.escape(search)}" placeholder="deal name, sponsor..." class="ck-input" data-search-target="#deals-tbl">
-</form>"""
+    def _regime_opts():
+        yield {"label": "All regimes", "value": "", "checked": not regime_filter}
+        for r in all_regimes:
+            yield {"label": r.title(), "value": r, "checked": r == regime_filter}
+
+    def _moic_opts():
+        yield {"label": "All MOIC", "value": "", "checked": not moic_bucket}
+        for key, (label, _pred) in _MOIC_BUCKETS.items():
+            yield {"label": label, "value": key, "checked": key == moic_bucket}
+
+    filter_rail = ck_filter_sidebar(
+        title="Filter",
+        form_action="/library",
+        groups=[
+            {"title": "By sector", "name": "sector", "input_type": "radio",
+             "options": list(_sector_opts())},
+            {"title": "By regime", "name": "regime", "input_type": "radio",
+             "options": list(_regime_opts())},
+            {"title": "By MOIC", "name": "moic_bucket", "input_type": "radio",
+             "options": list(_moic_opts())},
+        ],
+        extra_hidden={"q": search, "sort_by": sort_by, "sort_dir": sort_dir},
+    )
 
     kpis = _kpi_bar(deals, rows)
-    section = ck_section_header("DEAL CORPUS", "all healthcare PE transactions", len(rows))
-    table = ck_table(rows, _COLUMNS, caption="", sortable=True, id="deals-tbl")
+    section = ck_section_header(
+        "All healthcare PE transactions",
+        eyebrow=f"DEAL CORPUS · {len(rows):,} DEALS",
+    )
+    table = ck_table(rows, _COLUMNS)
     # Chartis Insights-style search hero — navy panel with italic
     # "Search" label + circular submit + teal chevron-cut bottom-right.
-    # Renders above the filter bar so the partner's first read on
-    # /library matches chartis.com.
+    # Renders full-width above the rail+content layout so the partner's
+    # first read on /library matches chartis.com. Filter selections
+    # round-trip through extra_hidden so submitting a new keyword
+    # doesn't drop the active facets.
     search_hero = ck_search_hero(
         action="/library", name="q", initial=search,
         placeholder="Deal name, sponsor, sector…",
+        extra_hidden={
+            "sector": sector_filter,
+            "regime": regime_filter,
+            "moic_bucket": moic_bucket,
+        },
     )
 
-    body = search_hero + explainer + kpis + filter_bar + section + table
+    rail_layout = (
+        '<div class="ck-rail-layout">'
+        f'{filter_rail}'
+        '<div class="ck-rail-content">'
+        f'{section}{table}'
+        '</div>'
+        '</div>'
+    )
+
+    body = search_hero + explainer + kpis + rail_layout
 
     return chartis_shell(
         body,
