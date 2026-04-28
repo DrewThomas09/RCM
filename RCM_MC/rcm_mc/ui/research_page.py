@@ -126,92 +126,62 @@ def render_research(
     topic: str = "",
     kind: str = "",
 ) -> str:
-    """Render /research with the chartis Insights triplet chrome."""
-    from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_search_hero, ck_filter_sidebar,
-        ck_results_header, ck_section_header, ck_section_intro,
-        ck_arrow_link,
-    )
+    """Render /research via the cycle-18 Insights-triplet helper.
 
-    # Apply server-side filtering. Keyword match runs against the
-    # title + summary so a partner searching for "covenant" surfaces
-    # any entry whose copy mentions covenants.
+    The page-specific work is just (1) filtering the catalog and
+    (2) rendering the cards; the chrome (search hero + filter
+    sidebar + results header + chips + Clear all + intro)
+    is composed by ``render_insights_page``.
+    """
+    from rcm_mc.ui._chartis_kit import render_insights_page, ck_arrow_link
+
     def _matches(entry: Dict[str, str]) -> bool:
         if topic and entry["topic"] != topic:
             return False
         if kind and entry["kind"] != kind:
             return False
-        if q:
-            haystack = (entry["title"] + " " + entry["summary"]).lower()
-            if q.lower() not in haystack:
-                return False
+        if q and q.lower() not in (
+            entry["title"] + " " + entry["summary"]
+        ).lower():
+            return False
         return True
 
     filtered = [e for e in RESEARCH_ENTRIES if _matches(e)]
 
-    # Filter sidebar facets — derive topic + kind options from the
-    # full catalog so partner sees every facet even when filtered to
-    # a subset. Sorted alphabetically for stable rendering.
+    # Facet options derive from the full catalog (not the filtered
+    # subset) so partner can navigate back to a topic that's been
+    # filtered out.
     all_topics = sorted({e["topic"] for e in RESEARCH_ENTRIES})
     all_kinds = sorted({e["kind"] for e in RESEARCH_ENTRIES})
+    facets = [
+        {
+            "title": "By topic",
+            "name": "topic",
+            "input_type": "radio",
+            "options": [
+                {"label": "All topics", "value": "", "checked": not topic},
+                *[
+                    {"label": t, "value": t, "checked": t == topic}
+                    for t in all_topics
+                ],
+            ],
+        },
+        {
+            "title": "By format",
+            "name": "kind",
+            "input_type": "radio",
+            "options": [
+                {"label": "All formats", "value": "", "checked": not kind},
+                *[
+                    {"label": k, "value": k, "checked": k == kind}
+                    for k in all_kinds
+                ],
+            ],
+        },
+    ]
 
-    def _topic_opts():
-        yield {"label": "All topics", "value": "", "checked": not topic}
-        for t in all_topics:
-            yield {"label": t, "value": t, "checked": t == topic}
-
-    def _kind_opts():
-        yield {"label": "All formats", "value": "", "checked": not kind}
-        for k in all_kinds:
-            yield {"label": k, "value": k, "checked": k == kind}
-
-    filter_rail = ck_filter_sidebar(
-        title="Filter",
-        form_action="/research",
-        groups=[
-            {"title": "By topic", "name": "topic", "input_type": "radio",
-             "options": list(_topic_opts())},
-            {"title": "By format", "name": "kind", "input_type": "radio",
-             "options": list(_kind_opts())},
-        ],
-        extra_hidden={"q": q},
-    )
-
-    # Active-filter chips with one-click drop URLs.
-    chips: List[Dict[str, str]] = []
-    if topic:
-        chips.append({"label": topic, "remove_href": _build_url(q=q, kind=kind)})
-    if kind:
-        chips.append({"label": kind, "remove_href": _build_url(q=q, topic=topic)})
-    if q:
-        chips.append({"label": f'"{q}"', "remove_href": _build_url(topic=topic, kind=kind)})
-
-    results_head = ck_results_header(
-        count=f"{len(filtered):,}",
-        label="Notes" if len(filtered) != 1 else "Note",
-        chips=chips or None,
-        clear_all_href="/research" if chips else None,
-    )
-
-    section = ck_section_header(
-        "Frameworks, methodology, and field notes",
-        eyebrow="RESEARCH",
-    )
-
-    search_hero = ck_search_hero(
-        action="/research",
-        name="q",
-        initial=q,
-        label="Search",
-        placeholder="Topic, framework, sector…",
-        extra_hidden={"topic": topic, "kind": kind},
-    )
-
-    # Results body — editorial card per research entry. Falls back
-    # to an affirm-empty band when the filter combination has zero
-    # matches so partner gets a real signal not a void.
     if not filtered:
-        results_body = (
+        body_html = (
             '<div class="ck-affirm-empty">'
             '<h3>No research matches that filter.</h3>'
             '<p>Drop a chip from the row above, or broaden the keyword '
@@ -234,39 +204,31 @@ def render_research(
                 + ck_arrow_link("Read more", entry["href"])
                 + '</article>'
             )
-        results_body = (
+        body_html = (
             '<div class="ck-research-grid">'
             + "".join(cards)
             + '</div>'
         )
 
-    rail_layout = (
-        '<div class="ck-rail-layout">'
-        f'{filter_rail}'
-        '<div class="ck-rail-content">'
-        f'{section}{results_head}{results_body}'
-        '</div>'
-        '</div>'
-    )
-
-    intro = ck_section_intro(
-        eyebrow="RESEARCH",
-        headline="Where the platform thinks out loud.",
-        italic_word="thinks",
-        body=(
-            "Methodology, frameworks, deep-dives, and field notes — "
-            "everything the analyst voice has published since the "
-            "last fund raise. Filter by topic or format to narrow."
-        ),
-    )
-
-    body = intro + search_hero + rail_layout
-
-    return chartis_shell(
-        body,
+    return render_insights_page(
+        action="/research",
+        state={"q": q, "topic": topic, "kind": kind},
+        facets=facets,
+        count=f"{len(filtered):,}",
+        count_label="Note" if len(filtered) == 1 else "Notes",
+        body_html=body_html,
         title="Research",
         active_nav="research",
-        subtitle=(
-            f"{len(filtered)} of {len(RESEARCH_ENTRIES)} research notes"
-        ),
+        keyword_placeholder="Topic, framework, sector…",
+        intro={
+            "eyebrow": "RESEARCH",
+            "headline": "Where the platform thinks out loud.",
+            "italic_word": "thinks",
+            "body": (
+                "Methodology, frameworks, deep-dives, and field notes — "
+                "everything the analyst voice has published since the "
+                "last fund raise. Filter by topic or format to narrow."
+            ),
+        },
+        subtitle=f"{len(filtered)} of {len(RESEARCH_ENTRIES)} research notes",
     )

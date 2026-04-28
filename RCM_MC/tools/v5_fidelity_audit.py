@@ -45,12 +45,24 @@ from typing import Dict, List, Optional, Tuple
 # pass over each file's source. All patterns are line-tolerant; some
 # of the helpers wrap onto multiple lines so we use re.DOTALL where
 # needed.
-_RE_CHARTIS_SHELL = re.compile(r"\bchartis_shell\s*\(")
+# Editorial-shell call — direct ``chartis_shell(...)`` OR a call to
+# the cycle-18 ``render_insights_page(...)`` helper that composes
+# chartis_shell with the Insights triplet wired around the body.
+# Both put the page on the editorial chrome.
+_RE_CHARTIS_SHELL = re.compile(
+    r"\b(?:chartis_shell|render_insights_page)\s*\("
+)
+# Primitive names. ``render_insights_page`` counts as a primitive
+# itself because invoking it composes 5+ ck_* helpers (search hero,
+# filter sidebar, results header, section header, section intro)
+# behind a single call — pages that use it deserve density credit
+# without dropping each helper name into the source manually.
 _RE_CK_PRIMITIVES = re.compile(
-    r"\bck_(?:eyebrow|section_header|section_intro|panel|table|"
+    r"\b(?:ck_(?:eyebrow|section_header|section_intro|panel|table|"
     r"kpi_block|signal_badge|arrow_link|image_card|severity_panel|"
     r"affirm_empty|search_hero|filter_sidebar|results_header|"
-    r"command_palette|fmt_(?:currency|percent|number)|provenance_tooltip)\b"
+    r"command_palette|fmt_(?:currency|percent|number)|provenance_tooltip)"
+    r"|render_insights_page)\b"
 )
 # Italic-serif highlight signal — either via the ck_section_intro
 # kwarg (chartis cadence: "Reasons to *believe* in better") or via
@@ -60,7 +72,11 @@ _RE_CK_PRIMITIVES = re.compile(
 # f-strings with .upper() or .strip()), so we just check for the
 # kwarg name anywhere in the source — false-positive risk is very
 # low because no other helper uses it.
-_RE_ITALIC_HIGHLIGHT = re.compile(r"\bitalic_word\s*=")
+# Italic-serif kwarg can appear as ``italic_word="thing"`` (kwarg
+# syntax in a direct ck_section_intro call) OR as ``"italic_word":
+# "thing"`` (dict-literal key when intro is passed as a dict to
+# render_insights_page). Both express the chartis cadence.
+_RE_ITALIC_HIGHLIGHT = re.compile(r"""\bitalic_word\s*["']?\s*[=:]""")
 _RE_INLINE_STYLE = re.compile(r"\bstyle\s*=\s*[\"']")
 # A "bespoke" div is one whose class isn't a ck-* primitive class —
 # editorial divs like `<div class="ck-rail-layout">` should NOT count
@@ -230,6 +246,15 @@ def score_file(path: Path) -> Optional[FidelityScore]:
 def audit_tree(ui_dir: Path, *, repo_root: Optional[Path] = None) -> List[FidelityScore]:
     """Walk ui_dir and score every renderer file.
 
+    Skipped:
+    - ``__pycache__`` build artifacts
+    - test fixtures (filenames starting with ``_test``)
+    - ``__init__.py``
+    - underscore-prefixed helper modules (``_chartis_kit.py``,
+      ``_helpers.py``, ``_html_polish.py`` etc.) — these are
+      kit/utility files that may *contain* helper-entry function
+      definitions but aren't routes themselves
+
     File paths in the score are normalised to repo-relative so the
     Markdown leaderboard is portable across environments. ``repo_root``
     defaults to ``ui_dir.parent.parent`` (i.e. the dir containing
@@ -239,7 +264,13 @@ def audit_tree(ui_dir: Path, *, repo_root: Optional[Path] = None) -> List[Fideli
         repo_root = ui_dir.parent.parent
     scores: List[FidelityScore] = []
     for py in sorted(ui_dir.rglob("*.py")):
-        if "__pycache__" in str(py) or py.name.startswith("_test"):
+        if "__pycache__" in str(py):
+            continue
+        if py.name.startswith("_test") or py.name == "__init__.py":
+            continue
+        if py.name.startswith("_"):
+            # Underscore-prefixed = helper / kit module by Python
+            # convention. Not a route renderer.
             continue
         s = score_file(py)
         if s is not None:

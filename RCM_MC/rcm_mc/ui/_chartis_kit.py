@@ -606,6 +606,159 @@ def ck_results_header(
     )
 
 
+def render_insights_page(
+    *,
+    action: str,
+    state: Mapping[str, str],
+    facets: Sequence[Mapping[str, Any]],
+    count: Any,
+    body_html: str,
+    title: str,
+    keyword_name: str = "q",
+    keyword_label: str = "Search",
+    keyword_placeholder: str = "Keyword",
+    intro: Optional[Mapping[str, Any]] = None,
+    section_title: Optional[str] = None,
+    section_eyebrow: Optional[str] = None,
+    count_label: str = "Results",
+    active_nav: Optional[str] = None,
+    subtitle: Optional[str] = None,
+    breadcrumbs: Optional[Sequence[Any]] = None,
+    chip_label_overrides: Optional[Mapping[str, Any]] = None,
+) -> str:
+    """Compose the chartis Insights triplet around a body of items.
+
+    Replaces the ~200 LOC of triplet wiring that cycles 6, 8, 9
+    each shipped (search hero + filter sidebar + results header +
+    chip URL building + extra_hidden round-trip + Clear all)
+    with one call. The caller pre-renders the items as
+    ``body_html`` (table / cards / list) and passes:
+
+      - ``action``    — page URL, e.g. ``"/library"``
+      - ``state``     — current URL params as a ``{name: value}``
+                        dict; empty values are dropped
+      - ``facets``    — list of facet specs, each a mapping with
+                        ``name`` / ``label`` / ``input_type`` /
+                        ``options`` per ``ck_filter_sidebar``
+      - ``count``     — the row count to surface in the results
+                        header
+      - ``intro``     — optional ``{eyebrow, headline, ...}`` kwargs
+                        passed to ``ck_section_intro``
+
+    For each active facet (state value present), a chip is added
+    to the results header whose ``remove_href`` reconstructs the
+    URL with that facet stripped. The keyword (default ``q``)
+    becomes a chip too when set, with a wrapping ``"value"``
+    label. ``chip_label_overrides`` lets the caller swap the
+    default chip label for a specific facet — e.g. /notes uses
+    ``deal: hca-001`` for the deal-id chip rather than the bare
+    value.
+
+    Spec: ``docs/CHARTIS_MATCH_NOTES.md`` patterns 01-03 composed.
+    """
+    facet_names = {f["name"] for f in facets}
+    overrides = chip_label_overrides or {}
+
+    # Build extra_hidden for the search hero — every state field
+    # except the keyword itself round-trips so submitting q
+    # preserves active filters.
+    state_except_kw = {
+        k: v for k, v in state.items()
+        if k != keyword_name and v
+    }
+    search_hero = ck_search_hero(
+        action=action,
+        name=keyword_name,
+        initial=state.get(keyword_name, ""),
+        label=keyword_label,
+        placeholder=keyword_placeholder,
+        extra_hidden=state_except_kw,
+    )
+
+    # Filter sidebar — caller provides the facet groups directly;
+    # extra_hidden round-trips q (and any non-facet state).
+    state_except_facets = {
+        k: v for k, v in state.items()
+        if k not in facet_names and v
+    }
+    filter_rail = ck_filter_sidebar(
+        title="Filter",
+        form_action=action,
+        groups=list(facets),
+        extra_hidden=state_except_facets,
+    )
+
+    # Build chips: one per active facet + one for active keyword.
+    # Each chip's remove_href reconstructs ``action?...`` with that
+    # one field stripped, so partner can drop facets one at a time.
+    chips: List[Mapping[str, str]] = []
+    nonempty = {k: v for k, v in state.items() if v}
+
+    def _url_omit(name: str) -> str:
+        kept = [(k, v) for k, v in nonempty.items() if k != name]
+        if not kept:
+            return action
+        import urllib.parse as _up
+        return action + "?" + _up.urlencode(kept)
+
+    for name, value in nonempty.items():
+        if name == keyword_name:
+            label = f'"{value}"'
+        elif name in facet_names:
+            override = overrides.get(name)
+            if callable(override):
+                label = override(value)
+            elif override:
+                label = override
+            else:
+                label = value
+        else:
+            # Non-facet state (e.g. sort_by) doesn't surface as a
+            # chip — partner controls those via column headers,
+            # not the chip row.
+            continue
+        chips.append({
+            "label": label,
+            "remove_href": _url_omit(name),
+        })
+
+    results_head = ck_results_header(
+        count=count,
+        label=count_label,
+        chips=chips or None,
+        clear_all_href=action if chips else None,
+    )
+
+    intro_html = ""
+    if intro:
+        intro_html = ck_section_intro(**intro)
+
+    section_html = ""
+    if section_title:
+        section_html = ck_section_header(
+            section_title, eyebrow=section_eyebrow,
+        )
+
+    rail_layout = (
+        '<div class="ck-rail-layout">'
+        f'{filter_rail}'
+        '<div class="ck-rail-content">'
+        f'{section_html}{results_head}{body_html}'
+        '</div>'
+        '</div>'
+    )
+
+    full_body = intro_html + search_hero + rail_layout
+
+    return chartis_shell(
+        full_body,
+        title=title,
+        active_nav=active_nav,
+        subtitle=subtitle,
+        breadcrumbs=breadcrumbs,
+    )
+
+
 def ck_affirm_empty(
     *,
     headline: str,
