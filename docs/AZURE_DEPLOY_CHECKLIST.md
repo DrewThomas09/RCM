@@ -39,17 +39,25 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
     `test_alerts_page.py::test_alerts_renders_through_chartis_shell`
     which asserts the link is present in rendered HTML.
 - [x] `/static/v3/chartis.css` served (marketing landing).
-- [ ] Static assets cached via `Cache-Control` headers (Azure CDN
-      friendly).
-  - Current: server sends no Cache-Control on static; first-load
-    cost is repeated.
+- [x] Static assets cached via `Cache-Control` headers (Azure CDN
+      friendly). (iter cycle-10)
+  - `_route_static` now sends
+    `Cache-Control: public, max-age=3600` on every `/static/*`
+    response. Pinned by
+    `tests/test_azure_deploy_v2.py::StaticCacheControlTests::test_chartis_tokens_carries_cache_control`.
+  - `_send_file` for partner-generated outputs in `outdir` still
+    sends no caching directive (those change without a deploy).
 
 ## PORT BINDING
 
-- [ ] Bind to `0.0.0.0` not `127.0.0.1` so Azure can route traffic.
-  - Current: `port_free` check binds to `127.0.0.1`, server binds
-    to whatever `build_server(host=...)` resolves to. Audit the
-    server entry to confirm host kwarg.
+- [x] Bind to `0.0.0.0` not `127.0.0.1` so Azure can route traffic.
+      (iter cycle-10)
+  - `demo.py` now auto-detects the App Service environment via
+    `WEBSITE_HOSTNAME` / `WEBSITES_PORT` (canonical Azure env
+    vars) and defaults `HOST` to `0.0.0.0` in that case. Local
+    runs (no Azure env) still bind `127.0.0.1`. `RCM_MC_HOST`
+    explicit override wins over both. Pinned by 4 tests in
+    `tests/test_azure_deploy_v2.py::AzureHostDetectionTests`.
 
 ## HEALTHCHECK
 
@@ -76,14 +84,30 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
   - Verified: every server response logs a JSON line with `ts`,
     `request_id`, `method`, `path`, `status`, `duration_ms`,
     `user_id`, `client`. Captured during recent test runs.
-- [ ] Log level configurable via env (`LOG_LEVEL`).
+- [x] Log level configurable via env (`LOG_LEVEL`). (iter cycle-10)
+  - `rcm_mc/infra/logger.py` now resolves `LOG_LEVEL` from env,
+    accepting both named levels (`DEBUG` / `INFO` / `WARNING` /
+    `ERROR` / `CRITICAL`, case-insensitive) and numeric levels
+    (`10` / `20` / `30`). Unknown values fall back to `INFO`
+    rather than muting the logger or crashing boot. Pinned by 6
+    tests in `tests/test_azure_deploy_v2.py::LogLevelEnvTests`.
 
 ## AUTH SESSION COOKIE
 
-- [ ] `SameSite=Lax` (or `Strict`) set on session cookie.
-- [ ] `Secure` flag set when serving over HTTPS.
-- [ ] `HttpOnly` set so JS can't read it.
-  - Current: needs audit of `rcm_mc/auth/*.py`.
+- [x] `SameSite=Lax` (or `Strict`) set on session cookie.
+      (verified cycle-10)
+- [x] `Secure` flag set when serving over HTTPS.
+      (verified cycle-10)
+- [x] `HttpOnly` set so JS can't read it.
+      (verified cycle-10)
+  - The `/api/login` and `/api/logout` paths in `server.py` set
+    `rcm_session` with `HttpOnly; SameSite=Lax` and append
+    `; Secure` via `_cookie_flags()` whenever `_is_https()`
+    returns true (driven by `X-Forwarded-Proto: https` from
+    Azure's reverse proxy). The `rcm_csrf` cookie is
+    intentionally non-HttpOnly (the CSRF-patching JS reads it)
+    but still carries `SameSite=Lax`. Pinned by 3 tests in
+    `tests/test_azure_deploy_v2.py::SessionCookieFlagsTests`.
 
 ## CHARTIS_UI_V2 LOCK
 
@@ -116,13 +140,36 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
 
 ---
 
-## Audit summary (cycle 1 step 10 baseline)
+## Audit summary
 
-- Total rows: 22
-- Passing: 6 (chartis_tokens.css served, /static/v3/chartis.css
-  served, /healthz wired, structured logs, CHARTIS_UI_V2 documented,
-  /login round-trip verified locally)
-- Pending: 16
+**Cycle 1 baseline (2026-04-28):** 6 of 22 passing.
+**Cycle 4-5 update:** 7 of 22 passing (PORT-from-env shipped).
+**Cycle 10 update (2026-04-28):** **13 of 22 passing.**
+
+Cycle 10 closed 6 rows in one batch:
+1. PORT BINDING — auto-bind `0.0.0.0` on Azure (env-detected).
+2. STATIC ASSETS — `Cache-Control: public, max-age=3600` on
+   `/static/*`.
+3. LOGGING — `LOG_LEVEL` env configurable (named or numeric).
+4. AUTH SESSION COOKIE — `HttpOnly` + `SameSite=Lax` verified.
+5. AUTH SESSION COOKIE — `Secure` on HTTPS verified
+   (`X-Forwarded-Proto: https` driven).
+6. AUTH SESSION COOKIE — `HttpOnly` regression-pinned.
+
+All six are pinned by 14 new tests in
+`tests/test_azure_deploy_v2.py`.
+
+**Still pending (9 of 22):**
+- CHARTIS_UI_V2=1 in deploy/ manifest
+- `secret_key` for sessions sourced from env (audit)
+- No DB credentials / API keys / PII in repo or env defaults
+- `/healthz` cold-container response time <100ms confirmation
+- Production WSGI/ASGI server (gunicorn/hypercorn) — deferred
+- Azure App Service Configuration JSON snapshot
+- `portfolio.db` on a mounted volume that survives restarts
+- DB schema migrations idempotent on cold start
+- Same /login round-trip exercised post-Azure-deploy
+- Editorial chrome verification on `/app` post-deploy
 
 **Next-up rows for cycle 2 step 10:**
 1. PORT from env (5-line change to the production entry point).

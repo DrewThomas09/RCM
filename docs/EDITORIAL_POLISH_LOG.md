@@ -812,3 +812,103 @@ chrome. Recommend B (Azure quick-wins) — moves the deploy-
 readiness gate from 32% to 50%+ in one cycle and the work is
 mostly mechanical. Forward-only.
 
+---
+
+## Cycle 10 build — 2026-04-28 — Azure deploy quick-wins
+
+**Step 10 — six Azure rows closed in one batch.** Deploy-readiness
+gate moves from 7 of 22 (32%) to **13 of 22 (59%)** with mechanical
+edits across four files. Cycle 1's "next-up" list is now mostly
+done; the remaining 9 rows are all infrastructure work
+(deploy/ manifest, persistent volume, gunicorn) rather than code.
+
+**Row 1 — PORT BINDING: auto-bind 0.0.0.0 on Azure.** `demo.py`
+now detects the App Service environment via `WEBSITE_HOSTNAME` /
+`WEBSITES_PORT` (canonical Azure env vars) and defaults `HOST` to
+`0.0.0.0` in that case. Local runs (no Azure env) still bind
+`127.0.0.1` — preserves the LAN-safety property a casual `python
+demo.py` invocation expects. `RCM_MC_HOST` explicit override wins
+over both. No partner-facing config step needed for a clean
+Azure deploy.
+
+**Row 2 — STATIC ASSETS: Cache-Control on /static/\*.**
+`_route_static` now sends `Cache-Control: public, max-age=3600`
+on every `/static/*` response so Azure CDN / browser cache
+spare the origin on every page load. `_send_file` for
+partner-generated outputs in `outdir` still sends no caching
+directive (those change without a deploy and need fresh fetches).
+The `cache_control` kwarg on `_send_file` is opt-in so other
+callers can plug in if they need to.
+
+**Row 3 — LOGGING: LOG_LEVEL env configurable.**
+`rcm_mc/infra/logger.py` now resolves `LOG_LEVEL` from env,
+accepting both named levels (`DEBUG` / `INFO` / `WARNING` /
+`ERROR` / `CRITICAL`, case-insensitive) and numeric levels
+(`10` / `20` / `30`). Unknown values fall back to `INFO` rather
+than muting the logger or crashing boot. Azure App Service
+Configuration can tighten verbosity in production without a
+code change.
+
+**Rows 4-6 — AUTH SESSION COOKIE: flags audit.** No code change
+needed — the existing `/api/login` / `/api/logout` paths in
+`server.py` already set `rcm_session` with `HttpOnly;
+SameSite=Lax` and append `; Secure` via `_cookie_flags()`
+whenever `_is_https()` returns true (driven by
+`X-Forwarded-Proto: https` from Azure's reverse proxy). The
+`rcm_csrf` cookie is intentionally non-HttpOnly (the CSRF-
+patching JS reads it) but still carries `SameSite=Lax`. Cycle
+1's audit predicted "likely already correct; verify and check
+off" — confirmed.
+
+**Step 10 — focused test suite.** New `tests/test_azure_deploy_v2.py`
+(distinct from existing `test_azure_deploy.py` that covers
+Docker artifacts) with 14 tests:
+- `LogLevelEnvTests` (6) — default / named / lowercase / numeric /
+  unknown-falls-back behaviors of the resolver
+- `AzureHostDetectionTests` (4) — local default, Azure
+  WEBSITE_HOSTNAME triggers 0.0.0.0, Azure WEBSITES_PORT
+  triggers 0.0.0.0, RCM_MC_HOST overrides Azure default
+- `StaticCacheControlTests` (1) — chartis_tokens.css carries
+  `Cache-Control: public; max-age=`
+- `SessionCookieFlagsTests` (3) — session has HttpOnly +
+  SameSite=Lax, csrf has SameSite=Lax but not HttpOnly,
+  no-Secure-on-plain-HTTP
+
+All 14 pass.
+
+**Files touched this batch.**
+- `demo.py` — Azure-env detection block.
+- `rcm_mc/infra/logger.py` — `_resolve_log_level()` helper +
+  module-level call.
+- `rcm_mc/server.py` — `_route_static` adds Cache-Control;
+  `_send_file` gains optional `cache_control` kwarg.
+- `tests/test_azure_deploy_v2.py` — NEW, 14 tests.
+- `docs/AZURE_DEPLOY_CHECKLIST.md` — six rows checked, audit
+  summary updated to 13 of 22.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Azure deploy-readiness rows passing: 13 of 22 (was 7) — 59%
+  (was 32%).
+- Total focused tests passing: 152 + 1 documented skip (was
+  122 in cycle 9 + 1 skip).
+- Code lines added: ~70 (10 demo.py, 25 logger.py, 8 server.py,
+  ~30 effective on test side).
+- Pages changed: 0 — all changes are infrastructure / wiring.
+
+**Suggested next:** cycle 11 step 10 — deploy/ manifest. The
+remaining 9 rows split cleanly:
+- **Quick wins (cycle 11):** `deploy/azure-app-service.json`
+  manifest with `CHARTIS_UI_V2=1` + `LOG_LEVEL=INFO` + a
+  pointer at the persistent-volume mount path; `secret_key`
+  audit (likely already env-sourced — verify and check off);
+  DB-credentials / PII grep.
+- **Bigger (cycle 12+):** persistent-volume wiring for
+  `portfolio.db`, schema-migration idempotency proof,
+  `/healthz` cold-time measurement, gunicorn/hypercorn
+  swap, post-deploy smoke gate (needs a real Azure ship).
+
+Recommend **C (deploy/ manifest first)** — closes 3-4 more rows
+in one short cycle and unblocks the persistent-volume work
+which can't ship without a manifest. Forward-only.
+

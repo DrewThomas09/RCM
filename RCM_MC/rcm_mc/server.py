@@ -1830,9 +1830,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(encoded)
 
-    def _send_file(self, abs_path: str) -> None:
+    def _send_file(self, abs_path: str, *, cache_control: Optional[str] = None) -> None:
         """Serve a static file from ``self.config.outdir``. Guarded against
         path-traversal by requiring the resolved path to live inside outdir.
+
+        ``cache_control`` lets callers opt into a ``Cache-Control``
+        header for known-immutable assets (design tokens, marketing
+        CSS); when omitted, no caching directive is sent so partner-
+        generated outputs in ``outdir`` stay fresh on every fetch.
         """
         try:
             with open(abs_path, "rb") as f:
@@ -1860,18 +1865,29 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", mime)
         self.send_header("Content-Length", str(len(data)))
+        if cache_control:
+            self.send_header("Cache-Control", cache_control)
         self.end_headers()
         self.wfile.write(data)
 
     def _route_static(self, filename: str) -> None:
-        """Serve a file from ``rcm_mc/ui/static/``. Path-traversal safe."""
+        """Serve a file from ``rcm_mc/ui/static/``. Path-traversal safe.
+
+        Static UI assets (design tokens, marketing CSS, etc.) are
+        immutable per deploy and CDN-friendly — we send a one-hour
+        ``Cache-Control: public, max-age=3600`` so Azure CDN /
+        browser cache spare the origin on every page load.
+        """
         import pathlib
         static_dir = pathlib.Path(__file__).parent / "ui" / "static"
         target = (static_dir / filename).resolve()
         if not str(target).startswith(str(static_dir.resolve())):
             self.send_error(HTTPStatus.FORBIDDEN)
             return
-        self._send_file(str(target))
+        self._send_file(
+            str(target),
+            cache_control="public, max-age=3600",
+        )
 
     # ── Route matching ──
 
