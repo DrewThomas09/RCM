@@ -159,12 +159,21 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
     Azure App Service's persistent mount. `create_user` calls
     are now idempotent (catch ValueError on duplicate users)
     so a persistent DB across restarts doesn't crash boot.
-- [ ] DB schema migrations idempotent on cold start.
-  - `infra/migrations.run_pending()` is called by
-    `build_server`; needs verification that all 89-table
-    `CREATE TABLE IF NOT EXISTS` migrations are no-op when
-    the table exists with the expected schema. Cycle 12
-    target.
+- [x] DB schema migrations idempotent on cold start.
+      (iter cycle-12)
+  - `infra/migrations.run_pending()` is verified idempotent
+    by `tests/test_migration_idempotency.py`: boot fresh DB,
+    snapshot `sqlite_master`, boot again on the same path,
+    snapshot again — schemas equal byte-for-byte and
+    `_migrations` row count unchanged. Three runs in a row
+    leave no duplicate registry rows. The `build_server` boot
+    path is also exercised twice end-to-end with the same
+    schema-equality assertion.
+  - Static convention pin: every `CREATE TABLE` statement in
+    `rcm_mc/` uses `IF NOT EXISTS`, verified by AST-aware
+    walker that filters out docstring prose. Catches new
+    tables added without the idempotent guard at PR-time —
+    ie, before they corrupt a live Azure DB on restart.
 
 ## SMOKE TEST (post-deploy)
 
@@ -185,6 +194,23 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
 **Cycle 4-5 update:** 7 of 22 passing (PORT-from-env shipped).
 **Cycle 10 update (2026-04-28):** **13 of 22 passing.**
 **Cycle 11 update (2026-04-28):** **18 of 22 passing.**
+**Cycle 12 update (2026-04-28):** **19 of 22 passing.**
+
+Cycle 12 closed the last code-side row:
+- DATABASE PERSISTENCE — DB schema migrations idempotent on
+  cold start. Pinned by 6 tests in
+  `tests/test_migration_idempotency.py` covering both runtime
+  schema-diff and a static convention check that every
+  `CREATE TABLE` in the codebase uses `IF NOT EXISTS`.
+
+The remaining 3 rows all need a real Azure ship to verify:
+- `/healthz` cold-container <100ms confirmation
+- /login round-trip exercised post-deploy
+- Editorial chrome on `/app` post-deploy
+
+These belong to a "post-ship verification" rather than the
+deploy-readiness gate — the code is ready; the deploy itself
+is the next step.
 
 Cycle 11 closed 5 more rows in one batch:
 1. SECRETS — `secret_key` from env via

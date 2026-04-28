@@ -1022,3 +1022,94 @@ on the code side. Anything left after that is "needs a real
 Azure deploy to verify" and can be folded into the smoke
 suite once shipped. Forward-only.
 
+---
+
+## Cycle 12 build — 2026-04-28 — DB migration idempotency proof
+
+**Step 12 — last code-side deploy-readiness row closed.** Gate
+goes from 18 of 22 (82%) to **19 of 22 (86%)**. The remaining
+3 rows all need a real Azure ship to verify (cold-time
+measurement, post-deploy /login smoke, /app chrome
+verification) — they belong to a "post-ship" gate rather than
+the code-readiness gate. **Code-side deploy-readiness is now
+complete.**
+
+**Step 12 — runtime idempotency proof.** New
+`tests/test_migration_idempotency.py` with 6 tests:
+- `MigrationIdempotencyTests.test_run_pending_is_idempotent_on_persistent_db`
+  — boot fresh DB, capture `sqlite_master` snapshot (DDL +
+  `_migrations` row count), boot again, capture again. Snapshots
+  must be byte-equal. Second `run_pending` must return 0
+  applied (the registry blocks re-application).
+- `MigrationIdempotencyTests.test_build_server_twice_on_same_db_no_drift`
+  — end-to-end exercise of the production boot path
+  (`build_server`) twice on the same DB; schema must not drift.
+- `MigrationIdempotencyTests.test_migrations_registry_records_each_only_once`
+  — three runs in a row must not produce duplicate rows in
+  `_migrations`.
+
+**Step 12 — static convention check.** A regex+continuation-
+peek walker over every `*.py` file in `rcm_mc/` confirms that
+every real `CREATE TABLE` statement uses `IF NOT EXISTS`.
+False positives in docstrings (e.g. "Only CREATE TABLE here —
+schema migrations are a later brick") are filtered out by
+requiring proper SQL continuation (`(` or `AS`) after the
+table name. Catches a new table added without the idempotent
+guard at PR-time, before it would crash an Azure restart.
+
+**Step 12 — registry shape pins.** Two more tests pin the
+migration registry shape so future additions stay
+idempotency-friendly:
+- Each migration name is unique.
+- Each migration SQL is `ALTER TABLE` or `CREATE INDEX` —
+  full `CREATE TABLE` belongs in per-feature `_ensure_table`
+  helpers (which are naturally idempotent via `IF NOT EXISTS`),
+  not the delta-migration registry.
+
+**Files touched this batch.**
+- `tests/test_migration_idempotency.py` — NEW, 6 tests.
+- `docs/AZURE_DEPLOY_CHECKLIST.md` — DB row checked, audit
+  summary updated to 19 of 22, code-side declared complete.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Azure deploy-readiness rows passing: 19 of 22 (was 18) —
+  86% (was 82%).
+- All 11 code-side rows now closed. The remaining 3 rows are
+  ship-side verification:
+  - `/healthz` cold-container <100ms — needs Azure ship
+  - /login round-trip post-deploy — needs Azure ship
+  - Editorial chrome on /app post-deploy — needs Azure ship
+- Total focused tests passing: 181 + 1 documented skip (was
+  175 + 1 in cycle 11).
+- Code lines added: 0 production code; ~190 test code in a
+  new test file.
+
+**Suggested next:** **The code-side deploy-readiness gate is
+done.** Two natural directions:
+
+- **A — ship to Azure.** Apply `deploy/azure-app-service.json`
+  via `az webapp config appsettings set`, set
+  `RCM_MC_CSRF_SECRET`, push the image, and walk the 3
+  remaining rows post-deploy. Closes the deploy-readiness
+  campaign entirely.
+
+- **B — pivot back to editorial polish.** The cycle 7 polish-
+  log queue still has untouched work: `/escalations` +
+  `/my/<owner>` (alerts archetype, reuse `ck_severity_panel`
+  + `ck_affirm_empty`); `/audit` admin surface chrome;
+  per-page chartis-match dives across the 50 data_public
+  pages (beyond label copy).
+
+- **C — connect the two halves.** Add a deploy-time smoke
+  script (`tools/azure_smoke.sh`?) that hits `/healthz`,
+  `/login`, `/app` post-deploy and asserts the chrome strings.
+  When run after a deploy, it would mechanically check the
+  remaining 3 rows.
+
+Recommend **A** — the code is ready; further code work
+without a deploy verification adds risk that some
+deploy-time issue we can't anticipate from local testing
+breaks at ship time. A real Azure ship would either confirm
+deploy-readiness or surface the next gap. Forward-only.
+
