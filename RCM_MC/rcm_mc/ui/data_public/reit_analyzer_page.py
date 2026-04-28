@@ -11,7 +11,7 @@ def _assets_table(items) -> str:
     cols = [("ID","left"),("Asset Type","left"),("Location","left"),("SqFt","right"),
             ("NOI ($M)","right"),("Cap Rate","right"),("Market ($M)","right"),
             ("Book ($M)","right"),("Unrealized Gain ($M)","right"),("Occupancy","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -39,7 +39,7 @@ def _scenarios_table(items) -> str:
     cols = [("Scenario","left"),("Asset Type","left"),("Proceeds ($M)","right"),("Initial Rent ($M)","right"),
             ("Escalation","right"),("Term (yr)","right"),("Coverage (EBITDAR/Rent)","right"),
             ("NPV Benefit ($M)","right"),("Tax Gain ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -66,7 +66,7 @@ def _buyers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Buyer","left"),("Type","left"),("Focus","left"),("Typical Cap","right"),
             ("Avg Deal ($M)","right"),("Pipeline ($M)","right"),("Credit","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -90,7 +90,7 @@ def _coverage_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Metric","left"),("Pre-SLB","right"),("Post-SLB","right"),
             ("Δ %","right"),("Covenant","right"),("Headroom","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -114,7 +114,7 @@ def _uses_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Use of Proceeds","left"),("Allocation %","right"),("Amount ($M)","right"),
             ("Rationale","left"),("MOIC Uplift","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, u in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

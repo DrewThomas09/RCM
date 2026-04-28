@@ -11,7 +11,7 @@ def _entities_table(entities) -> str:
     cols = [("ID","left"),("Type","center"),("Name","left"),("Drug Spend ($M)","right"),
             ("Ceiling Spread ($M)","right"),("CP Count","right"),("Child Sites","right"),
             ("Margin ($M)","right"),("Audit Risk","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     stat_c = {"clean": pos, "minor finding": warn, "monitoring": warn}
     for i, e in enumerate(entities):
@@ -40,7 +40,7 @@ def _drugs_table(drugs) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Drug Category","left"),("Volume (units)","right"),("WAC $/unit","right"),
             ("Ceiling $/unit","right"),("Discount","right"),("Annual Savings ($M)","right"),("Share of Spend","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(drugs):
         rb = panel_alt if i % 2 == 0 else bg
@@ -63,7 +63,7 @@ def _pharmacy_table(pharms) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Pharmacy Type","left"),("Locations","right"),("Claims/mo","right"),
             ("Spread/Claim","right"),("Monthly Margin ($k)","right"),("Annual ($M)","right"),("Integrity Risk","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     risk_c = {"low": text_dim, "medium": warn, "high": neg}
     for i, p in enumerate(pharms):
@@ -88,7 +88,7 @@ def _audits_table(audits) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Audit Area","left"),("Severity","center"),("Exposure ($M)","right"),
             ("Remediation (days)","right"),("Last HRSA Visit","left"),("Status","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sev_c = {"clean": pos, "minor": text_dim, "moderate": warn, "severe": neg}
     for i, a in enumerate(audits):
@@ -112,7 +112,7 @@ def _manufacturer_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Manufacturer","left"),("Restricted Products","right"),("Restriction Type","left"),
             ("Annual Impact ($M)","right"),("Workaround","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -134,7 +134,7 @@ def _medicaid_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("State","left"),("Carve Status","left"),("Avg MAC Rate","right"),
             ("Duplicate Discount Risk","center"),("Gross Margin ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     risk_c = {"low": text_dim, "medium": warn, "high": neg}
     for i, m in enumerate(items):

@@ -30,7 +30,7 @@ def _cases_table(items) -> str:
     cols = [("Case ID","left"),("Deal","left"),("Specialty","left"),("Payer","left"),
             ("Claim ($)","right"),("QPA ($)","right"),("Provider Offer","right"),("Payer Offer","right"),
             ("Selected","center"),("Days","right"),("Status","center"),("Admin Fee","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -60,7 +60,7 @@ def _payers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Payer","left"),("Cases","right"),("Provider Wins","right"),("Provider Win %","right"),
             ("Median Delta","right"),("QPA / Claim","right"),("Posture","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -85,7 +85,7 @@ def _deals_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Deal","left"),("Sector","left"),("OON Revenue ($M)","right"),("Annual IDR Cases","right"),
             ("Avg Case ($M)","right"),("Revenue at Risk ($M)","right"),("QPA vs Charge","right"),("Strategy","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -109,7 +109,7 @@ def _emergency_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Entity","left"),("ED Visits","right"),("OON %","right"),("Avg Charge ($)","right"),
             ("Avg QPA ($)","right"),("Avg Collected ($)","right"),("Bad Debt %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -133,7 +133,7 @@ def _reg_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Event","left"),("Date","right"),("Impact","left"),("Portfolio Impact ($M)","right"),("Status","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

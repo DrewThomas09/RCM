@@ -42,7 +42,7 @@ def _percentile_table(rows) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Metric","left"),("N","right"),("P25","right"),("P50 (Median)","right"),
             ("P75","right"),("P90","right"),("Mean","right"),("Min","right"),("Max","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(rows):
         rb = panel_alt if i % 2 == 0 else bg
@@ -70,7 +70,7 @@ def _sector_table(rows) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Sector","left"),("Deals","right"),("Med EV ($M)","right"),("Med EV/EBITDA","right"),
             ("Med EV/Rev","right"),("Med EBITDA Margin","right"),("Med MOIC","right"),("Med IRR","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(rows[:40]):
         rb = panel_alt if i % 2 == 0 else bg
@@ -94,7 +94,7 @@ def _size_table(rows) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Size Bucket","left"),("Deals","right"),("Med EV/EBITDA","right"),
             ("Med EBITDA Margin","right"),("Med MOIC","right"),("Med Hold Years","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(rows):
         rb = panel_alt if i % 2 == 0 else bg
@@ -115,7 +115,7 @@ def _vintage_table(rows) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Year","left"),("Deals","right"),("Med EV/EBITDA","right"),("Med EBITDA Margin","right"),("Med MOIC","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, v in enumerate(rows):
         rb = panel_alt if i % 2 == 0 else bg
@@ -135,7 +135,7 @@ def _comm_table(rows) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Commercial Share Bucket","left"),("Deals","right"),("Med EV/EBITDA","right"),("Med EBITDA Margin","right"),("Med MOIC","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(rows):
         rb = panel_alt if i % 2 == 0 else bg

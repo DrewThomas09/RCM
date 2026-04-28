@@ -9,7 +9,7 @@ def _plan_vs_actual_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Metric","left"),("Underwritten","right"),("Realized","right"),("Variance %","right"),("Commentary","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -41,7 +41,7 @@ def _attribution_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Lever","left"),("Planned ($M)","right"),("Realized ($M)","right"),("Capture Rate","right"),
             ("What Went Right","left"),("What Went Wrong","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -63,7 +63,7 @@ def _milestones_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Milestone","left"),("Planned","left"),("Actual","left"),("Slipped (days)","right"),("Impact","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -84,7 +84,7 @@ def _lessons_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Category","left"),("Lesson","left"),("Change for Next Deal","left"),("Priority","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     p_c = {"critical": neg, "high": warn, "medium": acc, "low": text_dim}
     for i, l in enumerate(items):
@@ -106,7 +106,7 @@ def _bridge_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Component","left"),("Underwritten ($M)","right"),("Realized ($M)","right"),
             ("Delta ($M)","right"),("Delta %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -128,7 +128,7 @@ def _counter_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Scenario","left"),("Change from Actual","left"),("Est MOIC Delta","right"),("Feasibility","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     f_c = {"high": pos, "medium": acc, "speculative": text_dim, "counterfactual": text_dim, "hypothetical ceiling": acc}
     for i, c in enumerate(items):

@@ -66,7 +66,7 @@ def _population_svg(pop) -> str:
 def _population_table(pop) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Age Band","left"),("2025 (M)","right"),("2030 (M)","right"),("2035 (M)","right"),("5-yr CAGR","right"),("Share 2025","right"),("Share 2035","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(pop):
         rb = panel_alt if i % 2 == 0 else bg
@@ -88,7 +88,7 @@ def _population_table(pop) -> str:
 def _util_table(util) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Year","left"),("Total Pop (M)","right"),("Expected Visits (M)","right"),("vs 2025 Baseline","right"),("Medicare Share","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, u in enumerate(util):
         rb = panel_alt if i % 2 == 0 else bg
@@ -107,7 +107,7 @@ def _util_table(util) -> str:
 def _disease_table(disease) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Disease","left"),("Prevalence 2025","right"),("Prevalence 2035","right"),("Patients 2025 (M)","right"),("Patients 2035 (M)","right"),("10-yr CAGR","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(disease):
         rb = panel_alt if i % 2 == 0 else bg
@@ -128,7 +128,7 @@ def _disease_table(disease) -> str:
 def _volume_table(vol) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Year","left"),("Patient Visits (K)","right"),("Growth vs PY","right"),("Medicare Share","right"),("Commercial Share","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, v in enumerate(vol):
         rb = panel_alt if i % 2 == 0 else bg
@@ -149,7 +149,7 @@ def _opps_table(opps) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     feas_colors = {"high": pos, "medium": P["accent"], "low": P["warning"]}
     cols = [("Opportunity","left"),("Addressable Pop (M)","right"),("Current Pen.","right"),("Target Pen.","right"),("Revenue Opp ($M)","right"),("Feasibility","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, o in enumerate(opps):
         rb = panel_alt if i % 2 == 0 else bg

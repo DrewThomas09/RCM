@@ -10,7 +10,7 @@ def _facilities_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Lender","left"),("Type","center"),("Commit ($M)","right"),("Outstanding ($M)","right"),
             ("Spread (bps)","right"),("All-In Rate","right"),("Tenor (yr)","right"),("Cov-Lite","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -34,7 +34,7 @@ def _rates_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]
     cols = [("Deal Size","left"),("Unitranche (bps)","right"),("First-Lien TL (bps)","right"),
             ("Second-Lien (bps)","right"),("Typical OID","right"),("Closing Fee (bps)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -56,7 +56,7 @@ def _matrix_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Sponsor","left"),("Primary Lender","left"),("Deals LTM","right"),
             ("Total Committed ($M)","right"),("Avg Leverage","right"),("Tier","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     tier_c = {"platinum": pos, "captive": pos, "gold": acc, "silver": text_dim}
     for i, m in enumerate(items):
@@ -80,7 +80,7 @@ def _defaults_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Period","left"),("HC Default %","right"),("Overall Default %","right"),
             ("Amend-Extend Volume","right"),("Covenant Breach","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -101,7 +101,7 @@ def _marks_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Sector","left"),("Par Balance ($M)","right"),("Current Mark","right"),("Unrealized Loss ($M)","right"),("Watch List","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

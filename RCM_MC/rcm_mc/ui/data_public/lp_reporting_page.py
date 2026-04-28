@@ -10,7 +10,7 @@ def _funds_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; warn = P["warning"]
     cols = [("Fund","left"),("Vintage","right"),("Fund Size ($M)","right"),("Called %","right"),
             ("TVPI","right"),("DPI","right"),("RVPI","right"),("Net IRR","right"),("Quartile","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     q_c = {"top quartile": pos, "top decile": pos, "second quartile": acc, "third quartile": warn, "fourth quartile": P["negative"], "too early": text_dim}
     for i, f in enumerate(items):
@@ -39,7 +39,7 @@ def _marks_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Quarter","left"),("NAV ($M)","right"),("Δ %","right"),("Contribs ($M)","right"),
             ("Distribs ($M)","right"),("Cum DPI","right"),("Cum TVPI","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -63,7 +63,7 @@ def _attribution_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Driver","left"),("Q Contribution ($M)","right"),("YTD Contribution ($M)","right"),
             ("% of Value Δ","right"),("Commentary","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -85,7 +85,7 @@ def _benchmarks_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; warn = P["warning"]
     cols = [("Metric","left"),("Fund","right"),("Q1 Bench","right"),("Q2 Bench","right"),
             ("Q3 Bench","right"),("Q4 Bench","right"),("Quartile","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     q_c = {"top decile": pos, "top quartile": pos, "second quartile": acc, "third quartile": warn}
     for i, b in enumerate(items):
@@ -115,7 +115,7 @@ def _companies_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Company","left"),("Sector","left"),("Cost Basis ($M)","right"),
             ("Current FV ($M)","right"),("Marked MOIC","right"),("YTD Δ","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     s_c = {"Active": pos, "Closing Q2 exit": pos, "Watch list": warn, "Held": acc}
     for i, c in enumerate(items):
@@ -141,7 +141,7 @@ def _comms_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; warn = P["warning"]
     cols = [("Date","left"),("Type","center"),("Topic","left"),("Status","center"),("Recipients","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     s_c = {"sent": pos, "completed": pos, "scheduled": acc, "in progress": warn}
     for i, c in enumerate(items):

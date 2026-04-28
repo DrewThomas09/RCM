@@ -10,7 +10,7 @@ def _segments_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; warn = P["warning"]
     cols = [("Segment","left"),("Customers","right"),("ACV ($k)","right"),("ARR ($M)","right"),
             ("NRR","right"),("Gross Churn","right"),("LTV ($k)","right"),("CAC Payback (mo)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -35,7 +35,7 @@ def _products_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Product","left"),("Category","center"),("ARR ($M)","right"),("YoY Growth","right"),("Gross Margin","right"),("Users","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -57,7 +57,7 @@ def _metrics_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; warn = P["warning"]
     cols = [("Metric","left"),("Current","right"),("Top Quartile","right"),("Median","right"),("Percentile","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -85,7 +85,7 @@ def _tam_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Sub-TAM","left"),("TAM ($M)","right"),("Serviceable ($M)","right"),("Current Penetration","right"),
             ("Y3 Target","right"),("Revenue Opportunity ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -106,7 +106,7 @@ def _comps_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; neg = P["negative"]
     cols = [("Company","left"),("ARR ($M)","right"),("Growth","right"),("EV/Rev Mult","right"),("Implied EV ($M)","right"),("Profile","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

@@ -10,7 +10,7 @@ def _dimensions_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Dimension","left"),("Current","right"),("IPO Threshold","right"),("Strategic","right"),
             ("S2S","right"),("Gap to IPO","right"),("Notes","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -35,7 +35,7 @@ def _paths_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Exit Path","left"),("Readiness","right"),("Timing (mo)","right"),("Expected EV ($M)","right"),
             ("Multiple","right"),("Advantages","left"),("Risks","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -58,7 +58,7 @@ def _remediations_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Area","left"),("Action","left"),("Priority","center"),("Cost ($M)","right"),("Timeline (mo)","right"),("Score Uplift","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     pri_c = {"critical for IPO": neg, "critical": neg, "high": warn, "medium": P["accent"]}
     for i, r in enumerate(items):
@@ -81,7 +81,7 @@ def _financial_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]
     cols = [("Metric","left"),("Current","right"),("IPO Benchmark","right"),("Strategic Benchmark","right"),("Assessment","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -101,7 +101,7 @@ def _comps_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Comparable","left"),("Sector","left"),("Exit Year","right"),("EV ($M)","right"),("Multiple","right"),("Path","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

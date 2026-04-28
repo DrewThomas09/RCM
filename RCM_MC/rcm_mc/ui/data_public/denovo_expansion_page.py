@@ -10,7 +10,7 @@ def _sites_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; warn = P["warning"]
     cols = [("Site Type","left"),("Capex ($M)","right"),("Working Cap ($M)","right"),("Total Inv ($M)","right"),
             ("Stab EBITDA ($M)","right"),("Ramp (mo)","right"),("Payback (yr)","right"),("Y1 Rev ($M)","right"),("Y3 Rev ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -36,7 +36,7 @@ def _markets_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Market","left"),("Region","center"),("Population (000)","right"),("Competitors","right"),
             ("Demand Score","right"),("Target Sites","right"),("Investment ($M)","right"),("Expected EBITDA ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -61,7 +61,7 @@ def _ramp_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Month","right"),("Visits/Day","right"),("Revenue ($M)","right"),("Expense ($M)","right"),
             ("EBITDA ($M)","right"),("Cumulative FCF ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -85,7 +85,7 @@ def _lease_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Scenario","left"),("Upfront ($M)","right"),("Annual Cost ($M)","right"),("Tenure (yr)","right"),
             ("NPV 10yr ($M)","right"),("Flexibility","right"),("Exit Value ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, lb in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -109,7 +109,7 @@ def _blend_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Category","left"),("Deals","right"),("Investment ($M)","right"),("EBITDA Added ($M)","right"),
             ("Avg Multiple","right"),("Payback (yr)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

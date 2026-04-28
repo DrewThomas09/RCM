@@ -62,7 +62,7 @@ def _spend_table(cats) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     var_colors = {"above": P["negative"], "benchmark": P["accent"], "below": P["positive"]}
     cols = [("Category","left"),("Annual Spend ($M)","right"),("% of Rev","right"),("% of Supply","right"),("Benchmark %","right"),("Variance","left"),("Top Vendor","left"),("Vendor Share","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(cats):
         rb = panel_alt if i % 2 == 0 else bg
@@ -86,7 +86,7 @@ def _levers_table(levers) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     risk_colors = {"low": pos, "medium": P["warning"], "high": P["negative"]}
     cols = [("Lever","left"),("Current","left"),("Target","left"),("Annual Savings ($M)","right"),("One-Time ($M)","right"),("Timeline (mo)","right"),("Risk","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, l in enumerate(levers):
         rb = panel_alt if i % 2 == 0 else bg
@@ -109,7 +109,7 @@ def _vendors_table(vendors) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     risk_colors = {"low": P["positive"], "medium": P["warning"], "high": P["negative"], "critical": P["negative"]}
     cols = [("Vendor","left"),("Category","left"),("Annual Spend ($M)","right"),("Contract End","right"),("Alternatives","right"),("Switching Cost ($M)","right"),("Risk","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, v in enumerate(vendors):
         rb = panel_alt if i % 2 == 0 else bg
@@ -133,7 +133,7 @@ def _capex_table(projects) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     prio_colors = {"high": P["negative"], "medium": P["warning"], "low": P["text_faint"]}
     cols = [("Project","left"),("One-Time ($M)","right"),("Annual Savings ($M)","right"),("Payback (yrs)","right"),("Strategic Value","left"),("Priority","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(projects):
         rb = panel_alt if i % 2 == 0 else bg
@@ -156,7 +156,7 @@ def _inventory_table(inv) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     stat_colors = {"above-benchmark": P["negative"], "above": P["negative"], "below": P["warning"], "benchmark": P["positive"]}
     cols = [("Metric","left"),("Current","right"),("Benchmark","right"),("Unit","left"),("Status","left"),("Capital Tied Up ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, k in enumerate(inv):
         rb = panel_alt if i % 2 == 0 else bg

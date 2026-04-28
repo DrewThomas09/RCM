@@ -10,7 +10,7 @@ def _components_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Measure","left"),("Domain","center"),("LIS/Dual","right"),("Non-LIS","right"),
             ("Gap","right"),("Weight","right"),("Points","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -34,7 +34,7 @@ def _sdoh_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Domain","left"),("Screened","right"),("Positive Screen","right"),("Closed-Loop Referral","right"),
             ("Intervention PMPY","right"),("ROI Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -58,7 +58,7 @@ def _investments_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Initiative","left"),("Category","center"),("Annual Cost ($M)","right"),("Lives Impacted","right"),
             ("Outcome","left"),("HEI Δ","right"),("Star Bonus Impact ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, inv in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -81,7 +81,7 @@ def _demographics_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Segment","left"),("Pop (000)","right"),("Avg RAF","right"),("Preventive Util","right"),
             ("ED/1000","right"),("HEDIS Composite","right"),("Disparity Flag","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

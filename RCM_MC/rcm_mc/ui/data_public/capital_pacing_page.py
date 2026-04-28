@@ -11,7 +11,7 @@ def _cashflow_table(items) -> str:
     cols = [("Year","left"),("Called ($M)","right"),("Cum Called ($M)","right"),
             ("Deployed ($M)","right"),("Distributions ($M)","right"),("Cum Dist ($M)","right"),
             ("NAV ($M)","right"),("Total Value ($M)","right"),("DPI","right"),("TVPI","right"),("Interim IRR","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, cf in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -41,7 +41,7 @@ def _investments_table(items) -> str:
     cols = [("ID","left"),("Sector","left"),("Inv Year","right"),("Initial ($M)","right"),
             ("Follow-On ($M)","right"),("Total Inv ($M)","right"),("Current FV ($M)","right"),
             ("Proj MOIC","right"),("Exit Year","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, inv in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -68,7 +68,7 @@ def _vintage_table(items, current_vintage: int) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Vintage","left"),("Fund Size ($M)","right"),("Current TVPI","right"),
             ("Current DPI","right"),("Projected MOIC","right"),("Projected IRR","right"),("Age (yr)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, v in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -94,7 +94,7 @@ def _commitments_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Category","left"),("Committed ($M)","right"),("Deployed ($M)","right"),
             ("Utilization","right"),("Remaining ($M)","right"),("Status","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

@@ -10,7 +10,7 @@ def _hhi_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Market","left"),("MSA","left"),("Pre-Merger HHI","right"),("Post-Merger HHI","right"),
             ("Δ HHI","right"),("CR3 Share","right"),("Flag","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     flag_c = {"highly concentrated": neg, "moderately concentrated": warn, "unconcentrated": pos}
     for i, h in enumerate(items):
@@ -36,7 +36,7 @@ def _hsr_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Threshold","left"),("Current Value ($M)","right"),("Threshold Value ($M)","right"),
             ("Filing Required","center"),("Waiting Period (days)","right"),("Filing Fee ($k)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -59,7 +59,7 @@ def _overlaps_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Geography","left"),("Platform Share","right"),("Target Share","right"),("Combined","right"),
             ("Next Competitor","right"),("Severity","center"),("Remediation","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sev_c = {"severe — likely 2R": neg, "material — monitor": warn, "moderate": warn, "low": text_dim}
     for i, o in enumerate(items):
@@ -84,7 +84,7 @@ def _case_law_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]
     cols = [("Case","left"),("Year","right"),("Parties","left"),("Outcome","left"),("Precedent","left"),("Relevance","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -107,7 +107,7 @@ def _states_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("State","left"),("Trigger","left"),("Notice (days)","right"),("Fee ($k)","right"),
             ("AG Posture","center"),("Challenge Rate","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     post_c = {"active scrutiny": neg, "active review": warn, "standard review": text_dim, "minimal scrutiny": pos}
     for i, s in enumerate(items):
@@ -132,7 +132,7 @@ def _remediations_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Option","left"),("Description","left"),("Timeline (mo)","right"),
             ("Cost ($M)","right"),("Deal Value Impact","right"),("Probability of Approval","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

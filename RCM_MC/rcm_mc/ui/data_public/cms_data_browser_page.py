@@ -11,7 +11,7 @@ def _datasets_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Dataset","left"),("Category","center"),("Update Freq","center"),("Last Refresh","center"),
             ("Records","right"),("Primary Use","left"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -35,7 +35,7 @@ def _fee_schedule_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("CPT/HCPCS","left"),("Descriptor","left"),("Work RVU","right"),("Total RVU","right"),
             ("Facility Rate","right"),("Non-Facility Rate","right"),("Year","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -58,7 +58,7 @@ def _drg_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("MS-DRG","left"),("Description","left"),("Weight","right"),("Geo LOS","right"),
             ("Arith LOS","right"),("Base Payment ($)","right"),("FY","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -81,7 +81,7 @@ def _hcris_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Provider Type","left"),("Reports","right"),("Filing Year","right"),("Median Occupancy","right"),
             ("Median Margin","right"),("Median CMI","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, h in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -104,7 +104,7 @@ def _connections_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Source","left"),("Endpoint","left"),("Version","center"),("Auth","center"),
             ("Rate Limit","center"),("Cache TTL (hr)","right"),("Last Pull","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -128,7 +128,7 @@ def _quality_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Measure","left"),("Program","center"),("Type","center"),("Reporting Year","right"),
             ("National Median","right"),("Measure Steward","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, q in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

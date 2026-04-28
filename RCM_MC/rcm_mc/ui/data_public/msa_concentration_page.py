@@ -10,7 +10,7 @@ def _msas_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("MSA","left"),("Specialty","center"),("Providers","right"),("HHI","right"),
             ("CR3","right"),("CR5","right"),("Structure","center"),("Top Operator","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     s_c = {"fragmented": pos, "moderately concentrated": warn, "highly concentrated": neg}
     for i, m in enumerate(items):
@@ -38,7 +38,7 @@ def _regimes_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Regime","left"),("Description","left"),("HHI Range","right"),("CR3 Range","right"),
             ("Typical MOIC","right"),("Typical Hold (yr)","right"),("MSAs in Sample","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -62,7 +62,7 @@ def _whitespace_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; warn = P["warning"]
     cols = [("MSA","left"),("State","center"),("Pop (000)","right"),("Providers","right"),
             ("Top Share","right"),("CR3","right"),("Whitespace Score","right"),("Priority","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     p_c = {"priority expansion": pos, "active target": acc, "fill-in": warn, "selective": text_dim}
     for i, w in enumerate(items):
@@ -89,7 +89,7 @@ def _stress_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Scenario","left"),("HHI Delta","right"),("CR3 Delta","right"),
             ("Likely FTC Action","center"),("Value at Risk ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -112,7 +112,7 @@ def _operators_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Operator","left"),("Markets Active","right"),("Practices","right"),
             ("Providers","right"),("Median HHI Contribution","right"),("Strategy","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, o in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

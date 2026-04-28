@@ -10,7 +10,7 @@ def _drugs_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Drug","left"),("Therapy","center"),("Shortage Status","left"),("Sole-Source","center"),
             ("Annual Volume","right"),("Substitute","center"),("Spend ($M)","right"),("Days on Hand","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -38,7 +38,7 @@ def _suppliers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Supplier","left"),("Category","left"),("Spend ($M)","right"),("Category Share","right"),
             ("Country","left"),("Audit History","left"),("Risk Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -62,7 +62,7 @@ def _geo_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Country","left"),("Product Categories","right"),("Spend Exposure ($M)","right"),
             ("Tariff Risk","right"),("Geopolitical Risk","center"),("Diversification Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     gr_c = {"very low": pos, "low": pos, "moderate": warn, "elevated": neg, "hurricane risk": warn}
     for i, g in enumerate(items):
@@ -87,7 +87,7 @@ def _playbooks_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Scenario","left"),("Probability","right"),("Financial Impact ($M)","right"),
             ("Operational Impact","left"),("Mitigation","center"),("Lead Time (days)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -110,7 +110,7 @@ def _gpo_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
     cols = [("GPO","left"),("Contracts","right"),("Annual Volume ($M)","right"),
             ("On-Time Fill","right"),("Backorder Rate","right"),("Price Stability","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, g in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

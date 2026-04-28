@@ -11,7 +11,7 @@ def _cohorts_table(items) -> str:
     cols = [("Year","left"),("Targets Closed","right"),("Avg Entry Mult","right"),
             ("Avg EV ($M)","right"),("Total Deployed ($M)","right"),
             ("Synergy Capture","right"),("Integ Time (mo)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -34,7 +34,7 @@ def _arb_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Stage","left"),("EBITDA ($M)","right"),("Implied Multiple","right"),
             ("Implied EV ($M)","right"),("Incremental Value ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -56,7 +56,7 @@ def _synergy_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Category","left"),("Annual Run-Rate ($M)","right"),("Capture (mo)","right"),
             ("One-Time Cost ($M)","right"),("Exec Risk","center"),("Confidence","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     risk_c = {"low": text_dim, "medium": warn, "high": neg}
     conf_c = {"low": neg, "medium": warn, "high": pos}
@@ -82,7 +82,7 @@ def _integration_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; warn = P["warning"]
     cols = [("Workstream","left"),("$/Add-On ($k)","right"),("Total Cost ($M)","right"),
             ("Duration (mo)","right"),("Peak FTE","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, ic in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -103,7 +103,7 @@ def _debt_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Stage","left"),("EBITDA ($M)","right"),("Leverage","right"),
             ("Max Debt ($M)","right"),("Equity Check ($M)","right"),("Dry Powder ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -127,7 +127,7 @@ def _walk_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Period","left"),("Standalone ($M)","right"),("Acquired ($M)","right"),
             ("Synergies ($M)","right"),("Total EBITDA ($M)","right"),("Organic Growth","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, w in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -151,7 +151,7 @@ def _exit_table(items) -> str:
     cols = [("Scenario","left"),("Exit EBITDA ($M)","right"),("Multiple","right"),
             ("Exit EV ($M)","right"),("Less Debt ($M)","right"),("Equity Proceeds ($M)","right"),
             ("MOIC","right"),("IRR","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

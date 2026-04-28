@@ -26,7 +26,7 @@ def _deals_table(items) -> str:
     cols = [("Deal","left"),("Sector","left"),("Pre-PHE Medicaid %","right"),("Current Medicaid %","right"),
             ("Medicaid Lost (K)","right"),("→ ACA %","right"),("→ Commercial %","right"),
             ("→ Self-Pay %","right"),("→ Back Medicaid %","right"),("Rev Impact ($M)","right"),("Mitigation","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -53,7 +53,7 @@ def _states_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("State","left"),("Disenrolled (M)","right"),("Pre-PHE (M)","right"),("Disenroll %","right"),
             ("Procedural %","right"),("Gain ACA %","right"),("Back to Medicaid %","right"),("Portfolio Deals","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -79,7 +79,7 @@ def _shifts_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
     cols = [("From","left"),("To","left"),("Members Shifted (M)","right"),
             ("Rev/Patient Δ","right"),("Portfolio Impact ($M)","right"),("Retention Strategy","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -103,7 +103,7 @@ def _ops_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("Deal","left"),("Self-Pay AR Days","right"),("Self-Pay Coll %","right"),("Charity Care Growth","right"),
             ("Fin Assist Apps","right"),("Settlement %","right"),("Bad Debt Growth","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, o in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -129,7 +129,7 @@ def _programs_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Program","left"),("Deals","right"),("Members Assisted (K)","right"),("Re-enrolled Medicaid %","right"),
             ("ACA %","right"),("Self-Pay %","right"),("Cost/Member ($)","right"),("Revenue Preserved ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -153,7 +153,7 @@ def _timelines_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]
     cols = [("State","left"),("Unwinding Start","right"),("First Renewals","right"),
             ("Projected End","right"),("Total Disenrolled (K)","right"),("Pace","center"),("Posture","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

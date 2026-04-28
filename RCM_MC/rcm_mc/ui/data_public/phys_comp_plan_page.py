@@ -10,7 +10,7 @@ def _models_table(models) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Plan Type","left"),("Base %","right"),("Prod %","right"),("Quality %","right"),
             ("Call %","right"),("Signing %","right"),("Ramp (mo)","right"),("Retention","right"),("Suitable For","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(models):
         rb = panel_alt if i % 2 == 0 else bg
@@ -37,7 +37,7 @@ def _providers_table(providers) -> str:
     cols = [("Provider","left"),("Specialty","left"),("wRVUs","right"),("Pctile","right"),
             ("Base ($k)","right"),("Prod ($k)","right"),("Quality ($k)","right"),("Call ($k)","right"),
             ("Total ($k)","right"),("$/wRVU","right"),("Comp/Coll","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(providers):
         rb = panel_alt if i % 2 == 0 else bg
@@ -65,7 +65,7 @@ def _quality_table(pools) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]
     cols = [("Quality Metric","left"),("Weight","right"),("Threshold","left"),("Max Bonus","right"),("Current","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, q in enumerate(pools):
         rb = panel_alt if i % 2 == 0 else bg
@@ -86,7 +86,7 @@ def _sims_table(sims) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Scenario","left"),("Top 10% ($k)","right"),("Median ($k)","right"),("Bottom 10% ($k)","right"),
             ("Total Pool ($M)","right"),("Retention","right"),("Recruit Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(sims):
         rb = panel_alt if i % 2 == 0 else bg
@@ -110,7 +110,7 @@ def _benchmarks_table(benchmarks) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Specialty","left"),("MGMA Median ($k)","right"),("Our Median ($k)","right"),("Delta","right"),("Position","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     pos_colors = {"above market": pos, "at market": P["accent"], "below market": neg}
     for i, b in enumerate(benchmarks):

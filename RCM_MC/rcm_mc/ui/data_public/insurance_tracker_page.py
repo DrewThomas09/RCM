@@ -36,7 +36,7 @@ def _coverages_table(coverages) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     trend_colors = {"hardening": P["negative"], "stable": P["accent"], "softening": P["positive"]}
     cols = [("Coverage Type","left"),("Premium ($M)","right"),("% of Rev","right"),("Limits ($M)","right"),("Retention ($M)","right"),("Carrier","left"),("Renewal","left"),("Market Trend","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(coverages):
         rb = panel_alt if i % 2 == 0 else bg
@@ -59,7 +59,7 @@ def _coverages_table(coverages) -> str:
 def _specialty_table(specs) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Specialty","left"),("Headcount","right"),("Premium/Provider ($K)","right"),("Total Annual ($K)","right"),("Claim Freq /100","right"),("Avg Severity ($K)","right"),("Loss Ratio","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(specs):
         rb = panel_alt if i % 2 == 0 else bg
@@ -82,7 +82,7 @@ def _claims_table(claims) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     stat_colors = {"open": P["warning"], "litigation": P["negative"], "settled": P["accent"], "closed": P["positive"]}
     cols = [("Claim ID","left"),("Specialty","left"),("Accident Year","right"),("Reserve ($M)","right"),("Case ($M)","right"),("Status","left"),("Projected Resolution","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(claims):
         rb = panel_alt if i % 2 == 0 else bg
@@ -104,7 +104,7 @@ def _claims_table(claims) -> str:
 def _tail_table(tail) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Structure","left"),("Upfront Cost ($M)","right"),("Coverage (yrs)","right"),("Ongoing Risk ($M)","right"),("Recommended","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(tail):
         rb = panel_alt if i % 2 == 0 else bg
@@ -125,7 +125,7 @@ def _tail_table(tail) -> str:
 def _captive_table(captive) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Structure","left"),("Retained Loss ($M)","right"),("Tax Benefit ($M)","right"),("Admin Cost ($M)","right"),("Net Benefit ($M)","right"),("Viable","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(captive):
         rb = panel_alt if i % 2 == 0 else bg

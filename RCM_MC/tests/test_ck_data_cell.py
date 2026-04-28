@@ -19,10 +19,14 @@ class CkDataCellTests(unittest.TestCase):
             html, '<td class="ck-cell">hello</td>',
         )
 
-    def test_header_cell_emits_th(self):
+    def test_header_cell_emits_th_with_table_head_class(self):
+        # Cycle 30 — is_header=True now adds ck-data-table-head
+        # so header cells pick up the editorial caps + spacing
+        # + border-bottom styling automatically.
         html = ck_data_cell("Header", is_header=True)
         self.assertEqual(
-            html, '<th class="ck-cell">Header</th>',
+            html,
+            '<th class="ck-cell ck-data-table-head">Header</th>',
         )
 
     def test_mono_cell_adds_mono_class(self):

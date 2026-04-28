@@ -28,7 +28,7 @@ def _portfolios_table(items) -> str:
     cols = [("Deal","left"),("Sector","left"),("MA Lives (K)","right"),("Avg RAF","right"),
             ("Prior RAF","right"),("RAF Trend","right"),("MA Rev ($M)","right"),
             ("$ per RAF pt","right"),("Coding Intensity","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -55,7 +55,7 @@ def _hcc_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("HCC","left"),("Description","left"),("Members (K)","right"),("Open Suspects","right"),
             ("Closure Rate","right"),("Opportunity ($M)","right"),("Priority","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, h in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -81,7 +81,7 @@ def _coding_table(items) -> str:
     cols = [("Deal","left"),("Documentation Score","right"),("MRA Quality","right"),
             ("Auto-Adjudicated %","right"),("Provider Training","right"),
             ("Chart Review Cov","right"),("Prospective Coding","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -105,7 +105,7 @@ def _radv_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; neg = P["negative"]
     cols = [("Deal","left"),("Current RAF","right"),("Extrap Recovery ($M)","right"),
             ("Sample","right"),("Error %","right"),("Likely Payback ($M)","right"),("Max Exposure ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -129,7 +129,7 @@ def _v28_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; neg = P["negative"]
     cols = [("Category","left"),("Members (K)","right"),("V24 RAF","right"),("V28 RAF","right"),
             ("Delta","right"),("Revenue Impact ($M)","right"),("Mitigation","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, v in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -152,7 +152,7 @@ def _programs_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Program","left"),("Deals","right"),("Members Engaged (K)","right"),("Gaps Closed","right"),
             ("RAF Uplift","right"),("Revenue Captured ($M)","right"),("Cost per Gap ($K)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

@@ -39,7 +39,7 @@ def _tier_svg(tiers) -> str:
 def _tiers_table(tiers) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Tier","left"),("Partners","right"),("Base Salary ($K)","right"),("Qtrly Distributions ($M)","right"),("Equity %","right"),("Buy-in Value ($M)","right"),("Total Comp ($K)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(tiers):
         rb = panel_alt if i % 2 == 0 else bg
@@ -60,7 +60,7 @@ def _tiers_table(tiers) -> str:
 def _cash_flow_table(cf) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Year","left"),("Salary ($K)","right"),("Distributions ($M)","right"),("Pretax Total ($M)","right"),("Fed Tax","right"),("State","right"),("SE Tax","right"),("Total Tax","right"),("After-Tax Take-Home ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(cf):
         rb = panel_alt if i % 2 == 0 else bg
@@ -84,7 +84,7 @@ def _buy_in_table(structures) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     risk_colors = {"low": P["positive"], "medium": P["warning"], "high": P["negative"]}
     cols = [("Structure","left"),("Buy-in ($M)","right"),("Source","left"),("Annual Cost ($M)","right"),("Years to Recoup","right"),("Risk","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(structures):
         rb = panel_alt if i % 2 == 0 else bg
@@ -106,7 +106,7 @@ def _vs_table(rows) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     fav_colors = {"partner": P["positive"], "employee": P["negative"], "even": P["text_faint"]}
     cols = [("Metric","left"),("Employee","left"),("Partner","left"),("Delta","left"),("Favors","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(rows):
         rb = panel_alt if i % 2 == 0 else bg
@@ -126,7 +126,7 @@ def _vs_table(rows) -> str:
 def _exit_table(exits) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Role","left"),("Equity %","right"),("Gross Proceeds ($M)","right"),("Carry Paid ($M)","right"),("Tax ($M)","right"),("Net Proceeds ($M)","right"),("MOIC on Buy-in","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(exits):
         rb = panel_alt if i % 2 == 0 else bg
@@ -153,7 +153,7 @@ def _recruit_table(recruits) -> str:
         "very low — gap coverage": P["negative"],
     }
     cols = [("Scenario","left"),("Years to Partner","right"),("Comp Y1 ($K)","right"),("Comp Partnership ($K)","right"),("5-yr Value ($M)","right"),("Retention Impact","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(recruits):
         rb = panel_alt if i % 2 == 0 else bg

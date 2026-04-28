@@ -92,7 +92,7 @@ def _yearly_stack_svg(yearly) -> str:
 def _flow_table(flow) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Year","left"),("EBITDA","right"),("Interest","right"),("Taxes","right"),("Capex","right"),("FCF","right"),("Cum FCF","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(flow):
         rb = panel_alt if i % 2 == 0 else bg
@@ -114,7 +114,7 @@ def _options_table(options) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     risk_colors = {"low": pos, "medium": P["warning"], "high": P["negative"]}
     cols = [("Option","left"),("Capital ($M)","right"),("Expected IRR","right"),("MOIC","right"),("Risk","left"),("Strategic Value","left"),("Exit Impact ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, o in enumerate(options):
         rb = panel_alt if i % 2 == 0 else bg
@@ -136,7 +136,7 @@ def _options_table(options) -> str:
 def _scenarios_table(scenarios) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Scenario","left"),("Bolt-ons","right"),("Organic ($M)","right"),("Debt Paydown ($M)","right"),("Dividend ($M)","right"),("Terminal EBITDA","right"),("Exit EV","right"),("MOIC","right"),("IRR","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(scenarios):
         rb = panel_alt if i % 2 == 0 else bg
@@ -160,7 +160,7 @@ def _scenarios_table(scenarios) -> str:
 def _yearly_table(yearly) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Year","left"),("Available FCF ($M)","right"),("Bolt-ons","right"),("Organic","right"),("Debt Paydown","right"),("Dividend","right"),("Retained","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, y in enumerate(yearly):
         rb = panel_alt if i % 2 == 0 else bg

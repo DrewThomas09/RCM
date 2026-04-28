@@ -27,7 +27,7 @@ def _systems_table(items) -> str:
     cols = [("Deal","left"),("Vendor","left"),("Product","left"),("Use Case","left"),
             ("FDA Status","center"),("Clinical Domain","left"),("Deployed","right"),
             ("Sites","right"),("Monthly Cases (K)","right"),("License ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -54,7 +54,7 @@ def _outcomes_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("System","left"),("Deal","left"),("Accuracy","right"),("Sensitivity","right"),
             ("Specificity","right"),("Time Saved (min)","right"),("Revenue ($M)","right"),("Satisfaction","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, o in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -80,7 +80,7 @@ def _adoption_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("Deal","left"),("Total Clinicians","right"),("Trained","right"),("Active","right"),
             ("Daily Usage","right"),("Override Rate","right"),("Complaints","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -105,7 +105,7 @@ def _fda_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Vendor","left"),("Product","left"),("Type","center"),("K Number","center"),
             ("Cleared","right"),("Intended Use","left"),("Predicate","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -128,7 +128,7 @@ def _eval_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Vendor","left"),("Product","left"),("Stage","center"),("Deals","right"),
             ("Expected Close","right"),("Competitors","left"),("Risk","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -154,7 +154,7 @@ def _gov_table(items) -> str:
     cols = [("Deal","left"),("AIACE Framework","center"),("Audit Freq","center"),
             ("Bias Monitoring","center"),("Clinical Oversight","center"),("Patient Disclosure","center"),
             ("HIPAA BAA","center"),("Compliance Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     def yn(b):
         c = pos if b else P["warning"]

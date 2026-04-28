@@ -11,7 +11,7 @@ def _init_table(items) -> str:
     cols = [("Use Case","left"),("Category","center"),("Stage","center"),("Spend ($M)","right"),
             ("Savings ($M)","right"),("Rev Lift ($M)","right"),("Net ROI","right"),
             ("Adoption","right"),("P2P (mo)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     stg_c = {"production": pos, "pilot": acc, "concept": text_dim}
     for i, it in enumerate(items):
@@ -40,7 +40,7 @@ def _vendors_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Vendor","left"),("Category","left"),("Contract ($M)","right"),("Integration","left"),
             ("Clinical Accuracy","right"),("User NPS","right"),("Tier","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     tier_c = {"platinum": pos, "gold": acc, "silver": text_dim, "divested": neg}
     for i, v in enumerate(items):
@@ -67,7 +67,7 @@ def _governance_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Model","left"),("Use Case","left"),("FDA Class","center"),("Bias Audit","left"),
             ("Drift Monitoring","left"),("Last Validation","left"),("Risk Tier","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     r_c = {"low": pos, "medium": warn, "high": neg}
     for i, g in enumerate(items):
@@ -92,7 +92,7 @@ def _roi_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Bucket","left"),("Spend ($M)","right"),("Savings ($M)","right"),("ROI Multiple","right"),
             ("Payback (mo)","right"),("Strategic Value","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sv_c = {"high": pos, "medium": acc, "low": text_dim}
     for i, b in enumerate(items):
@@ -117,7 +117,7 @@ def _regulation_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; pos = P["positive"]
     cols = [("Regulation","left"),("Applicability","left"),("Compliance","left"),
             ("Gap","left"),("Remediation ($M)","right"),("Deadline","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

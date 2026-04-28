@@ -23,7 +23,7 @@ def _credits_table(items) -> str:
     cols = [("Deal","left"),("Type","left"),("Credit Name","left"),("Year","right"),
             ("Gross ($M)","right"),("Carryforward ($M)","right"),("Utilized ($M)","right"),
             ("Remaining ($M)","right"),("Expires","right"),("Counsel","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -50,7 +50,7 @@ def _state_table(items) -> str:
     cols = [("Deal","left"),("State","center"),("Program","left"),("Type","left"),
             ("Award ($M)","right"),("Period (yrs)","right"),("Annual ($M)","right"),
             ("Obligations","left"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -77,7 +77,7 @@ def _qoz_table(items) -> str:
     cols = [("Project","left"),("Deal","left"),("QOZ Tract","center"),("Invested ($M)","right"),
             ("Invested Date","right"),("Hold Remaining (yrs)","right"),("Deferred Gain ($M)","right"),
             ("Projected Exit ($M)","right"),("Step-Up Basis","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, z in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -103,7 +103,7 @@ def _wotc_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal","left"),("Annual Hires","right"),("Eligible Hires","right"),("Eligible %","right"),
             ("Annual Credit ($M)","right"),("Credits Since Inception ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, w in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -126,7 +126,7 @@ def _tp_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal","left"),("Structure","left"),("Annual Benefit ($M)","right"),
             ("Risk Level","center"),("Documentation","left"),("Counsel","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -150,7 +150,7 @@ def _pipeline_table(items) -> str:
     cols = [("Opportunity","left"),("Deal","left"),("Credit Type","left"),
             ("Annual Benefit ($M)","right"),("Implementation Cost ($M)","right"),
             ("Probability","right"),("Timeline (mo)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

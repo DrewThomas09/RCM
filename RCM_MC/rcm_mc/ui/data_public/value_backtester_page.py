@@ -11,7 +11,7 @@ def _levers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Lever","left"),("Target ($M)","right"),("Base Rate P50 ($M)","right"),
             ("Base Rate P75 ($M)","right"),("Realization %","right"),("Risk-Adj ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, lv in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -34,7 +34,7 @@ def _buckets_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Sector","left"),("Vintage","center"),("Size","center"),("N","right"),
             ("Realized MOIC P25","right"),("P50","right"),("P75","right"),("Mean","right"),("IRR P50","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items[:40]):
         rb = panel_alt if i % 2 == 0 else bg
@@ -60,7 +60,7 @@ def _calibration_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Predicted MOIC","right"),("Realized P25","right"),("Realized P50","right"),
             ("Realized P75","right"),("N Deals","right"),("Calibration Error","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -83,7 +83,7 @@ def _attribution_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Driver","left"),("Correlation","right"),("P50 Realized MOIC","right"),
             ("P75 Realized MOIC","right"),("Signal","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sig_c = {"strong": pos, "moderate": warn, "negative": neg}
     for i, a in enumerate(items):
@@ -107,7 +107,7 @@ def _comparables_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Comparable Deal","left"),("Sector","left"),("Year","right"),
             ("Entry Mult","right"),("Realized MOIC","right"),("Hold (yr)","right"),("Similarity","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

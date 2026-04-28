@@ -61,7 +61,7 @@ def _cohort_table(cohorts) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     sev_colors = {"critical": P["negative"], "high": P["negative"], "medium": P["warning"], "low": P["text_faint"]}
     cols = [("Role","left"),("Headcount","right"),("Turnover %","right"),("Expected Dep","right"),("Replacement Cost ($M)","right"),("Revenue/Provider ($M)","right"),("Lost Revenue ($M)","right"),("Severity","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(cohorts):
         rb = panel_alt if i % 2 == 0 else bg
@@ -85,7 +85,7 @@ def _drivers_table(drivers) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     trend_colors = {"rising": P["negative"], "stable": P["accent"], "declining": P["positive"]}
     cols = [("Driver","left"),("Contribution %","right"),("Trend","left"),("Addressable","left"),("Fix Timeline","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(drivers):
         rb = panel_alt if i % 2 == 0 else bg
@@ -106,7 +106,7 @@ def _drivers_table(drivers) -> str:
 def _at_risk_table(at_risk) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("ID","left"),("Role","left"),("Tenure (yr)","right"),("wRVU %ile","right"),("Rev Contribution ($M)","right"),("Retention Score","right"),("Flight-Risk Factors","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(at_risk):
         rb = panel_alt if i % 2 == 0 else bg
@@ -129,7 +129,7 @@ def _levers_table(levers) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     prio_colors = {"high": P["negative"], "medium": P["warning"], "low": P["text_faint"]}
     cols = [("Lever","left"),("One-Time Cost ($M)","right"),("Annual Cost ($M)","right"),("Retention Lift","right"),("Addressable HC","right"),("Retained Rev ($M)","right"),("ROI","right"),("Priority","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, l in enumerate(levers):
         rb = panel_alt if i % 2 == 0 else bg
@@ -155,7 +155,7 @@ def _succession_table(succession) -> str:
     gap_colors = {"critical": P["negative"], "high": P["negative"], "medium": P["warning"], "low": P["positive"]}
     succ_colors = {"yes": P["positive"], "developing": P["warning"], "no": P["negative"]}
     cols = [("Role","left"),("Current Tenure (yr)","right"),("Successor","left"),("Gap Severity","left"),("Readiness %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(succession):
         rb = panel_alt if i % 2 == 0 else bg

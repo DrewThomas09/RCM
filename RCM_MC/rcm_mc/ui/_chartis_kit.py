@@ -860,6 +860,13 @@ def ck_data_cell(
       is_header: Render as ``<th>`` instead of ``<td>``.
     """
     cls_parts = ["ck-cell"]
+    if is_header:
+        # Header cells get the cycle-27 ck-data-table-head class
+        # which carries: caps + 10px + letter-spacing + border-bottom.
+        # Lets ck_data_cell(..., is_header=True) replace the
+        # ~720 hand-rolled <th style="..."> attributes that the
+        # cycle-30 audit identified as the next inline-style hotspot.
+        cls_parts.append("ck-data-table-head")
     if mono:
         cls_parts.append("ck-cell-mono")
     if align == "right":

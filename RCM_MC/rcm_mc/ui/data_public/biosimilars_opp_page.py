@@ -10,7 +10,7 @@ def _waves_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Reference Drug","left"),("Class","left"),("LoE Year","right"),("Sales ($B)","right"),
             ("Biosimilars","right"),("Interchangeable","center"),("Price Decline","right"),("Y3 Adoption","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, w in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -34,7 +34,7 @@ def _economics_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Reference","left"),("Ref WAC/Dose","right"),("Bio WAC/Dose","right"),("ASP+6 Ref","right"),
             ("ASP+6 Bio","right"),("Ref Margin/Dose","right"),("Bio Margin/Dose","right"),("Volume","right"),("Opportunity ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -59,7 +59,7 @@ def _sites_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Site Type","left"),("Biologic Volume","right"),("Adoption","right"),
             ("Margin/Dose ($)","right"),("Annual Margin ($M)","right"),("Y3 Growth","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -82,7 +82,7 @@ def _interchangeable_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Biosimilar","left"),("Reference","left"),("Interchangeable Date","left"),
             ("States Auto-Sub","right"),("Notification","left"),("Impact","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, it in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -104,7 +104,7 @@ def _dynamics_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Class","left"),("Biosimilar Count","right"),("Y1 Erosion","right"),("Y3 Erosion","right"),
             ("Leader Share Y3","right"),("Negotiating Leverage","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

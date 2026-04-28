@@ -10,7 +10,7 @@ def _billing_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Provider","left"),("Specialty","left"),("Pattern","left"),("Anomaly Score","right"),
             ("Peer Percentile","right"),("Exposure ($k)","right"),("Severity","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sev_c = {"critical": neg, "high": neg, "medium": warn, "low": text_dim}
     for i, b in enumerate(items):
@@ -36,7 +36,7 @@ def _upcoding_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("CPT","left"),("Description","left"),("Platform %","right"),("Peer %","right"),
             ("Delta","right"),("Volume","right"),("Clawback ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, u in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -60,7 +60,7 @@ def _referrals_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Referring Provider","left"),("Referred To","left"),("Referrals LTM","right"),
             ("Ownership Overlap","center"),("Stark Exception","left"),("AKS Risk Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -84,7 +84,7 @@ def _fingerprints_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Pattern","left"),("Description","left"),("Claims Flagged","right"),
             ("Dollar Impact ($M)","right"),("Payback Likelihood","right"),("Remediation","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -106,7 +106,7 @@ def _geo_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]
     cols = [("ZIP","left"),("Provider Count","right"),("Volume vs Pop (norm)","right"),
             ("Cluster Severity","center"),("Service Line","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sev_c = {"severe": neg, "moderate": warn, "mild": text_dim}
     for i, g in enumerate(items):
@@ -128,7 +128,7 @@ def _events_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; pos = P["positive"]
     cols = [("Event","left"),("Date","left"),("Type","center"),("Resolution","left"),("Financial Impact ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

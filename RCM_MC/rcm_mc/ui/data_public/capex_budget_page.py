@@ -23,7 +23,7 @@ def _projects_table(items) -> str:
     cols = [("ID","left"),("Deal","left"),("Category","left"),("Description","left"),
             ("Budget ($M)","right"),("Spent ($M)","right"),("% Complete","right"),
             ("Finish","right"),("ROI","right"),("Payback (mo)","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -53,7 +53,7 @@ def _categories_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Category","left"),("Projects","right"),("Total Budget ($M)","right"),("Deployed ($M)","right"),
             ("Avg ROI","right"),("Avg Payback (mo)","right"),("Typical Lifespan (yrs)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -77,7 +77,7 @@ def _deal_budgets_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal","left"),("Annual Capex ($M)","right"),("Maint ($M)","right"),("Growth ($M)","right"),
             ("IT ($M)","right"),("YoY Change","right"),("Capex / Revenue","right"),("Capex / EBITDA","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -103,7 +103,7 @@ def _approvals_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Project","left"),("Deal","left"),("Budget ($M)","right"),("Approver","left"),
             ("Date","right"),("Committee","left"),("Conditions","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -126,7 +126,7 @@ def _tech_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Category","left"),("Projects","right"),("Budget ($M)","right"),("Impl (mo)","right"),
             ("Annual Savings ($M)","right"),("Deals Deployed","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -149,7 +149,7 @@ def _denovo_table(items) -> str:
     cols = [("Project","left"),("Deal","left"),("Market","left"),("Build Type","left"),
             ("Budget ($M)","right"),("Planned Open","right"),("Y1 Revenue ($M)","right"),
             ("Y3 EBITDA ($M)","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

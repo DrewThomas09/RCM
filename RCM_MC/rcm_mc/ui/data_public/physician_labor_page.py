@@ -10,7 +10,7 @@ def _specialties_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Specialty","left"),("Active","right"),("Grad Supply","right"),("Retirements","right"),
             ("Net Change","right"),("Median Age","right"),("2030 Shortage","right"),("Wage Inflation","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -38,7 +38,7 @@ def _wages_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Specialty","left"),("2019 Median ($k)","right"),("2024 Median ($k)","right"),
             ("CAGR","right"),("Locum Premium","right"),("Signing Bonus ($k)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, w in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -60,7 +60,7 @@ def _extenders_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Category","left"),("FTE Supply","right"),("Productivity vs MD","right"),
             ("Cost Ratio vs MD","right"),("Scope","left"),("Full-Practice States","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -83,7 +83,7 @@ def _burnout_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Specialty","left"),("Burnout Rate","right"),("3-Yr Attrition","right"),("Reduced Hours","right"),("Retention Invest PMPY ($k)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -105,7 +105,7 @@ def _geo_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Region Type","left"),("Phys/100k","right"),("Severity","center"),("HPSA Score","right"),("Loan Repayment","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sev_c = {"no shortage": pos, "mild shortage": text_dim, "moderate shortage": warn, "severe shortage": neg, "critical shortage": neg}
     for i, g in enumerate(items):

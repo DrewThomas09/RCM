@@ -11,7 +11,7 @@ def _plans_table(plans) -> str:
     cols = [("Plan","left"),("Type","left"),("Enrollees","right"),("RAF","right"),
             ("Benchmark PMPM","right"),("Bid PMPM","right"),("Rebate","right"),("Star","center"),
             ("Bonus","right"),("MLR","right"),("Margin PMPM","right"),("Revenue ($M)","right"),("Margin ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(plans):
         rb = panel_alt if i % 2 == 0 else bg
@@ -43,7 +43,7 @@ def _raf_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; warn = P["warning"]; acc = P["accent"]
     cols = [("HCC Category","left"),("Prevalence","right"),("RAF Contrib","right"),
             ("Current Capture","right"),("Target Capture","right"),("Gap","right"),("Incremental Rev ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -68,7 +68,7 @@ def _stars_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Measure Domain","left"),("Current","right"),("Target","right"),
             ("Weight","right"),("Bonus Revenue ($M)","right"),("Priority","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     pri_colors = {"critical": neg, "high": warn, "standard": text_dim}
     for i, s in enumerate(items):
@@ -93,7 +93,7 @@ def _v28_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Plan Segment","left"),("V24 RAF","right"),("V28 RAF","right"),
             ("Delta","right"),("Revenue Impact ($M)","right"),("Full Blend Year","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, v in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -115,7 +115,7 @@ def _mlr_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Component","left"),("PMPM Cost","right"),("% Premium","right"),
             ("YTD Actual","right"),("Target","right"),("Variance","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -138,7 +138,7 @@ def _supplemental_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Benefit","left"),("Utilization","right"),("Cost PMPM","right"),
             ("Enrollment Impact","left"),("ROI Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

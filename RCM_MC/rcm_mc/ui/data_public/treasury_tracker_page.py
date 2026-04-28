@@ -20,7 +20,7 @@ def _cash_table(items) -> str:
     cols = [("Deal","left"),("Operating Cash ($M)","right"),("Restricted ($M)","right"),("Investments ($M)","right"),
             ("Total Liquidity ($M)","right"),("Rev Drawn ($M)","right"),("Rev Capacity ($M)","right"),
             ("Availability ($M)","right"),("Days of Opex","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -47,7 +47,7 @@ def _wc_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("Deal","left"),("AR ($M)","right"),("AR Days","right"),("Inventory ($M)","right"),
             ("Inv Days","right"),("AP ($M)","right"),("AP Days","right"),("NWC ($M)","right"),("Trend (pp)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, w in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -74,7 +74,7 @@ def _burn_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal","left"),("Monthly Revenue","right"),("Monthly EBITDA","right"),("Monthly FCF","right"),
             ("Capex","right"),("Interest","right"),("Runway (mo)","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -100,7 +100,7 @@ def _accounts_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("Deal","left"),("Bank","left"),("Account Type","left"),("Balance ($M)","right"),
             ("FDIC Insured %","right"),("Sweep","center"),("Yield %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -125,7 +125,7 @@ def _hedging_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal","left"),("Hedge Type","left"),("Notional ($M)","right"),("Fixed Rate","right"),
             ("Benchmark","left"),("Expiration","right"),("MTM ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, h in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -149,7 +149,7 @@ def _intercompany_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("From","left"),("To","left"),("Balance ($M)","right"),("Rate %","right"),
             ("Purpose","left"),("Expected Settlement","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, ic in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

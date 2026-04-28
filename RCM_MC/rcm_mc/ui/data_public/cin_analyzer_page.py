@@ -10,7 +10,7 @@ def _providers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Provider Group","left"),("Category","center"),("Providers","right"),("Lives","right"),
             ("Contrib ($M)","right"),("Quality","right"),("Engagement","right"),("Tenure (yr)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -36,7 +36,7 @@ def _contracts_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Payer","left"),("Type","left"),("Lives","right"),("Premium PPMY","right"),
             ("Shared Savings %","right"),("Quality Weight","right"),("Expected Savings ($M)","right"),("Distribution ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -60,7 +60,7 @@ def _quality_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Measure","left"),("Domain","center"),("Current","right"),("Benchmark","right"),
             ("Gap","right"),("Weight","right"),("Financial Impact ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, q in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -94,7 +94,7 @@ def _geo_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Market","left"),("Attributed Lives","right"),("PCPs","right"),("Specialists","right"),
             ("Adequacy","center"),("Growth","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     adeq_c = {"strong": pos, "adequate": P["accent"], "gap": warn}
     for i, g in enumerate(items):
@@ -118,7 +118,7 @@ def _dist_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Cohort","left"),("Provider Count","right"),("Avg Dist/Provider ($k)","right"),
             ("Quality Bonus ($k)","right"),("Productivity Bonus ($k)","right"),("Total Distribution ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -140,7 +140,7 @@ def _compliance_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Regulation","left"),("Status","center"),("Last Review","left"),
             ("Remediation","left"),("Exposure ($k)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sc = {"compliant": pos, "monitoring": warn, "minor gap": warn, "severe": neg}
     for i, c in enumerate(items):

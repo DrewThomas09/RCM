@@ -10,7 +10,7 @@ def _workstreams_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Workstream","left"),("Owner","left"),("Total","right"),("Completed","right"),
             ("On Track","right"),("Status","center"),("Budget ($M)","right"),("Spent ($M)","right"),("Next Milestone","left"),("Due","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     stat_c = {"on track": pos, "ahead": pos, "at risk": warn, "lagging": neg}
     for i, w in enumerate(items):
@@ -41,7 +41,7 @@ def _synergy_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Synergy Category","left"),("Target ($M)","right"),("Run-Rate ($M)","right"),
             ("% of Target","right"),("Timing","center"),("Risk","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     t_c = {"ahead": pos, "on track": acc, "behind": neg}
     r_c = {"low": pos, "medium": warn, "high": neg}
@@ -68,7 +68,7 @@ def _milestones_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Horizon","left"),("Target","right"),("Completed","right"),("In Progress","right"),
             ("Slipped","right"),("Completion %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -91,7 +91,7 @@ def _risks_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Risk Area","left"),("Description","left"),("Probability","center"),
             ("Impact ($M)","right"),("Mitigation","center"),("Owner","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     p_c = {"high": neg, "medium": warn, "low": text_dim}
     for i, r in enumerate(items):
@@ -115,7 +115,7 @@ def _tms_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Function","left"),("Pre-Integration ($M)","right"),("Post-Integration ($M)","right"),
             ("Actual Savings ($M)","right"),("Target Savings ($M)","right"),("Variance %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

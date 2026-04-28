@@ -28,7 +28,7 @@ def _facilities_table(items) -> str:
     cols = [("Deal","left"),("Sector","left"),("Tranche","left"),("Size ($M)","right"),
             ("Lead","left"),("SOFR+","right"),("Floor","right"),("OID","right"),
             ("Tenor","center"),("Call Protection","left"),("Cov-Lite","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -57,7 +57,7 @@ def _syndication_table(items) -> str:
     cols = [("Deal","left"),("Package ($M)","right"),("Committed ($M)","right"),("Allocation ($M)","right"),
             ("Accounts","right"),("Oversubscribed","right"),("Launch","right"),("Target Close","right"),
             ("Status","center"),("Flex Used (bps)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -86,7 +86,7 @@ def _pricing_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("Sector","left"),("Segment","left"),("1L SOFR+","right"),("2L SOFR+","right"),
             ("Median Leverage","right"),("Median Int. Cov","right"),("Clearing Rate","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -111,7 +111,7 @@ def _covenants_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("Deal","left"),("Cov-Lite","center"),("Max Leverage","right"),("At Close","right"),
             ("Headroom","right"),("Int. Cov","right"),("Capex Flex","right"),("RP Basket","right"),("Incr Facility","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -138,7 +138,7 @@ def _flex_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal","left"),("Spread Flex (bps)","right"),("OID Flex (pt)","right"),
             ("Caps Effective","left"),("MFN","center"),("Structure Flex","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -161,7 +161,7 @@ def _lenders_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Lender","left"),("Commitments ($M)","right"),("Deals","right"),("Avg Hold ($M)","right"),
             ("Sectors Active","left"),("Tier","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, l in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

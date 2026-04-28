@@ -37,7 +37,7 @@ def _tracks_table(tracks) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     risk_colors = {"upside-only": P["positive"], "two-sided": P["warning"], "global / full-risk": P["negative"], "full-risk": P["negative"]}
     cols = [("Track","left"),("Beneficiaries","right"),("Benchmark PMPM","right"),("Risk Level","left"),("Upside Cap","right"),("Downside Cap","right"),("Quality Weight","right"),("Min Savings Rate","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(tracks):
         rb = panel_alt if i % 2 == 0 else bg
@@ -60,7 +60,7 @@ def _tracks_table(tracks) -> str:
 def _benchmark_table(benchmark) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Component","left"),("Value PMPM","right"),("Basis","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(benchmark):
         rb = panel_alt if i % 2 == 0 else bg
@@ -78,7 +78,7 @@ def _benchmark_table(benchmark) -> str:
 def _savings_table(savings) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Scenario","left"),("Actual PMPM","right"),("Savings %","right"),("Gross Savings ($M)","right"),("Quality Mult","right"),("Net Shared Savings","right"),("ACO Share","right"),("Payout ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(savings):
         rb = panel_alt if i % 2 == 0 else bg
@@ -101,7 +101,7 @@ def _savings_table(savings) -> str:
 def _quality_table(q) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Component","left"),("Weight","right"),("Current Score","right"),("Target","right"),("Contribution","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(q):
         rb = panel_alt if i % 2 == 0 else bg
@@ -121,7 +121,7 @@ def _quality_table(q) -> str:
 def _infra_table(infra) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Investment","left"),("Y1 Cost ($M)","right"),("Ongoing ($M)","right"),("Enables Savings ($M)","right"),("Payback (mo)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, inv in enumerate(infra):
         rb = panel_alt if i % 2 == 0 else bg
@@ -140,7 +140,7 @@ def _infra_table(infra) -> str:
 def _full_risk_table(fr) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Stage","left"),("Risk Exposure","right"),("Required Infra ($M)","right"),("Reinsurance ($M)","right"),("Shared Savings ($M)","right"),("Capitation Margin ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(fr):
         rb = panel_alt if i % 2 == 0 else bg

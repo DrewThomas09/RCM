@@ -28,7 +28,7 @@ def _deals_table(items) -> str:
     cols = [("Deal","left"),("Sector","left"),("Sponsor","left"),("Equity ($M)","right"),
             ("Coinvest ($M)","right"),("Status","center"),("Mgmt Fee","right"),("Carry","right"),
             ("Hurdle","right"),("Expected Close","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -56,7 +56,7 @@ def _lps_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("LP","left"),("Type","left"),("Commitment ($M)","right"),("Active","right"),
             ("Total Coinvests","right"),("Avg Check ($M)","right"),("AUM ($B)","right"),("Appetite","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, l in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -81,7 +81,7 @@ def _sectors_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Sector","left"),("Active Opps","right"),("Total Equity ($M)","right"),
             ("Allocated ($M)","right"),("Unallocated ($M)","right"),("Avg Fee","right"),("Avg Carry","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -105,7 +105,7 @@ def _realizations_table(items) -> str:
     cols = [("Deal","left"),("Sector","left"),("Sponsor","left"),("Vintage","right"),
             ("Exit","right"),("Invested ($M)","right"),("Realized ($M)","right"),
             ("Gross MOIC","right"),("Net MOIC","right"),("Gross IRR","right"),("DPI","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -134,7 +134,7 @@ def _fees_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Tier","left"),("Description","left"),("Mgmt Fee Discount","right"),
             ("Carry Reduction","right"),("Hurdle Concession","right"),("Realized Savings","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -156,7 +156,7 @@ def _capacity_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("Deal","left"),("Total Equity","right"),("Sponsor","right"),("Anchor","right"),
             ("Remaining","right"),("Demand","right"),("Oversub","right"),("Methodology","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

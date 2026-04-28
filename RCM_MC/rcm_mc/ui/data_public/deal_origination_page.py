@@ -11,7 +11,7 @@ def _pipeline_table(items) -> str:
     cols = [("Deal","left"),("Sector","left"),("Stage","center"),("Est EV ($M)","right"),
             ("Target EBITDA ($M)","right"),("Entry Mult","right"),("Prob","right"),
             ("Weighted EV ($M)","right"),("Source","left"),("Owner","center"),("Next Milestone","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     stage_c = {"Screening": text_dim, "Diligence": acc, "IC Review": warn, "LOI": pos, "Closing": pos}
     for i, p in enumerate(items):
@@ -41,7 +41,7 @@ def _bankers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Banker Firm","left"),("Type","left"),("Seen LTM","right"),("Engaged","right"),
             ("Won","right"),("Win Rate","right"),("Avg Deal ($M)","right"),("Relationship","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -67,7 +67,7 @@ def _whitespace_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Sector","left"),("Active Targets","right"),("Platforms Deployed","right"),
             ("Concentration","right"),("Whitespace Score","right"),("Priority","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     pri_c = {"high": pos, "medium": acc, "low": text_dim}
     for i, w in enumerate(items):
@@ -92,7 +92,7 @@ def _winloss_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Category","left"),("Won","right"),("Lost - Price","right"),("Lost - Strategy","right"),
             ("Lost - Relationship","right"),("Rate","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, wl in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -114,7 +114,7 @@ def _velocity_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Quarter","left"),("Screened","right"),("Diligenced","right"),
             ("LOI Signed","right"),("Closed","right"),("Conversion","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, v in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

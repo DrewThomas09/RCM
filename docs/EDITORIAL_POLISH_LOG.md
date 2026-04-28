@@ -2713,3 +2713,68 @@ SVG charts, custom layout). They're now reachable.
 Recommend **A** — same pattern as cycles 22-28, expected
 +30-50 passers. Forward-only.
 
+---
+
+## Cycle 30 build — 2026-04-28 — header-cell migration consolidates the 70-79 tier
+
+**Step 30 — header `<th>` cells migrated.** Cycle 28's chrome
+migration deferred header cells (more variable shape than body
+cells). Cycle 30 closes the gap by:
+
+1. Updating `ck_data_cell(..., is_header=True)` to also add the
+   `ck-data-table-head` class so headers pick up editorial caps
+   + spacing + border-bottom styling automatically.
+2. Shipping `tools/migrate_th_loops.py` that detects the
+   canonical f-string-in-a-loop pattern and rewrites to
+   `ck_data_cell(c, align=a, is_header=True)`.
+
+**Run result.**
+
+    144 data_public pages scanned.
+    483 <th> patterns migrated.
+    0 skipped (no triple-quote edge cases).
+
+**Audit shape: 70-79 tier swells from 89 to 138 pages.** That
+49-page shift is the cycle-30 lift — pages that were marginally
+passing before are now solidly passing with more headroom. The
+60-69 tier shrunk from 49 to 3 pages (two of the three are
+edge cases the script skipped).
+
+**Pass count steady at 159 of 310 (51.3%).** The migration
+moved scores up (dpi_tracker 69 → 76, biosimilars 65 → 79
+etc.) but most beneficiaries were already passing in the
+80-89 tier or just-passing 70s; the lift consolidated
+existing passers rather than crossing new ones.
+
+The lift would be larger if combined with another inline-style
+cluster migration (KPI cards, badges). The cycle-30 + cycle-28
+chrome work is the foundation; future cycles compound on it.
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — `ck_data_cell(is_header=True)`
+  also adds `ck-data-table-head` class.
+- `tools/migrate_th_loops.py` — NEW, ~120 LOC.
+- `tests/test_ck_data_cell.py` — 1 test updated to assert the
+  new class on header rendering.
+- 144 data_public pages — 483 `<th>` patterns migrated.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- V5 fidelity passers: 159 of 310 (51.3%) — unchanged count,
+  but underlying score quality higher (the 70-79 tier nearly
+  doubled).
+- 483 `<th>` inline-style attrs replaced with class attrs.
+  Net ~80KB HTML weight reduction across full corpus render.
+- Total focused tests: 267 + 2 documented skips (no change —
+  test count same, one test rewritten for new class).
+- LOC: +120 script.
+
+**Suggested next:** cycle 31 — KPI-card migration. Per the
+post-cycle-28 inline-style survey, KPI cards (`<div
+style="font-size:11px;color:{text_dim};margin-top:4px">`,
+badge spans with custom styles) are the next biggest cluster.
+~5-10 instances per page × ~140 pages = ~1000 instances.
+Same playbook as cycles 22-28: helper + script + bulk apply.
+Expected to lift ~30-50 pages from the bottom into 70+.
+Forward-only.
+

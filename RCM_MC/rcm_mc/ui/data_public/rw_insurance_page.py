@@ -22,7 +22,7 @@ def _policies_table(items) -> str:
     cols = [("Deal","left"),("Policy Type","left"),("Deal Size ($M)","right"),("Primary Limit ($M)","right"),
             ("Total Tower ($M)","right"),("Retention ($M)","right"),("Retention %","right"),("Premium ($M)","right"),
             ("Rate %","right"),("Period (y)","right"),("Primary Carrier","left"),("Broker","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -51,7 +51,7 @@ def _carriers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Carrier","left"),("Primary","right"),("Excess Layers","right"),("Limit Deployed ($M)","right"),
             ("Avg Rate %","right"),("Open Claims","right"),("Strengths","left"),("Rating","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -77,7 +77,7 @@ def _exclusions_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Deal","left"),("Exclusion Type","left"),("Scope","left"),("Standalone Coverage","left"),
             ("Premium ($M)","right"),("Retention ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -99,7 +99,7 @@ def _claims_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Deal","left"),("Claim Date","right"),("Type","left"),("Claimed ($M)","right"),
             ("Paid ($M)","right"),("Carrier","left"),("Status","center"),("Root Cause","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -126,7 +126,7 @@ def _specialty_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Coverage Type","left"),("Deal","left"),("Limit ($M)","right"),("Retention ($M)","right"),
             ("Premium ($M)","right"),("Rate %","right"),("Period (y)","right"),("Trigger","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -150,7 +150,7 @@ def _benchmarks_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal Size Band","left"),("Typical Primary %","right"),("Typical Retention %","right"),
             ("Median Rate %","right"),("Market Trend","center"),("Typical Tower Layers","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

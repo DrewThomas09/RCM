@@ -11,7 +11,7 @@ def _sites_table(items) -> str:
     cols = [("Site ID","left"),("Therapeutic Area","left"),("Active Trials","right"),
             ("Screens","right"),("Enrollment Rate","right"),("Revenue ($M)","right"),
             ("Op Margin","right"),("ROI / Study ($k)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items[:30]):
         rb = panel_alt if i % 2 == 0 else bg
@@ -37,7 +37,7 @@ def _tas_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Therapeutic Area","left"),("Sites","right"),("Active Trials","right"),
             ("Med Revenue / Site ($M)","right"),("Med Enrollment Rate","right"),("Growth","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     grow_c = {"accelerating": pos, "accelerating (GLP-1)": pos, "accelerating (psychedelics)": pos, "stable": text_dim}
     for i, t in enumerate(items):
@@ -61,7 +61,7 @@ def _phase_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Phase","left"),("Site Payment ($k)","right"),("Patients/Site","right"),
             ("Duration (mo)","right"),("Total Revenue ($k)","right"),("Typical Margin","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -84,7 +84,7 @@ def _sponsors_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]; warn = P["warning"]
     cols = [("Sponsor","left"),("Type","left"),("Active Trials","right"),("Completed LTM","right"),
             ("Avg Fee ($k)","right"),("On-Time","right"),("Engagement","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     eng_c = {"repeat": pos, "growing": acc, "pass-through": text_dim}
     for i, s in enumerate(items):
@@ -109,7 +109,7 @@ def _cost_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Category","left"),("% of Revenue","right"),("Annual Cost ($M)","right"),("Trend","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

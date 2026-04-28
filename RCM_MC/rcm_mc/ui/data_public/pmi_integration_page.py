@@ -31,7 +31,7 @@ def _integrations_table(items) -> str:
     cols = [("Platform","left"),("Bolt-On","left"),("Close Date","right"),("Months","right"),
             ("Deal Value ($M)","right"),("Synergy Target ($M)","right"),("Realized ($M)","right"),
             ("Realization %","right"),("Integration Cost ($M)","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -60,7 +60,7 @@ def _workstreams_table(items) -> str:
     cols = [("Platform","left"),("Bolt-On","left"),("Workstream","left"),("Total","right"),
             ("Complete","right"),("In Progress","right"),("Blocked","right"),
             ("Completion %","right"),("Owner","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, w in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -87,7 +87,7 @@ def _categories_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Synergy Category","left"),("Deals","right"),("Target ($M)","right"),("Realized ($M)","right"),
             ("Realization %","right"),("Timeline (mo)","right"),("Difficulty","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -112,7 +112,7 @@ def _risks_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]
     cols = [("Platform","left"),("Bolt-On","left"),("Risk","left"),("Severity","center"),
             ("Workstream","left"),("Mitigation","left"),("Owner","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -136,7 +136,7 @@ def _milestones_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Platform","left"),("Milestone","left"),("Target Date","right"),("Actual Date","right"),
             ("Status","center"),("Variance (days)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -160,7 +160,7 @@ def _retention_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]
     cols = [("Platform","left"),("Bolt-On","left"),("Physicians Retained","right"),("Lost","right"),
             ("Retention %","right"),("Patient Retention %","right"),("Staff Retention %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

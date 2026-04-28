@@ -11,7 +11,7 @@ def _roles_table(roles) -> str:
     cols = [("Role","left"),("FTE","right"),("Hrs/mo","right"),("Locum $/hr","right"),
             ("Perm $/hr","right"),("Premium %","right"),("Agency Fee","right"),
             ("Monthly ($k)","right"),("Annual ($M)","right"),("Convert","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(roles):
         rb = panel_alt if i % 2 == 0 else bg
@@ -39,7 +39,7 @@ def _gaps_table(gaps) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]; pos = P["positive"]
     cols = [("Department","left"),("Open Positions","right"),("Avg Gap (days)","right"),
             ("Locum Coverage","right"),("Uncovered","right"),("Revenue Risk ($M)","right"),("Priority","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     pri_colors = {"critical": neg, "high": warn, "standard": text_dim}
     for i, g in enumerate(gaps):
@@ -65,7 +65,7 @@ def _convert_table(convs) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Role","left"),("In Pipeline","right"),("Offer Made","right"),("Accepted","right"),
             ("Monthly Savings ($k)","right"),("Annual Savings ($M)","right"),("Conversion Rate","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(convs):
         rb = panel_alt if i % 2 == 0 else bg
@@ -89,7 +89,7 @@ def _compliance_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Category","left"),("Finding","left"),("Exposure ($k)","right"),
             ("Remediation (days)","right"),("Severity","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sev_colors = {"high": neg, "medium": warn, "low": text_dim}
     for i, c in enumerate(items):
@@ -113,7 +113,7 @@ def _scenarios_table(scenarios) -> str:
     cols = [("Scenario","left"),("Locum Spend ($M)","right"),("Permanent ($M)","right"),
             ("Total Labor ($M)","right"),("Labor/Rev %","right"),("Retention","center"),
             ("Impl (mo)","right"),("Y1 Savings ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     ret_colors = {"elevated": P["negative"], "improved": pos, "stable": acc, "neutral": text_dim}
     for i, s in enumerate(scenarios):

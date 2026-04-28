@@ -10,7 +10,7 @@ def _portfolio_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Holdco","left"),("Sector","left"),("Current Balance ($M)","right"),("Rate","right"),
             ("Maturity","right"),("Yrs Remaining","right"),("Covenant","center"),("Refi Window","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     w_c = {"priority": neg, "in-window": acc, "approaching-window": warn, "long-dated": text_dim}
     c_c = {"maintenance": acc, "cov-lite": pos}
@@ -40,7 +40,7 @@ def _opportunities_table(items) -> str:
     cols = [("Holdco","left"),("Current Rate","right"),("Achievable","right"),("Δ bps","right"),
             ("Amount ($M)","right"),("Annual Savings ($M)","right"),("NPV Savings ($M)","right"),
             ("Refi Cost ($M)","right"),("Net NPV ($M)","right"),("Priority","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     p_c = {"urgent": neg, "standard": warn, "monitor": text_dim}
     for i, o in enumerate(items):
@@ -68,7 +68,7 @@ def _market_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Period","left"),("Spread Trend","center"),("Primary Issuance ($B)","right"),
             ("Direct Lending ($B)","right"),("Investor Demand","center"),("Commentary","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     d_c = {"very strong": pos, "strong": pos, "broad": acc, "moderate": warn, "selective": warn}
     t_c = {"tightening": pos, "stable": acc, "widening": warn}
@@ -94,7 +94,7 @@ def _quotes_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Lender","left"),("Product","left"),("Size ($M)","right"),("Spread (bps)","right"),
             ("Term (yr)","right"),("Cov-Lite","center"),("OID","right"),("Closing Fee (bps)","right"),("Confidence","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, q in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -120,7 +120,7 @@ def _maturity_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]; pos = P["positive"]
     cols = [("Maturity Year","left"),("Holdcos Maturing","right"),("Total Balance ($M)","right"),("Refi Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     s_c = {"near-term": neg, "intermediate": warn, "long-dated": pos}
     for i, m in enumerate(items):
@@ -142,7 +142,7 @@ def _covenant_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Holdco","left"),("Current Leverage","right"),("Covenant Leverage","right"),
             ("Headroom (x)","right"),("Remediation","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

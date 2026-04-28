@@ -73,7 +73,7 @@ def _metrics_table(metrics) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     trend_colors = {"up": P["positive"], "flat": P["accent"], "down": P["negative"]}
     cols = [("Category","left"),("Metric","left"),("Current","right"),("Benchmark","right"),("Percentile","right"),("Trend","left"),("Rev Corr","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(metrics):
         rb = panel_alt if i % 2 == 0 else bg
@@ -96,7 +96,7 @@ def _metrics_table(metrics) -> str:
 def _reviews_table(reviews) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Platform","left"),("Total Volume","right"),("Avg Rating","right"),("Last 90d Volume","right"),("90d Rating","right"),("Positive Sentiment %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(reviews):
         rb = panel_alt if i % 2 == 0 else bg
@@ -118,7 +118,7 @@ def _reviews_table(reviews) -> str:
 def _drivers_table(drivers) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     cols = [("Driver","left"),("Current","right"),("Unit","left"),("Benchmark","right"),("Impact on Experience","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(drivers):
         rb = panel_alt if i % 2 == 0 else bg
@@ -138,7 +138,7 @@ def _initiatives_table(initiatives) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     risk_colors = {"low": pos, "medium": P["warning"], "high": P["negative"]}
     cols = [("Initiative","left"),("Investment ($M)","right"),("NPS Δ","right"),("Retention Δ","right"),("Revenue Uplift ($M)","right"),("Timeline (mo)","right"),("Risk","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, init in enumerate(initiatives):
         rb = panel_alt if i % 2 == 0 else bg
@@ -160,7 +160,7 @@ def _initiatives_table(initiatives) -> str:
 def _retention_table(retention) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]
     cols = [("Cohort","left"),("Current Retention","right"),("Target","right"),("Implied Revenue Uplift ($M)","right"),("EV Impact ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(retention):
         rb = panel_alt if i % 2 == 0 else bg

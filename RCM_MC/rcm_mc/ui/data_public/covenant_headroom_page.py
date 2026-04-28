@@ -10,7 +10,7 @@ def _covenants_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Covenant","left"),("Actual","right"),("Limit","right"),("Direction","center"),
             ("Headroom","right"),("Risk","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     risk_c = {"low": pos, "medium": warn, "high": neg}
     for i, c in enumerate(items):
@@ -35,7 +35,7 @@ def _tranches_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Tranche","left"),("Balance ($M)","right"),("Rate Type","left"),("Spread (bps)","right"),
             ("All-In Rate","right"),("Maturity","right"),("Covenant Type","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -58,7 +58,7 @@ def _stress_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Scenario","left"),("EBITDA Delta","right"),("Projected EBITDA ($M)","right"),
             ("Projected Leverage","right"),("Status","center"),("Headroom","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     status_c = {"in compliance": pos, "tight / monitoring": warn, "technical breach": warn, "material breach": neg}
     for i, s in enumerate(items):
@@ -83,7 +83,7 @@ def _cure_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Cure Right","left"),("Equity Needed ($M)","right"),("Mechanism","left"),
             ("Time (days)","right"),("Rate Penalty","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -104,7 +104,7 @@ def _amort_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Year","left"),("Opening ($M)","right"),("Mandatory ($M)","right"),
             ("Cash Sweep ($M)","right"),("Voluntary ($M)","right"),("Closing ($M)","right"),("Interest ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

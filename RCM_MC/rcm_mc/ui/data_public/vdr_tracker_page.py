@@ -42,7 +42,7 @@ def _requests_table(items) -> str:
     cols = [("ID","left"),("Workstream","left"),("Category","left"),("Request","left"),
             ("Status","center"),("Priority","center"),("Requested","right"),("Response","right"),
             ("Days Out","right"),("Complete %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -72,7 +72,7 @@ def _workstreams_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Workstream","left"),("Total","right"),("Complete","right"),("In Progress","right"),
             ("Outstanding","right"),("Overdue","right"),("Completeness %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, w in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -97,7 +97,7 @@ def _qa_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Q&A ID","left"),("Topic","left"),("Response Quality","center"),("Days to Answer","right"),
             ("Follow-Up","center"),("Materiality","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     q_c = {"thorough": pos, "partial": P["warning"], "deflected": neg}
     for i, q in enumerate(items):
@@ -124,7 +124,7 @@ def _documents_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Section","left"),("Uploaded","right"),("Expected","right"),("Completeness %","right"),
             ("Last Updated","right"),("Seller Notes","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -147,7 +147,7 @@ def _critical_path_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Item","left"),("Owner","left"),("Dependency","left"),("Needed By","right"),
             ("Status","center"),("Risk to Close","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -171,7 +171,7 @@ def _materiality_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]
     cols = [("Finding","left"),("Workstream","left"),("Materiality","center"),
             ("SPA Impact","left"),("Disposition","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     disp_c = {"resolved": P["positive"], "disclosed, mitigated": P["positive"], "disclosed": P["accent"],
               "in remediation": P["warning"], "in progress": P["accent"], "in negotiation": P["warning"],

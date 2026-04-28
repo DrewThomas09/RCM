@@ -20,7 +20,7 @@ def _cells_table(cells) -> str:
     cols = [("Sponsor","left"),("Sector","left"),("Deals","right"),
             ("Avg MOIC","right"),("Median MOIC","right"),("Avg IRR","right"),
             ("Total EV ($M)","right"),("Realized","right"),("Tier","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(cells[:50]):
         rb = panel_alt if i % 2 == 0 else bg
@@ -48,7 +48,7 @@ def _profiles_table(profiles) -> str:
     cols = [("Sponsor","left"),("Deals","right"),("Avg MOIC","right"),("Avg IRR","right"),
             ("Median Hold","right"),("Total EV ($M)","right"),("Sectors","right"),
             ("Top Sector","left"),("Concentration","right"),("Realized","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(profiles):
         rb = panel_alt if i % 2 == 0 else bg
@@ -76,7 +76,7 @@ def _leaders_table(leaders) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Sector","left"),("Top Sponsor","left"),("Top MOIC","right"),
             ("Top IRR","right"),("Deals","right"),("Runner Up","left"),("Runner MOIC","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, lead in enumerate(leaders[:40]):
         rb = panel_alt if i % 2 == 0 else bg
@@ -100,7 +100,7 @@ def _vintage_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Sponsor","left"),("2016-2019 MOIC","right"),("2016-2019 Deals","right"),
             ("2020-2024 MOIC","right"),("2020-2024 Deals","right"),("Trend","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     trend_c = {"improving": pos, "stable": text_dim, "declining": neg}
     for i, v in enumerate(items):
@@ -124,7 +124,7 @@ def _hold_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Hold Bucket","left"),("Deals","right"),("Avg MOIC","right"),
             ("Avg IRR","right"),("Best MOIC","right"),("Best Deal","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, h in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg

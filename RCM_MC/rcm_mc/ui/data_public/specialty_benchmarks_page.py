@@ -11,7 +11,7 @@ def _benchmarks_table(items) -> str:
     cols = [("Specialty","left"),("Category","left"),("Median Comp ($K)","right"),
             ("P25 / P75","right"),("Median wRVU","right"),("$/wRVU","right"),
             ("Patients/Day","right"),("Overhead %","right"),("Collections/wRVU","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -37,7 +37,7 @@ def _econ_table(items) -> str:
     cols = [("Specialty","left"),("Rev/FTE ($K)","right"),("EBITDA %","right"),
             ("Commercial %","right"),("Medicare %","right"),("Medicaid %","right"),
             ("PTO Days","right"),("Signing ($K)","right"),("Loan Repay ($K)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -63,7 +63,7 @@ def _np_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Specialty","left"),("New/Month","right"),("New Rev/Month ($K)","right"),
             ("Mkt Cost/New ($K)","right"),("Referral %","right"),("Digital %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, n in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -85,7 +85,7 @@ def _anc_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Specialty","left"),("Ancillary Services","left"),("Ancillary Rev %","right"),
             ("Capex ($K)","right"),("Payback (mo)","right"),("Incremental EBITDA %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -109,7 +109,7 @@ def _quality_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Specialty","left"),("Measure","left"),("Industry Median","right"),
             ("Top Decile","right"),("Portfolio","right"),("MIPS Weight","center"),("Payer Incentive (bps)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, q in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -133,7 +133,7 @@ def _staffing_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Specialty","left"),("Role","left"),("Median Ratio","right"),
             ("P25 Ratio","right"),("P75 Ratio","right"),("Typical Comp ($K)","right"),("Turnover %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
