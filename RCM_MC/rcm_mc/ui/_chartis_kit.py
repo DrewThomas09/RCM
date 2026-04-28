@@ -783,6 +783,56 @@ def render_insights_page(
     )
 
 
+def ck_data_cell(
+    value: str,
+    *,
+    align: str = "left",
+    mono: bool = False,
+    tone: Optional[str] = None,
+    weight: Optional[int] = None,
+    is_header: bool = False,
+) -> str:
+    """One styled ``<td>`` (or ``<th>``) for the data_public table
+    archetype. Replaces the ~1200 hand-rolled inline-styled cells
+    that the cycle-22 audit identified as the dominant inline-style
+    source.
+
+    Each cell is rendered with utility classes:
+      - ``ck-cell``               — base padding + 11px font
+      - ``ck-cell-mono``          — JetBrains Mono + tabular-nums
+      - ``ck-cell-r`` / ``ck-cell-c`` — right / center alignment
+      - ``tone-dim`` / ``tone-pos`` / ``tone-neg`` / ``tone-acc`` —
+        dim / positive / negative / accent text color
+      - ``ck-cell-w-700`` / ``ck-cell-w-600`` — weight modifiers
+
+    The caller supplies ``value`` already pre-formatted (with $, %,
+    x suffixes etc.) — the cell wrapper does not format. For
+    auto-formatted cells use the existing ``ck_fmt_*`` helpers.
+
+    Args:
+      value: HTML-safe pre-formatted display string.
+      align: ``left`` / ``right`` / ``center``.
+      mono: Use mono font + tabular-nums.
+      tone: Optional ``dim`` / ``pos`` / ``neg`` / ``acc``.
+      weight: Optional 600 or 700 (CSS font-weight).
+      is_header: Render as ``<th>`` instead of ``<td>``.
+    """
+    cls_parts = ["ck-cell"]
+    if mono:
+        cls_parts.append("ck-cell-mono")
+    if align == "right":
+        cls_parts.append("ck-cell-r")
+    elif align == "center":
+        cls_parts.append("ck-cell-c")
+    if tone in ("dim", "pos", "neg", "acc"):
+        cls_parts.append(f"tone-{tone}")
+    if weight in (600, 700):
+        cls_parts.append(f"ck-cell-w-{weight}")
+    tag = "th" if is_header else "td"
+    cls = " ".join(cls_parts)
+    return f'<{tag} class="{cls}">{value}</{tag}>'
+
+
 def ck_affirm_empty(
     *,
     headline: str,
@@ -1014,6 +1064,22 @@ _CSS_INLINE_FALLBACK = """
   .ck-note-pills { display:inline-flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
   .ck-note-body { font-family:var(--sc-serif); font-size:14px; line-height:1.5; color:var(--sc-text); white-space:pre-wrap; }
   .ck-mark { background:#fff5d6; padding:0 2px; border-radius:1px; }
+
+  /* Data table cells — utility classes that replace the ~1200
+   * hand-rolled inline-styled <td> attrs across data_public/.
+   * Use ck_data_cell() to emit cells; or apply classes directly
+   * for one-off cases. The cycle-22 lift consolidates these so
+   * future cycles can mechanically migrate inline-styled tables. */
+  .ck-cell { padding:5px 10px; font-size:11px; color:var(--sc-text); }
+  .ck-cell-mono { font-family:var(--sc-mono); font-variant-numeric:tabular-nums; }
+  .ck-cell-r { text-align:right; }
+  .ck-cell-c { text-align:center; }
+  .ck-cell.tone-dim { color:var(--sc-text-dim); }
+  .ck-cell.tone-pos { color:var(--sc-positive); }
+  .ck-cell.tone-neg { color:var(--sc-negative); }
+  .ck-cell.tone-acc { color:var(--sc-teal-ink); }
+  .ck-cell-w-600 { font-weight:600; }
+  .ck-cell-w-700 { font-weight:700; }
 
   /* Personal dashboard /my/<owner> — pulse strip uses the existing
    * ck-kpi-grid; health-mix bar is the only bespoke chrome. */

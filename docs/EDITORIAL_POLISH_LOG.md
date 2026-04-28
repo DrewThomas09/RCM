@@ -2041,3 +2041,107 @@ Recommend **A** — bulk lift via script keeps the campaign's
 2-3x-per-cycle momentum and addresses the dominant remaining
 penalty pattern. Forward-only.
 
+---
+
+## Cycle 22 build — 2026-04-28 — ck_data_cell helper + utility classes
+
+**Step 22 — infrastructure for the next bulk migration.** The
+cycle 21 retrospective identified inline styles as the dominant
+penalty across 290+ pages. Source-of-truth survey: a single
+inline-style pattern accounts for ~700 instances across 124
+data_public pages:
+
+    f'<td style="text-align:right;padding:5px 10px;'
+    f'font-variant-numeric:tabular-nums;font-family:JetBrains '
+    f'Mono,monospace;font-size:11px;color:{text_dim}">{value}</td>'
+
+Each cell hand-rolls a 200-byte inline-style attribute. The 124
+files have ~10 cells each = ~1240 instances of the same shape.
+
+**Cycle 22 ships the migration target, not the migration.** A
+one-line helper + a handful of utility classes lets future
+cycles (or a careful script) replace each inline-styled cell
+with `ck_data_cell(value, align="right", mono=True, tone="dim")`.
+
+**`ck_data_cell` API.**
+
+    ck_data_cell(
+        value,                # pre-formatted display string
+        *,
+        align="left",         # left / right / center
+        mono=False,           # JetBrains Mono + tabular-nums
+        tone=None,            # dim / pos / neg / acc
+        weight=None,          # 600 / 700 / None
+        is_header=False,      # <th> instead of <td>
+    ) -> str
+
+The helper composes utility classes (`ck-cell`, `ck-cell-mono`,
+`ck-cell-r`, `tone-dim`, `ck-cell-w-700` etc.) so each output
+cell is ~30 bytes of class attribute instead of ~200 bytes of
+inline style. ~6x compression on the byte budget per page.
+
+**Utility CSS classes.** Added to `_CSS_INLINE_FALLBACK`:
+
+    .ck-cell        { padding:5px 10px; font-size:11px;
+                      color:var(--sc-text); }
+    .ck-cell-mono   { font-family:var(--sc-mono);
+                      font-variant-numeric:tabular-nums; }
+    .ck-cell-r      { text-align:right; }
+    .ck-cell-c      { text-align:center; }
+    .ck-cell.tone-dim  { color:var(--sc-text-dim); }
+    .ck-cell.tone-pos  { color:var(--sc-positive); }
+    .ck-cell.tone-neg  { color:var(--sc-negative); }
+    .ck-cell.tone-acc  { color:var(--sc-teal-ink); }
+    .ck-cell-w-600  { font-weight:600; }
+    .ck-cell-w-700  { font-weight:700; }
+
+These tokens cover every variation surfaced by the cycle-21
+survey: 685 instances of `tone-dim` (color:var(--sc-text-dim))
++ 379 of base text + 199 of `tone-pos` + 176 of `tone-acc`.
+
+**Audit recognizes ck_data_cell.** Added to the primitive
+whitelist so pages using the helper get density credit.
+
+**Step 22 — focused tests.** New `tests/test_ck_data_cell.py`
+with 10 tests pinning: minimal cell shape, header (`<th>`),
+mono modifier, alignment modifiers, tone modifiers (4 variants
++ unknown silently dropped), weight modifiers (600/700, others
+silently dropped), real-world DPI-tracker shape, value
+verbatim (caller pre-escapes).
+
+All 10 pass. Plus 95-test regression sweep clean.
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — `ck_data_cell` helper + 10
+  utility CSS classes.
+- `tools/v5_fidelity_audit.py` — primitive whitelist
+  extended.
+- `tests/test_ck_data_cell.py` — NEW, 10 tests.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Migration target shipped — pages can adopt a 1-line per cell
+  call instead of 200-byte inline-style attrs.
+- V5 fidelity passers: 21 of 310 (6.8%) — unchanged this
+  cycle. The lift comes when pages migrate.
+- Total focused tests: 261 + 2 documented skips (was 251 + 2
+  in cycle 21).
+- LOC: +50 helper + 5 audit + 100 tests = +155.
+
+**Migration math.** Each migrated cell drops from ~200 bytes
+of inline-style + interpolation to ~30 bytes of class attr +
+function call overhead. Across 124 pages × 10 cells = ~21KB
+of HTML attribute reduction per page render once fully
+migrated. Source-side: ~1200 inline-style strings replaced
+with 1200 `ck_data_cell(...)` calls — net source LOC roughly
+neutral but source readability improves dramatically.
+
+**Suggested next:** cycle 23 — write
+`tools/migrate_inline_cells.py` that detects the
+`<td style="...padding:5px 10px;font-variant-numeric..."` shape
+and rewrites it as `ck_data_cell(...)`. The script needs to
+parse the f-string interpolation (e.g. `color:{text_dim}` →
+`tone="dim"`) and align with the helper's API. Test against 5
+pages first, then bulk-apply with diff review per page (cycle
+21 lesson). Forward-only.
+
