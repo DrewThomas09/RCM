@@ -169,12 +169,31 @@ def ck_panel(body_html: str, *, title: Optional[str] = None, code: Optional[str]
     return f'<section class="ck-panel">{head}<div class="ck-panel-body">{body_html}</div></section>'
 
 
-def ck_section_header(title: str, *, eyebrow: Optional[str] = None, code: Optional[str] = None) -> str:
+def ck_section_header(
+    title: str,
+    eyebrow: Optional[str] = None,
+    count: Optional[Any] = None,
+    *,
+    code: Optional[str] = None,
+) -> str:
+    """Editorial section header — eyebrow + title + optional count badge.
+
+    Accepts the legacy 3-positional form
+    ``ck_section_header(title, subtitle, count)`` used by ~30 page
+    renderers carried over from the Bloomberg-era kit (the legacy
+    ``subtitle`` argument is rendered as the editorial eyebrow row),
+    plus the keyword form ``ck_section_header(title, eyebrow=..., count=...)``.
+    ``code`` remains keyword-only for debug overlays.
+    """
     eb = f'<div class="sc-eyebrow">{_esc(eyebrow)}</div>' if eyebrow else ""
     cd = f'<div class="ck-section-code">[{_esc(code)}]</div>' if code else ""
+    count_html = (
+        f'<span class="ck-section-count">{_esc(count)}</span>'
+        if count is not None and count != "" else ""
+    )
     return (
         '<header class="ck-section-header">'
-        f'{eb}<h2 class="sc-h2">{_esc(title)}</h2>{cd}'
+        f'{eb}<h2 class="sc-h2">{_esc(title)}{count_html}</h2>{cd}'
         "</header>"
     )
 
@@ -227,11 +246,21 @@ def ck_table(
 def ck_kpi_block(
     label: str,
     value: str,
-    *,
-    trend: Optional[str] = None,
     sub: Optional[str] = None,
+    trend: Optional[str] = None,
+    *,
     code: Optional[str] = None,
 ) -> str:
+    """Editorial KPI block — label / value / optional sub / optional trend.
+
+    Accepts the legacy 4-positional form ``ck_kpi_block(label, value,
+    sub, trend)`` used by ~80 page renderers carried over from the
+    Bloomberg-era kit, as well as the keyword form
+    ``ck_kpi_block(label, value, sub=..., trend=...)``. Empty strings
+    in ``sub`` / ``trend`` render as no-ops — legacy callers pass ``""``
+    rather than ``None`` when a slot is unused. ``code`` remains
+    keyword-only; only debug overlays use it.
+    """
     trend_html = ""
     if trend:
         tone = "positive" if trend.startswith("+") else "negative" if trend.startswith("-") else "neutral"
@@ -609,6 +638,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-badge.tone-neutral  { color:var(--sc-text-dim); }
   .ck-section-header { display:flex; align-items:flex-end; justify-content:space-between; gap:var(--sc-s-5); margin:var(--sc-s-8) 0 var(--sc-s-5); }
   .ck-section-code { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.1em; }
+  .ck-section-count { display:inline-block; font-family:var(--sc-mono); font-size:13px; font-weight:500; color:var(--sc-text-faint); margin-left:12px; vertical-align:baseline; letter-spacing:0.04em; }
 
   /* Top bar — navy + white + teal accent rule, mirrors chartis.com */
   .ck-topbar { position:sticky; top:0; z-index:50; background:var(--sc-navy); border-bottom:2px solid var(--sc-teal); }
