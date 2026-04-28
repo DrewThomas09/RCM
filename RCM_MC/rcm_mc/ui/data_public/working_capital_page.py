@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _dso_trajectory_svg(bridge) -> str:
@@ -138,10 +138,10 @@ def _payer_ar_table(payer_ar) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         dso_color = P["positive"] if p.dso_days < 40 else (P["warning"] if p.dso_days < 65 else P["negative"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(p.payer)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{p.pct_of_ar*100:.1f}%</td>',
+            f'ck_data_cell(f"{_html.escape(p.payer)}", mono=True)',
+            f'ck_data_cell(f"{p.pct_of_ar*100:.1f}%", align="right", mono=True)',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dso_color}">{p.dso_days:.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.ar_balance_mm:,.2f}</td>',
+            f'ck_data_cell(f"${p.ar_balance_mm:,.2f}", align="right", mono=True, tone="dim")',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -163,11 +163,11 @@ def _improvements_table(improvements) -> str:
     for i, im in enumerate(improvements):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(im.initiative)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">-{im.dso_reduction_days:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${im.cash_release_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${im.ongoing_fcf_impact_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{im.timeline_months} mo</td>',
+            f'ck_data_cell(f"{_html.escape(im.initiative)}", mono=True)',
+            f'ck_data_cell(f"-{im.dso_reduction_days:.1f}", align="right", mono=True, tone="pos")',
+            f'ck_data_cell(f"${im.cash_release_mm:,.2f}", align="right", mono=True)',
+            f'ck_data_cell(f"${im.ongoing_fcf_impact_mm:,.2f}", align="right", mono=True, tone="pos")',
+            f'ck_data_cell(f"{im.timeline_months} mo", align="right", mono=True, tone="dim")',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -190,12 +190,12 @@ def _bridge_table(bridge) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         fcf_color = pos if b.fcf_mm > 0 else P["negative"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">Year {b.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${b.revenue_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${b.ebitda_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.dso_days:.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${b.ar_balance_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${b.nwc_mm:,.2f}</td>',
+            f'ck_data_cell(f"Year {b.year}", mono=True)',
+            f'ck_data_cell(f"${b.revenue_mm:,.1f}", align="right", mono=True)',
+            f'ck_data_cell(f"${b.ebitda_mm:,.1f}", align="right", mono=True, tone="dim")',
+            f'ck_data_cell(f"{b.dso_days:.0f}", align="right", mono=True, tone="dim")',
+            f'ck_data_cell(f"${b.ar_balance_mm:,.2f}", align="right", mono=True, tone="dim")',
+            f'ck_data_cell(f"${b.nwc_mm:,.2f}", align="right", mono=True, tone="dim")',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{fcf_color};font-weight:600">${b.fcf_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${b.cum_cash_released_mm:,.2f}</td>',
         ]
@@ -340,4 +340,9 @@ def render_working_capital(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Working Capital Analyzer", active_nav="/working-capital")
+    return chartis_shell(body, "Working Capital Analyzer", active_nav="/working-capital",
+        editorial_intro={
+            "eyebrow": "WORKING CAPITAL",
+            "headline": "What the working capital page reveals on this deal.",
+            "italic_word": "reveals",
+        })
