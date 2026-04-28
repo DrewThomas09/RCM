@@ -73,14 +73,21 @@ class AlertsPageE2ETests(unittest.TestCase):
                 server.server_close()
 
     def test_empty_state_copy_preserved(self) -> None:
-        """A fresh DB has no deals → no active alerts → empty-state
-        card should render with the unchanged copy."""
+        """A fresh DB has no deals → no active alerts → editorial
+        empty-state card renders with affirmative copy. Pre-uplift
+        the copy was "Portfolio looks clean" + "Evaluators run on
+        every page load"; post-uplift the headline tightens to
+        "Portfolio is clean" inside an editorial ``ck-affirm-empty``
+        section, with the explainer copy lifted into the page intro.
+        Either copy is OK — what matters is that the empty signal is
+        affirmative, not blank."""
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/alerts") as r:
                     body = r.read().decode("utf-8")
-                self.assertIn("Portfolio looks clean", body)
+                self.assertIn("ck-affirm-empty", body)
+                self.assertIn("Portfolio is clean", body)
                 self.assertIn("Evaluators run on every page load", body)
             finally:
                 server.shutdown()
@@ -99,19 +106,24 @@ class AlertsPageE2ETests(unittest.TestCase):
                 server.server_close()
 
     def test_active_all_toggle_survives(self) -> None:
-        """Active-only view shows 'show acked / all' link;
-        ?show=all view shows 'active only' link back."""
+        """Active-only view shows the 'show acknowledged + all' link;
+        ?show=all view shows the 'show active only' link back. Copy
+        was tightened during the editorial uplift — abbreviation
+        'acked' replaced with full 'acknowledged' so partners reading
+        for the first time aren't decoding shorthand."""
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/alerts") as r:
                     active_body = r.read().decode("utf-8")
-                self.assertIn("show acked / all", active_body)
+                self.assertIn("Show acknowledged", active_body.lower().replace(
+                    "show acknowledged", "Show acknowledged"))
+                self.assertIn("Show acknowledged", active_body)
                 with _u.urlopen(
                     f"http://127.0.0.1:{port}/alerts?show=all"
                 ) as r:
                     all_body = r.read().decode("utf-8")
-                self.assertIn("active only", all_body)
+                self.assertIn("Show active only", all_body)
             finally:
                 server.shutdown()
                 server.server_close()

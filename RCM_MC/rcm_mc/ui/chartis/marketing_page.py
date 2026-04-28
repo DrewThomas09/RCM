@@ -388,35 +388,45 @@ def _footer() -> str:
 # ── Top-nav (minimal, marketing variant) ───────────────────────────
 
 def _marketing_topnav() -> str:
+    """Navy topbar mirroring chartis.com chrome — same wordmark +
+    teal-on-navy CTA cluster as the signed-in app's chartis_shell.
+
+    Continuity from `/` → `/login` → `/home` requires the topbar
+    silhouette to be unchanged across all three; only the right-
+    side action cluster differs (Methodology / Sign in on
+    marketing, user chip on app).
+    """
     return (
         '<header style="position:sticky;top:0;z-index:50;'
-        'background:var(--bg);'
-        'border-bottom:1px solid var(--rule);">'
-        '<div style="max-width:1280px;margin:0 auto;padding:18px 32px;'
+        'background:#0b2341;border-bottom:2px solid #2fb3ad;">'
+        '<div style="max-width:1440px;margin:0 auto;padding:18px 32px;'
         'display:flex;align-items:center;justify-content:space-between;">'
-        # Wordmark
+        # Wordmark — white with teal accent arc, italic Chartis
         '<a href="/" style="text-decoration:none;'
         'font-family:\"Source Serif 4\", Georgia, serif;font-size:20px;font-weight:500;'
-        'color:var(--ink-2);letter-spacing:-0.005em;'
+        'color:#e9eef5;letter-spacing:-0.005em;'
         'display:flex;align-items:center;gap:10px;">'
         '<svg width="26" height="26" viewBox="0 0 48 48" style="flex-shrink:0;">'
-        '<circle cx="24" cy="24" r="22" fill="none" stroke="var(--ink-2)" stroke-width="1.5"/>'
-        '<circle cx="24" cy="24" r="3" fill="var(--teal)"/>'
-        '<path d="M24 6 L19 15 L24 12 L29 15 Z" fill="var(--ink-2)"/>'
-        '<path d="M42 24 L33 19 L36 24 L33 29 Z" fill="var(--ink-2)"/>'
-        '<path d="M24 42 L29 33 L24 36 L19 33 Z" fill="var(--ink-2)"/>'
-        '<path d="M6 24 L15 29 L12 24 L15 19 Z" fill="var(--ink-2)"/>'
+        '<circle cx="24" cy="24" r="22" fill="none" stroke="#e9eef5" stroke-width="1.5"/>'
+        '<circle cx="24" cy="24" r="3" fill="#2fb3ad"/>'
+        '<path d="M24 6 L19 15 L24 12 L29 15 Z" fill="#e9eef5"/>'
+        '<path d="M42 24 L33 19 L36 24 L33 29 Z" fill="#e9eef5"/>'
+        '<path d="M24 42 L29 33 L24 36 L19 33 Z" fill="#e9eef5"/>'
+        '<path d="M6 24 L15 29 L12 24 L15 19 Z" fill="#e9eef5"/>'
         '</svg>'
-        'Seeking<em style="font-weight:400;font-style:italic;">Chartis</em></a>'
-        # Right-side CTA
-        '<div style="display:flex;align-items:center;gap:24px;">'
-        '<a href="/methodology" style="font-family:\"Inter\", -apple-system, sans-serif;'
-        'font-size:13px;font-weight:500;color:var(--muted);'
-        'text-decoration:none;">Methodology</a>'
-        '<a href="/home" style="font-family:\"Inter\", -apple-system, sans-serif;font-size:13px;'
-        'font-weight:600;color:var(--paper);background:var(--ink-2);'
-        'padding:10px 18px;border-radius:2px;text-decoration:none;">'
-        'Open Platform</a>'
+        'Seeking<em style="font-weight:400;font-style:italic;color:#66c8c3;">'
+        'Chartis</em></a>'
+        # Right-side actions
+        '<div style="display:flex;align-items:center;gap:18px;">'
+        '<a href="/methodology" style="font-family:\"Inter Tight\", -apple-system, sans-serif;'
+        'font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;'
+        'color:#a5b4ca;text-decoration:none;">Methodology</a>'
+        '<a href="/home" style="font-family:\"Inter Tight\", -apple-system, sans-serif;'
+        'font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;'
+        'color:#0b2341;background:#2fb3ad;'
+        'padding:10px 18px;border-radius:2px;text-decoration:none;'
+        'display:inline-flex;align-items:center;gap:8px;">'
+        'Open Platform <span style="font-size:14px;">↗</span></a>'
         '</div></div></header>'
     )
 

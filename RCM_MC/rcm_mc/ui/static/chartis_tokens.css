@@ -68,6 +68,57 @@
   --sc-shadow-1: 0 1px 2px rgba(6, 22, 38, 0.06);
   --sc-shadow-2: 0 6px 24px rgba(6, 22, 38, 0.08);
   --sc-shadow-3: 0 18px 48px rgba(6, 22, 38, 0.12);
+
+  /* ── Compatibility aliases ─────────────────────────────────────
+   * Legacy CAD-era (Bloomberg-style) and v3-marketing tokens map to
+   * the editorial canonical tokens above so renderers written before
+   * the editorial uplift inherit Chartis colors without per-file
+   * rewrites. Every alias is a one-line forward; the editorial
+   * --sc-* token is the source of truth. */
+
+  /* Cadence (legacy Bloomberg) → editorial */
+  --cad-pos:        var(--sc-positive);
+  --cad-neg:        var(--sc-negative);
+  --cad-warn:       var(--sc-warning);
+  --cad-accent:     var(--sc-teal);
+  --cad-bg:         var(--sc-parchment);
+  --cad-panel:      #ffffff;
+  --cad-text:       var(--sc-text);
+  --cad-text2:      var(--sc-text-dim);
+  --cad-text3:      var(--sc-text-faint);
+  --cad-border:     var(--sc-rule);
+
+  /* v3 marketing tokens → editorial (so marketing_page.py + chartis
+   * shell share the same palette and the bridge from / to /home is
+   * visually continuous instead of a regression).
+   * --teal-deep in marketing maps to our editorial teal-ink. */
+  --bg:             var(--sc-parchment);
+  --bg-alt:         var(--sc-bone);
+  --paper:          #ffffff;
+  --paper-pure:     #ffffff;
+  --border:         var(--sc-rule);
+  --border-strong:  var(--sc-rule-2);
+  --rule:           var(--sc-rule);
+  --ink:            var(--sc-ink);
+  --ink-2:          var(--sc-navy);
+  --muted:          var(--sc-text-dim);
+  --faint:          var(--sc-text-faint);
+  --teal:           var(--sc-teal);
+  --teal-soft:      #d4e4e2;
+  --teal-deep:      var(--sc-teal-ink);
+  --green:          var(--sc-positive);
+  --green-text:     var(--sc-positive);
+  --green-soft:     #dce6d9;
+  --amber:          var(--sc-warning);
+  --amber-soft:     #efe2bc;
+  --red:            var(--sc-negative);
+  --red-soft:       #ebd3cd;
+  --blue:           #2c5c84;
+  --blue-soft:      #d6e1eb;
+  --link:           var(--sc-teal-ink);
+  --accent:         var(--sc-teal);
+  --accent-soft:    #d4e4e2;
+  --card:           #ffffff;
 }
 
 /* Reset / base */

@@ -254,6 +254,137 @@ def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
 
 
 # ---------------------------------------------------------------------------
+# Editorial primitives — eyebrow, section intro, arrow link, image card.
+# These mirror the patterns on chartis.com so partner-facing pages
+# feel continuous with the marketing landing.
+# ---------------------------------------------------------------------------
+
+def ck_eyebrow(text: str, *, on_navy: bool = False) -> str:
+    """Caps eyebrow + thin teal rule. Primary section anchor pattern."""
+    cls = "ck-eyebrow on-navy" if on_navy else "ck-eyebrow"
+    return f'<div class="{cls}">{_esc(text)}</div>'
+
+
+def ck_section_intro(
+    eyebrow: str,
+    headline: str,
+    *,
+    body: Optional[str] = None,
+    italic_word: Optional[str] = None,
+    on_navy: bool = False,
+) -> str:
+    """Editorial section intro — eyebrow + serif headline + optional body.
+
+    If ``italic_word`` is provided it is wrapped in ``<em>`` inside the
+    headline (case-insensitive substring match), reproducing the
+    "Reasons to *believe* in better" cadence on chartis.com.
+    """
+    h = _esc(headline)
+    if italic_word:
+        for cand in (italic_word, italic_word.capitalize(), italic_word.upper()):
+            e_cand = _esc(cand)
+            if e_cand in h:
+                h = h.replace(e_cand, f"<em>{e_cand}</em>", 1)
+                break
+    body_html = (
+        f'<p class="ck-section-body">{_esc(body)}</p>' if body else ""
+    )
+    return (
+        '<div class="ck-section-intro">'
+        f'{ck_eyebrow(eyebrow, on_navy=on_navy)}'
+        f'<h2>{h}</h2>'
+        f'{body_html}'
+        '</div>'
+    )
+
+
+def ck_arrow_link(text: str, href: str, *, on_navy: bool = False) -> str:
+    """Teal "VIEW MORE ↗" arrow link, the primary editorial CTA."""
+    cls = "ck-arrow on-navy" if on_navy else "ck-arrow"
+    return f'<a class="{cls}" href="{_esc(href)}">{_esc(text)}</a>'
+
+
+def ck_image_card(
+    *,
+    image_html: str,
+    eyebrow: str,
+    title: str,
+    body: str,
+    cta_text: str = "Read more",
+    cta_href: str = "#",
+) -> str:
+    """Image-top editorial card — eyebrow / title / body / arrow CTA.
+
+    ``image_html`` is the inner ``<img>`` or SVG; the card wrapper
+    supplies the 4:3 aspect frame and the bottom teal border that
+    pairs cards across a row visually.
+    """
+    return (
+        '<article class="ck-image-card">'
+        f'<div class="ck-image-card-img">{image_html}</div>'
+        '<div class="ck-image-card-body">'
+        f'{ck_eyebrow(eyebrow)}'
+        f'<h3 class="ck-image-card-title">{_esc(title)}</h3>'
+        f'<p>{_esc(body)}</p>'
+        f'{ck_arrow_link(cta_text, cta_href)}'
+        '</div>'
+        '</article>'
+    )
+
+
+def ck_severity_panel(
+    *,
+    tone: str,
+    label: str,
+    count: int,
+    rows_html: str,
+) -> str:
+    """Severity-toned panel for /alerts and /escalations.
+
+    Replaces the legacy ``<div class="card"><h2>RED (1)</h2>`` pattern
+    with a Chartis-style left-rule-toned panel. ``rows_html`` is the
+    pre-rendered ``<li>`` content.
+    """
+    valid = {"red", "amber", "info", "positive", "neutral"}
+    t = tone if tone in valid else "neutral"
+    return (
+        f'<section class="ck-severity-panel tone-{t}">'
+        '<header class="ck-severity-panel-head">'
+        f'<h3>{_esc(label)}</h3>'
+        f'<span class="count">{int(count):d} item{"" if count == 1 else "s"}</span>'
+        '</header>'
+        f'<ul class="ck-severity-list">{rows_html}</ul>'
+        '</section>'
+    )
+
+
+def ck_affirm_empty(
+    *,
+    headline: str,
+    body: str,
+    cta_text: Optional[str] = None,
+    cta_href: Optional[str] = None,
+) -> str:
+    """Editorial 'all clear' empty state — affirmative, not blank.
+
+    Chartis-style positive band with optional teal arrow CTA. Used
+    when /alerts has zero active items so the partner sees a real
+    signal of health, not a void.
+    """
+    cta = (
+        ck_arrow_link(cta_text, cta_href)
+        if cta_text and cta_href else ""
+    )
+    return (
+        '<section class="ck-affirm-empty">'
+        f'<h3>{_esc(headline)}</h3>'
+        f'<p>{_esc(body)}</p>'
+        f'{cta}'
+        '</section>'
+    )
+
+
+# ---------------------------------------------------------------------------
 # Command palette (⌘K) — feed it the module catalog
 # ---------------------------------------------------------------------------
 
@@ -315,22 +446,79 @@ _CSS_INLINE_FALLBACK = """
   .ck-section-header { display:flex; align-items:flex-end; justify-content:space-between; gap:var(--sc-s-5); margin:var(--sc-s-8) 0 var(--sc-s-5); }
   .ck-section-code { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.1em; }
 
-  /* Top bar */
-  .ck-topbar { position:sticky; top:0; z-index:50; background:#fff; border-bottom:1px solid var(--sc-rule); }
-  .ck-topbar-inner { display:flex; align-items:center; gap:var(--sc-s-6); padding:14px var(--sc-s-6); max-width:1440px; margin:0 auto; }
-  .ck-wordmark { display:flex; align-items:center; gap:10px; font-family:var(--sc-serif); font-weight:500; font-size:19px; color:var(--sc-navy); letter-spacing:-0.005em; }
-  .ck-wordmark-mark { width:28px; height:28px; border-radius:50%; background:var(--sc-navy); position:relative; }
-  .ck-wordmark-mark::after { content:''; position:absolute; inset:6px; border:2px solid var(--sc-teal); border-right-color:transparent; border-bottom-color:transparent; border-radius:50%; transform:rotate(-45deg); }
-  .ck-nav { display:flex; gap:var(--sc-s-6); margin-left:var(--sc-s-4); }
-  .ck-nav a { font-family:var(--sc-sans); font-size:13px; font-weight:500; letter-spacing:0.04em; color:var(--sc-text-dim); padding:6px 0; border-bottom:2px solid transparent; }
-  .ck-nav a:hover { color:var(--sc-navy); }
-  .ck-nav a.active { color:var(--sc-navy); border-bottom-color:var(--sc-teal); }
+  /* Top bar — navy + white + teal accent rule, mirrors chartis.com */
+  .ck-topbar { position:sticky; top:0; z-index:50; background:var(--sc-navy); border-bottom:2px solid var(--sc-teal); }
+  .ck-topbar-inner { display:flex; align-items:center; gap:var(--sc-s-6); padding:18px var(--sc-s-6); max-width:1440px; margin:0 auto; }
+  .ck-wordmark { display:flex; align-items:center; gap:10px; font-family:var(--sc-serif); font-weight:500; font-size:19px; color:var(--sc-on-navy); letter-spacing:-0.005em; text-decoration:none; }
+  .ck-wordmark em { font-style:italic; font-weight:400; color:var(--sc-teal-2); }
+  .ck-wordmark-mark { width:28px; height:28px; border-radius:50%; background:transparent; border:1.5px solid var(--sc-on-navy); position:relative; flex-shrink:0; }
+  .ck-wordmark-mark::after { content:''; position:absolute; inset:5px; border:2px solid var(--sc-teal); border-right-color:transparent; border-bottom-color:transparent; border-radius:50%; transform:rotate(-45deg); }
+  .ck-nav { display:flex; gap:var(--sc-s-7); margin-left:var(--sc-s-6); }
+  .ck-nav a { font-family:var(--sc-sans); font-size:13px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--sc-on-navy-dim); padding:6px 0; border-bottom:2px solid transparent; text-decoration:none; transition:color 0.15s; }
+  .ck-nav a:hover { color:var(--sc-on-navy); }
+  .ck-nav a.active { color:var(--sc-on-navy); border-bottom-color:var(--sc-teal); }
   .ck-topbar-right { margin-left:auto; display:flex; align-items:center; gap:var(--sc-s-4); }
-  .ck-search { border:1px solid var(--sc-rule); padding:6px 12px; font-size:13px; min-width:220px; border-radius:2px; background:var(--sc-bone); font-family:var(--sc-sans); }
-  .ck-user-chip { width:32px; height:32px; border-radius:50%; background:var(--sc-navy); color:var(--sc-on-navy); display:flex; align-items:center; justify-content:center; font-family:var(--sc-sans); font-weight:600; font-size:12px; }
-  .ck-breadcrumbs { display:flex; gap:8px; padding:10px var(--sc-s-6); max-width:1440px; margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; }
-  .ck-breadcrumbs a { color:var(--sc-text-dim); }
+  .ck-search { border:1px solid var(--sc-navy-3); padding:7px 12px; font-size:12px; min-width:240px; border-radius:2px; background:var(--sc-navy-2); font-family:var(--sc-sans); color:var(--sc-on-navy); letter-spacing:0.02em; }
+  .ck-search::placeholder { color:var(--sc-on-navy-faint); }
+  .ck-search:focus { outline:none; border-color:var(--sc-teal); background:var(--sc-navy); }
+  .ck-cta { display:inline-flex; align-items:center; gap:8px; font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-on-navy); border:1px solid var(--sc-on-navy); padding:8px 14px; border-radius:2px; text-decoration:none; transition:background 0.15s, color 0.15s; }
+  .ck-cta:hover { background:var(--sc-teal); border-color:var(--sc-teal); color:var(--sc-navy); }
+  .ck-cta-arrow { display:inline-block; width:10px; height:10px; }
+  .ck-user-chip { width:34px; height:34px; border-radius:50%; background:var(--sc-teal); color:var(--sc-navy); display:flex; align-items:center; justify-content:center; font-family:var(--sc-sans); font-weight:700; font-size:12px; letter-spacing:0.04em; cursor:pointer; }
+  .ck-breadcrumbs { display:flex; gap:8px; padding:14px var(--sc-s-6); max-width:1440px; margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--sc-rule); }
+  .ck-breadcrumbs a { color:var(--sc-text-dim); text-decoration:none; }
+  .ck-breadcrumbs a:hover { color:var(--sc-teal-ink); }
   .ck-breadcrumbs .sep { color:var(--sc-rule-2); }
+
+  /* Editorial primitives — eyebrow + section intro + arrow link */
+  .ck-eyebrow { display:inline-flex; align-items:center; gap:12px; font-family:var(--sc-mono); font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--sc-text-dim); }
+  .ck-eyebrow::before { content:''; display:inline-block; width:24px; height:2px; background:var(--sc-teal); }
+  .ck-eyebrow.on-navy { color:var(--sc-on-navy-dim); }
+  .ck-eyebrow.on-navy::before { background:var(--sc-teal); }
+  .ck-section-intro { margin:var(--sc-s-9) 0 var(--sc-s-7); }
+  .ck-section-intro h2 { font-family:var(--sc-serif); font-weight:400; font-size:clamp(28px, 3.4vw, 40px); line-height:1.1; letter-spacing:-0.015em; color:var(--sc-navy); margin:var(--sc-s-5) 0 0; max-width:24ch; }
+  .ck-section-intro h2 em { font-style:italic; font-weight:400; color:var(--sc-teal-ink); }
+  .ck-section-intro .ck-section-body { font-family:var(--sc-serif); font-size:17px; line-height:1.6; color:var(--sc-text-dim); margin-top:var(--sc-s-5); max-width:54ch; }
+  .ck-arrow { display:inline-flex; align-items:center; gap:6px; font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-teal-ink); text-decoration:none; }
+  .ck-arrow::after { content:'\\2197'; font-size:14px; line-height:1; }
+  .ck-arrow:hover { color:var(--sc-navy); }
+  .ck-arrow.on-navy { color:var(--sc-teal); }
+  .ck-arrow.on-navy:hover { color:var(--sc-on-navy); }
+
+  /* Editorial card — image-top with eyebrow / title / body / arrow */
+  .ck-card-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:var(--sc-s-7); margin:var(--sc-s-6) 0; }
+  .ck-image-card { display:flex; flex-direction:column; gap:var(--sc-s-4); padding:0; background:transparent; border:0; }
+  .ck-image-card-img { width:100%; aspect-ratio:4/3; background:var(--sc-bone); border-bottom:2px solid var(--sc-teal); object-fit:cover; }
+  .ck-image-card-body { padding:var(--sc-s-4) 0 var(--sc-s-3); }
+  .ck-image-card-title { font-family:var(--sc-serif); font-weight:500; font-size:21px; line-height:1.25; color:var(--sc-navy); margin:var(--sc-s-3) 0 var(--sc-s-3); }
+  .ck-image-card-body p { font-family:var(--sc-sans); font-size:14px; line-height:1.6; color:var(--sc-text-dim); margin:0 0 var(--sc-s-4); }
+
+  /* Severity panels — replace legacy <div class="card"> in alerts/etc. */
+  .ck-severity-panel { background:#fff; border:1px solid var(--sc-rule); border-left:4px solid var(--sc-rule-2); border-radius:2px; box-shadow:var(--sc-shadow-1); margin:0 0 var(--sc-s-5); }
+  .ck-severity-panel.tone-red { border-left-color:var(--sc-negative); }
+  .ck-severity-panel.tone-amber { border-left-color:var(--sc-warning); }
+  .ck-severity-panel.tone-info { border-left-color:var(--sc-teal); }
+  .ck-severity-panel.tone-positive { border-left-color:var(--sc-positive); }
+  .ck-severity-panel-head { display:flex; align-items:baseline; justify-content:space-between; gap:var(--sc-s-4); padding:14px 18px 6px; border-bottom:1px solid var(--sc-rule); }
+  .ck-severity-panel-head h3 { font-family:var(--sc-sans); font-weight:700; font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:var(--sc-navy); }
+  .ck-severity-panel-head .count { font-family:var(--sc-mono); font-size:13px; color:var(--sc-text-faint); }
+  .ck-severity-list { list-style:none; padding:0; margin:0; }
+  .ck-severity-list li { padding:14px 18px; border-bottom:1px solid var(--sc-rule); display:flex; flex-direction:column; gap:6px; }
+  .ck-severity-list li:last-child { border-bottom:0; }
+  .ck-severity-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .ck-severity-row .deal { font-family:var(--sc-sans); font-weight:600; color:var(--sc-teal-ink); text-decoration:none; }
+  .ck-severity-row .deal:hover { color:var(--sc-navy); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; }
+  .ck-severity-row .title { color:var(--sc-text); font-size:14px; }
+  .ck-severity-row .age { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); margin-left:auto; }
+  .ck-severity-detail { font-family:var(--sc-sans); font-size:13px; line-height:1.5; color:var(--sc-text-dim); margin-left:0; }
+  .ck-severity-actions { display:flex; align-items:center; gap:8px; margin-top:4px; }
+  .ck-severity-actions select { font-family:var(--sc-sans); font-size:12px; padding:4px 8px; border:1px solid var(--sc-rule); border-radius:2px; background:#fff; color:var(--sc-text); }
+  .ck-severity-actions button { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; padding:6px 12px; border:1px solid var(--sc-navy); background:var(--sc-navy); color:var(--sc-on-navy); border-radius:2px; cursor:pointer; }
+  .ck-severity-actions button:hover { background:var(--sc-navy-2); border-color:var(--sc-navy-2); }
+  .ck-affirm-empty { background:#fff; border:1px solid var(--sc-rule); border-left:4px solid var(--sc-positive); border-radius:2px; box-shadow:var(--sc-shadow-1); padding:20px 24px; }
+  .ck-affirm-empty h3 { font-family:var(--sc-serif); font-weight:500; font-size:20px; color:var(--sc-positive); margin:0 0 6px; }
+  .ck-affirm-empty p { font-family:var(--sc-sans); font-size:14px; line-height:1.6; color:var(--sc-text-dim); margin:0; max-width:64ch; }
+  .ck-affirm-empty .ck-arrow { margin-top:var(--sc-s-4); }
 
   /* Command palette */
   .ck-palette { position:fixed; inset:0; background:rgba(6,22,38,0.4); display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; z-index:100; }
@@ -388,6 +576,13 @@ _PALETTE_JS = """
 
 
 def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
+    """Editorial topbar mirroring chartis.com chrome.
+
+    Navy background, white wordmark with italic ``Chartis``, uppercase
+    nav links with teal active underline, search anchored to the
+    right with a teal-on-navy user chip. The thin teal stripe on the
+    bottom edge is a Chartis signature.
+    """
     links = "".join(
         f'<a href="{_esc(item["href"])}" class="{"active" if item["key"] == active_nav else ""}">{_esc(item["label"])}</a>'
         for item in _CORPUS_NAV
@@ -395,11 +590,16 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     return (
         '<header class="ck-topbar">'
         '<div class="ck-topbar-inner">'
-        '<a href="/" class="ck-wordmark"><span class="ck-wordmark-mark"></span>SeekingChartis</a>'
-        f'<nav class="ck-nav">{links}</nav>'
+        '<a href="/" class="ck-wordmark" aria-label="SeekingChartis home">'
+        '<span class="ck-wordmark-mark"></span>'
+        'Seeking<em>Chartis</em>'
+        '</a>'
+        f'<nav class="ck-nav" aria-label="Primary">{links}</nav>'
         '<div class="ck-topbar-right">'
-        '<input class="ck-search" type="search" placeholder="Search deals, hospitals, routes… (⌘K)" />'
-        f'<span class="ck-user-chip">{_esc(user_initials)}</span>'
+        '<input class="ck-search" type="search" '
+        'placeholder="Search deals, hospitals, routes — ⌘K" '
+        'aria-label="Open command palette" />'
+        f'<span class="ck-user-chip" title="Signed in">{_esc(user_initials)}</span>'
         "</div>"
         "</div>"
         "</header>"
