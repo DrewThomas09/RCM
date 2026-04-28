@@ -912,3 +912,113 @@ Recommend **C (deploy/ manifest first)** — closes 3-4 more rows
 in one short cycle and unblocks the persistent-volume work
 which can't ship without a manifest. Forward-only.
 
+---
+
+## Cycle 11 build — 2026-04-28 — Azure deploy manifest + secret persistence
+
+**Step 11 — five more deploy-readiness rows closed.** Gate goes
+from 13 of 22 (59%) to **18 of 22 (82%)**. Only four rows remain
+and three of those need a real Azure ship to verify (cold-time
+measurement, post-deploy smoke gate, editorial chrome
+verification).
+
+**Row 1 — SECRETS: CSRF secret from env.** New module-level
+`_resolve_csrf_secret()` helper in `server.py` reads
+`RCM_MC_CSRF_SECRET` from env. Required length 32+ chars; shorter
+values trigger a stderr warning + ephemeral fallback rather than
+weakening the HMAC silently. The class-level `_SERVER_SECRET` is
+now resolved at import via this helper. Default behavior (no env)
+is unchanged — random per-process secret as before. With env set,
+partners stay logged in across container restarts and deploys —
+lifts the documented Phase-3 limitation in CLAUDE.md
+("Session tokens invalidate on server restart").
+
+**Row 2 — SECRETS: PII / credentials grep.** Audit of `rcm_mc/`
++ `demo.py`: no hardcoded secrets, API keys, or production
+credentials. `demo.py` ships demo admin credentials
+(`DemoPass!1`, `ChartisDemo1`) intentionally — those are seeded
+demo accounts for the container, not production credentials, and
+production deploys should rotate via `rcm-mc users password`.
+SMTP and external secrets read from env. No PII in seed data —
+every name in the corpus is a public PE deal or sponsor. Row
+checked off based on the audit, no code change needed.
+
+**Row 3 — CHARTIS_UI_V2 LOCK: deploy manifest.** New
+`deploy/azure-app-service.json` ships seven env vars:
+- `CHARTIS_UI_V2=1` (required for editorial chrome)
+- `RCM_MC_HOST=0.0.0.0` (App Service binding)
+- `LOG_LEVEL=INFO` (tuneable verbosity)
+- `RCM_MC_CSRF_SECRET=<48-char generate-fresh>` (persistent
+  secret, slotSetting=true so slot swaps don't rotate it)
+- `RCM_MC_DB_PATH=/home/data/portfolio.db` (persistent SQLite)
+- `WEBSITES_PORT=8765` (App Service port forwarding)
+- `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true` (mounts /home)
+
+Apply via
+`az webapp config appsettings set --resource-group <rg> --name
+<app> --settings @deploy/azure-app-service.json`. Pinned by 5
+manifest-validation tests.
+
+**Row 4 — DATABASE PERSISTENCE: persistent volume.** `demo.py`
+now reads `RCM_MC_DB_PATH` env when set and uses that path for
+the SQLite file (mkdir-p the parent dir for safety). Local dev
+(env unset) keeps the `tempfile.mkdtemp` fallback. The deploy
+manifest sets `RCM_MC_DB_PATH=/home/data/portfolio.db` —
+`/home` is Azure App Service's persistent mount. The
+`create_user` calls are now idempotent (catch ValueError on
+duplicate users) so a persistent DB across restarts doesn't
+crash boot when the demo accounts already exist.
+
+**Row 5 — (same row, tooling): WEBSITES_ENABLE_APP_SERVICE_STORAGE.**
+Manifest sets `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true` so
+`/home` is mounted as persistent storage. Required when
+`RCM_MC_DB_PATH` points under `/home`.
+
+**Step 11 — focused tests added.** 10 more tests appended to
+`tests/test_azure_deploy_v2.py`:
+- `CSRFSecretEnvTests` (4) — no-env-returns-random-32-bytes,
+  valid-env-used-verbatim, too-short-falls-back-to-random,
+  minimum-length-boundary
+- `AzureManifestTests` (5) — manifest is valid JSON array,
+  each entry has required keys, CHARTIS_UI_V2 set to "1",
+  required env vars present, csrf_secret marked slotSetting
+- `DBPathEnvTests` (1) — demo module imports clean under both
+  env states
+
+All pass. Total file: 24 tests, all passing.
+
+**Files touched this batch.**
+- `rcm_mc/server.py` — `_resolve_csrf_secret()` helper +
+  class-level `_SERVER_SECRET` sourced from it.
+- `demo.py` — `RCM_MC_DB_PATH` env handling +
+  idempotent `create_user`.
+- `deploy/azure-app-service.json` — NEW, 7 env vars.
+- `tests/test_azure_deploy_v2.py` — 10 more tests
+  (24 total now).
+- `docs/AZURE_DEPLOY_CHECKLIST.md` — 5 rows checked, audit
+  summary updated to 18 of 22.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Azure deploy-readiness rows passing: 18 of 22 (was 13) —
+  82% (was 59%).
+- Lifted Phase-3 documented limitation: sessions now survive
+  container restarts when CSRF secret env is set.
+- Total focused tests passing: 175 + 1 documented skip (was
+  152 + 1 in cycle 10).
+- Code lines added: ~80 (40 server.py, 25 demo.py, 30
+  manifest, ~150 effective on test side).
+
+**Suggested next:** cycle 12 — the four remaining rows split
+into two halves. Code-side: DB schema migration idempotency
+proof (verifiable locally — boot a fresh DB, dump schema,
+boot again on the same DB, dump schema, diff should be
+empty). Ship-side: cold-time `/healthz` measurement,
+post-deploy `/login` smoke gate, editorial chrome on `/app`
+post-deploy — these all need a real Azure ship. Recommend:
+ship the DB migration idempotency proof and the deploy
+artifacts now (cycle 12), then declare deploy-readiness done
+on the code side. Anything left after that is "needs a real
+Azure deploy to verify" and can be folded into the smoke
+suite once shipped. Forward-only.
+

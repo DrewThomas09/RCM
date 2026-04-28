@@ -229,9 +229,23 @@ def port_free(p):
 
 
 def main() -> int:
-    tmp = tempfile.mkdtemp(prefix="rcm_demo_")
-    db_path = os.path.join(tmp, "portfolio.db")
-    run_dir = os.path.join(tmp, "runs")
+    # ``RCM_MC_DB_PATH`` lets Azure App Service point at a path on
+    # the persistent /home volume so the SQLite file survives
+    # container restarts. Local dev (env unset) keeps the
+    # tempfile.mkdtemp fallback so a casual `python demo.py` run
+    # still gets a fresh DB on every invocation. The parent dir
+    # is created if missing — saves the partner one mkdir step.
+    db_env = (os.environ.get("RCM_MC_DB_PATH") or "").strip()
+    if db_env:
+        db_path = db_env
+        os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
+        run_dir = os.path.join(
+            os.path.dirname(db_path) or ".", "runs",
+        )
+    else:
+        tmp = tempfile.mkdtemp(prefix="rcm_demo_")
+        db_path = os.path.join(tmp, "portfolio.db")
+        run_dir = os.path.join(tmp, "runs")
     os.makedirs(run_dir, exist_ok=True)
 
     store = PortfolioStore(db_path)
@@ -242,11 +256,16 @@ def main() -> int:
     # Create the demo admin last — this switches the server into
     # multi-user mode, so all subsequent access goes through /login.
     # Both accounts get role=admin so they land in the same
-    # dashboard with the same permissions.
-    create_user(store, USERNAME, PASSWORD,
-                display_name="Demo Partner", role="admin")
-    create_user(store, PARTNER_USERNAME, PARTNER_PASSWORD,
-                display_name="Andrew Thomas", role="admin")
+    # dashboard with the same permissions. On a persistent DB the
+    # users may already exist; idempotent on second run.
+    for _u, _p, _dn in (
+        (USERNAME, PASSWORD, "Demo Partner"),
+        (PARTNER_USERNAME, PARTNER_PASSWORD, "Andrew Thomas"),
+    ):
+        try:
+            create_user(store, _u, _p, display_name=_dn, role="admin")
+        except ValueError:
+            pass  # already exists on a persistent DB — fine
 
     # Pick a port
     port = PORT

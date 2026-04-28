@@ -1395,6 +1395,36 @@ def _sanitize_profile_margins(profile: Dict[str, Any]) -> Dict[str, Any]:
     return profile
 
 
+def _resolve_csrf_secret() -> bytes:
+    """Source the HMAC secret used for CSRF tokens.
+
+    When ``RCM_MC_CSRF_SECRET`` is set in the environment (Azure App
+    Service Configuration is the supported path), the secret is taken
+    from there so it persists across container restarts — partners
+    stay logged in across deploys. Required length: 32+ chars; an
+    env value shorter than that triggers a stderr warning and the
+    ephemeral fallback rather than weakening the HMAC silently.
+
+    With no env, falls back to a per-process random 32-byte secret.
+    Sessions don't survive restart in that mode (the documented
+    Phase-3 behavior in CLAUDE.md "Known limitations").
+    """
+    import secrets as _secrets
+    import sys as _sys
+    env = (os.environ.get("RCM_MC_CSRF_SECRET") or "").strip()
+    if env and len(env) >= 32:
+        return env.encode("utf-8")
+    if env:
+        _sys.stderr.write(
+            "[rcm-mc] WARNING: RCM_MC_CSRF_SECRET is too short "
+            f"({len(env)} chars; need >= 32). Falling back to an "
+            "ephemeral per-process secret — partners will be kicked "
+            "to /login on every container restart.\n"
+        )
+        _sys.stderr.flush()
+    return _secrets.token_bytes(32)
+
+
 class RCMHandler(BaseHTTPRequestHandler):
     """Main request handler. Lightweight dispatch on ``path``."""
 
@@ -1523,10 +1553,19 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     # ── Auth gate (B89) ──
 
-    # B128: per-process HMAC secret for CSRF tokens. Ephemeral — rotates
-    # each server restart, which also invalidates old form tokens (but
-    # sessions survive via the server_secret mismatch check below).
-    _SERVER_SECRET: bytes = __import__("secrets").token_bytes(32)
+    # B128: per-process HMAC secret for CSRF tokens. Ephemeral by
+    # default — rotates each server restart, which also invalidates
+    # old form tokens (but sessions survive via the server_secret
+    # mismatch check below).
+    #
+    # Cycle 11 (Azure deploy-readiness): when ``RCM_MC_CSRF_SECRET``
+    # is set in the environment, the secret is sourced from there
+    # instead of ``secrets.token_bytes`` so Azure App Service can
+    # persist it across container restarts. This stops partners from
+    # being kicked back to the login screen on every deploy. Required
+    # length: 32+ chars. Anything shorter falls back to the ephemeral
+    # default with a stderr warning rather than weakening the HMAC.
+    _SERVER_SECRET: bytes = _resolve_csrf_secret()
 
     # B130: simple per-IP login rate limiter. Not a substitute for a
     # real WAF; enough to slow credential stuffing in dev deploys.

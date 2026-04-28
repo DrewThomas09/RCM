@@ -24,11 +24,28 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
 
 ## SECRETS
 
-- [ ] `secret_key` for session cookies sourced from env, never
-      hardcoded.
-  - Current: `rcm_mc/auth/session.py` (or equivalent) — needs
-    audit.
-- [ ] No DB credentials, API keys, or PII in repo or env defaults.
+- [x] `secret_key` for session cookies sourced from env, never
+      hardcoded. (iter cycle-11)
+  - Two distinct secrets: (1) per-session token via
+    `secrets.token_urlsafe(32)` stored in DB — no master key
+    needed; (2) per-process CSRF HMAC secret. The CSRF secret
+    now reads `RCM_MC_CSRF_SECRET` env (32+ chars required;
+    shorter values trigger a stderr warning + ephemeral
+    fallback). When env is set, partners stay logged in across
+    container restarts. When unset, falls back to the
+    documented Phase-3 ephemeral behavior. Pinned by 4 tests
+    in `tests/test_azure_deploy_v2.py::CSRFSecretEnvTests`.
+- [x] No DB credentials, API keys, or PII in repo or env defaults.
+      (iter cycle-11)
+  - Grep audit of `rcm_mc/` + `demo.py`: no hardcoded secrets.
+    `demo.py` ships demo credentials (`DemoPass!1`,
+    `ChartisDemo1`) intentionally — these are seeded admin
+    accounts for the demo container, not production
+    credentials. Production deploys should rotate them via
+    `rcm-mc users password` after first boot. SMTP / external
+    secrets read from env (`SMTP_PASS`, etc.). No PII in
+    seed data — every name in the corpus is a public PE deal
+    or sponsor.
 
 ## STATIC ASSETS
 
@@ -115,17 +132,39 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
       point: `demo.py` startup banner, `CLAUDE.md`,
       `EDITORIAL_POLISH_LOG.md`. Without it the app falls back to
       the legacy dark Bloomberg shell — DO NOT ship like that.
-- [ ] Azure App Service Configuration JSON includes the
+- [x] Azure App Service Configuration JSON includes the
       `CHARTIS_UI_V2=1` setting (deploy manifest).
+      (iter cycle-11)
+  - `deploy/azure-app-service.json` ships with
+    `CHARTIS_UI_V2=1` plus six other operational env vars
+    (`RCM_MC_HOST`, `LOG_LEVEL`, `RCM_MC_CSRF_SECRET`,
+    `RCM_MC_DB_PATH`, `WEBSITES_PORT`,
+    `WEBSITES_ENABLE_APP_SERVICE_STORAGE`). Apply via
+    `az webapp config appsettings set --resource-group <rg> \
+    --name <app> --settings @deploy/azure-app-service.json`.
+    Pinned by 5 tests in
+    `tests/test_azure_deploy_v2.py::AzureManifestTests`.
 
 ## DATABASE PERSISTENCE
 
-- [ ] `portfolio.db` written to a path that survives container
-      restarts on Azure.
-  - Current: `demo.py` uses `tempfile.mkdtemp(prefix="rcm_demo_")`
-    — wiped on restart. Production needs a mounted volume
-    (Azure Files share / managed disk) at e.g. `/data`.
+- [x] `portfolio.db` written to a path that survives container
+      restarts on Azure. (iter cycle-11)
+  - `demo.py` now reads `RCM_MC_DB_PATH` env when set and uses
+    that path for the SQLite file (creating its parent dir if
+    needed). Local dev (env unset) keeps the
+    `tempfile.mkdtemp` fallback so `python demo.py` still gets
+    a fresh DB. The deploy manifest sets
+    `RCM_MC_DB_PATH=/home/data/portfolio.db` and
+    `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true` — `/home` is
+    Azure App Service's persistent mount. `create_user` calls
+    are now idempotent (catch ValueError on duplicate users)
+    so a persistent DB across restarts doesn't crash boot.
 - [ ] DB schema migrations idempotent on cold start.
+  - `infra/migrations.run_pending()` is called by
+    `build_server`; needs verification that all 89-table
+    `CREATE TABLE IF NOT EXISTS` migrations are no-op when
+    the table exists with the expected schema. Cycle 12
+    target.
 
 ## SMOKE TEST (post-deploy)
 
@@ -145,31 +184,34 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
 **Cycle 1 baseline (2026-04-28):** 6 of 22 passing.
 **Cycle 4-5 update:** 7 of 22 passing (PORT-from-env shipped).
 **Cycle 10 update (2026-04-28):** **13 of 22 passing.**
+**Cycle 11 update (2026-04-28):** **18 of 22 passing.**
 
-Cycle 10 closed 6 rows in one batch:
-1. PORT BINDING — auto-bind `0.0.0.0` on Azure (env-detected).
-2. STATIC ASSETS — `Cache-Control: public, max-age=3600` on
-   `/static/*`.
-3. LOGGING — `LOG_LEVEL` env configurable (named or numeric).
-4. AUTH SESSION COOKIE — `HttpOnly` + `SameSite=Lax` verified.
-5. AUTH SESSION COOKIE — `Secure` on HTTPS verified
-   (`X-Forwarded-Proto: https` driven).
-6. AUTH SESSION COOKIE — `HttpOnly` regression-pinned.
+Cycle 11 closed 5 more rows in one batch:
+1. SECRETS — `secret_key` from env via
+   `RCM_MC_CSRF_SECRET`. Persists across container restarts
+   so partners stay logged in across deploys.
+2. SECRETS — no DB credentials / API keys / PII in repo
+   audit.
+3. CHARTIS_UI_V2 LOCK — `deploy/azure-app-service.json`
+   manifest with `CHARTIS_UI_V2=1` + 6 other operational
+   env vars.
+4. DATABASE PERSISTENCE — `RCM_MC_DB_PATH` env points DB at
+   Azure persistent `/home/data/` volume.
+5. (`WEBSITES_ENABLE_APP_SERVICE_STORAGE=true` in manifest
+   to mount `/home` — same row, different tooling.)
 
-All six are pinned by 14 new tests in
-`tests/test_azure_deploy_v2.py`.
+10 new tests in `tests/test_azure_deploy_v2.py` covering
+CSRF-secret env semantics + manifest contents + DB-path env
+clean import.
 
-**Still pending (9 of 22):**
-- CHARTIS_UI_V2=1 in deploy/ manifest
-- `secret_key` for sessions sourced from env (audit)
-- No DB credentials / API keys / PII in repo or env defaults
+**Still pending (4 of 22):**
+- DB schema migrations idempotent on cold start (cycle 12)
 - `/healthz` cold-container response time <100ms confirmation
+  (needs a real Azure ship)
 - Production WSGI/ASGI server (gunicorn/hypercorn) — deferred
-- Azure App Service Configuration JSON snapshot
-- `portfolio.db` on a mounted volume that survives restarts
-- DB schema migrations idempotent on cold start
-- Same /login round-trip exercised post-Azure-deploy
-- Editorial chrome verification on `/app` post-deploy
+  by design until post-MVP load testing
+- Same /login round-trip exercised post-Azure-deploy + chrome
+  verification on `/app` post-deploy (needs a real Azure ship)
 
 **Next-up rows for cycle 2 step 10:**
 1. PORT from env (5-line change to the production entry point).

@@ -249,5 +249,146 @@ class SessionCookieFlagsTests(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
 
+class CSRFSecretEnvTests(unittest.TestCase):
+    """RCM_MC_CSRF_SECRET env var sources the CSRF HMAC secret.
+
+    Lets Azure App Service Configuration persist the secret across
+    container restarts so partners stay logged in across deploys.
+    Documented Phase-3 limitation in CLAUDE.md is that sessions
+    invalidate on restart in the no-env mode; this test class pins
+    the env-override path that lifts that limitation.
+    """
+
+    def _resolve(self):
+        # Re-import the resolver each call so it re-reads env state.
+        import importlib
+        import sys
+        sys.modules.pop("rcm_mc.server", None)
+        # The resolver itself doesn't depend on the rest of server.py,
+        # but it's defined in that module. Importing the module is
+        # cheap (already-resolved imports are cached) and gives us
+        # the real production code path.
+        from rcm_mc.server import _resolve_csrf_secret
+        return _resolve_csrf_secret()
+
+    def test_no_env_returns_random_32_bytes(self):
+        with _env(RCM_MC_CSRF_SECRET=None):
+            secret = self._resolve()
+            self.assertEqual(len(secret), 32)
+            # A second call returns a different secret (randomness).
+            self.assertNotEqual(secret, self._resolve())
+
+    def test_valid_env_value_used_verbatim(self):
+        good = "a" * 48
+        with _env(RCM_MC_CSRF_SECRET=good):
+            secret = self._resolve()
+            self.assertEqual(secret, good.encode("utf-8"))
+
+    def test_too_short_env_falls_back_to_random(self):
+        # The fallback is silent at the test level (warning goes to
+        # stderr) — the key invariant is that a weak env doesn't
+        # weaken the HMAC.
+        with _env(RCM_MC_CSRF_SECRET="too-short"):
+            secret = self._resolve()
+            # Random fallback is 32 bytes
+            self.assertEqual(len(secret), 32)
+            self.assertNotEqual(secret, b"too-short")
+
+    def test_minimum_length_boundary(self):
+        # Exactly 32 chars must be accepted
+        boundary = "x" * 32
+        with _env(RCM_MC_CSRF_SECRET=boundary):
+            secret = self._resolve()
+            self.assertEqual(secret, boundary.encode("utf-8"))
+
+
+class AzureManifestTests(unittest.TestCase):
+    """deploy/azure-app-service.json carries every required env var."""
+
+    def _load_manifest(self):
+        import json
+        import pathlib
+        here = pathlib.Path(__file__).parent.parent
+        manifest_path = here / "deploy" / "azure-app-service.json"
+        with manifest_path.open() as f:
+            return json.load(f)
+
+    def test_manifest_is_valid_json_array(self):
+        manifest = self._load_manifest()
+        self.assertIsInstance(manifest, list)
+        self.assertGreater(len(manifest), 0)
+
+    def test_each_entry_has_required_keys(self):
+        manifest = self._load_manifest()
+        for entry in manifest:
+            self.assertIn("name", entry)
+            self.assertIn("value", entry)
+            self.assertIn("slotSetting", entry)
+
+    def test_chartis_ui_v2_set_to_one(self):
+        manifest = self._load_manifest()
+        entry = next(
+            (e for e in manifest if e["name"] == "CHARTIS_UI_V2"),
+            None,
+        )
+        self.assertIsNotNone(entry, "CHARTIS_UI_V2 missing from manifest")
+        self.assertEqual(entry["value"], "1")
+
+    def test_required_env_vars_present(self):
+        manifest = self._load_manifest()
+        names = {e["name"] for e in manifest}
+        for required in (
+            "CHARTIS_UI_V2",
+            "RCM_MC_HOST",
+            "LOG_LEVEL",
+            "RCM_MC_CSRF_SECRET",
+            "RCM_MC_DB_PATH",
+            "WEBSITES_PORT",
+            "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+        ):
+            self.assertIn(
+                required, names,
+                f"manifest missing required env var: {required}",
+            )
+
+    def test_csrf_secret_marked_slot_setting(self):
+        # SlotSetting=true keeps the secret bound to its slot during
+        # slot swaps so blue-green deploys don't accidentally rotate
+        # secrets.
+        manifest = self._load_manifest()
+        entry = next(
+            (e for e in manifest if e["name"] == "RCM_MC_CSRF_SECRET"),
+            None,
+        )
+        self.assertIsNotNone(entry)
+        self.assertTrue(entry["slotSetting"])
+
+
+class DBPathEnvTests(unittest.TestCase):
+    """demo.py reads RCM_MC_DB_PATH env to enable persistent storage."""
+
+    def _reload_demo(self):
+        import sys
+        sys.modules.pop("demo", None)
+        proj_root = os.path.dirname(
+            os.path.dirname(os.path.abspath(
+                __import__("rcm_mc").__file__,
+            )),
+        )
+        if proj_root not in sys.path:
+            sys.path.insert(0, proj_root)
+        return importlib.import_module("demo")
+
+    def test_demo_module_imports_clean(self):
+        # demo.py is the production entry; smoke-test its import
+        # path under both env states.
+        with _env(RCM_MC_DB_PATH=None):
+            demo = self._reload_demo()
+            self.assertTrue(hasattr(demo, "main"))
+        with _env(RCM_MC_DB_PATH="/tmp/rcm_test/portfolio.db"):
+            demo = self._reload_demo()
+            self.assertTrue(hasattr(demo, "main"))
+
+
 if __name__ == "__main__":
     unittest.main()
