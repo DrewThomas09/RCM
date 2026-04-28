@@ -625,6 +625,9 @@ def render_insights_page(
     subtitle: Optional[str] = None,
     breadcrumbs: Optional[Sequence[Any]] = None,
     chip_label_overrides: Optional[Mapping[str, Any]] = None,
+    extra_chips: Optional[Sequence[Mapping[str, str]]] = None,
+    omit_auto_chips: Optional[Sequence[str]] = None,
+    prelude_html: str = "",
 ) -> str:
     """Compose the chartis Insights triplet around a body of items.
 
@@ -658,6 +661,7 @@ def render_insights_page(
     """
     facet_names = {f["name"] for f in facets}
     overrides = chip_label_overrides or {}
+    skip_auto = set(omit_auto_chips or ())
 
     # Build extra_hidden for the search hero — every state field
     # except the keyword itself round-trips so submitting q
@@ -702,9 +706,18 @@ def render_insights_page(
         return action + "?" + _up.urlencode(kept)
 
     for name, value in nonempty.items():
+        if name in skip_auto:
+            # Caller supplies its own chip(s) for this name via
+            # ``extra_chips`` (e.g. multi-value tag filters where
+            # each tag drops independently — the auto-builder can't
+            # know how to drop one tag from a list-valued URL state).
+            continue
         if name == keyword_name:
             label = f'"{value}"'
-        elif name in facet_names:
+        elif name in facet_names or name in overrides:
+            # Either a facet or a name with an explicit chip-label
+            # override (e.g. /notes' ``deal_id`` — not a sidebar
+            # facet but partner sees it as an active scope chip).
             override = overrides.get(name)
             if callable(override):
                 label = override(value)
@@ -721,6 +734,12 @@ def render_insights_page(
             "label": label,
             "remove_href": _url_omit(name),
         })
+
+    # Caller-supplied chips for cases the auto-builder can't handle
+    # (multi-value facets, computed labels, etc.). Appended after
+    # auto-chips so the visual order is "main facets → extras → q".
+    if extra_chips:
+        chips.extend(extra_chips)
 
     results_head = ck_results_header(
         count=count,
@@ -748,7 +767,12 @@ def render_insights_page(
         '</div>'
     )
 
-    full_body = intro_html + search_hero + rail_layout
+    # ``prelude_html`` is full-width content the caller wants between
+    # the search hero and the rail layout (e.g. /library puts a KPI
+    # strip + page-explainer block there). Empty string when unused.
+    full_body = (
+        intro_html + search_hero + prelude_html + rail_layout
+    )
 
     return chartis_shell(
         full_body,

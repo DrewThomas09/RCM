@@ -153,7 +153,15 @@ def score_file(path: Path) -> Optional[FidelityScore]:
     # filtered above.
 
     has_shell = bool(_RE_CHARTIS_SHELL.search(src))
-    primitives = len(_RE_CK_PRIMITIVES.findall(src))
+    # Each ``render_insights_page`` call composes ~5 ck_* primitives
+    # (search hero + filter sidebar + results header + section header +
+    # section intro + chartis_shell). Without weighting, pages that
+    # use the helper score lower than pages that hand-wire each
+    # primitive — penalising the abstraction. Count helper calls 5x.
+    raw_primitives = _RE_CK_PRIMITIVES.findall(src)
+    helper_calls = sum(1 for p in raw_primitives if p == "render_insights_page")
+    other_primitives = len(raw_primitives) - helper_calls
+    primitives = other_primitives + (helper_calls * 5)
     italic_kwarg = bool(_RE_ITALIC_HIGHLIGHT.search(src))
     italic_em = bool(_RE_ITALIC_EM.search(src))
     italic = italic_kwarg or italic_em

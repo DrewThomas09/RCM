@@ -62,17 +62,21 @@ def render_notes_search(
     deal_id: str = "",
     tags_raw: str = "",
 ) -> str:
-    """Render /notes with the chartis Insights triplet chrome.
+    """Render /notes via the cycle-18 Insights-triplet helper.
 
     ``tags_raw`` is the space-separated tag string from the URL —
     we split, dedupe, and use AND semantics against the data layer
     via the existing ``search_notes`` helper.
+
+    The tags facet is multi-select: the URL state carries a
+    space-separated string but each tag chip drops independently.
+    The helper's auto-chip-builder can't know how to drop one tag
+    from a list-valued URL, so we omit ``tags`` from auto-chips and
+    pass the per-tag chips via ``extra_chips``. Everything else
+    (search hero, filter sidebar, results header, deal_id chip,
+    keyword chip, Clear all, intro) the helper builds for free.
     """
-    from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_search_hero, ck_filter_sidebar,
-        ck_results_header, ck_section_header, ck_section_intro,
-        ck_arrow_link,
-    )
+    from rcm_mc.ui._chartis_kit import render_insights_page
     from rcm_mc.deals.deal_notes import search_notes
     from rcm_mc.deals.note_tags import tags_for_notes, all_note_tags
 
@@ -89,13 +93,11 @@ def render_notes_search(
     except ValueError as exc:
         tag_err = str(exc)
 
-    # All known tags for the filter sidebar (most-used first). Each
-    # carries a count so the partner sees popularity at a glance.
+    # All known tags for the filter sidebar (most-used first).
     try:
         known_tags = all_note_tags(store)
     except Exception:
         known_tags = []
-
     tag_options: List[Dict[str, Any]] = [
         {
             "label": f"{tag} ({count})",
@@ -105,83 +107,17 @@ def render_notes_search(
         for tag, count in known_tags
     ]
 
-    # Search hero — full-width navy panel. Carries deal_id + tags
-    # through hidden inputs so a fresh keyword search preserves the
-    # active scope.
-    search_hero = ck_search_hero(
-        action="/notes",
-        name="q",
-        initial=q,
-        label="Search",
-        placeholder="Note text…",
-        extra_hidden={"deal_id": deal_id, "tags": tags_raw},
-    )
-
-    # Filter sidebar — BY TAG group; checkbox multi-select since
-    # tags AND together. Hidden inputs preserve q + deal_id when
-    # the partner toggles a tag.
-    filter_rail = ck_filter_sidebar(
-        title="Filter",
-        form_action="/notes",
-        groups=[
-            {
-                "title": "By tag",
-                "name": "tags",
-                "input_type": "checkbox",
-                "options": tag_options,
-            },
-        ] if tag_options else [],
-        extra_hidden={"q": q, "deal_id": deal_id},
-        more_threshold=12,
-    )
-
-    # Active-filter chips for the results header. Each chip drops
-    # just that one filter from the URL.
-    chips: List[Dict[str, str]] = []
-    if deal_id:
-        chips.append({
-            "label": f"deal: {deal_id}",
-            "remove_href": _build_url(q=q, tags=active_tags),
-        })
+    # Per-tag remove chips: each drops just that tag, preserving
+    # the others.
+    extra_chips: List[Dict[str, str]] = []
     for tag in active_tags:
         remaining = [t for t in active_tags if t != tag]
-        chips.append({
+        extra_chips.append({
             "label": tag,
-            "remove_href": _build_url(q=q, deal_id=deal_id, tags=remaining),
+            "remove_href": _build_url(
+                q=q, deal_id=deal_id, tags=remaining,
+            ),
         })
-    if q:
-        chips.append({
-            "label": f'"{q}"',
-            "remove_href": _build_url(deal_id=deal_id, tags=active_tags),
-        })
-
-    count = 0 if df is None else len(df)
-    results_head = ck_results_header(
-        count=f"{count:,}",
-        label="Notes" if count != 1 else "Note",
-        chips=chips or None,
-        clear_all_href="/notes" if chips else None,
-    )
-
-    section = ck_section_header(
-        "Full-text search across deal notes",
-        eyebrow="NOTES",
-    )
-
-    # Editorial intro — italic-serif highlight matches the chartis
-    # cadence on /alerts and /my/<owner>. Sits above the search hero
-    # so the partner's first read on /notes carries the chartis
-    # signature ("Where the analyst voice *finds* its archive.")
-    intro = ck_section_intro(
-        eyebrow="NOTES SEARCH",
-        headline="Where the analyst voice finds its archive.",
-        italic_word="finds",
-        body=(
-            "Full-text search across every deal note in the portfolio, "
-            "scoped by tag or by deal. Note bodies render with case-"
-            "insensitive keyword highlighting in the results below."
-        ),
-    )
 
     # Results body — mirrors the legacy list shape but with editorial
     # tokens. Empty / no-query / error states each render their own
@@ -255,23 +191,50 @@ def render_notes_search(
             + '</ul>'
         )
 
-    rail_layout = (
-        '<div class="ck-rail-layout">'
-        f'{filter_rail}'
-        '<div class="ck-rail-content">'
-        f'{section}{results_head}{results_body}'
-        '</div>'
-        '</div>'
+    count = 0 if df is None else len(df)
+
+    facets = (
+        [{
+            "title": "By tag",
+            "name": "tags",
+            "input_type": "checkbox",
+            "options": tag_options,
+        }] if tag_options else []
     )
 
-    body = intro + search_hero + rail_layout
-
-    return chartis_shell(
-        body,
+    return render_insights_page(
+        action="/notes",
+        state={"q": q, "deal_id": deal_id, "tags": tags_raw},
+        facets=facets,
+        count=f"{count:,}",
+        count_label="Notes" if count != 1 else "Note",
+        body_html=results_body,
         title="Notes Search",
         active_nav="research",
+        keyword_placeholder="Note text…",
+        section_title="Full-text search across deal notes",
+        section_eyebrow="NOTES",
+        intro={
+            "eyebrow": "NOTES SEARCH",
+            "headline": "Where the analyst voice finds its archive.",
+            "italic_word": "finds",
+            "body": (
+                "Full-text search across every deal note in the "
+                "portfolio, scoped by tag or by deal. Note bodies "
+                "render with case-insensitive keyword highlighting "
+                "in the results below."
+            ),
+        },
+        chip_label_overrides={
+            "deal_id": lambda v: f"deal: {v}",
+        },
+        # Tags are multi-value — the helper can't auto-build chips
+        # for them. ``extra_chips`` adds one chip per active tag,
+        # each dropping just that tag from the URL.
+        omit_auto_chips=("tags",),
+        extra_chips=extra_chips,
         subtitle=(
             f'{count:,} match{"es" if count != 1 else ""}'
-            + (f" for \"{_html.escape(q)}\"" if q else "")
+            + (f' for "{q}"' if q else "")
         ),
     )

@@ -156,14 +156,70 @@ def render_deals_library(
     sort_dir: str = "desc",
     moic_bucket: str = "",
 ) -> str:
-    from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_table, ck_section_header, ck_section_intro,
-        ck_search_hero, ck_filter_sidebar, ck_results_header,
-    )
+    """Render /library via the cycle-18 Insights-triplet helper.
+
+    The page work is just (1) filter the corpus, (2) sort the rows,
+    (3) build facet options, (4) render the table; the chrome
+    (search hero + filter sidebar + results header + chips +
+    Clear all + intro + KPI strip prelude) is composed by
+    ``render_insights_page``.
+    """
+    from rcm_mc.ui._chartis_kit import render_insights_page, ck_table
     from rcm_mc.ui.chartis._helpers import render_page_explainer
 
     deals = _get_all_seed_deals()
     rows = _build_rows(deals)
+
+    # Server-side filters
+    if sector_filter:
+        rows = [r for r in rows if r["sector"] == sector_filter]
+    if regime_filter:
+        rows = [r for r in rows if r["regime"] == regime_filter]
+    bucket_entry = _MOIC_BUCKETS.get(moic_bucket)
+    if bucket_entry is not None:
+        _, _pred = bucket_entry
+        rows = [r for r in rows if _pred(r.get("moic"))]
+
+    # Sort
+    _SORT_KEY = {
+        "entry_year": "entry_year", "moic": "moic", "ev_mm": "ev_mm",
+        "multiple": "multiple", "deal_name": "deal_name",
+    }
+    sk = _SORT_KEY.get(sort_by, "entry_year")
+    rev = sort_dir == "desc"
+    rows.sort(key=lambda r: (r[sk] is None, r[sk] or 0 if isinstance(r[sk], (int, float)) else str(r[sk] or "")), reverse=rev)
+
+    # Facet options derived from full corpus, not the filtered subset
+    all_sectors = sorted({d.get("sector") for d in deals if d.get("sector")})
+    all_regimes = ["expansion", "peak", "contraction", "recovery", "correction", "normalization"]
+
+    facets = [
+        {
+            "title": "By sector", "name": "sector", "input_type": "radio",
+            "options": [
+                {"label": "All sectors", "value": "", "checked": not sector_filter},
+                *[{"label": s, "value": s, "checked": s == sector_filter}
+                  for s in all_sectors],
+            ],
+        },
+        {
+            "title": "By regime", "name": "regime", "input_type": "radio",
+            "options": [
+                {"label": "All regimes", "value": "", "checked": not regime_filter},
+                *[{"label": r.title(), "value": r, "checked": r == regime_filter}
+                  for r in all_regimes],
+            ],
+        },
+        {
+            "title": "By MOIC", "name": "moic_bucket", "input_type": "radio",
+            "options": [
+                {"label": "All MOIC", "value": "", "checked": not moic_bucket},
+                *[{"label": label, "value": key, "checked": key == moic_bucket}
+                  for key, (label, _pred) in _MOIC_BUCKETS.items()],
+            ],
+        },
+    ]
+
     explainer = render_page_explainer(
         what=(
             "Browsable 655-deal healthcare-PE corpus — name, sponsor, "
@@ -186,148 +242,45 @@ def render_deals_library(
         ),
         page_key="library",
     )
-
-    # Build filter options
-    all_sectors = sorted({d.get("sector") for d in deals if d.get("sector")})
-    all_regimes = ["expansion", "peak", "contraction", "recovery", "correction", "normalization"]
-
-    # Apply server-side filters (client-side search handles the rest)
-    if sector_filter:
-        rows = [r for r in rows if r["sector"] == sector_filter]
-    if regime_filter:
-        rows = [r for r in rows if r["regime"] == regime_filter]
-    bucket_entry = _MOIC_BUCKETS.get(moic_bucket)
-    if bucket_entry is not None:
-        _, _pred = bucket_entry
-        rows = [r for r in rows if _pred(r.get("moic"))]
-
-    # Sort
-    _SORT_KEY = {
-        "entry_year": "entry_year", "moic": "moic", "ev_mm": "ev_mm",
-        "multiple": "multiple", "deal_name": "deal_name",
-    }
-    sk = _SORT_KEY.get(sort_by, "entry_year")
-    rev = sort_dir == "desc"
-    rows.sort(key=lambda r: (r[sk] is None, r[sk] or 0 if isinstance(r[sk], (int, float)) else str(r[sk] or "")), reverse=rev)
-
-    # Build chartis Insights-style filter rail groups. Single-select
-    # radio rows match the existing single-value URL state for each
-    # facet; the "All …" option is the no-filter default. q + sort
-    # round-trip through extra_hidden so toggling a facet preserves
-    # the active keyword and sort order.
-    def _sector_opts():
-        yield {"label": "All sectors", "value": "", "checked": not sector_filter}
-        for s in all_sectors:
-            yield {"label": s, "value": s, "checked": s == sector_filter}
-
-    def _regime_opts():
-        yield {"label": "All regimes", "value": "", "checked": not regime_filter}
-        for r in all_regimes:
-            yield {"label": r.title(), "value": r, "checked": r == regime_filter}
-
-    def _moic_opts():
-        yield {"label": "All MOIC", "value": "", "checked": not moic_bucket}
-        for key, (label, _pred) in _MOIC_BUCKETS.items():
-            yield {"label": label, "value": key, "checked": key == moic_bucket}
-
-    filter_rail = ck_filter_sidebar(
-        title="Filter",
-        form_action="/library",
-        groups=[
-            {"title": "By sector", "name": "sector", "input_type": "radio",
-             "options": list(_sector_opts())},
-            {"title": "By regime", "name": "regime", "input_type": "radio",
-             "options": list(_regime_opts())},
-            {"title": "By MOIC", "name": "moic_bucket", "input_type": "radio",
-             "options": list(_moic_opts())},
-        ],
-        extra_hidden={"q": search, "sort_by": sort_by, "sort_dir": sort_dir},
-    )
-
     kpis = _kpi_bar(deals, rows)
-    section = ck_section_header(
-        "All healthcare PE transactions",
-        eyebrow="DEAL CORPUS",
-    )
     table = ck_table(rows, _COLUMNS)
 
-    # Build the chartis Insights N-RESULTS header. Each active facet
-    # gets a chip whose href drops just that facet (preserving the
-    # other URL state) so partner can clear filters one-at-a-time.
-    # Clear-all returns to /library with no filters or sort state.
-    def _url_with(**overrides: str) -> str:
-        params = {
+    return render_insights_page(
+        action="/library",
+        state={
             "sector": sector_filter,
             "regime": regime_filter,
             "moic_bucket": moic_bucket,
             "q": search,
             "sort_by": sort_by,
             "sort_dir": sort_dir,
-        }
-        params.update(overrides)
-        kept = [(k, v) for k, v in params.items() if v]
-        if not kept:
-            return "/library"
-        return "/library?" + urllib.parse.urlencode(kept)
-
-    chips: List[Dict[str, str]] = []
-    if sector_filter:
-        chips.append({"label": sector_filter, "remove_href": _url_with(sector="")})
-    if regime_filter:
-        chips.append({"label": regime_filter.title(), "remove_href": _url_with(regime="")})
-    if moic_bucket:
-        bucket_label = _MOIC_BUCKETS.get(moic_bucket, (moic_bucket, None))[0]
-        chips.append({"label": bucket_label, "remove_href": _url_with(moic_bucket="")})
-    if search:
-        chips.append({"label": f'"{search}"', "remove_href": _url_with(q="")})
-
-    results_head = ck_results_header(
-        count=f"{len(rows):,}",
-        label="Deals",
-        chips=chips or None,
-        clear_all_href="/library" if chips else None,
-    )
-    # Chartis Insights-style search hero — navy panel with italic
-    # "Search" label + circular submit + teal chevron-cut bottom-right.
-    # Renders full-width above the rail+content layout so the partner's
-    # first read on /library matches chartis.com. Filter selections
-    # round-trip through extra_hidden so submitting a new keyword
-    # doesn't drop the active facets.
-    search_hero = ck_search_hero(
-        action="/library", name="q", initial=search,
-        placeholder="Deal name, sponsor, sector…",
-        extra_hidden={
-            "sector": sector_filter,
-            "regime": regime_filter,
-            "moic_bucket": moic_bucket,
         },
-    )
-
-    rail_layout = (
-        '<div class="ck-rail-layout">'
-        f'{filter_rail}'
-        '<div class="ck-rail-content">'
-        f'{section}{results_head}{table}'
-        '</div>'
-        '</div>'
-    )
-
-    intro = ck_section_intro(
-        eyebrow="DEAL CORPUS",
-        headline="The healthcare-PE deal universe, cataloged.",
-        italic_word="cataloged",
-        body=(
-            "Every deal we've ingested — name, sponsor, vintage, "
-            "EV/EBITDA, realized MOIC and IRR. Filter by sector, "
-            "regime, or MOIC bucket to assemble comparables."
-        ),
-    )
-
-    body = intro + search_hero + explainer + kpis + rail_layout
-
-    return chartis_shell(
-        body,
+        facets=facets,
+        count=f"{len(rows):,}",
+        count_label="Deals",
+        body_html=table,
         title="Deals Library",
         active_nav="/library",
+        keyword_placeholder="Deal name, sponsor, sector…",
+        section_title="All healthcare PE transactions",
+        section_eyebrow="DEAL CORPUS",
+        intro={
+            "eyebrow": "DEAL CORPUS",
+            "headline": "The healthcare-PE deal universe, cataloged.",
+            "italic_word": "cataloged",
+            "body": (
+                "Every deal we've ingested — name, sponsor, vintage, "
+                "EV/EBITDA, realized MOIC and IRR. Filter by sector, "
+                "regime, or MOIC bucket to assemble comparables."
+            ),
+        },
+        # Regime chip should label as Title-cased so the chip reads
+        # "Peak" not "peak"; MOIC bucket chips use the canonical
+        # bucket label ("2.0x – 3.0x") not the URL key ("2to3").
+        chip_label_overrides={
+            "regime": lambda v: v.title(),
+            "moic_bucket": lambda v: _MOIC_BUCKETS.get(v, (v, None))[0],
+        },
+        prelude_html=explainer + kpis,
         subtitle=f"{len(rows):,} deals · {len({r['sector'] for r in rows})} sectors · sorted by {sort_by} {sort_dir}",
     )
