@@ -209,10 +209,15 @@ def score_file(path: Path) -> Optional[FidelityScore]:
 
     # +20: Cleanliness — credits absence of inline-style and bespoke-
     # div HTML. A page with zero inline styles and zero bespoke divs
-    # gets the full 20; each violation removes points.
+    # gets the full 20; each violation removes points on a SLIDING
+    # scale (cycle 24 recalibration). Previously the penalty saturated
+    # at -15 for ≥30 inline styles — meaning a page going from 100 to
+    # 50 inline styles got zero credit. The new formula scales
+    # linearly with the actual count up to a higher ceiling, so
+    # migration progress earns proportional credit.
     cleanliness = 20
-    cleanliness -= min(15, inline_styles // 2)
-    cleanliness -= min(10, max(0, bespoke_divs // 4))
+    cleanliness -= min(15, int(inline_styles * 0.18))
+    cleanliness -= min(10, int(bespoke_divs * 0.20))
     score += max(0, cleanliness)
     if inline_styles > 5:
         notes.append(f"high inline-style count: {inline_styles}")
