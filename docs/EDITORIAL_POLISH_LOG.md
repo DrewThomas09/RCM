@@ -1113,3 +1113,103 @@ deploy-time issue we can't anticipate from local testing
 breaks at ship time. A real Azure ship would either confirm
 deploy-readiness or surface the next gap. Forward-only.
 
+---
+
+## Cycle 13 build — 2026-04-28 — Post-deploy smoke gate scripted
+
+**Step 13 — `tools/azure_smoke.py` shipped.** Closes the gap
+between cycle-12's "code-side complete, ship to verify the
+last 3 rows" state and the next Azure deploy: when partner
+runs the script against the live URL, the three remaining
+deploy rows verify themselves mechanically.
+
+**The script bundles three checks.**
+1. `/healthz` 200 with latency under threshold (default 1000ms;
+   tune down with `--max-healthz-ms 500` once a baseline is
+   established on the cold-container shape).
+2. `/login` → `POST /api/login` round-trip with the seeded
+   demo credentials, asserting status 200/303 + an `rcm_session`
+   cookie was issued.
+3. `GET /app` carries the editorial chrome — four load-bearing
+   markers from the chartis_shell topbar (`class="ck-topbar"`,
+   `class="ck-wordmark"`, `Seeking<em>Chartis</em>`, `ck-nav`).
+
+**CLI shape.**
+
+    python tools/azure_smoke.py https://<app>.azurewebsites.net
+    python tools/azure_smoke.py https://staging.example.net \\
+        --username andrewthomas@chartis.com \\
+        --password ChartisDemo1 \\
+        --max-healthz-ms 500 \\
+        --json
+
+Exit 0 on full pass; non-zero on any failure (CI-friendly).
+`--json` emits a machine-readable summary; default human output
+is a banner + per-check PASS/FAIL line.
+
+**Step 13 — focused test suite.** New `tests/test_azure_smoke.py`
+with 10 tests boots an in-process RCM-MC server on a random
+port (with `CHARTIS_UI_V2=1` set to mirror the Azure deploy
+env from `deploy/azure-app-service.json`), seeds the demo
+credentials, and runs the same checks the script would run
+against `*.azurewebsites.net`:
+- `HealthzCheckTests` (3) — pass under threshold, fail when
+  threshold too tight, fail when host unreachable
+- `LoginRoundTripTests` (2) — pass with valid creds + opener
+  with cookie returned, fail with bad creds + no opener
+- `AppChromeTests` (1) — chrome markers present after login
+- `FullSmokeRunTests` (2) — full run all-pass against healthy
+  server, full run failure cascade (login fails → chrome check
+  reports skipped)
+- `CLIExitCodeTests` (2) — exit 0 on pass, non-zero on fail
+
+All 10 pass. Plus a smoke run against the in-process server
+manually verified the human/JSON output renders cleanly.
+
+**Files touched this batch.**
+- `tools/azure_smoke.py` — NEW, 230 LOC.
+- `tests/test_azure_smoke.py` — NEW, 10 tests.
+- `docs/AZURE_DEPLOY_CHECKLIST.md` — Smoke Test rows updated
+  from `[ ]` to `[~]` (scripted, awaiting first ship); audit
+  summary updated.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Azure deploy-readiness rows passing: 19 of 22 (no row count
+  change — the 2 scripted rows stay `[~]` until the first
+  Azure ship). But of the 3 remaining rows, 2 are now
+  one-command verifiable post-ship.
+- Code-side deploy-readiness: complete (cycle 12).
+- Post-deploy verification: scripted + locally tested
+  (cycle 13).
+- Total focused tests passing: 191 + 1 documented skip (was
+  181 + 1 in cycle 12).
+- Total LOC added: ~230 production (smoke script) + ~190
+  test = ~420.
+
+**Suggested next:** **The Azure track is feature-complete.**
+The remaining work is non-Azure:
+
+- **A — pivot back to editorial polish.** The cycle 7 polish-
+  log queue still has untouched work: `/escalations` +
+  `/my/<owner>` (alerts archetype, reuse `ck_severity_panel`
+  + `ck_affirm_empty`); `/audit` admin surface chrome;
+  per-page chartis-match dives across the 50 data_public
+  pages.
+
+- **B — open a PR for design-v5 → main.** This branch is now
+  22+ commits ahead of main with 7 cycles of editorial
+  polish, 4 cycles of Azure deploy-readiness, and a clean
+  test baseline. Consolidating into a PR and merging would
+  let other branches build on this foundation.
+
+- **C — connect /research to the catalog.** Currently
+  `RESEARCH_ENTRIES` is curated in code; cycle 9 noted that
+  a future iteration should move it to a SQLite table once
+  the editorial team needs to publish without a deploy.
+
+Recommend **A** — keeps momentum on the editorial-fidelity
+campaign that drove cycles 6-9. /escalations + /my/<owner>
+reuse existing helpers and would land in 1-2 commits.
+Forward-only.
+

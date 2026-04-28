@@ -182,9 +182,20 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
   - Verified locally during this session via curl + the server's
     own request log: GET `/login` 200 → POST `/api/login` 303 →
     GET `/` 303 → GET `/app` 200. End-to-end auth works.
-- [ ] Same round-trip exercised post-Azure-deploy as a smoke gate.
-- [ ] Editorial chrome present on `/app` (navy topbar + italic
+- [~] Same round-trip exercised post-Azure-deploy as a smoke gate.
+      (cycle 13: scripted, awaiting first Azure ship)
+  - Wired via `tools/azure_smoke.py`. Run after every deploy:
+    `python tools/azure_smoke.py https://<app>.azurewebsites.net`.
+    Returns exit code 0 on pass, non-zero on any failed check;
+    `--json` flag emits a CI-friendly summary.
+- [~] Editorial chrome present on `/app` (navy topbar + italic
       `Chartis` wordmark + teal accent rule visible in HTML).
+      (cycle 13: scripted, awaiting first Azure ship)
+  - `tools/azure_smoke.py` asserts four load-bearing chrome
+    markers — `class="ck-topbar"`, `class="ck-wordmark"`,
+    `Seeking<em>Chartis</em>`, `ck-nav` — on the post-login
+    `/app` response. 10 tests in `tests/test_azure_smoke.py`
+    pin both pass and fail paths against an in-process server.
 
 ---
 
@@ -195,6 +206,21 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
 **Cycle 10 update (2026-04-28):** **13 of 22 passing.**
 **Cycle 11 update (2026-04-28):** **18 of 22 passing.**
 **Cycle 12 update (2026-04-28):** **19 of 22 passing.**
+**Cycle 13 update (2026-04-28):** **19 of 22 passing + 2 of 3
+remaining rows scripted via `tools/azure_smoke.py`.**
+
+Cycle 13 didn't move the row count (the 2 scripted rows still
+need a real Azure ship to flip from `[~]` to `[x]`), but
+delivered the verification artifact so the post-deploy walk
+is one command:
+
+    python tools/azure_smoke.py https://<app>.azurewebsites.net
+
+Three checks bundled: `/healthz` 200 + latency, `/login` →
+`/api/login` round-trip with cookie posture, and `/app`
+editorial chrome assertion. Exit 0 on full pass; `--json` for
+a CI summary. Locally exercised by 10 tests in
+`tests/test_azure_smoke.py`.
 
 Cycle 12 closed the last code-side row:
 - DATABASE PERSISTENCE — DB schema migrations idempotent on
@@ -203,14 +229,17 @@ Cycle 12 closed the last code-side row:
   schema-diff and a static convention check that every
   `CREATE TABLE` in the codebase uses `IF NOT EXISTS`.
 
-The remaining 3 rows all need a real Azure ship to verify:
-- `/healthz` cold-container <100ms confirmation
-- /login round-trip exercised post-deploy
-- Editorial chrome on `/app` post-deploy
+The remaining row that genuinely needs a real Azure ship:
+- `/healthz` cold-container <100ms confirmation — ship-time
+  measurement against a real cold-started container.
 
-These belong to a "post-ship verification" rather than the
-deploy-readiness gate — the code is ready; the deploy itself
-is the next step.
+The other two are now scripted and pending one deploy:
+- /login round-trip post-deploy — `tools/azure_smoke.py`
+  closes this on first run against the live URL.
+- Editorial chrome on `/app` post-deploy — same.
+
+Code-side deploy-readiness is **complete**. Post-deploy
+verification is **scripted**. Only thing left is the ship.
 
 Cycle 11 closed 5 more rows in one batch:
 1. SECRETS — `secret_key` from env via
