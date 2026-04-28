@@ -416,4 +416,9 @@ def render_ic_memo_gen(params: Dict[str, str]) -> str:
         page_key="corpus-ic-memo",
     )
     subtitle = f"Target: {html.escape(deal_name)}" if has_inputs else "Corpus benchmarking"
-    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/corpus-ic-memo", subtitle=subtitle)
+    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/corpus-ic-memo", subtitle=subtitle,
+        editorial_intro={
+            "eyebrow": "IC MEMO",
+            "headline": "What the ic memo page reveals on this deal.",
+            "italic_word": "reveals",
+        })

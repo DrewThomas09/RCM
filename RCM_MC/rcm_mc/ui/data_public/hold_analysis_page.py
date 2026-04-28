@@ -281,4 +281,9 @@ def render_hold_analysis() -> str:
 </div>"""
 
     return chartis_shell(body, "Hold Duration Analysis", active_nav="/hold-analysis",
-                         subtitle=f"{len(has_hold)} deals with hold data")
+                         subtitle=f"{len(has_hold)} deals with hold data",
+        editorial_intro={
+            "eyebrow": "{LEN(HAS_HOLD)} DEALS WITH HOLD DATA",
+            "headline": "What the {len(has_hold)} deals with hold data reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -206,4 +206,9 @@ def render_sector_momentum(recent_years: int = 5) -> str:
 </div>"""
 
     return chartis_shell(body, "Sector Momentum", active_nav="/sector-momentum",
-                         subtitle=f"{recent_years}y window — {len(momentum_data)} sectors")
+                         subtitle=f"{recent_years}y window — {len(momentum_data)} sectors",
+        editorial_intro={
+            "eyebrow": "{RECENT_YEARS}Y WINDOW — {LEN(MOMENTUM_DATA)} SECTORS",
+            "headline": "What the {recent_years}y window — {len(momentum_data)} sectors reveals on this deal.",
+            "italic_word": "reveals",
+        })

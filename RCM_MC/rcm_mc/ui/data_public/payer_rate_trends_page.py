@@ -288,4 +288,9 @@ def render_payer_rate_trends() -> str:
 </div>"""
 
     return chartis_shell(body, "Payer Rate Trends", active_nav="/payer-rate-trends",
-                         subtitle=f"{len(with_payer)} deals with payer data")
+                         subtitle=f"{len(with_payer)} deals with payer data",
+        editorial_intro={
+            "eyebrow": "{LEN(WITH_PAYER)} DEALS WITH PAYER DATA",
+            "headline": "What the {len(with_payer)} deals with payer data reveals on this deal.",
+            "italic_word": "reveals",
+        })

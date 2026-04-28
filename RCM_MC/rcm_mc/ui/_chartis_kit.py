@@ -88,6 +88,40 @@ P.update({
 })
 
 # ---------------------------------------------------------------------------
+# Font-family constants — referenced by SVG text elements that
+# need a font-family attr (CSS classes don't apply inside SVG
+# unless the document's CSS reaches into it). Cycle 29 restores
+# these constants that 12 data_public pages still import.
+# ---------------------------------------------------------------------------
+
+_MONO = "JetBrains Mono,monospace"
+_SANS = "Inter Tight,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif"
+
+
+# Cycle 29 — backward-compat helpers for pre-cycle-22 helper names
+# that 12+ data_public pages still import directly. ``ck_fmt_moic``
+# is a thin formatter; ``ck_fmt_num`` / ``ck_fmt_pct`` aliases get
+# defined later (after the underlying ``ck_fmt_number`` /
+# ``ck_fmt_percent`` are defined further down in this file).
+
+
+def ck_fmt_moic(v: Optional[float], *, dash: str = "—") -> str:
+    """Backward-compat MOIC formatter — pre-cycle-22 helper name.
+
+    Several data_public pages (ic_memo_page, lp_dashboard_page, and
+    siblings) call ``ck_fmt_moic(value)`` to produce ``2.40x`` style
+    multiplier text. The helper got renamed during the cycle 6 kit
+    refresh; cycle 29 restores it as a thin alias on top of
+    ``ck_fmt_number``.
+    """
+    if v is None:
+        return dash
+    try:
+        return f"{float(v):.2f}x"
+    except (TypeError, ValueError):
+        return dash
+
+# ---------------------------------------------------------------------------
 # Navigation — top bar primary + Platform Index secondary
 # ---------------------------------------------------------------------------
 
@@ -146,6 +180,14 @@ def ck_fmt_number(v: Optional[float], *, precision: int = 0, dash: str = "—") 
         return f"{v:,.{precision}f}"
     except Exception:
         return dash
+
+
+# Cycle 29 — backward-compat aliases for pre-cycle-22 names. Defined
+# AFTER the underlying functions so the rebind succeeds. 12+
+# data_public pages import these names directly; renaming each call
+# site is a future-cycle cleanup.
+ck_fmt_num = ck_fmt_number
+ck_fmt_pct = ck_fmt_percent
 
 
 # ---------------------------------------------------------------------------

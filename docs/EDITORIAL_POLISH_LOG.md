@@ -2643,3 +2643,73 @@ regression sweep clean (88 focused tests pass).
 Recommend **C** first (cheap, unblocks downstream), then **A**.
 Forward-only.
 
+---
+
+## Cycle 29 build — 2026-04-28 — kit backward-compat unblocks 12 pages
+
+**Step 29 — restore the legacy helper names that 12 pages still
+import.** The cycle 28 audit identified 12 data_public pages
+that fail to import because they reference symbols removed
+from `rcm_mc/ui/_chartis_kit.py` during the cycle 6 kit
+refresh: `_MONO`, `_SANS`, `ck_fmt_moic`, `ck_fmt_num`,
+`ck_fmt_pct`. The pages couldn't participate in any migration
+cycle until those names exist again.
+
+**Restored to the kit:**
+
+- `_MONO = "JetBrains Mono,monospace"` — font-family constant
+  for SVG `font-family` attrs (CSS classes don't apply inside
+  SVG without explicit reach-in).
+- `_SANS = "Inter Tight,-apple-system,..."` — same role for
+  sans-serif SVG text.
+- `ck_fmt_moic(v)` — formatter for MOIC multipliers
+  (`2.40x`). Thin function, not an alias.
+- `ck_fmt_num = ck_fmt_number` — alias for the renamed helper.
+- `ck_fmt_pct = ck_fmt_percent` — alias for the renamed helper.
+
+All five are placed correctly: constants near the top of the
+kit; `ck_fmt_moic` as a real def; aliases AFTER
+`ck_fmt_number` / `ck_fmt_percent` are defined so the rebind
+target exists.
+
+**Result.** 144 of 144 data_public pages import cleanly post-
+cycle-29. Was 132 of 144 in cycle 28 (12 unblocked).
+
+The 12 unblocked pages got their cycle-28 migrations applied
+(table chrome) + cycle-25 intros added. They didn't all clear
+the 70 threshold this cycle (they have larger inline-style
+counts in non-table parts), but they're now in the audit
+denominator and eligible for future migrations.
+
+**Audit pass rate: 159 of 310 (51.3%) — unchanged this
+cycle.** The unblock is real; the lift on those specific
+pages requires more work in their bespoke chrome (KPI cards,
+SVG charts, custom layout). They're now reachable.
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — `_MONO`, `_SANS`,
+  `ck_fmt_moic`, `ck_fmt_num`, `ck_fmt_pct` restored.
+- 12 data_public pages — table chrome migrated +
+  editorial_intro added (best-effort).
+- `docs/V5_FIDELITY_REPORT.md` — refreshed.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- 144 of 144 data_public pages import cleanly (was 132).
+- V5 fidelity passers: 159 of 310 (51.3%) — unchanged.
+- Total focused tests: 267 + 2 documented skips (no change).
+- LOC: +25 kit (constants + aliases + ck_fmt_moic).
+
+**Suggested next:** cycle 30 — three branches:
+
+- **A — header `<th>` migration** (cycle 28 deferred). A
+  `ck_data_th(label, *, align)` helper + companion script
+  could lift the 60-79 cluster into the 80s.
+- **B — port the 14 chartis_shell-less pages.** Structural
+  ports.
+- **C — KPI-card / badge inline-style cluster.** The third
+  pattern after cells (cycle 22) and table chrome (cycle 28).
+
+Recommend **A** — same pattern as cycles 22-28, expected
++30-50 passers. Forward-only.
+

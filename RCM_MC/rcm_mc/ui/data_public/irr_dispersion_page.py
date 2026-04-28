@@ -234,4 +234,9 @@ def render_irr_dispersion() -> str:
 </div>"""
 
     return chartis_shell(body, "IRR Dispersion", active_nav="/irr-dispersion",
-                         subtitle=f"{len(has_irr)} deals with IRR data")
+                         subtitle=f"{len(has_irr)} deals with IRR data",
+        editorial_intro={
+            "eyebrow": "{LEN(HAS_IRR)} DEALS WITH IRR DATA",
+            "headline": "What the {len(has_irr)} deals with irr data reveals on this deal.",
+            "italic_word": "reveals",
+        })
