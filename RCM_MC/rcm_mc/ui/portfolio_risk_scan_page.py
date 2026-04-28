@@ -365,8 +365,8 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         empty = (
             '<p>No active deals in the portfolio store yet. '
             'Add deals via the <a href="/new-deal" '
-            'style="color:#1F4E78;">new deal wizard</a> or import '
-            'via <a href="/import" style="color:#1F4E78;">Quick '
+            'style="color:var(--sc-navy);">new deal wizard</a> or import '
+            'via <a href="/import" style="color:var(--sc-navy);">Quick '
             'import</a>, then this scan will populate.</p>'
         )
         body = (
@@ -448,7 +448,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         deal_id = d["deal_id"]
         name_link = (
             f'<a href="/deal/{_html.escape(deal_id)}" '
-            f'style="color:#1F4E78;font-weight:500;text-decoration:none;">'
+            f'style="color:var(--sc-navy);font-weight:500;text-decoration:none;">'
             f'{_html.escape(d["name"])}</a>'
             f'<div style="font-family:monospace;font-size:10px;'
             f'color:#6b7280;margin-top:2px;text-transform:uppercase;">'
@@ -501,7 +501,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         '<a href="/api/portfolio/risk-scan.csv" '
         'download style="display:inline-block;margin:0 0 12px;'
         'padding:6px 12px;background:#fff;border:1px solid #d0e3f0;'
-        'color:#1F4E78;border-radius:4px;font-size:12px;'
+        'color:var(--sc-navy);border-radius:4px;font-size:12px;'
         'font-weight:500;text-decoration:none;'
         'transition:background 0.1s;" '
         'onmouseover="this.style.background=\'#f0f6fc\';" '

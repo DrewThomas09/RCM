@@ -58,7 +58,7 @@ def _source_row(source_name: str, status: Dict[str, Any]) -> str:
         f'<td class="job-status" style="font-size:12px;">—</td>'
         f'<td style="text-align:right;">'
         f'<button class="refresh-btn" data-source="{name}" '
-        f'style="background:#1F4E78;color:#fff;border:none;padding:5px 12px;'
+        f'style="background:var(--sc-navy);color:#fff;border:none;padding:5px 12px;'
         f'border-radius:4px;font-size:12px;cursor:pointer;">Refresh</button>'
         f'</td>'
         f'</tr>'

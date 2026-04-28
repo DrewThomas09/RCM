@@ -46,7 +46,7 @@ def _input_form(qs: Dict[str, Any]) -> str:
         'style="padding:6px 8px;border:1px solid #e5e7eb;'
         'border-radius:4px;font-size:13px;width:100%;"></div>'
         '<button type="submit" '
-        'style="padding:8px 16px;background:#1F4E78;color:#fff;'
+        'style="padding:8px 16px;background:var(--sc-navy);color:#fff;'
         'border:0;border-radius:4px;font-size:13px;font-weight:500;'
         'cursor:pointer;">Run track record</button>'
         '</form>'
@@ -71,7 +71,7 @@ def _stat(label: str, big: str, sub: str = "",
         "alert":    ("#fef2f2", "#991b1b"),
         "positive": ("#f0fdf4", "#065f46"),
         "warn":     ("#fffbeb", "#92400e"),
-        "neutral":  ("#fff",    "#1F4E78"),
+        "neutral":  ("#fff",    "var(--sc-navy)"),
     }
     bg, fg = palette.get(tone, palette["neutral"])
     return (
@@ -132,7 +132,7 @@ def _vintage_bars(years_active: List[int],
         c = deal_count_per_year.get(y, 0)
         h = (c / max_count) * bar_h_max if max_count else 0
         x = i * (bar_w + gap)
-        color = "#1F4E78" if c > 0 else "#f3f4f6"
+        color = "var(--sc-navy)" if c > 0 else "#f3f4f6"
         bars.append(
             f'<rect x="{x:.1f}" y="{height - h - 12:.1f}" '
             f'width="{bar_w:.1f}" height="{h:.1f}" '
@@ -179,7 +179,7 @@ def _sector_pie(sectors_with_counts: Dict[str, int]) -> str:
             f'{_html.escape(sector)}</span>'
             f'<div style="background:#f3f4f6;border-radius:3px;'
             f'height:12px;overflow:hidden;">'
-            f'<div style="background:#1F4E78;height:100%;'
+            f'<div style="background:var(--sc-navy);height:100%;'
             f'width:{bar_w}%;"></div></div>'
             f'<span style="color:#6b7280;font-variant-numeric:'
             f'tabular-nums;text-align:right;">{count} · '
@@ -263,7 +263,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                     f'<p style="margin:0;font-size:12px;color:#6b7280;">'
                     f'For the full league table across every '
                     f'sponsor, see <a href="/sponsor-track-record" '
-                    f'style="color:#1F4E78;">/sponsor-track-record</a>.'
+                    f'style="color:var(--sc-navy);">/sponsor-track-record</a>.'
                     f'</p>'
                 )
             )
@@ -281,7 +281,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
             f'<a href="/diligence/sponsor-detail?'
             f'sponsor={_urlparse.quote(s)}" '
             f'style="display:inline-block;margin:2px 4px 2px 0;'
-            f'padding:4px 10px;background:#f0f6fc;color:#1F4E78;'
+            f'padding:4px 10px;background:#f0f6fc;color:var(--sc-navy);'
             f'border:1px solid #d0e3f0;border-radius:4px;'
             f'font-size:12px;text-decoration:none;">'
             f'{_html.escape(s)}</a>'

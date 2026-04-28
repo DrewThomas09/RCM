@@ -26,9 +26,9 @@ from typing import List, Tuple
 
 
 def _button(href: str, label: str, *, primary: bool = False) -> str:
-    bg = "#1F4E78" if primary else "#fff"
-    fg = "#fff" if primary else "#1F4E78"
-    border = "1px solid #1F4E78"
+    bg = "var(--sc-navy)" if primary else "#fff"
+    fg = "#fff" if primary else "var(--sc-navy)"
+    border = "1px solid var(--sc-navy)"
     return (
         f'<a href="{_html.escape(href)}" '
         f'style="display:inline-block;padding:6px 14px;margin:0 6px 6px 0;'

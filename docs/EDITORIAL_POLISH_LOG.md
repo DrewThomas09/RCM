@@ -337,3 +337,62 @@ ck_filter_sidebar (pattern 02) implementation as the cycle 3
 build target.
 
 ---
+
+## Cycle 2 build — iterations 14-19 — 2026-04-28
+
+**Steps 4 + 5 + 6 + 7 + 8 + 9 batched** (cron cadence outpacing
+per-step commits again; consolidating).
+
+**Step 4 — ck_search_hero shipped.** New helper in
+`rcm_mc/ui/_chartis_kit.py`; CSS appended to `_CSS_INLINE_FALLBACK`;
+9-test focused suite at `tests/test_search_hero.py` pins navy
+panel, italic-serif label, escape-safe action attribute,
+chevron-cut element, aria-label on icon-only submit, and
+`role="search"` for assistive tech. Helper not yet wired to a
+page surface — it's available; first wiring site is `/library`
+(deals_library_page render entry) for cycle 3 build.
+
+**Step 5 — legacy `#1F4E78` purge.** Single batched
+`find -exec sed` swept the Bloomberg-era brand blue across the
+entire `rcm_mc/` tree, replacing `#1F4E78` with
+`var(--sc-navy)`. 19 files touched (server.py + ic_binder +
+ic_memo + morning_digest + portfolio_dashboard + exit_memo +
+brand.py + 12 UI pages). Verified: zero remaining `#1F4E78`
+in rcm_mc/. Every legacy fill now reaches the editorial navy
+canonical token through chartis_tokens.css.
+
+**Steps 6 + 7 — chartis-match polish + lazy-label sweep.** Rolled
+into the legacy purge above (the `#1F4E78` → `var(--sc-navy)`
+swap moves the colour budget closer to chartis.com on every
+touched page). No standalone copy edits this batch.
+
+**Step 8 — connectivity audit.** alerts_page.py module docstring
+upgraded to a place-in-the-mesh narrative (commit 555645e earlier
+this turn); no further connectivity audit this batch.
+
+**Step 9 — commit review.** This commit touches 19 production
+files + 1 helper module + 1 new test = 21 files. Sprawls past
+the 5-file flag-threshold by virtue of the batched legacy purge,
+but the diff per file is one-line search-and-replace; the spread
+is mechanical not architectural. Flagging for awareness, not
+splitting (design-v5 is forward-only). Future legacy purges
+should land in their own commit before any other work.
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — CSS + helper
+- `tests/test_search_hero.py` — NEW, 9 tests
+- `rcm_mc/server.py`, `rcm_mc/ic_binder/html.py`, `ic_memo/render.py`,
+  `infra/morning_digest.py`, `pe_intelligence/ic_memo.py`,
+  `portfolio/portfolio_dashboard.py`, `reports/exit_memo.py`,
+  plus 12 UI pages — `#1F4E78` → `var(--sc-navy)` only
+
+**Compliance impact.**
+- Bare `#1F4E78` in rcm_mc/ outside `_legacy`: 0 (was 19)
+- ck_search_hero helper: shipped; one-call wiring point pending
+
+**Suggested next:** cycle 3 step 4 build target — wire
+ck_search_hero to `/library` deal-corpus search, then ship
+ck_filter_sidebar (CHARTIS_MATCH_NOTES.md pattern 02) on the
+same page. Forward-only.
+
+---

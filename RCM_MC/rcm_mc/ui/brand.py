@@ -30,11 +30,11 @@ BRAND = {
 
 LOGO_SVG = (
     '<svg viewBox="0 0 32 32" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">'
-    '<path d="M16 2L16 28" stroke="#1F4E78" stroke-width="2.5" stroke-linecap="round"/>'
-    '<path d="M10 6C10 6 13 8 16 8C19 8 22 6 22 6" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
-    '<path d="M10 12C10 12 13 14 16 14C19 14 22 12 22 12" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
-    '<path d="M10 18C10 18 13 20 16 20C19 20 22 18 22 18" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
-    '<path d="M12 2L20 2" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M16 2L16 28" stroke="var(--sc-navy)" stroke-width="2.5" stroke-linecap="round"/>'
+    '<path d="M10 6C10 6 13 8 16 8C19 8 22 6 22 6" stroke="var(--sc-navy)" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M10 12C10 12 13 14 16 14C19 14 22 12 22 12" stroke="var(--sc-navy)" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M10 18C10 18 13 20 16 20C19 20 22 18 22 18" stroke="var(--sc-navy)" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M12 2L20 2" stroke="var(--sc-navy)" stroke-width="2" stroke-linecap="round"/>'
     '<circle cx="10" cy="3" r="1.5" fill="#3b82f6"/>'
     '<circle cx="22" cy="3" r="1.5" fill="#3b82f6"/>'
     '</svg>'

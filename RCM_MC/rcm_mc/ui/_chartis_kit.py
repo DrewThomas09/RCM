@@ -358,6 +358,52 @@ def ck_severity_panel(
     )
 
 
+def ck_search_hero(
+    *,
+    label: str = "Search",
+    placeholder: str = "Keyword",
+    action: str,
+    name: str = "q",
+    initial: Optional[str] = None,
+    method: str = "GET",
+) -> str:
+    """Navy search hero with italic-serif label + circular submit
+    + teal chevron-cut bottom-right corner. Mirrors the Chartis
+    Insights page hero exactly. Drop above any content-listing
+    page (``/library``, ``/research``, ``/notes``, ``/search``)
+    so the partner's first read is the same as on chartis.com.
+
+    Spec: ``docs/CHARTIS_MATCH_NOTES.md`` pattern 01.
+    """
+    initial_attr = (
+        f' value="{_esc(initial)}"' if initial else ""
+    )
+    return (
+        '<section class="ck-search-hero">'
+        '<div class="ck-search-hero-inner">'
+        f'<span class="ck-search-hero-label">{_esc(label)}</span>'
+        f'<form class="ck-search-hero-form" method="{_esc(method)}" '
+        f'action="{_esc(action)}" role="search">'
+        f'<input class="ck-search-hero-input" type="search" '
+        f'name="{_esc(name)}" placeholder="{_esc(placeholder)}" '
+        f'aria-label="{_esc(label)}"{initial_attr}>'
+        '<button class="ck-search-hero-submit" type="submit" '
+        'aria-label="Run search">'
+        '<svg viewBox="0 0 24 24" width="18" height="18" '
+        'aria-hidden="true">'
+        '<circle cx="10" cy="10" r="6" fill="none" '
+        'stroke="currentColor" stroke-width="1.5"/>'
+        '<line x1="14.5" y1="14.5" x2="20" y2="20" '
+        'stroke="currentColor" stroke-width="1.5"/>'
+        '</svg>'
+        '</button>'
+        '</form>'
+        '</div>'
+        '<span class="ck-search-hero-chevron" aria-hidden="true"></span>'
+        '</section>'
+    )
+
+
 def ck_affirm_empty(
     *,
     headline: str,
@@ -519,6 +565,19 @@ _CSS_INLINE_FALLBACK = """
   .ck-affirm-empty h3 { font-family:var(--sc-serif); font-weight:500; font-size:20px; color:var(--sc-positive); margin:0 0 6px; }
   .ck-affirm-empty p { font-family:var(--sc-sans); font-size:14px; line-height:1.6; color:var(--sc-text-dim); margin:0; max-width:64ch; }
   .ck-affirm-empty .ck-arrow { margin-top:var(--sc-s-4); }
+
+  /* Search hero — navy panel + italic-serif label + circular submit
+   * + teal chevron-cut bottom-right corner. Mirrors chartis.com/insights. */
+  .ck-search-hero { position:relative; background:var(--sc-navy); color:var(--sc-on-navy); padding:56px 0 64px; margin:0 0 var(--sc-s-9); overflow:hidden; }
+  .ck-search-hero-inner { max-width:1280px; margin:0 auto; padding:0 var(--sc-s-7); display:flex; align-items:baseline; gap:var(--sc-s-7); }
+  .ck-search-hero-label { font-family:var(--sc-serif); font-size:36px; font-weight:400; font-style:italic; letter-spacing:-0.01em; color:var(--sc-on-navy); flex-shrink:0; }
+  .ck-search-hero-form { flex:1; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--sc-on-navy-dim); padding-bottom:8px; transition:border-color 0.15s; }
+  .ck-search-hero-form:focus-within { border-bottom-color:var(--sc-teal); }
+  .ck-search-hero-input { flex:1; background:transparent; border:0; font-family:var(--sc-serif); font-size:22px; color:var(--sc-on-navy); padding:8px 0; outline:none; min-width:0; }
+  .ck-search-hero-input::placeholder { color:var(--sc-on-navy-faint); font-style:italic; }
+  .ck-search-hero-submit { background:transparent; border:1px solid var(--sc-on-navy-dim); border-radius:50%; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; color:var(--sc-on-navy); cursor:pointer; flex-shrink:0; transition:color 0.15s, border-color 0.15s; }
+  .ck-search-hero-submit:hover { color:var(--sc-teal); border-color:var(--sc-teal); }
+  .ck-search-hero-chevron { position:absolute; right:0; bottom:0; width:0; height:0; border-style:solid; border-width:0 0 64px 64px; border-color:transparent transparent var(--sc-teal) transparent; pointer-events:none; }
 
   /* Command palette */
   .ck-palette { position:fixed; inset:0; background:rgba(6,22,38,0.4); display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; z-index:100; }

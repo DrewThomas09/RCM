@@ -89,7 +89,7 @@ def _slider_card(payer: str, agg: Dict[str, float]) -> str:
         'text-transform:none;display:block;margin-bottom:.25rem;">'
         f'IDR mean: <span id="idr-{ep}" class="num mono">{idr_m:.3f}</span></label>'
         f'<input type="range" min="0" max="0.5" step="0.005" value="{idr_m:.3f}" '
-        'style="width:100%;accent-color:#1F4E78;" '
+        'style="width:100%;accent-color:var(--sc-navy);" '
         f'oninput="document.getElementById(\'idr-{ep}\').textContent=this.value">'
         '</div>'
         # FWR
@@ -98,7 +98,7 @@ def _slider_card(payer: str, agg: Dict[str, float]) -> str:
         'text-transform:none;display:block;margin-bottom:.25rem;">'
         f'FWR mean: <span id="fwr-{ep}" class="num mono">{fwr_m:.3f}</span></label>'
         f'<input type="range" min="0" max="0.8" step="0.005" value="{fwr_m:.3f}" '
-        'style="width:100%;accent-color:#1F4E78;" '
+        'style="width:100%;accent-color:var(--sc-navy);" '
         f'oninput="document.getElementById(\'fwr-{ep}\').textContent=this.value">'
         '</div>'
         # DAR
@@ -107,7 +107,7 @@ def _slider_card(payer: str, agg: Dict[str, float]) -> str:
         'text-transform:none;display:block;margin-bottom:.25rem;">'
         f'DAR days: <span id="dar-{ep}" class="num mono">{dar_m:.0f}</span></label>'
         f'<input type="range" min="0" max="120" step="1" value="{dar_m:.0f}" '
-        'style="width:100%;accent-color:#1F4E78;" '
+        'style="width:100%;accent-color:var(--sc-navy);" '
         f'oninput="document.getElementById(\'dar-{ep}\').textContent=this.value">'
         '</div>'
         '</div>'

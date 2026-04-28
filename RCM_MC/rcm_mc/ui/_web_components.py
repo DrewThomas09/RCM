@@ -71,8 +71,8 @@ def web_styles() -> str:
     cursor: pointer; user-select: none; white-space: nowrap; font-size: 12px;
     text-transform: uppercase; letter-spacing: 0.03em; }
 .wc-table thead th:hover { background: #f3f4f6; }
-.wc-table thead th.wc-sorted-asc::after  { content: " ↑"; color: #1F4E78; }
-.wc-table thead th.wc-sorted-desc::after { content: " ↓"; color: #1F4E78; }
+.wc-table thead th.wc-sorted-asc::after  { content: " ↑"; color: var(--sc-navy); }
+.wc-table thead th.wc-sorted-desc::after { content: " ↓"; color: var(--sc-navy); }
 .wc-table tbody td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6;
     vertical-align: top; color: #1f2937; }
 .wc-table tbody tr:hover { background: #fafbfc; }
@@ -85,7 +85,7 @@ def web_styles() -> str:
     border: 1px solid #e5e7eb; border-radius: 4px;
     background: #fff; color: #111827;
     transition: border-color 0.1s, box-shadow 0.1s; }
-.wc-filter:focus { outline: none; border-color: #1F4E78;
+.wc-filter:focus { outline: none; border-color: var(--sc-navy);
     box-shadow: 0 0 0 2px rgba(31, 78, 120, 0.15); }
 .wc-table tbody tr.wc-filter-hide { display: none; }
 
@@ -115,8 +115,8 @@ def web_styles() -> str:
     padding: 8px 16px; color: #111827; text-decoration: none;
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
-    background: #f0f6fc; border-left-color: #1F4E78; }
-.wc-cmdk-id { font-family: monospace; color: #1F4E78;
+    background: #f0f6fc; border-left-color: var(--sc-navy); }
+.wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
 .wc-cmdk-name { flex: 1; color: #1f2937; }
@@ -138,7 +138,7 @@ def web_styles() -> str:
 
 /* Loading spinner (CSS-only; JS toggles display) */
 .wc-spinner { display: none; width: 16px; height: 16px; border: 2px solid #e5e7eb;
-    border-top-color: #1F4E78; border-radius: 50%;
+    border-top-color: var(--sc-navy); border-radius: 50%;
     animation: wc-spin 0.7s linear infinite;
     vertical-align: middle; margin-right: 6px; }
 .wc-spinner.wc-on { display: inline-block; }
@@ -147,10 +147,10 @@ def web_styles() -> str:
 /* Buttons — match export menu styling */
 .wc-btn { display: inline-block; padding: 8px 16px; border-radius: 6px;
     font-size: 13px; font-weight: 500; text-decoration: none;
-    cursor: pointer; border: 1px solid #1F4E78; transition: background 0.1s; }
-.wc-btn-primary { background: #1F4E78; color: #fff; }
+    cursor: pointer; border: 1px solid var(--sc-navy); transition: background 0.1s; }
+.wc-btn-primary { background: var(--sc-navy); color: #fff; }
 .wc-btn-primary:hover { background: #1a3f61; }
-.wc-btn-secondary { background: #fff; color: #1F4E78; }
+.wc-btn-secondary { background: #fff; color: var(--sc-navy); }
 .wc-btn-secondary:hover { background: #eff4f8; }
 
 /* Responsive — mobile/tablet breakpoints */
@@ -400,8 +400,8 @@ def universal_palette_bundle() -> str:
     padding: 8px 16px; color: #111827; text-decoration: none;
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
-    background: #f0f6fc; border-left-color: #1F4E78; }
-.wc-cmdk-id { font-family: monospace; color: #1F4E78;
+    background: #f0f6fc; border-left-color: var(--sc-navy); }
+.wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
 .wc-cmdk-name { flex: 1; color: #1f2937; }
@@ -727,7 +727,7 @@ def sortable_table_js() -> str:
                     counter.textContent = 'showing ' + visible + ' of ' + total
                         + (total === 1 ? ' row' : ' rows')
                         + (visible === 0 ? ' — no matches' : '');
-                    counter.style.color = visible === 0 ? '#991b1b' : '#1F4E78';
+                    counter.style.color = visible === 0 ? '#991b1b' : 'var(--sc-navy)';
                 } else {
                     counter.textContent = total + (total === 1 ? ' row' : ' rows');
                     counter.style.color = '#6b7280';

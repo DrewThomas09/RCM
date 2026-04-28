@@ -37,7 +37,7 @@ _PALETTE = {
     "border":   "#E5E7EB",
     "text":     "#111827",
     "muted":    "#6B7280",
-    "accent":   "#1F4E78",
+    "accent":   "var(--sc-navy)",
     "green":    "#10B981",
     "amber":    "#F59E0B",
     "red":      "#EF4444",
@@ -1021,7 +1021,7 @@ def _render_at_risk(df: pd.DataFrame) -> str:
 _CSS = """
 :root {
   --bg: #FAFAFA; --card: #FFFFFF; --border: #E5E7EB;
-  --text: #111827; --muted: #6B7280; --accent: #1F4E78;
+  --text: #111827; --muted: #6B7280; --accent: var(--sc-navy);
   --green: #10B981; --amber: #F59E0B; --red: #EF4444;
 }
 * { box-sizing: border-box; }

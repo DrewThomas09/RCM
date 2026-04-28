@@ -179,7 +179,7 @@ def _render_health_sparkline(
         f'<line x1="{pad}" x2="{width - pad}" y1="{y50:.1f}" y2="{y50:.1f}" '
         f'stroke="#EF4444" stroke-width="1" stroke-dasharray="2,3" '
         f'opacity="0.5"/>'
-        f'<polyline fill="none" stroke="#1F4E78" stroke-width="1.5" '
+        f'<polyline fill="none" stroke="var(--sc-navy)" stroke-width="1.5" '
         f'stroke-linejoin="round" points="{pts}"/>'
         f'<circle cx="{_x(n - 1):.1f}" cy="{_y(last_score):.1f}" r="3" '
         f'fill="{last_color}"/>'
@@ -1190,7 +1190,7 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
         f'<line x1="{pad}" y1="{height - pad}" x2="{width - pad}" '
         f'y2="{height - pad}" stroke="#E5E7EB" stroke-width="1"/>'
         f'{plan_path}'
-        f'<polyline points="{actual_pts}" fill="none" stroke="#1F4E78" stroke-width="2.5"/>'
+        f'<polyline points="{actual_pts}" fill="none" stroke="var(--sc-navy)" stroke-width="2.5"/>'
         f'{dots}'
         f'{labels}'
         f'{y_labels}'
@@ -4577,7 +4577,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "start_url": "/",
                 "display": "standalone",
                 "background_color": "#0F172A",
-                "theme_color": "#1F4E78",
+                "theme_color": "var(--sc-navy)",
             }
             body = _json.dumps(manifest, indent=2).encode("utf-8")
             self.send_response(HTTPStatus.OK)
