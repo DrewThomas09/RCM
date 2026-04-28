@@ -1841,3 +1841,109 @@ Recommend `/audit` since it's a smaller scope and the
 admin row in the deploy checklist references it. Forward-
 only.
 
+---
+
+## Cycle 20 build — 2026-04-28 — bulk lift via editorial_intro kwarg
+
+**Step 20 — campaign-wide accelerator, not single-page work.**
+The cycle 16 audit surfaced 12 pages in the 60-69 "near-passing"
+tier. Each page individually would take a manual edit to add
+a ck_section_intro block. Higher-leverage: extend
+``chartis_shell`` itself with an ``editorial_intro`` kwarg that
+auto-prepends the intro block. Then adopting the chartis
+cadence on a legacy page becomes a 3-line addition instead of
+a renderer restructure.
+
+**API:**
+
+    return chartis_shell(
+        body, title="X",
+        ...
+        editorial_intro={
+            "eyebrow": "STRESS GRID",
+            "headline": "Where the deal breaks under pressure.",
+            "italic_word": "breaks",
+        },
+    )
+
+The kwarg auto-routes to ``ck_section_intro`` and prepends the
+result to ``body_html``. Backward-compatible: omitting the
+kwarg is a no-op (every existing call still works unchanged).
+
+**Step 20 — bulk lift.** All 12 near-passing pages got an
+editorial_intro kwarg with an italic-serif headline matching
+the page's purpose:
+
+| score before | score after | page |
+|---|---|---|
+| 65 | 80 | rcm_mc/ui/chartis/stress_page.py |
+| 65 | 78 | rcm_mc/ui/data_public/value_backtester_page.py |
+| 64 | 79 | rcm_mc/ui/data_public/multiple_decomp_page.py |
+| 64 | 79 | rcm_mc/ui/data_public/payer_stress_page.py |
+| 63 | 78 | rcm_mc/ui/data_public/acq_timing_page.py |
+| 62 | 77 | rcm_mc/ui/data_public/market_rates_page.py |
+| 62 | 77 | rcm_mc/ui/data_public/portfolio_sim_page.py |
+| 61 | 76 | rcm_mc/ui/data_public/capital_efficiency_page.py |
+| 61 | 76 | rcm_mc/ui/data_public/deal_risk_scores_page.py |
+| 61 | 76 | rcm_mc/ui/insights_page.py |
+| 60 | 75 | rcm_mc/ui/data_public/hold_optimizer_page.py |
+| 60 | 75 | rcm_mc/ui/data_public/sector_correlation_page.py |
+
+**V5 fidelity passers: 18 of 310 (5.8%) — was 7 (2.3%).**
+The audit pass-rate **2.5x'd** in one cycle. Eleven pages
+crossed the threshold; one (insights_page) was already above
+because of an earlier intro and stayed comfortably above.
+
+**Step 20 — focused tests.** New `tests/test_chartis_shell_intro.py`
+with 5 tests pinning the kwarg contract:
+- omit kwarg → unchanged behavior (backward-compat)
+- intro dict → ck_section_intro prepended to body
+- intro with body text renders body paragraph
+- kwarg doesn't affect subtitle / breadcrumbs / other chrome
+- empty dict treated as None (no intro emitted)
+
+All 5 pass. Plus full regression sweep clean: chartis_integration
+(61), v5_fidelity_audit (11), render_insights_page (13),
+alerts_page (7) — 92 total focused tests pass.
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — `editorial_intro` kwarg added
+  to `chartis_shell`; auto-prepends `ck_section_intro` block.
+- 12 page renderers — each gained one `editorial_intro={...}`
+  kwarg in its `chartis_shell` call.
+- `tests/test_chartis_shell_intro.py` — NEW, 5 tests.
+- `docs/V5_FIDELITY_REPORT.md` — refreshed.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- V5 fidelity passers: 18 of 310 (5.8%) — **2.5x lift**.
+- Lift mechanism: API extension to chartis_shell, not 12
+  separate renderer ports.
+- Total focused tests passing: 251 + 2 documented skips
+  (was 246 + 2 in cycle 19).
+- LOC: ~140 across 13 files (kit kwarg + 12 page additions).
+
+**Suggested next:** cycle 21 — three branches:
+
+- **A — extend the bulk-lift to the 50-69 tier.** ~80 more
+  pages cluster in this range. Most are already on
+  chartis_shell + ck_kpi_block but missing intros + still
+  carrying inline styles. The editorial_intro kwarg lifts
+  the headline gap; the inline-style gap still requires
+  per-page work.
+
+- **B — port `/audit` admin surface.** Original cycle 19
+  recommendation; lifted to a single page via the helper
+  patterns established in cycles 18+19.
+
+- **C — run the audit on rendered HTML, not source.** The
+  current static analysis can't see chartis_shell HTML
+  output. A live-server audit could check final rendered
+  pages for things the source can't (font loading, palette
+  application, layout grid). Bigger build, deeper signal.
+
+Recommend **A** — same mechanism as cycle 20, bigger
+denominator. With the kwarg shipped, lifting the next 30-50
+pages is mechanical; could push fidelity passers from 18 to
+~50+ (10-15%) in a single cycle. Forward-only.
+

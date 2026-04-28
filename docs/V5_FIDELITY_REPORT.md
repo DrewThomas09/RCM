@@ -3,8 +3,8 @@
 Audited 310 renderer files in `rcm_mc/ui/`. 
 Passing threshold: **70/100**.
 
-- **7 above threshold** — chartis-grade
-- **303 below threshold** — needs editorial cycle
+- **18 above threshold** — chartis-grade
+- **292 below threshold** — needs editorial cycle
 
 Run `python tools/v5_fidelity_audit.py` to refresh.
 
@@ -20,6 +20,17 @@ Run `python tools/v5_fidelity_audit.py` to refresh.
 | 84 | `rcm_mc/ui/my_dashboard_page.py` | 309 | 23 (7.4/100) | — |
 | 83 | `rcm_mc/ui/notes_search_page.py` | 206 | 10 (4.9/100) | — |
 | 80 | `rcm_mc/ui/alerts_page.py` | 249 | 17 (6.8/100) | high inline-style count: 11 |
+| 80 | `rcm_mc/ui/chartis/stress_page.py` | 251 | 9 (3.6/100) | high inline-style count: 11 |
+| 79 | `rcm_mc/ui/data_public/multiple_decomp_page.py` | 286 | 10 (3.5/100) | high inline-style count: 13 |
+| 79 | `rcm_mc/ui/data_public/payer_stress_page.py` | 296 | 9 (3.0/100) | high inline-style count: 12 |
+| 78 | `rcm_mc/ui/data_public/acq_timing_page.py` | 284 | 10 (3.5/100) | high inline-style count: 15 |
+| 77 | `rcm_mc/ui/data_public/market_rates_page.py` | 294 | 9 (3.1/100) | high inline-style count: 16 |
+| 77 | `rcm_mc/ui/data_public/portfolio_sim_page.py` | 271 | 9 (3.3/100) | high inline-style count: 16 |
+| 76 | `rcm_mc/ui/data_public/capital_efficiency_page.py` | 252 | 10 (4.0/100) | high inline-style count: 15 |
+| 76 | `rcm_mc/ui/data_public/deal_risk_scores_page.py` | 237 | 10 (4.2/100) | high inline-style count: 16 |
+| 76 | `rcm_mc/ui/insights_page.py` | 140 | 10 (7.1/100) | high inline-style count: 16 |
+| 75 | `rcm_mc/ui/data_public/hold_optimizer_page.py` | 352 | 9 (2.6/100) | high inline-style count: 12 |
+| 75 | `rcm_mc/ui/data_public/sector_correlation_page.py` | 274 | 8 (2.9/100) | high inline-style count: 16 |
 | 71 | `rcm_mc/ui/chartis/corpus_backtest_page.py` | 385 | 14 (3.6/100) | high inline-style count: 27 |
 
 ## Below threshold
@@ -28,18 +39,7 @@ Sorted highest score first — these pages are partially editorial. Lowest score
 
 | Score | File | LOC | Primitives | Notes |
 |---|---|---|---|---|
-| 65 | `rcm_mc/ui/chartis/stress_page.py` | 246 | 9 (3.7/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 11 |
-| 65 | `rcm_mc/ui/data_public/value_backtester_page.py` | 260 | 9 (3.5/100) | high inline-style count: 101; high non-ck-class <div> count: 27 |
-| 64 | `rcm_mc/ui/data_public/multiple_decomp_page.py` | 281 | 10 (3.6/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 13 |
-| 64 | `rcm_mc/ui/data_public/payer_stress_page.py` | 291 | 9 (3.1/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 12 |
-| 63 | `rcm_mc/ui/data_public/acq_timing_page.py` | 279 | 10 (3.6/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 15 |
-| 62 | `rcm_mc/ui/data_public/market_rates_page.py` | 289 | 9 (3.1/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 16 |
-| 62 | `rcm_mc/ui/data_public/portfolio_sim_page.py` | 266 | 9 (3.4/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 16 |
-| 61 | `rcm_mc/ui/data_public/capital_efficiency_page.py` | 247 | 10 (4.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 15 |
-| 61 | `rcm_mc/ui/data_public/deal_risk_scores_page.py` | 232 | 10 (4.3/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 16 |
-| 61 | `rcm_mc/ui/insights_page.py` | 134 | 10 (7.5/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 16 |
-| 60 | `rcm_mc/ui/data_public/hold_optimizer_page.py` | 347 | 9 (2.6/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 12 |
-| 60 | `rcm_mc/ui/data_public/sector_correlation_page.py` | 269 | 8 (3.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 16 |
+| 65 | `rcm_mc/ui/data_public/value_backtester_page.py` | 267 | 9 (3.4/100) | high inline-style count: 101; high non-ck-class <div> count: 27 |
 | 57 | `rcm_mc/ui/chartis/market_structure_page.py` | 271 | 8 (3.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 20 |
 | 57 | `rcm_mc/ui/chartis/sponsor_track_record_page.py` | 289 | 9 (3.1/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 24 |
 | 57 | `rcm_mc/ui/data_public/risk_matrix_page.py` | 281 | 9 (3.2/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 26 |

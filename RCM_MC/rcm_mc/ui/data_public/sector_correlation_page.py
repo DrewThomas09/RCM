@@ -307,4 +307,9 @@ def render_sector_correlation(params: Dict[str, str]) -> str:
         title="Sector Correlation Matrix",
         active_nav="/sector-correlation",
         subtitle="Pairwise MOIC correlations across healthcare sectors — portfolio diversification lens",
+        editorial_intro={
+            "eyebrow": "SECTOR CORRELATION",
+            "headline": "Where two sectors move together.",
+            "italic_word": "together",
+        },
     )

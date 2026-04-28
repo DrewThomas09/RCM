@@ -257,4 +257,9 @@ def render_deal_risk_scores(params: Dict[str, str]) -> str:
         title="Deal Risk Score Dashboard",
         active_nav="/deal-risk-scores",
         subtitle="Corpus-wide 5-factor risk scoring — validated against realized MOIC",
+        editorial_intro={
+            "eyebrow": "RISK SCORES",
+            "headline": "Where the corpus called the loss before exit.",
+            "italic_word": "called",
+        },
     )

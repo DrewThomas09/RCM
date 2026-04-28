@@ -1193,6 +1193,14 @@ def chartis_shell(
     # variant). No-op in this v2 shell.
     show_phi_banner: bool = False,
     phi_mode: Optional[str] = None,
+    # Cycle 20 — convenience kwarg that auto-prepends
+    # ``ck_section_intro(**editorial_intro)`` to ``body_html`` so a
+    # page can adopt the chartis cadence (italic-serif headline +
+    # eyebrow + body) with one kwarg instead of restructuring its
+    # render function. Use cases: every legacy renderer that's
+    # already on chartis_shell but missing the editorial-cadence
+    # intro signal.
+    editorial_intro: Optional[Mapping[str, Any]] = None,
     **_extra: Any,
 ) -> str:
     """Render a full page. Drop-in replacement for the legacy dark shell.
@@ -1236,6 +1244,15 @@ def chartis_shell(
         f'font-style:italic;">{_esc(subtitle)}</div>'
     ) if subtitle else ""
     main_class = "ck-main ck-with-sidebar" if show_sidebar else "ck-main"
+    # ``editorial_intro`` auto-prepends a ck_section_intro block to
+    # the page body. Lets a legacy renderer adopt the chartis cadence
+    # (italic-serif headline) with a single kwarg instead of
+    # restructuring its render function — much lower-friction port
+    # for the 60-69 fidelity-tier.
+    intro_html = ""
+    if editorial_intro:
+        intro_html = ck_section_intro(**editorial_intro)
+    body_html = intro_html + body_html
     # Page-specific CSS goes AFTER the kit's CSS so page styles
     # win specificity ties — matches the contract login_page.py
     # and forgot_page.py expect (grid layout, panel chrome, etc.)

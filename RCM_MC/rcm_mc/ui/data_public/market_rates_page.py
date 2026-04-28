@@ -344,4 +344,9 @@ def render_market_rates(
         title="Market Rates",
         active_nav="/market-rates",
         subtitle=f"P25/P50/P75 MOIC and IRR · {len(realized)} realized deals · grouped by {group_label.lower()}",
+        editorial_intro={
+            "eyebrow": "MARKET RATES",
+            "headline": "What the realized cohort taught us.",
+            "italic_word": "taught",
+        },
     )

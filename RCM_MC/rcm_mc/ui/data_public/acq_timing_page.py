@@ -322,4 +322,9 @@ def render_acq_timing(params: Dict[str, str]) -> str:
         title="Acquisition Timing Analyzer",
         active_nav="/acq-timing",
         subtitle="Entry EV/EBITDA vs. realized MOIC by vintage year — cycle timing impact",
+        editorial_intro={
+            "eyebrow": "ACQUISITION TIMING",
+            "headline": "When the cycle pays you for vintage discipline.",
+            "italic_word": "pays",
+        },
     )

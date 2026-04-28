@@ -264,6 +264,11 @@ def render_stress(
         ],
         subtitle=f"{label} · grade {grade} · {pass_rate*100:.0f}% downside pass · "
                  f"{n_breaches} breach{'es' if n_breaches != 1 else ''}",
+        editorial_intro={
+            "eyebrow": "STRESS GRID",
+            "headline": "Where the deal breaks under pressure.",
+            "italic_word": "breaks",
+        },
     )
 
 

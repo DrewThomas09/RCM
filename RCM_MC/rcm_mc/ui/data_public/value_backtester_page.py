@@ -293,4 +293,11 @@ def render_value_backtester(params: dict = None) -> str:
         source="data_public/value_backtester.py; base_rates.py.",
         page_key="value-backtester",
     )
-    return chartis_shell(explainer + body, "Value Backtester", active_nav="/backtester")
+    return chartis_shell(
+        explainer + body, "Value Backtester", active_nav="/backtester",
+        editorial_intro={
+            "eyebrow": "VALUE BACKTESTER",
+            "headline": "What the bridge looked like in retrospect.",
+            "italic_word": "retrospect",
+        },
+    )

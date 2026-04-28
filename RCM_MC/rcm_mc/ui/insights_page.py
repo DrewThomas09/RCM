@@ -150,5 +150,11 @@ def render_insights_page(db_path: str) -> str:
         _wc.web_styles()
         + _wc.responsive_container(inner)
     )
-    return chartis_shell(body, "All insights",
-                         active_nav="/insights")
+    return chartis_shell(
+        body, "All insights", active_nav="/insights",
+        editorial_intro={
+            "eyebrow": "INSIGHTS",
+            "headline": "What the platform noticed that you didn't ask.",
+            "italic_word": "noticed",
+        },
+    )
