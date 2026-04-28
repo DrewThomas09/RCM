@@ -161,3 +161,48 @@ image-card grid and start the design pass for `ck_image_card_grid`
 as the cycle 2 build target.
 
 ---
+
+## Cycle 1 build — iterations 3-7 — 2026-04-28
+
+**Steps 3 + 4 + 5 + 6 + 7 batched** (cron firing faster than per-step
+commit cadence; consolidating to keep the work coherent and the
+push history honest).
+
+**Step 3 — pattern sketched:** `docs/CHARTIS_MATCH_NOTES.md` created
+with three patterns: search hero (navy panel + italic-serif label
++ chevron-cut bottom-right), filter sidebar (eyebrow rail with BY
+TOPIC / BY TYPE), N-RESULTS header with chip-clear active filters.
+Search hero specced fully (markup + CSS + tokens + target pages +
+helper signature + build sequence). The other two are scoped for
+cycle 2 build.
+
+**Step 4 + 5 + 7 — lazy-label sweep across ALL data_public pages:**
+50 pages had a generic `<button type="submit">Run</button>` (not 12
+as planned — discovery undercount). Replaced with `Run analysis` in
+a single batched sed across all 50 files; one cycle's work in one
+edit. The bare `>Run<` button as a Bloomberg-era legacy idiom is
+now extinct in the codebase.
+
+**Step 6 — chartis-match polish:** `/alerts` headline gained the
+italic-serif highlight signature ("Where the portfolio *needs*
+attention"). Matches the chartis.com "Reasons to *believe* in
+better" cadence. Single-line edit, large editorial impact —
+partners now see a fully Chartis-toned headline above the severity
+panels.
+
+**Files touched.**
+- `docs/CHARTIS_MATCH_NOTES.md` (new, ~200 LOC)
+- `rcm_mc/ui/data_public/*.py` × 50 (one line each, Run → Run analysis)
+- `rcm_mc/ui/alerts_page.py` (one headline edit, italic-serif highlight)
+
+**Compliance impact.**
+- Lazy `>Run<` buttons remaining in codebase: 0 (was 50)
+- `>Click here<`, `>TBD<`, `>Coming soon<`, `>...<` — 0 (already clean)
+- Pages with italic-serif highlight in headline: /alerts (was 0)
+
+**Suggested next:** cycle 2 step 4 build target — implement
+`ck_search_hero` per `CHARTIS_MATCH_NOTES.md` pattern 01. First
+user: `/library`. Once landed, follow with `ck_filter_sidebar`
+(pattern 02) on the same page.
+
+---

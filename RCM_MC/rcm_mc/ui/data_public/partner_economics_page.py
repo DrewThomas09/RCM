@@ -224,7 +224,7 @@ def render_partner_economics(params: dict = None) -> str:
   <label style="font-size:11px;color:{text_dim}">Partners<input name="partners" value="{partners}" type="number" step="5" style="margin-left:6px;background:{panel};border:1px solid {border};color:{text};padding:4px 8px;font-size:11px;font-family:JetBrains Mono,monospace;width:60px"/></label>
   <label style="font-size:11px;color:{text_dim}">Hold Yrs<input name="hold_years" value="{hold}" type="number" min="3" max="10" style="margin-left:6px;background:{panel};border:1px solid {border};color:{text};padding:4px 8px;font-size:11px;font-family:JetBrains Mono,monospace;width:50px"/></label>
   <label style="font-size:11px;color:{text_dim}">Equity Pool<input name="pool" value="{pool}" type="number" step="0.05" style="margin-left:6px;background:{panel};border:1px solid {border};color:{text};padding:4px 8px;font-size:11px;font-family:JetBrains Mono,monospace;width:60px"/></label>
-  <button type="submit" style="background:{border};color:{text};border:1px solid {border};padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+  <button type="submit" style="background:{border};color:{text};border:1px solid {border};padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
