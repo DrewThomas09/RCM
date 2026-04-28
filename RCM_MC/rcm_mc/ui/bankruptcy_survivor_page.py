@@ -93,11 +93,17 @@ button{margin-top:14pt;padding:8pt 20pt;background:#0b2341;color:#fff;
 
 
 def render_scan_landing() -> str:
-    return (
-        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-        "<title>Bankruptcy-Survivor Scan</title>"
+    """Landing/form page for the Bankruptcy-Survivor scan.
+
+    Wrapped in chartis_shell so the form lives inside the v5 chrome.
+    The result page (``render_scan_result`` below) is intentionally
+    standalone — see module docstring — to keep the print/PDF flow
+    clean.
+    """
+    from ._chartis_kit import chartis_shell
+
+    body = (
         f"{_style()}"
-        "</head><body>"
         "<div class='eyebrow'>Pre-screening</div>"
         "<h1>Bankruptcy-Survivor Scan</h1>"
         "<p>A 12-pattern screen against the named PE-healthcare "
@@ -145,8 +151,10 @@ def render_scan_landing() -> str:
         "<label class='form-field'>Out-of-network revenue share (0–1)</label>"
         "<input name='oon_revenue_share' type='number' step='0.01' min='0' max='1'>"
         "<button type='submit'>Run scan</button>"
-        "</form></body></html>"
+        "</form>"
     )
+    return chartis_shell(body, "Bankruptcy-Survivor Scan",
+                         subtitle="12-pattern PE-healthcare playbook screen")
 
 
 def render_scan_result(scan: BankruptcySurvivorScan) -> str:

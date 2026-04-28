@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import re
 import sys
+from functools import lru_cache as _lru_cache
 from pathlib import Path
 from typing import NamedTuple
 
@@ -62,7 +63,91 @@ _PATH_STARTSWITH_RE = re.compile(r'\bpath\.startswith\("([^"]+)"\)')
 _PATH_IN_RE = re.compile(r'\bpath\s+in\s+\(([^)]+)\)')
 _UI_IMPORT_RE = re.compile(r"from \.ui\.([A-Za-z_][A-Za-z0-9_.]*) import")
 _RENDER_CALL_RE = re.compile(r"\brender_([A-Za-z_][A-Za-z0-9_]*)\s*\(")
-_REDIRECT_RE = re.compile(r"self\._redirect\(")
+_REDIRECT_RE = re.compile(
+    r"self\._redirect\(|"
+    r"send_response\(\s*HTTPStatus\.MOVED_PERMANENTLY|"
+    r"send_response\(\s*HTTPStatus\.FOUND|"
+    r"send_response\(\s*HTTPStatus\.SEE_OTHER|"
+    r"send_response\(\s*HTTPStatus\.TEMPORARY_REDIRECT|"
+    r"send_response\(\s*HTTPStatus\.PERMANENT_REDIRECT|"
+    r"send_response\(\s*30[178]\b"
+)
+# Many dispatcher blocks delegate to a self._route_<name>() method that
+# itself does the import + render_* + chartis_shell call. Follow those
+# one level so the classifier reaches the actual renderer.
+_ROUTE_CALL_RE = re.compile(r"self\._route_([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+# `shell(` preceded by start-of-token (not `chartis_shell` or `_shell`)
+_SHELL_CALL_RE = re.compile(r"(?<![A-Za-z0-9_])shell\s*\(")
+
+# Markers that an inline block is serving JSON, a file, or a 204/no-body
+# response — i.e. legitimately not a UI page. Used to split the "unknown"
+# bucket into an "api/non-ui" sub-bucket so the v5 compliance percentage
+# reflects only routes that are SUPPOSED to render HTML.
+_JSON_MARKERS = (
+    "_send_json(",
+    "send_json(",
+    "application/json",
+    "json.dumps(",
+    "self.wfile.write(json.",
+)
+_FILE_MARKERS = (
+    "_send_file(",
+    "_send_static(",
+    "_serve_static",
+    "send_response(HTTPStatus.NO_CONTENT)",
+    "image/png",
+    "image/svg",
+    "text/css",
+    "application/octet-stream",
+)
+_HEALTH_PATHS = {"/health", "/healthz", "/api/health", "/api/health/deep"}
+
+
+@_lru_cache(maxsize=1)
+def _shell_shim_is_chartis() -> bool:
+    """True iff ``rcm_mc/ui/_ui_kit.py``'s ``shell`` already delegates
+    to ``chartis_shell``. When this is true (Phase 1C of the v5
+    campaign), every legacy ``shell()`` caller is *runtime*-compliant
+    with v5 chrome — the classifier should treat them as v5 even if
+    the source still spells ``shell``."""
+    p = REPO_ROOT / "RCM_MC" / "rcm_mc" / "ui" / "_ui_kit.py"
+    if not p.is_file():
+        return False
+    text = p.read_text(encoding="utf-8", errors="replace")
+    # Look for `def shell(...): ... return chartis_shell(...)`
+    m = re.search(
+        r"^def shell\(",
+        text, flags=re.M,
+    )
+    if not m:
+        return False
+    body_start = m.end()
+    next_def = re.search(r"^def [a-zA-Z_]\w*\(", text[body_start:], flags=re.M)
+    body = (
+        text[body_start: body_start + next_def.start()]
+        if next_def else text[body_start:]
+    )
+    return "chartis_shell(" in body or "from ._chartis_kit import chartis_shell" in text
+
+# Print / export renderers — intentionally bespoke (self-contained HTML,
+# @media print styles, designed for PDF generation). Wrapping these in
+# chartis_shell would break their print contract, so they're excluded
+# from the v5 compliance denominator the same way api/static are.
+_PRINT_PATH_PREFIXES = (
+    "/diligence/ic-memo",
+    "/diligence/synthesis",
+    "/exports/",
+    "/outputs/",
+    "/api/docs",  # SwaggerUI — third-party HTML
+    "/digest/morning",  # email-preview HTML; same body as SMTP send
+)
+_PRINT_FN_HINTS = (
+    "render_memo_html",
+    "render_html_binder",
+    "render_swagger_ui",
+    "render_lp_update_html",
+    "@media print",
+)
 
 
 def _slice_dispatcher(src: str) -> str:
@@ -125,9 +210,21 @@ def _extract_blocks(dispatcher: str) -> list[tuple[str, str, str]]:
 
 def _classify_renderer(renderer_module: str) -> tuple[str, str]:
     """Return (v3_status, packet_status) for a ui module name like
-    'dashboard_page' or 'chartis.app_page'."""
+    'dashboard_page' or 'chartis.app_page'. Also accepts the
+    synthetic '(render_<fn>)' marker emitted by _resolve_renderer
+    when the dispatcher uses a bare ``render_<fn>()`` call — in
+    that case we grep the repo for the function definition and
+    classify the file that owns it."""
     if not renderer_module:
         return ("unknown", "no")
+    # synthetic marker: (render_<fn>) — locate the function
+    if renderer_module.startswith("(render_") and renderer_module.endswith(")"):
+        fn_name = renderer_module[1:-1]  # strip parens
+        path = _find_function_source(fn_name)
+        if path is None:
+            return ("unknown", "no")
+        text = path.read_text(encoding="utf-8", errors="replace")
+        return _classify_text(text, path)
     if renderer_module.startswith("chartis."):
         path = UI_DIR / "chartis" / (renderer_module.split(".", 1)[1] + ".py")
     else:
@@ -135,13 +232,29 @@ def _classify_renderer(renderer_module: str) -> tuple[str, str]:
     if not path.is_file():
         return ("unknown", "no")
     text = path.read_text(encoding="utf-8", errors="replace")
+    return _classify_text(text, path)
+
+
+def _classify_text(text: str, path: Path) -> tuple[str, str]:
+    """Inspect the source of a renderer file and return
+    (v3_status, packet_status)."""
     # v3 marker: chartis_shell from editorial OR file is in chartis/
-    if renderer_module.startswith("chartis."):
+    try:
+        rel = path.resolve().relative_to(UI_DIR)
+        in_chartis = str(rel).startswith("chartis/")
+    except ValueError:
+        in_chartis = False
+    if in_chartis:
         v3 = "v3"
     elif "chartis_shell" in text or "_chartis_kit_editorial" in text:
         v3 = "v3"
-    elif "from ._ui_kit import shell" in text or "from .._ui_kit import shell" in text or " shell(" in text:
-        v3 = "legacy"
+    elif (
+        "from ._ui_kit import shell" in text
+        or "from .._ui_kit import shell" in text
+        or _SHELL_CALL_RE.search(text)
+    ):
+        # Phase 1C: shell() shim routes to chartis_shell at runtime.
+        v3 = "v3" if _shell_shim_is_chartis() else "legacy"
     else:
         v3 = "bespoke"
     # Packet marker
@@ -152,12 +265,53 @@ def _classify_renderer(renderer_module: str) -> tuple[str, str]:
     return (v3, packet)
 
 
-def _resolve_renderer(body: str) -> str:
+@_lru_cache(maxsize=None)
+def _find_function_source(fn_name: str) -> "Path | None":
+    """Search the rcm_mc package for ``def <fn_name>(`` and return
+    the file path it lives in, or None if not found.
+
+    Used when the dispatcher block calls a bare ``render_X()`` we
+    couldn't resolve to a module name. Cached so repeated lookups
+    on the same function are free.
+    """
+    needle = f"def {fn_name}("
+    pkg_root = REPO_ROOT / "RCM_MC" / "rcm_mc"
+    if not pkg_root.is_dir():
+        return None
+    for py in pkg_root.rglob("*.py"):
+        try:
+            if needle in py.read_text(encoding="utf-8", errors="replace"):
+                return py
+        except OSError:
+            continue
+    return None
+
+
+def _method_body(src: str, method_name: str) -> str:
+    """Return the body of ``def <method_name>(`` in server.py, or ''
+    if it can't be found. Used to follow ``self._route_<name>()``
+    delegations one level for renderer resolution."""
+    pat = re.compile(
+        rf"^    def {re.escape(method_name)}\(", re.M
+    )
+    m = pat.search(src)
+    if not m:
+        return ""
+    end_re = re.compile(r"^    def [a-zA-Z_]\w*\(", re.M)
+    n = end_re.search(src, m.end())
+    return src[m.start(): n.start() if n else len(src)]
+
+
+def _resolve_renderer(
+    body: str, *, server_src: str = "", _depth: int = 0
+) -> str:
     """Pick a single representative renderer module for an if-body.
 
     Heuristic: first .ui import wins. If none, look for render_<name>
-    calls and try to match a module by name. If neither, return
-    '(inline)' or '(redirect)' as appropriate.
+    calls. If the body just calls ``self._route_<name>()`` and we
+    have the full server source, follow into that method. Recurse up
+    to 3 levels deep so chains like
+    ``_route_login_page → _route_login_page_editorial`` resolve.
     """
     imports = _UI_IMPORT_RE.findall(body)
     if imports:
@@ -167,7 +321,76 @@ def _resolve_renderer(body: str) -> str:
     renders = _RENDER_CALL_RE.findall(body)
     if renders:
         return f"(render_{renders[0]})"
+    if server_src and _depth < 3:
+        for route_name in _ROUTE_CALL_RE.findall(body):
+            inner = _method_body(server_src, f"_route_{route_name}")
+            if not inner:
+                continue
+            inner_imports = _UI_IMPORT_RE.findall(inner)
+            if inner_imports:
+                return inner_imports[0]
+            inner_renders = _RENDER_CALL_RE.findall(inner)
+            if inner_renders:
+                return f"(render_{inner_renders[0]})"
+            if "chartis_shell" in inner:
+                return f"(_route_{route_name} -> chartis_shell)"
+            # Match the legacy shell helper in any call context:
+            # ``shell(``, ``(shell(``, ``=shell(``, etc. — server.py's
+            # top-level `from .ui._ui_kit import shell` lets the inner
+            # method call it without a re-import in the local body.
+            if _SHELL_CALL_RE.search(inner) or "from ._ui_kit import shell" in inner:
+                return f"(_route_{route_name} -> shell)"
+            # Followed method is a JSON endpoint — propagate so the
+            # outer route gets classified as `api` not `unknown`.
+            if any(m in inner for m in _JSON_MARKERS):
+                return f"(_route_{route_name} -> json)"
+            if any(m in inner for m in _FILE_MARKERS):
+                return f"(_route_{route_name} -> file)"
+            # Recurse: this method itself just calls another _route_*
+            recursed = _resolve_renderer(
+                inner, server_src=server_src, _depth=_depth + 1
+            )
+            if recursed != "(inline)":
+                return recursed
     return "(inline)"
+
+
+def _classify_inline_route(pattern: str, body: str) -> str:
+    """Sub-classify a route whose body has no .ui import + no
+    render_* call + no _redirect, returning one of:
+
+      "api"      — JSON endpoint or file/no-content response
+      "static"   — static file serve
+      "health"   — health/heartbeat endpoint
+      "print"    — print/PDF/export endpoint (self-contained HTML)
+      "ui"       — none of the above; presumed inline HTML page
+
+    The non-"ui" rows are excluded from the v5 compliance
+    denominator because they have no chartis chrome to migrate.
+    """
+    if pattern in _HEALTH_PATHS:
+        return "health"
+    if pattern.startswith("/static") or pattern == "/favicon.ico":
+        return "static"
+    if any(pattern.startswith(p) for p in _PRINT_PATH_PREFIXES):
+        return "print"
+    if pattern.startswith("/api/") or pattern == "/api":
+        return "api"
+    if any(m in body for m in _JSON_MARKERS):
+        return "api"
+    if any(m in body for m in _FILE_MARKERS):
+        return "static"
+    # No-op GET handler that just falls through (`pass # handled in
+    # POST`) — has no UI surface, classify as api so it doesn't drag
+    # the compliance percentage.
+    body_no_comments = re.sub(r"#.*", "", body).strip()
+    inner_lines = [
+        ln.strip() for ln in body_no_comments.splitlines()
+        if ln.strip() and not ln.strip().startswith(("if ", "elif ", "else"))
+    ]
+    if inner_lines and all(ln in ("pass",) for ln in inner_lines):
+        return "api"
+    return "ui"
 
 
 def _emit_route_row(r: Route, *, v5_mode: bool) -> str:
@@ -191,11 +414,58 @@ def main(argv: list[str] | None = None) -> int:
 
     routes: list[Route] = []
     for pattern, kind, body in blocks:
-        renderer = _resolve_renderer(body)
+        renderer = _resolve_renderer(body, server_src=src)
         if renderer == "(redirect)":
             v3, pkt = "redirect", "n/a"
+        elif renderer.endswith("-> chartis_shell)"):
+            # _route_* method delegates to chartis_shell directly
+            v3, pkt = "v3", "no"
+        elif renderer.endswith("-> json)"):
+            v3, pkt = "api", "n/a"
+        elif renderer.endswith("-> file)"):
+            v3, pkt = "static", "n/a"
+        elif renderer.endswith("-> shell)"):
+            # Phase 1C: `_ui_kit.shell` is a chartis_shell shim, so
+            # legacy callers are runtime-compliant with v5 chrome.
+            # Treat as v3 (chartis-reachable) when the shim is in
+            # place; flag as legacy only if the shim hasn't been
+            # installed yet.
+            v3 = "v3" if _shell_shim_is_chartis() else "legacy"
+            pkt = "no"
+        elif renderer.startswith("(render_"):
+            # render_<fn>() bare call — resolve via repo grep
+            v3, pkt = _classify_renderer(renderer)
+            # Even if we found the source and it's bespoke, check if
+            # the route pattern says "print/export" — those are
+            # intentionally bare and excluded from UI surface.
+            if any(pattern.startswith(p) for p in _PRINT_PATH_PREFIXES):
+                v3, pkt = "print", "n/a"
+            else:
+                fn_name = renderer[1:-1]  # render_<fn>
+                if any(h == fn_name for h in _PRINT_FN_HINTS):
+                    v3, pkt = "print", "n/a"
+            if v3 == "unknown":
+                sub = _classify_inline_route(pattern, body)
+                if sub == "api":
+                    v3, pkt = "api", "n/a"
+                elif sub == "static":
+                    v3, pkt = "static", "n/a"
+                elif sub == "health":
+                    v3, pkt = "health", "n/a"
+                elif sub == "print":
+                    v3, pkt = "print", "n/a"
         elif renderer.startswith("("):
-            v3, pkt = "unknown", "no"
+            sub = _classify_inline_route(pattern, body)
+            if sub == "api":
+                v3, pkt = "api", "n/a"
+            elif sub == "static":
+                v3, pkt = "static", "n/a"
+            elif sub == "health":
+                v3, pkt = "health", "n/a"
+            elif sub == "print":
+                v3, pkt = "print", "n/a"
+            else:
+                v3, pkt = "unknown", "no"
         else:
             v3, pkt = _classify_renderer(renderer)
         routes.append(Route(pattern, kind, renderer, v3, pkt))
@@ -209,9 +479,24 @@ def main(argv: list[str] | None = None) -> int:
     bespoke_count = sum(1 for r in routes if r.v3_status == "bespoke")
     redirect_count = sum(1 for r in routes if r.v3_status == "redirect")
     unknown_count = sum(1 for r in routes if r.v3_status == "unknown")
+    api_count = sum(1 for r in routes if r.v3_status == "api")
+    static_count = sum(1 for r in routes if r.v3_status == "static")
+    health_count = sum(1 for r in routes if r.v3_status == "health")
+    print_count = sum(1 for r in routes if r.v3_status == "print")
     packet_yes = sum(1 for r in routes if r.packet == "yes")
 
+    # UI surface = total − non-UI buckets. Compliance is measured
+    # against this denominator, since api/static/health/print/redirect
+    # rows have no HTML chrome to migrate.
+    non_ui = (
+        api_count + static_count + health_count
+        + print_count + redirect_count
+    )
+    ui_surface = total - non_ui
     pct = lambda n: f"{(100 * n / total):.0f}%" if total else "n/a"
+    pct_ui = lambda n: (
+        f"{(100 * n / ui_surface):.0f}%" if ui_surface else "n/a"
+    )
 
     chartis_label = (
         "v5 (chartis_shell or under ui/chartis/)"
@@ -248,16 +533,31 @@ def main(argv: list[str] | None = None) -> int:
         f"`RCM_MC/rcm_mc/server.py`. Re-run after any migration commit.",
         "",
         f"**Total routes mapped:** {total}",
+        f"**UI surface (excludes api / static / health / redirect):** "
+        f"{ui_surface}",
         "",
         "## Compliance summary",
         "",
-        f"| Status | Count | % |",
-        f"|---|---|---|",
-        f"| {chartis_label} | {v3_count} | {pct(v3_count)} |",
-        f"| legacy (`shell()` from `_ui_kit` only) | {legacy_count} | {pct(legacy_count)} |",
-        f"| bespoke (no shell — direct HTML) | {bespoke_count} | {pct(bespoke_count)} |",
-        f"| redirect | {redirect_count} | {pct(redirect_count)} |",
-        f"| unknown / unresolved | {unknown_count} | {pct(unknown_count)} |",
+        f"| Status | Count | % of total | % of UI surface |",
+        f"|---|---|---|---|",
+        f"| {chartis_label} | {v3_count} | {pct(v3_count)} | "
+        f"{pct_ui(v3_count)} |",
+        f"| legacy (`shell()` from `_ui_kit` only) | {legacy_count} | "
+        f"{pct(legacy_count)} | {pct_ui(legacy_count)} |",
+        f"| bespoke (no shell — direct HTML) | {bespoke_count} | "
+        f"{pct(bespoke_count)} | {pct_ui(bespoke_count)} |",
+        f"| unknown / unresolved (UI route, no renderer) | "
+        f"{unknown_count} | {pct(unknown_count)} | {pct_ui(unknown_count)} |",
+        f"| api / json (excluded from UI surface) | {api_count} | "
+        f"{pct(api_count)} | — |",
+        f"| static / file (excluded from UI surface) | {static_count} | "
+        f"{pct(static_count)} | — |",
+        f"| health / heartbeat (excluded from UI surface) | "
+        f"{health_count} | {pct(health_count)} | — |",
+        f"| print / export (excluded from UI surface) | {print_count} | "
+        f"{pct(print_count)} | — |",
+        f"| redirect (excluded from UI surface) | {redirect_count} | "
+        f"{pct(redirect_count)} | — |",
         "",
         f"**Packet-driven (calls `get_or_build_packet` or imports "
         f"`DealAnalysisPacket`):** {packet_yes} of {total} ({pct(packet_yes)})",

@@ -3979,8 +3979,21 @@ class RCMHandler(BaseHTTPRequestHandler):
                     assets=assets,
                 )
                 pv = compute_variance(snapshot)
-                return self._send_html(
-                    render_monitor_dashboard(pv))
+                # Wrap the bespoke dashboard body in chartis_shell so
+                # /portfolio/monitor renders inside the v5 chrome
+                # without rewriting the renderer.
+                from .ui._chartis_kit import chartis_shell
+                inner = render_monitor_dashboard(pv)
+                # The renderer returns a full <html>...</html> doc; pull
+                # out the <body> contents so chartis_shell can supply
+                # the page chrome around it.
+                import re as _re_pm
+                m = _re_pm.search(
+                    r"<body[^>]*>(.*?)</body>", inner, _re_pm.S)
+                body_html = m.group(1) if m else inner
+                return self._send_html(chartis_shell(
+                    body_html, "Portfolio Monitor",
+                    subtitle="plan-vs-actual variance, fund-level"))
             except Exception as exc:  # noqa: BLE001
                 return self._send_html(
                     f"<h1>500</h1><p>Monitor failed: "
