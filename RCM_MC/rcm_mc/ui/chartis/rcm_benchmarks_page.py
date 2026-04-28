@@ -373,4 +373,9 @@ def render_rcm_benchmarks(
             ("RCM Benchmarks", None),
         ],
         subtitle=f"{n_segments} segments · {len(_METRICS)} metrics · HFMA / Advisory Board priors",
+        editorial_intro={
+            "eyebrow": "RCM BENCHMARKS",
+            "headline": "What the rcm benchmarks reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

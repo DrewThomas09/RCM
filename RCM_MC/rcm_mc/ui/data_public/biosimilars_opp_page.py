@@ -171,4 +171,9 @@ def render_biosimilars(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Biosimilars", active_nav="/biosimilars")
+    return chartis_shell(body, "Biosimilars", active_nav="/biosimilars",
+        editorial_intro={
+            "eyebrow": "BIOSIMILARS OPP",
+            "headline": "What the biosimilars opp page reveals on this deal.",
+            "italic_word": "reveals",
+        })

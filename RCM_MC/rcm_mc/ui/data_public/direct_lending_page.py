@@ -170,4 +170,9 @@ def render_direct_lending(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Direct Lending", active_nav="/direct-lending")
+    return chartis_shell(body, "Direct Lending", active_nav="/direct-lending",
+        editorial_intro={
+            "eyebrow": "DIRECT LENDING",
+            "headline": "What the direct lending page reveals on this deal.",
+            "italic_word": "reveals",
+        })

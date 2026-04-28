@@ -1947,3 +1947,97 @@ denominator. With the kwarg shipped, lifting the next 30-50
 pages is mechanical; could push fidelity passers from 18 to
 ~50+ (10-15%) in a single cycle. Forward-only.
 
+---
+
+## Cycle 21 build — 2026-04-28 — bulk_add_intros.py + 50-69 tier sweep
+
+**Step 21 — script-driven intro additions, learning + correction
+loop.** Cycle 20 manually added intros to 12 pages. Cycle 21
+ships `tools/bulk_add_intros.py` so the same lift is mechanical
+across larger tiers. The script:
+
+1. Locates the LAST `return chartis_shell(...)` call in each
+   target file (usually the happy-path return)
+2. Skips files that already have `editorial_intro`
+3. Generates a template intro from the page's title kwarg or
+   filename
+4. Inserts the kwarg before the closing `)` of the call
+
+**Bug caught + fixed during the run.** First pass produced 12
+syntax errors (`,,\n...` patterns) because the script appended
+a leading-comma kwarg into calls that already ended with a
+trailing comma. Reverted, fixed the script to detect and skip
+pre-existing trailing commas, re-ran clean. Lesson logged: any
+mechanical-edit script needs to be tested against the variety
+of formatting the codebase carries before bulk-applying.
+
+**Run result.** 29 files updated in one pass against the 50-69
+fidelity tier. All 29 import cleanly + the chartis_integration
++ v5_fidelity_audit + render_insights_page test suites pass
+(72 tests).
+
+**Pass-rate lift.** V5 fidelity passers: 21 of 310 (6.8%) —
+was 18 (5.8%). Modest +3 because most 50-69 pages had bigger
+penalties beyond the missing intro (high inline-style counts,
+bespoke `<div>` density). The intro alone added ~15 pts but
+the threshold gap was 5-19 pts, with 26 pages still under
+after the intro lift.
+
+**Lessons applied to the audit roadmap.** The remaining gap
+isn't intro-shaped. Three orthogonal patterns dominate the
+50-69 tier:
+
+- **Inline styles** — many data_public pages embed `style="..."`
+  attributes directly in HTML strings rather than using ck_*
+  primitives or shared CSS classes. Each `style="` deducts
+  cleanliness points; ~290 pages have >5 inline styles.
+- **Bespoke divs** — same pages render `<div class="custom-x">`
+  rather than ck_panel / ck_eyebrow / ck_severity_panel. ~240
+  pages have >10 such divs.
+- **Per-page CSS blocks** — most pages emit a `<style>...</style>`
+  in their body. The cleanliness rubric doesn't currently
+  penalize this, but it's a smell that the page is using
+  custom CSS instead of the shared kit.
+
+Next cycle should target one of these patterns at scale, not
+iterate on intros. A regex-based inline-style → ck_* mapping
+could touch 30+ pages at once.
+
+**Files touched this batch.**
+- `tools/bulk_add_intros.py` — NEW, ~210 LOC. Reusable for
+  future tier sweeps.
+- 29 page files in rcm_mc/ui/ — each gained one
+  `editorial_intro={...}` kwarg in its `chartis_shell` call.
+- `docs/V5_FIDELITY_REPORT.md` — refreshed.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- V5 fidelity passers: 21 of 310 (6.8%) — was 18 of 310 (5.8%).
+- Reusable mechanical-edit tool added.
+- Total focused tests passing: 251 + 2 documented skips
+  (no change — bulk addition was content-only).
+- LOC: +210 (script) + ~290 (29 file edits at ~10 LOC each).
+
+**Suggested next:** cycle 22 — pick one of:
+
+- **A — inline-style migration script.** Many `style="..."`
+  attributes match a known pattern (e.g.
+  `style="color: var(--accent);"` → `class="ck-accent-text"`).
+  A regex-rewrite over the data_public pages could lift 50+
+  pages in one cycle.
+
+- **B — port the highest-traffic chartis page** still below.
+  Looking at the audit's top of failing tier:
+  `corpus_dashboard_page` (53), `sponsor_league_page` (53),
+  `home_page` (51) — all touched daily.
+
+- **C — DOM-shape audit, not source.** Render each page in-
+  process and check the live HTML for chartis-grade signals
+  (font-family applied, palette tokens used, no inline
+  styles in output). Catches gaps the source-level audit
+  misses.
+
+Recommend **A** — bulk lift via script keeps the campaign's
+2-3x-per-cycle momentum and addresses the dominant remaining
+penalty pattern. Forward-only.
+

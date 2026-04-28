@@ -315,4 +315,9 @@ def render_fund_attribution(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Fund Attribution", active_nav="/fund-attribution")
+    return chartis_shell(body, "Fund Attribution", active_nav="/fund-attribution",
+        editorial_intro={
+            "eyebrow": "FUND ATTRIBUTION",
+            "headline": "What the fund attribution page reveals on this deal.",
+            "italic_word": "reveals",
+        })

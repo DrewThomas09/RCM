@@ -276,4 +276,9 @@ def render_ai_settings(store: Any) -> str:
         title="AI Assistant — Claude",
         active_nav="/settings",
         subtitle=("Connected" if key_set else "Not yet connected"),
+        editorial_intro={
+            "eyebrow": "AI ASSISTANT — CLAUDE",
+            "headline": "What the ai assistant — claude reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

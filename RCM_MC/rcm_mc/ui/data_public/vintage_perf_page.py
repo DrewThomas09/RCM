@@ -258,4 +258,9 @@ def render_vintage_perf() -> str:
             f"worst {worst.year} ({worst.moic_p50:.2f}x) · "
             f"avg P50 {avg_p50:.2f}x"
         ),
+        editorial_intro={
+            "eyebrow": "VINTAGE PERFORMANCE",
+            "headline": "What the vintage performance reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

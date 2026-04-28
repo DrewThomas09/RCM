@@ -294,4 +294,9 @@ def render_cost_structure(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Cost Structure Analyzer", active_nav="/cost-structure")
+    return chartis_shell(body, "Cost Structure Analyzer", active_nav="/cost-structure",
+        editorial_intro={
+            "eyebrow": "COST STRUCTURE",
+            "headline": "What the cost structure page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -341,4 +341,9 @@ def render_risk_matrix(sector_filter: str = "") -> str:
             + (f"{sector_filter} only · " if sector_filter else "")
             + f"avg risk {sum(p[0] for p in pts)/len(pts):.0f}/100 · {len(sector_rows)} sectors"
         ) if pts else "corpus risk analysis",
+        editorial_intro={
+            "eyebrow": "RISK MATRIX",
+            "headline": "What the risk matrix reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

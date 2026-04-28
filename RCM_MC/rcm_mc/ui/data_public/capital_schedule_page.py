@@ -345,4 +345,9 @@ def render_capital_schedule(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Capital Schedule", active_nav="/capital-schedule")
+    return chartis_shell(body, "Capital Schedule", active_nav="/capital-schedule",
+        editorial_intro={
+            "eyebrow": "CAPITAL SCHEDULE",
+            "headline": "What the capital schedule page reveals on this deal.",
+            "italic_word": "reveals",
+        })

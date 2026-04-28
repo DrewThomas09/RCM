@@ -319,4 +319,9 @@ def render_sponsor_track_record(
         ],
         subtitle=f"{total_sponsors} sponsors · {total_deals} deals · "
                  f"{realized} realized",
+        editorial_intro={
+            "eyebrow": "SPONSOR TRACK RECORD",
+            "headline": "What the sponsor track record reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

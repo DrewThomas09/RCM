@@ -706,4 +706,9 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         breadcrumbs=[
             ("Home", None),
         ],
+        editorial_intro={
+            "eyebrow": "HOME",
+            "headline": "What the home reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

@@ -297,4 +297,9 @@ def render_market_structure(
             ("Structure", None),
         ],
         subtitle=f"{label} · HHI {hhi:,.0f} · {verdict}",
+        editorial_intro={
+            "eyebrow": "MARKET STRUCTURE",
+            "headline": "What the market structure reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

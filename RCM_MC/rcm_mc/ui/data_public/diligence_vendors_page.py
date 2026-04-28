@@ -171,4 +171,9 @@ def render_diligence_vendors(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Diligence Vendors", active_nav="/diligence-vendors")
+    return chartis_shell(body, "Diligence Vendors", active_nav="/diligence-vendors",
+        editorial_intro={
+            "eyebrow": "DILIGENCE VENDORS",
+            "headline": "What the diligence vendors page reveals on this deal.",
+            "italic_word": "reveals",
+        })

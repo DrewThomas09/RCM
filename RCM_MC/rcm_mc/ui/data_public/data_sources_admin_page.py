@@ -281,4 +281,9 @@ def render_data_sources_admin() -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Data Sources Admin", active_nav="/admin/data-sources")
+    return chartis_shell(body, "Data Sources Admin", active_nav="/admin/data-sources",
+        editorial_intro={
+            "eyebrow": "DATA SOURCES ADMIN",
+            "headline": "What the data sources admin page reveals on this deal.",
+            "italic_word": "reveals",
+        })

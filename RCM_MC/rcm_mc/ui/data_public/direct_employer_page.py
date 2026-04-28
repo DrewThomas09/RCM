@@ -175,4 +175,9 @@ def render_direct_employer(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Direct Employer", active_nav="/direct-employer")
+    return chartis_shell(body, "Direct Employer", active_nav="/direct-employer",
+        editorial_intro={
+            "eyebrow": "DIRECT EMPLOYER",
+            "headline": "What the direct employer page reveals on this deal.",
+            "italic_word": "reveals",
+        })

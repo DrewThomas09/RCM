@@ -154,7 +154,12 @@ def render_scan_landing() -> str:
         "</form>"
     )
     return chartis_shell(body, "Bankruptcy-Survivor Scan",
-                         subtitle="12-pattern PE-healthcare playbook screen")
+                         subtitle="12-pattern PE-healthcare playbook screen",
+        editorial_intro={
+            "eyebrow": "12-PATTERN PE-HEALTHCARE PLAYBOOK SCREEN",
+            "headline": "What the 12-pattern pe-healthcare playbook screen reveals on this deal.",
+            "italic_word": "reveals",
+        })
 
 
 def render_scan_result(scan: BankruptcySurvivorScan) -> str:

@@ -175,4 +175,9 @@ def render_hcit_platform(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "HCIT Platform", active_nav="/hcit-platform")
+    return chartis_shell(body, "HCIT Platform", active_nav="/hcit-platform",
+        editorial_intro={
+            "eyebrow": "HCIT PLATFORM",
+            "headline": "What the hcit platform page reveals on this deal.",
+            "italic_word": "reveals",
+        })

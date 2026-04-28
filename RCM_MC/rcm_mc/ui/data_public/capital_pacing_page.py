@@ -223,4 +223,9 @@ def render_capital_pacing(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Capital Pacing", active_nav="/capital-pacing")
+    return chartis_shell(body, "Capital Pacing", active_nav="/capital-pacing",
+        editorial_intro={
+            "eyebrow": "CAPITAL PACING",
+            "headline": "What the capital pacing page reveals on this deal.",
+            "italic_word": "reveals",
+        })

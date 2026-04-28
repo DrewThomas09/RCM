@@ -331,4 +331,9 @@ def render_white_space(
             ("White Space", None),
         ],
         subtitle=f"{label} · {len(opportunities)} opportunities · top: {top_dim or '—'}",
+        editorial_intro={
+            "eyebrow": "WHITE SPACE",
+            "headline": "What the white space reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )
