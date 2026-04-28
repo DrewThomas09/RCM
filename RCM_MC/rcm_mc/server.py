@@ -12554,6 +12554,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         ≥ ``min_days`` (default 30) days old. This is what a partner
         reviews before an LP update: "anything we've failed to resolve
         for 30+ days needs a decision."
+
+        Renders through ``rcm_mc.ui.escalations_page.render_escalations``
+        (chartis editorial chrome — search hero + min-days filter rail
+        + results header + ck_severity_panel). Server-side semantics
+        unchanged from the original inline implementation; this
+        dispatcher is the seam between the URL parser and the renderer.
+        The CSV-download branch stays inline because it shortcuts
+        directly to ``_send_csv_df`` without rendering HTML.
         """
         from .alerts.alert_acks import is_acked
         from .alerts.alert_history import days_red
@@ -12565,94 +12573,26 @@ class RCMHandler(BaseHTTPRequestHandler):
             default=30, min_v=0, max_v=3650,
         )
 
-        df = days_red(store, min_days=min_days)
-
-        # Mark rows that have an active ack so partners can see what's
-        # "known but still open" vs "silenced".
-        ack_flags = []
-        for _, r in df.iterrows():
-            ack_flags.append(is_acked(
-                store,
-                kind=str(r["kind"]),
-                deal_id=str(r["deal_id"]),
-                trigger_key=str(r["trigger_key"]),
-            ))
-        df_acked = df.assign(acked=ack_flags) if not df.empty else df
-
+        # CSV branch is unchanged — surfaces the raw days_red output
+        # rather than running through the editorial renderer.
         if (qs.get("format") or [""])[0] == "csv":
+            df = days_red(store, min_days=min_days)
+            ack_flags = []
+            for _, r in df.iterrows():
+                ack_flags.append(is_acked(
+                    store,
+                    kind=str(r["kind"]),
+                    deal_id=str(r["deal_id"]),
+                    trigger_key=str(r["trigger_key"]),
+                ))
+            df_acked = df.assign(acked=ack_flags) if not df.empty else df
             return self._send_csv_df(
                 df_acked, filename=f"escalations_{min_days}d.csv",
             )
 
-        picker = (
-            '<form method="GET" action="/escalations" '
-            'style="display: inline-flex; gap: 0.3rem; align-items: center; '
-            'margin-bottom: 1rem; font-size: 0.85rem;">'
-            '<label>Min days open</label>'
-            '<select name="min_days" onchange="this.form.submit()" '
-            'style="font-size: 0.85rem; padding: 0.1rem;">'
-        )
-        for opt in (7, 14, 30, 60, 90):
-            sel = " selected" if opt == min_days else ""
-            picker += f'<option value="{opt}"{sel}>{opt}</option>'
-        picker += "</select></form>"
-        picker += (
-            f'<a href="/escalations?min_days={min_days}&format=csv" '
-            f'style="color: var(--accent); font-size: 0.85rem; '
-            f'text-decoration: none; border-bottom: 1px dotted var(--accent); '
-            f'margin-left: 1rem;">↓ Download CSV</a>'
-        )
-
-        if df_acked.empty:
-            body = (
-                f"{picker}"
-                '<div class="card">'
-                '<p style="color: var(--green-text); font-weight: 600;">'
-                f'No red alerts open ≥ {min_days} days.</p>'
-                '<p class="muted" style="font-size: 0.85rem;">'
-                'Escalations show only red-severity alerts whose first '
-                'sighting is older than the threshold. History is built '
-                'up from every /alerts or /api/alerts/active call.'
-                '</p></div>'
-            )
-        else:
-            rows = []
-            for _, r in df_acked.iterrows():
-                days_open = int(r["days_open"])
-                ack_badge = (
-                    ' <span class="badge badge-muted" '
-                    'style="font-size: 0.7rem;">ACKED</span>'
-                    if r["acked"] else ""
-                )
-                rows.append(
-                    f"<tr>"
-                    f"<td class='num' style='color: var(--red-text); "
-                    f"font-weight: 700;'>{days_open}d</td>"
-                    f"<td><a href='/deal/{urllib.parse.quote(str(r['deal_id']))}' "
-                    f"style='color: var(--accent); text-decoration: none; "
-                    f"font-weight: 600;'>{html.escape(str(r['deal_id']))}</a></td>"
-                    f"<td>{html.escape(str(r.get('title') or ''))}</td>"
-                    f"<td class='muted' style='font-size: 0.85rem;'>"
-                    f"{html.escape(str(r.get('detail') or ''))}</td>"
-                    f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['first_seen_at'])[:10])}"
-                    f"{ack_badge}</td>"
-                    f"</tr>"
-                )
-            body = (
-                f"{picker}"
-                f'<div class="card">'
-                f'<h2>Red alerts open ≥ {min_days} days ({len(df_acked)})</h2>'
-                f'<table><thead><tr>'
-                f'<th>Open</th><th>Deal</th><th>Alert</th>'
-                f'<th>Detail</th><th>First seen</th>'
-                f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
-            )
-
-        self._send_html(shell(
-            body=body, title="Escalations",
-            subtitle=f"Red alerts ≥ {min_days} days old",
-            back_href="/alerts",
+        from .ui.escalations_page import render_escalations
+        self._send_html(render_escalations(
+            store=store, min_days=min_days,
         ))
 
     def _route_jobs_index(self) -> None:

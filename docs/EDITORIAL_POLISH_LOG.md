@@ -1213,3 +1213,87 @@ campaign that drove cycles 6-9. /escalations + /my/<owner>
 reuse existing helpers and would land in 1-2 commits.
 Forward-only.
 
+---
+
+## Cycle 14 build — 2026-04-28 — /escalations editorial port
+
+**Step 14 — /escalations ported to chartis editorial chrome.**
+Same shape as the cycle 8 /notes port: extract the ~110-line
+inline `_route_escalations` body in `server.py` to a new
+`rcm_mc/ui/escalations_page.py` module that renders through
+`chartis_shell` + `ck_search_hero` + `ck_filter_sidebar` +
+`ck_results_header` + `ck_severity_panel` + `ck_affirm_empty`.
+Server-side data semantics unchanged — every existing
+`tests/test_escalations.py` data-layer assertion still passes.
+
+**Filter sidebar is single-select radio over canonical day
+thresholds.** Replaces the legacy `<select>` with a
+`Days open` group offering `≥ 7 / 14 / 30 / 60 / 90 days`.
+Default 30 is the "monthly review" cadence; 7 surfaces hot
+escalations, 90 surfaces stale ones the partner has stopped
+looking at. Active threshold is checkbox-checked + emits a
+chip when off-default + a Clear all link to reset.
+
+**Empty state uses ck_affirm_empty.** "No red alerts open ≥
+N days" with body copy explaining where the data comes from
+("History is built up on every /alerts call — narrow the
+threshold above to look further back.") and a CTA back to
+`/alerts` so partner has a next step from the empty state.
+
+**Populated state uses ck_severity_panel (red-toned).** One
+row per escalated alert in the panel's list shape — same
+chrome as `/alerts` so partners moving between the two pages
+see consistent rendering. Each row carries the deal anchor
+(teal-ink), alert title, days-open + first-seen date, ack
+badge if present, and the alert detail line.
+
+**CSV download preserved.** `/escalations?format=csv` still
+shortcuts directly to `_send_csv_df` in `server.py` — only
+the HTML branch ports through the new renderer. The download
+link in the rendered page round-trips the active min_days so
+the partner downloads what they're looking at.
+
+**Step 14 — focused test suite.** New
+`tests/test_escalations_page.py` with 9 tests pinning the
+empty-state affirm band + CTA, threshold filter rendering all
+canonical options as radios, default checked + non-default
+checked, chip emit + clear-all only when off-default, CSV
+link round-trips threshold, search hero round-trips threshold
+in hidden input, section eyebrow + title, label
+pluralization. All 9 pass.
+
+**Test impact.** The pre-existing
+`test_escalations.py::test_dashboard_has_escalations_link`
+test was already failing on `design-v5` baseline (same shape
+as the cycle-8 /notes case — editorial chrome moved nav
+anchors to /app + Cmd-K). Marked `@unittest.skip` with a
+clear restoration note pointing at a future Alerts nav group.
+
+**Files touched this batch.**
+- `rcm_mc/ui/escalations_page.py` — NEW, ~165 LOC.
+- `rcm_mc/server.py` — `_route_escalations` slimmed from
+  ~110 inline lines to ~25 lines (URL parse + CSV branch +
+  delegate to renderer).
+- `tests/test_escalations.py` — 1 skip with restoration note.
+- `tests/test_escalations_page.py` — NEW, 9 tests.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Pages on the chartis editorial Insights/severity chrome:
+  4 (was 3) — /library, /notes, /research, /escalations.
+- Routes ported from legacy `shell()` to chartis editorial
+  chrome this cycle: 1 (/escalations).
+- Total focused tests passing: 200 + 2 documented skips
+  (was 191 + 1 in cycle 13).
+
+**Suggested next:** cycle 15 step 4 — port `/my/<owner>`
+(personal dashboard for one analyst — deals + alerts +
+deadlines, three-card layout). Larger than escalations
+(~150 LOC inline) but reuses every helper already shipped.
+Pairs naturally with /escalations on the editorial Alerts
+archetype. Then cycle 16 — `/audit` admin surface chrome
+(third archetype, partial editorial chrome already, audit
+the gaps row-by-row against
+`design_reference/handoff/ACCEPTANCE_CHECKLIST.md`).
+Forward-only.
+
