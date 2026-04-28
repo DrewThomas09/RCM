@@ -75,8 +75,10 @@ _RE_LAZY_LABELS = re.compile(
 )
 # Italic-serif highlight via either ck_section_intro(italic_word=...)
 # or a literal `<em>...</em>` inside a section heading. Both are the
-# chartis cadence signal.
-_RE_ITALIC_EM = re.compile(r"<em>[^<]+</em>")
+# chartis cadence signal. The <em> may carry style/class attributes
+# (some renderers inline-style the teal-ink color directly), so the
+# attribute portion is permissive.
+_RE_ITALIC_EM = re.compile(r"<em(?:\s[^>]*)?>[^<]+</em>")
 _RE_FMT_HELPERS = re.compile(
     r"\bck_fmt_(?:currency|percent|number)\s*\(",
 )

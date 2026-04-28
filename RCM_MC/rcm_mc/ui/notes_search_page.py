@@ -70,7 +70,8 @@ def render_notes_search(
     """
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_search_hero, ck_filter_sidebar,
-        ck_results_header, ck_section_header, ck_arrow_link,
+        ck_results_header, ck_section_header, ck_section_intro,
+        ck_arrow_link,
     )
     from rcm_mc.deals.deal_notes import search_notes
     from rcm_mc.deals.note_tags import tags_for_notes, all_note_tags
@@ -167,6 +168,21 @@ def render_notes_search(
         eyebrow="NOTES",
     )
 
+    # Editorial intro — italic-serif highlight matches the chartis
+    # cadence on /alerts and /my/<owner>. Sits above the search hero
+    # so the partner's first read on /notes carries the chartis
+    # signature ("Where the analyst voice *finds* its archive.")
+    intro = ck_section_intro(
+        eyebrow="NOTES SEARCH",
+        headline="Where the analyst voice finds its archive.",
+        italic_word="finds",
+        body=(
+            "Full-text search across every deal note in the portfolio, "
+            "scoped by tag or by deal. Note bodies render with case-"
+            "insensitive keyword highlighting in the results below."
+        ),
+    )
+
     # Results body — mirrors the legacy list shape but with editorial
     # tokens. Empty / no-query / error states each render their own
     # affirmative band so the partner never sees a void.
@@ -248,7 +264,7 @@ def render_notes_search(
         '</div>'
     )
 
-    body = search_hero + rail_layout
+    body = intro + search_hero + rail_layout
 
     return chartis_shell(
         body,

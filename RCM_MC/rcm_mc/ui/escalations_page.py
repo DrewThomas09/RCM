@@ -32,8 +32,8 @@ def render_escalations(
     """Render /escalations with the editorial chrome."""
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_search_hero, ck_filter_sidebar,
-        ck_results_header, ck_section_header, ck_severity_panel,
-        ck_affirm_empty,
+        ck_results_header, ck_section_header, ck_section_intro,
+        ck_severity_panel, ck_affirm_empty,
     )
     from rcm_mc.alerts.alert_acks import is_acked
     from rcm_mc.alerts.alert_history import days_red
@@ -176,7 +176,18 @@ def render_escalations(
         extra_hidden={"min_days": str(min_days)},
     )
 
-    body = search_hero + rail_layout
+    intro = ck_section_intro(
+        eyebrow="ESCALATIONS",
+        headline="What stayed open longer than it should.",
+        italic_word="longer",
+        body=(
+            "Red-severity alerts sorted by days-open, oldest first. "
+            "Anything still red past the threshold needs a decision "
+            "before the next LP update."
+        ),
+    )
+
+    body = intro + search_hero + rail_layout
     return chartis_shell(
         body,
         title="Escalations",

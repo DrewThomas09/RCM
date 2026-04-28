@@ -1524,3 +1524,85 @@ Recommend **C** — the audit confirmed there are 320 renderers
 below the line. A 10x speedup on each port saves 19,000 LOC
 across the campaign. Forward-only.
 
+---
+
+## Cycle 17 build — 2026-04-28 — Lift the cluster above the line
+
+**Step 17 — italic-serif highlights added to 4 cycle ports + 1
+audit-regex fix.** The cycle 16 baseline showed 5 of 325
+renderers above the 70 threshold; this cycle pushes that to 7
+and raises every cycle 6-15 editorial port to 80+ for
+substantial headroom. Each affected page gets the chartis
+cadence intro:
+
+  - `/notes`        68 → 83  (+15) — "Where the analyst voice
+                                     *finds* its archive."
+  - `/alerts`        65 → 80  (+15) — `<em>` regex was missing
+                                       attribute support; the
+                                       page already had the
+                                       italic highlight in
+                                       its h1, just wasn't
+                                       being detected.
+  - `/escalations`   70 → 85  (+15) — "What stayed open
+                                      *longer* than it should."
+  - `/research`      70 → 85  (+15) — "Where the platform
+                                      *thinks* out loud."
+  - `/library`       74 → 89  (+15) — "The healthcare-PE deal
+                                      universe, *cataloged*."
+
+**Audit regex fix.** The `<em>...</em>` italic-detection
+pattern only matched bare `<em>` tags. Some renderers (notably
+the original `/alerts` page) inline-style the teal-ink color
+directly: `<em style="font-style:italic;color:var(--sc-teal-ink);">needs</em>`.
+Tightened to `<em(?:\\s[^>]*)?>[^<]+</em>` so attribute-bearing
+em tags also count. Without this fix, `/alerts` was scoring
+65 even though it visibly carries the chartis cadence; with
+the fix it correctly scores 80.
+
+**Top-of-leaderboard now (post-cycle-17):**
+
+| Score | File |
+|---|---|
+| 89 | rcm_mc/ui/data_public/deals_library_page.py |
+| 85 | rcm_mc/ui/escalations_page.py |
+| 85 | rcm_mc/ui/research_page.py |
+| 84 | rcm_mc/ui/my_dashboard_page.py |
+| 83 | rcm_mc/ui/notes_search_page.py |
+| 80 | rcm_mc/ui/alerts_page.py |
+| 71 | rcm_mc/ui/chartis/corpus_backtest_page.py |
+
+**Step 17 — regression sweep clean.** All 110 focused tests
+across the touched pages pass: `test_alerts_page` (7),
+`test_notes_search_page` (11), `test_escalations_page` (9),
+`test_research_page` (11), `test_v5_fidelity_audit` (11),
+`test_chartis_integration` (61). The intro additions slot
+above existing test assertions — every test continues passing
+because the chrome they pin is unchanged.
+
+**Files touched this batch.**
+- `rcm_mc/ui/notes_search_page.py` — `ck_section_intro` import
+  + 14-line intro block.
+- `rcm_mc/ui/escalations_page.py` — same shape.
+- `rcm_mc/ui/research_page.py` — same shape.
+- `rcm_mc/ui/data_public/deals_library_page.py` — same shape.
+- `tools/v5_fidelity_audit.py` — `<em>` regex permits
+  attributes.
+- `docs/V5_FIDELITY_REPORT.md` — refreshed leaderboard.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- V5 fidelity passers: 7 of 325 (2.2%) — was 5 of 325 (1.5%).
+- Headroom on cycle 6-15 ports: 10-19 points each above
+  threshold (was 0-4). One chartis edit elsewhere can't tank
+  any of them now.
+- Total focused tests passing: 220 + 2 documented skips
+  (no change from cycle 16).
+- Net LOC: +60 (intro blocks) +1 (regex tweak) -0 = +61.
+
+**Suggested next:** cycle 18 — back to the cycle-16 Option C
+recommendation: build the `@insights_page` decorator. The 7
+passing pages confirm the editorial-port pattern works; lifting
+it to a single decorator reduces future ports from ~200 LOC to
+~20 LOC. With 318 renderers still below the line, even a 5x
+reduction saves ~30K LOC across the campaign. Forward-only.
+

@@ -129,7 +129,8 @@ def render_research(
     """Render /research with the chartis Insights triplet chrome."""
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_search_hero, ck_filter_sidebar,
-        ck_results_header, ck_section_header, ck_arrow_link,
+        ck_results_header, ck_section_header, ck_section_intro,
+        ck_arrow_link,
     )
 
     # Apply server-side filtering. Keyword match runs against the
@@ -248,7 +249,18 @@ def render_research(
         '</div>'
     )
 
-    body = search_hero + rail_layout
+    intro = ck_section_intro(
+        eyebrow="RESEARCH",
+        headline="Where the platform thinks out loud.",
+        italic_word="thinks",
+        body=(
+            "Methodology, frameworks, deep-dives, and field notes — "
+            "everything the analyst voice has published since the "
+            "last fund raise. Filter by topic or format to narrow."
+        ),
+    )
+
+    body = intro + search_hero + rail_layout
 
     return chartis_shell(
         body,

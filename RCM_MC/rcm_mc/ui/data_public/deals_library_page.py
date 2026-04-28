@@ -157,7 +157,7 @@ def render_deals_library(
     moic_bucket: str = "",
 ) -> str:
     from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_table, ck_section_header,
+        chartis_shell, ck_table, ck_section_header, ck_section_intro,
         ck_search_hero, ck_filter_sidebar, ck_results_header,
     )
     from rcm_mc.ui.chartis._helpers import render_page_explainer
@@ -312,7 +312,18 @@ def render_deals_library(
         '</div>'
     )
 
-    body = search_hero + explainer + kpis + rail_layout
+    intro = ck_section_intro(
+        eyebrow="DEAL CORPUS",
+        headline="The healthcare-PE deal universe, cataloged.",
+        italic_word="cataloged",
+        body=(
+            "Every deal we've ingested — name, sponsor, vintage, "
+            "EV/EBITDA, realized MOIC and IRR. Filter by sector, "
+            "regime, or MOIC bucket to assemble comparables."
+        ),
+    )
+
+    body = intro + search_hero + explainer + kpis + rail_layout
 
     return chartis_shell(
         body,
