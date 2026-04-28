@@ -264,3 +264,76 @@ PORT-from-env, 0.0.0.0 bind, auth cookie flag audit, deploy
 manifest under `deploy/` for Azure App Service Configuration.
 
 ---
+
+## Cycle 2 plan — iteration 12 — 2026-04-28
+
+**Target:** Build `ck_search_hero` per `CHARTIS_MATCH_NOTES.md`
+pattern 01 — navy panel with italic-serif "Search" label,
+wide keyword input ruled by a thin teal underline, circular
+submit icon, distinctive teal chevron-cut bottom-right corner.
+
+**Why this one now.** `chartis.com/insights` opens with this
+pattern; reproducing it on `/library` (deals corpus) and
+`/research` is the single highest-leverage move toward the
+chartis.com aesthetic for content-listing surfaces. The pattern
+is already specced (markup + CSS + tokens + helper signature)
+in CHARTIS_MATCH_NOTES.md so the build risk is low. Once landed
+it unlocks ck_filter_sidebar (pattern 02) on the same page in
+a follow-on iteration.
+
+**Files in scope.**
+- `rcm_mc/ui/_chartis_kit.py` — append `ck_search_hero(...)`
+  helper alongside `ck_section_intro` (~30 LOC). Append CSS
+  for `.ck-search-hero*` to `_CSS_INLINE_FALLBACK` (~50 LOC).
+- `rcm_mc/server.py` — wire to `/library` (or first available
+  content-listing page that already renders chartis_shell).
+  May only require swapping a section header for the new
+  helper. ~5 LOC.
+- `tests/test_search_hero.py` — NEW. ~50 LOC. Renders the
+  helper, asserts `.ck-search-hero` class + italic-serif
+  label + form action attribute + chevron-cut element.
+
+**Line-count estimate.** ~135 LOC across 3 files.
+
+**Test plan.**
+- `pytest -x tests/test_search_hero.py` — focused renderer test.
+- `pytest -x tests/test_alerts_page.py tests/test_v3_route_inventory.py
+  tests/test_v5_status_page.py tests/test_bankruptcy_survivor_scan.py`
+  — confirm no regression in pages that share chartis_shell.
+- Visual verify: `curl http://127.0.0.1:8765/library` under
+  CHARTIS_UI_V2=1, grep for `ck-search-hero` + `<em>Search</em>`
+  + chevron-cut element + the `/library` form action.
+
+**User-visible diff.** A partner navigating to /library (or the
+target page selected at build time) sees a chartis.com-grade
+search hero: navy panel, italic-serif "Search" label, single
+wide input with a teal underline and a circular submit icon, a
+distinctive teal triangle clipped to the bottom-right corner
+that bridges into the paper-background results section below.
+Replaces whatever bare input or label/input pair the page
+currently exposes.
+
+**Coverage of cycle 2's 10 steps.**
+- Step 3 (think/design): pattern is already specced in
+  CHARTIS_MATCH_NOTES.md; if the build surfaces a missing
+  detail, sketch the variation in the notes file before coding.
+- Step 4 (build): land the helper + CSS + first wiring site.
+- Step 5 (legacy elim): if /library currently uses bespoke
+  HTML for its search input, that bespoke path is removed.
+- Step 6 (chartis match): /library walked against
+  chartis.com/insights for header/hero/spacing/cards/accent;
+  search hero closes the worst gap.
+- Step 7 (no-lazy-labels): replace any "Search…" placeholder
+  with "Keyword" (chartis.com convention).
+- Step 8 (.py connectivity): /library renderer module gets a
+  partner-readable docstring + connectivity audit.
+- Step 9 (continue + commit review): finish the in-progress
+  thread, run focused tests, flag sprawling commits.
+- Step 10 (Azure deploy): pick the next-up row from the
+  cycle-1 baseline (PORT-from-env or 0.0.0.0 bind).
+
+**Stretch:** if cycle 2 finishes with budget left, sketch
+ck_filter_sidebar (pattern 02) implementation as the cycle 3
+build target.
+
+---
