@@ -833,6 +833,61 @@ def ck_data_cell(
     return f'<{tag} class="{cls}">{value}</{tag}>'
 
 
+def ck_data_table(
+    *,
+    headers: Sequence[Mapping[str, str]],
+    rows_html: str,
+    scrollable: bool = True,
+) -> str:
+    """Wrap an editorial data table in chartis-grade chrome.
+
+    Cycle 27 helper for the second-most-common inline-style cluster
+    (after the cycle 22 cell migration): the table container,
+    scroll wrapper, header row, and alternating-row background
+    boilerplate that ~120 data_public pages still hand-roll. Each
+    page emits ~5 inline-styled wrappers per table; this helper
+    replaces all of them with class-based markup.
+
+    Caller supplies the body via ``rows_html`` — typically a string
+    of ``<tr>`` elements built from ``ck_data_cell`` calls in the
+    page's render loop (so each row's tone-coloring stays at the
+    caller's discretion). The helper handles the surrounding chrome:
+    scroll wrapper, ``<table>`` + class, ``<thead>`` row, alternating
+    body-row backgrounds via CSS.
+
+    Args:
+      headers: list of ``{"label": "Deal", "align": "left"}`` dicts.
+        ``align`` ∈ ``left`` / ``right`` / ``center`` (default
+        ``left``).
+      rows_html: pre-rendered ``<tr>...</tr>`` strings concatenated.
+        The helper wraps these in ``<tbody>``.
+      scrollable: wrap in ``<div class="ck-data-table-scroll">``.
+        Set False to skip the wrapper for inline / non-overflow
+        contexts.
+    """
+    head_cells = []
+    for h in headers:
+        align = h.get("align", "left")
+        align_cls = (
+            f" ck-cell-r" if align == "right"
+            else f" ck-cell-c" if align == "center"
+            else ""
+        )
+        head_cells.append(
+            f'<th class="ck-cell ck-data-table-head{align_cls}">'
+            f'{_esc(h.get("label", ""))}</th>'
+        )
+    head_html = "<thead><tr>" + "".join(head_cells) + "</tr></thead>"
+    body_html = f"<tbody>{rows_html}</tbody>"
+    table = (
+        '<table class="ck-data-table">'
+        + head_html + body_html + "</table>"
+    )
+    if scrollable:
+        return f'<div class="ck-data-table-scroll">{table}</div>'
+    return table
+
+
 def ck_affirm_empty(
     *,
     headline: str,
@@ -1080,6 +1135,16 @@ _CSS_INLINE_FALLBACK = """
   .ck-cell.tone-acc { color:var(--sc-teal-ink); }
   .ck-cell-w-600 { font-weight:600; }
   .ck-cell-w-700 { font-weight:700; }
+
+  /* Data-table chrome — wraps the second-most-common inline-style
+   * cluster (cycle 27): the <table>+<thead>+<tbody> container with
+   * scroll-wrapper + alternating row backgrounds. Use ck_data_table
+   * to compose the chrome around ck_data_cell rows. */
+  .ck-data-table-scroll { overflow-x:auto; margin-top:12px; }
+  .ck-data-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .ck-data-table thead tr { background:var(--sc-bone); }
+  .ck-data-table tbody tr:nth-child(even) { background:var(--sc-panel-alt, #ece6db); }
+  .ck-data-table-head { padding:6px 10px; border-bottom:1px solid var(--sc-rule); font-size:10px; color:var(--sc-text-dim); letter-spacing:0.05em; font-weight:600; text-transform:uppercase; }
 
   /* Personal dashboard /my/<owner> — pulse strip uses the existing
    * ck-kpi-grid; health-mix bar is the only bespoke chrome. */

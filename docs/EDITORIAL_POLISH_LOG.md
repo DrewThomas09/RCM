@@ -2485,3 +2485,90 @@ candidates:
 Recommend **A** — same playbook as cycles 22-25 with new
 helpers, expected to push pass rate to 50%+. Forward-only.
 
+---
+
+## Cycle 27 build — 2026-04-28 — ck_data_table helper for table chrome
+
+**Step 27 — second-most-common inline-style cluster handled.**
+After cycle 22's `ck_data_cell` migrated 2572 cells, the audit
+showed table CHROME (containers, scroll wrappers, header rows,
+alternating-row backgrounds) as the next biggest pattern: ~5
+inline-styled wrappers per table × ~120 pages = ~600 instances.
+
+**`ck_data_table` API.**
+
+    ck_data_table(
+        *,
+        headers=[{"label": "Deal"}, {"label": "MOIC", "align": "right"}],
+        rows_html="<tr>...</tr><tr>...</tr>",
+        scrollable=True,  # wrap in overflow-x scroll div
+    ) -> str
+
+The helper composes:
+- `<div class="ck-data-table-scroll">` (when scrollable)
+- `<table class="ck-data-table">`
+- `<thead><tr>` with class-based `<th>` cells (alignment via
+  `ck-cell-r` / `ck-cell-c`)
+- `<tbody>` containing the caller's pre-rendered rows
+
+Caller controls row content (typically built from
+`ck_data_cell` calls in cycles 22-25 style). Helper handles
+the surrounding chrome: zero inline styles in the wrapper.
+
+**CSS — 5 utility classes added.**
+
+    .ck-data-table-scroll  { overflow-x:auto; margin-top:12px; }
+    .ck-data-table         { width:100%; border-collapse:collapse;
+                             font-size:11px; }
+    .ck-data-table thead tr { background:var(--sc-bone); }
+    .ck-data-table tbody tr:nth-child(even) {
+      background:var(--sc-panel-alt, #ece6db); }
+    .ck-data-table-head    { padding:6px 10px;
+                             border-bottom:1px solid var(--sc-rule);
+                             font-size:10px; color:var(--sc-text-dim);
+                             letter-spacing:0.05em; font-weight:600;
+                             text-transform:uppercase; }
+
+The alternating-row background is handled by CSS
+`:nth-child(even)` so the caller no longer needs to emit
+`<tr style="background:{rb}">` per row. Removes one
+inline-style instance per row (across 124 pages × 30+ rows
+= ~4000 instances eliminable when migrated).
+
+**Step 27 — focused tests.** 6 tests in
+`tests/test_ck_data_table.py`: minimal chrome render, header
+alignment classes, scrollable wrap default, scrollable=False
+omits wrap, header label HTML escape, body rows pass through
+verbatim.
+
+All 6 pass. Plus 88-test regression sweep clean.
+
+**Audit recognizes ck_data_table.** Added to the primitive
+whitelist so pages using the helper get density credit.
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — `ck_data_table` helper + 5
+  CSS classes.
+- `tools/v5_fidelity_audit.py` — primitive whitelist
+  extended.
+- `tests/test_ck_data_table.py` — NEW, 6 tests.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Helper shipped — pages can adopt with one-line wrapper
+  call.
+- V5 fidelity passers: 110 of 310 (no change yet — lift
+  comes when pages migrate).
+- Total focused tests: 267 + 2 documented skips (was 261 +
+  2 in cycle 26).
+- LOC: +90 helper + 60 tests = +150.
+
+**Suggested next:** cycle 28 — write the migration script that
+detects the `<div style="overflow-x:auto..."><table style="...">
+<thead><tr style="background:{bg}">…</tr></thead><tbody>` pattern
+and rewrites to `ck_data_table(headers=[...], rows_html="".join(trs))`.
+Same playbook as cycle 23's cell migration. Conservative
+defaults (cycle 21 lesson: skip cells we don't recognise rather
+than risk breakage). Expected to push pass rate from 35% toward
+50%+. Forward-only.
+

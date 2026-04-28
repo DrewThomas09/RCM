@@ -61,7 +61,7 @@ _RE_CK_PRIMITIVES = re.compile(
     r"\b(?:ck_(?:eyebrow|section_header|section_intro|panel|table|"
     r"kpi_block|signal_badge|arrow_link|image_card|severity_panel|"
     r"affirm_empty|search_hero|filter_sidebar|results_header|"
-    r"data_cell|"
+    r"data_cell|data_table|"
     r"command_palette|fmt_(?:currency|percent|number)|provenance_tooltip)"
     r"|render_insights_page)\b"
 )
