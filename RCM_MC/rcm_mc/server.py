@@ -11512,225 +11512,26 @@ class RCMHandler(BaseHTTPRequestHandler):
         Pulls together: deals currently owned, alerts on those deals,
         and deadlines assigned to them (overdue + upcoming). Lets an
         analyst start Monday on one URL instead of five.
+
+        Renders through ``rcm_mc.ui.my_dashboard_page.render_my_dashboard``
+        (chartis editorial chrome — italic-serif intro + pulse strip +
+        health-mix bar + ck_severity_panel for alerts / deadlines +
+        editorial deals table + affirm-empty bands on each empty
+        section). Server-side data semantics unchanged. The ValueError
+        guard on `deals_by_owner` is kept here so we surface a 400
+        instead of letting the renderer 500 on a bad owner string.
         """
-        from .alerts.alerts import evaluate_active
-        from .deals.deal_deadlines import overdue, upcoming
         from .deals.deal_owners import deals_by_owner
-        from .portfolio.portfolio_snapshots import latest_per_deal
         store = PortfolioStore(self.config.db_path)
         if not owner:
             return self.send_error(HTTPStatus.BAD_REQUEST, "owner required")
         try:
-            my_deals = set(deals_by_owner(store, owner))
+            deals_by_owner(store, owner)  # validate; renderer re-fetches
         except ValueError as exc:
             return self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
-
-        my_alerts = [a for a in evaluate_active(store)
-                     if a.deal_id in my_deals]
-        my_od = overdue(store, owner=owner)
-        my_up = upcoming(store, days_ahead=14, owner=owner)
-
-        # ── Deals card ──
-        if not my_deals:
-            deals_html = (
-                '<div class="card">'
-                f'<p class="muted">No deals currently assigned to '
-                f'<code>{html.escape(owner)}</code>. Open a deal and use '
-                f'the <em>Assign</em> form on its page.</p></div>'
-            )
-        else:
-            df = latest_per_deal(store)
-            df = df[df["deal_id"].isin(my_deals)] if not df.empty else df
-
-            def _fmt(v, pct=False):
-                if v is None or (isinstance(v, float) and v != v):
-                    return "—"
-                return f"{float(v)*100:.1f}%" if pct else f"{float(v):.2f}x"
-
-            rows = []
-            if not df.empty:
-                for _, r in df.iterrows():
-                    did = str(r["deal_id"])
-                    rows.append(
-                        f"<tr>"
-                        f"<td><a href='/deal/{urllib.parse.quote(did)}' "
-                        f"style='color: var(--accent); font-weight: 600; "
-                        f"text-decoration: none;'>{html.escape(did)}</a></td>"
-                        f"{_health_cell(store, did)}"
-                        f"<td>{html.escape(str(r.get('stage') or '—'))}</td>"
-                        f"<td>{html.escape(str(r.get('covenant_status') or '—'))}</td>"
-                        f"<td class='num'>{_fmt(r.get('moic'))}</td>"
-                        f"<td class='num'>{_fmt(r.get('irr'), pct=True)}</td>"
-                        f"</tr>"
-                    )
-            deals_html = (
-                f'<div class="card"><h2 style="margin-top: 0;">'
-                f'My deals ({len(my_deals)})</h2>'
-                f'<table><thead><tr>'
-                f'<th>Deal</th><th>Health</th><th>Stage</th><th>Covenant</th>'
-                f'<th>MOIC</th><th>IRR</th>'
-                f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
-            )
-
-        # ── Alerts card ──
-        red = [a for a in my_alerts if a.severity == "red"]
-        amber = [a for a in my_alerts if a.severity == "amber"]
-        if my_alerts:
-            alert_rows = []
-            for a in red + amber:
-                cls = "badge-red" if a.severity == "red" else "badge-amber"
-                alert_rows.append(
-                    f"<li style='padding: 0.4rem 0; "
-                    f"border-bottom: 1px solid var(--border); "
-                    f"display: flex; gap: 0.5rem; align-items: center; "
-                    f"flex-wrap: wrap;'>"
-                    f"<span class='badge {cls}'>{a.severity.upper()}</span>"
-                    f"<a href='/deal/{urllib.parse.quote(a.deal_id)}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(a.deal_id)}</a>"
-                    f"<span>{html.escape(a.title)}</span>"
-                    f"<span class='muted' style='font-size: 0.85rem;'>"
-                    f"{html.escape(a.detail)}</span>"
-                    f"</li>"
-                )
-            alerts_html = (
-                f'<div class="card"><h2 style="margin-top: 0;">'
-                f'My alerts ({len(red)} red / {len(amber)} amber)</h2>'
-                f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                f'{"".join(alert_rows)}</ul></div>'
-            )
-        else:
-            alerts_html = (
-                '<div class="card"><h2 style="margin-top: 0;">My alerts</h2>'
-                '<p class="muted">Nothing active on your deals.</p></div>'
-            )
-
-        # ── Deadlines card ──
-        def _deadline_li(r, *, badge):
-            did = str(r["deal_id"])
-            return (
-                f"<li style='padding: 0.4rem 0; "
-                f"border-bottom: 1px solid var(--border); "
-                f"display: flex; gap: 0.5rem; align-items: center;'>"
-                f"{badge} "
-                f"<a href='/deal/{urllib.parse.quote(did)}' "
-                f"style='color: var(--accent); font-weight: 600; "
-                f"text-decoration: none;'>{html.escape(did)}</a>"
-                f"<span>{html.escape(str(r['label']))}</span>"
-                f"<span class='muted' style='font-size: 0.85rem;'>"
-                f"due {html.escape(str(r['due_date']))}</span>"
-                f"</li>"
-            )
-
-        deadline_rows = []
-        for _, r in my_od.iterrows():
-            badge = (
-                f'<span class="badge badge-red">'
-                f'{int(r["days_overdue"])}d OVERDUE</span>'
-            )
-            deadline_rows.append(_deadline_li(r, badge=badge))
-        for _, r in my_up.iterrows():
-            deadline_rows.append(_deadline_li(
-                r, badge='<span class="badge badge-amber">UPCOMING</span>',
-            ))
-        if deadline_rows:
-            deadlines_html = (
-                f'<div class="card"><h2 style="margin-top: 0;">'
-                f'My deadlines ({len(my_od)} overdue, {len(my_up)} upcoming)'
-                f'</h2>'
-                f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                f'{"".join(deadline_rows)}</ul></div>'
-            )
-        else:
-            deadlines_html = (
-                '<div class="card"><h2 style="margin-top: 0;">My deadlines</h2>'
-                '<p class="muted">Nothing assigned.</p></div>'
-            )
-
-        # B141: personalized pulse + health mix at the top of the page
-        pulse_parts = []
-        n_red = sum(1 for a in my_alerts if a.severity == "red")
-        n_amber = sum(1 for a in my_alerts if a.severity == "amber")
-        if n_red:
-            pulse_parts.append(
-                f'<span style="color: var(--red-text); font-weight: 700;">'
-                f'{n_red} red</span>'
-            )
-        if n_amber:
-            pulse_parts.append(
-                f'<span style="color: var(--amber-text); font-weight: 700;">'
-                f'{n_amber} amber</span>'
-            )
-        if not my_od.empty:
-            pulse_parts.append(
-                f'<span style="color: var(--red-text); font-weight: 600;">'
-                f'{len(my_od)} overdue</span>'
-            )
-        if not my_up.empty:
-            pulse_parts.append(
-                f'<span class="muted">{len(my_up)} upcoming</span>'
-            )
-        sep = ' <span class="muted">·</span> '
-        pulse_html = (
-            f'<div style="margin-bottom: 1rem; font-size: 0.95rem;">'
-            f'<span class="muted" style="font-size: 0.82rem; '
-            f'text-transform: uppercase; letter-spacing: 0.05em; '
-            f'font-weight: 600; margin-right: 0.5rem;">Your pulse</span>'
-            f'{sep.join(pulse_parts)}</div>'
-            if pulse_parts else ""
-        )
-
-        # B141: health mix over my deals
-        health_html = ""
-        if my_deals:
-            from .deals.health_score import compute_health
-            counts = {"green": 0, "amber": 0, "red": 0}
-            for did in my_deals:
-                h = compute_health(store, did)
-                if h["score"] is None:
-                    continue
-                if h["band"] in counts:
-                    counts[h["band"]] += 1
-            total = sum(counts.values())
-            if total > 0:
-                def pct(n):
-                    return (n / total) * 100.0
-                health_html = f"""
-    <div class="card">
-      <h2 style="margin-top: 0;">Your health mix</h2>
-      <div style="display: flex; align-items: center; gap: 1rem;
-                  flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 20rem; display: flex;
-                    height: 1.2rem; border-radius: 6px; overflow: hidden;
-                    border: 1px solid var(--border);">
-          <div style="background: var(--green); width: {pct(counts['green']):.1f}%;"
-               title="{counts['green']} green"></div>
-          <div style="background: var(--amber); width: {pct(counts['amber']):.1f}%;"
-               title="{counts['amber']} amber"></div>
-          <div style="background: var(--red); width: {pct(counts['red']):.1f}%;"
-               title="{counts['red']} red"></div>
-        </div>
-        <div style="font-size: 0.9rem;">
-          <span style="color: var(--green-text); font-weight: 700;">●
-            {counts['green']}</span>
-          <span style="color: var(--amber-text); font-weight: 700;
-                       margin-left: 0.75rem;">● {counts['amber']}</span>
-          <span style="color: var(--red-text); font-weight: 700;
-                       margin-left: 0.75rem;">● {counts['red']}</span>
-        </div>
-      </div>
-    </div>
-"""
-
-        body = pulse_html + health_html + alerts_html + deadlines_html + deals_html
-        self._send_html(shell(
-            body=body, title=f"My work: {owner}",
-            subtitle=(
-                f"{len(my_deals)} deals · "
-                f"{len(my_alerts)} alerts · "
-                f"{len(my_od)} overdue · {len(my_up)} upcoming"
-            ),
-            back_href="/",
+        from .ui.my_dashboard_page import render_my_dashboard
+        return self._send_html(render_my_dashboard(
+            store=store, owner=owner,
         ))
 
     def _route_deadlines(self) -> None:

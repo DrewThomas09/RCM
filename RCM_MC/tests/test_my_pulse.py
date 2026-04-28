@@ -24,7 +24,13 @@ class TestMyPulse(unittest.TestCase):
         t.start(); _time.sleep(0.05)
         return server, port
 
-    def test_clean_owner_hides_pulse(self):
+    def test_clean_owner_renders_pulse_with_zero_alerts(self):
+        # Cycle 15 editorial port: pulse strip is ALWAYS rendered (5
+        # KPI blocks) because "0 red" is a signal worth surfacing —
+        # an analyst seeing a row of zeros confirms there's nothing
+        # outstanding rather than wondering if the page didn't load.
+        # Legacy behavior of hiding the pulse on a clean owner is
+        # intentionally dropped.
         with tempfile.TemporaryDirectory() as tmp:
             store = _seed_with_pe_math(tmp, "clean", headroom=2.0)
             assign_owner(store, deal_id="clean", owner="AT")
@@ -32,14 +38,20 @@ class TestMyPulse(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/my/AT") as r:
                     body = r.read().decode()
-                    self.assertNotIn("Your pulse", body)
-                    self.assertIn("Your health mix", body)  # still renders
-                    # 1 green on AT's health mix
-                    self.assertIn(">●\n            1</span>", body)
+                    # Pulse strip + health-mix card both present
+                    self.assertIn("ck-pulse-grid", body)
+                    self.assertIn(">Red Alerts</div>", body)
+                    self.assertIn("Your health mix", body)
+                    # AT has 1 green deal — health-mix legend reflects it
+                    self.assertIn("● 1 green", body)
             finally:
                 server.shutdown(); server.server_close()
 
     def test_pulse_counts_scoped_to_owner(self):
+        # Editorial port: legacy "1 red" inline phrase replaced by a
+        # "Red Alerts" KPI block carrying the count. Other owners'
+        # deals must NOT contribute to the count — scoping is the
+        # load-bearing assertion this test pins.
         with tempfile.TemporaryDirectory() as tmp:
             store = _seed_with_pe_math(tmp, "atdeal", headroom=-0.5)
             _seed_with_pe_math(tmp, "other", headroom=-0.5)
@@ -48,10 +60,16 @@ class TestMyPulse(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/my/AT") as r:
                     body = r.read().decode()
-                    self.assertIn("Your pulse", body)
-                    # Only AT's deal (1 red) should count — not `other`'s red
-                    self.assertIn("1 red", body)
-                    self.assertNotIn("2 red", body)
+                    # Pulse strip is rendered
+                    self.assertIn("ck-pulse-grid", body)
+                    self.assertIn(">Red Alerts</div>", body)
+                    # AT owns 1 red deal — scoped count reflects it.
+                    # Pull the Red Alerts KPI block region for tight
+                    # match. The KPI value slot ends at </div> so the
+                    # rendered "1" trails right up to "</div>".
+                    red_block_start = body.index(">Red Alerts</div>")
+                    red_block_end = red_block_start + body[red_block_start:].index('class="ck-kpi-sub"')
+                    self.assertIn(">1</div>", body[red_block_start:red_block_end])
             finally:
                 server.shutdown(); server.server_close()
 

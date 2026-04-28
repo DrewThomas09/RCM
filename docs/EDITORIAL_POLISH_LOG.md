@@ -1297,3 +1297,106 @@ the gaps row-by-row against
 `design_reference/handoff/ACCEPTANCE_CHECKLIST.md`).
 Forward-only.
 
+---
+
+## Cycle 15 build — 2026-04-28 — /my/<owner> editorial port
+
+**Step 15 — /my/<owner> ported to chartis editorial chrome.**
+Same pattern as cycle 14's /escalations: extract the ~220-line
+inline `_route_my_dashboard` body in `server.py` to a new
+`rcm_mc/ui/my_dashboard_page.py` module. The legacy body is
+deleted (not preserved as a stale alternative) — git history
+keeps the diff for archaeology.
+
+**Layout — five editorial primitives composed.**
+1. `ck_section_intro` — italic-serif headline naming the
+   analyst ("Your *week*, in one read.") with eyebrow
+   `PARTNER · {NAME}`.
+2. **Pulse strip** — 5 KPI blocks (My Deals / Red Alerts /
+   Amber Alerts / Overdue Deadlines / Upcoming Deadlines)
+   composed via `ck_kpi_block` inside a `ck-kpi-grid
+   ck-pulse-grid` container. Always rendered, even at zero
+   counts — "0 red" is a signal worth surfacing, not a gap
+   to hide. Replaces the legacy hide-when-clean behavior.
+3. **Health-mix bar** — bespoke
+   `.ck-health-mix` chrome (navy panel head, parchment bar
+   with green/amber/red segments, mono legend with bullet
+   markers) showing the band distribution across the
+   analyst's owned deals. Pinned to its own CSS block.
+4. **Alerts panel** — `ck_severity_panel` (red/amber-toned
+   by worst severity present) listing each scoped alert as
+   a row with severity badge + deal anchor + title + detail.
+   Falls back to `ck_affirm_empty` with a CTA to /alerts when
+   no alerts active.
+5. **Deadlines panel** — `ck_severity_panel` again, same row
+   shape with `Nd OVERDUE` badge for overdue items, `UPCOMING`
+   badge for next-14-days. Falls back to `ck_affirm_empty`
+   with no CTA when nothing assigned.
+6. **Deals panel** — `ck-panel` + `ck-table.ck-dense` with
+   columns Deal / Health / Stage / Covenant / MOIC / IRR.
+   Health column uses a `.ck-health-cell` span tinted by
+   band (positive/warning/negative). Falls back to two
+   distinct affirm-empty bands: "owned but no snapshots yet"
+   (CTA to /analysis) and "no deals assigned" (CTA to
+   /library).
+
+**Server.py route slimmed to ~14 lines.** `_route_my_dashboard`
+keeps the empty-owner BAD_REQUEST guard and the
+`deals_by_owner` ValueError-to-400 wrapper, then delegates to
+the renderer. The legacy ~220-line body is deleted.
+
+**Step 15 — focused test suite.** New
+`tests/test_my_dashboard_page.py` with 7 tests pinning the
+empty state with all 5 pulse KPIs + 3 affirm bands, pulse
+zeros rendered (not hidden), breadcrumbs, subtitle plurals,
+empty-state CTA destinations (/library + /alerts), and the
+"owned with no snapshots yet" branch with its CTA to
+/analysis.
+
+**Test impact across the existing suite.** Four pre-existing
+tests in `tests/test_my_dashboard.py` and `tests/test_my_pulse.py`
+asserted on legacy copy ("Nothing active", "Nothing assigned",
+"My deals (1)", "Your pulse" hidden when clean, "1 red"
+inline phrase). Updated each with a comment naming the cycle
+and the editorial-port intent. Two tests pin new behaviors
+explicitly (always-rendered pulse, scoped Red-Alerts KPI
+count). All 4 pass with the updates.
+
+**Files touched this batch.**
+- `rcm_mc/ui/my_dashboard_page.py` — NEW, ~290 LOC.
+- `rcm_mc/ui/_chartis_kit.py` — `.ck-pulse-grid` /
+  `.ck-health-mix` / `.ck-health-cell` / `.ck-deal-link` CSS
+  appended.
+- `rcm_mc/server.py` — `_route_my_dashboard` slimmed from
+  ~220 inline lines to ~14 lines (legacy body deleted).
+- `tests/test_my_dashboard.py` — 2 copy updates.
+- `tests/test_my_pulse.py` — 2 test rewrites pinning
+  always-rendered pulse + scoped count semantics.
+- `tests/test_my_dashboard_page.py` — NEW, 7 tests.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Pages on the chartis editorial chrome: 5 (was 4) —
+  /library, /notes, /research, /escalations, /my/<owner>.
+- Routes ported from legacy `shell()` this cycle: 1
+  (/my/<owner>).
+- The personal-analyst archetype (alerts + deadlines + deals
+  + pulse + health-mix in one read) is now consistent with
+  the partner-facing surfaces.
+- Total focused tests passing: 209 + 2 documented skips
+  (was 200 + 2 in cycle 14).
+- LOC change: +290 (renderer) +33 (CSS) +7 (slimmed server)
+  -220 (legacy body deleted) = net +110 LOC, with much
+  better tested behavior.
+
+**Suggested next:** cycle 16 step 4 — `/audit` admin surface
+chrome audit. Already partially editorial; walk it row-by-row
+against `design_reference/handoff/ACCEPTANCE_CHECKLIST.md`
+to find the gaps. Then cycle 17 — pick one of:
+- `/diligence/*` workbench archetype (different shape from
+  any current page; needs a per-step layout)
+- `/deal/<id>` profile page (dense single-deal view; lots
+  of bespoke HTML to migrate)
+- Per-page chartis-match dives across the 50 data_public
+  pages (beyond label copy and color purges already shipped).
+

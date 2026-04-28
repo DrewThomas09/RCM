@@ -838,6 +838,33 @@ _CSS_INLINE_FALLBACK = """
   .ck-note-body { font-family:var(--sc-serif); font-size:14px; line-height:1.5; color:var(--sc-text); white-space:pre-wrap; }
   .ck-mark { background:#fff5d6; padding:0 2px; border-radius:1px; }
 
+  /* Personal dashboard /my/<owner> — pulse strip uses the existing
+   * ck-kpi-grid; health-mix bar is the only bespoke chrome. */
+  .ck-pulse-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:0; border-top:1px solid var(--sc-rule); }
+  .ck-pulse-grid .ck-kpi { padding:14px 18px; border-right:1px solid var(--sc-rule); }
+  .ck-pulse-grid .ck-kpi:last-child { border-right:0; }
+  .ck-pulse-grid .ck-kpi-value .neg { color:var(--sc-negative); }
+  .ck-pulse-grid .ck-kpi-value .warn { color:var(--sc-warning); }
+  .ck-health-mix { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; box-shadow:var(--sc-shadow-1); margin:0 0 var(--sc-s-5); padding:18px; }
+  .ck-health-mix-head { display:flex; align-items:baseline; justify-content:space-between; gap:var(--sc-s-4); margin-bottom:14px; }
+  .ck-health-mix-head h3 { font-family:var(--sc-sans); font-weight:700; font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:var(--sc-navy); margin:0; }
+  .ck-health-mix-head .count { font-family:var(--sc-mono); font-size:13px; color:var(--sc-text-faint); }
+  .ck-health-bar { display:flex; height:18px; border-radius:2px; overflow:hidden; border:1px solid var(--sc-rule); margin-bottom:10px; }
+  .ck-health-bar .seg.green { background:var(--sc-positive); }
+  .ck-health-bar .seg.amber { background:var(--sc-warning); }
+  .ck-health-bar .seg.red   { background:var(--sc-negative); }
+  .ck-health-legend { display:flex; gap:18px; font-family:var(--sc-mono); font-size:11px; letter-spacing:0.06em; }
+  .ck-health-legend .lg.green { color:var(--sc-positive); }
+  .ck-health-legend .lg.amber { color:var(--sc-warning); }
+  .ck-health-legend .lg.red   { color:var(--sc-negative); }
+  .ck-health-cell.tone-positive { color:var(--sc-positive); font-weight:700; }
+  .ck-health-cell.tone-warning  { color:var(--sc-warning); font-weight:700; }
+  .ck-health-cell.tone-negative { color:var(--sc-negative); font-weight:700; }
+  .ck-health-cell.tone-neutral  { color:var(--sc-text-faint); font-weight:600; }
+  .ck-health-cell.faint { color:var(--sc-text-faint); }
+  .ck-deal-link { color:var(--sc-teal-ink); font-weight:600; text-decoration:none; }
+  .ck-deal-link:hover { color:var(--sc-navy); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; }
+
   /* Research grid — one editorial card per research entry. Pairs
    * with the Insights triplet on /research. */
   .ck-research-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:var(--sc-s-6) var(--sc-s-7); margin:0 0 var(--sc-s-6); }

@@ -26,18 +26,25 @@ class TestMyDashboard(unittest.TestCase):
         return server, port
 
     def test_my_empty_analyst(self):
+        # Cycle 15 editorial port: copy was rewritten as affirmative
+        # bands. Each empty section now reads as a positive signal
+        # ("No deals currently assigned", "No active alerts on your
+        # deals", "No deadlines assigned") rather than the legacy
+        # neutral phrases ("Nothing active", "Nothing assigned").
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/my/AT") as r:
                     body = r.read().decode()
                     self.assertIn("No deals currently assigned", body)
-                    self.assertIn("Nothing active", body)
-                    self.assertIn("Nothing assigned", body)
+                    self.assertIn("No active alerts on your deals", body)
+                    self.assertIn("No deadlines assigned", body)
             finally:
                 server.shutdown(); server.server_close()
 
     def test_my_shows_owned_deals(self):
+        # Cycle 15 editorial port: deals card title format changed
+        # from "My deals (N)" to "My deals · N" (editorial separator).
         with tempfile.TemporaryDirectory() as tmp:
             store = _seed_with_pe_math(tmp, "ccf")
             assign_owner(store, deal_id="ccf", owner="AT")
@@ -45,7 +52,7 @@ class TestMyDashboard(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/my/AT") as r:
                     body = r.read().decode()
-                    self.assertIn("My deals (1)", body)
+                    self.assertIn("My deals · 1", body)
                     self.assertIn("ccf", body)
             finally:
                 server.shutdown(); server.server_close()
