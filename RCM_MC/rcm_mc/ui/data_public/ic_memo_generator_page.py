@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -18,9 +18,9 @@ def _thesis_table(items) -> str:
         ec = e_c.get(t.evidence_strength, text_dim)
         v_c = pos if t.validation_score >= 82 else (acc if t.validation_score >= 72 else warn)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(t.thesis_element)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.thesis_element)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(t.description)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{ec};border:1px solid {ec};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.evidence_strength)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{ec};border:1px solid {ec};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.evidence_strength)}</span>""", align="center")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{v_c};font-weight:700">{t.validation_score}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -39,9 +39,9 @@ def _findings_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         sc = s_c.get(f.severity, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(f.workstream)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(f.workstream)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.finding)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(f.severity)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(f.severity)}</span>""", align="center")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{P["accent"]}">{_html.escape(f.mitigation)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.impact_on_thesis)}</td>',
         ]
@@ -61,12 +61,12 @@ def _levers_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         p_c = pos if lv.probability_pct >= 0.80 else (acc if lv.probability_pct >= 0.65 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(lv.lever)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${lv.target_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${lv.base_rate_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(lv.lever)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${lv.target_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${lv.base_rate_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{lv.probability_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{lv.timeline_months}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${lv.expected_contribution_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{lv.timeline_months}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${lv.expected_contribution_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -87,10 +87,10 @@ def _risks_table(items) -> str:
         pc = p_c.get(rk.probability, text_dim)
         rc = r_c.get(rk.residual_risk, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(rk.risk)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(rk.risk)}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(rk.category)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(rk.probability)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${rk.impact_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(rk.probability)}</span>""", align="center")}',
+            f'{ck_data_cell(f"""${rk.impact_mm:,.2f}""", align="right", mono=True, tone="neg", weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(rk.mitigation_plan)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{rc};font-weight:600">{_html.escape(rk.residual_risk)}</td>',
         ]
@@ -111,13 +111,13 @@ def _scenarios_table(items) -> str:
         m_c = pos if s.moic >= 2.5 else (acc if s.moic >= 1.8 else neg)
         i_c = pos if s.irr >= 0.20 else (acc if s.irr >= 0.12 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.ebitda_at_exit_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{s.exit_multiple:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.equity_proceeds_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${s.ebitda_at_exit_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.exit_multiple:.2f}x""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""${s.equity_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{s.moic:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{i_c};font-weight:700">{s.irr * 100:+.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.probability_pct * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{s.probability_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -133,9 +133,9 @@ def _structure_table(items) -> str:
     for i, ds in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(ds.component)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${ds.amount_mm:,.2f}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{_html.escape(ds.terms)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(ds.component)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${ds.amount_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{_html.escape(ds.terms)}""", mono=True, tone="acc")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(ds.notes)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -211,4 +211,9 @@ def render_ic_memo_generator(params: dict = None) -> str:
         source="data_public/ic_memo_generator.py (standardized memo template).",
         page_key="ic-memo-gen",
     )
-    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/ic-memo-gen")
+    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/ic-memo-gen",
+        editorial_intro={
+            "eyebrow": "IC MEMO GENERATOR",
+            "headline": "What the ic memo generator page reveals on this deal.",
+            "italic_word": "reveals",
+        })

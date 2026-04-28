@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _flags_table(items) -> str:
@@ -27,11 +27,11 @@ def _flags_table(items) -> str:
             tv = f"{f.target_value:.2f}"
             bv = f"{f.benchmark_p50:.2f}"
         cells = [
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{cc};border:1px solid {cc};border-radius:2px;letter-spacing:0.06em;font-weight:700">{_html.escape(f.severity.upper())}</span></td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(f.category)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(f.flag_name)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">{tv}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{bv}</td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{cc};border:1px solid {cc};border-radius:2px;letter-spacing:0.06em;font-weight:700">{_html.escape(f.severity.upper())}</span>""", align="center")}',
+            f'{ck_data_cell(f"""{_html.escape(f.category)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(f.flag_name)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{tv}""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""{bv}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cc};font-weight:600">{f.delta_vs_p50 * 100:+.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.evidence)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{acc}">{_html.escape(f.mitigation)}</td>',
@@ -52,12 +52,12 @@ def _categories_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         ws_c = neg if c.weighted_score >= 70 else (warn if c.weighted_score >= 50 else (pos if c.weighted_score < 30 else text_dim))
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.flag_count}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.category)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{c.flag_count}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if c.critical_count > 0 else text_dim}">{c.critical_count}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if c.high_count > 0 else text_dim}">{c.high_count}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn if c.medium_count > 0 else text_dim}">{c.medium_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.low_count}</td>',
+            f'{ck_data_cell(f"""{c.low_count}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ws_c};font-weight:700">{c.weighted_score:.1f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -75,11 +75,11 @@ def _comps_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         moic_c = pos if c.moic >= 2.5 else (P["warning"] if c.moic >= 1.8 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.comp_deal)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(c.sector)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.year}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.comp_deal)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(c.sector)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.year}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:700">{c.moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:600">{c.flag_overlap_count}</td>',
+            f'{ck_data_cell(f"""{c.flag_overlap_count}""", align="right", mono=True, tone="neg", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -211,4 +211,9 @@ def render_redflag_scanner(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Red-Flag Scanner", active_nav="/redflag-scanner")
+    return chartis_shell(body, "Red-Flag Scanner", active_nav="/redflag-scanner",
+        editorial_intro={
+            "eyebrow": "REDFLAG SCANNER",
+            "headline": "What the redflag scanner page reveals on this deal.",
+            "italic_word": "reveals",
+        })

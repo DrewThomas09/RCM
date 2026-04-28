@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _components_table(items) -> str:
@@ -16,13 +16,13 @@ def _components_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         gap_c = pos if abs(c.gap_pct) < 0.08 else (warn if abs(c.gap_pct) < 0.15 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.measure)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.measure)}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.domain)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.lis_dual_performance * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.non_lis_performance * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{c.lis_dual_performance * 100:.1f}%""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{c.non_lis_performance * 100:.1f}%""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{gap_c};font-weight:700">{c.gap_pct * 100:+.1f}pp</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{c.weight_in_hei * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{c.points_available}</td>',
+            f'{ck_data_cell(f"""{c.weight_in_hei * 100:.0f}%""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{c.points_available}""", align="right", mono=True, tone="pos", weight=700)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -41,11 +41,11 @@ def _sdoh_table(items) -> str:
         roi_c = pos if s.roi_score >= 70 else (acc if s.roi_score >= 60 else warn)
         cl_c = pos if s.referral_closed_loop_pct >= 0.50 else (warn if s.referral_closed_loop_pct >= 0.35 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.domain)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.screened_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">{s.positive_screen_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.domain)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{s.screened_pct * 100:.1f}%""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.positive_screen_pct * 100:.1f}%""", align="right", mono=True, tone="neg")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cl_c};font-weight:700">{s.referral_closed_loop_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.intervention_cost_pmpy:,.2f}</td>',
+            f'{ck_data_cell(f"""${s.intervention_cost_pmpy:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{roi_c};font-weight:700">{s.roi_score}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -63,13 +63,13 @@ def _investments_table(items) -> str:
     for i, inv in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(inv.initiative)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(inv.initiative)}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(inv.category)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]}">${inv.annual_cost_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{inv.lives_impacted:,}</td>',
+            f'{ck_data_cell(f"""{inv.lives_impacted:,}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(inv.measurable_outcome)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">+{inv.hei_points_delta:.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${inv.star_bonus_impact_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""+{inv.hei_points_delta:.2f}""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""${inv.star_bonus_impact_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -89,10 +89,10 @@ def _demographics_table(items) -> str:
         h_c = pos if d.hedis_composite >= 0.78 else (warn if d.hedis_composite >= 0.70 else neg)
         f_c = neg if d.disparity_flag else pos
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.segment)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.population_000:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{d.avg_raf:.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{d.preventive_utilization_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.segment)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{d.population_000:,.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{d.avg_raf:.2f}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{d.preventive_utilization_pct * 100:.1f}%""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ed_c}">{d.ed_utilization_per_1000}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{h_c};font-weight:700">{d.hedis_composite:.2f}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{f_c};font-weight:700">{"YES" if d.disparity_flag else "NO"}</td>',
@@ -152,4 +152,9 @@ def render_health_equity(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Health Equity", active_nav="/health-equity")
+    return chartis_shell(body, "Health Equity", active_nav="/health-equity",
+        editorial_intro={
+            "eyebrow": "HEALTH EQUITY",
+            "headline": "What the health equity page reveals on this deal.",
+            "italic_word": "reveals",
+        })

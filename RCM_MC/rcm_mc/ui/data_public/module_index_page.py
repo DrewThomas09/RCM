@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -17,12 +17,12 @@ def _modules_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         corpus_ind = pos if m.corpus_dependent else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.name)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.name)}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(m.category)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(m.lifecycle_phase)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(m.primary_persona)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.description)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}"><a href="{m.route}" style="color:{acc};text-decoration:none">{_html.escape(m.route)}</a></td>',
+            f'{ck_data_cell(f"""<a href="{m.route}" style="color:{acc};text-decoration:none">{_html.escape(m.route)}</a>""", mono=True, tone="acc")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -38,9 +38,9 @@ def _categories_table(items) -> str:
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{c.module_count}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{_html.escape(c.lifecycle_phases)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.category)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{c.module_count}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{_html.escape(c.lifecycle_phases)}""", mono=True, tone="acc")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.example_modules)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -57,8 +57,8 @@ def _phases_table(items) -> str:
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(p.phase)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{p.module_count}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.phase)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{p.module_count}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.primary_output)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -75,8 +75,8 @@ def _personas_table(items) -> str:
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(p.persona)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{p.module_count}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.persona)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{p.module_count}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.top_modules)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -145,4 +145,9 @@ def render_module_index(params: dict = None) -> str:
         source="data_public/module_index.py (module catalog).",
         page_key="module-index",
     )
-    return chartis_shell(explainer + body, "Module Index", active_nav="/module-index")
+    return chartis_shell(explainer + body, "Module Index", active_nav="/module-index",
+        editorial_intro={
+            "eyebrow": "MODULE INDEX",
+            "headline": "What the module index page reveals on this deal.",
+            "italic_word": "reveals",
+        })

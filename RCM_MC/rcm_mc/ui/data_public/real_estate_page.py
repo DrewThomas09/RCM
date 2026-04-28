@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _ownership_svg(total_sqft: int, owned_sqft: int, leased_sqft: int) -> str:
@@ -98,12 +98,12 @@ def _assets_table(assets) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         oc = own_colors.get(a.current_ownership, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(a.property_id)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(a.property_id)}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(a.property_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{a.sqft:,}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{oc};border:1px solid {oc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.current_ownership.replace("_", " "))}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${a.annual_rent_mm:,.3f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{a.implied_cap_rate * 100:.2f}%</td>',
+            f'{ck_data_cell(f"""{a.sqft:,}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{oc};border:1px solid {oc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.current_ownership.replace("_", " "))}</span>""")}',
+            f'{ck_data_cell(f"""${a.annual_rent_mm:,.3f}M""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{a.implied_cap_rate * 100:.2f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">${a.implied_value_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"] if a.slb_proceeds_mm > 0 else text_dim};font-weight:600">${a.slb_proceeds_mm:,.2f}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(a.notes)}</td>',
@@ -133,13 +133,13 @@ def _leases_table(leases) -> str:
         rc = risk_colors.get(l.renewal_risk, text_dim)
         mkt_c = P["positive"] if l.market_rent_vs_current < 0.98 else (P["warning"] if l.market_rent_vs_current < 1.05 else P["negative"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(l.property_id)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(l.property_id)}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(l.lease_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{l.years_remaining:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{l.annual_escalator_pct * 100:.2f}%</td>',
+            f'{ck_data_cell(f"""{l.years_remaining:.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{l.annual_escalator_pct * 100:.2f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(l.renewal_options)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{mkt_c}">{l.market_rent_vs_current:.2f}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{l.renewal_risk}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{l.renewal_risk}</span>""")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -164,13 +164,13 @@ def _scenarios_table(scenarios) -> str:
         eb_c = pos if s.net_ebitda_impact_mm >= 0 else neg
         mc = pos if s.implied_moic_lift >= 0.02 else P["warning"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.properties_in_scope}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.total_slb_proceeds_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.incremental_rent_mm:+,.2f}M</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{s.properties_in_scope}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.total_slb_proceeds_mm:,.1f}M""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${s.incremental_rent_mm:+,.2f}M""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{eb_c}">${s.net_ebitda_impact_mm:+,.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.debt_paydown_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.equity_return_mm:,.1f}M</td>',
+            f'{ck_data_cell(f"""${s.debt_paydown_mm:,.1f}M""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.equity_return_mm:,.1f}M""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{mc};font-weight:600">+{s.implied_moic_lift * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -310,4 +310,9 @@ def render_real_estate(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Real Estate", active_nav="/real-estate")
+    return chartis_shell(body, "Real Estate", active_nav="/real-estate",
+        editorial_intro={
+            "eyebrow": "REAL ESTATE",
+            "headline": "What the real estate page reveals on this deal.",
+            "italic_word": "reveals",
+        })

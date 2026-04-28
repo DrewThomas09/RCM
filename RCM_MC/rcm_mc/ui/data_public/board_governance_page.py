@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _holdcos_table(items) -> str:
@@ -17,14 +17,14 @@ def _holdcos_table(items) -> str:
         g_c = pos if h.governance_score >= 85 else (acc if h.governance_score >= 78 else warn)
         i_c = pos if h.independence_pct >= 0.45 else (acc if h.independence_pct >= 0.40 else warn)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(h.holdco)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(h.sector)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{h.board_size}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{h.independent_directors}</td>',
+            f'{ck_data_cell(f"""{_html.escape(h.holdco)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(h.sector)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{h.board_size}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{h.independent_directors}""", align="right", mono=True, tone="acc")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{i_c};font-weight:600">{h.independence_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{h.diversity_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{h.avg_tenure_years:.1f}y</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{h.meetings_ltm}</td>',
+            f'{ck_data_cell(f"""{h.diversity_pct * 100:.1f}%""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{h.avg_tenure_years:.1f}y""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{h.meetings_ltm}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{g_c};font-weight:700">{h.governance_score}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -43,10 +43,10 @@ def _directors_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         ind_c = pos if d.independent else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(d.director)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{d.holdcos_served}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.director)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{d.holdcos_served}""", align="right", mono=True, tone="acc")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.specialty)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.tenure_years:.1f}y</td>',
+            f'{ck_data_cell(f"""{d.tenure_years:.1f}y""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{ind_c};font-weight:700">{"YES" if d.independent else "NO"}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(d.diversity_category)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{acc}">{_html.escape(d.committees)}</td>',
@@ -70,7 +70,7 @@ def _committees_table(items) -> str:
             color = pos if has else neg
             return f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{color};font-weight:700">{"✓" if has else "✗"}</td>'
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.holdco)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.holdco)}""", mono=True, weight=600)}',
             cell(c.audit_committee),
             cell(c.compensation_committee),
             cell(c.nominating_gov_committee),
@@ -94,12 +94,12 @@ def _sponsors_table(items) -> str:
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.sponsor_firm)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.holdcos}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{s.total_board_seats}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.observer_seats}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.affiliated_independents}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{s.effective_voting_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.sponsor_firm)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{s.holdcos}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.total_board_seats}""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""{s.observer_seats}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.affiliated_independents}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.effective_voting_pct * 100:.1f}%""", align="right", mono=True, tone="pos", weight=700)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -119,12 +119,12 @@ def _gaps_table(items) -> str:
         pc = p_c.get(g.priority, text_dim)
         c_c = pos if g.coverage_pct >= 0.90 else (acc if g.coverage_pct >= 0.70 else warn)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(g.practice)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{g.holdcos_implemented}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{g.holdcos_total}</td>',
+            f'{ck_data_cell(f"""{_html.escape(g.practice)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{g.holdcos_implemented}""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""{g.holdcos_total}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{g.coverage_pct * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(g.remediation_owner)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(g.priority)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(g.priority)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -141,11 +141,11 @@ def _comp_table(items) -> str:
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.role)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.median_comp_k:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${c.quartile_top_k:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.quartile_bottom_k:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{c.equity_pct * 100:.2f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.role)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${c.median_comp_k:,.1f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.quartile_top_k:,.1f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${c.quartile_bottom_k:,.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.equity_pct * 100:.2f}%""", align="right", mono=True, tone="acc", weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.typical_vesting)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -206,4 +206,9 @@ def render_board_governance(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Board Governance", active_nav="/board-governance")
+    return chartis_shell(body, "Board Governance", active_nav="/board-governance",
+        editorial_intro={
+            "eyebrow": "BOARD GOVERNANCE",
+            "headline": "What the board governance page reveals on this deal.",
+            "italic_word": "reveals",
+        })

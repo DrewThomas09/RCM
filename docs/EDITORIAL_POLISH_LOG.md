@@ -2309,3 +2309,104 @@ Recommend **A** — leverages the cycle 23 script and cycle
 24 recal to push pass rate to ~25-30% in one cycle without
 new code. Forward-only.
 
+---
+
+## Cycle 25 build — 2026-04-28 — bulk migration validates pipeline; pass rate 35.5%
+
+**Step 25 — three bug fixes + bulk migration of all 124
+data_public pages.** Cycle 23's first run had a script bug that
+shipped malformed migrations to 5 pages (string literals
+containing `f'ck_data_cell(...)'` instead of evaluated calls).
+Cycle 25 caught two more script bugs while extending to the full
+124-page denominator:
+
+**Bug 1 (from cycle 23) — f-string interpolation context.** The
+script wrote `f'ck_data_cell(...)'` (literal string) instead of
+`f'{ck_data_cell(...)}'` (interpolated expression). Fix: the
+script now detects whether the matched `<td>` is inside an outer
+f-string and wraps the call in `{...}` accordingly.
+
+**Bug 2 (caught cycle 25) — nested quote conflict.** When the
+inner cell content contains `<span style="...">` markup, wrapping
+it in an f-string with double-quotes creates a quote-collision
+syntax error. Fix: the script uses **triple-quoted f-strings**
+(`f"""..."""`) which accept embedded single + double quotes
+without escape. Cells whose inner content contains `"""` (extreme
+edge case) are left unmigrated rather than risk further
+breakage.
+
+**Bug 3 (caught cycle 25) — multi-line import injection.** The
+import-injection regex `[^\n]+` stopped at the first newline of
+multi-line `from … import (\n    foo,\n    bar,\n)` patterns,
+producing malformed `import (, ck_data_cell` syntax. Fix: detect
+multi-line imports explicitly (matching `(...)` block) and inject
+the new symbol before the closing paren, respecting trailing-
+comma + indentation.
+
+**Bulk run — 124 pages.**
+
+    tools/migrate_inline_cells.py 124 pages:
+      Total: 2572 cells migrated, 1175 skipped.
+
+    tools/bulk_add_intros.py 99 of 124 pages updated
+      (others already had editorial_intro from prior cycles).
+
+    Manual fixes: 2 files had pre-existing import shapes the
+    script's regex couldn't handle cleanly.
+
+All 124 pages import cleanly. 82-test regression sweep clean.
+
+**V5 fidelity passers: 110 of 310 (35.5%) — was 41 (13.2%)
+before cycle 25.** +69 passers in one cycle. The script + recal
+combination shipped in cycles 22-24 finally meets its leverage:
+each migrated page picks up ~15-25 fidelity points (intro lift
++ primitive density credit + cleanliness recovery).
+
+**Session arc snapshot:**
+
+| metric | session start | cycle 25 |
+|---|---|---|
+| V5 fidelity passers | 5 of 325 (1.5%) | **110 of 310 (35.5%)** |
+| Pass-rate multiplier | 1× | **23×** |
+
+**Files touched this batch.**
+- `tools/migrate_inline_cells.py` — 3 bug fixes (f-string
+  context, triple-quote wrap, multi-line import injection).
+- 124 data_public pages — 2572 cells migrated, 99 intros
+  added.
+- 2 pages — manual import fixes.
+- `docs/V5_FIDELITY_REPORT.md` — refreshed.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- V5 fidelity passers: 110 of 310 (35.5%) — was 41 (13.2%).
+- 2572 inline-styled cells replaced with `ck_data_cell`
+  helper calls. Each cell drops from ~200 bytes inline-style
+  attribute to ~30 bytes class attr — net ~340KB of HTML
+  weight saved across full corpus render.
+- Total focused tests: 261 + 2 documented skips (no change —
+  bulk migration was content-only).
+- Migration pipeline (helper + script + recal + intro tool)
+  validated end-to-end.
+
+**Suggested next:** cycle 26 — pick one of:
+
+- **A — work on the second-most-common inline-style pattern.**
+  Each migrated page still has ~30-50 inline styles in non-
+  table elements (KPI cards, badges, page chrome). A
+  `ck_kpi_card` helper + companion script could push pass
+  rate further toward 50%+.
+
+- **B — port the highest-traffic non-Insights pages** to the
+  editorial chrome. The audit's bottom decile still has
+  pages with no chartis_shell call (raw `shell()` /
+  bespoke HTML). Those are the structural ports.
+
+- **C — DOM-shape audit (cycle 16 Option C).** Render each
+  page in-process, check live HTML for chartis-grade signals
+  the source-only audit can't see. Bigger build but
+  complementary signal.
+
+Recommend **A** — same pattern as cycles 22-25 with new helpers,
+expected to push pass rate from 35% to 50%+. Forward-only.
+

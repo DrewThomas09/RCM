@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _market_nested_svg(sizes) -> str:
@@ -161,8 +161,8 @@ def _sizes_table(sizes) -> str:
     for i, s in enumerate(sizes):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.level)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.size_mm:,.0f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.level)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${s.size_mm:,.0f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{s.current_capture_pct:.3f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${s.headroom_mm:,.0f}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.definition)}</td>',
@@ -189,12 +189,12 @@ def _drivers_table(drivers) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cc = conf_colors.get(d.confidence, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.driver)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.current_contrib_pct * 100:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{d.potential_contrib_pct * 100:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${d.implied_revenue_uplift_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.timeline_years:.1f}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{cc};border:1px solid {cc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{d.confidence}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(d.driver)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{d.current_contrib_pct * 100:.2f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{d.potential_contrib_pct * 100:.2f}%""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${d.implied_revenue_uplift_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""{d.timeline_years:.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{cc};border:1px solid {cc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{d.confidence}</span>""")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -216,11 +216,11 @@ def _penetration_table(curve) -> str:
     for i, p in enumerate(curve):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">Year {p.year}</td>',
+            f'{ck_data_cell(f"""Year {p.year}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{p.market_share_pct:.3f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${p.revenue_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${p.incremental_rev_mm:+,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.cumulative_capture_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${p.revenue_mm:,.2f}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${p.incremental_rev_mm:+,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${p.cumulative_capture_mm:,.2f}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -242,11 +242,11 @@ def _comparables_table(comps) -> str:
     for i, c in enumerate(comps):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(c.sector)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.sector)}""", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{c.median_cagr * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">{c.top_quartile_cagr * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.typical_share_shift_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.tam_headroom_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{c.typical_share_shift_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.tam_headroom_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -402,4 +402,9 @@ def render_growth_runway(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Growth Runway", active_nav="/growth-runway")
+    return chartis_shell(body, "Growth Runway", active_nav="/growth-runway",
+        editorial_intro={
+            "eyebrow": "GROWTH RUNWAY",
+            "headline": "What the growth runway page reveals on this deal.",
+            "italic_word": "reveals",
+        })

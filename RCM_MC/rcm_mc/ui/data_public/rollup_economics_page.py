@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _cohorts_table(items) -> str:
@@ -16,13 +16,13 @@ def _cohorts_table(items) -> str:
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{c.cohort_year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.targets_closed}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{c.avg_entry_multiple:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.avg_ev_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.total_deployed_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{c.synergy_capture_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.time_to_full_integration_months}</td>',
+            f'{ck_data_cell(f"""{c.cohort_year}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{c.targets_closed}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{c.avg_entry_multiple:.2f}x""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${c.avg_ev_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${c.total_deployed_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{c.synergy_capture_pct * 100:.1f}%""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{c.time_to_full_integration_months}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -40,10 +40,10 @@ def _arb_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         val_c = pos if s.incremental_value_mm > 0 else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.stage)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{s.implied_multiple:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.implied_ev_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.stage)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${s.ebitda_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.implied_multiple:.2f}x""", align="right", mono=True, tone="acc", weight=600)}',
+            f'{ck_data_cell(f"""${s.implied_ev_mm:,.2f}""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{val_c};font-weight:700">${s.incremental_value_mm:+,.2f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -65,12 +65,12 @@ def _synergy_table(items) -> str:
         rc = risk_c.get(s.execution_risk, text_dim)
         cc = conf_c.get(s.confidence, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.annual_run_rate_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.capture_timing_months}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.category)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${s.annual_run_rate_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{s.capture_timing_months}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn}">${s.one_time_cost_mm:,.2f}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.execution_risk)}</span></td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{cc};border:1px solid {cc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.confidence)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.execution_risk)}</span>""", align="center")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{cc};border:1px solid {cc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.confidence)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -87,11 +87,11 @@ def _integration_table(items) -> str:
     for i, ic in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(ic.workstream)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${ic.cost_per_addon_k:,.0f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(ic.workstream)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${ic.cost_per_addon_k:,.0f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn};font-weight:600">${ic.total_cost_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{ic.duration_months}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{ic.peak_fte}</td>',
+            f'{ck_data_cell(f"""{ic.duration_months}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{ic.peak_fte}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -110,11 +110,11 @@ def _debt_table(items) -> str:
         lev_c = neg if d.leverage_multiple >= 6.0 else (acc if d.leverage_multiple >= 5.5 else text_dim)
         dp_c = pos if d.dry_powder_mm > 0 else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.stage)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${d.ebitda_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.stage)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${d.ebitda_mm:,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{lev_c};font-weight:600">{d.leverage_multiple:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${d.max_debt_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${d.equity_check_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${d.max_debt_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${d.equity_check_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dp_c};font-weight:600">${d.dry_powder_mm:+,.2f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -133,11 +133,11 @@ def _walk_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         grow_c = pos if w.organic_growth_pct > 0.08 else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(w.period)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${w.standalone_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${w.acquired_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${w.synergies_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${w.total_ebitda_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(w.period)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${w.standalone_ebitda_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${w.acquired_ebitda_mm:,.2f}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${w.synergies_mm:,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${w.total_ebitda_mm:,.2f}""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{grow_c}">{w.organic_growth_pct * 100:+.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -158,12 +158,12 @@ def _exit_table(items) -> str:
         moic_c = pos if s.moic >= 2.5 else (acc if s.moic >= 1.8 else (text_dim if s.moic >= 1.0 else neg))
         irr_c = pos if s.irr >= 0.20 else (acc if s.irr >= 0.12 else (text_dim if s.irr >= 0 else neg))
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.exit_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{s.exit_multiple:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.exit_ev_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">${s.less_debt_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.equity_proceeds_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${s.exit_ebitda_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.exit_multiple:.2f}x""", align="right", mono=True, tone="acc", weight=600)}',
+            f'{ck_data_cell(f"""${s.exit_ev_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${s.less_debt_mm:,.2f}""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""${s.equity_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:700">{s.moic:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{irr_c};font-weight:700">{s.irr * 100:+.1f}%</td>',
         ]
@@ -306,4 +306,9 @@ def render_rollup_economics(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Roll-Up Economics", active_nav="/rollup-economics")
+    return chartis_shell(body, "Roll-Up Economics", active_nav="/rollup-economics",
+        editorial_intro={
+            "eyebrow": "ROLLUP ECONOMICS",
+            "headline": "What the rollup economics page reveals on this deal.",
+            "italic_word": "reveals",
+        })

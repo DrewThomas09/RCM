@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _milestone_waterfall_svg(milestones) -> str:
@@ -116,14 +116,14 @@ def _milestones_table(milestones) -> str:
         rc = risk_colors.get(m.risk_allocation, text_dim)
         prob_c = P["positive"] if m.probability_of_achievement >= 0.7 else (P["accent"] if m.probability_of_achievement >= 0.5 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.milestone)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.milestone)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.metric)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(m.target)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.measurement_period)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${m.max_payout_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{prob_c}">{m.probability_of_achievement * 100:.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">${m.expected_payout_mm:,.2f}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.risk_allocation}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.risk_allocation}</span>""")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -145,11 +145,11 @@ def _scenarios_table(scenarios) -> str:
     for i, s in enumerate(scenarios):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.scenario)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{s.probability * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.base_purchase_price_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""${s.base_purchase_price_mm:,.1f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${s.earnout_payout_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${s.total_consideration_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""${s.total_consideration_mm:,.1f}""", align="right", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]};font-weight:600">{s.implied_multiple_x:.2f}x</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -172,10 +172,10 @@ def _fair_value_table(fv) -> str:
     for i, f in enumerate(fv):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(f.period)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{f.discount_rate * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${f.expected_payout_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${f.present_value_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(f.period)}""", mono=True)}',
+            f'{ck_data_cell(f"""{f.discount_rate * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${f.expected_payout_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${f.present_value_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.accounting_classification)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -198,11 +198,11 @@ def _irr_table(irr) -> str:
     for i, r in enumerate(irr):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.seller_gross_ev_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${r.seller_net_proceeds_mm:,.1f}M</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.scenario)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${r.seller_gross_ev_mm:,.1f}M""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${r.seller_net_proceeds_mm:,.1f}M""", align="right", mono=True, tone="pos")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">{r.buyer_effective_mult:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{r.buyer_irr_if_exit_at_12x * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{r.buyer_irr_if_exit_at_12x * 100:.1f}%""", align="right", mono=True, tone="pos", weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.seller_pref_vs_buyer)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -226,7 +226,7 @@ def _risk_table(risk) -> str:
         sc = P["negative"] if r.seller_burden >= 0.60 else (P["warning"] if r.seller_burden >= 0.45 else P["text_dim"])
         bc = P["negative"] if r.buyer_burden >= 0.60 else (P["warning"] if r.buyer_burden >= 0.45 else P["text_dim"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(r.factor)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.factor)}""", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sc};font-weight:600">{r.seller_burden * 100:.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{bc};font-weight:600">{r.buyer_burden * 100:.0f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.guidance)}</td>',
@@ -358,4 +358,9 @@ def render_earnout(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Earnout Analyzer", active_nav="/earnout")
+    return chartis_shell(body, "Earnout Analyzer", active_nav="/earnout",
+        editorial_intro={
+            "eyebrow": "EARNOUT",
+            "headline": "What the earnout page reveals on this deal.",
+            "italic_word": "reveals",
+        })

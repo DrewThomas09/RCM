@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _funnel_svg(stages) -> str:
@@ -106,12 +106,12 @@ def _stage_table(stages) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"600" if i == 0 or i == len(stages) - 1 else "400"}">{_html.escape(s.stage)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.count:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.conversion_from_prior * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{s.count:,}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.conversion_from_prior * 100:.0f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">{s.cumulative_conversion * 100:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.avg_days_in_stage}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.total_ev_mm:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.avg_ev_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""{s.avg_days_in_stage}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.total_ev_mm:,.0f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.avg_ev_mm:,.1f}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -135,13 +135,13 @@ def _channel_table(channels) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         rc = pos if c.roi >= 1 else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(c.channel)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.deals_sourced}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.close_rate * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{c.closed_deals}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.avg_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.cost_per_close_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.total_cost_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.channel)}""", mono=True)}',
+            f'{ck_data_cell(f"""{c.deals_sourced}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{c.close_rate * 100:.0f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.closed_deals}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{c.avg_moic:.2f}x""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${c.cost_per_close_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${c.total_cost_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rc};font-weight:600">{c.roi:.1f}x</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -164,12 +164,12 @@ def _sector_table(sectors) -> str:
     for i, s in enumerate(sectors):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(s.sector)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.pipeline_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.pipeline_ev_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.median_ebitda_mult:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.avg_days_in_pipeline}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.pct_of_pipeline * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.sector)}""", mono=True)}',
+            f'{ck_data_cell(f"""{s.pipeline_count}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.pipeline_ev_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.median_ebitda_mult:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.avg_days_in_pipeline}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.pct_of_pipeline * 100:.1f}%""", align="right", mono=True)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -193,12 +193,12 @@ def _deal_table(deals) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         prob_color = P["positive"] if d.probability >= 0.6 else (P["accent"] if d.probability >= 0.3 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(d.company)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.company)}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(d.sector)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.stage)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${d.ev_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.ev_ebitda:.1f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.days_in_pipeline}</td>',
+            f'{ck_data_cell(f"""${d.ev_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{d.ev_ebitda:.1f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{d.days_in_pipeline}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{prob_color};font-weight:600">{d.probability * 100:.0f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.source_channel)}</td>',
         ]
@@ -315,4 +315,9 @@ def render_deal_pipeline(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Deal Pipeline Tracker", active_nav="/deal-pipeline")
+    return chartis_shell(body, "Deal Pipeline Tracker", active_nav="/deal-pipeline",
+        editorial_intro={
+            "eyebrow": "DEAL PIPELINE",
+            "headline": "What the deal pipeline page reveals on this deal.",
+            "italic_word": "reveals",
+        })

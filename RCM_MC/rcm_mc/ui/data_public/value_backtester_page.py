@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -17,12 +17,12 @@ def _levers_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         real_c = pos if lv.realization_rate_pct >= 0.70 else (warn if lv.realization_rate_pct >= 0.55 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(lv.lever)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">${lv.target_contribution_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${lv.base_rate_p50_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${lv.base_rate_p75_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(lv.lever)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${lv.target_contribution_mm:,.2f}""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""${lv.base_rate_p50_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${lv.base_rate_p75_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{real_c};font-weight:700">{lv.realization_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${lv.risk_adjusted_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${lv.risk_adjusted_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -40,15 +40,15 @@ def _buckets_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         moic_c = pos if b.realized_moic_p50 >= 2.5 else (acc if b.realized_moic_p50 >= 2.0 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(b.sector[:26])}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.sector[:26])}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(b.vintage_range)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(b.size_bucket)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{b.n_deals}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.realized_moic_p25:.2f}x</td>',
+            f'{ck_data_cell(f"""{b.n_deals}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{b.realized_moic_p25:.2f}x""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:700">{b.realized_moic_p50:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{b.realized_moic_p75:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{b.realized_moic_mean:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{b.realized_irr_p50 * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{b.realized_moic_p75:.2f}x""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{b.realized_moic_mean:.2f}x""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{b.realized_irr_p50 * 100:.1f}%""", align="right", mono=True, tone="acc")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -66,11 +66,11 @@ def _calibration_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         err_c = pos if abs(c.calibration_error) < 0.10 else (warn if abs(c.calibration_error) < 0.25 else neg)
         cells = [
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{c.predicted_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.realized_moic_p25:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{c.realized_moic_p50:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.realized_moic_p75:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.n_deals}</td>',
+            f'{ck_data_cell(f"""{c.predicted_moic:.2f}x""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{c.realized_moic_p25:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.realized_moic_p50:.2f}x""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{c.realized_moic_p75:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.n_deals}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{err_c};font-weight:600">{c.calibration_error * 100:+.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -91,11 +91,11 @@ def _attribution_table(items) -> str:
         sc = sig_c.get(a.signal_strength, text_dim)
         corr_c = pos if a.correlation > 0.40 else (text_dim if a.correlation > 0 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(a.driver)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(a.driver)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{corr_c};font-weight:700">{a.correlation:+.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{a.p50_realized_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{a.p75_realized_moic:.2f}x</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.signal_strength)}</span></td>',
+            f'{ck_data_cell(f"""{a.p50_realized_moic:.2f}x""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{a.p75_realized_moic:.2f}x""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.signal_strength)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -113,13 +113,13 @@ def _comparables_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         moic_c = pos if c.realized_moic >= 2.5 else (acc if c.realized_moic >= 1.8 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.deal_name[:30])}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(c.sector[:24])}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.entry_multiple:.2f}x</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.deal_name[:30])}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(c.sector[:24])}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.year}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.entry_multiple:.2f}x""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:700">{c.realized_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.hold_years:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{c.similarity_score:.3f}</td>',
+            f'{ck_data_cell(f"""{c.hold_years:.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.similarity_score:.3f}""", align="right", mono=True, tone="acc")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'

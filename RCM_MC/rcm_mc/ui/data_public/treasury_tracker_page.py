@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _status_color(s: str) -> str:
@@ -27,14 +27,14 @@ def _cash_table(items) -> str:
         d_c = pos if c.days_of_opex >= 90 else (acc if c.days_of_opex >= 60 else warn)
         u_c = warn if (c.revolver_capacity_m > 0 and c.revolver_drawn_m / c.revolver_capacity_m >= 0.70) else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.deal)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.operating_cash_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.restricted_cash_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${c.investments_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${c.total_liquidity_m:.1f}M</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.deal)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.operating_cash_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${c.restricted_cash_m:.1f}M""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${c.investments_m:.1f}M""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${c.total_liquidity_m:.1f}M""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{u_c};font-weight:600">${c.revolver_drawn_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.revolver_capacity_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.revolver_availability_m:.1f}M</td>',
+            f'{ck_data_cell(f"""${c.revolver_capacity_m:.1f}M""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${c.revolver_availability_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">{c.days_of_opex}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -54,14 +54,14 @@ def _wc_table(items) -> str:
         ar_c = pos if w.ar_days <= 50 else (acc if w.ar_days <= 65 else warn)
         t_c = pos if w.nwc_trend_pp <= -2 else (acc if w.nwc_trend_pp <= 0 else warn)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(w.deal)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${w.ar_m:.1f}M</td>',
+            f'{ck_data_cell(f"""{_html.escape(w.deal)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${w.ar_m:.1f}M""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ar_c};font-weight:700">{w.ar_days}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${w.inventory_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{w.inventory_days}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${w.ap_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{w.ap_days}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${w.nwc_m:.1f}M</td>',
+            f'{ck_data_cell(f"""${w.inventory_m:.1f}M""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{w.inventory_days}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${w.ap_m:.1f}M""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{w.ap_days}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${w.nwc_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{t_c};font-weight:700">{w.nwc_trend_pp:+.1f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -81,14 +81,14 @@ def _burn_table(items) -> str:
         s_c = _status_color(b.status)
         r_c = pos if b.cash_runway_months >= 10 else (acc if b.cash_runway_months >= 7 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(b.deal)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${b.monthly_revenue_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${b.monthly_ebitda_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${b.monthly_free_cash_flow_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${b.monthly_capex_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${b.monthly_interest_m:.1f}M</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.deal)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${b.monthly_revenue_m:.1f}M""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${b.monthly_ebitda_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${b.monthly_free_cash_flow_m:.1f}M""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""${b.monthly_capex_m:.1f}M""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${b.monthly_interest_m:.1f}M""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{b.cash_runway_months:.1f}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.status)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.status)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -107,13 +107,13 @@ def _accounts_table(items) -> str:
         s_c = pos if a.sweep_enabled else warn
         i_c = pos if a.fdic_insured_pct >= 0.90 else (acc if a.fdic_insured_pct >= 0.50 else warn)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(a.deal)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(a.deal)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(a.bank)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(a.account_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${a.balance_m:.1f}M</td>',
+            f'{ck_data_cell(f"""${a.balance_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{i_c};font-weight:700">{a.fdic_insured_pct * 100:.0f}%</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{s_c};font-weight:700">{"YES" if a.sweep_enabled else "NO"}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{a.yield_pct:.2f}%</td>',
+            f'{ck_data_cell(f"""{a.yield_pct:.2f}%""", align="right", mono=True, tone="acc", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -131,12 +131,12 @@ def _hedging_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         m_c = pos if h.mtm_value_m > 0 else P["negative"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(h.deal)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(h.deal)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(h.hedge_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${h.notional_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{h.fixed_rate_pct:.2f}%</td>',
+            f'{ck_data_cell(f"""${h.notional_m:.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{h.fixed_rate_pct:.2f}%""", align="right", mono=True, tone="acc", weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(h.floating_benchmark)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(h.expiration)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(h.expiration)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">${h.mtm_value_m:+.1f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -154,12 +154,12 @@ def _intercompany_table(items) -> str:
     for i, ic in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(ic.from_entity)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(ic.from_entity)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(ic.to_entity)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${ic.balance_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{ic.rate_pct:.2f}%</td>',
+            f'{ck_data_cell(f"""${ic.balance_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{ic.rate_pct:.2f}%""", align="right", mono=True, tone="acc", weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:300px">{_html.escape(ic.purpose)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(ic.expected_settlement)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(ic.expected_settlement)}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -221,4 +221,9 @@ def render_treasury_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Treasury", active_nav="/treasury")
+    return chartis_shell(body, "Treasury", active_nav="/treasury",
+        editorial_intro={
+            "eyebrow": "TREASURY TRACKER",
+            "headline": "What the treasury tracker page reveals on this deal.",
+            "italic_word": "reveals",
+        })

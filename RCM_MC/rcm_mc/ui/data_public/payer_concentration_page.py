@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _payers_table(payers) -> str:
@@ -20,14 +20,14 @@ def _payers_table(payers) -> str:
         den_c = neg if p.denial_rate_pct > 0.10 else (warn if p.denial_rate_pct > 0.07 else text_dim)
         risk_c = neg if p.renewal_risk_score >= 65 else (warn if p.renewal_risk_score >= 40 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(p.payer_name)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(p.payer_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.annual_net_rev_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.payer_name)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(p.payer_type)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${p.annual_net_rev_mm:,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{share_c};font-weight:700">{p.revenue_share_pct * 100:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{yoy_c}">{p.yoy_delta_pct * 100:+.1f}%</td>',
-            f'<td style="text-align:center;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{_html.escape(p.contract_expiry)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.contract_expiry)}""", align="center", mono=True, tone="acc")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{den_c}">{p.denial_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{p.days_in_ar}</td>',
+            f'{ck_data_cell(f"""{p.days_in_ar}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{risk_c};font-weight:600">{p.renewal_risk_score}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(p.status)}</td>',
         ]
@@ -55,9 +55,9 @@ def _metrics_table(items) -> str:
         else:
             var_c = neg if m.variance > 0 else pos
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{val_disp}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{bench_disp}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.metric)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{val_disp}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{bench_disp}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{var_c};font-weight:600">{var_disp}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.interpretation)}</td>',
         ]
@@ -78,13 +78,13 @@ def _renewals_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         pc = pri_c.get(r.priority, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.payer_name)}</td>',
-            f'<td style="text-align:center;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(r.expiry_quarter)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.annual_revenue_mm:,.2f}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(r.contract_type)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.payer_name)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(r.expiry_quarter)}""", align="center", mono=True)}',
+            f'{ck_data_cell(f"""${r.annual_revenue_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{_html.escape(r.contract_type)}""", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.rate_reset_clause)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn}">{r.exposure_pct * 100:.1f}%</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(r.priority)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(r.priority)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -103,12 +103,12 @@ def _denials_table(items) -> str:
         den_c = neg if d.denials_pct > 0.10 else P["warning"]
         ov_c = pos if d.overturn_success_pct > 0.70 else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.payer_name)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.payer_name)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{den_c};font-weight:600">{d.denials_pct * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.top_denial_reason)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{d.days_to_overturn}</td>',
+            f'{ck_data_cell(f"""{d.days_to_overturn}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ov_c}">{d.overturn_success_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:600">${d.write_off_exposure_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${d.write_off_exposure_mm:,.2f}""", align="right", mono=True, tone="neg", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -126,9 +126,9 @@ def _oon_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         oon_c = neg if o.oon_volume_pct > 0.20 else (warn if o.oon_volume_pct > 0.10 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(o.service_line)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(o.service_line)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{oon_c};font-weight:600">{o.oon_volume_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{o.avg_collection_rate * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{o.avg_collection_rate * 100:.1f}%""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn}">${o.balance_bill_risk_mm:,.2f}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(o.no_surprises_act_impact)}</td>',
         ]
@@ -238,4 +238,9 @@ def render_payer_concentration(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Payer Concentration", active_nav="/payer-concentration")
+    return chartis_shell(body, "Payer Concentration", active_nav="/payer-concentration",
+        editorial_intro={
+            "eyebrow": "PAYER CONCENTRATION",
+            "headline": "What the payer concentration page reveals on this deal.",
+            "italic_word": "reveals",
+        })

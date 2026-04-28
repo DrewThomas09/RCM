@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _plan_vs_actual_table(items) -> str:
@@ -25,9 +25,9 @@ def _plan_vs_actual_table(items) -> str:
             u_disp = f"{p.underwritten:.1f}"
             r_disp = f"{p.realized:.1f}"
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(p.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{u_disp}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{r_disp}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.metric)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{u_disp}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{r_disp}""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{v_c};font-weight:700">{p.variance_pct * 100:+.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.commentary)}</td>',
         ]
@@ -47,9 +47,9 @@ def _attribution_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         r_c = pos if a.capture_rate_pct >= 0.80 else (acc if a.capture_rate_pct >= 0.65 else (warn if a.capture_rate_pct >= 0.50 else neg))
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(a.lever)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${a.planned_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${a.realized_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(a.lever)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${a.planned_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${a.realized_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{a.capture_rate_pct * 100:.0f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{pos}">{_html.escape(a.what_went_right)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{neg}">{_html.escape(a.what_went_wrong)}</td>',
@@ -69,8 +69,8 @@ def _milestones_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         s_c = pos if m.slipped_days <= 30 else (warn if m.slipped_days <= 90 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.milestone)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(m.planned_date)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.milestone)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(m.planned_date)}""", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{_html.escape(m.actual_date)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{m.slipped_days}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.impact)}</td>',
@@ -91,10 +91,10 @@ def _lessons_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         pc = p_c.get(l.priority, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(l.category)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(l.category)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(l.lesson)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{acc}">{_html.escape(l.change_for_next)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(l.priority)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(l.priority)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -113,9 +113,9 @@ def _bridge_table(items) -> str:
         d_c = pos if b.delta_mm >= 0 else neg
         delta_pct_str = f"{b.delta_pct * 100:+.1f}%" if abs(b.delta_pct) < 5 else "n/a"
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(b.component)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${b.underwritten_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${b.realized_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.component)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${b.underwritten_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${b.realized_mm:,.2f}""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">${b.delta_mm:+,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c}">{delta_pct_str}</td>',
         ]
@@ -135,10 +135,10 @@ def _counter_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         fc = f_c.get(c.feasibility, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.scenario)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.scenario)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.change_from_actual)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">+{c.estimated_moic_delta:.2f}x</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{fc};border:1px solid {fc};border-radius:2px;letter-spacing:0.06em">{_html.escape(c.feasibility)}</span></td>',
+            f'{ck_data_cell(f"""+{c.estimated_moic_delta:.2f}x""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{fc};border:1px solid {fc};border-radius:2px;letter-spacing:0.06em">{_html.escape(c.feasibility)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -207,4 +207,9 @@ def render_deal_postmortem(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Deal Post-Mortem", active_nav="/deal-postmortem")
+    return chartis_shell(body, "Deal Post-Mortem", active_nav="/deal-postmortem",
+        editorial_intro={
+            "eyebrow": "DEAL POSTMORTEM",
+            "headline": "What the deal postmortem page reveals on this deal.",
+            "italic_word": "reveals",
+        })

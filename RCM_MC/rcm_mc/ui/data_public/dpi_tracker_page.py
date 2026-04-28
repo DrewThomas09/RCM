@@ -29,17 +29,17 @@ def _funds_table(items) -> str:
         ir_c = pos if f.net_irr_pct >= 18 else (acc if f.net_irr_pct >= 13 else warn)
         dp_c = pos if f.dpi >= 1.0 else (acc if f.dpi >= 0.5 else text_dim)
         cells = [
-            f'ck_data_cell(f"{_html.escape(f.sponsor)}", mono=True, weight=700)',
+            f'{ck_data_cell(f"""{_html.escape(f.sponsor)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(f.fund_name)}</td>',
-            f'ck_data_cell(f"{f.vintage}", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"${f.fund_size_b:.1f}B", align="right", mono=True, weight=700)',
-            f'ck_data_cell(f"{f.called_pct * 100:.0f}%", align="right", mono=True, tone="dim")',
+            f'{ck_data_cell(f"""{f.vintage}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${f.fund_size_b:.1f}B""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{f.called_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dp_c};font-weight:700">{f.dpi:.2f}x</td>',
-            f'ck_data_cell(f"{f.rvpi:.2f}x", align="right", mono=True)',
-            f'ck_data_cell(f"{f.tvpi:.2f}x", align="right", mono=True, tone="acc", weight=600)',
+            f'{ck_data_cell(f"""{f.rvpi:.2f}x""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{f.tvpi:.2f}x""", align="right", mono=True, tone="acc", weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ir_c};font-weight:700">{f.net_irr_pct:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{q_c};font-weight:700">Q{f.quartile if f.quartile else "—"}</td>',
-            f'ck_data_cell(f"{f.benchmark_dpi:.2f}x", align="right", mono=True, tone="dim")',
+            f'{ck_data_cell(f"""{f.benchmark_dpi:.2f}x""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{g_c};font-weight:700">{gap:+.2f}x</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -58,13 +58,13 @@ def _distributions_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         m_c = pos if d.moic >= 2.5 else (acc if d.moic >= 1.8 else text_dim)
         cells = [
-            f'ck_data_cell(f"{_html.escape(d.sponsor)}", mono=True, weight=700)',
+            f'{ck_data_cell(f"""{_html.escape(d.sponsor)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(d.fund)}</td>',
-            f'ck_data_cell(f"{_html.escape(d.event_date)}", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"{_html.escape(d.portfolio_company)}", weight=600)',
-            f'ck_data_cell(f"${d.distribution_m:.1f}M", align="right", mono=True, tone="pos", weight=700)',
+            f'{ck_data_cell(f"""{_html.escape(d.event_date)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(d.portfolio_company)}""", weight=600)}',
+            f'{ck_data_cell(f"""${d.distribution_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(d.event_type)}</td>',
-            f'ck_data_cell(f"{d.hold_years:.1f}y", align="right", mono=True, tone="dim")',
+            f'{ck_data_cell(f"""{d.hold_years:.1f}y""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{d.moic:.2f}x</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -83,13 +83,13 @@ def _sectors_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         d_c = pos if s.aggregate_dpi >= 1.5 else (acc if s.aggregate_dpi >= 1.3 else text_dim)
         cells = [
-            f'ck_data_cell(f"{_html.escape(s.sector)}", mono=True, weight=700)',
-            f'ck_data_cell(f"{s.sponsors}", align="right", mono=True)',
-            f'ck_data_cell(f"{s.funds}", align="right", mono=True, tone="acc")',
-            f'ck_data_cell(f"${s.total_commitment_b:.1f}B", align="right", mono=True, weight=700)',
+            f'{ck_data_cell(f"""{_html.escape(s.sector)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{s.sponsors}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.funds}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${s.total_commitment_b:.1f}B""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">{s.aggregate_dpi:.2f}x</td>',
-            f'ck_data_cell(f"{s.median_hold_years:.1f}y", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"${s.exit_volume_m:,.1f}M", align="right", mono=True, tone="pos")',
+            f'{ck_data_cell(f"""{s.median_hold_years:.1f}y""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.exit_volume_m:,.1f}M""", align="right", mono=True, tone="pos")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -106,9 +106,9 @@ def _drought_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         d_c = neg if m.delta.startswith("-") else (acc if m.delta.startswith("+") else text_dim)
         cells = [
-            f'ck_data_cell(f"{_html.escape(m.metric)}", mono=True, weight=700)',
-            f'ck_data_cell(f"{_html.escape(m.current_value)}", align="right", mono=True, weight=600)',
-            f'ck_data_cell(f"{_html.escape(m.prior_year)}", align="right", mono=True, tone="dim")',
+            f'{ck_data_cell(f"""{_html.escape(m.metric)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{_html.escape(m.current_value)}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(m.prior_year)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">{_html.escape(m.delta)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.impact_on_lps)}</td>',
         ]
@@ -127,12 +127,12 @@ def _lp_requests_table(items) -> str:
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'ck_data_cell(f"{_html.escape(r.lp_name)}", mono=True, weight=700)',
+            f'{ck_data_cell(f"""{_html.escape(r.lp_name)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.lp_type)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(r.request_type)}</td>',
-            f'ck_data_cell(f"${r.commitment_m:.1f}M", align="right", mono=True, weight=600)',
-            f'ck_data_cell(f"${r.dpi_shortfall_m:.1f}M", align="right", mono=True, tone="neg", weight=700)',
-            f'ck_data_cell(f"{_html.escape(r.request_date)}", align="right", mono=True, tone="dim")',
+            f'{ck_data_cell(f"""${r.commitment_m:.1f}M""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${r.dpi_shortfall_m:.1f}M""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""{_html.escape(r.request_date)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{pos}">{_html.escape(r.sponsor_response)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -152,14 +152,14 @@ def _exit_paths_table(items) -> str:
         c_c = _confidence_color(p.confidence)
         m_c = pos if p.projected_moic >= 2.75 else (acc if p.projected_moic >= 2.25 else text_dim)
         cells = [
-            f'ck_data_cell(f"{_html.escape(p.portfolio_company)}", weight=600)',
+            f'{ck_data_cell(f"""{_html.escape(p.portfolio_company)}""", weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.sector)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(p.sponsor)}</td>',
-            f'ck_data_cell(f"{p.hold_years:.1f}y", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"{p.target_exit_year}", align="right", mono=True)',
+            f'{ck_data_cell(f"""{p.hold_years:.1f}y""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{p.target_exit_year}""", align="right", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(p.exit_path)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{p.projected_moic:.2f}x</td>',
-            f'ck_data_cell(f"<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{c_c};border:1px solid {c_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.confidence)}</span>", align="center")',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{c_c};border:1px solid {c_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.confidence)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'

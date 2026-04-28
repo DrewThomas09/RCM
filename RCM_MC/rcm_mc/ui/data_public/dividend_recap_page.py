@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _scenarios_svg(scenarios) -> str:
@@ -121,14 +121,14 @@ def _scenarios_table(scenarios, recommended) -> str:
         head_c = P["positive"] if s.covenant_headroom_pct >= 0.15 else (P["warning"] if s.covenant_headroom_pct >= 0.05 else P["negative"])
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_rec else "400"}">{_html.escape(s.scenario)}{" ★" if is_rec else ""}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.target_leverage:.1f}x</td>',
+            f'{ck_data_cell(f"""{s.target_leverage:.1f}x""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${s.new_debt_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">${s.net_dividend_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dscr_c}">{s.post_recap_dscr:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{head_c}">{s.covenant_headroom_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.moic_on_original_equity:.2f}x</td>',
+            f'{ck_data_cell(f"""{s.moic_on_original_equity:.2f}x""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{s.pct_of_invested_returned * 100:.0f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{s.execution_risk}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{s.execution_risk}</span>""")}',
         ]
         trs.append(f'<tr style="{row_style}">{"".join(cells)}</tr>')
     return (
@@ -154,13 +154,13 @@ def _timing_table(timing) -> str:
             P["accent"] if "Consider" in t.recommendation else P["warning"]
         )
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">Year {t.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${t.ebitda_mm:,.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.current_debt_mm:,.1f}M</td>',
+            f'{ck_data_cell(f"""Year {t.year}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${t.ebitda_mm:,.2f}M""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${t.current_debt_mm:,.1f}M""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${t.available_capacity_mm:,.1f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">${t.potential_dividend_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.dscr:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.post_recap_leverage:.1f}x</td>',
+            f'{ck_data_cell(f"""{t.dscr:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{t.post_recap_leverage:.1f}x""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{rec_color}">{_html.escape(t.recommendation)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -185,9 +185,9 @@ def _carry_table(carry) -> str:
         is_rate = "IRR" in c.item or "MOIC" in c.item
         fmt = lambda v: f"{v * 100:.1f}%" if "IRR" in c.item else (f"{v:.2f}x" if "MOIC" in c.item else f"${v:,.1f}M")
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.item)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{fmt(c.pre_recap_mm)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{fmt(c.post_recap_mm)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.item)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{fmt(c.pre_recap_mm)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{fmt(c.post_recap_mm)}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dc};font-weight:600">{"+" if c.delta_mm >= 0 else ""}{fmt(c.delta_mm)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.notes)}</td>',
         ]
@@ -215,9 +215,9 @@ def _market_table(market) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         tc = trend_colors.get(m.trend, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(m.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.value)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;letter-spacing:0.06em">{m.trend}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(m.metric)}""", mono=True)}',
+            f'{ck_data_cell(f"""{_html.escape(m.value)}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;letter-spacing:0.06em">{m.trend}</span>""")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.implication)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -365,4 +365,9 @@ def render_dividend_recap(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Dividend Recap", active_nav="/dividend-recap")
+    return chartis_shell(body, "Dividend Recap", active_nav="/dividend-recap",
+        editorial_intro={
+            "eyebrow": "DIVIDEND RECAP",
+            "headline": "What the dividend recap page reveals on this deal.",
+            "italic_word": "reveals",
+        })

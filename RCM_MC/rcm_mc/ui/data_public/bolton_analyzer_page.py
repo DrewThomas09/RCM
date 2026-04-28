@@ -8,7 +8,7 @@ from __future__ import annotations
 import html as _html
 from typing import List
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _ebitda_bridge_svg(projections) -> str:
@@ -147,15 +147,15 @@ def _bolton_table(boltons) -> str:
     for i, b in enumerate(boltons):
         row_bg = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(b.label)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">Y{b.acquire_year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{b.ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.purchase_mult:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{b.purchase_price_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.revenue_synergy_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.cost_synergy_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.label)}""", mono=True)}',
+            f'{ck_data_cell(f"""Y{b.acquire_year}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{b.ebitda_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{b.purchase_mult:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{b.purchase_price_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{b.revenue_synergy_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{b.cost_synergy_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{b.run_rate_synergy_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.integration_cost_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{b.integration_cost_mm:,.2f}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{row_bg}">{"".join(cells)}</tr>')
     return (
@@ -186,12 +186,12 @@ def _projection_table(projections) -> str:
     for i, p in enumerate(projections):
         row_bg = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">Year {p.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.platform_ebitda_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""Year {p.year}""", mono=True)}',
+            f'{ck_data_cell(f"""${p.platform_ebitda_mm:,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${p.bolton_ebitda_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${p.synergy_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${p.total_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.cumulative_boltons}</td>',
+            f'{ck_data_cell(f"""${p.total_ebitda_mm:,.2f}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{p.cumulative_boltons}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{row_bg}">{"".join(cells)}</tr>')
     return (
@@ -226,12 +226,12 @@ def _scenario_table(scenarios) -> str:
         moic_color = pos if s.moic >= 2.5 else (P["warning"] if s.moic >= 1.5 else P["negative"])
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"600" if "With" in s.label else "400"}">{_html.escape(s.label)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">Y{s.exit_year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.exit_ebitda_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.exit_multiple:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.exit_ev_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.invested_equity_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.exit_equity_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""Y{s.exit_year}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.exit_ebitda_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.exit_multiple:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.exit_ev_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.invested_equity_mm:,.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.exit_equity_mm:,.1f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_color};font-weight:600">{s.moic:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_color};font-weight:600">{s.irr * 100:.1f}%</td>',
         ]
@@ -411,4 +411,9 @@ def render_bolton_analyzer(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Bolt-on M&A Analyzer", active_nav="/bolton-analyzer")
+    return chartis_shell(body, "Bolt-on M&A Analyzer", active_nav="/bolton-analyzer",
+        editorial_intro={
+            "eyebrow": "BOLTON ANALYZER",
+            "headline": "What the bolton analyzer page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -16,13 +16,13 @@ def _categories_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         bench_c = pos if c.pct_of_revenue <= c.benchmark_pct else neg
         cells = [
-            f'ck_data_cell(f"{_html.escape(c.category)}", mono=True, weight=600)',
-            f'ck_data_cell(f"${c.pre_zbb_mm:,.2f}", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"${c.current_run_rate_mm:,.2f}", align="right", mono=True, weight=700)',
-            f'ck_data_cell(f"${c.target_run_rate_mm:,.2f}", align="right", mono=True, tone="acc")',
-            f'ck_data_cell(f"${c.savings_captured_mm:,.2f}", align="right", mono=True, tone="pos", weight=700)',
-            f'ck_data_cell(f"${c.savings_potential_mm:,.2f}", align="right", mono=True, tone="acc")',
-            f'ck_data_cell(f"{c.pct_of_revenue * 100:.2f}%", align="right", mono=True)',
+            f'{ck_data_cell(f"""{_html.escape(c.category)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${c.pre_zbb_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${c.current_run_rate_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.target_run_rate_mm:,.2f}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${c.savings_captured_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${c.savings_potential_mm:,.2f}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{c.pct_of_revenue * 100:.2f}%""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{bench_c};font-weight:600">{c.benchmark_pct * 100:.2f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -43,13 +43,13 @@ def _initiatives_table(items) -> str:
         sc = stat_c.get(it.status, text_dim)
         r_c = pos if it.capture_rate_pct >= 0.80 else (acc if it.capture_rate_pct >= 0.60 else warn)
         cells = [
-            f'ck_data_cell(f"{_html.escape(it.initiative)}", mono=True, weight=600)',
+            f'{ck_data_cell(f"""{_html.escape(it.initiative)}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(it.category)}</td>',
-            f'ck_data_cell(f"${it.annualized_target_mm:,.2f}", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"${it.captured_ltm_mm:,.2f}", align="right", mono=True, tone="pos", weight=700)',
+            f'{ck_data_cell(f"""${it.annualized_target_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${it.captured_ltm_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{it.capture_rate_pct * 100:.0f}%</td>',
-            f'ck_data_cell(f"{_html.escape(it.owner)}", align="center", mono=True, tone="dim")',
-            f'ck_data_cell(f"<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(it.status)}</span>", align="center")',
+            f'{ck_data_cell(f"""{_html.escape(it.owner)}""", align="center", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(it.status)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -68,12 +68,12 @@ def _waste_table(items) -> str:
         r_c = pos if w.recurring else text_dim
         e_c = pos if w.eliminated_mm >= w.identified_mm * 0.90 else acc
         cells = [
-            f'ck_data_cell(f"{_html.escape(w.waste_type)}", mono=True, weight=600)',
+            f'{ck_data_cell(f"""{_html.escape(w.waste_type)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(w.description)}</td>',
-            f'ck_data_cell(f"${w.identified_mm:,.2f}", align="right", mono=True, tone="neg")',
+            f'{ck_data_cell(f"""${w.identified_mm:,.2f}""", align="right", mono=True, tone="neg")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{e_c};font-weight:700">${w.eliminated_mm:,.2f}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{r_c};font-weight:700">{"YES" if w.recurring else "ONE-TIME"}</td>',
-            f'ck_data_cell(f"{_html.escape(w.remediation_owner)}", align="center", mono=True, tone="dim")',
+            f'{ck_data_cell(f"""{_html.escape(w.remediation_owner)}""", align="center", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -91,12 +91,12 @@ def _policies_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         v_c = neg if p.violations_ltm >= 10 else (warn if p.violations_ltm >= 5 else pos)
         cells = [
-            f'ck_data_cell(f"{_html.escape(p.policy)}", mono=True, weight=600)',
+            f'{ck_data_cell(f"""{_html.escape(p.policy)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.threshold)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.approval_level)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.enforcement_status)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{v_c};font-weight:600">{p.violations_ltm}</td>',
-            f'ck_data_cell(f"${p.savings_from_policy_mm:,.2f}", align="right", mono=True, tone="pos", weight=700)',
+            f'{ck_data_cell(f"""${p.savings_from_policy_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -114,12 +114,12 @@ def _vendors_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         q_c = pos if "improved" in v.quality_impact else (acc if "same" in v.quality_impact or "maintained" in v.quality_impact else text_dim)
         cells = [
-            f'ck_data_cell(f"{_html.escape(v.category)}", mono=True, weight=600)',
-            f'ck_data_cell(f"{v.vendor_count_pre}", align="right", mono=True, tone="neg")',
-            f'ck_data_cell(f"{v.vendor_count_post}", align="right", mono=True, tone="pos", weight=700)',
-            f'ck_data_cell(f"${v.spend_pre_mm:,.2f}", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"${v.spend_post_mm:,.2f}", align="right", mono=True, weight=700)',
-            f'ck_data_cell(f"${v.savings_mm:,.2f}", align="right", mono=True, tone="pos", weight=700)',
+            f'{ck_data_cell(f"""{_html.escape(v.category)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{v.vendor_count_pre}""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""{v.vendor_count_post}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${v.spend_pre_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${v.spend_post_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${v.savings_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{q_c}">{_html.escape(v.quality_impact)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')

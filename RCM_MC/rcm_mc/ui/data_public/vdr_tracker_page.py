@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _status_color(status: str) -> str:
@@ -51,14 +51,14 @@ def _requests_table(items) -> str:
         d_c = P["negative"] if r.days_outstanding > 20 else (P["warning"] if r.days_outstanding > 10 else text_dim)
         c_c = pos if r.completeness_pct >= 0.95 else (acc if r.completeness_pct >= 0.70 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(r.request_id)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(r.workstream)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.request_id)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{_html.escape(r.workstream)}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.category)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim};max-width:340px">{_html.escape(r.request)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(r.status)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(r.status)}</span>""", align="center")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{p_c};font-weight:700">{_html.escape(r.priority)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(r.requested_date)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(r.response_date) if r.response_date else "—"}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.requested_date)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(r.response_date) if r.response_date else "—"}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">{r.days_outstanding if r.days_outstanding else "—"}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{r.completeness_pct * 100:.1f}%</td>',
         ]
@@ -79,11 +79,11 @@ def _workstreams_table(items) -> str:
         c_c = pos if w.completeness_pct >= 0.95 else (acc if w.completeness_pct >= 0.80 else P["warning"])
         o_c = neg if w.overdue > 0 else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(w.workstream)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{w.total_requests}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{w.complete}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{w.in_progress}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{w.outstanding}</td>',
+            f'{ck_data_cell(f"""{_html.escape(w.workstream)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{w.total_requests}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{w.complete}""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""{w.in_progress}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{w.outstanding}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{o_c};font-weight:700">{w.overdue}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{w.completeness_pct * 100:.1f}%</td>',
         ]
@@ -107,12 +107,12 @@ def _qa_table(items) -> str:
         m_c = _mat_color(q.materiality)
         d_c = neg if q.answered_within_days > 5 else (P["warning"] if q.answered_within_days > 3 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(q.qa_id)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(q.qa_id)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim};max-width:400px">{_html.escape(q.topic)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{qc};font-weight:700">{_html.escape(q.seller_response_quality).upper()}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:600">{q.answered_within_days}d</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{f_c};font-weight:700">{"YES" if q.follow_up_required else "NO"}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{m_c};border:1px solid {m_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(q.materiality)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{m_c};border:1px solid {m_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(q.materiality)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -130,11 +130,11 @@ def _documents_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         c_c = pos if d.completeness_pct >= 0.90 else (acc if d.completeness_pct >= 0.80 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(d.section)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{d.documents_uploaded}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.total_expected}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.section)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{d.documents_uploaded}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{d.total_expected}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{d.completeness_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(d.last_updated)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.last_updated)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.seller_notes)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -154,11 +154,11 @@ def _critical_path_table(items) -> str:
         s_c = _status_color(c.current_status)
         r_c = neg if c.risk_to_close.startswith("critical") or c.risk_to_close.startswith("high") else (P["warning"] if c.risk_to_close.startswith("medium") else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.item)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.item)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.owner)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.dependency)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{_html.escape(c.needed_by)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(c.current_status)}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(c.needed_by)}""", align="right", mono=True, tone="acc", weight=600)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(c.current_status)}</span>""", align="center")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{r_c}">{_html.escape(c.risk_to_close)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -183,7 +183,7 @@ def _materiality_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text};font-weight:600;max-width:380px">{_html.escape(m.finding)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(m.workstream)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{m_c};border:1px solid {m_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(m.materiality)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{m_c};border:1px solid {m_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(m.materiality)}</span>""", align="center")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:340px">{_html.escape(m.spa_impact)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{d_c};font-weight:600">{_html.escape(m.disposition)}</td>',
         ]
@@ -249,4 +249,9 @@ def render_vdr_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "VDR Tracker", active_nav="/vdr-tracker")
+    return chartis_shell(body, "VDR Tracker", active_nav="/vdr-tracker",
+        editorial_intro={
+            "eyebrow": "VDR TRACKER",
+            "headline": "What the vdr tracker page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _ramp_svg(ramp) -> str:
@@ -151,12 +151,12 @@ def _metric_table(metrics) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         sc = stat_colors.get(m.status, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(m.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{m.value:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.metric)}""", mono=True)}',
+            f'{ck_data_cell(f"""{m.value:,.2f}""", align="right", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.unit)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.benchmark:,.2f}</td>',
+            f'{ck_data_cell(f"""{m.benchmark:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sc}">{m.delta_vs_bench * 100:+.1f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(m.status)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(m.status)}</span>""")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -178,12 +178,12 @@ def _visit_table(visits) -> str:
     for i, v in enumerate(visits):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(v.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{v.pct_of_visits * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{v.annual_volume:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${v.avg_reimbursement:.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${v.avg_cost:.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${v.contribution_per_visit:.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(v.category)}""", mono=True)}',
+            f'{ck_data_cell(f"""{v.pct_of_visits * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{v.annual_volume:,}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${v.avg_reimbursement:.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${v.avg_cost:.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${v.contribution_per_visit:.2f}""", align="right", mono=True, tone="pos", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -205,12 +205,12 @@ def _provider_table(providers) -> str:
     for i, p in enumerate(providers):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(p.role)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{p.annual_visits_per_provider:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.annual_revenue_per_provider_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.comp_per_provider_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${p.net_margin_per_provider_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{p.roi_multiple:.2f}x</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.role)}""", mono=True)}',
+            f'{ck_data_cell(f"""{p.annual_visits_per_provider:,}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${p.annual_revenue_per_provider_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${p.comp_per_provider_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${p.net_margin_per_provider_mm:,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{p.roi_multiple:.2f}x""", align="right", mono=True, weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -234,12 +234,12 @@ def _scenario_table(scenarios) -> str:
         cm_c = pos if s.contribution_margin_pct >= 0.25 else (P["warning"] if s.contribution_margin_pct >= 0.15 else neg)
         cash_c = pos if s.cash_flow_mm >= 0 else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.revenue_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.contribution_mm:+,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True)}',
+            f'{ck_data_cell(f"""${s.revenue_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.contribution_mm:+,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cm_c};font-weight:600">{s.contribution_margin_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cash_c}">${s.cash_flow_mm:+,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.years_to_payback:.1f}</td>',
+            f'{ck_data_cell(f"""{s.years_to_payback:.1f}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -361,4 +361,9 @@ def render_unit_economics(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Unit Economics", active_nav="/unit-economics")
+    return chartis_shell(body, "Unit Economics", active_nav="/unit-economics",
+        editorial_intro={
+            "eyebrow": "UNIT ECONOMICS",
+            "headline": "What the unit economics page reveals on this deal.",
+            "italic_word": "reveals",
+        })

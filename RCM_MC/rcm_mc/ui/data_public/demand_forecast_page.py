@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _volume_svg(volume) -> str:
@@ -72,13 +72,13 @@ def _population_table(pop) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cagr_c = P["positive"] if p.cagr_5yr >= 0.03 else P["accent"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(p.age_band)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{p.pop_2025_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.pop_2030_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.age_band)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{p.pop_2025_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{p.pop_2030_mm:,.1f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">{p.pop_2035_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cagr_c}">{p.cagr_5yr * 100:+.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.share_2025 * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.share_2035 * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{p.share_2025 * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{p.share_2035 * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -93,9 +93,9 @@ def _util_table(util) -> str:
     for i, u in enumerate(util):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{u.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{u.total_pop_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{u.expected_visits_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{u.year}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{u.total_pop_mm:,.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{u.expected_visits_mm:,.2f}""", align="right", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{u.pct_vs_baseline * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{u.medicare_share_pct * 100:.1f}%</td>',
         ]
@@ -113,11 +113,11 @@ def _disease_table(disease) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cagr_c = P["positive"] if d.cagr_10yr >= 0.02 else P["accent"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.disease)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.prevalence_2025_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.disease)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{d.prevalence_2025_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">{d.prevalence_2035_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.patients_2025_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{d.patients_2035_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{d.patients_2025_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{d.patients_2035_mm:,.2f}""", align="right", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cagr_c}">{d.cagr_10yr * 100:+.2f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -134,11 +134,11 @@ def _volume_table(vol) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         gc = P["positive"] if v.growth_vs_py > 0 else P["text_faint"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{v.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{v.patient_visits_k:,.1f}</td>',
+            f'{ck_data_cell(f"""{v.year}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{v.patient_visits_k:,.1f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{gc}">{v.growth_vs_py * 100:+.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{v.medicare_share * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{v.commercial_share * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{v.commercial_share * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -155,12 +155,12 @@ def _opps_table(opps) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         fc = feas_colors.get(o.feasibility, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(o.opportunity)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{o.addressable_pop_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{o.current_penetration * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{o.target_penetration * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${o.revenue_opportunity_mm:,.2f}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{fc};border:1px solid {fc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{o.feasibility}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(o.opportunity)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{o.addressable_pop_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{o.current_penetration * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{o.target_penetration * 100:.1f}%""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""${o.revenue_opportunity_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{fc};border:1px solid {fc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{o.feasibility}</span>""")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -245,4 +245,9 @@ def render_demand_forecast(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Demand Forecast", active_nav="/demand-forecast")
+    return chartis_shell(body, "Demand Forecast", active_nav="/demand-forecast",
+        editorial_intro={
+            "eyebrow": "DEMAND FORECAST",
+            "headline": "What the demand forecast page reveals on this deal.",
+            "italic_word": "reveals",
+        })

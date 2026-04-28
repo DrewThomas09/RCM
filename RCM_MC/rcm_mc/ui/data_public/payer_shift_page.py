@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _mix_bar_svg(start_mix, target_mix) -> str:
@@ -172,10 +172,10 @@ def _mix_table(mix, title: str) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         rate_c = P["positive"] if m.rate_index >= 0.9 else (P["warning"] if m.rate_index >= 0.6 else P["negative"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(m.payer)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{m.pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.payer)}""", mono=True)}',
+            f'{ck_data_cell(f"""{m.pct * 100:.1f}%""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rate_c}">{m.rate_index:.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.collection_rate * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{m.collection_rate * 100:.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">{m.weighted_yield:.3f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -200,7 +200,7 @@ def _scenario_table(scenarios) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         ec = pos if s.ev_impact_mm >= 0 else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.label)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.label)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:240px">{_html.escape(s.description)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{s.start_commercial_pct * 100:.0f}% → {s.end_commercial_pct * 100:.0f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{s.start_medicaid_pct * 100:.0f}% → {s.end_medicaid_pct * 100:.0f}%</td>',
@@ -229,14 +229,14 @@ def _projection_table(yearly) -> str:
     for i, y in enumerate(yearly):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">Year {y.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{y.commercial_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{y.medicare_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{y.medicaid_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{y.self_pay_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{y.weighted_yield:.3f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${y.revenue_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${y.ebitda_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""Year {y.year}""", mono=True)}',
+            f'{ck_data_cell(f"""{y.commercial_pct * 100:.1f}%""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{y.medicare_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{y.medicaid_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{y.self_pay_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{y.weighted_yield:.3f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${y.revenue_mm:,.2f}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${y.ebitda_mm:,.2f}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -399,4 +399,9 @@ def render_payer_shift(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Payer Mix Shift", active_nav="/payer-shift")
+    return chartis_shell(body, "Payer Mix Shift", active_nav="/payer-shift",
+        editorial_intro={
+            "eyebrow": "PAYER SHIFT",
+            "headline": "What the payer shift page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -138,10 +138,10 @@ def _payer_ar_table(payer_ar) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         dso_color = P["positive"] if p.dso_days < 40 else (P["warning"] if p.dso_days < 65 else P["negative"])
         cells = [
-            f'ck_data_cell(f"{_html.escape(p.payer)}", mono=True)',
-            f'ck_data_cell(f"{p.pct_of_ar*100:.1f}%", align="right", mono=True)',
+            f'{ck_data_cell(f"""{_html.escape(p.payer)}""", mono=True)}',
+            f'{ck_data_cell(f"""{p.pct_of_ar*100:.1f}%""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dso_color}">{p.dso_days:.0f}</td>',
-            f'ck_data_cell(f"${p.ar_balance_mm:,.2f}", align="right", mono=True, tone="dim")',
+            f'{ck_data_cell(f"""${p.ar_balance_mm:,.2f}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -163,11 +163,11 @@ def _improvements_table(improvements) -> str:
     for i, im in enumerate(improvements):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'ck_data_cell(f"{_html.escape(im.initiative)}", mono=True)',
-            f'ck_data_cell(f"-{im.dso_reduction_days:.1f}", align="right", mono=True, tone="pos")',
-            f'ck_data_cell(f"${im.cash_release_mm:,.2f}", align="right", mono=True)',
-            f'ck_data_cell(f"${im.ongoing_fcf_impact_mm:,.2f}", align="right", mono=True, tone="pos")',
-            f'ck_data_cell(f"{im.timeline_months} mo", align="right", mono=True, tone="dim")',
+            f'{ck_data_cell(f"""{_html.escape(im.initiative)}""", mono=True)}',
+            f'{ck_data_cell(f"""-{im.dso_reduction_days:.1f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${im.cash_release_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${im.ongoing_fcf_impact_mm:,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{im.timeline_months} mo""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -190,12 +190,12 @@ def _bridge_table(bridge) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         fcf_color = pos if b.fcf_mm > 0 else P["negative"]
         cells = [
-            f'ck_data_cell(f"Year {b.year}", mono=True)',
-            f'ck_data_cell(f"${b.revenue_mm:,.1f}", align="right", mono=True)',
-            f'ck_data_cell(f"${b.ebitda_mm:,.1f}", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"{b.dso_days:.0f}", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"${b.ar_balance_mm:,.2f}", align="right", mono=True, tone="dim")',
-            f'ck_data_cell(f"${b.nwc_mm:,.2f}", align="right", mono=True, tone="dim")',
+            f'{ck_data_cell(f"""Year {b.year}""", mono=True)}',
+            f'{ck_data_cell(f"""${b.revenue_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${b.ebitda_mm:,.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{b.dso_days:.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${b.ar_balance_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${b.nwc_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{fcf_color};font-weight:600">${b.fcf_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${b.cum_cash_released_mm:,.2f}</td>',
         ]
@@ -280,7 +280,7 @@ def render_working_capital(params: dict = None) -> str:
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
-    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"

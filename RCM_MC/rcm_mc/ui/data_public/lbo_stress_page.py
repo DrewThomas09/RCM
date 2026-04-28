@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _sensitivity_table(items) -> str:
@@ -17,11 +17,11 @@ def _sensitivity_table(items) -> str:
         m_c = pos if s.moic >= 2.5 else (acc if s.moic >= 1.8 else warn)
         i_c = pos if s.irr_pct >= 0.20 else (acc if s.irr_pct >= 0.12 else warn)
         cells = [
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{s.exit_multiple:.1f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.exit_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">${s.exit_ev_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{s.exit_multiple:.1f}x""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${s.exit_ebitda_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.exit_ev_mm:,.2f}""", align="right", mono=True, tone="acc", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]}">${s.net_debt_at_exit_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.equity_proceeds_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${s.equity_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{s.moic:,.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{i_c};font-weight:700">{s.irr_pct * 100:+.1f}%</td>',
         ]
@@ -42,13 +42,13 @@ def _tornado_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         s_c = pos if abs(t.swing_moic) <= 0.50 else (acc if abs(t.swing_moic) <= 1.0 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(t.driver)}</td>',
-            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">{_html.escape(t.downside_value)}</td>',
-            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{_html.escape(t.base_value)}</td>',
-            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{_html.escape(t.upside_value)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">{t.downside_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{t.base_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{t.upside_moic:.2f}x</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.driver)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{_html.escape(t.downside_value)}""", align="center", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""{_html.escape(t.base_value)}""", align="center", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""{_html.escape(t.upside_value)}""", align="center", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{t.downside_moic:.2f}x""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""{t.base_moic:.2f}x""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{t.upside_moic:.2f}x""", align="right", mono=True, tone="pos")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{t.swing_moic:+.2f}x</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -68,11 +68,11 @@ def _covenant_table(items) -> str:
         l_c = pos if c.leverage < 6.0 else (P["warning"] if c.leverage < 6.25 else neg)
         comp_c = pos if c.in_compliance else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{c.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${c.ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.total_debt_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{c.year}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.ebitda_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${c.total_debt_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{l_c};font-weight:700">{c.leverage:,.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{c.interest_coverage:,.2f}x</td>',
+            f'{ck_data_cell(f"""{c.interest_coverage:,.2f}x""", align="right", mono=True, tone="pos")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{comp_c};font-weight:700">{"YES" if c.in_compliance else "BREACH"}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -93,7 +93,7 @@ def _bridge_table(items) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_final else "600"}">{_html.escape(b.component)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">${b.contribution_mm:+,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{b.contribution_pct:+.2f}x</td>',
+            f'{ck_data_cell(f"""{b.contribution_pct:+.2f}x""", align="right", mono=True, tone="acc", weight=700)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -112,13 +112,13 @@ def _scenarios_table(items) -> str:
         m_c = pos if s.moic >= 2.5 else (acc if s.moic >= 1.8 else (text_dim if s.moic >= 1.0 else neg))
         i_c = pos if s.irr_pct >= 0.20 else (acc if s.irr_pct >= 0.12 else (text_dim if s.irr_pct >= 0 else neg))
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.exit_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{s.exit_multiple:,.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.exit_proceeds_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${s.exit_ebitda_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.exit_multiple:,.2f}x""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""${s.exit_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{s.moic:,.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{i_c};font-weight:700">{s.irr_pct * 100:+.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.probability_pct * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{s.probability_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -219,4 +219,9 @@ def render_lbo_stress(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "LBO Stress Test", active_nav="/lbo-stress")
+    return chartis_shell(body, "LBO Stress Test", active_nav="/lbo-stress",
+        editorial_intro={
+            "eyebrow": "LBO STRESS",
+            "headline": "What the lbo stress page reveals on this deal.",
+            "italic_word": "reveals",
+        })

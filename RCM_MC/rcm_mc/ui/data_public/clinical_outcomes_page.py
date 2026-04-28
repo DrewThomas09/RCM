@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _star_trajectory_svg(progression) -> str:
@@ -80,13 +80,13 @@ def _metrics_table(metrics) -> str:
         pct_c = P["positive"] if m.percentile >= 70 else (P["accent"] if m.percentile >= 50 else P["warning"])
         trigger_c = P["positive"] if m.quality_bonus_trigger else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{m.current_value:,.2f} {_html.escape(m.unit)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.benchmark:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.metric)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{m.current_value:,.2f} {_html.escape(m.unit)}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{m.benchmark:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{m.target:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pct_c};font-weight:600">{m.percentile:.0f}th</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.trend}</span></td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{trigger_c};border:1px solid {trigger_c};border-radius:2px;letter-spacing:0.06em">{"yes" if m.quality_bonus_trigger else "no"}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.trend}</span>""")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{trigger_c};border:1px solid {trigger_c};border-radius:2px;letter-spacing:0.06em">{"yes" if m.quality_bonus_trigger else "no"}</span>""")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -111,12 +111,12 @@ def _stars_table(stars) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         elig_c = pos if s.ma_bonus_eligible else P["text_faint"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">Year {s.year}</td>',
+            f'{ck_data_cell(f"""Year {s.year}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">{s.star_rating:.2f}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{elig_c};border:1px solid {elig_c};border-radius:2px;letter-spacing:0.06em">{"yes" if s.ma_bonus_eligible else "no"}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.bonus_bps}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.pmpm_bonus:.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${s.annual_bonus_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{elig_c};border:1px solid {elig_c};border-radius:2px;letter-spacing:0.06em">{"yes" if s.ma_bonus_eligible else "no"}</span>""")}',
+            f'{ck_data_cell(f"""{s.bonus_bps}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.pmpm_bonus:.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.annual_bonus_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -140,12 +140,12 @@ def _complications_table(comps) -> str:
     for i, c in enumerate(comps):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(c.complication)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.current_rate * 100:.2f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.complication)}""", mono=True)}',
+            f'{ck_data_cell(f"""{c.current_rate * 100:.2f}%""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{c.benchmark_rate * 100:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.avg_cost_per_event:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.annual_events:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:600">${c.annual_cost_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${c.avg_cost_per_event:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.annual_events:,}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${c.annual_cost_mm:,.2f}""", align="right", mono=True, tone="neg", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -169,12 +169,12 @@ def _vbc_table(vbc) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         tc = type_colors.get(v.contract_type, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(v.payer)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;letter-spacing:0.06em">{_html.escape(v.contract_type)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{v.covered_lives:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${v.upside_quality_pool_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(v.payer)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;letter-spacing:0.06em">{_html.escape(v.contract_type)}</span>""")}',
+            f'{ck_data_cell(f"""{v.covered_lives:,}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${v.upside_quality_pool_mm:,.2f}""", align="right", mono=True, tone="pos")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"] if v.downside_risk_mm else text_dim}">${v.downside_risk_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${v.expected_payout_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${v.expected_payout_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(v.current_performance)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -197,11 +197,11 @@ def _roi_table(roi) -> str:
     for i, r in enumerate(roi):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.initiative)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.initiative)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${r.one_time_cost_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${r.annual_benefit_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.payback_months}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${r.ev_impact_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""${r.annual_benefit_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""{r.payback_months}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${r.ev_impact_mm:,.1f}""", align="right", mono=True, tone="pos", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -328,4 +328,9 @@ def render_clinical_outcomes(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Clinical Outcomes", active_nav="/clinical-outcomes")
+    return chartis_shell(body, "Clinical Outcomes", active_nav="/clinical-outcomes",
+        editorial_intro={
+            "eyebrow": "CLINICAL OUTCOMES",
+            "headline": "What the clinical outcomes page reveals on this deal.",
+            "italic_word": "reveals",
+        })

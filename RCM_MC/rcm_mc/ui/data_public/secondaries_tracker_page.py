@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _transactions_table(items) -> str:
@@ -16,13 +16,13 @@ def _transactions_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         p_c = pos if t.nav_premium_discount_pct >= 0 else (neg if t.nav_premium_discount_pct <= -0.08 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(t.transaction)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.transaction)}""", mono=True, weight=700)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(t.structure)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(t.gp_sponsor)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.gp_sponsor)}""", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(t.asset)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{t.vintage}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.close_year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${t.transaction_size_mm:,.0f}</td>',
+            f'{ck_data_cell(f"""{t.vintage}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{t.close_year}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${t.transaction_size_mm:,.0f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:600">{t.nav_premium_discount_pct * 100:+.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -41,10 +41,10 @@ def _buyers_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         aum_c = pos if b.aum_b >= 50 else acc
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(b.buyer)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.buyer)}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(b.buyer_type)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{aum_c};font-weight:700">${b.aum_b:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${b.typical_check_mm:,.0f}</td>',
+            f'{ck_data_cell(f"""${b.typical_check_mm:,.0f}""", align="right", mono=True, tone="acc")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(b.focus)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{pos}">{_html.escape(b.recent_close)}</td>',
         ]
@@ -62,7 +62,7 @@ def _cv_econ_table(items) -> str:
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(c.component)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.component)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.mechanics)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{acc}">{_html.escape(c.typical_value)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.key_consideration)}</td>',
@@ -82,7 +82,7 @@ def _conflicts_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         v_c = neg if c.lpac_vote_needed else pos
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.conflict_area)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.conflict_area)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.description)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{P["accent"]}">{_html.escape(c.mitigation)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{v_c};font-weight:700">{"YES" if c.lpac_vote_needed else "NO"}</td>',
@@ -102,12 +102,12 @@ def _deals_table(items) -> str:
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.deal_name)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.deal_name)}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(d.deal_type)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(d.sector)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.nav_mm:,.0f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.sector)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${d.nav_mm:,.0f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.holder_offered_options)}</td>',
-            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{_html.escape(d.close_date)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.close_date)}""", align="center", mono=True, tone="acc")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.lead_buyers)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -131,11 +131,11 @@ def _trends_table(items) -> str:
             if v >= 1: return f"{v:,.1f}"
             return f"{v:,.2f}"
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(t.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{fmt(t.y2020)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{fmt(t.y2022)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{fmt(t.y2024)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.trend)}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(t.metric)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{fmt(t.y2020)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{fmt(t.y2022)}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{fmt(t.y2024)}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.trend)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -198,4 +198,9 @@ def render_secondaries_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Secondaries", active_nav="/secondaries-tracker")
+    return chartis_shell(body, "Secondaries", active_nav="/secondaries-tracker",
+        editorial_intro={
+            "eyebrow": "SECONDARIES TRACKER",
+            "headline": "What the secondaries tracker page reveals on this deal.",
+            "italic_word": "reveals",
+        })

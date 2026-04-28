@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -134,10 +134,10 @@ def _dimension_table(dimensions) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         score_color = P["positive"] if d.score >= 80 else (P["accent"] if d.score >= 65 else (P["warning"] if d.score >= 45 else P["negative"]))
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(d.dimension)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.weight * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.dimension)}""", mono=True)}',
+            f'{ck_data_cell(f"""{d.weight * 100:.0f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{score_color};font-weight:600">{d.score:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{d.weighted_contribution:.1f}</td>',
+            f'{ck_data_cell(f"""{d.weighted_contribution:.1f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{d.criteria_ready}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"] if d.criteria_gap else text_dim}">{d.criteria_gap}</td>',
         ]
@@ -166,10 +166,10 @@ def _criteria_table(criteria) -> str:
         ic = imp_colors.get(c.importance, text_dim)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.dimension[:4])}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text}">{_html.escape(c.criterion)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{c.status}</span></td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{ic};border:1px solid {ic};border-radius:2px;letter-spacing:0.06em">{c.importance}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.score_pts:.1f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.criterion)}""")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{c.status}</span>""")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{ic};border:1px solid {ic};border-radius:2px;letter-spacing:0.06em">{c.importance}</span>""")}',
+            f'{ck_data_cell(f"""{c.score_pts:.1f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"] if c.estimated_days_to_close else text_dim}">{c.estimated_days_to_close}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.owner)}</td>',
         ]
@@ -197,9 +197,9 @@ def _gap_table(gaps) -> str:
         sc = sev_colors.get(g.severity, text_dim)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(g.dimension)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text}">{_html.escape(g.criterion)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{g.severity}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{g.days_to_close}</td>',
+            f'{ck_data_cell(f"""{_html.escape(g.criterion)}""")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{g.severity}</span>""")}',
+            f'{ck_data_cell(f"""{g.days_to_close}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${g.cost_estimate_mm:,.2f}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -223,11 +223,11 @@ def _scenario_table(scenarios) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         pct_color = P["positive"] if s.current_readiness_pct >= 100 else (P["warning"] if s.current_readiness_pct >= 85 else P["negative"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.pathway)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.readiness_bar}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.pathway)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{s.readiness_bar}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pct_color};font-weight:600">{s.current_readiness_pct:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"] if s.months_to_ready else P["positive"]}">{s.months_to_ready}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.likely_multiple:.2f}x</td>',
+            f'{ck_data_cell(f"""{s.likely_multiple:.2f}x""", align="right", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.notes)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -365,4 +365,9 @@ def render_exit_readiness(params: dict = None) -> str:
         source="data_public/exit_readiness.py (multi-dimensional readiness model).",
         page_key="exit-readiness",
     )
-    return chartis_shell(explainer + body, "Exit Readiness Index", active_nav="/exit-readiness")
+    return chartis_shell(explainer + body, "Exit Readiness Index", active_nav="/exit-readiness",
+        editorial_intro={
+            "eyebrow": "EXIT READINESS",
+            "headline": "What the exit readiness page reveals on this deal.",
+            "italic_word": "reveals",
+        })

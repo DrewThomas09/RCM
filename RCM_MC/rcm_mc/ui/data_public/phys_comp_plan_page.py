@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _models_table(models) -> str:
@@ -16,13 +16,13 @@ def _models_table(models) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         ret_c = pos if m.retention_score >= 80 else (P["warning"] if m.retention_score >= 70 else P["negative"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.plan_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{m.base_salary_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{m.productivity_bonus_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.quality_bonus_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.call_pay_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.signing_bonus_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.ramp_period_months}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.plan_type)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{m.base_salary_pct * 100:.0f}%""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{m.productivity_bonus_pct * 100:.0f}%""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{m.quality_bonus_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{m.call_pay_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{m.signing_bonus_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{m.ramp_period_months}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ret_c};font-weight:600">{m.retention_score}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.suitable_for)}</td>',
         ]
@@ -44,16 +44,16 @@ def _providers_table(providers) -> str:
         pct_c = pos if p.wrvu_percentile >= 75 else (acc if p.wrvu_percentile >= 50 else text_dim)
         cpc_c = P["warning"] if p.comp_to_collection_pct > 0.75 else (pos if p.comp_to_collection_pct < 0.55 else text)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(p.provider_id)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(p.specialty)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{p.wrvu_production:,}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.provider_id)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(p.specialty)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{p.wrvu_production:,}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pct_c};font-weight:600">{p.wrvu_percentile}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.base_salary_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${p.productivity_pay_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.quality_bonus_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.call_stipend_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${p.total_comp_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.comp_per_wrvu:.2f}</td>',
+            f'{ck_data_cell(f"""${p.base_salary_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${p.productivity_pay_k:,.0f}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${p.quality_bonus_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${p.call_stipend_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${p.total_comp_k:,.0f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${p.comp_per_wrvu:.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cpc_c};font-weight:600">{p.comp_to_collection_pct * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -70,8 +70,8 @@ def _quality_table(pools) -> str:
     for i, q in enumerate(pools):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(q.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{q.weight_pct * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(q.metric)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{q.weight_pct * 100:.0f}%""", align="right", mono=True, tone="acc")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(q.threshold)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">{q.max_bonus_pct_of_base * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{P["warning"]}">{_html.escape(q.current_performance)}</td>',
@@ -93,11 +93,11 @@ def _sims_table(sims) -> str:
         ret_c = pos if s.retention_projected_pct >= 0.80 else (P["warning"] if s.retention_projected_pct >= 0.70 else P["negative"])
         rec_c = pos if s.recruitment_attractiveness >= 80 else (acc if s.recruitment_attractiveness >= 70 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.top_10pct_comp_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.median_comp_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.bottom_10pct_comp_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">${s.total_physician_pool_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${s.top_10pct_comp_k:,.0f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${s.median_comp_k:,.0f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.bottom_10pct_comp_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.total_physician_pool_mm:,.2f}""", align="right", mono=True, tone="acc", weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ret_c};font-weight:600">{s.retention_projected_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rec_c};font-weight:600">{s.recruitment_attractiveness}</td>',
         ]
@@ -118,11 +118,11 @@ def _benchmarks_table(benchmarks) -> str:
         delta_c = pos if b.delta_pct > 0.03 else (neg if b.delta_pct < -0.03 else text_dim)
         pc = pos_colors.get(b.market_position, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(b.specialty)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${b.median_comp_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${b.our_median_k:,.0f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.specialty)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${b.median_comp_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${b.our_median_k:,.0f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{delta_c};font-weight:600">{b.delta_pct * 100:+.1f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.market_position)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.market_position)}</span>""")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -242,4 +242,9 @@ def render_phys_comp_plan(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Physician Comp Plan", active_nav="/phys-comp-plan")
+    return chartis_shell(body, "Physician Comp Plan", active_nav="/phys-comp-plan",
+        editorial_intro={
+            "eyebrow": "PHYS COMP PLAN",
+            "headline": "What the phys comp plan page reveals on this deal.",
+            "italic_word": "reveals",
+        })

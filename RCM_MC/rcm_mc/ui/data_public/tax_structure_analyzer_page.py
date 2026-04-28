@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _structures_table(items) -> str:
@@ -17,11 +17,11 @@ def _structures_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cc = c_c.get(s.complexity, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.structure)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.structure)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.description)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.tax_treatment)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.gain_recognition)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{cc};border:1px solid {cc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.complexity)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{cc};border:1px solid {cc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.complexity)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -39,11 +39,11 @@ def _scenarios_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         m_c = pos if s.after_tax_moic >= 3.0 else (acc if s.after_tax_moic >= 2.6 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.structure)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.gross_proceeds_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">${s.federal_tax_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">${s.state_tax_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.after_tax_proceeds_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.structure)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${s.gross_proceeds_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.federal_tax_mm:,.2f}""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""${s.state_tax_mm:,.2f}""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""${s.after_tax_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{s.after_tax_moic:,.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{s.after_tax_irr * 100:+.1f}%</td>',
         ]
@@ -63,10 +63,10 @@ def _rollovers_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         t_c = pos if r.tax_deferred else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.rollover_type)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.rollover_type)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.typical_structure)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{t_c};font-weight:700">{"YES" if r.tax_deferred else "NO"}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.lock_up_months}</td>',
+            f'{ck_data_cell(f"""{r.lock_up_months}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">{r.typical_rollover_pct * 100:.0f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.notes)}</td>',
         ]
@@ -84,10 +84,10 @@ def _blockers_table(items) -> str:
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(b.blocker_type)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.blocker_type)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(b.purpose)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(b.jurisdiction)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">${b.annual_cost_k:,.1f}</td>',
+            f'{ck_data_cell(f"""${b.annual_cost_k:,.1f}""", align="right", mono=True, tone="neg")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(b.affected_investors)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -105,8 +105,8 @@ def _state_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         r_c = neg if s.rate >= 0.08 else (warn if s.rate >= 0.05 else pos)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.state)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(s.relevant_tax)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.state)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{_html.escape(s.relevant_tax)}""", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{s.rate * 100:.2f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.apportionment_method)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.notable_items)}</td>',
@@ -126,7 +126,7 @@ def _sor_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         t_c = warn if s.timeline_pre_close_days >= 90 else pos
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.topic)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.topic)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.relevance)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{acc}">{_html.escape(s.diligence_action)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{t_c};font-weight:700">{s.timeline_pre_close_days}</td>',
@@ -193,4 +193,9 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Tax Structure", active_nav="/tax-structure-analyzer")
+    return chartis_shell(body, "Tax Structure", active_nav="/tax-structure-analyzer",
+        editorial_intro={
+            "eyebrow": "TAX STRUCTURE ANALYZER",
+            "headline": "What the tax structure analyzer page reveals on this deal.",
+            "italic_word": "reveals",
+        })

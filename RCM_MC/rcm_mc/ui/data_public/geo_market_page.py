@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _tier_distribution_svg(priority: int, watch: int, secondary: int, avoid: int) -> str:
@@ -125,16 +125,16 @@ def _markets_table(markets) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         tc = tier_colors.get(m.tier, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(m.cbsa)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{m.population_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.pct_65plus:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${m.median_income_k:.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.pcp_per_1k:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.hhi:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{m.comm_pct * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.cbsa)}""", mono=True)}',
+            f'{ck_data_cell(f"""{m.population_k:,.0f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{m.pct_65plus:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${m.median_income_k:.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{m.pcp_per_1k:.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{m.hhi:,}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{m.comm_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"] if m.growth_5yr_pct >= 0.05 else (P["warning"] if m.growth_5yr_pct >= 0.02 else P["negative"])}">{m.growth_5yr_pct * 100:+.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{tc};font-weight:600">{m.white_space_score:.1f}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.tier}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.tier}</span>""")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -158,11 +158,11 @@ def _components_table(components) -> str:
         # Format value based on dimension
         fmt_val = f"{c.value:,.2f}" if isinstance(c.value, float) else f"{c.value:,}"
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(c.dimension)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{fmt_val}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{c.normalized_score:.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.weight * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{c.contribution:.1f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.dimension)}""", mono=True)}',
+            f'{ck_data_cell(f"""{fmt_val}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.normalized_score:.0f}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{c.weight * 100:.0f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.contribution:.1f}""", align="right", mono=True, tone="pos", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -187,11 +187,11 @@ def _scenarios_table(scenarios) -> str:
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text}">{_html.escape(s.cbsa[:34])}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.entry_strategy)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.year1_revenue_mm:,.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.year3_revenue_mm:,.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.year5_revenue_mm:,.2f}M</td>',
+            f'{ck_data_cell(f"""${s.year1_revenue_mm:,.2f}M""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.year3_revenue_mm:,.2f}M""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.year5_revenue_mm:,.2f}M""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${s.capex_mm:,.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.payback_years:.1f}</td>',
+            f'{ck_data_cell(f"""{s.payback_years:.1f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:600">{s.expected_moic:.2f}x</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -216,11 +216,11 @@ def _tiers_table(tiers) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         tc = tier_colors.get(t.tier, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{t.tier}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{t.cbsa_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{t.avg_population_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.avg_hhi:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.avg_growth * 100:+.1f}%</td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{t.tier}</span>""")}',
+            f'{ck_data_cell(f"""{t.cbsa_count}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{t.avg_population_k:,.0f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{t.avg_hhi:,}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{t.avg_growth * 100:+.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(t.recommended_action)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -335,4 +335,9 @@ def render_geo_market(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Geographic Market", active_nav="/geo-market")
+    return chartis_shell(body, "Geographic Market", active_nav="/geo-market",
+        editorial_intro={
+            "eyebrow": "GEO MARKET",
+            "headline": "What the geo market page reveals on this deal.",
+            "italic_word": "reveals",
+        })

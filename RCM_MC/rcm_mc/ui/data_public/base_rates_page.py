@@ -7,7 +7,7 @@ by sector, size bucket, vintage year, commercial-payer-share bucket.
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -48,14 +48,14 @@ def _percentile_table(rows) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         kind = _percentile_row_kind(r.metric)
         def _cell(v):
-            return f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_fmt(v, kind)}</td>'
+            return f'{ck_data_cell(f"""{_fmt(v, kind)}""", align="right", mono=True)}'
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.n:,}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.metric)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{r.n:,}""", align="right", mono=True, tone="dim")}',
             _cell(r.p25),
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{_fmt(r.p50, kind)}</td>',
+            f'{ck_data_cell(f"""{_fmt(r.p50, kind)}""", align="right", mono=True, tone="acc", weight=700)}',
             _cell(r.p75),
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{_fmt(r.p90, kind)}</td>',
+            f'{ck_data_cell(f"""{_fmt(r.p90, kind)}""", align="right", mono=True, tone="pos")}',
             _cell(r.mean),
             _cell(r.min),
             _cell(r.max),
@@ -75,14 +75,14 @@ def _sector_table(rows) -> str:
     for i, s in enumerate(rows[:40]):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.sector[:36])}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.deal_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.median_ev_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{s.median_ev_ebitda:,.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.median_ev_revenue:,.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.median_ebitda_margin * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{s.median_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.median_irr * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.sector[:36])}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{s.deal_count}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.median_ev_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.median_ev_ebitda:,.2f}x""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""{s.median_ev_revenue:,.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.median_ebitda_margin * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.median_moic:.2f}x""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""{s.median_irr * 100:.1f}%""", align="right", mono=True)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -99,12 +99,12 @@ def _size_table(rows) -> str:
     for i, s in enumerate(rows):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.bucket)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.deal_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{s.median_ev_ebitda:,.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.median_ebitda_margin * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{s.median_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.median_hold_years:,.1f}y</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.bucket)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{s.deal_count}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.median_ev_ebitda:,.2f}x""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""{s.median_ebitda_margin * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.median_moic:.2f}x""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""{s.median_hold_years:,.1f}y""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -120,11 +120,11 @@ def _vintage_table(rows) -> str:
     for i, v in enumerate(rows):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{v.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{v.deal_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{v.median_ev_ebitda:,.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{v.median_ebitda_margin * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{v.median_moic:.2f}x</td>',
+            f'{ck_data_cell(f"""{v.year}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{v.deal_count}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{v.median_ev_ebitda:,.2f}x""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""{v.median_ebitda_margin * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{v.median_moic:.2f}x""", align="right", mono=True, tone="pos", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -140,11 +140,11 @@ def _comm_table(rows) -> str:
     for i, c in enumerate(rows):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.comm_bucket)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.deal_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{c.median_ev_ebitda:,.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.median_ebitda_margin * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{c.median_moic:.2f}x</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.comm_bucket)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{c.deal_count}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.median_ev_ebitda:,.2f}x""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""{c.median_ebitda_margin * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.median_moic:.2f}x""", align="right", mono=True, tone="pos", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -292,4 +292,9 @@ def render_base_rates(params: dict = None) -> str:
         source="data_public/base_rates.py (corpus percentile engine).",
         page_key="base-rates",
     )
-    return chartis_shell(explainer + body, "Base Rates", active_nav="/base-rates")
+    return chartis_shell(explainer + body, "Base Rates", active_nav="/base-rates",
+        editorial_intro={
+            "eyebrow": "BASE RATES",
+            "headline": "What the base rates page reveals on this deal.",
+            "italic_word": "reveals",
+        })

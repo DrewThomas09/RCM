@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _waves_table(items) -> str:
@@ -15,14 +15,14 @@ def _waves_table(items) -> str:
     for i, w in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(w.reference_drug)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(w.class_area)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{w.loe_year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${w.reference_annual_sales_b:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{w.biosimilars_launched}</td>',
+            f'{ck_data_cell(f"""{_html.escape(w.reference_drug)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(w.class_area)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{w.loe_year}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${w.reference_annual_sales_b:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{w.biosimilars_launched}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{pos if w.interchangeable_approved else text_dim};font-weight:700">{"YES" if w.interchangeable_approved else "NO"}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">{w.reference_price_decline_pct * 100:+.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{w.biosimilar_adoption_y3_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{w.reference_price_decline_pct * 100:+.0f}%""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""{w.biosimilar_adoption_y3_pct * 100:.1f}%""", align="right", mono=True, tone="pos", weight=700)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -39,15 +39,15 @@ def _economics_table(items) -> str:
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(e.reference_drug)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${e.reference_wac_per_dose:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${e.biosimilar_wac_per_dose:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${e.asp_plus_6_reference:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${e.asp_plus_6_biosimilar:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${e.provider_margin_reference:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">${e.provider_margin_biosimilar:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{e.annual_volume_platform:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.revenue_opportunity_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(e.reference_drug)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${e.reference_wac_per_dose:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${e.biosimilar_wac_per_dose:,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${e.asp_plus_6_reference:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.asp_plus_6_biosimilar:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.provider_margin_reference:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${e.provider_margin_biosimilar:,.2f}""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""{e.annual_volume_platform:,}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.revenue_opportunity_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -65,12 +65,12 @@ def _sites_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         a_c = pos if s.biosimilar_adoption_pct >= 0.60 else (acc if s.biosimilar_adoption_pct >= 0.50 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.site_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.biologic_volume_annual:,}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.site_type)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{s.biologic_volume_annual:,}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{a_c};font-weight:700">{s.biosimilar_adoption_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${s.margin_per_dose:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.annual_biosimilar_margin_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{s.growth_y3_pct * 100:+.1f}%</td>',
+            f'{ck_data_cell(f"""${s.margin_per_dose:,.2f}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${s.annual_biosimilar_margin_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{s.growth_y3_pct * 100:+.1f}%""", align="right", mono=True, tone="acc")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -87,10 +87,10 @@ def _interchangeable_table(items) -> str:
     for i, it in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(it.biosimilar)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(it.reference)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{_html.escape(it.interchangeable_date)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{it.state_pharmacy_sub_allowed}</td>',
+            f'{ck_data_cell(f"""{_html.escape(it.biosimilar)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(it.reference)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(it.interchangeable_date)}""", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{it.state_pharmacy_sub_allowed}""", align="right", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(it.notification_requirement)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(it.automatic_sub_impact)}</td>',
         ]
@@ -110,11 +110,11 @@ def _dynamics_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         e_c = neg if d.price_erosion_y3_pct >= 0.60 else warn
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.class_area)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{d.biosimilar_count}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.class_area)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{d.biosimilar_count}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn}">{d.price_erosion_y1_pct * 100:-.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{e_c};font-weight:700">{d.price_erosion_y3_pct * 100:-.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{d.market_leader_share_y3_pct * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{d.market_leader_share_y3_pct * 100:.0f}%""", align="right", mono=True, tone="acc")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.provider_negotiating_leverage)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')

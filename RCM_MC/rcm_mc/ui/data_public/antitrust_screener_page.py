@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _hhi_table(items) -> str:
@@ -18,13 +18,13 @@ def _hhi_table(items) -> str:
         fc = flag_c.get(h.concentration_flag, text_dim)
         d_c = neg if h.delta_hhi >= 200 else (warn if h.delta_hhi >= 100 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(h.market)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(h.msa)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{h.pre_merger_hhi:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">{h.post_merger_hhi:,}</td>',
+            f'{ck_data_cell(f"""{_html.escape(h.market)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(h.msa)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{h.pre_merger_hhi:,}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{h.post_merger_hhi:,}""", align="right", mono=True, tone="neg", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">+{h.delta_hhi}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{h.cr3_share_pct * 100:.1f}%</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{fc};border:1px solid {fc};border-radius:2px;letter-spacing:0.06em">{_html.escape(h.concentration_flag)}</span></td>',
+            f'{ck_data_cell(f"""{h.cr3_share_pct * 100:.1f}%""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{fc};border:1px solid {fc};border-radius:2px;letter-spacing:0.06em">{_html.escape(h.concentration_flag)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -42,12 +42,12 @@ def _hsr_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         f_c = neg if t.filing_required else pos
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(t.threshold)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${t.current_value_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.threshold_value_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.threshold)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${t.current_value_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${t.threshold_value_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{f_c};font-weight:700">{"REQUIRED" if t.filing_required else "No"}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.waiting_period_days}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.filing_fee_k:,.1f}</td>',
+            f'{ck_data_cell(f"""{t.waiting_period_days}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${t.filing_fee_k:,.1f}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -67,12 +67,12 @@ def _overlaps_table(items) -> str:
         sc = sev_c.get(o.overlap_severity, text_dim)
         cb_c = neg if o.combined_share_pct >= 50 else (warn if o.combined_share_pct >= 35 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(o.geography)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{o.platform_share_pct:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{o.target_share_pct:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(o.geography)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{o.platform_share_pct:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{o.target_share_pct:.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cb_c};font-weight:700">{o.combined_share_pct:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{o.next_competitor_pct:.1f}%</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(o.overlap_severity)}</span></td>',
+            f'{ck_data_cell(f"""{o.next_competitor_pct:.1f}%""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(o.overlap_severity)}</span>""", align="center")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(o.remediation_required)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -90,9 +90,9 @@ def _case_law_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         r_c = P["negative"] if c.relevance_score >= 85 else (P["warning"] if c.relevance_score >= 65 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.case)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{c.year}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(c.parties)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.case)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{c.year}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{_html.escape(c.parties)}""", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.outcome)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.precedent_for_platform)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{c.relevance_score}</td>',
@@ -115,11 +115,11 @@ def _states_table(items) -> str:
         pc = post_c.get(s.state_ag_posture, text_dim)
         cr_c = neg if s.historical_challenge_rate_pct >= 0.15 else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.state)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.state)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.review_trigger)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.notice_days}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.notification_fee_k:,.1f}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.state_ag_posture)}</span></td>',
+            f'{ck_data_cell(f"""{s.notice_days}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.notification_fee_k:,.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.state_ag_posture)}</span>""", align="center")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cr_c};font-weight:600">{s.historical_challenge_rate_pct * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -139,10 +139,10 @@ def _remediations_table(items) -> str:
         p_c = pos if r.probability_of_approval >= 0.80 else (acc if r.probability_of_approval >= 0.55 else neg)
         v_c = neg if r.deal_value_impact_pct >= 0.10 else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.option)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.option)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.description)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.timeline_months}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">${r.financial_cost_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{r.timeline_months}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${r.financial_cost_mm:,.2f}""", align="right", mono=True, tone="neg")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{v_c};font-weight:700">{r.deal_value_impact_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{r.probability_of_approval * 100:.0f}%</td>',
         ]
@@ -225,4 +225,9 @@ def render_antitrust_screener(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Anti-Trust Screener", active_nav="/antitrust-screener")
+    return chartis_shell(body, "Anti-Trust Screener", active_nav="/antitrust-screener",
+        editorial_intro={
+            "eyebrow": "ANTITRUST SCREENER",
+            "headline": "What the antitrust screener page reveals on this deal.",
+            "italic_word": "reveals",
+        })

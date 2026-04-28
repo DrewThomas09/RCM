@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _cost_stack_svg(cost_lines, ebitda_margin: float) -> str:
@@ -117,11 +117,11 @@ def _cost_table(cost_lines, revenue_mm: float) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         tcolor = P["warning"] if cl.is_variable else P["text_faint"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(cl.category)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tcolor};border:1px solid {tcolor};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{"variable" if cl.is_variable else "fixed"}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${cl.amount_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{cl.pct_of_revenue * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{cl.benchmark_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(cl.category)}""", mono=True)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tcolor};border:1px solid {tcolor};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{"variable" if cl.is_variable else "fixed"}</span>""")}',
+            f'{ck_data_cell(f"""${cl.amount_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{cl.pct_of_revenue * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{cl.benchmark_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -142,11 +142,11 @@ def _labor_table(labor) -> str:
     for i, l in enumerate(labor):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(l.role_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{l.headcount:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${l.avg_comp_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${l.total_cost_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{l.pct_of_revenue * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(l.role_type)}""", mono=True)}',
+            f'{ck_data_cell(f"""{l.headcount:,}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${l.avg_comp_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${l.total_cost_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{l.pct_of_revenue * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -168,12 +168,12 @@ def _scenario_table(scenarios) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         ec = pos if s.expected_ebitda_delta_pct >= 0 else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.revenue_delta_pct * 100:+.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True)}',
+            f'{ck_data_cell(f"""{s.revenue_delta_pct * 100:+.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ec};font-weight:600">{s.expected_ebitda_delta_pct * 100:+.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.leverage_ratio:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.implied_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${s.implied_ev_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""{s.leverage_ratio:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.implied_ebitda_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.implied_ev_mm:,.1f}""", align="right", mono=True, weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _entities_table(entities) -> str:
@@ -19,16 +19,16 @@ def _entities_table(entities) -> str:
         risk_c = neg if e.audit_risk_score >= 60 else (warn if e.audit_risk_score >= 40 else text_dim)
         sc = stat_c.get(e.compliance_status, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(e.entity_id)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{acc};border:1px solid {acc};border-radius:2px;letter-spacing:0.06em">{_html.escape(e.entity_type)}</span></td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(e.name)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${e.annual_drug_spend_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${e.ceiling_price_spread_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{e.contract_pharmacy_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{e.child_sites}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.program_margin_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(e.entity_id)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{acc};border:1px solid {acc};border-radius:2px;letter-spacing:0.06em">{_html.escape(e.entity_type)}</span>""", align="center")}',
+            f'{ck_data_cell(f"""{_html.escape(e.name)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.annual_drug_spend_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${e.ceiling_price_spread_mm:,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{e.contract_pharmacy_count}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{e.child_sites}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.program_margin_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{risk_c};font-weight:600">{e.audit_risk_score}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(e.compliance_status)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(e.compliance_status)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -45,13 +45,13 @@ def _drugs_table(drugs) -> str:
     for i, d in enumerate(drugs):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.annual_volume_units:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${d.wac_per_unit:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${d.ceiling_price_per_unit:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{d.discount_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${d.annual_savings_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.share_of_spend_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.category)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{d.annual_volume_units:,}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${d.wac_per_unit:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${d.ceiling_price_per_unit:,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{d.discount_pct * 100:.1f}%""", align="right", mono=True, tone="acc", weight=600)}',
+            f'{ck_data_cell(f"""${d.annual_savings_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{d.share_of_spend_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -70,13 +70,13 @@ def _pharmacy_table(pharms) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         rc = risk_c.get(p.integrity_risk, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(p.pharmacy_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{p.location_count:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.claims_per_month:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.avg_spread_per_claim:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.monthly_margin_k:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.annual_margin_mm:,.2f}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.integrity_risk)}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(p.pharmacy_type)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{p.location_count:,}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{p.claims_per_month:,}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${p.avg_spread_per_claim:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${p.monthly_margin_k:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${p.annual_margin_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.integrity_risk)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -95,12 +95,12 @@ def _audits_table(audits) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         sc = sev_c.get(a.finding_severity, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(a.audit_area)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.finding_severity)}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(a.audit_area)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.finding_severity)}</span>""", align="center")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if a.exposure_mm > 0 else text_dim};font-weight:{"600" if a.exposure_mm > 0 else "400"}">${a.exposure_mm / 1000:,.3f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{a.remediation_days}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(a.last_hrsa_visit)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(a.status)}</td>',
+            f'{ck_data_cell(f"""{a.remediation_days}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(a.last_hrsa_visit)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(a.status)}""", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -118,10 +118,10 @@ def _manufacturer_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         w_c = pos if m.workaround_available else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.manufacturer)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{m.restricted_products}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.manufacturer)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{m.restricted_products}""", align="right", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.restriction_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:600">${m.annual_impact_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${m.annual_impact_mm:,.2f}""", align="right", mono=True, tone="neg", weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{w_c};font-weight:600">{"AVAILABLE" if m.workaround_available else "NONE"}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -141,11 +141,11 @@ def _medicaid_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         rc = risk_c.get(m.duplicate_discount_risk, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.state)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(m.carve_status)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{m.avg_mac_rate * 100:.1f}%</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;letter-spacing:0.06em">{_html.escape(m.duplicate_discount_risk)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${m.gross_margin_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.state)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(m.carve_status)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{m.avg_mac_rate * 100:.1f}%""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;letter-spacing:0.06em">{_html.escape(m.duplicate_discount_risk)}</span>""", align="center")}',
+            f'{ck_data_cell(f"""${m.gross_margin_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -256,4 +256,9 @@ def render_drug_pricing_340b(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "340B Drug Pricing", active_nav="/drug-pricing-340b")
+    return chartis_shell(body, "340B Drug Pricing", active_nav="/drug-pricing-340b",
+        editorial_intro={
+            "eyebrow": "DRUG PRICING 340B",
+            "headline": "What the drug pricing 340b page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _histogram_svg(distribution, base_case: float, median: float) -> str:
@@ -136,10 +136,10 @@ def _inputs_table(inputs) -> str:
                 return f"{v:.2f}x"
             return f"{v * 100:.0f}%"
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(inp.driver)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_fmt(inp.base_case, inp.unit)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_fmt(inp.low, inp.unit)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_fmt(inp.high, inp.unit)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(inp.driver)}""", mono=True)}',
+            f'{ck_data_cell(f"""{_fmt(inp.base_case, inp.unit)}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_fmt(inp.low, inp.unit)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_fmt(inp.high, inp.unit)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(inp.unit)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -162,13 +162,13 @@ def _percentile_table(percentiles) -> str:
     for i, r in enumerate(percentiles):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.metric)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.metric)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]}">{r.p5:.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">{r.p25:.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{r.p50:.2f}</td>',
+            f'{ck_data_cell(f"""{r.p50:.2f}""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{r.p75:.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{r.p95:.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.mean:.2f}</td>',
+            f'{ck_data_cell(f"""{r.mean:.2f}""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -190,7 +190,7 @@ def _probability_table(probs) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         color = neg if "Loss" in p.outcome or "Downside" in p.outcome else pos
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(p.outcome)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.outcome)}""", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{color};font-weight:600">{p.probability * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.description)}</td>',
         ]
@@ -214,9 +214,9 @@ def _sensitivity_table(sensitivities) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         color = P["positive"] if abs(s.correlation_to_moic) >= 0.5 else (P["accent"] if abs(s.correlation_to_moic) >= 0.3 else P["text_dim"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.driver)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.driver)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{color}">{s.correlation_to_moic:+.3f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.elasticity:+.2f}</td>',
+            f'{ck_data_cell(f"""{s.elasticity:+.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">±${s.tornado_range_mm:,.1f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -370,4 +370,9 @@ def render_scenario_mc(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Scenario Monte Carlo", active_nav="/scenario-mc")
+    return chartis_shell(body, "Scenario Monte Carlo", active_nav="/scenario-mc",
+        editorial_intro={
+            "eyebrow": "SCENARIO MC",
+            "headline": "What the scenario mc page reveals on this deal.",
+            "italic_word": "reveals",
+        })

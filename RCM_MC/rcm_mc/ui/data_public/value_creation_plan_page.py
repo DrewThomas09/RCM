@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _bridge_svg(bridge) -> str:
@@ -119,15 +119,15 @@ def _initiatives_table(initiatives) -> str:
         pc = prio_colors.get(init.priority, text_dim)
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(init.category)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(init.name)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">Day {init.target_day}</td>',
+            f'{ck_data_cell(f"""{_html.escape(init.name)}""", mono=True)}',
+            f'{ck_data_cell(f"""Day {init.target_day}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${init.impact_ebitda_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${init.cost_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${init.net_impact_mm:+,.2f}</td>',
+            f'{ck_data_cell(f"""${init.net_impact_mm:+,.2f}""", align="right", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sc}">{init.progress_pct * 100:.0f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(init.actual_status.replace("_", " "))}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(init.actual_status.replace("_", " "))}</span>""")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(init.owner_role)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{init.priority}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{init.priority}</span>""")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -150,12 +150,12 @@ def _checkpoint_table(checkpoints) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         ar_c = P["negative"] if cp.initiatives_at_risk > 2 else (P["warning"] if cp.initiatives_at_risk > 0 else P["text_dim"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(cp.checkpoint)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{cp.initiatives_completed}</td>',
+            f'{ck_data_cell(f"""{_html.escape(cp.checkpoint)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{cp.initiatives_completed}""", align="right", mono=True, tone="pos")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{cp.initiatives_on_track}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ar_c}">{cp.initiatives_at_risk}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${cp.ebitda_realized_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{cp.pct_of_plan * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""${cp.ebitda_realized_mm:,.2f}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{cp.pct_of_plan * 100:.1f}%""", align="right", mono=True, tone="pos")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -178,12 +178,12 @@ def _category_table(categories) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         prog_c = pos if c.avg_progress >= 0.6 else (P["accent"] if c.avg_progress >= 0.3 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.n_initiatives}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${c.total_impact_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.category)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{c.n_initiatives}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${c.total_impact_mm:,.2f}""", align="right", mono=True, tone="pos")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${c.total_cost_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${c.net_impact_mm:+,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.pct_of_total_plan * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""${c.net_impact_mm:+,.2f}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{c.pct_of_total_plan * 100:.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{prog_c};font-weight:600">{c.avg_progress * 100:.0f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -206,10 +206,10 @@ def _bridge_table(bridge) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         delta_c = pos if b.delta_from_entry_mm > 0 else P["text_faint"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(b.stage)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${b.ebitda_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.stage)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${b.ebitda_mm:,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{delta_c};font-weight:600">${b.delta_from_entry_mm:+,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.margin_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{b.margin_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (
@@ -340,4 +340,9 @@ def render_value_creation_plan(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Value Creation Plan", active_nav="/value-creation-plan")
+    return chartis_shell(body, "Value Creation Plan", active_nav="/value-creation-plan",
+        editorial_intro={
+            "eyebrow": "VALUE CREATION PLAN",
+            "headline": "What the value creation plan page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -140,14 +140,37 @@ def _parse_style(style: str) -> Optional[dict]:
     return kwargs
 
 
-def _kwargs_to_call(inner: str, kwargs: dict) -> str:
+def _kwargs_to_call(
+    inner: str, kwargs: dict, *, in_f_string: bool,
+) -> str:
     """Render the ``ck_data_cell`` call from inner content + kwargs.
 
     ``inner`` is the cell content as it appeared in the source,
-    typically containing f-string interpolations. We wrap it in a
-    new f-string so interpolations evaluate at render time.
+    typically containing f-string interpolations.
+
+    When ``in_f_string`` is True (the match was inside an outer
+    ``f'...'`` literal), wrap the call in ``{...}`` so it's
+    interpolated rather than rendered as literal text. Without
+    this wrap, the rewrite produces a string containing the
+    literal source ``ck_data_cell(...)`` instead of the result
+    of calling it — which is the cycle-25 bug we caught and fixed.
+
+    Inner content stays as-is: when the match was inside an
+    outer f-string, ``{var}`` interpolations within ``inner`` are
+    already in their rendering context. Wrapping them in another
+    inner f-string would double-evaluate.
     """
-    parts = [f'f"{inner}"']
+    # The inner content is already in f-string context (the outer
+    # f''). It can contain {var} interpolations directly. Pass it
+    # to ck_data_cell as an f-string so the helper sees the
+    # rendered value. Use TRIPLE-quoted f-string so embedded
+    # double-quotes inside ``inner`` (e.g. nested ``<span style="...">``
+    # markup or attribute strings) don't terminate the wrapper.
+    # Skip migration entirely if ``inner`` contains triple-double-
+    # quotes — those collide with the wrapper and need human review.
+    if '"""' in inner:
+        return None  # signal: skip this rewrite
+    parts = [f'f"""{inner}"""']
     for key in ("align", "mono", "tone", "weight"):
         if key not in kwargs:
             continue
@@ -158,7 +181,51 @@ def _kwargs_to_call(inner: str, kwargs: dict) -> str:
             parts.append(f'{key}={v}')
         elif isinstance(v, int):
             parts.append(f'{key}={v}')
-    return f'ck_data_cell({", ".join(parts)})'
+    call = f'ck_data_cell({", ".join(parts)})'
+    if in_f_string:
+        # Wrap in {...} so the outer f-string interpolates the
+        # call result instead of rendering literal source text.
+        return "{" + call + "}"
+    return call
+
+
+def _is_in_f_string(src: str, pos: int) -> bool:
+    """Heuristic: is ``src[pos]`` inside an f-string literal?
+
+    Walks back from ``pos`` to the start of the line and checks for
+    an unbalanced ``f'`` or ``f"`` prefix. False positives are rare
+    in idiomatic Python; the data_public callers all wrap their
+    HTML cells in single-line f-string list elements. Multi-line
+    triple-quoted f-strings aren't used in those contexts so
+    the simple line-bounded heuristic is enough.
+    """
+    line_start = src.rfind("\n", 0, pos) + 1
+    prefix = src[line_start:pos]
+    # Look for the LAST f-string opening that hasn't been closed.
+    # Strip already-closed f-strings by matching f'...' / f"..." pairs.
+    # For our data_public corpus, the f-string opens on the line and
+    # the <td> follows; just check if there's an unclosed f' or f".
+    in_string = None
+    i = 0
+    while i < len(prefix):
+        ch = prefix[i]
+        if in_string is None:
+            if ch == "f" and i + 1 < len(prefix) and prefix[i + 1] in ("'", '"'):
+                in_string = prefix[i + 1]
+                i += 2
+                continue
+            if ch in ("'", '"'):
+                # Plain (non-f) string — skip past matching close
+                close = prefix.find(ch, i + 1)
+                if close == -1:
+                    return False
+                i = close + 1
+                continue
+        else:
+            if ch == in_string:
+                in_string = None
+        i += 1
+    return in_string is not None
 
 
 def migrate_file(path: Path, dry_run: bool = False) -> Tuple[int, int]:
@@ -178,32 +245,64 @@ def migrate_file(path: Path, dry_run: bool = False) -> Tuple[int, int]:
             out_parts.append(m.group(0))
             skipped += 1
         else:
-            out_parts.append(_kwargs_to_call(inner, kwargs))
-            migrated += 1
+            in_f = _is_in_f_string(src, m.start())
+            call = _kwargs_to_call(inner, kwargs, in_f_string=in_f)
+            if call is None:
+                # Inner content too complex (triple-quotes etc.) —
+                # leave the cell alone rather than risk breakage.
+                out_parts.append(m.group(0))
+                skipped += 1
+            else:
+                out_parts.append(call)
+                migrated += 1
         last_end = m.end()
     out_parts.append(src[last_end:])
     new_src = "".join(out_parts)
 
-    # Need to ensure ck_data_cell is imported
+    # Need to ensure ck_data_cell is imported. Two import shapes
+    # to handle:
+    # 1. Single-line:  ``from rcm_mc.ui._chartis_kit import P, foo``
+    # 2. Multi-line:   ``from rcm_mc.ui._chartis_kit import (\n    P,\n    foo,\n)``
+    # The cycle-25 bug: the original logic mishandled (2), inserting
+    # ``, ck_data_cell`` after the opening ``(`` and producing
+    # ``import (, ck_data_cell``. Fix: locate the closing ``)`` of a
+    # multi-line import explicitly, or fall back to single-line.
     if migrated > 0 and "ck_data_cell" not in src:
-        # Inject into an existing _chartis_kit import line if present
-        import_line_re = re.compile(
-            r"(from rcm_mc\.ui\._chartis_kit import [^\n]+)",
+        # Multi-line import: ``from … import (\n    foo,\n    bar,\n)``
+        ml_re = re.compile(
+            r"(from rcm_mc\.ui\._chartis_kit import \()"
+            r"(?P<body>[^)]+)(\))",
+            re.DOTALL,
         )
-        m = import_line_re.search(new_src)
-        if m and "ck_data_cell" not in m.group(1):
-            new_line = m.group(1).rstrip()
-            if new_line.endswith(")"):
-                new_line = new_line[:-1] + ", ck_data_cell)"
+        m_ml = ml_re.search(new_src)
+        if m_ml:
+            # Append ``ck_data_cell,`` before the closing paren,
+            # respecting trailing-comma + indentation in the body.
+            body = m_ml.group("body").rstrip()
+            if body.endswith(","):
+                new_body = body + " ck_data_cell,\n"
             else:
-                new_line = new_line + ", ck_data_cell"
-            new_src = new_src.replace(m.group(1), new_line, 1)
-        else:
-            # No existing import — prepend at top
+                new_body = body + ", ck_data_cell,\n"
             new_src = (
-                "from rcm_mc.ui._chartis_kit import ck_data_cell\n"
-                + new_src
+                new_src[:m_ml.start("body")]
+                + new_body
+                + new_src[m_ml.end("body"):]
             )
+        else:
+            # Single-line import: ``from … import foo, bar``
+            sl_re = re.compile(
+                r"(from rcm_mc\.ui\._chartis_kit import [^\n(]+)",
+            )
+            m_sl = sl_re.search(new_src)
+            if m_sl:
+                new_line = m_sl.group(1).rstrip() + ", ck_data_cell"
+                new_src = new_src.replace(m_sl.group(1), new_line, 1)
+            else:
+                # No existing import — prepend a fresh one
+                new_src = (
+                    "from rcm_mc.ui._chartis_kit import ck_data_cell\n"
+                    + new_src
+                )
 
     if not dry_run and migrated > 0:
         path.write_text(new_src, encoding="utf-8")

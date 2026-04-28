@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _stage_color(s: str) -> str:
@@ -44,16 +44,16 @@ def _targets_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _status_color(t.status)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(t.fund_name)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${t.target_size_b:.2f}B</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${t.hard_cap_b:.2f}B</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.fund_name)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${t.target_size_b:.2f}B""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${t.hard_cap_b:.2f}B""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(t.strategy)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(t.launch_date)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(t.first_close)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(t.final_close_target)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">${t.committed_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${t.hard_circled_m:,.1f}M</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.status)}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(t.launch_date)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(t.first_close)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(t.final_close_target)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${t.committed_m:,.1f}M""", align="right", mono=True, tone="acc", weight=600)}',
+            f'{ck_data_cell(f"""${t.hard_circled_m:,.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.status)}</span>""", align="center")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -73,13 +73,13 @@ def _pipeline_table(items) -> str:
         p_c = pos if lp.prior_relationship else text_dim
         l_c = pos if lp.likelihood_pct >= 85 else (acc if lp.likelihood_pct >= 65 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(lp.lp_name)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(lp.lp_name)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(lp.lp_type)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{p_c};font-weight:700">{"YES" if lp.prior_relationship else "NO"}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${lp.target_commitment_m:.1f}M</td>',
+            f'{ck_data_cell(f"""${lp.target_commitment_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{l_c};font-weight:700">{lp.likelihood_pct:.0f}%</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(lp.stage)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(lp.last_activity)}</td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(lp.stage)}</span>""", align="center")}',
+            f'{ck_data_cell(f"""{_html.escape(lp.last_activity)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(lp.owner)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:340px">{_html.escape(lp.notes)}</td>',
         ]
@@ -98,11 +98,11 @@ def _stages_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         st_c = _stage_color(s.stage)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:11px;font-family:JetBrains Mono,monospace;color:{st_c};border:1px solid {st_c};border-radius:2px;letter-spacing:0.06em;font-weight:700">{_html.escape(s.stage)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{s.lps}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.target_commitment_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.weighted_commitment_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.avg_likelihood_pct:.1f}%</td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:11px;font-family:JetBrains Mono,monospace;color:{st_c};border:1px solid {st_c};border-radius:2px;letter-spacing:0.06em;font-weight:700">{_html.escape(s.stage)}</span>""")}',
+            f'{ck_data_cell(f"""{s.lps}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""${s.target_commitment_m:,.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${s.weighted_commitment_m:,.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{s.avg_likelihood_pct:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -120,10 +120,10 @@ def _terms_table(items) -> str:
         n_c = _neg_color(t.negotiation_status)
         p_c = P["warning"] if "favoring" in t.lp_pressure_direction.lower() or "up" in t.lp_pressure_direction.lower() else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(t.term)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.term)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim};max-width:320px">{_html.escape(t.main_fund)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{acc};max-width:240px">{_html.escape(t.benchmark_market)}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{n_c};border:1px solid {n_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.negotiation_status)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{n_c};border:1px solid {n_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.negotiation_status)}</span>""", align="center")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{p_c}">{_html.escape(t.lp_pressure_direction)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -141,13 +141,13 @@ def _agents_table(items) -> str:
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(a.agent)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(a.agent)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(a.fund)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${a.retainer_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{a.success_fee_bps}bps</td>',
+            f'{ck_data_cell(f"""${a.retainer_m:.1f}M""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{a.success_fee_bps}bps""", align="right", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(a.regions)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{a.deals_sourced}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${a.committed_m:,.1f}M</td>',
+            f'{ck_data_cell(f"""{a.deals_sourced}""", align="right", mono=True, tone="acc", weight=600)}',
+            f'{ck_data_cell(f"""${a.committed_m:,.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -165,11 +165,11 @@ def _schedule_table(items) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         t_c = pos if s.on_track else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.fund)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.fund)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(s.close)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(s.target_date)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.target_commitment_m:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.committed_m:,.1f}M</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.target_date)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.target_commitment_m:,.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${s.committed_m:,.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{t_c};font-weight:700">{"ON TRACK" if s.on_track else "AT RISK"}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:340px">{_html.escape(s.risk_factors)}</td>',
         ]
@@ -232,4 +232,9 @@ def render_fundraising_tracker(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Fundraising Tracker", active_nav="/fundraising")
+    return chartis_shell(body, "Fundraising Tracker", active_nav="/fundraising",
+        editorial_intro={
+            "eyebrow": "FUNDRAISING TRACKER",
+            "headline": "What the fundraising tracker page reveals on this deal.",
+            "italic_word": "reveals",
+        })
