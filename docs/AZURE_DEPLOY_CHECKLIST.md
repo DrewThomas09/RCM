@@ -11,13 +11,11 @@ off with the iteration that closed them (e.g. `[x] (iter 27)`).
 
 ## ENVIRONMENT
 
-- [ ] `PORT` bound from environment variable, not hardcoded.
-  - Current: `demo.py` uses `PORT = 8765` literal + auto-bumps if
-    busy. `server.py` `build_server(port=...)` takes it as a kwarg
-    so the wiring is one os.environ.get away.
-  - Gap: production entry point (not `demo.py`) needs to read
-    `os.environ.get("PORT", "8000")` and pass that in. Azure App
-    Service injects `PORT`.
+- [x] `PORT` bound from environment variable, not hardcoded. (iter 20+34)
+  - `demo.py` now reads `int(os.environ.get("PORT") or
+    os.environ.get("WEBSITES_PORT") or 8765)`. Honours both Azure
+    App Service env conventions (`PORT` and `WEBSITES_PORT`).
+    Local dev still falls back to 8765.
 - [ ] `CHARTIS_UI_V2=1` documented in deploy config.
   - Current: documented in `demo.py` docstring + CLAUDE.md.
   - Gap: needs to land in `deploy/` config (Bicep / app-service.json

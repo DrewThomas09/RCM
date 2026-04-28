@@ -42,7 +42,17 @@ from rcm_mc.server import build_server
 from rcm_mc.deals.watchlist import star_deal
 
 
-PORT = 8765
+# Azure App Service injects ``PORT`` (and may set ``WEBSITES_PORT``)
+# at container start; honour both before falling back to the dev
+# default. ``RCM_MC_HOST`` is our explicit override for binding —
+# Azure expects 0.0.0.0; local dev sticks with 127.0.0.1 so a
+# casual ``demo.py`` run isn't surprise-exposed on the LAN.
+PORT = int(
+    os.environ.get("PORT")
+    or os.environ.get("WEBSITES_PORT")
+    or 8765
+)
+HOST = os.environ.get("RCM_MC_HOST") or "127.0.0.1"
 USERNAME = "demo"
 PASSWORD = "DemoPass!1"
 # Andrew's primary partner account — added so the rendered login
@@ -232,7 +242,7 @@ def main() -> int:
         port += 1
 
     server, _ = build_server(
-        port=port, db_path=db_path, outdir=run_dir,
+        port=port, host=HOST, db_path=db_path, outdir=run_dir,
         title="RCM-MC Demo Portfolio",
     )
     t = threading.Thread(target=server.serve_forever, daemon=True)

@@ -156,7 +156,7 @@ def render_deals_library(
     moic_bucket: str = "",
 ) -> str:
     from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_table, ck_section_header,
+        chartis_shell, ck_table, ck_section_header, ck_search_hero,
     )
     from rcm_mc.ui.chartis._helpers import render_page_explainer
 
@@ -237,8 +237,16 @@ def render_deals_library(
     kpis = _kpi_bar(deals, rows)
     section = ck_section_header("DEAL CORPUS", "all healthcare PE transactions", len(rows))
     table = ck_table(rows, _COLUMNS, caption="", sortable=True, id="deals-tbl")
+    # Chartis Insights-style search hero — navy panel with italic
+    # "Search" label + circular submit + teal chevron-cut bottom-right.
+    # Renders above the filter bar so the partner's first read on
+    # /library matches chartis.com.
+    search_hero = ck_search_hero(
+        action="/library", name="q", initial=search,
+        placeholder="Deal name, sponsor, sector…",
+    )
 
-    body = explainer + kpis + filter_bar + section + table
+    body = search_hero + explainer + kpis + filter_bar + section + table
 
     return chartis_shell(
         body,

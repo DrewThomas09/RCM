@@ -396,3 +396,28 @@ ck_filter_sidebar (CHARTIS_MATCH_NOTES.md pattern 02) on the
 same page. Forward-only.
 
 ---
+
+## Cycles 3 + 4 + 5 build — iterations 20-42 — 2026-04-28
+
+**Steps batched** — cron firing ~60s apart outpaced per-step
+commit cadence; consolidating into one commit:
+
+- demo.py reads `PORT` and `WEBSITES_PORT` env vars (Azure App
+  Service); `RCM_MC_HOST` env override binds host. Local dev
+  unchanged. Two Azure rows checked off.
+- ck_search_hero wired into /library deal-corpus. Chartis
+  Insights navy panel + italic "Search" + circular submit +
+  teal chevron now lands above the filter bar; `?q=...`
+  initial value preserved.
+
+Files: demo.py, deals_library_page.py, AZURE_DEPLOY_CHECKLIST.md.
+
+Compliance impact: ck_search_hero wired sites 1 (was 0); Azure
+rows passing 7 of 22 (was 6).
+
+**Suggested next:** cycle 5 step 4 — build ck_filter_sidebar
+(pattern 02) and wire to /library replacing the inline-styled
+sector/regime/MOIC selects with the Chartis BY TOPIC eyebrow
+rail. Then ship ck_results_header (pattern 03 — N RESULTS +
+chip-clear).
+
