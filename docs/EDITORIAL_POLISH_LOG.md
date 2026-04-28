@@ -711,3 +711,104 @@ all three target pages. Option B: audit /home for the
 ck_image_card which already exists). Recommend doing both
 in cycle 9 — they're both 1-2 commits each. Forward-only.
 
+---
+
+## Cycle 9 build — 2026-04-28 — /research surface + /home editorial intro
+
+**Step 4 — /research surface shipped.** New
+`rcm_mc/ui/research_page.py` module renders the chartis
+Insights triplet for the /research nav anchor that had been
+404'ing since the chartis_shell ship (cycle 1) — there was a
+nav entry but no backing route. Catalog is curated in code as
+a `RESEARCH_ENTRIES` list so the editorial team can publish
+without a deploy needing a DB migration; future cycle can
+move it to a SQLite table once the pace warrants. Eight
+seed entries cover the natural taxonomy:
+- Methodology Hub (`/methodology`)
+- Conference Roadmap (`/conferences`)
+- PE Intelligence Hub (`/pe-intelligence`)
+- Bear Cases (`/bear-cases`)
+- Comparable Outcomes (`/comparable-outcomes`)
+- Regulatory Calendar (`/regulatory-calendar`)
+- Market Intelligence (`/market-intel`)
+- Causal & Counterfactual (`/benchmarks`)
+
+**Step 4 — Insights triplet on /research.** Same shape as
+`/library` and `/notes` — search hero (full-width navy,
+italic "Search" label), filter sidebar (BY TOPIC + BY FORMAT
+single-select radio groups), results header (count + chips +
+Clear all). Server-side keyword match runs against title +
+summary so partner searching for "covenant" surfaces any
+entry whose copy mentions covenants. New
+`.ck-research-grid` CSS — auto-fit grid of editorial cards
+with eyebrow / serif title / serif body / arrow-link CTA per
+entry.
+
+**Step 4 — /research route wired.** New `/research` handler
+in `server.py` parses `?q=...&topic=...&kind=...` and
+delegates to `render_research(...)`. Eight-line addition to
+the dispatcher; no new dependencies.
+
+**Step 4 — focused test suite.** New
+`tests/test_research_page.py` with 11 tests pinning unfiltered
+catalog rendering, topic filter narrows results, kind filter
+narrows results, keyword search hits title or body, zero-match
+affirm-empty band, active-filters emit chips + clear-all,
+chip remove_href drops only that facet, sidebar emits both
+groups, search-hero round-trips active facets, card links to
+entry href, label pluralizes with count. All 11 pass.
+
+**Step 4b — /home editorial intro.** Single-line audit fix:
+added `ck_section_intro` above the seven-panel partner
+landing so the partner's first read on `/home` matches the
+chartis.com cadence ("*Where the portfolio reveals what to
+read first.*") with the italic-serif highlight on "reveals".
+Pre-existing 7-panel data dashboard untouched — this is just
+the editorial signal above the data, not a replacement of
+the data.
+
+The cycle 7 polish-log called out two patterns: italic-serif
+headline + image-top card grid. Italic-serif headline ships
+this commit. Image-top card grid is a marketing-page pattern
+that doesn't fit a data-dense partner dashboard — applying it
+to functional panels would damage information density and
+slow partner-time-to-action. Decision logged: not porting the
+image-card grid to /home.
+
+**Files touched this batch.**
+- `rcm_mc/ui/research_page.py` — NEW module, ~210 LOC.
+- `rcm_mc/ui/_chartis_kit.py` — `.ck-research-grid` /
+  `.ck-research-card*` CSS appended.
+- `rcm_mc/server.py` — `/research` route wired.
+- `rcm_mc/ui/chartis/home_page.py` — `ck_section_intro` added
+  above the seven panels.
+- `tests/test_research_page.py` — NEW, 11 tests.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Pages on the chartis Insights triplet: 3 (was 2 — /library
+  + /notes). /research joins as the third sibling.
+- Routes ported / created with Insights triplet this cycle: 1
+  (/research, NEW).
+- /home pending editorial-cadence work: italic-serif headline
+  shipped; image-card grid intentionally skipped (pattern-fit
+  decision).
+- v5 chrome compliance: still 100% (the route inventory
+  classifier already counted /research as compliant via the
+  `_chartis_kit` renderer reachability heuristic — now the
+  page actually renders matching content).
+- Total focused tests passing: 122 + 1 documented skip (was
+  120 in cycle 8).
+
+**Suggested next:** cycle 10 step 4 — option A: port one of
+the next-priority routes from the cycle 1 polish-log queue
+(`/escalations`, `/my/<owner>` — same dashboard archetype as
+`/alerts`; reuse `ck_severity_panel` + `ck_affirm_empty`).
+Option B: shift to the Azure deploy checklist — 15 of 22 rows
+still open, several are quick wins (`0.0.0.0` host bind,
+`LOG_LEVEL` env, auth-cookie `SameSite`/`Secure`/`HttpOnly`
+audit). Option C: port `/audit` admin surface to the editorial
+chrome. Recommend B (Azure quick-wins) — moves the deploy-
+readiness gate from 32% to 50%+ in one cycle and the work is
+mostly mechanical. Forward-only.
+

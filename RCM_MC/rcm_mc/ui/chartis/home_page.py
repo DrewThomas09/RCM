@@ -20,6 +20,7 @@ from .._chartis_kit import (
     chartis_shell,
     ck_kpi_block,
     ck_section_header,
+    ck_section_intro,
     ck_signal_badge,
 )
 from ._helpers import render_page_explainer
@@ -649,6 +650,20 @@ def _new_modules_index() -> str:
 
 def render_home(store: Any, db_path: str, current_user: Optional[str] = None) -> str:
     """Render the seven-panel home landing page."""
+    # Editorial intro — italic-serif headline above the panels so the
+    # partner's first read on /home matches the chartis.com cadence
+    # ("Reasons to *believe* in better"). Sits above the page-explainer
+    # and KPI strip so the editorial signal is the first thing the eye
+    # lands on, before the data-dense panels below.
+    intro = ck_section_intro(
+        eyebrow="PARTNER LANDING",
+        headline="Where the portfolio reveals what to read first.",
+        italic_word="reveals",
+        body=(
+            "Pipeline, alerts, health distribution, and the seven "
+            "partner-reflex verdicts your team relies on, in one read."
+        ),
+    )
     explainer = render_page_explainer(
         what=(
             "Seven-panel partner landing: pipeline funnel, active alerts, "
@@ -684,7 +699,7 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         if current_user else "Partner landing — pipeline, alerts, PE brain verdicts"
     )
     return chartis_shell(
-        explainer + kpi + quickstart + new_modules + panels,
+        intro + explainer + kpi + quickstart + new_modules + panels,
         title="Home",
         active_nav="/home",
         subtitle=subtitle,

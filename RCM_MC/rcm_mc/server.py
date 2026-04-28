@@ -3386,6 +3386,20 @@ class RCMHandler(BaseHTTPRequestHandler):
                     moic_bucket=moic_bucket,
                 )
             )
+        if path == "/research":
+            # /research surfaces the curated research catalog —
+            # methodology hubs, frameworks, deep-dives, and field
+            # notes pulled from elsewhere in the platform. The
+            # nav anchor pointed here since the chartis_shell ship
+            # but had no backing route until cycle 9.
+            _qs = urllib.parse.parse_qs(parsed.query)
+            r_q = _qs.get("q", [""])[0]
+            r_topic = _qs.get("topic", [""])[0]
+            r_kind = _qs.get("kind", [""])[0]
+            from .ui.research_page import render_research
+            return self._send_html(
+                render_research(q=r_q, topic=r_topic, kind=r_kind),
+            )
         # Screener API
         if path == "/api/screener/run":
             return self._send_json({"error": "use POST"}, status=HTTPStatus.METHOD_NOT_ALLOWED)

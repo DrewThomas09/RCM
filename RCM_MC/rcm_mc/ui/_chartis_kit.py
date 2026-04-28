@@ -838,6 +838,16 @@ _CSS_INLINE_FALLBACK = """
   .ck-note-body { font-family:var(--sc-serif); font-size:14px; line-height:1.5; color:var(--sc-text); white-space:pre-wrap; }
   .ck-mark { background:#fff5d6; padding:0 2px; border-radius:1px; }
 
+  /* Research grid — one editorial card per research entry. Pairs
+   * with the Insights triplet on /research. */
+  .ck-research-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:var(--sc-s-6) var(--sc-s-7); margin:0 0 var(--sc-s-6); }
+  .ck-research-card { display:flex; flex-direction:column; gap:var(--sc-s-3); padding:0 0 var(--sc-s-5); border-bottom:1px solid var(--sc-rule); }
+  .ck-research-card .ck-eyebrow { margin-bottom:var(--sc-s-2); }
+  .ck-research-card-title { font-family:var(--sc-serif); font-weight:500; font-size:22px; line-height:1.2; margin:0; color:var(--sc-navy); }
+  .ck-research-card-title a { color:inherit; text-decoration:none; transition:color 0.15s; }
+  .ck-research-card-title a:hover { color:var(--sc-teal-ink); }
+  .ck-research-card-body { font-family:var(--sc-serif); font-size:15px; line-height:1.55; color:var(--sc-text-dim); margin:0; max-width:48ch; }
+
   /* Command palette */
   .ck-palette { position:fixed; inset:0; background:rgba(6,22,38,0.4); display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; z-index:100; }
   .ck-palette[hidden] { display:none; }
