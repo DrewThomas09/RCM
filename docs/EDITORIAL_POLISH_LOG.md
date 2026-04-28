@@ -2410,3 +2410,78 @@ each migrated page picks up ~15-25 fidelity points (intro lift
 Recommend **A** — same pattern as cycles 22-25 with new helpers,
 expected to push pass rate from 35% to 50%+. Forward-only.
 
+---
+
+## Cycle 26 build — 2026-04-28 — Kit-level README documents the editorial API
+
+**Step 26 — discoverability, not lift.** Cycle 25 hit a major
+milestone (110/310 fidelity passers, 35.5%). After 25 cycles
+of kit-building, the chartis editorial helpers number ~20
+public functions plus 7 migration tools — but no central
+reference. Future contributors would have to grep through
+20+ cycle entries to understand the API surface.
+
+**`rcm_mc/ui/README.md` extended** with an "Editorial Kit"
+section organised by use case:
+
+- **Shell** (`chartis_shell`)
+- **Editorial primitives** (`ck_eyebrow`, `ck_section_intro`,
+  `ck_section_header`, `ck_arrow_link`, `ck_image_card`,
+  `ck_panel`)
+- **Severity / status** (`ck_severity_panel`, `ck_signal_badge`,
+  `ck_affirm_empty`)
+- **Insights triplet** (`ck_search_hero`, `ck_filter_sidebar`,
+  `ck_results_header`, `render_insights_page`)
+- **Tables / KPIs / cells** (`ck_kpi_block`, `ck_table`,
+  `ck_data_cell`)
+- **Numeric formatting** (`ck_fmt_currency`, `ck_fmt_percent`,
+  `ck_fmt_number`)
+- **Command palette** (`ck_command_palette`)
+
+Plus a **Migration tools** section listing the 4 tools
+shipped (`v5_fidelity_audit.py`, `bulk_add_intros.py`,
+`migrate_inline_cells.py`, `azure_smoke.py`) and an
+**Authoring conventions** section with 6 rules for new
+partner-facing pages: always use shell or render_insights_page,
+italic-serif headline always, no inline styles, helper-first,
+affirmative empty states, run the audit ≥70.
+
+**Why this matters for the campaign.** With the audit shipped
++ the API documented, future cycles can:
+
+- Pick a page from the audit's bottom decile and port it
+  using the README as a cookbook
+- New contributors writing partner-facing pages start
+  chartis-grade by default — no archaeology of past cycles
+- The campaign-launch claim "100% v5 mechanical compliance"
+  finally has a meaningful definition of "v5" that's
+  documented in code, not just historical commits
+
+**Files touched this batch.**
+- `rcm_mc/ui/README.md` — appended ~110 lines under a new
+  "Editorial Kit" section.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- API discoverability: from "grep cycles 6-25" to "read the
+  README".
+- V5 fidelity passers: 110 of 310 (no audit change).
+- Total focused tests: 261 + 2 documented skips (no change —
+  docs only).
+- LOC: +110 (markdown).
+
+**Suggested next:** cycle 27 — pick the cycle 25 list of
+candidates:
+
+- **A — `ck_kpi_card` helper** for the second-most-common
+  inline-style cluster (~50 inline styles per page from KPI
+  cards, badges, page chrome). Push pass rate toward 50%.
+- **B — work on the 14 pages without `chartis_shell` at all.**
+  These are the structural ports — bigger lift per page, but
+  smaller denominator.
+- **C — DOM-shape audit** (cycle 16 Option C). Renders each
+  page in-process and checks live HTML.
+
+Recommend **A** — same playbook as cycles 22-25 with new
+helpers, expected to push pass rate to 50%+. Forward-only.
+

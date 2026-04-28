@@ -67,3 +67,94 @@ Reusable surface components introduced in the most recent loop cycle so every pa
 - **Empty states are first-class**: Every list/grid/chart has an empty-state render path with a CTA — never a blank pane.
 - **Provenance everywhere**: Any modeled number carries a click-to-explain badge linking to source / methodology / confidence / as-of date.
 - **Cache hot pages**: `/models/quality` and `/models/importance` use `infra/cache.ttl_cache` for >100,000× speedup on repeat loads.
+
+---
+
+## Editorial Kit (`_chartis_kit.py`)
+
+The chartis-editorial design system that replaces the legacy
+Bloomberg dark shell. Every new partner-facing page should
+build with these primitives. Pages that don't are scored by
+`tools/v5_fidelity_audit.py` (run
+`python tools/v5_fidelity_audit.py` to see the leaderboard).
+
+### Shell
+
+| helper | purpose |
+|---|---|
+| `chartis_shell(body, title, **kwargs)` | Full-page wrapper — navy topbar, italic-serif wordmark, teal accent, breadcrumbs. Drop-in replacement for legacy `shell()`. |
+
+Key kwargs: `active_nav`, `breadcrumbs`, `subtitle`, `extra_css`, `editorial_intro` (cycle 20 — auto-prepends a `ck_section_intro` block), `show_chrome`, `show_sidebar`.
+
+### Editorial primitives — building blocks for new pages
+
+| helper | purpose |
+|---|---|
+| `ck_eyebrow(text, *, on_navy=False)` | Caps-mono label with teal rule. The chartis cadence anchor. |
+| `ck_section_intro(eyebrow, headline, *, italic_word, body)` | Italic-serif highlight headline ("Where the portfolio *needs* attention"). Pairs the eyebrow with a serif h2 + optional body. |
+| `ck_section_header(title, eyebrow=None, count=None)` | Smaller than intro — eyebrow + h2 + optional row count badge. |
+| `ck_arrow_link(text, href)` | Teal "READ MORE ↗" CTA. |
+| `ck_image_card(image_html, eyebrow, title, body, cta_text, cta_href)` | chartis.com-style image-top editorial card. |
+| `ck_panel(body, *, title, code)` | White panel with navy header strip + optional `[CODE]` debug tag. |
+
+### Severity / status
+
+| helper | purpose |
+|---|---|
+| `ck_severity_panel(*, tone, label, count, rows_html)` | Toned panel (red / amber / info / positive / neutral) for alerts and escalations. |
+| `ck_signal_badge(text, *, tone)` | Inline pill badge — positive / warning / negative / critical / neutral. |
+| `ck_affirm_empty(*, headline, body, cta_text, cta_href)` | Affirmative empty-state band — never a blank pane. |
+
+### Insights triplet (`/library`, `/notes`, `/research`, `/escalations`)
+
+| helper | purpose |
+|---|---|
+| `ck_search_hero(*, action, name, initial, label, placeholder, extra_hidden)` | Navy hero panel with italic "Search" label + circular submit + teal chevron. |
+| `ck_filter_sidebar(*, groups, form_action, ...)` | Eyebrow-rail filter list with `<details>` "More" expander when groups exceed `more_threshold`. |
+| `ck_results_header(*, count, label, chips, clear_all_href)` | N RESULTS header with active-filter chips (one anchor per chip) + Clear all teal arrow. |
+| `render_insights_page(*, action, state, facets, count, body_html, title, intro, ...)` | **Composed helper** — wraps the above three plus `chartis_shell` in one call. Use this for any new content-listing page. Caller provides the items as `body_html`; the chrome is composed for free. |
+
+### Tables / KPIs / cells
+
+| helper | purpose |
+|---|---|
+| `ck_kpi_block(label, value, sub=None, trend=None, *, code=None)` | Editorial KPI block with optional subtext + trend tone. Accepts the legacy 4-positional form. |
+| `ck_kpi_grid(...)` | (use `<div class="ck-kpi-grid">…</div>` directly) |
+| `ck_table(rows, columns, *, dense=False)` | Bloomberg-density table with tabular-nums numerics. |
+| `ck_data_cell(value, *, align, mono, tone, weight, is_header=False)` | **Cycle 22** — one styled `<td>` (or `<th>`) for the data_public table archetype. Replaces ~200B inline-style attrs with ~30B class attrs. Use this for any new table cell. |
+
+### Numeric formatting
+
+| helper | purpose |
+|---|---|
+| `ck_fmt_currency(v, *, precision, dash)` | `$450K` / `$1.20M` / `$1.50B` auto-bucketed by magnitude. |
+| `ck_fmt_percent(v, *, precision, dash)` | `15.3%` (1 decimal default). |
+| `ck_fmt_number(v, *, precision, dash)` | Plain number with thousands separator. |
+
+### Command palette
+
+| helper | purpose |
+|---|---|
+| `ck_command_palette(modules)` | ⌘K palette popover — feed it the module catalog. Keyboard-driven nav. |
+
+## Migration tools (`tools/`)
+
+| script | purpose |
+|---|---|
+| `tools/v5_fidelity_audit.py` | Per-renderer chartis-grade scoring. `--md docs/V5_FIDELITY_REPORT.md` to refresh the leaderboard. |
+| `tools/bulk_add_intros.py` | Mechanical addition of `editorial_intro` kwarg to existing `chartis_shell` calls. |
+| `tools/migrate_inline_cells.py` | Mechanical rewrite of inline-styled `<td>` cells to `ck_data_cell` calls. |
+| `tools/azure_smoke.py` | Post-Azure-deploy verification — `/healthz` + `/login` round-trip + `/app` chrome assertion. |
+
+## Authoring conventions
+
+When building a new partner-facing page:
+
+1. **Always use `chartis_shell` or `render_insights_page`** — never roll your own layout.
+2. **Italic-serif headline** — every page should have one, via `ck_section_intro` or the `editorial_intro` kwarg on `chartis_shell`. This is the chartis cadence signal.
+3. **No inline styles** — use the kit's utility classes (`ck-cell`, `tone-dim`, `ck-kpi-grid` etc.) or write a class in `_CSS_INLINE_FALLBACK`.
+4. **Helper-first for tables** — prefer `ck_data_cell` over hand-rolled `<td>`; prefer `ck_table` for simple tables; prefer `render_insights_page` for content-listing pages.
+5. **Affirmative empty states** — use `ck_affirm_empty` with a CTA, never a bare "no data" line.
+6. **Accept the audit score** — run `python tools/v5_fidelity_audit.py` after adding a new page; aim for ≥70.
+
+For the editorial fidelity rationale (chartis.com cadence, palette, typography), see `docs/CHARTIS_MATCH_NOTES.md`. For the campaign log of what shipped when, see `docs/EDITORIAL_POLISH_LOG.md`.
