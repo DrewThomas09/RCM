@@ -824,6 +824,20 @@ _CSS_INLINE_FALLBACK = """
   .ck-chip:hover .ck-chip-x { color:var(--sc-teal-ink); }
   .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 
+  /* Notes list — used by /notes editorial port. ck-chip pills here
+   * double as tag-filter shortcuts. */
+  .ck-note-list { list-style:none; padding:0; margin:0; }
+  .ck-note-row { padding:14px 0; border-bottom:1px solid var(--sc-rule); display:flex; flex-direction:column; gap:6px; }
+  .ck-note-row:last-child { border-bottom:0; }
+  .ck-note-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--sc-sans); font-size:12px; color:var(--sc-text-faint); }
+  .ck-note-deal { font-weight:600; color:var(--sc-teal-ink); text-decoration:none; }
+  .ck-note-deal:hover { color:var(--sc-navy); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; }
+  .ck-note-ts { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); }
+  .ck-note-author { color:var(--sc-text-dim); }
+  .ck-note-pills { display:inline-flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
+  .ck-note-body { font-family:var(--sc-serif); font-size:14px; line-height:1.5; color:var(--sc-text); white-space:pre-wrap; }
+  .ck-mark { background:#fff5d6; padding:0 2px; border-radius:1px; }
+
   /* Command palette */
   .ck-palette { position:fixed; inset:0; background:rgba(6,22,38,0.4); display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; z-index:100; }
   .ck-palette[hidden] { display:none; }

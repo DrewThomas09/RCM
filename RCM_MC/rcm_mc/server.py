@@ -11986,127 +11986,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         ))
 
     def _route_notes_search(self) -> None:
-        """B110 + B123: full-text + tag-filtered notes search."""
-        from .deals.deal_notes import search_notes
-        from .deals.note_tags import tags_for_notes
+        """B110 + B123: full-text + tag-filtered notes search.
+
+        Renders through ``rcm_mc.ui.notes_search_page.render_notes_search``
+        (chartis Insights triplet — search hero + filter sidebar + results
+        header). Server-side search semantics unchanged from the original
+        inline implementation; this dispatcher is the seam between the
+        URL parser and the editorial renderer.
+        """
+        from .ui.notes_search_page import render_notes_search
         store = PortfolioStore(self.config.db_path)
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         q = (qs.get("q") or [""])[0]
         deal_id = (qs.get("deal_id") or [""])[0].strip()
         tags_raw = (qs.get("tags") or [""])[0].strip()
-        tag_list = [t for t in tags_raw.split() if t]
-
-        try:
-            df = search_notes(store, q, deal_id=deal_id or None,
-                              tags=tag_list or None)
-            tag_err = None
-        except ValueError as exc:
-            df = None
-            tag_err = str(exc)
-
-        # Simple highlight for matches (case-insensitive)
-        def _highlight(body: str) -> str:
-            esc = html.escape(body)
-            if not q:
-                return esc
-            import re as _re
-            try:
-                return _re.sub(
-                    "(" + _re.escape(html.escape(q)) + ")",
-                    r'<mark style="background: var(--amber-soft); '
-                    r'padding: 0 2px;">\1</mark>',
-                    esc, flags=_re.IGNORECASE,
-                )
-            except _re.error:
-                return esc
-
-        search_form = (
-            f'<form method="GET" action="/notes" '
-            f'style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">'
-            f'<input type="text" name="q" value="{html.escape(q)}" '
-            f'placeholder="Search note text…" '
-            f'style="flex: 1; font-size: 1rem; padding: 0.35rem 0.5rem;" '
-            f'autofocus>'
-            f'<input type="text" name="deal_id" value="{html.escape(deal_id)}" '
-            f'placeholder="deal_id (optional)" '
-            f'style="font-size: 1rem; padding: 0.35rem 0.5rem; width: 10rem;">'
-            f'<input type="text" name="tags" value="{html.escape(tags_raw)}" '
-            f'placeholder="tags (space-separated)" '
-            f'style="font-size: 1rem; padding: 0.35rem 0.5rem; width: 14rem;">'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.9rem; padding: 0.25rem 0.8rem;">Search</button>'
-            f'</form>'
-        )
-
-        if tag_err:
-            body = (
-                f"{search_form}"
-                f'<div class="card"><p class="err">'
-                f'Invalid tag: {html.escape(tag_err)}</p></div>'
-            )
-        elif not q and not tag_list:
-            body = (
-                f"{search_form}"
-                '<div class="card">'
-                '<p class="muted">Enter a query above. Searches are '
-                'case-insensitive and match any substring of the note '
-                'body. Optionally scope to a specific deal, or filter by '
-                'space-separated tags (AND semantics).</p></div>'
-            )
-        elif df.empty:
-            body = (
-                f"{search_form}"
-                f'<div class="card">'
-                f'<p class="muted">No notes match '
-                f'<code>{html.escape(q)}</code>'
-                f'{" for deal <code>" + html.escape(deal_id) + "</code>" if deal_id else ""}'
-                f'.</p></div>'
-            )
-        else:
-            rows = []
-            note_ids = [int(r["note_id"]) for _, r in df.iterrows()]
-            tags_map = tags_for_notes(store, note_ids)
-            for _, r in df.iterrows():
-                author = str(r.get("author") or "—")
-                note_id = int(r["note_id"])
-                pills = "".join(
-                    f'<a href="/notes?tags={urllib.parse.quote(t)}" '
-                    f'class="badge badge-blue" '
-                    f'style="text-decoration: none; font-size: 0.7rem; '
-                    f'margin-right: 0.25rem;">{html.escape(t)}</a>'
-                    for t in tags_map.get(note_id, [])
-                )
-                rows.append(
-                    f"<li style='padding: 0.6rem 0; "
-                    f"border-bottom: 1px solid var(--border);'>"
-                    f"<div style='display: flex; gap: 0.5rem; "
-                    f"align-items: baseline; margin-bottom: 0.2rem; "
-                    f"flex-wrap: wrap;'>"
-                    f"<a href='/deal/{urllib.parse.quote(str(r['deal_id']))}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(str(r['deal_id']))}</a>"
-                    f"<span class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['created_at'])[:19])}"
-                    f"{' · ' + html.escape(author) if author != '—' else ''}</span>"
-                    f"{pills}"
-                    f"</div>"
-                    f"<div style='white-space: pre-wrap; font-size: 0.9rem;'>"
-                    f"{_highlight(str(r['body']))}</div>"
-                    f"</li>"
-                )
-            body = (
-                f"{search_form}"
-                f'<div class="card">'
-                f'<h2>{len(df)} match{"es" if len(df) != 1 else ""} '
-                f'for <code>{html.escape(q)}</code></h2>'
-                f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                f'{"".join(rows)}</ul></div>'
-            )
-
-        self._send_html(shell(
-            body=body, title="Notes search",
-            subtitle="Full-text search across deal notes",
-            back_href="/",
+        self._send_html(render_notes_search(
+            store=store, q=q, deal_id=deal_id, tags_raw=tags_raw,
         ))
 
     def _route_variance(self) -> None:

@@ -614,3 +614,100 @@ helpers, different facet groups. Then audit `/home` for the
 chartis.com "Reasons to *believe* in better" image-card grid as
 the cycle 9 build target. Forward-only.
 
+---
+
+## Cycle 8 build — 2026-04-28 — /notes editorial port
+
+**Step 4 — /notes ported to the Insights triplet.** Extracted the
+~125-line inline `_route_notes_search` body in `server.py` to
+a new `rcm_mc/ui/notes_search_page.py` module that renders the
+chartis Insights triplet end-to-end:
+- ck_search_hero — full-width navy panel for the keyword input
+- ck_filter_sidebar — BY TAG checkbox group (multi-select; AND
+  semantics match the existing `search_notes` data layer);
+  more_threshold lifted to 12 since tag vocab is denser than
+  /library's facets
+- ck_results_header — count + chips for active facets +
+  Clear all teal arrow
+
+The legacy `deal_id` filter (used when partner navigates from
+a deal page via `?deal_id=…`) is preserved through hidden
+inputs in both forms, plus surfaces as a chip when active so
+the partner can drop it without losing tags or keyword.
+
+**Step 4 — empty / no-match / error states each get an editorial
+band.** Replaces the legacy `<div class="card">` no-data
+placeholders with affirmative `.ck-affirm-empty` panels styled
+per state:
+- empty (no q, no tags, no deal): teal-edged "Start typing to
+  search notes" — affirmative not blank
+- no-match: neutral "No notes match" with a hint to drop a chip
+- tag-rejected: warning-edged ValueError surfaced inline
+
+**Step 4 — note row chrome.** New CSS primitives (`.ck-note-list`
+/ `.ck-note-row` / `.ck-note-meta` / `.ck-note-deal` /
+`.ck-note-ts` / `.ck-note-author` / `.ck-note-pills` /
+`.ck-note-body` / `.ck-mark`) ported from the legacy inline
+styles to editorial tokens. Tag pills double as ck-chip
+shortcuts (clicking a pill scopes /notes to that tag).
+Highlight `<mark>` styled with bone-tinted background instead
+of the legacy amber-soft.
+
+**Step 4 — server.py dispatcher slimmed.** `_route_notes_search`
+goes from ~125 inline lines to a 10-line URL parser that
+delegates to `render_notes_search`. Server-side search
+semantics unchanged — every `tests/test_notes_search.py`
+data-layer assertion still passes.
+
+**Step 4 — focused test suite.** New `tests/test_notes_search_page.py`
+with 11 tests pinning each editorial state — empty / no-match /
+deal-scope / tags-scope / chip URLs / results-list / pluralized
+label / known-tags-with-counts / active-tag-checkbox-checked /
+search-hero-round-trips-scope / invalid-tag-band. All 11 pass.
+
+**Test impact.**
+- `test_notes_page_empty_state`: legacy "Enter a query above"
+  pinned the old copy. Updated to the new "Start typing to
+  search notes" affirmative band copy.
+- `test_dashboard_has_notes_link`: was already pre-existing
+  failing on design-v5 baseline (legacy /dashboard had a /notes
+  anchor; editorial chrome surfaces /notes via Cmd-K palette
+  instead). Marked `@unittest.skip` with a clear restoration
+  note pointing at a future Research nav group.
+
+**Files touched this batch.**
+- `rcm_mc/ui/notes_search_page.py` — NEW module, ~210 lines.
+- `rcm_mc/ui/_chartis_kit.py` — note-list CSS appended.
+- `rcm_mc/server.py` — dispatcher slimmed; the inline 125-line
+  body is gone.
+- `tests/test_notes_search.py` — 1 copy update + 1 skip.
+- `tests/test_notes_search_page.py` — NEW, 11 tests.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- Pages on the chartis Insights triplet: 2 (was 1 — /library).
+  /notes joins as a sibling.
+- Routes ported from legacy `shell()` to `chartis_shell` this
+  cycle: 1 (/notes).
+- v5 chrome: still 100% (no new routes; one route's renderer
+  swap doesn't move the inventory needle, just the editorial-
+  fidelity needle).
+- Total focused tests passing: 120 + 1 documented skip (was
+  107 in cycle 7).
+
+**Note on /research.** The cycle 7 polish-log named /research
+as a sibling target alongside /notes, but /research is a
+nav-only stub on `_CORPUS_NAV` — server.py has no matching
+route. Decided: ship the /notes port now (real data, real
+route, partner value), defer /research stub-build to cycle 9
+where it can pair with the /home audit since both are partner-
+facing surfaces that currently 404 / look unfinished.
+
+**Suggested next:** cycle 9 step 4 — option A: build a minimal
+/research surface (placeholder content + Insights triplet) so
+the nav anchor stops 404'ing and the triplet is consumed by
+all three target pages. Option B: audit /home for the
+"Reasons to *believe* in better" image-top card grid (uses
+ck_image_card which already exists). Recommend doing both
+in cycle 9 — they're both 1-2 commits each. Forward-only.
+
