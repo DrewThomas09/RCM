@@ -8,6 +8,7 @@ from __future__ import annotations
 import html as _html
 import os
 import tempfile
+import urllib.parse
 from typing import Any, Dict, List, Optional
 
 
@@ -157,7 +158,7 @@ def render_deals_library(
 ) -> str:
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_table, ck_section_header,
-        ck_search_hero, ck_filter_sidebar,
+        ck_search_hero, ck_filter_sidebar, ck_results_header,
     )
     from rcm_mc.ui.chartis._helpers import render_page_explainer
 
@@ -246,9 +247,46 @@ def render_deals_library(
     kpis = _kpi_bar(deals, rows)
     section = ck_section_header(
         "All healthcare PE transactions",
-        eyebrow=f"DEAL CORPUS · {len(rows):,} DEALS",
+        eyebrow="DEAL CORPUS",
     )
     table = ck_table(rows, _COLUMNS)
+
+    # Build the chartis Insights N-RESULTS header. Each active facet
+    # gets a chip whose href drops just that facet (preserving the
+    # other URL state) so partner can clear filters one-at-a-time.
+    # Clear-all returns to /library with no filters or sort state.
+    def _url_with(**overrides: str) -> str:
+        params = {
+            "sector": sector_filter,
+            "regime": regime_filter,
+            "moic_bucket": moic_bucket,
+            "q": search,
+            "sort_by": sort_by,
+            "sort_dir": sort_dir,
+        }
+        params.update(overrides)
+        kept = [(k, v) for k, v in params.items() if v]
+        if not kept:
+            return "/library"
+        return "/library?" + urllib.parse.urlencode(kept)
+
+    chips: List[Dict[str, str]] = []
+    if sector_filter:
+        chips.append({"label": sector_filter, "remove_href": _url_with(sector="")})
+    if regime_filter:
+        chips.append({"label": regime_filter.title(), "remove_href": _url_with(regime="")})
+    if moic_bucket:
+        bucket_label = _MOIC_BUCKETS.get(moic_bucket, (moic_bucket, None))[0]
+        chips.append({"label": bucket_label, "remove_href": _url_with(moic_bucket="")})
+    if search:
+        chips.append({"label": f'"{search}"', "remove_href": _url_with(q="")})
+
+    results_head = ck_results_header(
+        count=f"{len(rows):,}",
+        label="Deals",
+        chips=chips or None,
+        clear_all_href="/library" if chips else None,
+    )
     # Chartis Insights-style search hero — navy panel with italic
     # "Search" label + circular submit + teal chevron-cut bottom-right.
     # Renders full-width above the rail+content layout so the partner's
@@ -269,7 +307,7 @@ def render_deals_library(
         '<div class="ck-rail-layout">'
         f'{filter_rail}'
         '<div class="ck-rail-content">'
-        f'{section}{table}'
+        f'{section}{results_head}{table}'
         '</div>'
         '</div>'
     )

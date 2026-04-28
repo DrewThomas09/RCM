@@ -516,3 +516,101 @@ design-v5 and out of scope for this cycle. Logged for cycle 7.
 active filters) and wire to /library to complete the chartis.com
 Insights pattern triplet. Forward-only.
 
+---
+
+## Cycle 7 build — 2026-04-28 — Insights triplet closed + ~80 broken pages unblocked
+
+**Step 4a — backward-compat for two helper signatures.** Discovered
+during cycle 6 that the `ck_kpi_block` 3-positional bug was wider
+than the 21 chartis_integration failures suggested — most page
+renderers carried over from the Bloomberg-era kit call helpers in
+the legacy positional form (`ck_kpi_block(label, value, sub)` and
+`ck_section_header(title, subtitle, count)`). Cheaper than touching
+~80 callsites: drop the `*` keyword-only marker on both helpers and
+let positional + keyword both work.
+
+- `ck_kpi_block(label, value, sub=None, trend=None, *, code=None)`
+  — `sub` and `trend` now positional; legacy 4-positional form
+  honored verbatim. Empty-string `""` in either slot still no-ops
+  (legacy callers pass `""` rather than `None`).
+- `ck_section_header(title, eyebrow=None, count=None, *, code=None)`
+  — `eyebrow` and `count` positional; new `count` argument renders
+  a small monospace badge next to the title (legacy callers use
+  it for row counts in section heads).
+
+Both edits are backward-compatible — every existing keyword-form
+caller (including the cycle 6 `eyebrow=...` fix on
+deals_library_page.py) keeps working.
+
+**Step 4a impact.** `tests/test_chartis_integration.py` baseline
+goes 22 fail → 0 fail across all 61 tests. Two helper edits
+unblock /home, /pe-intelligence, /portfolio-analytics,
+/payer-intelligence, /sponsor-track-record, /rcm-benchmarks,
+/partner-review, /investability, /stress, /archetype, /ic-packet,
+/white-space, /corpus-backtest, /backtester, /deal-screening,
+/red-flags, and ~10 more chartis routes that all rendered as 500
+on design-v5 prior to this commit.
+
+**Step 4b — ck_results_header shipped.** New helper in
+`rcm_mc/ui/_chartis_kit.py` per `CHARTIS_MATCH_NOTES.md` pattern
+03. Serif tabular-nums count + caps RESULTS label + chips block
+(when filters active) with one-anchor-per-chip remove links + a
+teal-arrow Clear all link. Anchors not buttons — partner can
+Cmd-click / right-click to open in new tab without us managing
+JS state. Each chip carries an `sr-only` "remove filter" span for
+screen-reader users. CSS appended to `_CSS_INLINE_FALLBACK`
+(.ck-results-header / .ck-results-count / .ck-results-num /
+.ck-results-label / .ck-results-chips / .ck-chip / .ck-chip-x /
+.sr-only).
+
+**Step 4b — /library wired.** Sits in the right column under the
+section_header and above the table inside the rail layout. Each
+active facet (sector, regime, MOIC bucket, search) gets a chip
+whose `remove_href` reconstructs `/library?...` from the current
+state minus that one facet, so the partner can clear filters one
+at a time without losing the others. Clear all returns to bare
+`/library` (drops sort state too, deliberately — full-corpus
+default). When no filters active, the chips block is omitted
+entirely so the empty-state shows only "1,234 Deals" without
+clutter.
+
+**Step 4b — section_header eyebrow simplified.** The cycle-6 fix
+had eyebrow read `"DEAL CORPUS · 1,234 DEALS"` to surface the
+count. Now that ck_results_header carries the count
+authoritatively, the eyebrow drops to `"DEAL CORPUS"` and the
+count lives only in the results header. No duplicate counts.
+
+**Step 4b — focused test suite.** New `tests/test_results_header.py`
+with 12 tests pinning header wrapper, count + label rendering,
+chips-block presence/absence at the right times, anchor (not
+button) chip element, chip-x glyph + sr-only label, clear-all
+gated on both chips + href, HTML escape on label and remove_href,
+custom label override. All 12 pass.
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — ck_kpi_block + ck_section_header
+  positional backwards-compat; ck_results_header helper + CSS
+- `rcm_mc/ui/data_public/deals_library_page.py` — chips +
+  clear-all wiring; ck_results_header inserted between
+  section_header and table; section_header eyebrow simplified
+- `tests/test_results_header.py` — NEW, 12 tests
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry
+
+**Compliance impact.**
+- ck_results_header helper: shipped; wired to /library
+- Chartis Insights pattern triplet on /library: 3 of 3 (was 2 of 3)
+- /library now matches chartis.com/insights
+  layout end-to-end: search hero (full-width navy) → KPI bar →
+  rail layout (sidebar + section + N RESULTS + chips + table)
+- Pages unblocked from runtime 500 by helper backwards-compat: ~21
+  chartis routes (per chartis_integration.py 22→0 fail)
+- Total focused tests passing: 107 (12 new + 18 filter_sidebar +
+  9 search_hero + 7 alerts_page + 61 chartis_integration)
+
+**Suggested next:** cycle 8 step 4 — port the Insights triplet
+(search hero + filter sidebar + results header) to `/research`
+and `/notes`, the two sibling content-listing surfaces. Same
+helpers, different facet groups. Then audit `/home` for the
+chartis.com "Reasons to *believe* in better" image-card grid as
+the cycle 9 build target. Forward-only.
+

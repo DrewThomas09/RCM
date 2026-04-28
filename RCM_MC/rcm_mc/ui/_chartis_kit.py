@@ -551,6 +551,61 @@ def ck_filter_sidebar(
     return f'<aside class="ck-filter-rail">{inner}</aside>'
 
 
+def ck_results_header(
+    *,
+    count: Any,
+    label: str = "Results",
+    chips: Optional[Sequence[Mapping[str, str]]] = None,
+    clear_all_href: Optional[str] = None,
+) -> str:
+    """Editorial N-RESULTS header with active-filter chips + clear-all.
+
+    Mirrors the chartis.com/insights ``46 RESULTS`` row above the
+    results list — serif count + caps RESULTS label + a row of chips
+    showing active facets, each chip an anchor that drops just that
+    one facet on click. ``clear_all_href`` should point at the same
+    page with all filter params stripped so partner can reset to the
+    full corpus in one click. Drop in below ck_filter_sidebar +
+    ck_search_hero on /library, /research, /notes for the full
+    Insights pattern triplet.
+
+    Each chip dict supports:
+      - ``label`` (str) — visible chip text, e.g. ``"Behavioral Health"``
+      - ``remove_href`` (str) — anchor href that drops the facet
+
+    Spec: ``docs/CHARTIS_MATCH_NOTES.md`` pattern 03.
+    """
+    chips_html = ""
+    if chips:
+        chip_parts = []
+        for ch in chips:
+            chip_parts.append(
+                f'<a class="ck-chip" href="{_esc(ch.get("remove_href", "#"))}">'
+                f'{_esc(ch.get("label", ""))} '
+                '<span class="ck-chip-x" aria-hidden="true">×</span>'
+                '<span class="sr-only"> remove filter</span>'
+                '</a>'
+            )
+        clear_html = (
+            f'<a class="ck-arrow" href="{_esc(clear_all_href)}">Clear all</a>'
+            if clear_all_href else ""
+        )
+        chips_html = (
+            '<div class="ck-results-chips">'
+            f'{"".join(chip_parts)}{clear_html}'
+            '</div>'
+        )
+    return (
+        '<header class="ck-results-header">'
+        '<div class="ck-results-count">'
+        f'<span class="ck-results-num sc-num">{_esc(count)}</span>'
+        f'<span class="ck-results-label">{_esc(label)}</span>'
+        '</div>'
+        f'{chips_html}'
+        '</header>'
+    )
+
+
 def ck_affirm_empty(
     *,
     headline: str,
@@ -754,6 +809,20 @@ _CSS_INLINE_FALLBACK = """
   .ck-filter-overflow > summary:hover { color:var(--sc-navy); }
   .ck-filter-submit { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; padding:8px 14px; border:1px solid var(--sc-navy); background:var(--sc-navy); color:var(--sc-on-navy); border-radius:2px; cursor:pointer; margin-top:var(--sc-s-4); width:100%; transition:background 0.15s, color 0.15s; }
   .ck-filter-submit:hover { background:var(--sc-teal); border-color:var(--sc-teal); color:var(--sc-navy); }
+
+  /* Results header — N RESULTS + active-filter chips + Clear all.
+   * Sits between the filter sidebar / search hero and the results
+   * table on /library, /research, /notes. Mirrors chartis.com/insights. */
+  .ck-results-header { display:flex; align-items:baseline; justify-content:space-between; gap:var(--sc-s-5); margin:0 0 var(--sc-s-4); padding-bottom:var(--sc-s-3); border-bottom:1px solid var(--sc-rule); flex-wrap:wrap; }
+  .ck-results-count { font-family:var(--sc-serif); font-weight:500; color:var(--sc-navy); display:inline-flex; align-items:baseline; gap:10px; }
+  .ck-results-num { font-size:28px; font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }
+  .ck-results-label { font-family:var(--sc-mono); font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--sc-text-dim); }
+  .ck-results-chips { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .ck-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:var(--sc-bone); border:1px solid var(--sc-rule); border-radius:14px; font-family:var(--sc-sans); font-size:12px; color:var(--sc-text); text-decoration:none; transition:background 0.15s, border-color 0.15s, color 0.15s; }
+  .ck-chip:hover { background:#fff; border-color:var(--sc-teal); color:var(--sc-navy); }
+  .ck-chip-x { font-size:14px; line-height:1; color:var(--sc-text-faint); }
+  .ck-chip:hover .ck-chip-x { color:var(--sc-teal-ink); }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 
   /* Command palette */
   .ck-palette { position:fixed; inset:0; background:rgba(6,22,38,0.4); display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; z-index:100; }
