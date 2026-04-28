@@ -144,6 +144,50 @@ RCM_MC/tests/test_packet_sparse_data.py
 
 (none of the canonical partial dirs present — partials live in rcm_mc/ui/_*.py helpers)
 
+## Loop entry — 2026-04-27 — Phase 2 first migration: /alerts
+
+**Target picked:** `/alerts` (was `(inline) | unknown` in V5_ROUTE_INVENTORY).
+
+**Discovery queries run for this target:**
+
+```bash
+grep -n '"/alerts"' RCM_MC/rcm_mc/server.py
+# → line 4657 dispatcher; line 11420 _route_alerts inline body (~150 LOC)
+find RCM_MC/rcm_mc -name "*alert*" -type f
+# → rcm_mc/alerts/{alerts,alert_history,alert_acks}.py (data layer)
+# → rcm_mc/ui/chartis/_app_alerts.py (editorial card, 200+ LOC, used by /app)
+# → no rcm_mc/ui/alerts_page.py
+grep -n "shell(" RCM_MC/rcm_mc/server.py | grep -i alert
+# → line 11572: legacy shell() call inside _route_alerts
+```
+
+**Existing assets reused:**
+- `rcm_mc.alerts.alerts.evaluate_active` / `evaluate_all` — data layer, untouched.
+- `rcm_mc.alerts.alert_acks.trigger_key_for` — untouched.
+- `rcm_mc.alerts.alert_history.age_hint` — untouched.
+- `rcm_mc.deals.deal_owners.deals_by_owner` — untouched.
+- `rcm_mc.ui._chartis_kit.chartis_shell` — replaces legacy `shell()`.
+
+**New file justified:** `rcm_mc/ui/alerts_page.py` — the existing
+`rcm_mc/ui/chartis/_app_alerts.py` is a **card component** consumed
+by the `/app` editorial dashboard, NOT a standalone full-page
+renderer for `/alerts`. Same noun, different shape: the card filters
+to the focused deal and lives inside a multi-card grid; the page
+shows portfolio-wide alerts grouped by severity with ack/snooze
+forms and an owner filter. The card cannot be reused without
+inventing the page-level chrome around it. The new module ports
+the inline body verbatim (logic-preserving) and routes through
+`chartis_shell` instead of the legacy `shell()`.
+
+**Bug found + fixed during migration:** the inline route's empty-state
+copy interpolated `owner_filter` via Python `repr` (`f"No {owner!r} "`)
+which is **not** HTML-safe — reflected XSS via `?owner=<script>...`.
+The new renderer uses `html.escape(owner_filter)` and a regression
+test pins this against the `<script>alert(1)</script>` payload.
+
+**Compliance impact:** v5-chrome went 217 → 218 of 408 routes
+(53.2% → 53.4%). Unknown bucket 190 → 189.
+
 ## How to use this log
 
 When a future loop is about to ship a NEW renderer / partial / page:

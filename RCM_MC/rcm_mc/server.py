@@ -4655,7 +4655,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/ops":
             return self._route_ops()
         if path == "/alerts":
-            return self._route_alerts()
+            from .ui.alerts_page import render_alerts
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            show_all = bool(qs.get("show"))
+            owner_filter = (qs.get("owner") or [""])[0].strip() or None
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_alerts(
+                store, show_all=show_all, owner_filter=owner_filter,
+            ))
         if path == "/escalations":
             return self._route_escalations()
         if path == "/cohorts":
@@ -11416,163 +11423,6 @@ class RCMHandler(BaseHTTPRequestHandler):
             return None
 
     # ── Upload UI (B66) ──
-
-    def _route_alerts(self) -> None:
-        """B101 + B102: portfolio-wide alert review page with ack/snooze."""
-        from .alerts.alerts import evaluate_active, evaluate_all
-        from .alerts.alert_acks import trigger_key_for
-        store = PortfolioStore(self.config.db_path)
-
-        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        show_all = bool(qs.get("show"))
-        owner_filter = (qs.get("owner") or [""])[0].strip() or None
-        alerts = evaluate_all(store) if show_all else evaluate_active(store)
-        if owner_filter:
-            from .deals.deal_owners import deals_by_owner
-            try:
-                scope = set(deals_by_owner(store, owner_filter))
-            except ValueError:
-                scope = set()
-            alerts = [a for a in alerts if a.deal_id in scope]
-
-        sev_meta = {
-            "red":   ("badge-red",   "RED"),
-            "amber": ("badge-amber", "AMBER"),
-            "info":  ("badge-blue",  "INFO"),
-        }
-
-        # Toggle link between "active only" and "all (incl. acked)"
-        base_qs = {}
-        if owner_filter:
-            base_qs["owner"] = owner_filter
-        if show_all:
-            toggle_href = "/alerts" + (
-                "?" + urllib.parse.urlencode(base_qs) if base_qs else ""
-            )
-            toggle = (f'<a href="{toggle_href}" style="color: var(--accent); '
-                      f'font-size: 0.85rem;">← active only</a>')
-        else:
-            toggle_qs = dict(base_qs, show="all")
-            toggle_href = "/alerts?" + urllib.parse.urlencode(toggle_qs)
-            toggle = (f'<a href="{toggle_href}" style="color: var(--accent); '
-                      f'font-size: 0.85rem;">show acked / all →</a>')
-
-        # Owner-filter chip / form
-        owner_form = (
-            f'<form method="GET" action="/alerts" '
-            f'style="display: inline-flex; gap: 0.3rem; align-items: center; '
-            f'font-size: 0.85rem; margin-bottom: 0.75rem;">'
-            f'<label class="muted">Owner</label>'
-            f'<input type="text" name="owner" '
-            f'value="{html.escape(owner_filter or "")}" '
-            f'placeholder="e.g. AT" maxlength="40" '
-            f'style="font-size: 0.85rem; padding: 0.15rem; width: 6rem;">'
-            f'{"<input type=hidden name=show value=all>" if show_all else ""}'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.85rem; padding: 0.15rem 0.6rem;">Filter</button>'
-            f'{"<a href=/alerts style=color:var(--accent);font-size:0.85rem;margin-left:0.5rem;>× clear</a>" if owner_filter else ""}'
-            f'</form>'
-        )
-
-        if not alerts:
-            scope_prefix = (
-                f"No {owner_filter!r} " if owner_filter else "No active "
-            )
-            body = (
-                f"{owner_form}"
-                '<div class="card">'
-                '<p style="color: var(--green-text); font-weight: 600;">'
-                f'{scope_prefix}alerts. Portfolio looks clean.</p>'
-                '<p class="muted" style="font-size: 0.85rem;">'
-                'Evaluators run on every page load. They check covenant '
-                'status, latest-quarter EBITDA variance, concerning-signal '
-                'clusters, and stage regress. Acked alerts are hidden until '
-                'their underlying state changes or snooze expires.'
-                f'</p><p>{toggle}</p></div>'
-            )
-        else:
-            grouped: Dict[str, list] = {"red": [], "amber": [], "info": []}
-            for a in alerts:
-                grouped.setdefault(a.severity, []).append(a)
-
-            blocks = []
-            for sev in ("red", "amber", "info"):
-                bucket = grouped.get(sev) or []
-                if not bucket:
-                    continue
-                cls, label = sev_meta[sev]
-                rows = []
-                for a in bucket:
-                    tk = trigger_key_for(a)
-                    from .alerts.alert_history import age_hint
-                    age = age_hint(a.first_seen_at)
-                    age_span = (
-                        f'<span class="muted" style="font-size: 0.75rem;">'
-                        f'seen {html.escape(age)}</span>' if age else ""
-                    )
-                    ack_form = (
-                        f'<form method="POST" action="/api/alerts/ack" '
-                        f'style="display: inline-flex; gap: 0.3rem; '
-                        f'align-items: center; margin-left: 1rem;">'
-                        f'<input type="hidden" name="kind" value="{html.escape(a.kind)}">'
-                        f'<input type="hidden" name="deal_id" value="{html.escape(a.deal_id)}">'
-                        f'<input type="hidden" name="trigger_key" value="{html.escape(tk)}">'
-                        f'<select name="snooze_days" '
-                        f'style="font-size: 0.75rem; padding: 0.1rem;">'
-                        f'<option value="0">Ack (until state changes)</option>'
-                        f'<option value="7">Snooze 7d</option>'
-                        f'<option value="30">Snooze 30d</option>'
-                        f'</select>'
-                        f'<button type="submit" class="btn" '
-                        f'style="font-size: 0.75rem; padding: 0.15rem 0.5rem;">'
-                        f'Ack</button>'
-                        f'</form>'
-                    )
-                    returning_badge = (
-                        '<span class="badge badge-amber" '
-                        'style="font-size: 0.7rem;" '
-                        'title="Returned after snooze expired">'
-                        '↩ returning</span>'
-                        if getattr(a, "returning", False) else ""
-                    )
-                    rows.append(
-                        f'<li style="padding: 0.6rem 0; '
-                        f'border-bottom: 1px solid var(--border);">'
-                        f'<div style="display: flex; gap: 0.5rem; '
-                        f'align-items: center; flex-wrap: wrap;">'
-                        f'<span class="badge {cls}">{label}</span>'
-                        f'{returning_badge}'
-                        f'<a href="/deal/{urllib.parse.quote(a.deal_id)}" '
-                        f'style="color: var(--accent); text-decoration: none; '
-                        f'font-weight: 600;">{html.escape(a.deal_id)}</a>'
-                        f'<span style="color: var(--text);">— '
-                        f'{html.escape(a.title)}</span>'
-                        f'{age_span}'
-                        f'{ack_form}'
-                        f'</div>'
-                        f'<div class="muted" style="font-size: 0.85rem; '
-                        f'margin-top: 0.2rem; margin-left: 1rem;">'
-                        f'{html.escape(a.detail)}</div>'
-                        f'</li>'
-                    )
-                blocks.append(
-                    f'<div class="card"><h2>{label} ({len(bucket)})</h2>'
-                    f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                    f'{"".join(rows)}</ul></div>'
-                )
-            blocks.append(f'<p style="margin-top: 1rem;">{toggle}</p>')
-            body = owner_form + "".join(blocks)
-
-        subtitle = (
-            f"{len(alerts)} "
-            f"{'total' if show_all else 'active'} "
-            f"alert{'s' if len(alerts) != 1 else ''}"
-            f"{f' · owner = {owner_filter}' if owner_filter else ''}"
-        )
-        self._send_html(shell(
-            body=body, title="Alerts",
-            subtitle=subtitle, back_href="/",
-        ))
 
     def _route_my_dashboard(self, owner: str) -> None:
         """B117: single-pane view of one analyst's work.
