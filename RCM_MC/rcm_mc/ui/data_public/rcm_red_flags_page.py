@@ -308,7 +308,7 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
             sign = "+" if diff > 0 else ""
             impact = f'<span style="font-size:10px;font-family:{_MONO};color:{col};font-variant-numeric:tabular-nums">{sign}{diff:.2f}× vs clean</span>'
         br_rows += (
-            f'<tr style="background:{bg}">'
+            f'<tr>'
             f'<td style="padding:4px 8px;font-size:11px">{html.escape(factor["label"])}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{factor["count"]}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{factor["base_rate"]:.0f}%</td>'

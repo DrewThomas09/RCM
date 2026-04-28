@@ -133,7 +133,7 @@ def _slice_table(slices: list, corpus_p50: Optional[float] = None) -> str:
         irr_s = f"{s.irr_p50*100:.1f}%" if s.irr_p50 else "—"
         win_s = f"{s.win_rate*100:.0f}%" if s.win_rate is not None else "—"
 
-        rows += f"""<tr style="background:{bg}">
+        rows += f"""<tr>
   <td style="padding:4px 8px;font-size:11px;white-space:nowrap">{html.escape(s.label)}</td>
   <td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{s.deal_count}</td>
   <td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P['text_dim']};font-variant-numeric:tabular-nums">{p25_s}</td>

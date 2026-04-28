@@ -224,7 +224,7 @@ def _peers_table(peers: list) -> str:
         name = html.escape(p.deal_name[:42])
         buyer = html.escape((p.buyer or "—")[:28])
         yr = str(p.year) if p.year else "—"
-        rows += f"""<tr style="background:{bg}">
+        rows += f"""<tr>
   <td style="padding:5px 8px;font-size:11px;font-family:{_MONO}">{yr}</td>
   <td style="padding:5px 8px;font-size:11px;white-space:nowrap">{name}</td>
   <td style="padding:5px 8px;font-size:10px;color:{P['text_dim']}">{sector}</td>

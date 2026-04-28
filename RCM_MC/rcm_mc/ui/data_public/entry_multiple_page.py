@@ -151,7 +151,7 @@ def _sector_multiple_table(corpus: List[Dict]) -> str:
         moic_col = P["positive"] if (moic_p50 or 0) >= 2.5 else (P["warning"] if (moic_p50 or 0) >= 2.0 else P["text"])
 
         rows += (
-            f'<tr style="background:{bg}">'
+            f'<tr>'
             f'<td style="padding:4px 8px;font-size:11px">{html.escape(sec[:30])}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{len(mults)}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p25:.1f}×" if p25 else "—"}</td>'

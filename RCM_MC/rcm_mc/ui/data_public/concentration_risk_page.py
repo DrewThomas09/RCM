@@ -72,7 +72,7 @@ def _dim_card(dim) -> str:
         bg = P["row_stripe"] if i % 2 else P["panel"]
         bar_w = int(share_pct / 100 * 120)
         top5_rows += (
-            f'<tr style="background:{bg}">'
+            f'<tr>'
             f'<td style="padding:3px 8px;font-size:10px">{html.escape(label[:28])}</td>'
             f'<td style="padding:3px 8px;text-align:right;font-size:10px;font-family:{_MONO};font-variant-numeric:tabular-nums">{cnt}</td>'
             f'<td style="padding:3px 8px">'

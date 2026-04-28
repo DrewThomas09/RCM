@@ -179,7 +179,7 @@ def render_gp_benchmarking(params: Dict[str, str]) -> str:
                 irr  = d.get("realized_irr")
                 moic_col = P["positive"] if (moic or 0) >= 2.5 else (P["warning"] if (moic or 0) >= 2.0 else P["text"])
                 rows += (
-                    f'<tr style="background:{bg}">'
+                    f'<tr>'
                     f'<td style="padding:4px 8px;font-size:11px">{html.escape(d.get("deal_name","")[:44])}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;color:{P["text_dim"]}">{html.escape((d.get("sector") or "—")[:24])}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{d.get("year","—")}</td>'

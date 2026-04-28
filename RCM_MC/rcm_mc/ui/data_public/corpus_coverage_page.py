@@ -126,7 +126,7 @@ def _sector_breadth_table(corpus: List[Dict]) -> str:
             return f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{col};font-variant-numeric:tabular-nums">{pct:.0f}%</td>'
 
         rows += (
-            f'<tr style="background:{bg}">'
+            f'<tr>'
             f'<td style="padding:4px 8px;font-size:11px;white-space:nowrap">{html.escape(sec[:30])}</td>'
             f'<td style="padding:4px 8px;font-size:11px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{n}</td>'
             + cov_cell(moic_cov) + cov_cell(irr_cov) + cov_cell(payer_cov) + cov_cell(ev_cov) +

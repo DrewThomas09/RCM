@@ -214,7 +214,7 @@ def _comp_row(i: int, d: Dict, sim: float, corpus_moic_p50: Optional[float]) -> 
     sim_bar = f'<svg width="60" height="10" style="vertical-align:middle"><rect x="0" y="3" width="60" height="4" fill="{P["panel"]}"/><rect x="0" y="3" width="{sim_bar_w}" height="4" fill="{P["accent"]}"/></svg><span style="font-size:9px;font-family:{_MONO};color:{P["text_dim"]};margin-left:3px">{sim:.0f}</span>'
 
     return (
-        f'<tr style="background:{bg}">'
+        f'<tr>'
         f'<td style="padding:5px 8px;font-size:10px;font-family:{_MONO};color:{P["text_faint"]};font-variant-numeric:tabular-nums">#{i+1}</td>'
         f'<td style="padding:5px 8px;font-size:11px;white-space:nowrap">{name}</td>'
         f'<td style="padding:5px 8px;font-size:10px;color:{P["text_dim"]}">{sector}</td>'

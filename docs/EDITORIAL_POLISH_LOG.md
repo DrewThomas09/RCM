@@ -2572,3 +2572,74 @@ defaults (cycle 21 lesson: skip cells we don't recognise rather
 than risk breakage). Expected to push pass rate from 35% toward
 50%+. Forward-only.
 
+---
+
+## Cycle 28 build — 2026-04-28 — table-chrome migration crosses 50%
+
+**Step 28 — playbook repeats, pass-rate clears the half-line.**
+Cycle 27 shipped `ck_data_table` + utility CSS classes for the
+table-chrome cluster. Cycle 28 ships the migration script that
+applies them mechanically across all 144 data_public pages
+with inline-styled tables.
+
+**`tools/migrate_table_chrome.py`** — conservative literal-match
+replacements. Not a regex parser; just exact-string swaps:
+
+    <div style="overflow-x:auto;margin-top:12px">
+        → <div class="ck-data-table-scroll">
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+        → <table class="ck-data-table">
+    <tr style="background:{rb}">  (per-row alt-bg)
+        → <tr>
+    <tr style="background:{bg}">  (header row)
+        → <tr>
+
+Alt-row backgrounds disappear from source; the kit's
+`:nth-child(even)` CSS handles them at the stylesheet level.
+
+**Run result:** 144 pages scanned, 132 import cleanly post-
+migration; 2464 chrome elements migrated; 12 pre-existing
+`_MONO` import failures (baseline issue, not from this cycle).
+
+**Audit lift: 110 of 310 (35.5%) → 159 of 310 (51.3%).**
++49 passers in one cycle. **Pass-rate crosses the half-line**
+for the first time since campaign launch.
+
+The migration is content-only (no helper or test changes);
+regression sweep clean (88 focused tests pass).
+
+**Files touched this batch.**
+- `tools/migrate_table_chrome.py` — NEW, ~110 LOC.
+- 144 data_public pages — 2464 chrome inline-styles → class.
+- `docs/V5_FIDELITY_REPORT.md` — refreshed.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- V5 fidelity passers: **159 of 310 (51.3%)** — was 110 (35.5%).
+- HTML weight: ~340KB net reduction from chrome migration +
+  ~4000 alt-row inline-style instances eliminated by CSS
+  `:nth-child(even)` delegation.
+- Total focused tests: 267 + 2 documented skips (no change).
+- LOC: +110.
+
+**Session arc snapshot:**
+
+| metric | session start | cycle 28 |
+|---|---|---|
+| V5 fidelity passers | 5/325 (1.5%) | **159/310 (51.3%)** |
+| Pass-rate multiplier | 1× | **34×** |
+
+**Suggested next:** cycle 29 — three branches:
+
+- **A — header `<th>` migration.** The cycle-28 script skipped
+  header cells (variable shape). A `ck_data_th(...)` helper +
+  companion script could lift the 60-79 tier into the 80s.
+- **B — port the 14 chartis_shell-less pages** (cycle 23
+  distribution analysis identified these as structural).
+- **C — fix the 12 baseline-broken `_MONO` import pages.**
+  Cheap (5-line type rename) but unblocks 12 pages for future
+  migration.
+
+Recommend **C** first (cheap, unblocks downstream), then **A**.
+Forward-only.
+

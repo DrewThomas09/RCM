@@ -55,7 +55,7 @@ def _sources_table(sources) -> str:
         f'font-size:10px;color:{text_dim};letter-spacing:0.05em;white-space:nowrap">{col}</th>'
         for col, align in header_cols
     )
-    header = f'<thead><tr style="background:{bg}">{ths}</tr></thead>'
+    header = f'<thead><tr>{ths}</tr></thead>'
 
     trs = []
     for i, s in enumerate(sources):
@@ -79,8 +79,8 @@ def _sources_table(sources) -> str:
 
     body = f'<tbody>{"".join(trs)}</tbody>'
     return (
-        f'<div style="overflow-x:auto;margin-top:12px">'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+        f'<div class="ck-data-table-scroll">'
+        f'<table class="ck-data-table">'
         f'{header}{body}</table></div>'
     )
 
@@ -101,7 +101,7 @@ def _scraper_table(scrapers) -> str:
         f'font-size:10px;color:{text_dim};letter-spacing:0.05em">{col}</th>'
         for col, align in header_cols
     )
-    header = f'<thead><tr style="background:{bg}">{ths}</tr></thead>'
+    header = f'<thead><tr>{ths}</tr></thead>'
 
     trs = []
     for i, s in enumerate(scrapers):
@@ -117,8 +117,8 @@ def _scraper_table(scrapers) -> str:
 
     body = f'<tbody>{"".join(trs)}</tbody>'
     return (
-        f'<div style="overflow-x:auto;margin-top:12px">'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+        f'<div class="ck-data-table-scroll">'
+        f'<table class="ck-data-table">'
         f'{header}{body}</table></div>'
     )
 

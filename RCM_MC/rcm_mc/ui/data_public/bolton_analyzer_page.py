@@ -142,7 +142,7 @@ def _bolton_table(boltons) -> str:
         f'font-size:10px;color:{text_dim};letter-spacing:0.05em;white-space:nowrap">{col}</th>'
         for col, align in header_cols
     )
-    header = f'<thead><tr style="background:{bg}">{ths}</tr></thead>'
+    header = f'<thead><tr>{ths}</tr></thead>'
     trs = []
     for i, b in enumerate(boltons):
         row_bg = panel_alt if i % 2 == 0 else bg
@@ -159,8 +159,8 @@ def _bolton_table(boltons) -> str:
         ]
         trs.append(f'<tr style="background:{row_bg}">{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px">'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+        f'<div class="ck-data-table-scroll">'
+        f'<table class="ck-data-table">'
         f'{header}<tbody>{"".join(trs)}</tbody></table></div>'
     )
 
@@ -181,7 +181,7 @@ def _projection_table(projections) -> str:
         f'font-size:10px;color:{text_dim};letter-spacing:0.05em">{col}</th>'
         for col, align in header_cols
     )
-    header = f'<thead><tr style="background:{bg}">{ths}</tr></thead>'
+    header = f'<thead><tr>{ths}</tr></thead>'
     trs = []
     for i, p in enumerate(projections):
         row_bg = panel_alt if i % 2 == 0 else bg
@@ -195,8 +195,8 @@ def _projection_table(projections) -> str:
         ]
         trs.append(f'<tr style="background:{row_bg}">{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px">'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+        f'<div class="ck-data-table-scroll">'
+        f'<table class="ck-data-table">'
         f'{header}<tbody>{"".join(trs)}</tbody></table></div>'
     )
 
@@ -219,7 +219,7 @@ def _scenario_table(scenarios) -> str:
         f'font-size:10px;color:{text_dim};letter-spacing:0.05em">{col}</th>'
         for col, align in header_cols
     )
-    header = f'<thead><tr style="background:{bg}">{ths}</tr></thead>'
+    header = f'<thead><tr>{ths}</tr></thead>'
     trs = []
     for i, s in enumerate(scenarios):
         row_bg = panel_alt if i % 2 == 0 else bg
@@ -237,8 +237,8 @@ def _scenario_table(scenarios) -> str:
         ]
         trs.append(f'<tr style="background:{row_bg}">{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px">'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+        f'<div class="ck-data-table-scroll">'
+        f'<table class="ck-data-table">'
         f'{header}<tbody>{"".join(trs)}</tbody></table></div>'
     )
 

@@ -142,7 +142,7 @@ def render_sector_momentum(recent_years: int = 5) -> str:
             moic_r = f"{d['moic_recent']:.2f}×" if d.get("moic_recent") else "—"
             moic_p = f"{d['moic_prior']:.2f}×"  if d.get("moic_prior")  else "—"
             rows += (
-                f'<tr style="background:{bg}">'
+                f'<tr>'
                 f'<td style="padding:4px 8px;font-size:11px">{html.escape(d["sector"][:30])}</td>'
                 f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{d["recent"]}</td>'
                 f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{d["prior"]}</td>'
