@@ -206,3 +206,61 @@ user: `/library`. Once landed, follow with `ck_filter_sidebar`
 (pattern 02) on the same page.
 
 ---
+
+## Day 2 / Cycle 2 orient — iteration 11 — 2026-04-28
+
+**State of the world.** `design-v5` now has 14 commits ahead of
+`main`. Cycle 1 closed cleanly:
+- Topbar / chrome bridged across marketing → app (commit 9da9d1b)
+- Editorial primitives: ck_eyebrow, ck_section_intro, ck_arrow_link,
+  ck_image_card, ck_severity_panel, ck_affirm_empty
+- `/alerts` editorial uplift complete with italic-serif highlight
+- 50 data_public pages: bare `>Run<` → `>Run analysis<`
+- Token forwarding: `--cad-*` + v3 marketing tokens → canonical `--sc-*`
+- Polish log + chartis-match notes + Azure-deploy checklist created
+- Connectivity audit + partner-readable docstring on `alerts_page.py`
+
+**Routes polished to editorial spec (running list):**
+- `/` (marketing) — navy topbar, italic-serif Chartis wordmark, teal CTA
+- `/login` — split-panel editorial layout (pre-existing, verified)
+- `/alerts` — full editorial dashboard with italic-serif highlight
+- `/screening/bankruptcy-survivor` (landing) — chartis_shell wrapped
+- `/portfolio/monitor` — chartis_shell wraps the bespoke renderer
+- `/v5-status` — campaign progress dashboard
+- 50 `/data_public/*` pages — button copy editorialized
+- `/v3-status` — pre-existing v3 status page (no changes needed)
+
+**Routes pending editorial spec:**
+- `/home` — needs italic-serif headline + image-top card grid
+  ("Reasons to *believe*" cadence applied to portfolio panels)
+- `/library`, `/research` — need search hero + filter sidebar +
+  N-RESULTS chip-clear (sketched in CHARTIS_MATCH_NOTES.md
+  patterns 01 / 02 / 03)
+- `/escalations`, `/my/<owner>` — same archetype as `/alerts`;
+  reuse ck_severity_panel + ck_affirm_empty
+- `/notes`, `/search` — full-text search; reuse ck_search_hero
+  once it lands
+- `/audit` — admin surface; needs editorial chrome audit
+- `/diligence/*` — workbench archetype; partial editorial chrome,
+  audit per ACCEPTANCE_CHECKLIST.md row by row
+
+**Top 3 priorities for cycle 2:**
+1. Build `ck_search_hero` per CHARTIS_MATCH_NOTES.md pattern 01;
+   wire to `/library`. Add focused test pinning navy panel +
+   italic-serif label + form action.
+2. Build `ck_filter_sidebar` per pattern 02; wire to `/library`
+   alongside the search hero so the page is fully editorial.
+3. `/home` chartis-match audit: walk header / hero / cards /
+   accent / numerics / buttons against chartis.com; pick worst
+   gap (likely the "Reasons to *believe*" image-top card grid for
+   the partner panels) and ship.
+
+**Unfinished thread from prior iteration:** none — `/alerts`
+docstring + AZURE_DEPLOY_CHECKLIST.md + polish log all landed in
+the cycle-1-closing commit.
+
+**Azure deploy progress.** 6 of 22 rows passing. Next-up:
+PORT-from-env, 0.0.0.0 bind, auth cookie flag audit, deploy
+manifest under `deploy/` for Azure App Service Configuration.
+
+---

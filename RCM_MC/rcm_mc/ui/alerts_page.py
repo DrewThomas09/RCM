@@ -1,9 +1,37 @@
-"""Portfolio-wide alert review page (/alerts).
+"""Portfolio-wide alert review page — the partner's "where does this
+need attention" workflow surface.
 
-Phase 2 migration of the inline ``_route_alerts`` body in
-``rcm_mc/server.py`` to a dedicated chartis_shell renderer. Logic is
-preserved verbatim — same alert ordering (red → amber → info), same
-ack/snooze form, same owner filter, same active/all toggle.
+Place in the mesh
+-----------------
+A partner reaches this page three ways:
+  1. The "Active alerts" panel on /home — the panel header deep-links
+     into /alerts with the relevant severity pre-filtered.
+  2. ⌘K command palette ("alerts") — global keyboard navigation.
+  3. /portfolio breadcrumb — /alerts sits inside the Portfolio
+     section of the Platform Index even though it isn't a top-level
+     nav link. The editorial topbar holds at five primary links
+     (Home / Pipeline / Library / Research / Portfolio) to preserve
+     the chartis.com 5-link rhythm.
+
+Connectivity chain — verified 2026-04-28 cycle 1 step 8:
+  imports → resolve. alerts.alerts (evaluate_active, evaluate_all);
+            alerts.alert_acks (trigger_key_for); alerts.alert_history
+            (age_hint); deals.deal_owners (deals_by_owner);
+            portfolio.store (PortfolioStore); _chartis_kit
+            (chartis_shell + ck_severity_panel + ck_affirm_empty +
+            ck_arrow_link + ck_eyebrow).
+  route   → server.py dispatcher inlines the call to render_alerts
+            (commit 0b875f8); the v3 inventory classifier reaches
+            this module via the .ui import in the dispatcher block,
+            which is why it classifies as v5 not (inline) unknown.
+  shell   → chartis_shell wraps every response. No legacy shell().
+  ck-only → uses ck_severity_panel / ck_affirm_empty / ck_arrow_link
+            / ck_eyebrow — no bespoke <div class="card"> blocks since
+            commit 9da9d1b.
+  packet  → N/A. alerts is portfolio-level, not deal-specific, so
+            the DealAnalysisPacket invariant is exempt by design
+            (same exemption as /v3-status, /v5-status, /audit,
+            /watchlist).
 
 Module exposes a single entry point:
 
@@ -11,7 +39,8 @@ Module exposes a single entry point:
 
 Returns a full HTML string ready for ``_send_html``. Caller is
 responsible for parsing the query string and constructing the
-``store`` (the route handler in ``server.py`` does both).
+``store`` (the route handler in ``server.py`` does both — the store
+is the only sqlite owner per the CLAUDE.md invariant).
 """
 from __future__ import annotations
 
