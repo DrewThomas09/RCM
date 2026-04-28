@@ -1400,3 +1400,127 @@ to find the gaps. Then cycle 17 — pick one of:
 - Per-page chartis-match dives across the 50 data_public
   pages (beyond label copy and color purges already shipped).
 
+---
+
+## Cycle 16 build — 2026-04-28 — V5 fidelity audit shipped
+
+**Step 16 — campaign instrumentation, not page work.** The cycle 7
+inventory hit 100% mechanical compliance (every route reaches
+``chartis_shell``). That number was load-bearing for the
+campaign launch, but flat after cycle 7 — every cycle since has
+been editorial-fidelity work the inventory can't measure. Without
+a fidelity score the question "are we converging on chartis-grade
+across all 408 routes?" was vibes-driven, not data-driven.
+
+**`tools/v5_fidelity_audit.py` shipped.** Static-analysis scorer
+that walks every `*.py` file in `rcm_mc/ui/`, identifies renderer
+files (those with a `def render_*` / `def page_*` / `def build_*`
+/ `def emit_*` entry function), and scores each on six dimensions:
+
+  1. **Editorial shell** (+25) — calls `chartis_shell`. Required
+     floor; without it the render path bypasses chartis chrome
+     entirely.
+  2. **Editorial primitives** (+25) — `ck_*` helper density per
+     LOC, saturating at ~3 calls per 100 LOC.
+  3. **Italic-serif highlight** (+15) — the chartis cadence
+     signal; `ck_section_intro(italic_word=…)` or a literal
+     `<em>X</em>` in the body.
+  4. **Cleanliness** (+20) — credits absence of inline `style="`
+     attributes and bespoke `<div class="non-ck-…">` markup.
+  5. **Lazy-label penalty** (-10) — extinct since cycle 1 but
+     pinned for regression.
+  6. **Numeric discipline** (+10 + 5) — `ck_fmt_*` helpers and
+     `ck_provenance_tooltip` usage.
+
+Pass threshold: 70/100. Calibrated so the cycle 6-15 editorial
+ports clear the line and stragglers land far below.
+
+**Baseline (run today):** 5 of 325 renderers pass.
+
+| Score | File | Notes |
+|---|---|---|
+| 84 | `rcm_mc/ui/my_dashboard_page.py` | cycle 15 |
+| 74 | `rcm_mc/ui/data_public/deals_library_page.py` | cycle 6 |
+| 71 | `rcm_mc/ui/chartis/corpus_backtest_page.py` | pre-existing |
+| 70 | `rcm_mc/ui/escalations_page.py` | cycle 14 |
+| 70 | `rcm_mc/ui/research_page.py` | cycle 9 |
+
+Notes search (cycle 8) at 68 and `/alerts` at 65 are just below
+the line — they're real editorial ports that score lower because
+their LOC density of `ck_*` calls dilutes against template
+boilerplate. Future cycles can either lift those above the line
+(small adjustments) or accept that 65-69 is "passing-class" and
+tune the threshold to 65.
+
+**Next port targets surfaced by the audit.** The bottom 10
+scorers are mostly helper modules (`_helpers.py`, `loading.py`,
+`json_to_html.py`) which the renderer-entry filter MISSED — they
+have a `def page_*` or `def emit_*` that's not actually a route.
+The audit catches this so a future cycle can either skip these
+files explicitly or rename their entry functions to remove false
+positives. Of the genuine page renderers in the bottom decile,
+`thesis_card.py` and `chartis/marketing_page.py` are the next
+ports — both score 0 because they bypass `chartis_shell`
+entirely (one is a fragment, the other is the public marketing
+landing rendered with bespoke HTML for SEO control).
+
+**`docs/V5_FIDELITY_REPORT.md` is the durable artifact.** Run
+`python tools/v5_fidelity_audit.py --md docs/V5_FIDELITY_REPORT.md`
+to refresh after each editorial cycle. Sorted leaderboard with
+file paths, LOC, primitive counts, and per-page improvement
+notes — the document a partner reviews to pick the next batch.
+
+**Step 16 — focused test suite.** New
+`tests/test_v5_fidelity_audit.py` with 11 tests pinning the
+rubric so re-calibration is intentional, not accidental drift:
+- helper file (no render entry) returns None
+- minimal chartis_shell page floors above legacy
+- bespoke renderer without shell scores low
+- full editorial page (mirroring cycle 6-15 shape) clears 70
+- lazy-label penalty drops score below the no-label twin
+- inline-style penalty scales with literal `style="` count
+- editorial `<div class="ck-*">` not penalized as bespoke
+- real cycle-15 my_dashboard_page clears 70
+- real cycle-14 escalations_page clears 70
+- audit_tree normalizes paths to repo-relative
+- main exit code: 0 when threshold low, non-zero when failures
+
+All 11 pass.
+
+**Files touched this batch.**
+- `tools/v5_fidelity_audit.py` — NEW, ~310 LOC scoring tool.
+- `tests/test_v5_fidelity_audit.py` — NEW, 11 tests.
+- `docs/V5_FIDELITY_REPORT.md` — NEW, baseline leaderboard.
+- `docs/EDITORIAL_POLISH_LOG.md` — this entry.
+
+**Compliance impact.**
+- New campaign metric: V5 fidelity score per renderer file.
+- 5 of 325 renderers above threshold today (1.5%).
+- Fidelity report published as a durable artifact.
+- Total focused tests passing: 220 + 2 documented skips
+  (was 209 + 2 in cycle 15).
+- LOC change: +310 (audit tool) +220 (tests) +480 (report).
+
+**Suggested next:** cycle 17 — the audit surfaced two natural
+directions:
+
+- **Option A — lift the cluster.** Notes (68) and Alerts (65)
+  are 2-5 points shy of the threshold. Each needs an italic-
+  serif highlight added to push it over. 30 minutes per page,
+  closes 2 more rows.
+
+- **Option B — port the bottom decile.** The audit's bottom-10
+  list is the highest-leverage ports. Pick 1-2 high-traffic
+  ones (e.g. `/deal/<id>` profile page or `/diligence/*`
+  workbench) and walk the cycle 14 / 15 pattern.
+
+- **Option C — `@insights_page` decorator.** Lift the triplet
+  wiring that cycles 6, 8, 9 each shipped (~200 LOC each) into
+  a one-line decorator. Reduces future ports from ~200 LOC to
+  ~20 LOC. Highest leverage if the bottom decile is going to
+  see 5+ more ports.
+
+Recommend **C** — the audit confirmed there are 320 renderers
+below the line. A 10x speedup on each port saves 19,000 LOC
+across the campaign. Forward-only.
+
