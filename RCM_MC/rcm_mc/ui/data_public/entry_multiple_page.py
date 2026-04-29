@@ -25,7 +25,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip, ck_section_header,
+)
 
 
 def _percentile(vals: List[float], p: float) -> Optional[float]:
@@ -186,20 +189,39 @@ def render_entry_multiple() -> str:
     p75 = _percentile(mults, 75)
     above14 = sum(1 for v in mults if v >= 14) / len(mults) * 100 if mults else 0
 
-    kpis = "".join(
-        f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 14px">'
-        f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:3px">{lbl}</div>'
-        f'<div style="font-size:16px;font-family:{_MONO};font-variant-numeric:tabular-nums;color:{col}">{val}</div>'
-        f'</div>'
-        for lbl, val, col in [
-            ("WITH MULT DATA",  str(len(has_mult)),                           P["text"]),
-            ("EV/EBITDA P25",   f"{p25:.1f}×" if p25 else "—",              P["text"]),
-            ("EV/EBITDA P50",   f"{p50:.1f}×" if p50 else "—",              P["positive"] if (p50 or 0) < 12 else P["warning"]),
-            ("EV/EBITDA P75",   f"{p75:.1f}×" if p75 else "—",              P["text"]),
-            ("≥14× (RICH)",     f"{above14:.0f}%",                           P["negative"] if above14 > 20 else P["text"]),
-        ]
+    # Cycle 45 — port to ck_kpi_block + provenance.
+    p50_color = P["positive"] if (p50 or 0) < 12 else P["warning"]
+    rich_color = P["negative"] if above14 > 20 else P["text"]
+    p50_value = ck_provenance_tooltip(
+        "Corpus P50 entry multiple",
+        f'<span style="color:{p50_color}">{p50:.1f}x</span>' if p50 else "—",
+        explainer=(
+            "Median EV/EBITDA paid at entry across the realized "
+            "corpus. Healthcare PE typical range: 10-13x. Below "
+            "10x is vintage discipline; above 14x is the rich-"
+            "regime where exit multiple has to hold to make MOIC."
+        ),
     )
-    kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'
+    rich_value = ck_provenance_tooltip(
+        "Share above 14x",
+        f'<span style="color:{rich_color}">{above14:.0f}%</span>',
+        explainer=(
+            "Share of corpus deals that paid 14x EV/EBITDA or "
+            "higher at entry. Above 20% suggests a frothy vintage "
+            "regime; the deals at the top of this distribution "
+            "dominate the corpus's long-tail outcomes."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px;">'
+        + ck_kpi_block("With Mult Data", ck_fmt_num(len(has_mult)), "of corpus")
+        + ck_kpi_block("EV/EBITDA P25", f"{p25:.1f}x" if p25 else "—", "lower quartile")
+        + ck_kpi_block("EV/EBITDA P50", p50_value, "median entry mult")
+        + ck_kpi_block("EV/EBITDA P75", f"{p75:.1f}x" if p75 else "—", "upper quartile")
+        + ck_kpi_block(">=14x (rich)", rich_value, "share above 14x")
+        + '</div>'
+    )
 
     histogram = _multiple_histogram(mults)
     scatter = _multiple_moic_scatter(corpus)
@@ -236,4 +258,16 @@ def render_entry_multiple() -> str:
 </div>"""
 
     return chartis_shell(body, "Entry Multiple Analysis", active_nav="/entry-multiple",
-                         subtitle=f"{len(has_mult)} deals with multiple data")
+                         subtitle=f"{len(has_mult)} deals with multiple data",
+        editorial_intro={
+            "eyebrow": "ENTRY MULTIPLE",
+            "headline": "What the corpus actually paid at entry.",
+            "italic_word": "actually",
+            "body": (
+                "EV/EBITDA distribution at entry across the "
+                "corpus, with sector benchmarks and a multiple-"
+                "to-MOIC efficiency view. Below 10x is vintage "
+                "discipline; above 14x means the exit-multiple "
+                "assumption carries the underwriting."
+            ),
+        })

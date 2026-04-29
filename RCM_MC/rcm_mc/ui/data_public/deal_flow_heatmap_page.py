@@ -26,7 +26,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip, ck_section_header,
+)
 
 
 def _heatmap_svg(
@@ -274,9 +277,44 @@ def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
         for n in [1, 2, 3, 5, 8]
     )
 
+    # Cycle 45 — KPI strip with provenance.
+    peak_year = max(year_totals.items(), key=lambda kv: kv[1]) if year_totals else (None, 0)
+    sectors_value = ck_provenance_tooltip(
+        "Active sectors",
+        ck_fmt_num(len(active_sectors)),
+        explainer=(
+            f"Sectors carrying at least {min_sector_deals} corpus "
+            f"deals in the active filter. Lower the threshold via "
+            f"the chip row above to surface emerging sectors that "
+            f"don't yet have base-rate density."
+        ),
+    )
+    transactions_value = ck_provenance_tooltip(
+        "Corpus transactions",
+        ck_fmt_num(len(corpus)),
+        explainer=(
+            f"Total realized deals in the corpus with disclosed "
+            f"sector + vintage year. Peak vintage: {peak_year[0]} "
+            f"({peak_year[1]} deals). Use the heatmap below to "
+            f"read where the deal-flow is concentrating."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Transactions", transactions_value, "in corpus")
+        + ck_kpi_block("Active Sectors", sectors_value, "passing threshold")
+        + ck_kpi_block("Years Tracked", ck_fmt_num(len(years)), "vintage span")
+        + ck_kpi_block("Peak Vintage",
+                       str(peak_year[0]) if peak_year[0] else "—",
+                       f"{peak_year[1]} deals" if peak_year[0] else "")
+        + '</div>'
+    )
+
     body = f"""
 <div style="padding:16px 20px;max-width:1600px">
   {ck_section_header("DEAL FLOW HEATMAP", f"Year × sector activity matrix — {len(corpus)} transactions, {len(active_sectors)} active sectors", None)}
+  {kpi_strip}
 
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
     <span style="font-size:10px;color:{P['text_dim']};font-family:{_SANS}">MIN SECTOR DEALS:</span>
@@ -311,4 +349,15 @@ def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
 </div>"""
 
     return chartis_shell(body, "Deal Flow Heatmap", active_nav="/deal-flow-heatmap",
-                         subtitle=f"{len(active_sectors)} sectors × {len(years)} years")
+                         subtitle=f"{len(active_sectors)} sectors × {len(years)} years",
+        editorial_intro={
+            "eyebrow": "DEAL FLOW HEATMAP",
+            "headline": "Where the corpus deal flow concentrates.",
+            "italic_word": "concentrates",
+            "body": (
+                "Year x sector activity matrix across the realized "
+                "corpus. Darker cells = denser deal flow; the "
+                "second heatmap colors by realized MOIC so you "
+                "can read which active sectors are also winning."
+            ),
+        })

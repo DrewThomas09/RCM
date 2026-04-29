@@ -3533,3 +3533,54 @@ physician_attrition, exit_timing per-deal). The pattern
 holds: 30 min per smaller page should net 5+ more
 passers. Forward-only.
 
+## Cycle 45 build — 2026-04-28 — 44-49 zone closed (+5 passers)
+
+**Step 45 — port the remaining 44-49 cluster.** Five pages
+crossed the 70 threshold:
+
+- `data_public/entry_multiple_page.py` 45 → 86 — ported
+  bespoke 5-card KPI strip to ck_kpi_block + provenance
+  on Corpus P50 multiple and rich-share + ck_fmt_num +
+  editorial_intro.
+- `data_public/deal_flow_heatmap_page.py` 44 → 92 —
+  added 4-tile KPI strip with provenance on
+  transactions/active sectors + ck_fmt_num +
+  editorial_intro.
+- `data_public/qoe_analyzer_page.py` 44 → 70 — fixed
+  `unit=` typo on 5 calls + provenance on Total
+  Add-Backs and Quality Tier + editorial_intro.
+- `chartis/partner_review_page.py` 44 → 74 — provenance
+  on Verdict and Investability + ck_fmt_num +
+  editorial_intro.
+- `data_public/covenant_monitor_page.py` 68 → 74 —
+  fixed remaining `unit=""` typo + provenance on
+  Current Leverage and Interest Coverage with
+  break-even-shock context.
+
+**Latent typos — 2 more pages.** qoe_analyzer (5 calls)
+and covenant_monitor (1 call) had remaining `unit=` typos.
+Cumulative across cycles 40/41/44/45: **9 pages** with
+the recurring `unit=`/`delta=` bulk-migration bug, all
+500'ing in production before fixes.
+
+**Files touched this batch.**
+- 5 pages: KPI strip ports + provenance + ck_fmt_* +
+  editorial_intro adoption.
+
+**Compliance impact.**
+- V5 fidelity passers: **195 of 299 (65.2%)** — up from
+  190. Ninth straight cycle of net-new passers.
+- The 44-49 zone is closed (covenant_monitor was the last
+  blocker).
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 46 — the 30-49 tier still has
+~10 pages. Mostly small (100-400 LOC) — the ones with
+chartis_shell already in place: counterfactual_page (753
+LOC, 0 prims), risk_workbench_page (1202 LOC, 0 prims),
+portfolio_overview (414 LOC, 4 prov, italic Y), the rest
+in the 44-46 zone. Or pivot to the 25-score giants which
+need real ports (analysis_workbench 3032 LOC, dashboard_
+page 2612 LOC) — biggest blocker to 70%+. Forward-only.
+

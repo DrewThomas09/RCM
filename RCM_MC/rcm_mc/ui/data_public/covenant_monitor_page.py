@@ -335,18 +335,42 @@ def render_covenant_monitor(params: dict) -> str:
             "below shows the trajectory."
         ),
     )
+    current_lev_value = ck_provenance_tooltip(
+        "Current leverage ratio",
+        f"{r.current_leverage:.2f}x",
+        explainer=(
+            f"Total debt / trailing EBITDA. Covenant threshold "
+            f"{lev_cov.threshold:.1f}x; current headroom "
+            f"{lev_cov.headroom_pct*100:.1f}%. Headroom translates "
+            f"directly to break-even EBITDA shock - a 10% drop "
+            f"in EBITDA closes ~1x of leverage room."
+        ),
+        inject_css=False,
+    )
+    icr_value = ck_provenance_tooltip(
+        "Interest coverage ratio",
+        f"{r.interest_coverage:.2f}x",
+        explainer=(
+            f"EBITDA / interest expense. Covenant minimum "
+            f"{icr_cov.threshold:.1f}x; current headroom "
+            f"{icr_cov.headroom_pct*100:.1f}%. ICR breaches "
+            f"typically lead a leverage breach by 1-2 quarters - "
+            f"watch this trajectory before the leverage one."
+        ),
+        inject_css=False,
+    )
     kpis = ck_kpi_block("Overall Status", status_value)
     kpis += ck_kpi_block("Entry Leverage", f"{r.entry_leverage:.2f}x",
                          sub=f"Sz bucket: {r.size_bucket}")
-    kpis += ck_kpi_block("Current Leverage", f"{r.current_leverage:.2f}x",
+    kpis += ck_kpi_block("Current Leverage", current_lev_value,
                          sub=f"Threshold: {lev_cov.threshold:.1f}x",
                          trend=f"{lev_cov.headroom_pct * 100:.1f}% headroom")
-    kpis += ck_kpi_block("Int. Coverage", f"{r.interest_coverage:.2f}x",
+    kpis += ck_kpi_block("Int. Coverage", icr_value,
                          sub=f"Min: {icr_cov.threshold:.1f}x",
                          trend=f"{icr_cov.headroom_pct * 100:.1f}% headroom")
     kpis += ck_kpi_block("Sector Med. Leverage", f"{r.sector_median_leverage:.2f}x",
                          sub=f"P75: {r.sector_p75_leverage:.2f}x")
-    kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count), unit="")
+    kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count))
 
     thresholds_lev = r.covenants[0].threshold
     thresholds_icr = r.covenants[1].threshold
