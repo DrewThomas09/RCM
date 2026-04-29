@@ -613,10 +613,46 @@ def render_deal_profile_v2(
     # tags. chartis_shell() now wraps the editorial chrome (parchment
     # topbar + breadcrumbs + PHI banner) and the editorial CSS via
     # /static/v3/chartis.css provides the body type/spacing.
+    # Cycle 58 — KPI strip with provenance.
+    from ._chartis_kit import (
+        ck_eyebrow, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    )
+    n_risks = len(packet.risk_flags) if packet and packet.risk_flags else 0
+    n_questions = len(packet.diligence_questions) if packet and packet.diligence_questions else 0
+    grade = (packet.completeness.grade if packet and packet.completeness else "—")
+    grade_value = ck_provenance_tooltip(
+        "Completeness grade",
+        grade,
+        explainer=(
+            "Data-completeness grade A-D for this deal. A = "
+            ">=80% of expected fields populated; lower grades "
+            "mean the analysis below relies more on Bayesian "
+            "priors than on observed data."
+        ),
+    )
+    risks_value = ck_provenance_tooltip(
+        "Risk flags fired",
+        ck_fmt_num(n_risks),
+        explainer=(
+            "Falsifiable risk flags fired by the analysis "
+            "engines. Critical flags block IC; high flags need "
+            "a written response. The risks section below "
+            "decomposes by category."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 16px;">'
+        + ck_kpi_block("Completeness", grade_value, "data quality")
+        + ck_kpi_block("Risk Flags", risks_value, "fired")
+        + ck_kpi_block("Diligence Questions", ck_fmt_num(n_questions), "open")
+        + '</div>'
+    )
     page_body = (
         f'<div style="max-width:1100px;margin:0 auto;'
         f'padding:1.5rem 1rem;">'
-        f'<div style="display:flex;justify-content:'
+        + ck_eyebrow("Deal Profile")
+        + f'<div style="display:flex;justify-content:'
         f'space-between;align-items:baseline;'
         f'margin-bottom:.5rem;">'
         f'<h1 style="font-size:1.5rem;color:{_TEXT};margin:0;'
@@ -629,7 +665,8 @@ def render_deal_profile_v2(
         f'<p style="color:{_TEXT_DIM};font-size:13px;'
         f'margin:0 0 1rem 0;">Top-to-bottom investment '
         f'narrative — read sequentially.</p>'
-        f'{body}'
+        + kpi_strip
+        + f'{body}'
         f'</div>'
     )
 

@@ -4033,3 +4033,22 @@ deal_profile_v2 (566 LOC, 0 prims), ic_packet_page (618
 LOC), and remaining 35-tier pages. Each needs ~30 min of
 KPI strip + provenance + ck_fmt_* to overcome density.
 
+## Cycle 58 build — 2026-04-29 — news + deal_profile_v2 (+2, 83.3%)
+
+**Step 58 — port news_page + deal_profile_v2.** Both
+crossed via KPI strip + provenance:
+
+- `rcm_mc/ui/news_page.py` 51 → 77
+- `rcm_mc/ui/deal_profile_v2.py` 50 → 74
+
+**Compliance impact.**
+- V5 fidelity passers: **249 of 299 (83.3%)** — up from
+  247. 22 straight cycles of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 59 — keep grinding sub-70.
+Diligence_page (multiple shells), risk_workbench (1202
+LOC), deal_profile_page (1456 LOC), exit_timing_page
+(needs more primitives), regulatory_calendar.
+
