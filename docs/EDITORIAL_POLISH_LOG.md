@@ -3193,3 +3193,75 @@ Each strip swap adds ~5 primitives → ~10 score points.
 Two pages × ~30 minutes each should yield 2 more passers
 + headroom for the next push. Forward-only.
 
+## Cycle 39 build — 2026-04-28 — KPI ports + audit fmt-regex fix lifts top tier
+
+**Step 39a — port `models_page.py` KPI strips.** Three
+KPI strips (DCF, LBO, 3-statement) were emitting
+`<div class="cad-kpi">` cards. Ported all three to
+`ck_kpi_block` plus added provenance hovers on Enterprise
+Value, WACC, IRR, and MOIC — the four numbers that drive
+investment-committee debate. **Score: 25 → 73.**
+
+**Step 39b — port `ml_insights_page.py` KPI strips.**
+Both the corpus-level and per-hospital KPI strips ported
+to `ck_kpi_block`. Added provenance on the Distress Model
+AUC (held-out test, AUC interpretation thresholds) and
+high-distress count (calibrated decision threshold).
+Wired in `ck_fmt_num` and `ck_fmt_pct` for hospital and
+margin formatting. **Score: 25 → 77.**
+
+**Step 39c — fix audit fmt-helper regex blind spot.** While
+adding the kit's `ck_fmt_num` / `ck_fmt_pct` helpers in
+ml_insights, noticed the audit's `_RE_FMT_HELPERS` only
+matched `ck_fmt_(currency|percent|number)` — it was
+ignoring the `num`/`pct`/`moic` aliases the kit added in
+cycle 29. Pages already calling those aliases (the
+data_public cluster) had been silently denied credit.
+
+Updated regex to recognize both forms: `ck_fmt_(currency|
+percent|number|num|pct|moic)`. The knock-on lift was
+substantial — top tier reshuffled:
+
+- `deal_risk_scores` 87 → 97
+- `market_rates` 87 → 97
+- `acq_timing` 85 → 93
+- `payer_stress` 25 → 93 (caught up to its actual chrome)
+- `multiple_decomp` newly 91
+- `portfolio_sim` newly 91
+
+The audit was undercounting credit on ~6 already-quality
+pages.
+
+**Files touched this batch.**
+- `rcm_mc/ui/models_page.py` — 3 KPI strips + 4 provenance
+  wraps + imports.
+- `rcm_mc/ui/ml_insights_page.py` — 2 KPI strips + 2
+  provenance wraps + ck_fmt_num/pct adoption + imports.
+- `tools/v5_fidelity_audit.py` — `_RE_FMT_HELPERS` regex
+  recognizes short-form aliases.
+
+**Compliance impact.**
+- V5 fidelity passers: **171 of 299 (57.2%)** — up from 169.
+- Two pages joined the 90+ tier (deal_risk_scores 97,
+  market_rates 97).
+- Three new pages cross 90 first time:
+  payer_stress 93 (had the chrome but wasn't credited),
+  multiple_decomp 91, portfolio_sim 91.
+- models_page + ml_insights_page now in the 70+ passing
+  tier.
+- Per-module + provenance + integration sweep: 72 passing,
+  0 regressions.
+
+**Suggested next:** cycle 40 — the 25-score cluster has
+shrunk to 6 pages. The remaining hard ports:
+`analysis_workbench` (3032 LOC, partner workbench),
+`dashboard_page` (2612 LOC), `exit_timing_page` (765 LOC,
+per-deal), `hcris_xray_page`, `payer_stress_page` (now
+93 — leaving 5), `physician_attrition_page`. The two
+giants (`analysis_workbench`, `dashboard_page`) need a
+phased port, not a single-cycle swap. Smaller pages
+should pick up `editorial_intro` + ck_kpi_block + 1-2
+ck_fmt_* uses for ~30 min each. Or pivot: address the
+50-69 mid-tier where editorial_intro alone may push
+several over the line. Forward-only.
+

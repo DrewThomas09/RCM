@@ -8,7 +8,12 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell,
+    ck_eyebrow,
+    ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -140,21 +145,41 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     tv = dcf.get("terminal_value", 0)
 
     # KPIs
+    # Cycle 39 — port DCF KPI strip to ck_kpi_block + provenance.
+    ev_value = ck_provenance_tooltip(
+        "DCF enterprise value",
+        _fmt_m(ev),
+        explainer=(
+            "PV of explicit-period free cash flows + PV of terminal "
+            "value, discounted at WACC. Sensitive to terminal "
+            "growth and WACC assumptions in the sensitivity grid "
+            "below."
+        ),
+    )
+    wacc_value = ck_provenance_tooltip(
+        "Weighted average cost of capital",
+        _fmt_pct(assumptions.get("wacc")),
+        explainer=(
+            "Cost-of-equity (CAPM with healthcare beta) blended "
+            "with after-tax cost of debt at the deal's target "
+            "leverage. Lower WACC = higher EV - the sensitivity "
+            "grid shows the effect of +/-1% shifts."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(ev)}</div>'
-        f'<div class="cad-kpi-label">Enterprise Value</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(pv_cf)}</div>'
-        f'<div class="cad-kpi-label">PV of Cash Flows</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(pv_term)}</div>'
-        f'<div class="cad-kpi-label">PV of Terminal Value</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(tv)}</div>'
-        f'<div class="cad-kpi-label">Terminal Value</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_pct(assumptions.get("wacc"))}</div>'
-        f'<div class="cad-kpi-label">WACC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_pct(assumptions.get("terminal_growth"))}</div>'
-        f'<div class="cad-kpi-label">Terminal Growth</div></div>'
-        f'</div>'
+        f'<div class="ck-kpi-grid">'
+        + ck_kpi_block("Enterprise Value", ev_value, "PV of FCF + terminal")
+        + ck_kpi_block("PV of Cash Flows", _fmt_m(pv_cf), "explicit period")
+        + ck_kpi_block("PV of Terminal", _fmt_m(pv_term), "Gordon growth")
+        + ck_kpi_block("Terminal Value", _fmt_m(tv), "exit-year FCF / (WACC - g)")
+        + ck_kpi_block("WACC", wacc_value, "discount rate")
+        + ck_kpi_block(
+            "Terminal Growth",
+            _fmt_pct(assumptions.get("terminal_growth")),
+            "perpetual FCF growth",
+        )
+        + f'</div>'
     )
 
     # Projections table
@@ -329,20 +354,35 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     irr_color = PALETTE["positive"] if irr and irr > 0.20 else (
         PALETTE["warning"] if irr and irr > 0.15 else PALETTE["negative"])
 
+    # Cycle 39 — port LBO KPI strip + add IRR provenance.
+    irr_value = ck_provenance_tooltip(
+        "Levered IRR to equity",
+        f'<span style="color:{irr_color};">{_fmt_pct(irr)}</span>',
+        explainer=(
+            "Internal rate of return to the LP equity check over "
+            "a {hold}yr hold. >20% green, 15-20% amber, below "
+            "15% negative. Sensitive to exit multiple, leverage, "
+            "and EBITDA growth — all tunable below."
+        ).replace('{hold}', str(hold_years)),
+    )
+    moic_value = ck_provenance_tooltip(
+        "Multiple of invested capital",
+        _fmt_x(moic),
+        explainer=(
+            "Total equity proceeds at exit divided by equity "
+            "invested at entry. 2.5x is the rough industry "
+            "median over a 5-year hold; 3x+ is a strong outcome."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{irr_color};">'
-        f'{_fmt_pct(irr)}</div>'
-        f'<div class="cad-kpi-label">IRR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_x(moic)}</div>'
-        f'<div class="cad-kpi-label">MOIC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(entry_ev)}</div>'
-        f'<div class="cad-kpi-label">Entry EV</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(exit_ev)}</div>'
-        f'<div class="cad-kpi-label">Exit EV</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(equity_invested)}</div>'
-        f'<div class="cad-kpi-label">Equity Invested</div></div>'
-        f'</div>'
+        f'<div class="ck-kpi-grid">'
+        + ck_kpi_block("IRR", irr_value, "to equity over hold")
+        + ck_kpi_block("MOIC", moic_value, "exit / entry equity")
+        + ck_kpi_block("Entry EV", _fmt_m(entry_ev), "sources of capital")
+        + ck_kpi_block("Exit EV", _fmt_m(exit_ev), "year-{hold} terminal".replace('{hold}', str(hold_years)))
+        + ck_kpi_block("Equity Invested", _fmt_m(equity_invested), "LP check")
+        + f'</div>'
     )
 
     # Sources & Uses
@@ -556,17 +596,22 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
         model.get("cash_flow", model.get("cf", [])),
     )
 
-    # Summary KPIs
+    # Summary KPIs — cycle 39 ports to ck_kpi_block.
     summary = model.get("summary", {})
     kpis = ""
     if summary:
-        kpis = '<div class="cad-kpi-grid">'
+        kpi_blocks = []
         for k, v in list(summary.items())[:6]:
-            kpis += (
-                f'<div class="cad-kpi"><div class="cad-kpi-value">'
-                f'{_fmt_m(v) if isinstance(v, (int, float)) and abs(float(v)) > 1000 else _fmt_pct(v) if isinstance(v, float) and abs(v) < 1 else html.escape(str(v))}'
-                f'</div><div class="cad-kpi-label">{html.escape(k.replace("_", " ").title())}</div></div>'
+            value_str = (
+                _fmt_m(v) if isinstance(v, (int, float)) and abs(float(v)) > 1000
+                else _fmt_pct(v) if isinstance(v, float) and abs(v) < 1
+                else html.escape(str(v))
             )
+            kpi_blocks.append(ck_kpi_block(
+                k.replace("_", " ").title(),
+                value_str,
+            ))
+        kpis = f'<div class="ck-kpi-grid">{"".join(kpi_blocks)}</div>'
         kpis += '</div>'
 
     actions = (

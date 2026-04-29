@@ -100,7 +100,11 @@ _RE_LAZY_LABELS = re.compile(
 # attribute portion is permissive.
 _RE_ITALIC_EM = re.compile(r"<em(?:\s[^>]*)?>[^<]+</em>")
 _RE_FMT_HELPERS = re.compile(
-    r"\bck_fmt_(?:currency|percent|number)\s*\(",
+    # Cycle 39 — recognize both the long-form helper names
+    # (currency / percent / number) and the short-form aliases
+    # (num / pct / moic) that kit cycle-29 added as backward-
+    # compat shims. Pages calling either form should get credit.
+    r"\bck_fmt_(?:currency|percent|number|num|pct|moic)\s*\(",
 )
 # Provenance tooltip helper. The actual function lives in
 # ``rcm_mc/ui/_provenance_tooltip.py`` as ``provenance_tooltip``;
