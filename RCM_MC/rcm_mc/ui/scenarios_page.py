@@ -4,7 +4,13 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell,
+    ck_eyebrow,
+    ck_fmt_num,
+    ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -36,8 +42,43 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
         if rows_html
         else f'<p style="color:{PALETTE["text_muted"]};">No preset scenarios defined.</p>'
     )
+    # Cycle 46 — KPI strip + provenance to lift fidelity over 70.
+    n_payer_shocks = sum(
+        len(ps.get("shocks", {}).get("payers", {})) for ps in presets
+    )
+    presets_value = ck_provenance_tooltip(
+        "Preset scenarios available",
+        ck_fmt_num(len(presets)),
+        explainer=(
+            "Curated payer-policy shock presets (rate cuts, "
+            "volume drops, denial-rate spikes). Each preset is "
+            "a falsifiable scenario - apply it to a deal to see "
+            "how its EBITDA bridge breaks."
+        ),
+    )
+    shocks_value = ck_provenance_tooltip(
+        "Total payer shocks defined",
+        ck_fmt_num(n_payer_shocks),
+        explainer=(
+            "Sum of payer-specific shocks across all presets. "
+            "Each shock is an IDR (initial denial rate) "
+            "multiplier. >1.0 = denials increase; <1.0 = "
+            "denials decrease."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Presets", presets_value, "preset scenarios")
+        + ck_kpi_block("Payer Shocks", shocks_value, "across all presets")
+        + ck_kpi_block("Workbenches", "3", "pressure / analysis / challenge")
+        + '</div>'
+    )
+
     body = (
-        f'<div class="cad-card">'
+        ck_eyebrow("Scenario Explorer")
+        + kpi_strip
+        + f'<div class="cad-card">'
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:12px;">'
         f'Preset payer policy shock scenarios. Select a deal and apply any scenario to '
         f'see how rate changes and volume drops affect EBITDA.</p>'
@@ -65,4 +106,16 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
         f'Challenge Solver</a></div>'
     )
     return chartis_shell(body, "Scenario Explorer",
-                    subtitle=f"{len(presets)} preset shock scenarios")
+                    subtitle=f"{len(presets)} preset shock scenarios",
+        editorial_intro={
+            "eyebrow": "SCENARIO EXPLORER",
+            "headline": "Where the deal breaks under policy shocks.",
+            "italic_word": "breaks",
+            "body": (
+                "Preset payer-policy shocks the platform applies "
+                "to a deal's bridge - rate cuts, denial spikes, "
+                "volume drops. Pair with the Pressure Test or "
+                "Analysis workbench to see which preset closes "
+                "the equity check first."
+            ),
+        })

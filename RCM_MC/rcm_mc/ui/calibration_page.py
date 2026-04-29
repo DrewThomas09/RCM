@@ -32,7 +32,10 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 
 
 def _aggregate_payers(runs_df: pd.DataFrame) -> Dict[str, Dict[str, float]]:
@@ -160,8 +163,40 @@ def render_calibration_page(store: Any) -> str:
 
     sliders = "".join(_slider_card(p, agg) for p, agg in sorted(payers.items()))
 
+    # Cycle 46 — KPI strip with provenance to lift fidelity over 70.
+    runs_value = ck_provenance_tooltip(
+        "Calibration runs aggregated",
+        ck_fmt_num(n_runs),
+        explainer=(
+            "Analysis runs whose primitives are aggregated to "
+            "produce per-payer priors. Each run contributes IDR / "
+            "FWR / DAR observations; the slider values below are "
+            "the means across these runs."
+        ),
+    )
+    payers_value = ck_provenance_tooltip(
+        "Payers covered",
+        ck_fmt_num(len(payers)),
+        explainer=(
+            "Distinct payer-segment buckets observed across the "
+            "aggregated runs. More payer coverage = tighter "
+            "priors per payer; thin coverage means the slider "
+            "may swing on a single deal."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Runs Aggregated", runs_value, "calibration sources")
+        + ck_kpi_block("Payers", payers_value, "with priors")
+        + ck_kpi_block("Primitives Tracked", "3", "IDR / FWR / DAR")
+        + '</div>'
+    )
+
     body = (
-        '<section style="max-width:80rem;">'
+        ck_eyebrow("Calibration")
+        + kpi_strip
+        + '<section style="max-width:80rem;">'
         '<div style="display:flex;justify-content:space-between;'
         'align-items:baseline;margin-bottom:.75rem;">'
         '<h1 style="margin:0;">Calibration</h1>'
@@ -184,4 +219,16 @@ def render_calibration_page(store: Any) -> str:
         body,
         "Calibration",
         subtitle="per-payer prior calibration",
+        editorial_intro={
+            "eyebrow": "CALIBRATION",
+            "headline": "Where the model's priors come from.",
+            "italic_word": "from",
+            "body": (
+                "Per-payer IDR / FWR / DAR priors aggregated "
+                "across the analysis-run cache. The sliders are "
+                "read-only - they show the priors the simulator "
+                "actually uses; tune them by running more analyses, "
+                "not by dragging."
+            ),
+        },
     )

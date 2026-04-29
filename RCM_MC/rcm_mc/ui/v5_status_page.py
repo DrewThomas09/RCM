@@ -130,4 +130,16 @@ def render_v5_status() -> str:
         body,
         "v5 Transformation Status",
         subtitle="campaign progress · saving-seeking-chartis",
+        editorial_intro={
+            "eyebrow": "V5 STATUS",
+            "headline": "Where the chartis transformation stands.",
+            "italic_word": "stands",
+            "body": (
+                "Live campaign progress against the v5 editorial "
+                "chrome targets - shell adoption, primitive "
+                "density, italic-serif coverage, fmt-helper use, "
+                "provenance density. The numbers come from the "
+                "audit, not from claimed status."
+            ),
+        },
     )

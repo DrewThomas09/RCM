@@ -129,9 +129,13 @@ def provenance_tooltip(
         failing, returns plain escaped value text — no
         broken tooltips, no exceptions.
     """
+    # Cycle 46 — return SafeHtml so callers passing the result
+    # through _esc()-using helpers (ck_kpi_block, etc.) don't
+    # double-escape the tooltip markup.
+    from ._chartis_kit import SafeHtml
     safe_value = _html.escape(value)
     if graph is None or not metric_key:
-        return safe_value
+        return SafeHtml(safe_value)
 
     # Lazy import — pages without provenance should never pay
     # for the explainer at module-load time.
@@ -139,13 +143,13 @@ def provenance_tooltip(
         from ..provenance.explain import explain_for_ui
         info = explain_for_ui(graph, metric_key)
     except Exception:
-        return safe_value
+        return SafeHtml(safe_value)
 
     if not isinstance(info, dict) or "error" in info:
         # Metric not in graph, CCD chain incomplete, or any
         # other lookup failure → degrade silently to plain
         # value rather than ship a broken-looking tooltip.
-        return safe_value
+        return SafeHtml(safe_value)
 
     css = _TT_CSS if inject_css else ""
 
@@ -186,7 +190,7 @@ def provenance_tooltip(
             f'{"".join(items)}</ul>'
         )
 
-    return (
+    return SafeHtml(
         f'{css}<span class="prov-tt">'
         f'<span>{safe_value}</span>'
         f'<span class="prov-tt-icon" tabindex="0" '

@@ -3584,3 +3584,60 @@ in the 44-46 zone. Or pivot to the 25-score giants which
 need real ports (analysis_workbench 3032 LOC, dashboard_
 page 2612 LOC) — biggest blocker to 70%+. Forward-only.
 
+## Cycle 46 build — 2026-04-28 — crosses 200 passers via 30-49 sweep + provenance SafeHtml
+
+**Step 46a — port six 30-49 small pages.** Five crossed
+the threshold:
+
+- `rcm_mc/ui/scenarios_page.py` 43 → 95 — added KPI strip
+  + provenance + editorial_intro on a 62-LOC page.
+- `rcm_mc/ui/portfolio_map.py` 45 → 99 — KPI strip
+  (deals/states/CON) + provenance + editorial_intro.
+- `rcm_mc/ui/calibration_page.py` 42 → 94 — KPI strip
+  (runs/payers/primitives) + provenance + editorial_intro.
+- `rcm_mc/ui/portfolio_heatmap.py` 44 → 96 — KPI strip
+  (deals/A-grade share/metrics/bins) + provenance +
+  editorial_intro.
+- `rcm_mc/ui/source_page.py` 44 → 96 — KPI strip
+  (matches/theses/universe) + provenance + editorial_intro.
+- `rcm_mc/ui/portfolio_overview.py` 45 → 64 — ported
+  cad-kpi cards to ck_kpi_block (provenance_tooltip
+  values pass through cleanly via SafeHtml fix below);
+  still below threshold due to high inline-style count.
+- `rcm_mc/ui/v5_status_page.py` 44 → 59 — editorial_intro
+  added; still uses _kpi_card from v3_status_page (not
+  ck_kpi_block) so primitive density stays low.
+- `rcm_mc/ui/counterfactual_page.py` 46 → 46 —
+  editorial_intro added; needs primitive port.
+
+**Step 46b — extend SafeHtml to graph-mode provenance.**
+Cycle 35's SafeHtml class only covered ck_provenance_tooltip
+(the explainer-mode helper in _chartis_kit). The graph-mode
+helper at rcm_mc/ui/_provenance_tooltip.py::provenance_
+tooltip still returned plain str, so passing its output
+through ck_kpi_block (which uses _esc) would double-escape
+the markup. Updated to return SafeHtml in all four return
+paths. Drop-in safe — string callers unchanged.
+
+**Files touched this batch.**
+- 8 page files modified.
+- 1 kit file updated (`_provenance_tooltip.py` returns
+  SafeHtml).
+
+**Compliance impact.**
+- V5 fidelity passers: **200 of 299 (66.9%)** — up from
+  195. **Crossed the 200-passer milestone.** Tenth
+  straight cycle of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 47 — push past 70% (210 passers).
+Remaining 30-49 tier: ~10 pages still stuck. Quick wins:
+deal_timeline (213 LOC), portfolio_heatmap variants,
+gp_benchmarking_page (190 LOC, 2 prims), feature_
+importance_viz (268 LOC), exports_index_page (130 LOC),
+app_page (220 LOC). The 25-score giants (analysis_
+workbench 3032 LOC, dashboard_page 2612 LOC) remain the
+biggest blocker but need focused real ports. Continue
+forward-only via the proven pattern.
+

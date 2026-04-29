@@ -7,7 +7,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -78,5 +81,50 @@ def render_source_page(
         )
 
     n = len(results) if results else 0
+    n_theses = len(THESIS_LIBRARY)
+
+    # Cycle 46 — KPI strip with provenance.
+    matches_value = ck_provenance_tooltip(
+        "Thesis matches",
+        ck_fmt_num(n),
+        explainer=(
+            "Hospitals matching the selected thesis, ranked by "
+            "fit score (0-100). Score blends bed-count, revenue, "
+            "payer-mix, and geographic alignment with the "
+            "thesis's target profile."
+        ),
+    )
+    theses_value = ck_provenance_tooltip(
+        "Theses in library",
+        ck_fmt_num(n_theses),
+        explainer=(
+            "Curated investment theses with target-profile "
+            "definitions. Add new theses by extending "
+            "rcm_mc/analysis/deal_sourcer.py::THESIS_LIBRARY - "
+            "the page picks them up automatically."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Matches Found", matches_value, "for selected thesis")
+        + ck_kpi_block("Theses Available", theses_value, "in library")
+        + ck_kpi_block("HCRIS Universe", "~6,000", "hospital corpus")
+        + '</div>'
+    )
+    body = ck_eyebrow("Deal Sourcing") + kpi_strip + body
+
     sub = f"{n} matches found" if results else "Thesis-driven deal origination from HCRIS"
-    return chartis_shell(body, "Deal Sourcing", subtitle=sub)
+    return chartis_shell(body, "Deal Sourcing", subtitle=sub,
+        editorial_intro={
+            "eyebrow": "DEAL SOURCING",
+            "headline": "Where the next deal might be hiding.",
+            "italic_word": "hiding",
+            "body": (
+                "Pick an investment thesis and the platform "
+                "ranks the HCRIS universe against it. Use this "
+                "before screening - thesis-first sourcing finds "
+                "deals that fit the fund, not deals that look "
+                "good in isolation."
+            ),
+        })

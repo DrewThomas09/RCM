@@ -796,4 +796,16 @@ def render_counterfactual_page(
         body,
         f"Counterfactual Advisor — {dataset}",
         subtitle="What Would Change Your Mind",
+        editorial_intro={
+            "eyebrow": "COUNTERFACTUAL ADVISOR",
+            "headline": "What would change your mind on this deal.",
+            "italic_word": "change",
+            "body": (
+                "For each lever (rate, denial, AR), the smallest "
+                "shift that would flip the verdict. Use this as "
+                "the 'what we're waiting for' surface during "
+                "diligence - if you can't move that lever, the "
+                "verdict holds."
+            ),
+        },
     )

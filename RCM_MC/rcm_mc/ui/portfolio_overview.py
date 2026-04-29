@@ -227,23 +227,31 @@ def render_portfolio_overview(
             source_detail=f"mean across {n} deal(s)",
         ))
 
+    # Cycle 46 — port cad-kpi cards to ck_kpi_block. Each value is
+    # already wrapped in provenance_tooltip; the kit's ck_kpi_block
+    # passes value through _esc which now respects SafeHtml from the
+    # tooltip helper, so the markup survives.
+    from ._chartis_kit import ck_kpi_block, ck_fmt_num
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n}</div>'
-        f'<div class="cad-kpi-label">Active Deals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Total Net Revenue", value=(_fmt_money(total_rev) if total_rev else "—"), graph=prov_graph, metric_key="net_patient_revenue")}</div>'
-        f'<div class="cad-kpi-label">{metric_label_link("Total Net Revenue", _LABEL_TO_GLOSSARY_KEY["Total Net Revenue"])}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Avg Denial Rate", value=(_fmt_pct(avg_denial) if avg_denial else "—"), graph=prov_graph, metric_key="denial_rate", inject_css=False)}</div>'
-        f'<div class="cad-kpi-label">{metric_label_link("Avg Denial Rate", _LABEL_TO_GLOSSARY_KEY["Avg Denial Rate"])}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Avg Days in AR", value=(f"{avg_ar:.0f}" if avg_ar else "—"), graph=prov_graph, metric_key="days_in_ar", inject_css=False)}'
-        f'</div><div class="cad-kpi-label">{metric_label_link("Avg Days in AR", _LABEL_TO_GLOSSARY_KEY["Avg Days in AR"])}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{provenance_tooltip(label="Avg Net Collection", value=(_fmt_pct(avg_ncr) if avg_ncr else "—"), graph=prov_graph, metric_key="net_collection_rate", inject_css=False)}</div>'
-        f'<div class="cad-kpi-label">{metric_label_link("Avg Net Collection", _LABEL_TO_GLOSSARY_KEY["Avg Net Collection"])}</div></div>'
-        f'</div>'
+        f'<div class="ck-kpi-grid">'
+        + ck_kpi_block("Active Deals", ck_fmt_num(n))
+        + ck_kpi_block(
+            "Total Net Revenue",
+            provenance_tooltip(label="Total Net Revenue", value=(_fmt_money(total_rev) if total_rev else "—"), graph=prov_graph, metric_key="net_patient_revenue"),
+        )
+        + ck_kpi_block(
+            "Avg Denial Rate",
+            provenance_tooltip(label="Avg Denial Rate", value=(_fmt_pct(avg_denial) if avg_denial else "—"), graph=prov_graph, metric_key="denial_rate", inject_css=False),
+        )
+        + ck_kpi_block(
+            "Avg Days in AR",
+            provenance_tooltip(label="Avg Days in AR", value=(f"{avg_ar:.0f}" if avg_ar else "—"), graph=prov_graph, metric_key="days_in_ar", inject_css=False),
+        )
+        + ck_kpi_block(
+            "Avg Net Collection",
+            provenance_tooltip(label="Avg Net Collection", value=(_fmt_pct(avg_ncr) if avg_ncr else "—"), graph=prov_graph, metric_key="net_collection_rate", inject_css=False),
+        )
+        + '</div>'
     )
 
     # Health distribution
