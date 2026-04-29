@@ -25,7 +25,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_fmt_pct,
+    ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+)
 
 
 def _percentile(vals: List[float], p: float) -> Optional[float]:
@@ -185,20 +188,40 @@ def render_irr_dispersion() -> str:
     irr_p75 = _percentile(irrs, 75)
     above_hurdle = sum(1 for v in irrs if v >= 0.20) / len(irrs) * 100 if irrs else 0
 
-    kpis = "".join(
-        f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 14px">'
-        f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:3px">{lbl}</div>'
-        f'<div style="font-size:16px;font-family:{_MONO};font-variant-numeric:tabular-nums;color:{col}">{val}</div>'
-        f'</div>'
-        for lbl, val, col in [
-            ("WITH IRR DATA",    str(len(has_irr)),                              P["text"]),
-            ("IRR P25",          f"{irr_p25*100:.1f}%" if irr_p25 else "—",     P["text"]),
-            ("IRR P50",          f"{irr_p50*100:.1f}%" if irr_p50 else "—",     P["positive"] if (irr_p50 or 0) >= 0.20 else P["warning"]),
-            ("IRR P75",          f"{irr_p75*100:.1f}%" if irr_p75 else "—",     P["text"]),
-            ("≥20% HURDLE RATE", f"{above_hurdle:.0f}%",                         P["positive"] if above_hurdle >= 50 else P["warning"]),
-        ]
+    # Cycle 42 — port bespoke KPI cards to ck_kpi_block + provenance.
+    p50_color = P["positive"] if (irr_p50 or 0) >= 0.20 else P["warning"]
+    hurdle_color = P["positive"] if above_hurdle >= 50 else P["warning"]
+    p50_value = ck_provenance_tooltip(
+        "Realized IRR P50",
+        f'<span style="color:{p50_color}">{ck_fmt_pct(irr_p50)}</span>' if irr_p50 else "—",
+        explainer=(
+            "Median realized internal rate of return at exit "
+            "across the corpus deals with disclosed IRR. 20% is "
+            "the canonical hurdle - below that the deal didn't "
+            "earn carry; well above is the long-tail driving fund "
+            "performance."
+        ),
     )
-    kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'
+    hurdle_value = ck_provenance_tooltip(
+        "Above 20% hurdle rate",
+        f'<span style="color:{hurdle_color}">{above_hurdle:.0f}%</span>',
+        explainer=(
+            "Share of corpus deals that exited above 20% IRR. "
+            "Closer to 50% is healthy across a healthcare PE "
+            "vintage; below 30% means the fund is leaning "
+            "heavily on a small number of breakouts."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px;">'
+        + ck_kpi_block("With IRR Data", ck_fmt_num(len(has_irr)), "of corpus")
+        + ck_kpi_block("IRR P25", ck_fmt_pct(irr_p25) if irr_p25 else "—", "lower quartile")
+        + ck_kpi_block("IRR P50", p50_value, "median")
+        + ck_kpi_block("IRR P75", ck_fmt_pct(irr_p75) if irr_p75 else "—", "upper quartile")
+        + ck_kpi_block(">=20% Hurdle", hurdle_value, "share above hurdle")
+        + '</div>'
+    )
 
     histogram = _irr_histogram(irrs)
     scatter = _irr_moic_scatter(has_both)

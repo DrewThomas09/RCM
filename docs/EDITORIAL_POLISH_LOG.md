@@ -3381,3 +3381,54 @@ should yield 5-10 more passers in one cycle. Path (b)
 is cheaper per-page; path (a) closes the audit's worst
 offenders. Forward-only.
 
+## Cycle 42 build — 2026-04-28 — passes 60% mark via 50-63 sweep
+
+**Step 42 — port bespoke KPI strips on the 4 highest-
+scoring 50-63 pages.** Cycle 40-41's pattern (editorial_
+intro + provenance + ck_fmt_*) flips a page when most of
+the chrome is already chartis. Cycle 42 takes 4 data_public
+pages where the only blocker was hand-rolled `<div>` KPI
+cards — replace those with ck_kpi_block + provenance and
+the audit catches up to the actual chrome.
+
+- `data_public/sector_momentum_page.py` 63 → 93 (+30) —
+  added 4-card KPI strip (sectors, accelerating,
+  decelerating, top grower) + provenance on
+  Sectors/Accelerating + ck_fmt_num.
+- `data_public/irr_dispersion_page.py` 60 → 92 (+32) —
+  ported 5-card hand-rolled KPI strip to ck_kpi_block +
+  provenance on IRR P50 and >=20% Hurdle + ck_fmt_pct.
+- `data_public/payer_rate_trends_page.py` 60 → 94 (+34) —
+  ported 4-card strip + provenance on commercial/gov
+  share + ck_fmt_pct.
+- `data_public/hold_analysis_page.py` 55 → 88 (+33) —
+  ported 6-card strip + provenance on Hold P50 / Mean +
+  ck_fmt_num.
+
+All four cross 70+ and most enter 90+ tier. Average lift
++32 per page. Net: **+4 passers in one cycle**.
+
+**Files touched this batch.**
+- 4 data_public pages: bespoke KPI strips swapped for
+  ck_kpi_block + 2 provenance wraps + ck_fmt_* adoption.
+
+**Compliance impact.**
+- V5 fidelity passers: **183 of 299 (61.2%)** — up from
+  179. **Crossed the 60% mark.**
+- All four ported pages now in the 88-94 band — the
+  pattern reliably overshoots the 70 threshold.
+- Per-module + provenance + integration sweep: 72 passing,
+  zero regressions.
+
+**Suggested next:** cycle 43 — six 50-63 pages remain
+(bankruptcy_survivor, chartis/forgot_page, chartis/login_
+page, analysis_landing, chartis/home_page, ic_memo_page).
+Login flows (forgot, login) probably should be skipped —
+they're auth surfaces, not analysis. The other four
+should each take one KPI strip port + 1-2 provenance for
+~15 min each. Plus the 25-score cluster (analysis_workbench,
+dashboard_page, hcris_xray, physician_attrition) which
+needs real chartis_shell ports. Pick mid-tier first
+(easier, +4 expected passers); save the big 25-tier ports
+for a focused cycle. Forward-only.
+
