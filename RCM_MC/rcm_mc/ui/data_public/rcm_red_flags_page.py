@@ -26,7 +26,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip, ck_section_header,
+)
 
 
 def _percentile(vals: List[float], p: float) -> Optional[float]:
@@ -341,9 +344,38 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
   <div style="font-size:12px;color:{P['text_dim']};font-family:{_SANS}">Enter deal characteristics above to score against corpus risk factors.</div>
 </div>"""
 
+    # Cycle 57 — KPI strip with provenance.
+    factors_value = ck_provenance_tooltip(
+        "Risk factors scored",
+        ck_fmt_num(len(_RISK_FACTORS)),
+        explainer=(
+            "Curated RCM risk factors with corpus-validated "
+            "impact: high denial rates, long AR aging, payer "
+            "concentration, write-off spikes. Each factor cites "
+            "its empirical sub-2x MOIC rate on flagged deals."
+        ),
+    )
+    corpus_value = ck_provenance_tooltip(
+        "Corpus deals scored",
+        ck_fmt_num(len(corpus)),
+        explainer=(
+            "Realized PE-healthcare deals in the validation "
+            "corpus. Each risk factor's weight is calibrated "
+            "from this corpus's flagged-vs-clean MOIC distribution."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Risk Factors", factors_value, "scored")
+        + ck_kpi_block("Corpus Deals", corpus_value, "validation set")
+        + '</div>'
+    )
+
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
   {ck_section_header("RCM RED FLAG DETECTOR", f"Corpus-driven risk factor scoring — {len(corpus):,} transactions", None)}
+  {kpi_strip}
   <div style="background:{P['panel']};border:1px solid {P['border']};padding:14px;margin-bottom:16px">
     <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:10px">DEAL PARAMETERS</div>
     {_input_form(params)}
@@ -360,4 +392,16 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
 </div>"""
 
     return chartis_shell(body, "RCM Red Flag Detector", active_nav="/rcm-red-flags",
-                         subtitle=f"{len(_RISK_FACTORS)} risk factors — {len(corpus):,} deal corpus")
+                         subtitle=f"{len(_RISK_FACTORS)} risk factors — {len(corpus):,} deal corpus",
+        editorial_intro={
+            "eyebrow": "RCM RED FLAG DETECTOR",
+            "headline": "Where the deal's RCM hides its risks.",
+            "italic_word": "hides",
+            "body": (
+                f"{len(_RISK_FACTORS)} curated RCM risk factors "
+                f"scored against the corpus: high denial rates, "
+                f"long AR aging, payer concentration, write-off "
+                f"spikes. Each factor cites its sub-2x MOIC rate "
+                f"on flagged deals as the partner-day calibration."
+            ),
+        })

@@ -97,6 +97,17 @@ def _landing() -> str:
     return chartis_shell(
         body, "RCM Diligence — IC Packet Assembler",
         subtitle="One-click IC deliverable",
+        editorial_intro={
+            "eyebrow": "IC PACKET ASSEMBLER",
+            "headline": "Where the IC packet writes itself.",
+            "italic_word": "writes",
+            "body": (
+                "Pick a target hospital fixture and the platform "
+                "assembles the IC packet end-to-end: thesis, "
+                "base case, bear case, comparables, exit path. "
+                "Use as a draft anchor; the partner adds judgment."
+            ),
+        },
     )
 
 

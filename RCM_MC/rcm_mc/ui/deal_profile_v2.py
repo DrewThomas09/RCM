@@ -643,4 +643,15 @@ def render_deal_profile_v2(
             ("Deals", "/deals"),
             (deal_name, None),
         ],
+        editorial_intro={
+            "eyebrow": "DEAL PROFILE",
+            "headline": "Where the deal's full record lives.",
+            "italic_word": "full",
+            "body": (
+                "Per-deal canvas: profile, alerts, notes, history, "
+                "and the analysis packet. Edit fields inline; "
+                "alerts and packet rebuilds run automatically on "
+                "save. The audit log captures every change."
+            ),
+        },
     )

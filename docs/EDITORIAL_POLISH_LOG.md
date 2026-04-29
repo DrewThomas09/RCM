@@ -4009,3 +4009,27 @@ small/medium pages with shell adoption: rcm_red_flags
 (312 LOC, 2 prims), diligence_page (166 LOC), news_page
 (438 LOC). Plus the 600+ LOC heavyweights.
 
+## Cycle 57 build — 2026-04-29 — rcm_red_flags + intro adoption (+1, 82.6%)
+
+**Step 57 — port rcm_red_flags + add intros to four
+larger pages.** rcm_red_flags crossed:
+
+- `rcm_mc/ui/data_public/rcm_red_flags_page.py` 37 → 77
+
+deal_profile_v2 (35→50), ic_packet_page (36→51), and
+deal_comparison (52→52) adopted intros but stayed below
+threshold - they need primitive density. ic_packet_page's
+main render returns raw HTML, not chartis_shell - that's
+an architectural port, not a kwarg fix.
+
+**Compliance impact.**
+- V5 fidelity passers: **247 of 299 (82.6%)** — up from
+  246. 21 straight cycles of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 58 — add KPI strips to
+deal_profile_v2 (566 LOC, 0 prims), ic_packet_page (618
+LOC), and remaining 35-tier pages. Each needs ~30 min of
+KPI strip + provenance + ck_fmt_* to overcome density.
+
