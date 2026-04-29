@@ -9,7 +9,9 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -49,19 +51,26 @@ def render_fund_learning(db_path: str) -> str:
     r_color = "var(--cad-pos)" if accuracy.fund_realization_pct >= 0.80 else (
         "var(--cad-warn)" if accuracy.fund_realization_pct >= 0.60 else "var(--cad-neg)")
 
+    # Cycle 53 — port to ck_kpi_block + provenance.
+    realization_value = ck_provenance_tooltip(
+        "Fund realization rate",
+        f'<span style="color:{r_color};">{ck_fmt_pct(accuracy.fund_realization_pct)}</span>',
+        explainer=(
+            f"Realized vs. planned EBITDA uplift across "
+            f"{accuracy.n_closed_deals} closed deals. Above 80% "
+            f"green (track record holds); below 60% red (the "
+            f"fund is over-projecting underwriting). The lever-"
+            f"bias table below decomposes this by lever."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(4,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{accuracy.n_closed_deals}</div>'
-        f'<div class="cad-kpi-label">Deals with Data</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(accuracy.total_planned)}</div>'
-        f'<div class="cad-kpi-label">Total Planned</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{r_color};">'
-        f'{_fm(accuracy.total_realized)}</div>'
-        f'<div class="cad-kpi-label">Total Realized</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{r_color};">'
-        f'{accuracy.fund_realization_pct:.0%}</div>'
-        f'<div class="cad-kpi-label">Fund Realization</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);">'
+        + ck_kpi_block("Deals with Data", ck_fmt_num(accuracy.n_closed_deals), "in fund history")
+        + ck_kpi_block("Total Planned", _fm(accuracy.total_planned), "EBITDA uplift")
+        + ck_kpi_block("Total Realized", f'<span style="color:{r_color};">{_fm(accuracy.total_realized)}</span>',
+                       "vs underwriting")
+        + ck_kpi_block("Fund Realization", realization_value, "calibration signal")
+        + '</div>'
     )
 
     # Narrative
@@ -158,4 +167,16 @@ def render_fund_learning(db_path: str) -> str:
             f"{accuracy.fund_realization_pct:.0%} realization | "
             f"{len(accuracy.lever_biases)} levers tracked"
         ),
+        editorial_intro={
+            "eyebrow": "FUND LEARNING",
+            "headline": "What the fund knows now that it didn't.",
+            "italic_word": "knows",
+            "body": (
+                "Per-fund lever biases learned from realized "
+                "outcomes vs. underwriting projections. Use this "
+                "to calibrate the next deal's bridge - if your "
+                "fund consistently over-projects RCM uplift by "
+                "20%, the next underwriting should reflect that."
+            ),
+        },
     )

@@ -88,7 +88,19 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
 
     return chartis_shell(body, f"Diligence Questions — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"{len(questions)} questions across {len(by_category)} categories")
+                    subtitle=f"{len(questions)} questions across {len(by_category)} categories",
+        editorial_intro={
+            "eyebrow": "DILIGENCE QUESTIONS",
+            "headline": "What you should be asking next.",
+            "italic_word": "next",
+            "body": (
+                "Auto-generated diligence question list keyed off "
+                "this deal's outstanding gaps - missing data, "
+                "unresolved findings, model-flagged inconsistencies. "
+                "Each question carries a category and rationale "
+                "so you know why it matters."
+            ),
+        })
 
 
 def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]]) -> str:
@@ -159,4 +171,16 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
 
     return chartis_shell(body, f"Playbook — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"{len(entries)} initiatives | ${total_impact/1e6:.1f}M total impact")
+                    subtitle=f"{len(entries)} initiatives | ${total_impact/1e6:.1f}M total impact",
+        editorial_intro={
+            "eyebrow": "OPERATIONAL PLAYBOOK",
+            "headline": "What the operator does in year one.",
+            "italic_word": "does",
+            "body": (
+                "Sequenced value-creation initiatives with EBITDA "
+                "impact estimates and timelines. The playbook "
+                "anchors hold-period diligence; partner reviews "
+                "use this to read whether actuals are tracking "
+                "plan."
+            ),
+        })

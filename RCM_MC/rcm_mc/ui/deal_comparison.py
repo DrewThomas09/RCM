@@ -216,6 +216,18 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
     return chartis_shell(
         body, "Deal Comparison",
         subtitle=f"Comparing {len(packets)} deals",
+        editorial_intro={
+            "eyebrow": "DEAL COMPARISON",
+            "headline": "Where these deals diverge.",
+            "italic_word": "diverge",
+            "body": (
+                "Side-by-side metrics across the selected deals "
+                "with a radar chart for visual divergence. Use "
+                "this when picking which of two competing deals "
+                "to advance, or to see how a deal compares to a "
+                "recently closed peer."
+            ),
+        },
     )
 
 

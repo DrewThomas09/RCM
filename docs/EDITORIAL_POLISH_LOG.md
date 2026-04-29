@@ -3904,3 +3904,31 @@ Or: take a single 1000-LOC page and convert ~10-20
 inline-style divs to ck_panel / ck_section_header to
 reduce penalty directly. Forward-only.
 
+## Cycle 53 build — 2026-04-29 — 37-tier sweep (+4 passers, 79.6%)
+
+**Step 53 — port the 37-tier cluster.** Eight pages
+adopted editorial_intro; four crossed via additional
+KPI strip + provenance:
+
+- `rcm_mc/ui/bayesian_page.py` 37 → 90
+- `rcm_mc/ui/fund_learning_page.py` 37 → 89
+- `rcm_mc/ui/value_tracking_page.py` 37 → 92
+- `rcm_mc/ui/competitive_intel_page.py` 37 → 86
+
+Plus four pages got intro but stayed at 52 (need primitives
+in cycle 54): model_quality_dashboard, deal_comparison,
+diligence_page, quick_import.
+
+**Compliance impact.**
+- V5 fidelity passers: **238 of 299 (79.6%)** — up from
+  234. Seventeenth straight cycle of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 54 — finish the 52-tier
+(model_quality_dashboard, deal_comparison, diligence_page,
+quick_import) by adding KPI strips + provenance. Each
+follows the established pattern: ~3-4 KPI tiles + 1-2
+provenance wraps + ck_fmt_* helpers. Should net +4
+passers to push past 80%.
+

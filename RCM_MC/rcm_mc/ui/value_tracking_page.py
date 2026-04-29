@@ -9,7 +9,9 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+)
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
 from ..portfolio.store import PortfolioStore
@@ -100,22 +102,27 @@ def render_value_tracker(
     quarters = summary.quarters_tracked if summary else 0
     real_color = "var(--cad-pos)" if realization >= 0.85 else ("var(--cad-warn)" if realization >= 0.6 else "var(--cad-neg)")
 
+    realization_value = ck_provenance_tooltip(
+        "Realization rate",
+        f'<span style="color:{real_color};">{ck_fmt_pct(realization)}</span>',
+        explainer=(
+            "Realized EBITDA uplift divided by planned. Above "
+            "85% green (deal tracking ahead of plan); below 60% "
+            "red (deal slipping). The lever-by-lever table "
+            "below decomposes which initiatives are pulling "
+            "ahead vs. behind."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(total_planned)}</div>'
-        f'<div class="cad-kpi-label">Planned Uplift</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{real_color};">'
-        f'{_fm(total_realized)}</div>'
-        f'<div class="cad-kpi-label">Realized</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{real_color};">'
-        f'{realization:.0%}</div>'
-        f'<div class="cad-kpi-label">Realization</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{quarters}</div>'
-        f'<div class="cad-kpi-label">Quarters Tracked</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{summary.on_track_count if summary else 0}</div>'
-        f'<div class="cad-kpi-label">Levers On Track</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
+        + ck_kpi_block("Planned Uplift", _fm(total_planned), "underwriting target")
+        + ck_kpi_block("Realized", f'<span style="color:{real_color};">{_fm(total_realized)}</span>',
+                       "actual EBITDA")
+        + ck_kpi_block("Realization", realization_value, "% of plan")
+        + ck_kpi_block("Quarters Tracked", ck_fmt_num(quarters), "of hold")
+        + ck_kpi_block("Levers On Track", ck_fmt_num(summary.on_track_count if summary else 0),
+                       "ahead/on plan")
+        + '</div>'
     )
 
     # ── Ramp assessment ──
@@ -280,4 +287,16 @@ def render_value_tracker(
             f"Planned {_fm(total_planned)} | Realized {_fm(total_realized)} "
             f"({realization:.0%}) | {quarters} quarters"
         ),
+        editorial_intro={
+            "eyebrow": "VALUE TRACKER",
+            "headline": "What the value plan actually delivered.",
+            "italic_word": "actually",
+            "body": (
+                "Per-lever realization rates: planned EBITDA "
+                "uplift vs. quarter-over-quarter actual. The "
+                "ramp banner flags whether the deal is tracking "
+                "ahead, on plan, or behind - early warnings "
+                "surface 1-2 quarters before the gap matters."
+            ),
+        },
     )

@@ -253,4 +253,16 @@ def render_model_quality_dashboard(
         body,
         "Model Quality",
         subtitle="trained-model backtests",
+        editorial_intro={
+            "eyebrow": "MODEL QUALITY",
+            "headline": "Where each model has earned its keep.",
+            "italic_word": "earned",
+            "body": (
+                "Trained-model backtest scorecards: R-squared, "
+                "MAE, calibration, and confidence intervals. "
+                "Models below their stated quality threshold "
+                "are auto-flagged - pages depending on those "
+                "models surface a warning chip."
+            ),
+        },
     )

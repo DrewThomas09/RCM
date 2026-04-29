@@ -189,4 +189,15 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
         form, "Import Deals",
         subtitle="Create deals directly in your browser",
         extra_js=comma_js,
+        editorial_intro={
+            "eyebrow": "IMPORT DEALS",
+            "headline": "Where the deal first lands in the platform.",
+            "italic_word": "first",
+            "body": (
+                "Quick-import form for new deals - paste headline "
+                "economics, the platform creates the deal record "
+                "and seeds the analysis packet. For bulk imports, "
+                "use the JSON / CSV uploaders linked below."
+            ),
+        },
     )

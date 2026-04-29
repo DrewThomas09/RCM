@@ -8,7 +8,9 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -33,24 +35,26 @@ def render_bayesian_profile(
         "C": "var(--cad-warn)", "D": "var(--cad-neg)",
     }.get(data_score["grade"], "var(--cad-text3)")
 
+    # Cycle 53 — port to ck_kpi_block + provenance.
+    grade_value = ck_provenance_tooltip(
+        "Data quality grade",
+        f'<span style="color:{grade_color};">{data_score["grade"]}</span>',
+        explainer=(
+            f"A-D grade based on completeness ("
+            f"{data_score['completeness_pct']:.0f}%) and presence "
+            f"of suspicious values ({len(data_score['suspicious_values'])}). "
+            f"Lower grades = more prior weight in the posteriors "
+            f"below; the model leans on benchmarks when data is thin."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{grade_color};">'
-        f'{data_score["grade"]}</div>'
-        f'<div class="cad-kpi-label">Data Quality Grade</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{data_score["completeness_pct"]:.0f}%</div>'
-        f'<div class="cad-kpi-label">Completeness</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{data_score["present_count"]}/{data_score["total_metrics"]}</div>'
-        f'<div class="cad-kpi-label">Metrics Provided</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{data_score["missing_count"]}</div>'
-        f'<div class="cad-kpi-label">Missing (Imputed)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{len(data_score["suspicious_values"])}</div>'
-        f'<div class="cad-kpi-label">Suspicious Values</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("Data Quality Grade", grade_value, "blended posterior")
+        + ck_kpi_block("Completeness", f"{data_score['completeness_pct']:.0f}%", "fields populated")
+        + ck_kpi_block("Metrics Provided", f"{data_score['present_count']}/{data_score['total_metrics']}", "vs. expected")
+        + ck_kpi_block("Missing (Imputed)", ck_fmt_num(data_score["missing_count"]), "from prior")
+        + ck_kpi_block("Suspicious Values", ck_fmt_num(len(data_score["suspicious_values"])), "outliers flagged")
+        + '</div>'
     )
 
     # ── Missing data warning ──
@@ -171,4 +175,16 @@ def render_bayesian_profile(
             f"({data_score['completeness_pct']:.0f}% complete) | "
             f"{data_score['present_count']}/{data_score['total_metrics']} metrics"
         ),
+        editorial_intro={
+            "eyebrow": "BAYESIAN CALIBRATION",
+            "headline": "Where the model's beliefs come from.",
+            "italic_word": "from",
+            "body": (
+                "Per-metric Bayesian posteriors blending sector "
+                "prior + this hospital's signal. Lower data quality "
+                "means tighter prior weight; higher data quality "
+                "shifts toward the observed value. Use this to "
+                "see what the platform 'knows' vs. is inferring."
+            ),
+        },
     )
