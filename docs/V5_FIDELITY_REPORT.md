@@ -14,8 +14,8 @@ Run `python tools/v5_fidelity_audit.py` to refresh.
 
 | Score | File | LOC | Primitives | Notes |
 |---|---|---|---|---|
-| 89 | `rcm_mc/ui/data_public/deals_library_page.py` | 246 | 25 (10.2/100) | — |
-| 85 | `rcm_mc/ui/escalations_page.py` | 158 | 17 (10.8/100) | — |
+| 93 | `rcm_mc/ui/data_public/deals_library_page.py` | 269 | 28 (10.4/100) | — |
+| 87 | `rcm_mc/ui/escalations_page.py` | 168 | 20 (11.9/100) | — |
 | 85 | `rcm_mc/ui/my_dashboard_page.py` | 309 | 23 (7.4/100) | — |
 | 85 | `rcm_mc/ui/notes_search_page.py` | 206 | 10 (4.9/100) | — |
 | 85 | `rcm_mc/ui/research_page.py` | 212 | 17 (8.0/100) | — |
@@ -216,6 +216,7 @@ Sorted highest score first — these pages are partially editorial. Lowest score
 | 45 | `rcm_mc/ui/data_public/entry_multiple_page.py` | 197 | 2 (1.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 29; high non-ck-class <div> count: 15 |
 | 45 | `rcm_mc/ui/exports_index_page.py` | 130 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing) |
 | 45 | `rcm_mc/ui/portfolio_map.py` | 111 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing) |
+| 45 | `rcm_mc/ui/portfolio_overview.py` | 414 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 63; high non-ck-class <div> count: 62 |
 | 45 | `rcm_mc/ui/risk_workbench_page.py` | 1202 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 54; high non-ck-class <div> count: 30 |
 | 44 | `rcm_mc/ui/chartis/partner_review_page.py` | 652 | 13 (2.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 68; high non-ck-class <div> count: 25 |
 | 44 | `rcm_mc/ui/data_public/deal_flow_heatmap_page.py` | 259 | 2 (0.8/100) | low ck_* primitive density (0.8/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 30; high non-ck-class <div> count: 11 |
@@ -230,6 +231,7 @@ Sorted highest score first — these pages are partially editorial. Lowest score
 | 43 | `rcm_mc/ui/scenarios_page.py` | 62 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 13 |
 | 42 | `rcm_mc/ui/calibration_page.py` | 161 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 20 |
 | 42 | `rcm_mc/ui/data_public/corpus_coverage_page.py` | 210 | 2 (1.0/100) | low ck_* primitive density (1.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 41; high non-ck-class <div> count: 15 |
+| 42 | `rcm_mc/ui/ebitda_bridge_page.py` | 901 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 108; high non-ck-class <div> count: 95 |
 | 42 | `rcm_mc/ui/pressure_page.py` | 83 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 7; high non-ck-class <div> count: 13 |
 | 42 | `rcm_mc/ui/regulatory_calendar_page.py` | 973 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 46; high non-ck-class <div> count: 99 |
 | 42 | `rcm_mc/ui/surrogate_page.py` | 56 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 13 |
@@ -246,8 +248,6 @@ Sorted highest score first — these pages are partially editorial. Lowest score
 | 40 | `rcm_mc/ui/cli_runs_page.py` | 172 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 31 |
 | 40 | `rcm_mc/ui/deal_profile_page.py` | 1456 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 109; high non-ck-class <div> count: 76 |
 | 40 | `rcm_mc/ui/diligence_benchmarks.py` | 725 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 104; high non-ck-class <div> count: 47 |
-| 40 | `rcm_mc/ui/ebitda_bridge_page.py` | 901 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 108; high non-ck-class <div> count: 95 |
-| 40 | `rcm_mc/ui/portfolio_overview.py` | 414 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 63; high non-ck-class <div> count: 62 |
 | 40 | `rcm_mc/ui/sensitivity_dashboard.py` | 330 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 31 |
 | 39 | `rcm_mc/ui/comparable_outcomes_page.py` | 363 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 33 |
 | 39 | `rcm_mc/ui/sponsor_detail_page.py` | 401 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 28 |
@@ -260,22 +260,22 @@ Sorted highest score first — these pages are partially editorial. Lowest score
 | 38 | `rcm_mc/ui/hospital_stats_page.py` | 227 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 21; high non-ck-class <div> count: 21 |
 | 38 | `rcm_mc/ui/waterfall_page.py` | 107 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 16; high non-ck-class <div> count: 25 |
 | 37 | `rcm_mc/ui/bayesian_page.py` | 148 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 26; high non-ck-class <div> count: 24 |
+| 37 | `rcm_mc/ui/competitive_intel_page.py` | 343 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 30; high non-ck-class <div> count: 25 |
 | 37 | `rcm_mc/ui/data_public/rcm_red_flags_page.py` | 312 | 2 (0.6/100) | low ck_* primitive density (0.6/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 57; high non-ck-class <div> count: 19 |
 | 37 | `rcm_mc/ui/deal_comparison.py` | 280 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 33; high non-ck-class <div> count: 16 |
 | 37 | `rcm_mc/ui/diligence_page.py` | 142 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 26; high non-ck-class <div> count: 23 |
 | 37 | `rcm_mc/ui/fund_learning_page.py` | 136 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 26; high non-ck-class <div> count: 23 |
 | 37 | `rcm_mc/ui/model_quality_dashboard.py` | 221 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 36; high non-ck-class <div> count: 11 |
 | 37 | `rcm_mc/ui/quick_import.py` | 173 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 31; high non-ck-class <div> count: 17 |
+| 37 | `rcm_mc/ui/value_tracking_page.py` | 230 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 32; high non-ck-class <div> count: 26 |
 | 36 | `rcm_mc/ui/demand_page.py` | 172 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 23; high non-ck-class <div> count: 25 |
 | 36 | `rcm_mc/ui/ic_packet_page.py` | 618 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 43; high non-ck-class <div> count: 11 |
 | 36 | `rcm_mc/ui/news_page.py` | 427 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 36; high non-ck-class <div> count: 18 |
 | 35 | `rcm_mc/ui/compare_page.py` | 342 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 39; high non-ck-class <div> count: 17 |
-| 35 | `rcm_mc/ui/competitive_intel_page.py` | 343 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 30; high non-ck-class <div> count: 25 |
 | 35 | `rcm_mc/ui/deal_profile_v2.py` | 566 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 46; high non-ck-class <div> count: 14 |
 | 35 | `rcm_mc/ui/deal_quick_view.py` | 138 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 38; high non-ck-class <div> count: 20 |
 | 35 | `rcm_mc/ui/market_analysis_page.py` | 156 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 24; high non-ck-class <div> count: 31 |
 | 35 | `rcm_mc/ui/pe_returns_page.py` | 105 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 13; high non-ck-class <div> count: 43 |
-| 35 | `rcm_mc/ui/value_tracking_page.py` | 230 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 32; high non-ck-class <div> count: 26 |
 | 34 | `rcm_mc/ui/data_dashboard.py` | 219 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 29; high non-ck-class <div> count: 31 |
 | 34 | `rcm_mc/ui/memo_page.py` | 169 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 20; high non-ck-class <div> count: 44 |
 | 34 | `rcm_mc/ui/model_validation_page.py` | 211 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 27; high non-ck-class <div> count: 35 |
@@ -288,12 +288,13 @@ Sorted highest score first — these pages are partially editorial. Lowest score
 | 33 | `rcm_mc/ui/pipeline_page.py` | 240 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 39; high non-ck-class <div> count: 29 |
 | 33 | `rcm_mc/ui/scenario_modeler_page.py` | 379 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 36; high non-ck-class <div> count: 30 |
 | 32 | `rcm_mc/ui/analytics_pages.py` | 235 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 27; high non-ck-class <div> count: 46 |
+| 32 | `rcm_mc/ui/data_room_page.py` | 304 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 49; high non-ck-class <div> count: 37 |
 | 31 | `rcm_mc/ui/advanced_tools_page.py` | 244 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 33; high non-ck-class <div> count: 48 |
 | 31 | `rcm_mc/ui/market_intel_page.py` | 597 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 45; high non-ck-class <div> count: 34 |
 | 31 | `rcm_mc/ui/pe_tools_page.py` | 243 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 35; high non-ck-class <div> count: 42 |
 | 31 | `rcm_mc/ui/portfolio_monitor_page.py` | 347 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 45; high non-ck-class <div> count: 34 |
 | 31 | `rcm_mc/ui/seeking_alpha_page.py` | 605 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 27; high non-ck-class <div> count: 56 |
-| 30 | `rcm_mc/ui/data_room_page.py` | 304 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 49; high non-ck-class <div> count: 37 |
+| 30 | `rcm_mc/ui/hospital_profile.py` | 378 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 61; high non-ck-class <div> count: 69 |
 | 30 | `rcm_mc/ui/onboarding_wizard.py` | 592 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 28; high non-ck-class <div> count: 54 |
 | 30 | `rcm_mc/ui/physician_eu_page.py` | 484 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 35; high non-ck-class <div> count: 48 |
 | 30 | `rcm_mc/ui/thesis_pipeline_page.py` | 597 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 31; high non-ck-class <div> count: 56 |
@@ -315,7 +316,6 @@ Sorted highest score first — these pages are partially editorial. Lowest score
 | 25 | `rcm_mc/ui/exit_timing_page.py` | 725 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 72; high non-ck-class <div> count: 54 |
 | 25 | `rcm_mc/ui/hcris_xray_page.py` | 970 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 74; high non-ck-class <div> count: 85 |
 | 25 | `rcm_mc/ui/home_v2.py` | 423 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 64; high non-ck-class <div> count: 67 |
-| 25 | `rcm_mc/ui/hospital_profile.py` | 378 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 61; high non-ck-class <div> count: 69 |
 | 25 | `rcm_mc/ui/ml_insights_page.py` | 510 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 107; high non-ck-class <div> count: 76 |
 | 25 | `rcm_mc/ui/models_page.py` | 527 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 69; high non-ck-class <div> count: 67 |
 | 25 | `rcm_mc/ui/payer_stress_page.py` | 866 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 67; high non-ck-class <div> count: 85 |

@@ -117,7 +117,9 @@ _COLUMNS = [
 
 
 def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
-    from rcm_mc.ui._chartis_kit import ck_kpi_block, ck_fmt_number
+    from rcm_mc.ui._chartis_kit import (
+        ck_kpi_block, ck_fmt_number, ck_provenance_tooltip,
+    )
 
     total = len(deals)
     realized = [r for r in rows if r["moic"] is not None]
@@ -129,12 +131,37 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     p50_html = f"{ck_fmt_number(p50, precision=2)}x" if p50 else '<span class="faint">—</span>'
     loss_pct = f"{loss_count/len(moics)*100:.1f}%" if moics else "—"
 
+    # Cycle 34 — partner-grade explainers for the two values that
+    # most often need defending in an LP review: corpus P50 MOIC
+    # (calibration-relevant) and loss rate (downside discipline).
+    p50_explainer = ck_provenance_tooltip(
+        "Corpus P50 MOIC",
+        p50_html,
+        explainer=(
+            "Median realized MOIC across the corpus's realized "
+            "deals (those with a known exit MOIC). Compare against "
+            "your fund's vintage-matched cohort to gauge your "
+            "calibration."
+        ),
+    )
+    loss_explainer = ck_provenance_tooltip(
+        "Loss Rate",
+        f'<span class="mn neg">{loss_pct}</span>',
+        explainer=(
+            "Share of realized deals that returned less than 1.0× "
+            "MOIC (capital impaired). Industry baseline for HC PE: "
+            "~10–15%. Loss rates above 20% signal sourcing or "
+            "underwriting drift."
+        ),
+        inject_css=False,  # CSS already in the page from the first call
+    )
+
     return (
         f'<div class="ck-kpi-grid">'
         + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', sub="in corpus")
         + ck_kpi_block("Realized", f'<span class="mn">{len(realized)}</span>', sub=f"{len(realized)/total*100:.0f}% of corpus")
-        + ck_kpi_block("Corpus P50 MOIC", p50_html, sub="realized deals")
-        + ck_kpi_block("Loss Rate", f'<span class="mn neg">{loss_pct}</span>', sub="MOIC < 1.0×")
+        + ck_kpi_block("Corpus P50 MOIC", p50_explainer, sub="realized deals")
+        + ck_kpi_block("Loss Rate", loss_explainer, sub="MOIC < 1.0×")
         + ck_kpi_block("Sectors", f'<span class="mn">{sectors}</span>', sub="covered")
         + '</div>'
     )

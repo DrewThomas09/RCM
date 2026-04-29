@@ -2841,3 +2841,78 @@ Same playbook as cycles 22-28: helper + script + bulk apply.
 Expected to lift ~30-50 pages from the bottom into 70+.
 Forward-only.
 
+---
+
+## Cycle 34 build — 2026-04-28 — first page enters 90+ tier (deals_library 93)
+
+**Step 34 — `ck_provenance_tooltip` helper + 2 demo wires.**
+Per the cycle 33 strategic doc, the campaign's top tier
+plateaus at 89 because no page uses provenance tooltips
+(worth +5) or heavy fmt_helpers (+10 max). Cycle 34 ships
+the helper that makes provenance adoption a 1-line addition.
+
+**Audit fix.** The audit's regex looked for
+`ck_provenance_tooltip` but the actual function in
+`rcm_mc/ui/_provenance_tooltip.py` is just
+`provenance_tooltip`. Audit was missing 7 pages already
+calling the helper. Updated regex to recognize both names.
+
+**New `ck_provenance_tooltip(label, value, explainer=...)` in
+`_chartis_kit.py`.** Two paths:
+- **`explainer=` mode** — wraps the value in a hover card
+  with a plain-text methodology sentence. No per-deal graph
+  needed. Suitable for any page where each numeric has a
+  fixed "what it means / where it came from" sentence.
+- **`graph=` + `metric_key=` mode** — defers to the
+  existing `provenance_tooltip` for graph-driven explanation
+  (Phase 4C of the v3 transformation).
+
+With neither, falls through to escape-safe value text — same
+gracefully-degrading pattern as the existing helper.
+
+Pure HTML/CSS hover card (no JS). Inject CSS once per render;
+subsequent calls use `inject_css=False`.
+
+**Wired into 2 top-tier ports as proof.**
+
+- `/library` (cycle 6) — `_kpi_bar` now wraps "Corpus P50 MOIC"
+  with calibration-context explainer + "Loss Rate" with
+  industry-baseline explainer. **Score: 89 → 93.** First page
+  to enter 90+ tier since campaign launch.
+- `/escalations` (cycle 14) — count value gets a threshold-
+  meaning explainer. Score: 85 → 87.
+
+**Step 34 — focused test suite.** New
+`tests/test_ck_provenance_tooltip.py` with 6 tests:
+no-args / fall-through, escape-safe value, explainer-mode
+card markup, CSS injection toggle, label/value/explainer
+HTML escape, graph-mode deferral.
+
+All 6 pass. Plus 98-test regression sweep clean (audit, kit,
+chartis_integration, library, escalations).
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — new `ck_provenance_tooltip`
+  helper (~85 LOC).
+- `rcm_mc/ui/data_public/deals_library_page.py` — 2 wraps
+  in `_kpi_bar`.
+- `rcm_mc/ui/escalations_page.py` — 1 wrap in
+  `results_head`.
+- `tools/v5_fidelity_audit.py` — provenance regex
+  recognizes both names.
+- `tests/test_ck_provenance_tooltip.py` — NEW, 6 tests.
+
+**Compliance impact.**
+- V5 fidelity passers: 159 of 299 (53.2%) — pass count
+  unchanged but the leaderboard ceiling is now 93.
+- First page in 90+ tier (deals_library_page).
+- Total focused tests: 273 + 2 documented skips (was 267 +
+  2 in cycle 33).
+- Provenance helper available kit-wide for future cycles.
+
+**Suggested next:** cycle 35 — wire `ck_provenance_tooltip`
+on the remaining 4 cycle-6-15 ports (notes, research,
+my_dashboard, alerts) plus the cycle-30 70-79 cluster's
+top scorers. Each gets +2-4 fidelity. Expected ~10-15
+pages cross 90+. Forward-only.
+

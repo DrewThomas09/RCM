@@ -937,6 +937,98 @@ def ck_data_table(
     return table
 
 
+def ck_provenance_tooltip(
+    label: str,
+    value: str,
+    *,
+    explainer: Optional[str] = None,
+    graph: Optional[Any] = None,
+    metric_key: Optional[str] = None,
+    inject_css: bool = True,
+) -> str:
+    """Wrap a partner-facing value in an "explain this number" hover.
+
+    Cycle 34 entry point — the kit-level helper that pages should
+    call. Two paths:
+
+    1. ``explainer`` provided: renders a simple hover card with the
+       methodology string. Useful for any page (data_public,
+       editorial ports) where each numeric has a fixed "what it
+       means / where it came from" sentence. No per-deal graph
+       needed.
+
+    2. ``graph`` + ``metric_key`` provided: defers to
+       ``rcm_mc/ui/_provenance_tooltip.py::provenance_tooltip``
+       which pulls the explanation from a real provenance graph
+       (Phase 4C of the v3 transformation).
+
+    With neither, the value is returned escape-safely without a
+    tooltip — same fall-through pattern as the existing helper.
+
+    Args:
+        label: User-visible name of the metric (HTML-escaped).
+        value: Pre-formatted display string (HTML-escaped).
+        explainer: Optional plain-text methodology / source line.
+            When set, a hover card with this text appears on the
+            value's info icon.
+        graph: Optional provenance graph for graph-driven mode.
+        metric_key: Optional metric key for graph-driven mode.
+        inject_css: When True, inline the tooltip <style> on first
+            call. Pass False on subsequent calls in one render.
+    """
+    if graph is not None and metric_key:
+        # Defer to the graph-driven implementation. This is the
+        # Phase 4C path used by /alerts, /my/<owner>, etc.
+        from rcm_mc.ui._provenance_tooltip import provenance_tooltip
+        return provenance_tooltip(
+            label, value,
+            graph=graph, metric_key=metric_key,
+            inject_css=inject_css,
+        )
+    safe_value = _html.escape(value)
+    if not explainer:
+        return safe_value
+    safe_label = _html.escape(label)
+    safe_explainer = _html.escape(explainer)
+    css = ""
+    if inject_css:
+        css = (
+            '<style>'
+            '.ck-prov-tt{position:relative;display:inline-flex;'
+            'align-items:baseline;gap:4px;}'
+            '.ck-prov-tt-icon{display:inline-flex;align-items:center;'
+            'justify-content:center;width:14px;height:14px;border-radius:50%;'
+            'border:1px solid var(--sc-text-faint);'
+            'color:var(--sc-text-faint);font-size:10px;font-weight:600;'
+            'cursor:help;font-family:var(--sc-mono);}'
+            '.ck-prov-tt-card{position:absolute;left:0;top:calc(100% + 6px);'
+            'min-width:240px;max-width:340px;padding:12px 14px;'
+            'background:#fff;border:1px solid var(--sc-rule);'
+            'box-shadow:var(--sc-shadow-2);border-radius:2px;'
+            'font-family:var(--sc-sans);font-size:12px;line-height:1.5;'
+            'color:var(--sc-text);z-index:50;'
+            'visibility:hidden;opacity:0;transition:opacity 0.1s;}'
+            '.ck-prov-tt:hover .ck-prov-tt-card,'
+            '.ck-prov-tt:focus-within .ck-prov-tt-card{visibility:visible;'
+            'opacity:1;}'
+            '.ck-prov-tt-label{font-family:var(--sc-mono);font-size:11px;'
+            'font-weight:600;letter-spacing:0.06em;text-transform:uppercase;'
+            'color:var(--sc-text-dim);margin-bottom:4px;display:block;}'
+            '</style>'
+        )
+    return (
+        f'{css}'
+        '<span class="ck-prov-tt" tabindex="0">'
+        f'<span class="ck-prov-tt-value">{safe_value}</span>'
+        '<span class="ck-prov-tt-icon" aria-hidden="true">i</span>'
+        '<span class="ck-prov-tt-card" role="tooltip">'
+        f'<span class="ck-prov-tt-label">{safe_label}</span>'
+        f'{safe_explainer}'
+        '</span>'
+        '</span>'
+    )
+
+
 def ck_affirm_empty(
     *,
     headline: str,

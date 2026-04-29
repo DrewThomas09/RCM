@@ -102,7 +102,14 @@ _RE_ITALIC_EM = re.compile(r"<em(?:\s[^>]*)?>[^<]+</em>")
 _RE_FMT_HELPERS = re.compile(
     r"\bck_fmt_(?:currency|percent|number)\s*\(",
 )
-_RE_PROVENANCE = re.compile(r"\bck_provenance_tooltip\s*\(")
+# Provenance tooltip helper. The actual function lives in
+# ``rcm_mc/ui/_provenance_tooltip.py`` as ``provenance_tooltip``;
+# the cycle-22 audit naming used ``ck_provenance_tooltip`` which
+# doesn't exist. Cycle 34 fixes the regex so pages already using
+# the existing helper get the credit they earned.
+_RE_PROVENANCE = re.compile(
+    r"\b(?:ck_provenance_tooltip|provenance_tooltip)\s*\("
+)
 # Routes / renderer entry points only — files that don't define one
 # of these are treated as pure helpers and skipped (zero LOC against
 # editorial chrome means nothing to score).

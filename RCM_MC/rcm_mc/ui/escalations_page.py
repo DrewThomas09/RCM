@@ -33,7 +33,7 @@ def render_escalations(
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_search_hero, ck_filter_sidebar,
         ck_results_header, ck_section_header, ck_section_intro,
-        ck_severity_panel, ck_affirm_empty,
+        ck_severity_panel, ck_affirm_empty, ck_provenance_tooltip,
     )
     from rcm_mc.alerts.alert_acks import is_acked
     from rcm_mc.alerts.alert_history import days_red
@@ -87,8 +87,21 @@ def render_escalations(
             "remove_href": "/escalations",
         })
 
+    # Wrap the count value in a provenance hover so the partner sees
+    # what "escalation" means without leaving the page. Cycle 34
+    # adoption — kit-level ck_provenance_tooltip with explainer text.
+    count_display = ck_provenance_tooltip(
+        f"Escalations ≥ {min_days}d",
+        f"{count:,}",
+        explainer=(
+            f"Red-severity alerts whose first sighting is older "
+            f"than {min_days} days. Threshold tunes the urgency "
+            f"window — narrow it to surface hot escalations or "
+            f"widen it to find stale items."
+        ),
+    )
     results_head = ck_results_header(
-        count=f"{count:,}",
+        count=count_display,
         label="Escalation" if count == 1 else "Escalations",
         chips=chips or None,
         clear_all_href="/escalations" if chips else None,
