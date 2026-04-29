@@ -3932,3 +3932,36 @@ follows the established pattern: ~3-4 KPI tiles + 1-2
 provenance wraps + ck_fmt_* helpers. Should net +4
 passers to push past 80%.
 
+## Cycle 54 build — 2026-04-29 — crosses 80% (240 passers)
+
+**Step 54 — close the 52-tier.** Two pages crossed via
+KPI strip + provenance:
+
+- `rcm_mc/ui/quick_import.py` 52 → 79
+- `rcm_mc/ui/model_quality_dashboard.py` 52 → 91 — also
+  ported v3_status._kpi_card to ck_kpi_block.
+
+deal_comparison and diligence_page have multiple shell
+calls per file - they need full sweeps next cycle.
+
+**Compliance impact.**
+- V5 fidelity passers: **240 of 299 (80.3%)** — up from
+  238. **Crossed the 80% mark.** Eighteenth straight
+  cycle of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Cycle arc cycle 35 → 54 (20 cycles, ~36 hours wall-clock):**
+- Passers: 159 → 240 (+81, +27.0 percentage points)
+- 18 consecutive cycles of net-new passers
+- 11 latent production bugs fixed
+- 2 audit knowledge gaps closed
+- Editorial copy hand-written for ~95 pages
+
+**Suggested next:** cycle 55 — finish deal_comparison
+(both shell calls), diligence_page (both shell calls).
+Then attack the remaining 600+ LOC pages with full
+chrome cleanup (replace inline-style divs with ck_panel /
+ck_section_header) - density penalty is the blocker on
+exit_timing 66, ebitda_bridge 55, regulatory_calendar 64.
+

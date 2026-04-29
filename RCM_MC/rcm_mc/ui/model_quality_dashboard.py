@@ -26,7 +26,9 @@ import math
 from typing import Any, Dict, List
 
 from ..ml.model_quality import ModelBacktestResult
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from ._ui_kit import fmt_num
 from .colors import STATUS
 
@@ -188,25 +190,39 @@ def render_model_quality_dashboard(
     avg_r2 = sum(valid_r2) / len(valid_r2) if valid_r2 else 0.0
 
     n_results = len(results)
+    # Cycle 54 — port to ck_kpi_block + provenance.
+    r2_value = ck_provenance_tooltip(
+        "Average cross-validated R²",
+        f"{avg_r2:.3f}",
+        explainer=(
+            f"Mean R² across {n_results} tracked models, computed "
+            f"on held-out cross-validation folds. Above 0.7 = "
+            f"models earning their place; below 0.5 = sector-"
+            f"median baseline beats them on average."
+        ),
+    )
+    grade_value = ck_provenance_tooltip(
+        "Grade A/B models",
+        ck_fmt_num(grade_counts['A'] + grade_counts['B']),
+        explainer=(
+            f"Models scoring A or B on the composite quality "
+            f"grade (R-squared, MAE, calibration). Currently "
+            f"{grade_counts['A']} A-grade + {grade_counts['B']} B-"
+            f"grade out of {n_results} tracked. C/D grades are "
+            f"flagged on dependent pages."
+        ),
+        inject_css=False,
+    )
     kpi_html = (
-        '<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin:.75rem 0 1.25rem 0;">'
-        + _kpi_card("Models tracked", fmt_num(n_results))
-        + _kpi_card("Avg CV R²", f'<span class="num mono">{avg_r2:.3f}</span>')
-        + _kpi_card(
-            "Grade A/B",
-            fmt_num(grade_counts['A'] + grade_counts['B']),
-            sub=f"of {n_results}",
-        )
-        + _kpi_card(
-            "Well-calibrated",
-            f'{fmt_num(well_calibrated)} / {fmt_num(n_results)}',
-            sub="CI within ±5pp of nominal",
-        )
-        + _kpi_card(
-            "Overconfident",
-            fmt_num(overconfident),
-            sub="CI tighter than reality",
-        )
+        '<div class="ck-kpi-grid" style="display:flex;gap:.75rem;flex-wrap:wrap;margin:.75rem 0 1.25rem 0;">'
+        + ck_kpi_block("Models Tracked", ck_fmt_num(n_results), "in registry")
+        + ck_kpi_block("Avg CV R²", r2_value, "predictive power")
+        + ck_kpi_block("Grade A/B", grade_value, f"of {n_results}")
+        + ck_kpi_block("Well-calibrated",
+                       f"{ck_fmt_num(well_calibrated)} / {ck_fmt_num(n_results)}",
+                       "CI within +/-5pp")
+        + ck_kpi_block("Overconfident", ck_fmt_num(overconfident),
+                       "CI tighter than reality")
         + '</div>'
     )
 

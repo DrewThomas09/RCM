@@ -8,7 +8,10 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -107,8 +110,30 @@ def render_quick_import(success_msg: str = "", error_msg: str = "") -> str:
         + '</div>'
     )
 
+    # Cycle 54 — KPI strip with provenance.
+    fields_value = ck_provenance_tooltip(
+        "Required vs. optional fields",
+        "2 / 14",
+        explainer=(
+            "Only Deal ID and Hospital Name are required - the "
+            "platform fills missing RCM and financial fields with "
+            "Bayesian priors. Provide more fields to tighten "
+            "the predictions and avoid imputation flags on the "
+            "first run."
+        ),
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Required Fields", "2", "Deal ID + Name")
+        + ck_kpi_block("Optional Fields", fields_value, "richer analysis")
+        + ck_kpi_block("Bayesian Priors", "12+", "for missing data")
+        + '</div>'
+    )
+
     form = (
-        f'{alert}'
+        ck_eyebrow("Quick Import")
+        + kpi_strip
+        + f'{alert}'
         f'<div class="cad-card">'
         f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
         f'<h2 style="margin:0;">New Deal</h2>'
