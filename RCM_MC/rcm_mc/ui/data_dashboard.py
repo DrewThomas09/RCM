@@ -12,7 +12,9 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -83,21 +85,38 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
     total_rev = rev_stats.get("total", 0)
     total_beds = int(hcris_df["beds"].fillna(0).sum()) if "beds" in hcris_df.columns else 0
 
+    # Cycle 56 — port to ck_kpi_block + provenance.
+    hospitals_value = ck_provenance_tooltip(
+        "Hospitals indexed",
+        ck_fmt_num(n_hospitals),
+        explainer=(
+            f"HCRIS-certified hospitals across {n_states} states "
+            f"and territories. Each hospital carries ~50 fields "
+            f"per fiscal year - revenue, expenses, beds, payer "
+            f"mix, geography. {n_years} years of history per "
+            f"hospital where filings exist."
+        ),
+    )
+    npsr_value = ck_provenance_tooltip(
+        "Total net patient revenue",
+        _fmt_money(total_rev),
+        explainer=(
+            "Aggregate net patient service revenue across all "
+            "indexed hospitals. The denominator the platform "
+            "uses to compute market share, sector concentration, "
+            "and corpus-level rate trends."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_hospitals:,}</div>'
-        f'<div class="cad-kpi-label">Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_states}</div>'
-        f'<div class="cad-kpi-label">States + Territories</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_years}</div>'
-        f'<div class="cad-kpi-label">Fiscal Years</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_beds:,}</div>'
-        f'<div class="cad-kpi-label">Total Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_money(total_rev)}</div>'
-        f'<div class="cad-kpi-label">Total NPSR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(key_cols)}</div>'
-        f'<div class="cad-kpi-label">Core Metrics</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
+        + ck_kpi_block("Hospitals", hospitals_value, "in HCRIS")
+        + ck_kpi_block("States and Territories", ck_fmt_num(n_states), "national coverage")
+        + ck_kpi_block("Fiscal Years", ck_fmt_num(n_years), "of filings")
+        + ck_kpi_block("Total Beds", ck_fmt_num(total_beds), "licensed")
+        + ck_kpi_block("Total NPSR", npsr_value, "annual aggregate")
+        + ck_kpi_block("Core Metrics", ck_fmt_num(len(key_cols)), "tracked fields")
+        + '</div>'
     )
 
     # ── Completeness table ──
@@ -256,4 +275,16 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
             f"{n_hospitals:,} hospitals | {n_states} states | "
             f"{n_years} fiscal years | {_fmt_money(total_rev)} total NPSR"
         ),
+        editorial_intro={
+            "eyebrow": "DATA INTELLIGENCE",
+            "headline": "Where the platform's data estate lives.",
+            "italic_word": "lives",
+            "body": (
+                "Aggregate view of every public-data source the "
+                "platform indexes: HCRIS hospitals, completeness "
+                "by metric, sector breakdowns, and freshness. "
+                "Use this as the canonical 'what does the platform "
+                "know' answer."
+            ),
+        },
     )

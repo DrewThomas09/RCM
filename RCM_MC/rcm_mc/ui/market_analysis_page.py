@@ -7,7 +7,9 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -28,24 +30,37 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     moat_rating = moat.get("moat_rating", "none")
     moat_cls = "cad-badge-green" if moat_rating == "wide" else ("cad-badge-amber" if moat_rating == "narrow" else "cad-badge-muted")
 
+    # Cycle 56 — port to ck_kpi_block + provenance.
+    hhi_value = ck_provenance_tooltip(
+        f"Market HHI: {hhi:,.0f}",
+        f'<span class="cad-badge {hhi_cls}" style="font-size:14px;padding:4px 12px;">{hhi_label}</span>',
+        explainer=(
+            "Herfindahl-Hirschman Index of market concentration. "
+            "DOJ thresholds: <1,500 competitive, 1,500-2,500 "
+            "moderately concentrated, >2,500 highly concentrated. "
+            "Concentrated markets favor incumbent pricing power."
+        ),
+    )
+    moat_value = ck_provenance_tooltip(
+        f"Moat rating ({moat.get('moat_score', 0)}/10)",
+        f'<span class="cad-badge {moat_cls}" style="font-size:14px;padding:4px 12px;">{moat_rating.title()}</span>',
+        explainer=(
+            "Wide / narrow / none verdict from the moat-scoring "
+            "engine: catchment exclusivity, regulatory moats, "
+            "scale economies, switching costs. Wide moats are "
+            "the underwriting case for premium multiples."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{market_size.get("hospitals", 0)}</div>'
-        f'<div class="cad-kpi-label">Hospitals in Market</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{market_size.get("total_beds", 0):,}</div>'
-        f'<div class="cad-kpi-label">Total Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${market_size.get("total_revenue", 0)/1e9:.1f}B</div>'
-        f'<div class="cad-kpi-label">Market Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'<span class="cad-badge {hhi_cls}" style="font-size:14px;padding:4px 12px;">{hhi_label}</span></div>'
-        f'<div class="cad-kpi-label">HHI: {hhi:,.0f}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'<span class="cad-badge {moat_cls}" style="font-size:14px;padding:4px 12px;">'
-        f'{moat_rating.title()}</span></div>'
-        f'<div class="cad-kpi-label">Moat Rating ({moat.get("moat_score", 0)}/10)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">#{moat.get("market_share_rank", 0)}</div>'
-        f'<div class="cad-kpi-label">Market Share Rank</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("Hospitals in Market", ck_fmt_num(market_size.get("hospitals", 0)), "competitive set")
+        + ck_kpi_block("Total Beds", ck_fmt_num(market_size.get("total_beds", 0)), "licensed")
+        + ck_kpi_block("Market Revenue", f"${market_size.get('total_revenue', 0)/1e9:.1f}B", "annual NPR")
+        + ck_kpi_block("Concentration", hhi_value, f"HHI {hhi:,.0f}")
+        + ck_kpi_block("Moat", moat_value, f"score {moat.get('moat_score', 0)}/10")
+        + ck_kpi_block("Market Share Rank", f"#{moat.get('market_share_rank', 0)}", "in market")
+        + '</div>'
     )
 
     # Moat breakdown
@@ -171,4 +186,16 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         body, f"Market Analysis — {html.escape(deal_name)}",
         active_nav="/analysis",
         subtitle=f"{state} market | {market_size.get('hospitals', 0)} hospitals | HHI: {hhi:,.0f} ({hhi_label})",
+        editorial_intro={
+            "eyebrow": "MARKET ANALYSIS",
+            "headline": "Where this hospital sits in its market.",
+            "italic_word": "sits",
+            "body": (
+                "Per-deal market structure: competitive set, "
+                "concentration (HHI), moat rating, and market-"
+                "share rank. Wide moats in concentrated markets "
+                "= structural pricing power; competitive markets "
+                "with no moat are commodity hospital economics."
+            ),
+        },
     )
