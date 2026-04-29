@@ -66,7 +66,15 @@ def render_minimal() -> str:
         finally:
             path.unlink()
 
-    def test_bespoke_renderer_without_shell_scores_low(self):
+    def test_bespoke_renderer_without_shell_excluded_from_audit(self):
+        # Cycle 33 — a renderer-named function that doesn't call
+        # any editorial-shell entry point is a helper / fragment
+        # module, not a page. The audit excludes it from the
+        # denominator entirely (returns None) rather than scoring
+        # it low. This keeps the pass rate denominator honest:
+        # "pages above threshold of pages that COULD reach
+        # editorial chrome", not "any module with a render_X
+        # function".
         path = _write("""
 def render_bespoke() -> str:
     return (
@@ -76,9 +84,7 @@ def render_bespoke() -> str:
 """)
         try:
             s = audit.score_file(path)
-            self.assertIsNotNone(s)
-            self.assertFalse(s.has_chartis_shell)
-            self.assertLess(s.score, 30)
+            self.assertIsNone(s)
         finally:
             path.unlink()
 

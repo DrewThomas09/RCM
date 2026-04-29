@@ -45,12 +45,15 @@ from typing import Dict, List, Optional, Tuple
 # pass over each file's source. All patterns are line-tolerant; some
 # of the helpers wrap onto multiple lines so we use re.DOTALL where
 # needed.
-# Editorial-shell call — direct ``chartis_shell(...)`` OR a call to
-# the cycle-18 ``render_insights_page(...)`` helper that composes
-# chartis_shell with the Insights triplet wired around the body.
-# Both put the page on the editorial chrome.
+# Editorial-shell call — any of the three editorial-chrome entry
+# points: direct ``chartis_shell(...)``, the alias
+# ``editorial_chartis_shell(...)`` that several auth/marketing
+# pages were written against pre-cycle-6, or the cycle-18
+# ``render_insights_page(...)`` helper that composes chartis_shell
+# with the Insights triplet wired around the body. All three put
+# the page on the editorial chrome.
 _RE_CHARTIS_SHELL = re.compile(
-    r"\b(?:chartis_shell|render_insights_page)\s*\("
+    r"\b(?:chartis_shell|editorial_chartis_shell|render_insights_page)\s*\("
 )
 # Primitive names. ``render_insights_page`` counts as a primitive
 # itself because invoking it composes 5+ ck_* helpers (search hero,
@@ -147,11 +150,23 @@ def score_file(path: Path) -> Optional[FidelityScore]:
         return None
     if not _RE_RENDERER_ENTRY.search(src):
         return None
+    # Helper modules — files with renderer-entry function names but
+    # whose body returns HTML fragments rather than full pages —
+    # have no editorial-shell entry point in their source. Cycle 33
+    # adds this filter so the audit denominator is "real pages",
+    # not "any module with a render_X function". csv_to_html,
+    # json_to_html, loading, power_chart, power_table, provenance,
+    # validators, thesis_card etc. all fall out under this rule.
+    # The audit gates on PRESENCE of an editorial-shell call (we
+    # don't lift the no-call score; we just exclude the file
+    # entirely from the denominator).
+    if not _RE_CHARTIS_SHELL.search(src):
+        return None
     loc = _count_loc(src)
     # No LOC floor — even a 5-line wrapper that does ``return
     # chartis_shell(body, title="X")`` is a real render path worth
-    # scoring. Helpers without a render entry function were already
-    # filtered above.
+    # scoring. Helpers without a render entry function or shell
+    # call were already filtered above.
 
     has_shell = bool(_RE_CHARTIS_SHELL.search(src))
     # Each ``render_insights_page`` call composes ~5 ck_* primitives
