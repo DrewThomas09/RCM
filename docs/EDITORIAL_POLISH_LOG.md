@@ -3641,3 +3641,58 @@ workbench 3032 LOC, dashboard_page 2612 LOC) remain the
 biggest blocker but need focused real ports. Continue
 forward-only via the proven pattern.
 
+## Cycle 47 build — 2026-04-28 — crosses 70% (210 passers)
+
+**Step 47 — close the 30-49 tier.** Ten pages picked up the
+proven pattern (KPI strip + 1-2 provenance + ck_fmt_* +
+editorial_intro). Crossings:
+
+- `rcm_mc/ui/pressure_page.py` 42 → 92
+- `rcm_mc/ui/surrogate_page.py` 42 → 94
+- `rcm_mc/ui/exports_index_page.py` 45 → 97
+- `rcm_mc/ui/deal_timeline.py` 44 → 96
+- `rcm_mc/ui/data_public/corpus_coverage_page.py` 42 → 81
+- `rcm_mc/ui/data_public/gp_benchmarking_page.py` 43 → 89
+- `rcm_mc/ui/portfolio_overview.py` 64 → 72 (added
+  ck_fmt_currency to existing provenance-graph wraps)
+- `rcm_mc/ui/v5_status_page.py` 44 → 98 (replaced
+  v3_status._kpi_card with ck_kpi_block)
+- `rcm_mc/ui/feature_importance_viz.py` 43 → 91
+- `rcm_mc/ui/global_search.py` 44 → 85
+
+Three pages adopted intro / partial chrome but stayed
+below threshold (chartis/app_page 60, chartis/forgot_page,
+chartis/login_page — auth flows).
+
+**Files touched this batch.**
+- 11 page files modified.
+
+**Compliance impact.**
+- V5 fidelity passers: **210 of 299 (70.2%)** — up from
+  200. **Crossed the 70% mark.**
+- Eleventh straight cycle of net-new passers.
+- 11 pages added in one cycle (largest single-cycle
+  jump of the campaign).
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Cycle arc cycle 35 → 47 (12 cycles, ~1 day):**
+- Passers: 159 → 210 (+51, +17.0 percentage points)
+- Top tier ceiling: 89 → 99
+- Pages ≥90: 1 → 14
+- Latent prod bugs fixed: 0 → 11 (9 unit=/delta= + 2
+  chartis_shell signature)
+- Cycle 34 escape bug fix: SafeHtml class + extension to
+  graph-mode tooltip
+- Audit fmt-helper regex fix in cycle 39 (lifted ~6
+  pre-existing pages into 90+ tier)
+
+**Suggested next:** cycle 48 — remaining 30-69 tier:
+chartis/app_page 60 (220 LOC, 0 prims), chartis/login_page
+53 (369 LOC), chartis/home_page 51 (660 LOC, 9 prims),
+counterfactual_page 46 (765 LOC). The 25-score giants
+(analysis_workbench 3032 LOC, dashboard_page 2612 LOC,
+risk_workbench 1202 LOC) remain — need full ports.
+Forward-only via pattern; the giants require focused
+multi-cycle work.
+

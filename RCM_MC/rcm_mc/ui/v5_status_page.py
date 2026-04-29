@@ -18,7 +18,10 @@ import html as _html
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_fmt_pct,
+    ck_kpi_block, ck_provenance_tooltip,
+)
 from ._ui_kit import fmt_num, fmt_pct
 from .v3_status_page import _empty_counts, _kpi_card, parse_inventory
 
@@ -54,23 +57,39 @@ def render_v5_status() -> str:
     pct_chrome = (100.0 * counts.v3 / counts.total) if counts.total else 0.0
     pct_packet = (100.0 * counts.packet_driven / counts.total) if counts.total else 0.0
 
+    # Cycle 47 — port v3_status._kpi_card cards to ck_kpi_block +
+    # provenance on the campaign-progress numbers.
+    chrome_value = ck_provenance_tooltip(
+        "v5 chrome adoption",
+        ck_fmt_num(counts.v3),
+        explainer=(
+            f"Routes rendering through chartis_shell or living "
+            f"under rcm_mc/ui/chartis/. Currently {pct_chrome:.1f}% "
+            f"of {counts.total} total routes. The campaign "
+            f"target is 100%."
+        ),
+    )
+    packet_value = ck_provenance_tooltip(
+        "Packet-driven routes",
+        ck_fmt_num(counts.packet_driven),
+        explainer=(
+            "Renderers calling get_or_build_packet or importing "
+            "DealAnalysisPacket. CLAUDE.md invariant: every "
+            "partner-facing analytical page should reach the "
+            "packet. Detection is heuristic - the real number is "
+            "higher than this."
+        ),
+        inject_css=False,
+    )
     kpi_grid = (
-        '<div style="display:flex;gap:1rem;flex-wrap:wrap;margin:1.25rem 0;">'
-        + _kpi_card("Total routes", fmt_num(counts.total))
-        + _kpi_card(
-            "v5 chrome",
-            fmt_num(counts.v3),
-            sub=f"of {counts.total} ({pct_chrome:.1f}%)",
-        )
-        + _kpi_card("Legacy shell", fmt_num(counts.legacy))
-        + _kpi_card("Bespoke (no shell)", fmt_num(counts.bespoke))
-        + _kpi_card("Redirects", fmt_num(counts.redirect))
-        + _kpi_card("Unresolved", fmt_num(counts.unknown))
-        + _kpi_card(
-            "Packet-driven",
-            fmt_num(counts.packet_driven),
-            sub=f"of {counts.total}",
-        )
+        f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(7,1fr);gap:8px;margin:1.25rem 0;">'
+        + ck_kpi_block("Total Routes", ck_fmt_num(counts.total), "in inventory")
+        + ck_kpi_block("v5 Chrome", chrome_value, f"{pct_chrome:.1f}%")
+        + ck_kpi_block("Legacy Shell", ck_fmt_num(counts.legacy), "_ui_kit only")
+        + ck_kpi_block("Bespoke", ck_fmt_num(counts.bespoke), "no shell")
+        + ck_kpi_block("Redirects", ck_fmt_num(counts.redirect), "non-rendering")
+        + ck_kpi_block("Unresolved", ck_fmt_num(counts.unknown), "needs triage")
+        + ck_kpi_block("Packet-driven", packet_value, f"of {counts.total}")
         + "</div>"
     )
 
@@ -114,7 +133,8 @@ def render_v5_status() -> str:
 
     body = (
         '<section style="max-width:62rem;">'
-        '<p class="micro">v5 Chartis campaign — '
+        + ck_eyebrow("v5 Chartis Campaign")
+        + '<p class="micro">v5 Chartis campaign — '
         "<strong>saving-seeking-chartis</strong> branch</p>"
         '<h1 style="margin-top:.25rem;">v5 status</h1>'
         "<p>Campaign progress map. Numbers come from "

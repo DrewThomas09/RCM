@@ -4,7 +4,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -25,8 +28,42 @@ def render_surrogate_page(
         for t in schema.get("suggested_targets", [])
     )
 
+    # Cycle 47 — KPI strip with provenance.
+    n_features = len(schema.get("suggested_features", []))
+    n_targets = len(schema.get("suggested_targets", []))
+    status_value = ck_provenance_tooltip(
+        "Surrogate model status",
+        status,
+        explainer=(
+            "Trained = the surrogate has fit on the cached "
+            "analysis runs and can predict; Not Trained = no "
+            "trained model yet. Run analyses to generate "
+            "training data, then re-fit."
+        ),
+    )
+    features_value = ck_provenance_tooltip(
+        "Features in schema",
+        ck_fmt_num(n_features),
+        explainer=(
+            "Suggested input features for the surrogate, drawn "
+            "from the cached primitives. The platform picks the "
+            "subset that's most predictive of the target on the "
+            "current corpus."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Status", status_value, "model state")
+        + ck_kpi_block("Features", features_value, "candidate inputs")
+        + ck_kpi_block("Targets", ck_fmt_num(n_targets), "predicted outputs")
+        + '</div>'
+    )
+
     body = (
-        f'<div class="cad-card">'
+        ck_eyebrow("Surrogate Model")
+        + kpi_strip
+        + f'<div class="cad-card">'
         f'<div style="display:flex;justify-content:space-between;align-items:center;">'
         f'<div>'
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;">'
@@ -61,4 +98,16 @@ def render_surrogate_page(
         f'API: GET /api/surrogate/schema</a></div>'
     )
     return chartis_shell(body, "Surrogate Model",
-                    subtitle="Fast approximate prediction for screening")
+                    subtitle="Fast approximate prediction for screening",
+        editorial_intro={
+            "eyebrow": "SURROGATE MODEL",
+            "headline": "What the model predicts in milliseconds.",
+            "italic_word": "milliseconds",
+            "body": (
+                "A trained surrogate fits cached analysis runs "
+                "and produces fast EBITDA-drag predictions for "
+                "screening and what-if work. Use as a triage "
+                "filter, not as a substitute for the full "
+                "DealAnalysisPacket."
+            ),
+        })

@@ -229,6 +229,18 @@ def render_app_page(
         show_sidebar=True,
 
         sidebar_active_path="",
+        editorial_intro={
+            "eyebrow": "COMMAND CENTER",
+            "headline": "Where the fund actually operates.",
+            "italic_word": "actually",
+            "body": (
+                "Hold-period rollup, active diligence, screening "
+                "funnel, covenant heatmap, initiative variance, "
+                "and cross-deal playbook signals - one canvas. "
+                "This is the page a partner reads first thing "
+                "Monday."
+            ),
+        },
     )
 
 

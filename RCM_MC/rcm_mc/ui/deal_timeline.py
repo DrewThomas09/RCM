@@ -201,7 +201,10 @@ def render_timeline(
     events: List[Dict[str, Any]],
 ) -> str:
     """Full-page timeline HTML."""
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
 
     if not events:
         return chartis_shell(
@@ -240,9 +243,57 @@ def render_timeline(
     <h2>{_esc(deal_name)} — Activity Timeline ({len(events)} events)</h2>
     <div>{''.join(cards)}</div>
     """
+    # Cycle 47 — KPI strip + provenance + editorial chrome.
+    type_counts: Dict[str, int] = {}
+    for ev in events:
+        et = ev.get("event_type", "other")
+        type_counts[et] = type_counts.get(et, 0) + 1
+    most_common = max(type_counts.items(), key=lambda kv: kv[1]) if type_counts else ("—", 0)
+    events_value = ck_provenance_tooltip(
+        "Activity events on this deal",
+        ck_fmt_num(len(events)),
+        explainer=(
+            f"Audit-log events recorded against this deal "
+            f"(notes, status changes, alerts, exports, simulation "
+            f"reruns). Most-common type: {most_common[0]} "
+            f"({most_common[1]}x)."
+        ),
+    )
+    types_value = ck_provenance_tooltip(
+        "Event types observed",
+        ck_fmt_num(len(type_counts)),
+        explainer=(
+            "Distinct event categories (note / status / alert / "
+            "export / sim / etc.) observed on this deal. Higher "
+            "diversity = more partner engagement; sustained "
+            "single-category activity may indicate a stuck deal."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Total Events", events_value, "in audit log")
+        + ck_kpi_block("Event Types", types_value, "distinct categories")
+        + ck_kpi_block("Most Common",
+                       most_common[0],
+                       f"{most_common[1]} occurrences")
+        + '</div>'
+    )
+
     return chartis_shell(
-        f'<div>{"".join(cards)}</div>',
+        ck_eyebrow("Activity Timeline") + kpi_strip + f'<div>{"".join(cards)}</div>',
         f"{deal_name} — Timeline",
         subtitle=f"{len(events)} events",
         extra_css=css,
+        editorial_intro={
+            "eyebrow": "DEAL TIMELINE",
+            "headline": "What's happened on this deal.",
+            "italic_word": "happened",
+            "body": (
+                "Chronological audit log of every event on the "
+                "deal - notes, status changes, alerts, exports, "
+                "simulation reruns. Use this to read partner "
+                "engagement velocity over time."
+            ),
+        },
     )

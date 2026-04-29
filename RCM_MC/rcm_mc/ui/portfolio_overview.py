@@ -231,7 +231,9 @@ def render_portfolio_overview(
     # already wrapped in provenance_tooltip; the kit's ck_kpi_block
     # passes value through _esc which now respects SafeHtml from the
     # tooltip helper, so the markup survives.
-    from ._chartis_kit import ck_kpi_block, ck_fmt_num
+    from ._chartis_kit import (
+        ck_kpi_block, ck_fmt_num, ck_fmt_pct, ck_fmt_currency,
+    )
     kpis = (
         f'<div class="ck-kpi-grid">'
         + ck_kpi_block("Active Deals", ck_fmt_num(n))
@@ -339,7 +341,7 @@ def render_portfolio_overview(
             f'<td><span class="cad-badge cad-badge-muted">{stage}</span></td>'
             f'<td class="num" style="color:{dr_color};font-weight:600;">{_fmt_pct(dr)}{dr_delta}</td>'
             f'<td class="num">{ar_str}{ar_delta}</td>'
-            f'<td class="num">{_fmt_money(rev)}</td>'
+            f'<td class="num">{ck_fmt_currency(rev/1e6) + "M" if rev is not None else _fmt_money(rev)}</td>'
             f'<td style="white-space:nowrap;">'
             f'<a href="/deal/{did}" class="cad-badge cad-badge-blue" '
             f'style="text-decoration:none;">DASH</a> '

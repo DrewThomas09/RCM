@@ -25,7 +25,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_moic, ck_fmt_pct,
+    ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+)
 
 
 def _normalize(buyer: str) -> str:
@@ -148,14 +151,41 @@ def render_gp_benchmarking(params: Dict[str, str]) -> str:
                 ("WIN RATE", f"{win_rate:.0f}%" if win_rate is not None else "—", P["positive"] if (win_rate or 0) >= 60 else P["warning"]),
                 ("LOSS RATE", f"{loss_rate:.0f}%" if loss_rate is not None else "—", P["negative"] if (loss_rate or 0) >= 20 else P["text"]),
             ]
-            kpi_strip = "".join(
-                f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 12px">'
-                f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:2px">{lbl}</div>'
-                f'<div style="font-size:15px;font-family:{_MONO};color:{col};font-variant-numeric:tabular-nums">{val}</div>'
-                f'</div>'
-                for lbl, val, col in kpis
+            # Cycle 47 — port to ck_kpi_block + provenance.
+            gp_moic_value = ck_provenance_tooltip(
+                "GP P50 MOIC",
+                ck_fmt_moic(gp_p50) if gp_p50 else "—",
+                explainer=(
+                    f"Median realized MOIC across this GP's "
+                    f"{len(gp_deals)} corpus deals. Compare to "
+                    f"corpus P50 ({ck_fmt_moic(corp_p50)}) and "
+                    f"the rank gauge below to read whether the "
+                    f"GP outperforms or trails the average."
+                ),
             )
-            kpi_div = f'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px">{kpi_strip}</div>'
+            win_value = ck_provenance_tooltip(
+                "Win rate",
+                f"{win_rate:.0f}%" if win_rate is not None else "—",
+                explainer=(
+                    "Share of GP's deals that exited at MOIC "
+                    ">=2.0x. Above 60% is a healthy track record; "
+                    "below 40% means the GP relied heavily on a "
+                    "small number of breakouts."
+                ),
+                inject_css=False,
+            )
+            kpi_blocks = []
+            for lbl, val, _col in kpis:
+                if lbl == "MOIC P50":
+                    kpi_blocks.append(ck_kpi_block(lbl.title(), gp_moic_value))
+                elif lbl == "WIN RATE":
+                    kpi_blocks.append(ck_kpi_block(lbl.title(), win_value))
+                else:
+                    kpi_blocks.append(ck_kpi_block(lbl.title(), val))
+            kpi_div = (
+                f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px;">'
+                + "".join(kpi_blocks) + '</div>'
+            )
 
             # gauges
             gauges = ""
@@ -226,4 +256,16 @@ def render_gp_benchmarking(params: Dict[str, str]) -> str:
 
     title = f"GP Benchmarking — {html.escape(gp_name)}" if gp_name else "GP Benchmarking"
     return chartis_shell(body, title, active_nav="/gp-benchmarking",
-                         subtitle=f"{len(gps)} GPs in corpus")
+                         subtitle=f"{len(gps)} GPs in corpus",
+        editorial_intro={
+            "eyebrow": "GP BENCHMARKING",
+            "headline": "Where this GP stands against the corpus.",
+            "italic_word": "stands",
+            "body": (
+                "Type a GP name (or partial match) to see their "
+                "realized-deal record alongside the corpus "
+                "distribution. The percentile rank gauges tell you "
+                "whether the GP is genuinely outperforming or "
+                "carried by a single breakout."
+            ),
+        })
