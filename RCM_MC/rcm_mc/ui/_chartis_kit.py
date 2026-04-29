@@ -194,8 +194,21 @@ ck_fmt_pct = ck_fmt_percent
 # Panel primitives
 # ---------------------------------------------------------------------------
 
+class SafeHtml(str):
+    """Marker that says: this string is already safe HTML — skip escape.
+
+    Kit helpers that emit pre-escaped markup (provenance tooltip,
+    arrow links, etc.) return this so downstream call sites that pass
+    the value through ``_esc`` don't double-escape the inner tags.
+    """
+
+
 def _esc(x) -> str:
-    return _html.escape(str(x), quote=True) if x is not None else ""
+    if x is None:
+        return ""
+    if isinstance(x, SafeHtml):
+        return str(x)
+    return _html.escape(str(x), quote=True)
 
 
 def ck_panel(body_html: str, *, title: Optional[str] = None, code: Optional[str] = None) -> str:
@@ -987,7 +1000,7 @@ def ck_provenance_tooltip(
         )
     safe_value = _html.escape(value)
     if not explainer:
-        return safe_value
+        return SafeHtml(safe_value)
     safe_label = _html.escape(label)
     safe_explainer = _html.escape(explainer)
     css = ""
@@ -1016,7 +1029,7 @@ def ck_provenance_tooltip(
             'color:var(--sc-text-dim);margin-bottom:4px;display:block;}'
             '</style>'
         )
-    return (
+    return SafeHtml(
         f'{css}'
         '<span class="ck-prov-tt" tabindex="0">'
         f'<span class="ck-prov-tt-value">{safe_value}</span>'

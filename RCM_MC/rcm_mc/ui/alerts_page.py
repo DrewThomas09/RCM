@@ -58,6 +58,7 @@ from ._chartis_kit import (
     ck_affirm_empty,
     ck_arrow_link,
     ck_eyebrow,
+    ck_provenance_tooltip,
     ck_severity_panel,
 )
 
@@ -247,6 +248,43 @@ def render_alerts(
         grouped: Dict[str, List] = {"red": [], "amber": [], "info": []}
         for a in alerts:
             grouped.setdefault(a.severity, []).append(a)
+        # Cycle 35 — wrap the headline count with provenance so the
+        # partner sees what "active" means and what evaluators ran
+        # without leaving the page.
+        count_label = "All alerts (incl. acked)" if show_all else "Active alerts"
+        count_explainer = (
+            "Evaluators run on every page load: covenant headroom, "
+            "latest-quarter EBITDA variance, concerning-signal "
+            "clusters, and stage regress. "
+        ) + (
+            "'Show all' includes acknowledged and snoozed alerts."
+            if show_all else
+            "Acknowledged and snoozed alerts are hidden until the "
+            "underlying state changes or the snooze expires."
+        )
+        count_display = ck_provenance_tooltip(
+            count_label,
+            f"{len(alerts):,}",
+            explainer=count_explainer,
+        )
+        # Severity tally line — red / amber / info sub-counts inline.
+        sev_tally = " · ".join(
+            f'{label} {len(grouped.get(sev) or [])}'
+            for sev, (label, _) in _SEV_META.items()
+            if (grouped.get(sev) or [])
+        )
+        count_strip = (
+            '<div class="ck-results-header" style="margin:0 0 20px;">'
+            f'<span class="ck-results-count">{count_display}</span>'
+            f'<span class="ck-results-label" style="margin-left:6px;">'
+            f'{count_label}</span>'
+            + (
+                f'<span style="margin-left:14px;color:var(--sc-text-dim);'
+                f'font-size:13px;">{sev_tally}</span>'
+                if sev_tally else ""
+            )
+            + '</div>'
+        )
         blocks: List[str] = []
         for sev in ("red", "amber", "info"):
             bucket = grouped.get(sev) or []
@@ -260,7 +298,7 @@ def render_alerts(
         blocks.append(
             f'<p style="margin-top:24px;">{toggle}</p>'
         )
-        body = intro + owner_form + "".join(blocks)
+        body = intro + owner_form + count_strip + "".join(blocks)
 
     subtitle = (
         f"{len(alerts)} "

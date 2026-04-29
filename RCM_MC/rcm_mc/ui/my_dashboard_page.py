@@ -63,6 +63,7 @@ def render_my_dashboard(
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_section_intro, ck_kpi_block,
         ck_severity_panel, ck_affirm_empty, ck_arrow_link,
+        ck_provenance_tooltip,
     )
     from rcm_mc.alerts.alerts import evaluate_active
     from rcm_mc.deals.deal_deadlines import overdue, upcoming
@@ -100,25 +101,37 @@ def render_my_dashboard(
     # pass plain strings; tonal tinting (red/amber on non-zero counts)
     # is applied via .ck-kpi-value selectors in the CSS class set on
     # the kpi block via the ``sub`` line below.
+    # Cycle 35 — wrap the two most decision-driving values in
+    # explainer hovers. Red Alerts: what triggers + ack flow.
+    # Overdue Deadlines: what counts + how to clear.
+    red_value = ck_provenance_tooltip(
+        "Red alerts on your deals",
+        str(n_red),
+        explainer=(
+            "Severity-red alerts on deals you own that haven't "
+            "been acknowledged or snoozed. Red signals partner-"
+            "level decision required (covenant breach, EBITDA "
+            "miss, stage regress). Click into a deal to ack."
+        ),
+    )
+    overdue_value = ck_provenance_tooltip(
+        "Overdue deadlines on your deals",
+        str(len(my_od)),
+        explainer=(
+            "Deadlines tagged with you as owner whose due-date "
+            "has passed. Counts every overdue item regardless of "
+            "deal stage. Open the deal page's Deadlines panel to "
+            "mark complete or reassign."
+        ),
+        inject_css=False,  # CSS already in the page from Red Alerts call
+    )
     pulse = (
         '<div class="ck-kpi-grid ck-pulse-grid">'
         + ck_kpi_block("My Deals", str(len(my_deals)), sub="active")
-        + ck_kpi_block(
-            "Red Alerts", str(n_red),
-            sub="severity high",
-        )
-        + ck_kpi_block(
-            "Amber Alerts", str(n_amber),
-            sub="severity medium",
-        )
-        + ck_kpi_block(
-            "Overdue Deadlines", str(len(my_od)),
-            sub="past due",
-        )
-        + ck_kpi_block(
-            "Upcoming Deadlines", str(len(my_up)),
-            sub="next 14 days",
-        )
+        + ck_kpi_block("Red Alerts", red_value, sub="severity high")
+        + ck_kpi_block("Amber Alerts", str(n_amber), sub="severity medium")
+        + ck_kpi_block("Overdue Deadlines", overdue_value, sub="past due")
+        + ck_kpi_block("Upcoming Deadlines", str(len(my_up)), sub="next 14 days")
         + '</div>'
     )
 

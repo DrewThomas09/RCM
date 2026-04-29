@@ -2916,3 +2916,78 @@ my_dashboard, alerts) plus the cycle-30 70-79 cluster's
 top scorers. Each gets +2-4 fidelity. Expected ~10-15
 pages cross 90+. Forward-only.
 
+## Cycle 35 build — 2026-04-28 — provenance fan-out + double-escape fix
+
+**Step 35 — wire `ck_provenance_tooltip` into the remaining
+four cycle-6-15 ports.** Cycle 34 shipped the helper with
+two demo wires; cycle 35 fans it out across the rest of the
+top tier. Each port gets one or two key partner-facing values
+wrapped with an `explainer=` argument that documents the
+methodology / source / what-it-means without leaving the page.
+
+- `/notes` (`notes_search_page.py`) — count_display wraps
+  the result count with a search-semantics explainer
+  (case-insensitive substring + AND-tag scoping +
+  soft-deleted exclusion). **Score: 84 → 87.**
+- `/research` (`research_page.py`) — count wraps with a
+  catalog provenance explainer (curated 8 entries, facets
+  derive from full catalog not filtered subset). **Score:
+  83 → 87.**
+- `/my/<owner>` (`my_dashboard_page.py`) — Red Alerts and
+  Overdue Deadlines pulse-strip values both wrapped with
+  scoping explainers. **Score: 86 → 89.**
+- `/alerts` (`alerts_page.py`) — added a count strip above
+  the severity panels with an evaluator-list explainer
+  (covenant headroom, EBITDA variance, signal clusters,
+  stage regress) + active-vs-all semantics. **Score: 82 →
+  85.**
+
+**Latent cycle-34 bug found and fixed.** While verifying
+cycle 35, the `/research` test failed: the count value
+`>8<` was missing because the tooltip HTML was being
+double-escaped when passed through the kit's `_esc()`
+helper. The bug was present since cycle 34 — the
+provenance tooltip strings rendered as escaped HTML
+source in `/escalations` too, but no test caught it.
+
+**Fix:** introduced `SafeHtml(str)` marker class in
+`_chartis_kit.py`. Any helper that returns
+pre-escaped, kit-internal markup (currently just
+`ck_provenance_tooltip`) now returns `SafeHtml(...)`.
+`_esc()` checks `isinstance(x, SafeHtml)` and skips
+re-escaping. Drop-in safe — all existing call sites
+that pass plain strings still escape as before.
+
+**Files touched this batch.**
+- `rcm_mc/ui/_chartis_kit.py` — `SafeHtml` marker class +
+  `_esc` skip-re-escape branch + `ck_provenance_tooltip`
+  returns `SafeHtml`.
+- `rcm_mc/ui/notes_search_page.py` — import + count wrap.
+- `rcm_mc/ui/research_page.py` — import + count wrap.
+- `rcm_mc/ui/my_dashboard_page.py` — import + 2 pulse wraps
+  (Red Alerts, Overdue Deadlines).
+- `rcm_mc/ui/alerts_page.py` — import + count strip with
+  severity tally above severity panels.
+
+**Compliance impact.**
+- V5 fidelity passers: 159 of 299 (53.2%) — pass count
+  unchanged, ceiling holds at 93. **Top 6 pages now in
+  85-93 range** (was 89 ceiling at start of cycle).
+- Top 10 leaderboard:
+  93 deals_library, 89 my_dashboard, 87 escalations / 87
+  notes_search / 87 research, 85 alerts, 84 stress, 83
+  acq_timing / 83 deal_risk_scores / 83 market_rates.
+- Cycle-34 double-escape bug fixed across all pages using
+  the helper (escalations, library, notes, research,
+  my_dashboard, alerts).
+- Per-module + provenance + integration sweep: 114 + 80
+  passing, 0 new failures.
+
+**Suggested next:** cycle 36 — extend the helper into the
+70-79 cluster's top scorers (`stress_page.py` 84,
+`deal_risk_scores_page.py` 83, `market_rates_page.py` 83,
+etc.). Or pivot to fixing the legacy 25-score cluster
+(`analysis_workbench`, `dashboard_page`, etc.) which all
+need a chartis_shell port before any helper adoption can
+help. Forward-only.
+

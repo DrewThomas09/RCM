@@ -76,7 +76,9 @@ def render_notes_search(
     (search hero, filter sidebar, results header, deal_id chip,
     keyword chip, Clear all, intro) the helper builds for free.
     """
-    from rcm_mc.ui._chartis_kit import render_insights_page
+    from rcm_mc.ui._chartis_kit import (
+        render_insights_page, ck_provenance_tooltip,
+    )
     from rcm_mc.deals.deal_notes import search_notes
     from rcm_mc.deals.note_tags import tags_for_notes, all_note_tags
 
@@ -202,11 +204,23 @@ def render_notes_search(
         }] if tag_options else []
     )
 
+    # Cycle 35 — wrap the result count with an explainer so partners
+    # see the search semantics (case-insensitive substring + AND-tag
+    # scoping) without leaving the page.
+    count_display = ck_provenance_tooltip(
+        "Note search",
+        f"{count:,}",
+        explainer=(
+            "Case-insensitive substring match against note bodies. "
+            "Tag filters AND together (a note must carry every "
+            "selected tag). Soft-deleted notes are excluded."
+        ),
+    )
     return render_insights_page(
         action="/notes",
         state={"q": q, "deal_id": deal_id, "tags": tags_raw},
         facets=facets,
-        count=f"{count:,}",
+        count=count_display,
         count_label="Notes" if count != 1 else "Note",
         body_html=results_body,
         title="Notes Search",

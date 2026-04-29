@@ -133,7 +133,9 @@ def render_research(
     sidebar + results header + chips + Clear all + intro)
     is composed by ``render_insights_page``.
     """
-    from rcm_mc.ui._chartis_kit import render_insights_page, ck_arrow_link
+    from rcm_mc.ui._chartis_kit import (
+        render_insights_page, ck_arrow_link, ck_provenance_tooltip,
+    )
 
     def _matches(entry: Dict[str, str]) -> bool:
         if topic and entry["topic"] != topic:
@@ -210,11 +212,25 @@ def render_research(
             + '</div>'
         )
 
+    # Cycle 35 — wrap the count with the catalog provenance so
+    # partners see where the research surface lives + how the
+    # facets are derived.
+    count_display = ck_provenance_tooltip(
+        "Research catalog",
+        f"{len(filtered):,}",
+        explainer=(
+            f"Curated index of {len(RESEARCH_ENTRIES)} research "
+            f"notes (methodology, frameworks, deep-dives, field "
+            f"notes). Topic and format facets derive from the full "
+            f"catalog, not the current filter, so partner can "
+            f"navigate back into a topic that's been filtered out."
+        ),
+    )
     return render_insights_page(
         action="/research",
         state={"q": q, "topic": topic, "kind": kind},
         facets=facets,
-        count=f"{len(filtered):,}",
+        count=count_display,
         count_label="Note" if len(filtered) == 1 else "Notes",
         body_html=body_html,
         title="Research",
