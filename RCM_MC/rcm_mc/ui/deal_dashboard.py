@@ -384,4 +384,16 @@ def render_deal_dashboard(
         active_nav="/analysis",
         subtitle=f"Deal {deal_id} · 17 analytical models · click any tile",
         extra_css=_MODEL_TILE_CSS,
+        editorial_intro={
+            "eyebrow": "DEAL DASHBOARD",
+            "headline": "Where every analysis on this deal lives.",
+            "italic_word": "every",
+            "body": (
+                "All 17 analytical models for this deal in one "
+                "tile grid - DCF, LBO, market intel, denial, "
+                "scenarios, exit timing, and more. Click any "
+                "tile to drop into that model with the deal's "
+                "data pre-loaded."
+            ),
+        },
     )

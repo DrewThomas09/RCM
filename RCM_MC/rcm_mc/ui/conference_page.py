@@ -415,4 +415,16 @@ def render_conference_roadmap(category: str = "all") -> str:
             ".cad-badge-blue{background:var(--cad-accent);color:#fff;}"
             ".cad-badge-muted{background:var(--cad-border);color:var(--cad-text2);}"
         ),
+        editorial_intro={
+            "eyebrow": "CONFERENCE ROADMAP",
+            "headline": "Where the deal flow surfaces.",
+            "italic_word": "surfaces",
+            "body": (
+                "Healthcare PE conference calendar - JPM, HLTH, "
+                "specialty events, and partner-attendance plan. "
+                "Conferences are where bankers introduce buy-side "
+                "and where the next quarter's deal flow gets "
+                "previewed."
+            ),
+        },
     )

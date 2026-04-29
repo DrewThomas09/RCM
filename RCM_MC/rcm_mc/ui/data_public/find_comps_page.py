@@ -372,4 +372,16 @@ def render_find_comps(params: Dict[str, str]) -> str:
         page_key="find-comps",
     )
     subtitle = f"Searching {n:,} deals" if has_inputs else "Find deal comparables"
-    return chartis_shell(explainer + body, "Find Comps", active_nav="/find-comps", subtitle=subtitle)
+    return chartis_shell(explainer + body, "Find Comps", active_nav="/find-comps", subtitle=subtitle,
+        editorial_intro={
+            "eyebrow": "FIND COMPS",
+            "headline": "Where the closest realized deals live.",
+            "italic_word": "live",
+            "body": (
+                "Profile-distance similarity search across the "
+                "realized corpus. Tighter weights surface the "
+                "closest neighbors; looser weights expand the "
+                "comparable pool. Use match scores above 0.7 as "
+                "the underwriting reality check."
+            ),
+        })

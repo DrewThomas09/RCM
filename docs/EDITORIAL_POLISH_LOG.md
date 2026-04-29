@@ -3781,3 +3781,36 @@ real KPI port - ~40 min each. The 25-score giants
 (analysis_workbench 3032 LOC, dashboard_page 2612 LOC)
 still pending. Forward-only.
 
+## Cycle 50 build — 2026-04-29 — 38-tier sweep (+4 passers, 76.6%)
+
+**Step 50 — port the 38-41 cluster.** Four pages crossed
+the 70 threshold this cycle, lifted from the 38-41 zone
+via the proven KPI strip + provenance + ck_fmt_* +
+editorial_intro pattern:
+
+- `rcm_mc/ui/waterfall_page.py` 38 → 90
+- `rcm_mc/ui/denial_page.py` 38 → 88
+- `rcm_mc/ui/data_catalog_page.py` 38 → 90
+- `rcm_mc/ui/hospital_stats_page.py` 38 → 95
+
+Three pages adopted intro but stayed at 53 (need primitives
+in cycle 51): conference_page, find_comps_page, deal_
+dashboard.
+
+**Files touched this batch.**
+- 7 page files modified (4 crossed, 3 partial).
+
+**Compliance impact.**
+- V5 fidelity passers: **229 of 299 (76.6%)** — up from
+  225. Fourteenth straight cycle of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 51 — finish the 53-tier
+(conference_page, find_comps_page, deal_dashboard) by
+adding KPI strips + provenance. Then attack the 600+ LOC
+cluster: chartis/home_page, counterfactual_page, exit_
+timing_page, risk_workbench, ebitda_bridge_page,
+regulatory_calendar. Each needs a focused 30-40 min KPI-
+strip port. Forward-only.
+
