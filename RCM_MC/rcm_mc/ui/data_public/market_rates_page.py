@@ -262,6 +262,7 @@ def render_market_rates(
 ) -> str:
     from rcm_mc.ui._chartis_kit import (
         chartis_shell, ck_kpi_block, ck_section_header, ck_fmt_moic,
+        ck_provenance_tooltip,
     )
 
     corpus = _get_corpus()
@@ -275,14 +276,35 @@ def render_market_rates(
     corpus_irr_p50 = _percentile(all_irrs, 0.50)
     loss_rate = sum(1 for m in all_moics if m < 1.0) / len(all_moics) if all_moics else 0
 
+    # Cycle 36 — wrap the corpus median + loss rate so the partner
+    # sees how each is computed without leaving the page.
+    p50_value = ck_provenance_tooltip(
+        "Corpus P50 MOIC",
+        ck_fmt_moic(corpus_p50),
+        explainer=(
+            "Median realized MOIC across all closed deals in the "
+            "calibration corpus. Excludes unrealized / partial-realize "
+            "deals. Source: corpus_v2 (rcm_mc/data_public)."
+        ),
+    )
+    loss_value = ck_provenance_tooltip(
+        "Corpus loss rate",
+        f"{loss_rate*100:.1f}%",
+        explainer=(
+            "Share of realized deals that exited below 1.0x cost. "
+            "Industry baseline for healthcare PE is roughly 5-8%; "
+            "rates above that suggest underpriced risk."
+        ),
+        inject_css=False,
+    )
     kpis = (
         f'<div class="ck-kpi-grid">'
         + ck_kpi_block("Corpus N (Realized)", f'<span class="mn">{len(realized)}</span>', f"of {len(corpus)} total")
         + ck_kpi_block("P25 MOIC", ck_fmt_moic(corpus_p25), "lower quartile")
-        + ck_kpi_block("P50 MOIC", ck_fmt_moic(corpus_p50), "corpus median")
+        + ck_kpi_block("P50 MOIC", p50_value, "corpus median")
         + ck_kpi_block("P75 MOIC", ck_fmt_moic(corpus_p75), "upper quartile")
         + ck_kpi_block("P50 IRR", f'<span class="mn">{corpus_irr_p50*100:.1f}%</span>' if corpus_irr_p50 else '<span class="faint">—</span>', "median realized IRR")
-        + ck_kpi_block("Loss Rate", f'<span class="mn neg">{loss_rate*100:.1f}%</span>', "MOIC < 1.0×")
+        + ck_kpi_block("Loss Rate", loss_value, "MOIC < 1.0×")
         + '</div>'
     )
 

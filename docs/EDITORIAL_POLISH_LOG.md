@@ -2991,3 +2991,68 @@ etc.). Or pivot to fixing the legacy 25-score cluster
 need a chartis_shell port before any helper adoption can
 help. Forward-only.
 
+## Cycle 36 build — 2026-04-28 — provenance extends into 80-tier + 3-page latent bug fix
+
+**Step 36a — wire `ck_provenance_tooltip` into the four
+80-83 tier pages.** Cycle 35 closed out the cycle-6-15 ports;
+cycle 36 takes the helper one tier deeper.
+
+- `/deal/<id>/stress` (`chartis/stress_page.py`) — wraps
+  the Robustness grade KPI (grade thresholds explainer)
+  and the Downside Pass rate KPI (scenario universe
+  explainer). **Score: 84 → 88.**
+- `/acq-timing` (`data_public/acq_timing_page.py`) —
+  wraps the Q1 vs Q5 Timing Premium with the
+  vintage-discipline explainer. **Score: 83 → 85.**
+- `/deal-risk-scores` (`data_public/deal_risk_scores_page.py`)
+  — wraps Corpus Avg Score and % High/Critical with weights
+  and tier-cutoff explainers. **Score: 83 → 87.**
+- `/market-rates` (`data_public/market_rates_page.py`) —
+  wraps Corpus P50 MOIC (calibration source) and Loss Rate
+  (industry baseline) explainers. **Score: 83 → 87.**
+
+**Step 36b — fix latent `chartis_shell(body=body, …)` bug
+across two data_public pages.** While smoke-testing cycle 36
+edits, two pages 500'd at runtime: they passed `body=body`
+to `chartis_shell()`, but the signature is
+`chartis_shell(body_html, title, …)`. Stash + re-test
+confirmed the bug pre-dates cycle 36 — these pages have
+been broken in production. Fixed by switching to positional
+`body, title=…`.
+
+- `data_public/acq_timing_page.py` — fixed.
+- `data_public/deal_risk_scores_page.py` — fixed.
+
+`market_rates_page.py` already used positional form.
+
+**Files touched this batch.**
+- `rcm_mc/ui/chartis/stress_page.py` — import + 2 KPI wraps.
+- `rcm_mc/ui/data_public/acq_timing_page.py` — import + 1
+  wrap + chartis_shell call fix.
+- `rcm_mc/ui/data_public/deal_risk_scores_page.py` — import
+  + 2 wraps + chartis_shell call fix.
+- `rcm_mc/ui/data_public/market_rates_page.py` — import +
+  2 wraps.
+
+**Compliance impact.**
+- V5 fidelity passers: 159 of 299 (53.2%) — pass count
+  unchanged but **9 pages now ≥ 85**, top tier saturated.
+- Top 10 leaderboard:
+  93 deals_library, 89 my_dashboard, 88 stress, 87
+  escalations / 87 notes / 87 research / 87 deal_risk_scores
+  / 87 market_rates, 85 alerts, 85 acq_timing.
+- `/acq-timing` and `/deal-risk-scores` were 500'ing in
+  production; both render end-to-end now.
+- Per-module + provenance + chartis sweep: 55 + 72 passing,
+  zero regressions from cycle 36 changes.
+
+**Suggested next:** cycle 37 — pivot to the 25-score cluster
+(`analysis_workbench`, `command_center`, `dashboard_page`,
+`exit_timing_page`, `hcris_xray_page`, `home_v2`,
+`ml_insights_page`, `models_page`, `payer_stress_page`,
+`physician_attrition_page`). These all need a `chartis_shell`
+port before helper adoption can help. Pick the two with the
+highest partner foot-traffic (probably `analysis_workbench` +
+`dashboard_page`) and port them; expect each to leap 25 → 70+
+in one cycle. Forward-only.
+

@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic,
+    ck_provenance_tooltip,
 )
 
 TIER_COLORS = {
@@ -198,6 +199,28 @@ def render_deal_risk_scores(params: Dict[str, str]) -> str:
   <select name="tier" class="ck-sel" onchange="this.form.submit()">{tier_opts}</select>
 </form>"""
 
+    # Cycle 36 — provenance wraps on the two scoring KPIs that
+    # carry the most partner judgment weight.
+    avg_score_value = ck_provenance_tooltip(
+        "Corpus average risk score",
+        f"{result.corpus_avg_score:.1f}",
+        explainer=(
+            "Weighted composite: entry multiple 30%, payer "
+            "concentration 20%, hold duration 20%, vintage cycle "
+            "15%, deal size 15%. Scaled 0 (lowest risk) to 100 "
+            "(highest)."
+        ),
+    )
+    pct_critical_value = ck_provenance_tooltip(
+        "% high or critical risk",
+        f"{result.pct_high_critical:.1f}%",
+        explainer=(
+            "Share of corpus with composite score >= 50. "
+            "Tier cutoffs: Low <25, Medium 25-49, High 50-69, "
+            "Critical >=70."
+        ),
+        inject_css=False,
+    )
     kpi_grid = (
         '<div class="ck-kpi-grid">'
         + ck_kpi_block(
@@ -207,12 +230,12 @@ def render_deal_risk_scores(params: Dict[str, str]) -> str:
         )
         + ck_kpi_block(
             "Corpus Avg Score",
-            f'<span class="mn">{result.corpus_avg_score:.1f}</span>',
+            avg_score_value,
             "0 = lowest risk, 100 = highest",
         )
         + ck_kpi_block(
             "% High / Critical",
-            f'<span class="mn" style="color:{P["warning"]}">{result.pct_high_critical:.1f}%</span>',
+            pct_critical_value,
             "score ≥ 50",
         )
         + ck_kpi_block(
@@ -253,7 +276,7 @@ def render_deal_risk_scores(params: Dict[str, str]) -> str:
 """
 
     return chartis_shell(
-        body=body,
+        body,
         title="Deal Risk Score Dashboard",
         active_nav="/deal-risk-scores",
         subtitle="Corpus-wide 5-factor risk scoring — validated against realized MOIC",
