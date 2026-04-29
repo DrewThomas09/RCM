@@ -22,7 +22,10 @@ from ..diligence.counterfactual import (
     summarize_ccd_inputs,
 )
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .power_ui import diff_badge
 
 
@@ -31,8 +34,29 @@ def _landing_compare() -> str:
         f'<option value="{html.escape(n)}">{html.escape(l)}</option>'
         for n, l in AVAILABLE_FIXTURES
     )
+    # Cycle 55 — KPI strip with provenance.
+    fixtures_value = ck_provenance_tooltip(
+        "Available comparison fixtures",
+        ck_fmt_num(len(AVAILABLE_FIXTURES)),
+        explainer=(
+            f"Pre-built diligence-pipeline outputs for {len(AVAILABLE_FIXTURES)} "
+            f"target hospital profiles - clean acute, denial-heavy, "
+            f"QoR critical, etc. Pick any two and the page "
+            f"computes deltas across CCD KPIs, QoR, "
+            f"counterfactuals, and bridge levers."
+        ),
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0;">'
+        + ck_kpi_block("Fixtures Available", fixtures_value, "for comparison")
+        + ck_kpi_block("Comparison Dims", "4", "KPIs / QoR / CF / bridge")
+        + '</div>'
+    )
+
     body = (
-        f'<div style="padding:24px 0 12px 0;">'
+        ck_eyebrow("Side-by-side Compare")
+        + kpi_strip
+        + f'<div style="padding:24px 0 12px 0;">'
         f'<div style="font-size:11px;color:{P["text_faint"]};letter-spacing:1.5px;'
         f'text-transform:uppercase;margin-bottom:6px;font-weight:600;">'
         f'Side-by-side Compare</div>'
@@ -67,7 +91,19 @@ def _landing_compare() -> str:
         f'</form>'
     )
     return chartis_shell(body, "RCM Diligence — Compare",
-                        subtitle="Side-by-side comparison")
+                        subtitle="Side-by-side comparison",
+        editorial_intro={
+            "eyebrow": "COMPARE DEALS",
+            "headline": "Where the deals stand against each other.",
+            "italic_word": "stand",
+            "body": (
+                "Side-by-side comparison of two or three deals "
+                "across the standard analysis dimensions - "
+                "economics, RCM, market, exit. Use this when "
+                "you're choosing between competing opportunities "
+                "or pattern-matching to a recently closed peer."
+            ),
+        })
 
 
 def _analyse_fixture(name: str) -> Optional[Dict[str, Any]]:
@@ -352,6 +388,17 @@ def _render_comparison(
         hero + table_html + grid,
         f"Compare — {left['name']} vs {right['name']}",
         subtitle="Side-by-side",
+        editorial_intro={
+            "eyebrow": "DEAL COMPARE",
+            "headline": "Where these two deals diverge.",
+            "italic_word": "diverge",
+            "body": (
+                "Side-by-side metrics + radar across analysis "
+                "dimensions. Press 'b' to bookmark; the deal "
+                "you ultimately choose anchors the IC discussion "
+                "on the gaps between the two profiles."
+            ),
+        },
     )
 
 

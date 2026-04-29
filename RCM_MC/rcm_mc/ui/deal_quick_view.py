@@ -9,7 +9,9 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -62,15 +64,10 @@ def render_deal_quick_view(
             except (TypeError, ValueError):
                 display = str(val)
 
-            kpi_cards += (
-                f'<div class="cad-kpi">'
-                f'<div class="cad-kpi-value">{html.escape(display)}</div>'
-                f'<div class="cad-kpi-label">{html.escape(label)}</div>'
-                f'</div>'
-            )
+            kpi_cards += ck_kpi_block(label, html.escape(display))
 
     profile_section = (
-        f'<div class="cad-kpi-grid">{kpi_cards}</div>'
+        f'<div class="ck-kpi-grid">{kpi_cards}</div>'
         if kpi_cards else
         f'<div class="cad-card"><p style="color:{PALETTE["text_muted"]};">'
         f'No profile metrics yet. '
@@ -81,11 +78,22 @@ def render_deal_quick_view(
     total_fields = 8
     pct = populated / total_fields * 100
     bar_color = PALETTE["positive"] if pct > 70 else (PALETTE["warning"] if pct > 40 else PALETTE["negative"])
+    # Cycle 55 — provenance on the completeness summary.
+    completeness_value = ck_provenance_tooltip(
+        "Data completeness",
+        f'<span style="color:{bar_color};">{populated}/{total_fields} fields</span>',
+        explainer=(
+            f"Profile fields populated out of {total_fields} the "
+            f"platform expects. Above 70% green (analyses run on "
+            f"observed data), 40-70% amber (some imputation), "
+            f"below 40% red (Bayesian priors dominate predictions)."
+        ),
+    )
     completeness = (
         f'<div class="cad-card">'
         f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
         f'<h2>Data Completeness</h2>'
-        f'<span class="cad-mono" style="color:{bar_color};">{populated}/{total_fields} fields</span>'
+        f'<span class="cad-mono">{completeness_value}</span>'
         f'</div>'
         f'<div style="background:{PALETTE["bg_tertiary"]};border-radius:6px;height:10px;">'
         f'<div style="width:{pct:.0f}%;background:{bar_color};border-radius:6px;height:10px;"></div>'
@@ -163,4 +171,15 @@ def render_deal_quick_view(
         body, name,
         active_nav="/analysis",
         subtitle=f"Deal: {did} — {populated} of {total_fields} profile fields populated",
+        editorial_intro={
+            "eyebrow": "DEAL QUICK VIEW",
+            "headline": "Where the deal's profile lives in one glance.",
+            "italic_word": "one",
+            "body": (
+                "Compact profile view for fast triage - sector, "
+                "size, headline economics, completeness grade. "
+                "Use this from the pipeline screen before "
+                "committing to a full analysis run."
+            ),
+        },
     )

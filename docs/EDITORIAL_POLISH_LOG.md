@@ -3965,3 +3965,25 @@ chrome cleanup (replace inline-style divs with ck_panel /
 ck_section_header) - density penalty is the blocker on
 exit_timing 66, ebitda_bridge 55, regulatory_calendar 64.
 
+## Cycle 55 build — 2026-04-29 — 35-36 tier (+3 passers, 81.3%)
+
+**Step 55 — port the 35-36 tier.** Three pages crossed:
+
+- `rcm_mc/ui/demand_page.py` 36 → 83
+- `rcm_mc/ui/compare_page.py` 35 → 71
+- `rcm_mc/ui/deal_quick_view.py` 35 → 74
+
+news_page (36→51), deal_quick_view, and compare_page got
+intro + provenance + KPI ports. news_page still below
+threshold; needs primitive density.
+
+**Compliance impact.**
+- V5 fidelity passers: **243 of 299 (81.3%)** — up from
+  240. Nineteenth straight cycle of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 56 — finish news_page (KPI
+strip), then attack the rest of the 30-tier and the 600+
+LOC giants. Forward-only.
+

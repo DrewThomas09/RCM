@@ -450,4 +450,15 @@ def render_news(category: str = "all") -> str:
         body, "News & Research",
         active_nav="/news",
         subtitle="Healthcare PE market intelligence",
+        editorial_intro={
+            "eyebrow": "NEWS & RESEARCH",
+            "headline": "What the market is saying about the deal universe.",
+            "italic_word": "saying",
+            "body": (
+                "Curated healthcare PE coverage by sector and "
+                "deal type - bankruptcies, transactions, "
+                "regulatory moves. Use this as the partner-day "
+                "context check before opening any deal page."
+            ),
+        },
     )
