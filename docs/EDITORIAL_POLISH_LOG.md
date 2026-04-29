@@ -3056,3 +3056,62 @@ highest partner foot-traffic (probably `analysis_workbench` +
 `dashboard_page`) and port them; expect each to leap 25 → 70+
 in one cycle. Forward-only.
 
+## Cycle 37 build — 2026-04-28 — first crack at the 25-score cluster (2 pages 70+)
+
+**Step 37 — port two 25-score legacy pages to editorial chrome.**
+Cycle 36 saturated the 80-tier; cycle 37 turns to the 25-score
+cluster — pages still using the Bloomberg-era `cad-` chrome
+that the audit considered hopeless. Pick the two highest-
+traffic surfaces (`/home` and the SeekingChartis Command
+Center) and port the partner-visible scaffolding without
+rewriting the whole page.
+
+**`/home` (`home_v2.py`).** Score 25 → 72.
+- Added `editorial_intro` kwarg (eyebrow / italic-serif
+  headline / partner-voice body).
+- Ported the Portfolio Summary KPI block from
+  `cad-kpi-grid` to `ck_kpi_block`s; swapped the bespoke
+  Data Sources tile grid to `ck_kpi_block` + `ck_eyebrow`.
+- Wrapped Estimated EBITDA (revenue x avg margin) and Avg
+  Denial Rate with `ck_provenance_tooltip` explainers.
+- Result: editorial_intro + ck_eyebrow + 6 ck_kpi_block +
+  2 provenance + ck_fmt_num.
+
+**Command Center (`command_center.py`).** Score 25 → 71.
+- Added `editorial_intro` kwarg.
+- Ported the 6-card hero KPI strip from `cad-kpi` to
+  `ck_kpi_block`.
+- Wrapped PE-Sized Targets (sizing rubric) and Distressed
+  (-5% threshold + DQ exclusion) with provenance.
+
+Both pages cross the 70 passing threshold for the first time
+since the audit went live. Two genuine new passers from a
+tier that previously looked unportable without rewrites.
+
+**Files touched this batch.**
+- `rcm_mc/ui/home_v2.py` — imports + portfolio_summary +
+  freshness_section + chartis_shell call.
+- `rcm_mc/ui/command_center.py` — imports + hero KPIs +
+  chartis_shell call.
+
+**Compliance impact.**
+- V5 fidelity passers: **161 of 299 (53.8%)** — up from
+  159; first net-new passers since cycle 33's denominator
+  fix.
+- Two pages re-classified from "hopeless" (25) to
+  "passing" tier (71, 72).
+- Per-module + provenance + chartis sweep: 99 passing,
+  zero regressions.
+
+**Suggested next:** cycle 38 — keep grinding the 25-score
+cluster. Eight pages still stuck at 25:
+`analysis_workbench` (3032 LOC, partner workbench),
+`dashboard_page` (2612 LOC, big surface), `exit_timing_page`,
+`hcris_xray_page`, `ml_insights_page`, `models_page`,
+`payer_stress_page`, `physician_attrition_page`. Pattern is
+proven: editorial_intro + ck_kpi_block port + 1-2 provenance
+wraps lifts a 25 to 70+ in ~80 LOC of changes. Largest two
+(`analysis_workbench`, `dashboard_page`) are non-trivial
+ports; the smaller five should each take ~30 minutes.
+Forward-only.
+

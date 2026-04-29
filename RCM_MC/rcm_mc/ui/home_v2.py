@@ -10,7 +10,14 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell,
+    ck_eyebrow,
+    ck_fmt_num,
+    ck_fmt_pct,
+    ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -302,7 +309,10 @@ def render_home(
             f'{cards}</div>'
         )
 
-    # Portfolio summary KPIs (only when deals exist)
+    # Portfolio summary KPIs (only when deals exist) — cycle 37 ports
+    # the cad-kpi cards to ck_kpi_block + adds provenance hovers on
+    # the two KPIs that need methodology context (EBITDA estimate +
+    # avg denial rate).
     portfolio_summary = ""
     if not deals.empty:
         n_deals = len(deals)
@@ -310,31 +320,53 @@ def render_home(
         p_dr = deals["denial_rate"].dropna().mean() if "denial_rate" in deals.columns else None
         p_ar = deals["days_in_ar"].dropna().mean() if "days_in_ar" in deals.columns else None
         p_ebitda = 0
+        avg_m = 0.10
         if p_rev > 0:
             avg_m = float(deals["ebitda_margin"].dropna().mean()) if "ebitda_margin" in deals.columns and deals["ebitda_margin"].notna().any() else 0.10
             p_ebitda = p_rev * avg_m
 
+        ebitda_value = ck_provenance_tooltip(
+            "Estimated portfolio EBITDA",
+            f"${p_ebitda/1e6:,.0f}M",
+            explainer=(
+                f"Total revenue x portfolio average EBITDA margin "
+                f"({avg_m:.1%}). Falls back to a 10% margin floor "
+                f"when no per-deal margin is on file. Indicative only "
+                f"-- the deal-level pages run a full bridge."
+            ),
+        )
+        denial_value = ck_provenance_tooltip(
+            "Average denial rate",
+            f"{p_dr:.1f}%" if p_dr else "—",
+            explainer=(
+                "Equal-weighted mean denial rate across active "
+                "deals. Industry-typical ranges: clean platforms "
+                "3-6%, opportunity targets 12-20%. Above 12% "
+                "usually flags a roll-up audit-recovery thesis."
+            ),
+            inject_css=False,
+        ) if p_dr else None
+
+        kpi_blocks = (
+            ck_kpi_block("Active Deals", f"{n_deals}", "in portfolio")
+            + ck_kpi_block("Total Revenue", f"${p_rev/1e6:,.0f}M", "deals on file")
+            + (ck_kpi_block("Est. EBITDA", ebitda_value, "revenue x avg margin")
+               if p_ebitda > 0 else "")
+            + (ck_kpi_block("Avg Denial Rate", denial_value, "across portfolio")
+               if denial_value is not None else "")
+            + (ck_kpi_block("Avg AR Days", f"{p_ar:.0f}", "across portfolio")
+               if p_ar else "")
+        )
         portfolio_summary = (
             f'<div class="cad-card">'
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
             f'<div style="display:flex;align-items:center;gap:10px;">'
-            f'<h2 style="margin:0;">Portfolio Summary</h2>'
+            f'{ck_eyebrow("Portfolio Summary")}'
             f'<span class="cad-section-code">PFS</span></div>'
             f'<a href="/portfolio" style="font-size:10.5px;font-family:var(--cad-mono);'
             f'letter-spacing:0.06em;text-transform:uppercase;color:{PALETTE["text_link"]};">'
             f'View All &rarr;</a></div>'
-            f'<div class="cad-kpi-grid">'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">{n_deals}</div>'
-            f'<div class="cad-kpi-label">Active Deals</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">${p_rev/1e6:,.0f}M</div>'
-            f'<div class="cad-kpi-label">Total Revenue</div></div>'
-            + (f'<div class="cad-kpi"><div class="cad-kpi-value">${p_ebitda/1e6:,.0f}M</div>'
-               f'<div class="cad-kpi-label">Est. EBITDA</div></div>' if p_ebitda > 0 else "")
-            + (f'<div class="cad-kpi"><div class="cad-kpi-value">{p_dr:.1f}%</div>'
-               f'<div class="cad-kpi-label">Avg Denial Rate</div></div>' if p_dr else "")
-            + (f'<div class="cad-kpi"><div class="cad-kpi-value">{p_ar:.0f}</div>'
-               f'<div class="cad-kpi-label">Avg AR Days</div></div>' if p_ar else "")
-            + f'</div></div>'
+            f'<div class="ck-kpi-grid">{kpi_blocks}</div></div>'
         )
 
     # Active Deals Table
@@ -375,24 +407,18 @@ def render_home(
         n_hospitals = 0
         n_states = 0
 
+    # Data freshness — port to ck_kpi_block for chartis chrome
+    # consistency. Cycle 37.
     freshness_section = (
         f'<div class="cad-card" style="font-size:12px;">'
         f'<div style="display:flex;justify-content:space-between;align-items:center;">'
-        f'<h2>Data Sources</h2>'
+        f'{ck_eyebrow("Data Sources")}'
         f'<span class="cad-badge cad-badge-green">Live</span></div>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-top:8px;">'
-        f'<div>'
-        f'<div class="cad-mono" style="font-size:16px;font-weight:700;">{n_hospitals:,}</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">HCRIS Hospitals</div></div>'
-        f'<div>'
-        f'<div class="cad-mono" style="font-size:16px;font-weight:700;">50+</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">States &amp; Territories</div></div>'
-        f'<div>'
-        f'<div class="cad-mono" style="font-size:16px;font-weight:700;">FRED</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">Treasury / Macro</div></div>'
-        f'<div>'
-        f'<div class="cad-mono" style="font-size:16px;font-weight:700;">15+</div>'
-        f'<div style="color:{PALETTE["text_muted"]};">Analytical Models</div></div>'
+        f'<div class="ck-kpi-grid" style="margin-top:8px;">'
+        f'{ck_kpi_block("HCRIS Hospitals", ck_fmt_num(n_hospitals), "FY2022 cost reports")}'
+        f'{ck_kpi_block("States and Territories", "50+", "national coverage")}'
+        f'{ck_kpi_block("Treasury / Macro", "FRED", "fred.stlouisfed.org")}'
+        f'{ck_kpi_block("Analytical Models", "15+", "ridge, conformal, MC, ...")}'
         f'</div></div>'
     ) if n_hospitals > 0 else ""
 
@@ -461,4 +487,15 @@ def render_home(
         body, "Home",
         active_nav="/home",
         subtitle="Healthcare PE diligence, instrument-grade",
+        editorial_intro={
+            "eyebrow": "HOME",
+            "headline": "Where the partner reads the market first.",
+            "italic_word": "reads",
+            "body": (
+                "Market pulse, the analyst voice's latest insights, "
+                "and your own portfolio in one screen. Numbers carry "
+                "hover-card provenance so the methodology is one "
+                "click away."
+            ),
+        },
     )
