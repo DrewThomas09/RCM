@@ -2004,7 +2004,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         if ui_v2 in self._UI_EDITORIAL_VALUES:
             self._ui_choice = "editorial"
             return
-        self._ui_choice = "legacy"
+        if ui_v2 in self._UI_LEGACY_VALUES:
+            self._ui_choice = "legacy"
+            return
+        # Default: align with UI_V2_ENABLED (which defaults to True when
+        # CHARTIS_UI_V2 is unset). Without this default, /dashboard
+        # checks UI_V2_ENABLED → True → redirects to /app, while /app
+        # checks self._ui_choice → "legacy" → redirects back to
+        # /dashboard, producing an infinite redirect loop.
+        from .ui._chartis_kit import UI_V2_ENABLED as _v2_default
+        self._ui_choice = "editorial" if _v2_default else "legacy"
 
     def do_GET(self) -> None:
         if not self._auth_ok():
