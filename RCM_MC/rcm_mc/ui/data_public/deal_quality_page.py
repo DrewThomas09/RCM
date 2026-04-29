@@ -116,7 +116,10 @@ def _quality_histogram_svg(scores: List[float], width: int = 400, height: int = 
 
 
 def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", page: int = 1) -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui._chartis_kit import (
+        chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+        ck_section_header,
+    )
     from rcm_mc.data_public.deal_quality_score import score_corpus_quality, DealQualityScore
 
     corpus = _load_corpus()
@@ -157,14 +160,35 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
     page = max(1, min(page, total_pages))
     page_scores = scores[(page - 1) * PAGE_SIZE: page * PAGE_SIZE]
 
-    # KPIs
+    # KPIs — cycle 41 adds provenance + ck_fmt_num.
+    avg_q_value = ck_provenance_tooltip(
+        "Average corpus quality score",
+        f"{avg_q:.1f}",
+        explainer=(
+            "Mean quality score across all corpus deals. Score "
+            "blends completeness (% of fields populated) and "
+            "credibility (% of fields passing range / type "
+            "checks). Tier cutoffs: A>=80, B 60-79, C 40-59, D<40."
+        ),
+    )
+    flagged_value = ck_provenance_tooltip(
+        "Deals with data-quality flags",
+        ck_fmt_num(n_flagged),
+        explainer=(
+            f"Number of deals carrying at least one flagged field, "
+            f"of which {n_errors} are hard errors (range / type "
+            f"violations) vs. softer warnings. Hard errors block "
+            f"a deal from contributing to corpus benchmarks."
+        ),
+        inject_css=False,
+    )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', "in corpus")
-        + ck_kpi_block("Avg Quality", f'<span class="mn">{avg_q:.1f}</span>', "out of 100")
+        + ck_kpi_block("Total Deals", ck_fmt_num(total), "in corpus")
+        + ck_kpi_block("Avg Quality", avg_q_value, "out of 100")
         + ck_kpi_block("Tier A", f'<span class="mn" style="color:#22c55e">{tier_counts.get("A",0)}</span>', f'{100*tier_counts.get("A",0)/total:.0f}% of corpus')
         + ck_kpi_block("Tier B", f'<span class="mn" style="color:#3b82f6">{tier_counts.get("B",0)}</span>', f'{100*tier_counts.get("B",0)/total:.0f}% of corpus')
-        + ck_kpi_block("Flagged", f'<span class="mn" style="color:#f59e0b">{n_flagged}</span>', f"{n_errors} errors total")
+        + ck_kpi_block("Flagged", flagged_value, f"{n_errors} errors total")
         + '</div>'
     )
 

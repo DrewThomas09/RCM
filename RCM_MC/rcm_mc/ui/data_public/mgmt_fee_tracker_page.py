@@ -1,7 +1,9 @@
 """Management Fee Tracker page — /mgmt-fee-tracker."""
 from __future__ import annotations
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -212,15 +214,36 @@ def render_mgmt_fee_tracker(params: dict) -> str:
     r = compute_mgmt_fee_tracker(fund_mm)
     fe = r.fund_economics
 
+    annual_fees_value = ck_provenance_tooltip(
+        "Annual management fees",
+        f"${fe.total_annual_fees_mm:.2f}M",
+        explainer=(
+            "Gross management fees minus transaction-fee offsets, "
+            "net to the LP. The 'net to LP after offset' figure - "
+            "not the gross headline rate - is the right anchor "
+            "for fund-level peer compares."
+        ),
+    )
+    lp_moic_value = ck_provenance_tooltip(
+        "LP net MOIC",
+        ck_fmt_moic(fe.lp_net_moic),
+        explainer=(
+            f"Equity proceeds to LPs net of management fees + "
+            f"GP carry. Fee drag on this fund: "
+            f"{fe.fee_drag_on_moic:.2f}x - the gap between gross "
+            f"deal MOIC and what LPs actually receive."
+        ),
+        inject_css=False,
+    )
     kpis = ck_kpi_block("Fund Size", f"${fe.fund_size_mm:.0f}M")
     kpis += ck_kpi_block("Deployed Capital", f"${fe.invested_capital_mm:.0f}M",
-                          unit=f"{fe.deployment_pct*100:.0f}% deployed")
-    kpis += ck_kpi_block("Annual Mgmt. Fees", f"${fe.total_annual_fees_mm:.2f}M",
-                          unit=f"Net to LP after offset")
+                          sub=f"{fe.deployment_pct*100:.0f}% deployed")
+    kpis += ck_kpi_block("Annual Mgmt. Fees", annual_fees_value,
+                          sub=f"Net to LP after offset")
     kpis += ck_kpi_block("Total Carry (GP)", f"${fe.total_carry_paid_mm:.0f}M",
-                          unit="20% carry above 8% hurdle")
-    kpis += ck_kpi_block("LP Net MOIC", f"{fe.lp_net_moic:.2f}x",
-                          unit=f"Fee drag: {fe.fee_drag_on_moic:.2f}x")
+                          sub="20% carry above 8% hurdle")
+    kpis += ck_kpi_block("LP Net MOIC", lp_moic_value,
+                          sub=f"Fee drag: {fe.fee_drag_on_moic:.2f}x")
     kpis += ck_kpi_block("Portfolio Positions", str(len(r.positions)))
 
     fee_svg = _fee_waterfall_svg(r.fee_calculations)

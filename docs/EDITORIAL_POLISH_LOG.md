@@ -3321,3 +3321,63 @@ mgmt_fee_tracker, backtest, ic_packet. Each picks up
 ~10 min each. Cycle 41 should net 4-6 more passers.
 Forward-only.
 
+## Cycle 41 build — 2026-04-28 — 64-68 cluster sweep + 1 latent unit= bug
+
+**Step 41 — push the 64-68 cluster across threshold.**
+Cycle 40 left six pages stuck at 64-68 with
+`editorial_intro` adopted but missing primitive density.
+Cycle 41 adds provenance tooltips, ck_fmt_* helpers, and
+ck_kpi_block ports across all six.
+
+- `data_public/concentration_risk_page.py` 64 → 89 — port
+  bespoke 7-card HHI strip to ck_kpi_block + provenance
+  on sector HHI + ck_fmt_num. Biggest single-page lift.
+- `data_public/provider_network_page.py` 68 → 85 — fix
+  pre-existing `unit=` typo on 2 calls (kit signature is
+  `sub=`/`trend=`); add ck_fmt_moic + provenance on HHI
+  and adjusted MOIC.
+- `data_public/deal_quality_page.py` 65 → 84 — provenance
+  on Avg Quality and Flagged + ck_fmt_num.
+- `data_public/backtest_page.py` 67 → 85 — provenance on
+  Model R² and Corpus P50 MOIC + ck_fmt_pct/moic
+  throughout the KPI bar.
+- `data_public/mgmt_fee_tracker_page.py` 65 → 77 — fix
+  `unit=` typo on 4 calls + provenance on Annual Mgmt Fees
+  and LP Net MOIC + ck_fmt_moic.
+- `chartis/ic_packet_page.py` 67 → 75 — provenance on Bear
+  Patterns and Sections counts.
+
+All six cross 70+. Net: **+6 passers in one cycle**.
+
+**Latent `unit=` typo found again.** Same pattern as
+cycle 40 — `provider_network` and `mgmt_fee_tracker`
+called `ck_kpi_block(label, value, unit=..., delta=...)`
+but the kit signature is `(label, value, sub=, trend=)`.
+Both pages 500'd before the fix. Cumulative: 4 pages
+fixed across cycles 40-41 with the same pre-existing
+bulk-migration bug.
+
+**Files touched this batch.**
+- 6 pages picked up 1-2 ck_provenance_tooltip wraps each.
+- 4 pages adopted ck_fmt_moic/num/pct helpers.
+- 1 page (concentration_risk) ported its KPI strip from
+  bespoke divs to ck_kpi_block.
+- 2 pages had pre-existing `unit=`/`delta=` typos fixed.
+
+**Compliance impact.**
+- V5 fidelity passers: **179 of 299 (59.9%)** — up from
+  173. **Sixth straight cycle of net-new passers.** Just
+  one passer short of 60%.
+- Per-module + provenance + integration sweep: 72 passing,
+  0 regressions.
+
+**Suggested next:** cycle 42 — push past the 60% line.
+Two paths: (a) the remaining 25-score cluster (5 pages:
+analysis_workbench, dashboard_page, exit_timing,
+hcris_xray, physician_attrition), each needing a real
+port not just kwarg adoption; or (b) the 50-63 mid-tier
+(~15 pages) where the editorial_intro + ck_fmt_* pattern
+should yield 5-10 more passers in one cycle. Path (b)
+is cheaper per-page; path (a) closes the audit's worst
+offenders. Forward-only.
+

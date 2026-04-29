@@ -5,7 +5,10 @@ import html
 import math
 from typing import List
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip, ck_section_header,
+)
 
 
 def _hhi_gauge(hhi: float, w: int = 120, h: int = 24) -> str:
@@ -113,17 +116,32 @@ def render_concentration_risk() -> str:
 
     cr = compute_concentration()
 
-    # summary KPI strip
+    # Summary KPI strip — cycle 41 ports to ck_kpi_block + adds
+    # provenance on the highest-stakes dimension (sector HHI).
     dims = [cr.sector, cr.sponsor, cr.payer_regime, cr.vintage, cr.region, cr.size_bucket, cr.sector_ev]
-    kpis = "".join(
-        f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 12px">'
-        f'<div style="font-size:8px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.06em;margin-bottom:3px">{html.escape(d.name.split(" ")[0]).upper()} HHI</div>'
-        f'<div style="font-size:14px;font-family:{_MONO};font-variant-numeric:tabular-nums;color:{P["text"]}">{d.hhi:,.0f}</div>'
-        f'<div style="font-size:9px;margin-top:2px">{_interp_badge(d.interpretation)}</div>'
-        f'</div>'
-        for d in dims
+    sector_hhi_value = ck_provenance_tooltip(
+        "Sector HHI",
+        ck_fmt_num(cr.sector.hhi),
+        explainer=(
+            "Herfindahl-Hirschman Index of sector concentration "
+            "in the deal corpus. DOJ/FTC thresholds: below 1,000 "
+            "= competitive; 1,000-1,800 = moderate; 1,800-2,500 "
+            "= concentrated; above 2,500 = highly concentrated."
+        ),
     )
-    kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'
+    kpi_blocks = []
+    for i, d in enumerate(dims):
+        label = f"{d.name.split(' ')[0]} HHI".title()
+        value = sector_hhi_value if i == 0 else ck_fmt_num(d.hhi)
+        kpi_blocks.append(ck_kpi_block(
+            label,
+            value,
+            sub=d.interpretation,
+        ))
+    kpi_strip = (
+        f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px">'
+        f'{"".join(kpi_blocks)}</div>'
+    )
 
     hhi_legend = (
         f'<div style="font-size:9px;color:{P["text_faint"]};font-family:{_SANS};margin-bottom:14px">'
