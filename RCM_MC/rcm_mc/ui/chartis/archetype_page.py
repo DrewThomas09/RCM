@@ -420,4 +420,15 @@ def render_archetype(
             ("Archetype", None),
         ],
         subtitle=f"{label} · archetype match + regime classification",
+        editorial_intro={
+            "eyebrow": "ARCHETYPE",
+            "headline": "Which kind of deal this really is.",
+            "italic_word": "is",
+            "body": (
+                "Profile-distance match against the corpus archetype "
+                "library + regime classification. Once you know the "
+                "archetype, the realized-MOIC distribution + the "
+                "stress patterns come for free."
+            ),
+        },
     )

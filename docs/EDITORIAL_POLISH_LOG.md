@@ -3115,3 +3115,81 @@ wraps lifts a 25 to 70+ in ~80 LOC of changes. Largest two
 ports; the smaller five should each take ~30 minutes.
 Forward-only.
 
+## Cycle 38 build — 2026-04-28 — editorial_intro fan-out + 7 broken auto-intro fixes
+
+**Step 38a — fan editorial_intro across the 55-59 cluster.**
+Cycle 37 proved the editorial_intro kwarg lifts a page by
+~10 fidelity points when it was already on chartis_shell.
+Cycle 38 fans the kwarg out across six chartis/ pages that
+were sitting at 57-59:
+
+- `chartis/investability_page.py` 59 → 73
+- `chartis/portfolio_analytics_page.py` 59 → 73
+- `chartis/payer_intelligence_page.py` 59 → 74
+- `chartis/red_flags_page.py` 58 → 73
+- `chartis/archetype_page.py` 57 → 72
+- `chartis/pe_intelligence_hub_page.py` 58 → 73
+
+All six cross 70+. Each got a hand-written eyebrow / italic-
+serif headline / partner-voice body matching the page's
+purpose — none of the templated "what the X reveals on this
+deal" boilerplate.
+
+**Step 38b — fix 4 broken auto-intro placeholders.**
+A prior bulk-migration tool emitted `editorial_intro={...}`
+dicts with literal `{template}` placeholders rendered as text
+instead of f-string interpolation. Found and rewrote the
+broken intros in:
+
+- `data_public/sector_momentum_page.py`
+- `data_public/payer_rate_trends_page.py`
+- `data_public/irr_dispersion_page.py`
+- `data_public/hold_analysis_page.py`
+- `bankruptcy_survivor_page.py`
+
+Each got a hand-written intro with proper f-string
+interpolation against the page's runtime data (sector
+count, deal count, etc.). The audit didn't penalize these
+before — italic_highlight detection didn't care about the
+literal-text quality — so the rewrite is a partner-voice
+fix, not a fidelity-score lift.
+
+**Step 38c — fan editorial_intro across data_public mid-tier
++ models/ml/exit ports.** Six more pages picked up the
+kwarg:
+
+- `data_public/comparables_page.py` 58 → 70+
+- `data_public/exit_timing_page.py` 59 → 70+
+- `exit_timing_page.py` (per-deal) 25 → 41 (+16; needs
+  more primitives to cross threshold)
+- `models_page.py` 25 → 40 (+15; same ceiling — needs
+  primitives)
+- `ml_insights_page.py` 25 → 40 (+15; same)
+
+The three big legacy pages (exit_timing, models, ml_insights)
+all have 500+ LOC of pre-editorial chrome — editorial_intro
+alone gets them halfway, but a real lift across the threshold
+requires porting their KPI strips to ck_kpi_block.
+
+**Files touched this batch.**
+- 16 page files modified.
+- Editorial copy hand-written for each.
+
+**Compliance impact.**
+- V5 fidelity passers: **169 of 299 (56.5%)** — up from 161;
+  +8 net-new passers in one cycle.
+- Six chartis/ pages flipped from 57-59 to 72-74.
+- Broken auto-intro placeholders fixed on five data_public
+  pages (no fidelity lift, but partner-readable copy).
+- Per-module + chartis sweep: 93 passing, 0 regressions.
+- All 16 modified modules import cleanly.
+
+**Suggested next:** cycle 39 — the remaining 25-score
+cluster needs primitive density, not just intro. Pick
+`models_page.py` (560 LOC, 0 primitives) and port the
+3 KPI strips (DCF, LBO, Financials) to ck_kpi_block.
+Same for `ml_insights_page.py` (532 LOC, 0 primitives).
+Each strip swap adds ~5 primitives → ~10 score points.
+Two pages × ~30 minutes each should yield 2 more passers
++ headroom for the next push. Forward-only.
+

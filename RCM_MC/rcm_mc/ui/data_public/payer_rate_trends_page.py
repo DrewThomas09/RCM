@@ -290,7 +290,14 @@ def render_payer_rate_trends() -> str:
     return chartis_shell(body, "Payer Rate Trends", active_nav="/payer-rate-trends",
                          subtitle=f"{len(with_payer)} deals with payer data",
         editorial_intro={
-            "eyebrow": "{LEN(WITH_PAYER)} DEALS WITH PAYER DATA",
-            "headline": "What the {len(with_payer)} deals with payer data reveals on this deal.",
-            "italic_word": "reveals",
+            "eyebrow": "PAYER RATE TRENDS",
+            "headline": "What the payer mix is paying.",
+            "italic_word": "paying",
+            "body": (
+                f"Commercial-vs-government rate trajectories across "
+                f"{len(with_payer)} corpus deals with payer data on "
+                f"file. The relative direction matters more than the "
+                f"absolute level — a flat commercial regime in a "
+                f"falling-rates corpus is a real signal."
+            ),
         })

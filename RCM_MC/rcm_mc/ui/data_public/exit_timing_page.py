@@ -489,4 +489,16 @@ def render_exit_timing() -> str:
             f"P50 hold {stats['hold_p50']:.1f}yr · "
             f"IQR {stats['hold_p25']:.1f}–{stats['hold_p75']:.1f}yr"
         ),
+        editorial_intro={
+            "eyebrow": "EXIT TIMING ANALYSIS",
+            "headline": "When the corpus actually exited.",
+            "italic_word": "actually",
+            "body": (
+                "Realized hold-period distribution by sector and "
+                "vintage year — the empirical baseline against "
+                "which the current deal's exit-year assumptions "
+                "should be benchmarked. P50 holds tend to be "
+                "longer than fund-marketing claims."
+            ),
+        },
     )

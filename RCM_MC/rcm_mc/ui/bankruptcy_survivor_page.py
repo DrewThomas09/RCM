@@ -156,9 +156,16 @@ def render_scan_landing() -> str:
     return chartis_shell(body, "Bankruptcy-Survivor Scan",
                          subtitle="12-pattern PE-healthcare playbook screen",
         editorial_intro={
-            "eyebrow": "12-PATTERN PE-HEALTHCARE PLAYBOOK SCREEN",
-            "headline": "What the 12-pattern pe-healthcare playbook screen reveals on this deal.",
-            "italic_word": "reveals",
+            "eyebrow": "BANKRUPTCY SURVIVOR",
+            "headline": "Whether the deal survives the playbook.",
+            "italic_word": "survives",
+            "body": (
+                "12 patterns drawn from PE-healthcare bankruptcies "
+                "(Steward, Envision, Mednax) — a rapid screen "
+                "against the moves that have already broken "
+                "deals. Each fired pattern is a falsifiable "
+                "claim, not a verdict."
+            ),
         })
 
 

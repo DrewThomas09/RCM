@@ -17,7 +17,7 @@ from ..diligence.exit_timing import (
     ExitRecommendation, ExitTimingReport,
     analyze_exit_timing,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_provenance_tooltip
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel, provenance,
 )
@@ -630,6 +630,16 @@ def _landing() -> str:
     return chartis_shell(
         body, "RCM Diligence — Exit Timing",
         subtitle="When + to whom · predictive exit path",
+        editorial_intro={
+            "eyebrow": "EXIT TIMING",
+            "headline": "When the deal pays you to leave.",
+            "italic_word": "leave",
+            "body": (
+                "Probabilistic IRR/MOIC across candidate exit years, "
+                "scored by buyer-channel fit. Pair the highest-IRR "
+                "year with the buyer most likely to clear the bid."
+            ),
+        },
     )
 
 
@@ -802,4 +812,16 @@ def render_exit_timing_page(
     return chartis_shell(
         body, f"Exit Timing — {target_name}",
         subtitle="When + to whom · predictive exit path",
+        editorial_intro={
+            "eyebrow": "EXIT TIMING",
+            "headline": "When the deal pays you to leave.",
+            "italic_word": "leave",
+            "body": (
+                "IRR/MOIC across candidate exit years for "
+                f"{target_name}, scored by buyer-channel fit. "
+                "The recommended pairing combines the highest "
+                "probability-weighted IRR with the buyer most "
+                "likely to clear the bid."
+            ),
+        },
     )

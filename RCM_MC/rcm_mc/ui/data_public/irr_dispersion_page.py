@@ -236,7 +236,14 @@ def render_irr_dispersion() -> str:
     return chartis_shell(body, "IRR Dispersion", active_nav="/irr-dispersion",
                          subtitle=f"{len(has_irr)} deals with IRR data",
         editorial_intro={
-            "eyebrow": "{LEN(HAS_IRR)} DEALS WITH IRR DATA",
-            "headline": "What the {len(has_irr)} deals with irr data reveals on this deal.",
-            "italic_word": "reveals",
+            "eyebrow": "IRR DISPERSION",
+            "headline": "Where the realized returns split apart.",
+            "italic_word": "split",
+            "body": (
+                f"IRR distribution across {len(has_irr)} realized "
+                f"corpus deals — quartile cuts and the long tail "
+                f"that drives fund performance. Use this to set "
+                f"realistic IRR expectations for the current deal "
+                f"based on its archetype neighbors."
+            ),
         })

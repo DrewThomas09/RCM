@@ -385,4 +385,15 @@ def render_pe_intelligence_hub(
             ("Analysis", "/analysis"),
             ("PE Intelligence", None),
         ],
+        editorial_intro={
+            "eyebrow": "PE INTELLIGENCE",
+            "headline": "Where senior-PE judgment is codified.",
+            "italic_word": "codified",
+            "body": (
+                "278 partner-reflex modules covering screening, "
+                "diligence, structuring, value creation, and exit. "
+                "Each one a falsifiable claim with regression "
+                "tests — the platform's reasoning, in the open."
+            ),
+        },
     )

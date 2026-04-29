@@ -379,4 +379,15 @@ def render_comparables(
             (f" · EV ${ev_mm:,.0f}M" if ev_mm else "") +
             entry_multiple_str
         ) if has_query else f"{total_corpus} deals · {realized_n} realized",
+        editorial_intro={
+            "eyebrow": "COMPARABLES",
+            "headline": "Which deals look like this one.",
+            "italic_word": "look",
+            "body": (
+                "Profile-distance match against the realized corpus "
+                "— sector, size, entry multiple, payer mix. The "
+                "bands you see at MOIC P25/P50/P75 anchor what "
+                "good and bad outcomes look like for this archetype."
+            ),
+        },
     )

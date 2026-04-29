@@ -283,7 +283,14 @@ def render_hold_analysis() -> str:
     return chartis_shell(body, "Hold Duration Analysis", active_nav="/hold-analysis",
                          subtitle=f"{len(has_hold)} deals with hold data",
         editorial_intro={
-            "eyebrow": "{LEN(HAS_HOLD)} DEALS WITH HOLD DATA",
-            "headline": "What the {len(has_hold)} deals with hold data reveals on this deal.",
-            "italic_word": "reveals",
+            "eyebrow": "HOLD DURATION",
+            "headline": "How long the deal earned its keep.",
+            "italic_word": "earned",
+            "body": (
+                f"Realized hold periods + MOIC win-rates across "
+                f"{len(has_hold)} corpus deals. Outliers (hold >=7y "
+                f"AND MOIC <2.5x) are the deals where extending the "
+                f"hold did not pay - useful priors when scoping the "
+                f"current deal's exit window."
+            ),
         })

@@ -240,6 +240,17 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             f"{n_hospitals:,} hospitals | {n_clusters} archetypes | "
             f"Distress AUC {auc:.3f} | {n_distressed} high-risk"
         ),
+        editorial_intro={
+            "eyebrow": "ML INSIGHTS",
+            "headline": "What the model sees that the spreadsheet misses.",
+            "italic_word": "sees",
+            "body": (
+                "Hospital archetypes, distress prediction, and RCM "
+                "opportunity scoring across the full HCRIS corpus. "
+                "Each model carries its training cutoff and AUC so "
+                "the partner sees the ground beneath each call."
+            ),
+        },
     )
 
 
@@ -574,4 +585,15 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
         body,
         f"ML Analysis — {_html.escape(name)}",
         subtitle=f"CCN {_html.escape(ccn)} | Clustering + Distress + RCM Opportunity",
+        editorial_intro={
+            "eyebrow": "HOSPITAL ML",
+            "headline": "What the model says about this one hospital.",
+            "italic_word": "says",
+            "body": (
+                "Cluster archetype, distress probability, and RCM "
+                "opportunity score for this CCN. Each panel surfaces "
+                "the model's confidence so the partner can weigh the "
+                "signal against their own diligence."
+            ),
+        },
     )

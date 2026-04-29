@@ -298,7 +298,18 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     body = f'{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}'
     return chartis_shell(body, f"DCF — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Enterprise Value: {_fmt_m(ev)}")
+                    subtitle=f"Enterprise Value: {_fmt_m(ev)}",
+                    editorial_intro={
+                        "eyebrow": "DCF MODEL",
+                        "headline": "What the cash flows are worth.",
+                        "italic_word": "worth",
+                        "body": (
+                            "Discounted free-cash-flow valuation with a "
+                            "WACC + terminal-multiple sensitivity grid. "
+                            "Pair this with the LBO and 3-statement "
+                            "models for a full investment-committee view."
+                        ),
+                    })
 
 
 def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
@@ -475,7 +486,18 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     body = f'{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}'
     return chartis_shell(body, f"LBO — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}")
+                    subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}",
+                    editorial_intro={
+                        "eyebrow": "LBO MODEL",
+                        "headline": "What the leverage returns to equity.",
+                        "italic_word": "returns",
+                        "body": (
+                            "Sources and uses, debt amortization, and "
+                            "the equity waterfall through a 5-year hold. "
+                            "Tune leverage and exit multiple to see "
+                            "where the deal stops working."
+                        ),
+                    })
 
 
 def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) -> str:
@@ -581,4 +603,15 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
     body = f'{nav}{kpis}{is_section}{bs_section}{interp}{cf_section}{actions}'
     return chartis_shell(body, f"Financials — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle="3-statement model reconstructed from HCRIS + deal profile")
+                    subtitle="3-statement model reconstructed from HCRIS + deal profile",
+                    editorial_intro={
+                        "eyebrow": "FINANCIAL MODEL",
+                        "headline": "What the three statements tell each other.",
+                        "italic_word": "tell",
+                        "body": (
+                            "Income statement, balance sheet, and cash "
+                            "flow reconstructed from HCRIS plus deal "
+                            "profile. The places these don't tie tell "
+                            "you what the seller is hiding."
+                        ),
+                    })
