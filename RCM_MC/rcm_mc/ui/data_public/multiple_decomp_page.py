@@ -301,7 +301,7 @@ def render_multiple_decomp(params: Dict[str, str]) -> str:
 """
 
     return chartis_shell(
-        body=body,
+        body,
         title="Acquisition Multiple Decomposition",
         active_nav="/multiple-decomp",
         subtitle="Entry EV/EBITDA decomposed: sector baseline, size, payer mix, unexplained premium",

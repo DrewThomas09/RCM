@@ -382,7 +382,7 @@ def render_hold_optimizer(params: Dict[str, str]) -> str:
 """
 
     return chartis_shell(
-        body=body,
+        body,
         title="Hold Period Optimizer",
         active_nav="/hold-optimizer",
         subtitle="Corpus-calibrated optimal hold period from peer deal distribution",

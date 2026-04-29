@@ -305,6 +305,8 @@ def ck_kpi_block(
     trend: Optional[str] = None,
     *,
     code: Optional[str] = None,
+    unit: Optional[str] = None,    # legacy alias for ``sub``
+    delta: Optional[str] = None,   # legacy alias for ``trend``
 ) -> str:
     """Editorial KPI block — label / value / optional sub / optional trend.
 
@@ -315,7 +317,16 @@ def ck_kpi_block(
     in ``sub`` / ``trend`` render as no-ops — legacy callers pass ``""``
     rather than ``None`` when a slot is unused. ``code`` remains
     keyword-only; only debug overlays use it.
+
+    A handful of legacy callers used ``unit=``/``delta=`` instead of
+    ``sub=``/``trend=`` (cycle 40-45 prod-bug fixes). Accept both so a
+    forgotten file doesn't 500 the page — sub/trend take precedence
+    when both are provided.
     """
+    if sub is None and unit is not None:
+        sub = unit
+    if trend is None and delta is not None:
+        trend = delta
     trend_html = ""
     if trend:
         tone = "positive" if trend.startswith("+") else "negative" if trend.startswith("-") else "neutral"
@@ -1468,9 +1479,12 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
 
 
 def chartis_shell(
-    body_html: str,
-    title: str,
+    body_html: Optional[str] = None,
+    title: Optional[str] = None,
     *,
+    body: Optional[str] = None,  # legacy alias for body_html — accept
+                                  # so partially-migrated callers don't
+                                  # 500 with "missing positional argument"
     active_nav: Optional[str] = None,
     breadcrumbs: Optional[Sequence[Mapping[str, str]]] = None,
     code: Optional[str] = None,           # e.g. "[EBT-07]" for debug overlay
@@ -1507,6 +1521,15 @@ def chartis_shell(
     Unknown kwargs (\\*\\*_extra) are accepted silently for forward-compat
     with partially-migrated callers — every page renders rather than 500.
     """
+    # Accept legacy ``body=`` kwarg as an alias for ``body_html``.
+    # A handful of pages were ported with the wrong kwarg name and
+    # 500'd with "missing positional argument" until 2026-04-29.
+    if body_html is None and body is not None:
+        body_html = body
+    if body_html is None:
+        body_html = ""
+    if title is None:
+        title = "SeekingChartis"
     if not UI_V2_ENABLED:
         # Lazy-import the legacy shell so we don't pay the cost when v2 is on.
         try:

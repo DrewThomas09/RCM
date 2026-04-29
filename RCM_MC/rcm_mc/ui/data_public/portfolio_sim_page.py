@@ -296,7 +296,7 @@ def render_portfolio_sim(params: Dict[str, str]) -> str:
 """
 
     return chartis_shell(
-        body=body,
+        body,
         title="Portfolio Scenario Simulator",
         active_nav="/portfolio-sim",
         subtitle="Stress-test custom portfolio composition against 5 macro scenarios",

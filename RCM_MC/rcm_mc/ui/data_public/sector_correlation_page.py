@@ -303,7 +303,7 @@ def render_sector_correlation(params: Dict[str, str]) -> str:
 """
 
     return chartis_shell(
-        body=body,
+        body,
         title="Sector Correlation Matrix",
         active_nav="/sector-correlation",
         subtitle="Pairwise MOIC correlations across healthcare sectors — portfolio diversification lens",
