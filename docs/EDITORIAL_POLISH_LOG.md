@@ -3696,3 +3696,41 @@ risk_workbench 1202 LOC) remain — need full ports.
 Forward-only via pattern; the giants require focused
 multi-cycle work.
 
+## Cycle 48 build — 2026-04-28 — 41-tier sweep (+8 passers, 72.9%)
+
+**Step 48 — port eight pages stuck in the 41-42 tier.** All
+crossed the 70 threshold:
+
+- `rcm_mc/ui/metric_glossary_page.py` 41 → 87
+- `rcm_mc/ui/verticals_page.py` 42 → 92
+- `rcm_mc/ui/v3_status_page.py` 42 → 97 — ported
+  v3_status._kpi_card cards (the same kit-divergent helper
+  v5_status used) to ck_kpi_block.
+- `rcm_mc/ui/dashboard_v2.py` 41 → 95
+- `rcm_mc/ui/data_explorer.py` 41 → 93
+- `rcm_mc/ui/data_refresh_page.py` 41 → 86
+- `rcm_mc/ui/hold_dashboard.py` 41 → 92
+- `rcm_mc/ui/library_page.py` 41 → 87
+
+Pattern unchanged: KPI strip + 1-2 ck_provenance_tooltip +
+ck_fmt_* helpers + editorial_intro + ck_eyebrow.
+
+**Files touched this batch.**
+- 8 page files modified.
+
+**Compliance impact.**
+- V5 fidelity passers: **218 of 299 (72.9%)** — up from
+  210. Twelfth straight cycle of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 49 — remaining 30-69 tier (~10
+pages): portfolio_risk_scan_page (424 LOC), exit_timing_
+page (747 LOC, partner per-deal), regulatory_calendar_page
+(973 LOC), ebitda_bridge_page (901 LOC), counterfactual_
+page (765 LOC), risk_workbench (1202 LOC). All 600+ LOC
+real ports - each needs ~40 min of KPI strip + provenance.
+The 25-score giants (analysis_workbench 3032 LOC,
+dashboard_page 2612 LOC) remain a focused-cycle target.
+Forward-only.
+

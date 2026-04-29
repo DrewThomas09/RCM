@@ -10,7 +10,10 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -241,9 +244,51 @@ def render_data_explorer(
         f'</tr></thead><tbody>{mod_rows}</tbody></table></div>'
     )
 
-    body = f'{source_cards}{modules_section}{pipeline}'
+    # Cycle 48 — KPI strip + provenance.
+    n_sources = len(sources)
+    modules_value = ck_provenance_tooltip(
+        "Analytical modules loaded",
+        f"{loaded} / {len(module_checks)}",
+        explainer=(
+            f"Production modules currently importable in this "
+            f"server. {loaded} of {len(module_checks)} are live; "
+            f"the rest are either pending dependencies or "
+            f"intentionally disabled in this deployment."
+        ),
+    )
+    hcris_value = ck_provenance_tooltip(
+        "HCRIS hospital records",
+        ck_fmt_num(hcris_count) if hcris_count else "Not loaded",
+        explainer=(
+            "Annual financial filings for every Medicare-certified "
+            "hospital. Source: CMS HCRIS. Each row carries ~50 "
+            "fields - revenue, expenses, beds, payer mix, geo. "
+            "12-18 month publication lag from CMS."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Public Sources", ck_fmt_num(n_sources), "ingested")
+        + ck_kpi_block("HCRIS Records", hcris_value, "hospitals on file")
+        + ck_kpi_block("Modules Loaded", modules_value, "analytical")
+        + '</div>'
+    )
+
+    body = ck_eyebrow("Data Explorer") + kpi_strip + f'{source_cards}{modules_section}{pipeline}'
 
     return chartis_shell(
         body, "Data Explorer",
         subtitle=f"{loaded} analytical modules | {hcris_count:,} hospital profiles",
+        editorial_intro={
+            "eyebrow": "DATA EXPLORER",
+            "headline": "Where the underlying data lives.",
+            "italic_word": "lives",
+            "body": (
+                "Inventory of every public-data source the platform "
+                "ingests - HCRIS, IRS 990, sector reference data, "
+                "FRED macro indicators. Use this to confirm a "
+                "specific number's provenance before citing it."
+            ),
+        },
     )

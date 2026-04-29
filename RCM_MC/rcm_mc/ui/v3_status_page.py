@@ -34,7 +34,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from ._ui_kit import fmt_num, fmt_pct
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -154,23 +157,39 @@ def render_v3_status() -> str:
     pct_v3 = (100.0 * counts.v3 / counts.total) if counts.total else 0.0
     pct_packet = (100.0 * counts.packet_driven / counts.total) if counts.total else 0.0
 
+    # Cycle 48 — port to ck_kpi_block + provenance.
+    chrome_value = ck_provenance_tooltip(
+        "v3 chrome adoption",
+        ck_fmt_num(counts.v3),
+        explainer=(
+            f"Routes rendering through chartis_shell or living "
+            f"under rcm_mc/ui/chartis/ ({pct_v3:.1f}% of "
+            f"{counts.total} routes). The campaign predecessor to "
+            f"the v5 effort - v3 is essentially complete; the "
+            f"remaining gap is the structural-port cluster."
+        ),
+    )
+    packet_value = ck_provenance_tooltip(
+        "Packet-driven routes",
+        ck_fmt_num(counts.packet_driven),
+        explainer=(
+            "Renderers calling get_or_build_packet or importing "
+            "DealAnalysisPacket. CLAUDE.md invariant: every "
+            "partner-facing analytical page should reach the "
+            "packet. Detection is heuristic - the real number is "
+            "higher than this."
+        ),
+        inject_css=False,
+    )
     kpi_grid = (
-        '<div style="display:flex;gap:1rem;flex-wrap:wrap;margin:1.25rem 0;">'
-        + _kpi_card("Total routes", fmt_num(counts.total))
-        + _kpi_card(
-            "v3 chrome",
-            fmt_num(counts.v3),
-            sub=f"of {counts.total} ({pct_v3:.1f}%)",
-        )
-        + _kpi_card("Legacy shell", fmt_num(counts.legacy))
-        + _kpi_card("Bespoke (no shell)", fmt_num(counts.bespoke))
-        + _kpi_card("Redirects", fmt_num(counts.redirect))
-        + _kpi_card("Unresolved", fmt_num(counts.unknown))
-        + _kpi_card(
-            "Packet-driven",
-            fmt_num(counts.packet_driven),
-            sub=f"of {counts.total}",
-        )
+        f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(7,1fr);gap:8px;margin:1.25rem 0;">'
+        + ck_kpi_block("Total Routes", ck_fmt_num(counts.total), "in inventory")
+        + ck_kpi_block("v3 Chrome", chrome_value, f"{pct_v3:.1f}%")
+        + ck_kpi_block("Legacy Shell", ck_fmt_num(counts.legacy), "_ui_kit only")
+        + ck_kpi_block("Bespoke", ck_fmt_num(counts.bespoke), "no shell")
+        + ck_kpi_block("Redirects", ck_fmt_num(counts.redirect), "non-rendering")
+        + ck_kpi_block("Unresolved", ck_fmt_num(counts.unknown), "needs triage")
+        + ck_kpi_block("Packet-driven", packet_value, f"of {counts.total}")
         + '</div>'
     )
 
@@ -230,4 +249,16 @@ def render_v3_status() -> str:
         body,
         "v3 Transformation Status",
         subtitle="campaign progress · saving-seeking-chartis",
+        editorial_intro={
+            "eyebrow": "V3 STATUS",
+            "headline": "Where the v3 transformation landed.",
+            "italic_word": "landed",
+            "body": (
+                "Predecessor to the v5 editorial campaign. v3 "
+                "ported every renderer to chartis_shell; v5 added "
+                "italic-serif headlines, primitive density, "
+                "provenance, and ck_fmt_* discipline on top. "
+                "Numbers come from the route inventory."
+            ),
+        },
     )

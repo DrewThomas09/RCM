@@ -229,7 +229,10 @@ def _render_scorecard(actuals_list: List[Dict[str, Any]]) -> str:
 def render_hold_dashboard(
     store: Any, deal_id: str, deal_name: str = "",
 ) -> str:
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
     plan = _load_plan(store, deal_id)
     actuals = _load_actuals(store, deal_id)
 
@@ -238,8 +241,42 @@ def render_hold_dashboard(
     ebitda_chart = _render_ebitda_chart(actuals)
     quarters_held = len(actuals)
 
+    # Cycle 48 — KPI strip with provenance.
+    n_initiatives = len(plan) if plan else 0
+    quarters_value = ck_provenance_tooltip(
+        "Quarters held",
+        ck_fmt_num(quarters_held),
+        explainer=(
+            "Quarterly actuals filed against the original "
+            "underwriting plan. Each quarter contributes a "
+            "scorecard row + EBITDA actual point. Compare to "
+            "the plan trajectory below to read whether the "
+            "thesis is playing out."
+        ),
+    )
+    initiatives_value = ck_provenance_tooltip(
+        "Initiatives in plan",
+        ck_fmt_num(n_initiatives),
+        explainer=(
+            "Discrete value-creation initiatives committed at "
+            "underwriting (RCM, ops, capex, M&A roll-ups, etc). "
+            "Progress columns show on-track / at-risk / behind "
+            "for each. Initiatives behind plan are partner "
+            "discussion items at the next IC."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Quarters Held", quarters_value, "actuals filed")
+        + ck_kpi_block("Initiatives", initiatives_value, "in plan")
+        + '</div>'
+    )
+
     body = (
-        f'<div class="hold-wrap">'
+        ck_eyebrow("Hold Period")
+        + kpi_strip
+        + f'<div class="hold-wrap">'
         f'<div class="hold-header">'
         f'<span class="dim">{quarters_held} quarter(s) held</span>'
         f'<a href="/analysis/{_esc(deal_id)}" style="color:var(--teal);'
@@ -262,4 +299,16 @@ def render_hold_dashboard(
         body,
         f"{deal_name or deal_id} — Hold Period",
         extra_css=_HOLD_CSS,
+        editorial_intro={
+            "eyebrow": "HOLD PERIOD DASHBOARD",
+            "headline": "Where the hold period actually went.",
+            "italic_word": "went",
+            "body": (
+                "Per-deal hold-period decomposition: EBITDA "
+                "trajectory, leverage path, value-creation lever "
+                "contributions over the hold. Use this on existing "
+                "portfolio companies to read whether the original "
+                "thesis is playing out."
+            ),
+        },
     )
