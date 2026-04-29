@@ -708,7 +708,13 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         ],
         editorial_intro={
             "eyebrow": "HOME",
-            "headline": "What the home reveals on this deal.",
-            "italic_word": "reveals",
+            "headline": "Where the partner reads the day first.",
+            "italic_word": "reads",
+            "body": (
+                "Pipeline, active alerts, deals on watch, and the "
+                "PE-brain verdicts the platform produced overnight. "
+                "Numbers carry hover-card provenance so the "
+                "methodology stays one click away."
+            ),
         }
     )

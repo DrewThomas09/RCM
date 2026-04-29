@@ -3432,3 +3432,52 @@ needs real chartis_shell ports. Pick mid-tier first
 (easier, +4 expected passers); save the big 25-tier ports
 for a focused cycle. Forward-only.
 
+## Cycle 43 build — 2026-04-28 — 50-63 final sweep + KPI primitives
+
+**Step 43 — close the 50-63 mid-tier.** Three pages
+flipped: analysis_landing 52→89, ic_memo 51→74,
+bankruptcy_survivor 59→88. chartis/home_page (660 LOC,
+9 prims, density 1.4/100) didn't move — its low primitive
+density at high LOC requires a real port not just kwarg
+adoption; deferred.
+
+- `rcm_mc/ui/analysis_landing.py` — added
+  editorial_intro + ck_eyebrow + 3-tile KPI strip + 2
+  provenance tooltips (deals, recent runs).
+- `rcm_mc/ui/data_public/ic_memo_page.py` — rewrote
+  broken auto-intro; ported 7-card hand-rolled KPI strip
+  to ck_kpi_block + provenance on Target MOIC and Target
+  IRR with sector-percentile context.
+- `rcm_mc/ui/bankruptcy_survivor_page.py` — added
+  ck_eyebrow + ck_section_header + 3-tile KPI strip + 2
+  provenance tooltips on the screen's pattern + case-study
+  counts. Form had zero primitives before this cycle.
+
+**Files touched this batch.**
+- 3 page files modified.
+
+**Compliance impact.**
+- V5 fidelity passers: **186 of 299 (62.2%)** — up from
+  183. Seven straight cycles of net-new passers.
+- The 50-63 mid-tier shrunk to 5 pages: chartis/forgot_page
+  + chartis/login_page (auth flows — likely skip),
+  chartis/home_page (660 LOC, real port needed),
+  chartis/login_page, analysis_landing — wait,
+  analysis_landing now 89, so really: forgot, login,
+  home_page, plus the 25-score cluster.
+- Per-module + provenance + integration sweep: 72 passing,
+  zero regressions.
+
+**Suggested next:** cycle 44 — pivot to the 25-score
+cluster's smaller pages (`hcris_xray_page`,
+`physician_attrition_page`, `payer_stress_page`) which
+already crossed via the cycle-39 fmt-regex fix at 93.
+Wait — payer_stress is at 93 already. Real remaining 25-
+tier: `analysis_workbench` (3032 LOC, partner workbench),
+`dashboard_page` (2612 LOC), `exit_timing_page` (765 LOC),
+`hcris_xray_page`, `physician_attrition_page`. The two
+giants are full ports. Smaller three should take 30 min
+each via the proven pattern. Or pivot to the chartis/
+home_page real port — that's a partner-traffic surface.
+Forward-only.
+

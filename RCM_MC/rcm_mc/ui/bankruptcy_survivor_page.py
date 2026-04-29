@@ -153,6 +153,47 @@ def render_scan_landing() -> str:
         "<button type='submit'>Run scan</button>"
         "</form>"
     )
+    # Cycle 43 — KPI strip primitives at the top + chartis chrome.
+    from ._chartis_kit import (
+        ck_eyebrow, ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+    )
+    patterns_value = ck_provenance_tooltip(
+        "Patterns in the screen",
+        "12",
+        explainer=(
+            "Twelve falsifiable bear-thesis patterns drawn from "
+            "PE-healthcare bankruptcy precedents (Steward, "
+            "Envision, Mednax). Each is a structural pattern + "
+            "case-study citation, not a verdict."
+        ),
+    )
+    case_studies_value = ck_provenance_tooltip(
+        "Case studies cited",
+        "3",
+        explainer=(
+            "Steward, Envision, Mednax. Each fired pattern cites "
+            "the named historical deal's entry EV + actual outcome "
+            "from the public-deals corpus. Use as a precedent map, "
+            "not a legal opinion."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Patterns", patterns_value, "in screen")
+        + ck_kpi_block("Case Studies", case_studies_value, "named precedents")
+        + ck_kpi_block("Severity Tiers", "3", "critical / high / med")
+        + '</div>'
+    )
+    body = (
+        ck_eyebrow("Pre-screening")
+        + ck_section_header(
+            "Bankruptcy-Survivor Scan",
+            eyebrow="STRUCTURAL PATTERNS",
+        )
+        + kpi_strip
+        + body
+    )
     return chartis_shell(body, "Bankruptcy-Survivor Scan",
                          subtitle="12-pattern PE-healthcare playbook screen",
         editorial_intro={
