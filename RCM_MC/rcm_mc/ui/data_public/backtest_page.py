@@ -668,4 +668,15 @@ def render_backtest() -> str:
             f"Model R² {stats['r2']:.3f} · "
             f"MAE {stats['mae']:.3f}x"
         ) if stats["r2"] is not None else f"{stats['realized_n']} realized deals",
+        editorial_intro={
+            "eyebrow": "BACKTEST",
+            "headline": "How well the model retrodicts the corpus.",
+            "italic_word": "retrodicts",
+            "body": (
+                "Predicted vs. realized MOIC across the calibration "
+                "corpus, sliced by sector. R-squared and MAE tell "
+                "you whether the model is earning its place; the "
+                "residual cloud tells you where it isn't."
+            ),
+        },
     )

@@ -3265,3 +3265,59 @@ ck_fmt_* uses for ~30 min each. Or pivot: address the
 50-69 mid-tier where editorial_intro alone may push
 several over the line. Forward-only.
 
+## Cycle 40 build — 2026-04-28 — mid-tier sweep + 2 latent kpi-block bug fixes
+
+**Step 40 — fan editorial_intro across the 50-69 mid-tier
++ provenance + bug fixes.** Cycle 38 proved editorial_intro
+adds ~10 fidelity. Cycle 40 fans the kwarg out across 8
+mid-tier data_public + chartis pages, then adds provenance
+on two pages where the +10 alone wasn't enough.
+
+**Pages flipped to passing tier:**
+- `data_public/value_creation_page.py` 53 → 77 — also
+  fixed pre-existing `unit=` typo on 4 ck_kpi_block calls
+  (should be `sub=`); added provenance on MOIC and EV
+  Created.
+- `data_public/exit_multiple_page.py` 54 → 88 — fixed
+  `unit=` typo on 4 calls; added ck_fmt_moic + provenance
+  on Base MOIC and MOIC/Turn Sensitivity.
+
+**Pages adopted intro but did not cross threshold (still
+need primitive density / fmt helpers in cycle 41):**
+- `data_public/provider_network_page.py` 53 → 68
+- `data_public/concentration_risk_page.py` 50 → 64
+- `data_public/deal_quality_page.py` 51 → 65
+- `data_public/mgmt_fee_tracker_page.py` 50 → 65
+- `data_public/backtest_page.py` 53 → 67
+- `chartis/ic_packet_page.py` 53 → 67
+
+**Latent `unit=` typo found.** While porting
+value_creation, hit a `TypeError: ck_kpi_block() got an
+unexpected keyword argument 'unit'`. The kit signature is
+`ck_kpi_block(label, value, sub, ...)` — `unit=` was bulk-
+migrated incorrectly at some point. Fixed in two pages
+(value_creation, exit_multiple); both pages were 500'ing
+in production.
+
+**Files touched this batch.**
+- 8 data_public + chartis pages picked up
+  `editorial_intro={...}` with hand-written eyebrow /
+  italic-serif headline / partner-voice body.
+- value_creation and exit_multiple: also `unit=` → `sub=`
+  fix + provenance + ck_fmt_moic adoption.
+
+**Compliance impact.**
+- V5 fidelity passers: **173 of 299 (57.9%)** — up from
+  171; +2 net-new passers + 2 production 500-bug fixes.
+- 6 pages adopted editorial_intro and lifted into the
+  64-68 zone; one more push in cycle 41 will flip them.
+- Per-module + chartis sweep: 79 passing, 0 regressions.
+
+**Suggested next:** cycle 41 — hit the 64-68 cluster with
+provenance + ck_fmt_*. Six pages need ~+5 each:
+provider_network, concentration_risk, deal_quality,
+mgmt_fee_tracker, backtest, ic_packet. Each picks up
+1-2 provenance tooltips + 2-3 ck_fmt_* helper calls in
+~10 min each. Cycle 41 should net 4-6 more passers.
+Forward-only.
+

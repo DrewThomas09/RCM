@@ -359,4 +359,16 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
             f"C:{tier_counts.get('C',0)} D:{tier_counts.get('D',0)} · "
             f"{n_flagged} flagged"
         ),
+        editorial_intro={
+            "eyebrow": "DEAL QUALITY",
+            "headline": "Which deals carry their grade.",
+            "italic_word": "carry",
+            "body": (
+                f"A 0-100 quality grade across {total} corpus "
+                f"deals, decomposed by entry discipline, hold "
+                f"economics, and exit certainty. Use this to "
+                f"benchmark the current deal against the "
+                f"realized A-tier, not the average."
+            ),
+        },
     )

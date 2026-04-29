@@ -1,7 +1,9 @@
 """Value Creation Tracker page — /value-creation."""
 from __future__ import annotations
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_provenance_tooltip,
+)
 
 
 _SECTORS = [
@@ -281,14 +283,35 @@ def render_value_creation(params: dict) -> str:
 
     ev_created_pct = r.total_ev_created_mm / r.entry_ev_mm * 100 if r.entry_ev_mm else 0
 
+    moic_value = ck_provenance_tooltip(
+        "Multiple of invested capital",
+        f"{r.moic:.2f}x",
+        explainer=(
+            "Total equity proceeds divided by equity invested. "
+            "Composed of: entry-multiple expansion + EBITDA "
+            "growth + RCM-initiative uplift. The bridge below "
+            "decomposes the contribution of each."
+        ),
+    )
+    ev_created_value = ck_provenance_tooltip(
+        "Enterprise value created",
+        f"${r.total_ev_created_mm:.0f}M",
+        explainer=(
+            f"Exit EV minus entry EV. Currently +{ev_created_pct:.0f}% "
+            "vs entry. The split between multiple expansion and "
+            "EBITDA growth tells the partner whether the deal "
+            "earned its return via market rerating or operations."
+        ),
+        inject_css=False,
+    )
     kpis = ck_kpi_block("Entry EV", f"${r.entry_ev_mm:.0f}M",
-                         unit=f"{r.entry_multiple:.1f}x EV/EBITDA")
+                         sub=f"{r.entry_multiple:.1f}x EV/EBITDA")
     kpis += ck_kpi_block("Exit EV", f"${r.exit_ev_mm:.0f}M",
-                          unit=f"{r.exit_multiple:.1f}x EV/EBITDA")
-    kpis += ck_kpi_block("EV Created", f"${r.total_ev_created_mm:.0f}M",
-                          unit=f"+{ev_created_pct:.0f}% vs entry")
-    kpis += ck_kpi_block("MOIC", f"{r.moic:.2f}x",
-                          unit=f"IRR: {r.irr*100:.1f}%")
+                          sub=f"{r.exit_multiple:.1f}x EV/EBITDA")
+    kpis += ck_kpi_block("EV Created", ev_created_value,
+                          sub=f"+{ev_created_pct:.0f}% vs entry")
+    kpis += ck_kpi_block("MOIC", moic_value,
+                          sub=f"IRR: {r.irr*100:.1f}%")
     kpis += ck_kpi_block("Sector Median MOIC", f"{r.sector_median_moic:.2f}x")
     kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count))
 
@@ -360,7 +383,18 @@ def render_value_creation(params: dict) -> str:
 '''
 
     return chartis_shell(
-        body=content,
+        content,
         title=f"Value Creation Tracker — {sector}",
         active_nav="/value-creation",
+        editorial_intro={
+            "eyebrow": "VALUE CREATION",
+            "headline": "Where the equity value actually came from.",
+            "italic_word": "actually",
+            "body": (
+                "Entry-to-exit EV bridge for the deal — multiple "
+                "expansion vs. EBITDA growth vs. RCM initiative "
+                "uplift. Read the bridge widths, not the headline "
+                "MOIC: the numbers tell you which lever you bought."
+            ),
+        },
     )

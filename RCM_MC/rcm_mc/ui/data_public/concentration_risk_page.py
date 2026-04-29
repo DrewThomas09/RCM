@@ -149,4 +149,16 @@ def render_concentration_risk() -> str:
 </div>"""
 
     return chartis_shell(body, "Concentration Risk", active_nav="/concentration-risk",
-                         subtitle=f"HHI analysis — {cr.corpus_size} deals")
+                         subtitle=f"HHI analysis — {cr.corpus_size} deals",
+        editorial_intro={
+            "eyebrow": "CONCENTRATION RISK",
+            "headline": "Where the diversification breaks.",
+            "italic_word": "breaks",
+            "body": (
+                f"Herfindahl-Hirschman Index across {cr.corpus_size} "
+                f"corpus deals - by sector, payer, and geography. "
+                f"HHI above 2,500 marks a concentrated regime; "
+                f"every basis point of further concentration "
+                f"narrows the surviving exit channels."
+            ),
+        })

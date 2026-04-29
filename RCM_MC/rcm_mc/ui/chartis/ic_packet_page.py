@@ -581,4 +581,16 @@ def render_ic_packet(
             ("Deals", "/deals"),
             ("IC Packet", None),
         ],
+        editorial_intro={
+            "eyebrow": "IC PACKET",
+            "headline": "What the committee actually decides on.",
+            "italic_word": "decides",
+            "body": (
+                "Every section the IC needs to read on this deal — "
+                "thesis, base case, bear case, comparables, exit "
+                "path, and the questions a partner expects to be "
+                "asked. Generated against the live packet, so the "
+                "version on screen is the version in the room."
+            ),
+        },
     )

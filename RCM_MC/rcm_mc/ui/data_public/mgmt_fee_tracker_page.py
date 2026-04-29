@@ -314,7 +314,18 @@ def render_mgmt_fee_tracker(params: dict) -> str:
 '''
 
     return chartis_shell(
-        body=content,
+        content,
         title="Management Fee Tracker",
         active_nav="/mgmt-fee-tracker",
+        editorial_intro={
+            "eyebrow": "MGMT FEES",
+            "headline": "Where the GP economics actually sit.",
+            "italic_word": "actually",
+            "body": (
+                "Fund-level management fee accruals, offsets, and "
+                "GP-LP waterfall splits. The reported management "
+                "fee net of offsets - not the gross headline rate - "
+                "is the right anchor when reading peer compares."
+            ),
+        },
     )

@@ -335,7 +335,19 @@ def render_provider_network(params: dict) -> str:
 '''
 
     return chartis_shell(
-        body=content,
+        content,
         title=f"Provider Network Intelligence — {sector}",
         active_nav="/provider-network",
+        editorial_intro={
+            "eyebrow": "PROVIDER NETWORK",
+            "headline": "Where the steerage actually flows.",
+            "italic_word": "flows",
+            "body": (
+                "Network density, payer-mix overlap, and referral-"
+                "graph concentration. The density inside the "
+                "covered region matters more than the headline "
+                "provider count - a thin network in a "
+                "concentrated payer market is the trap."
+            ),
+        },
     )
