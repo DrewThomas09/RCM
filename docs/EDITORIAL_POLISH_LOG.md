@@ -3481,3 +3481,55 @@ each via the proven pattern. Or pivot to the chartis/
 home_page real port — that's a partner-traffic surface.
 Forward-only.
 
+## Cycle 44 build — 2026-04-28 — 44-49 mid-tier sweep (+4 passers)
+
+**Step 44 — port five 44-49 mid-tier pages.** All five
+data_public pages had the same shape: bespoke or partial
+ck_kpi_block KPI strips with no provenance, missing
+editorial_intro, several with the recurring `unit=`/`delta=`
+typo from earlier bulk-migration cycles.
+
+- `data_public/deal_search_page.py` 49 → 83 — 4-tile KPI
+  strip got provenance + editorial_intro + ck_fmt_num/moic.
+- `data_public/underwriting_model_page.py` 48 → 82 —
+  fixed `unit=` typo on 5 calls + provenance on Total
+  Leverage and Base MOIC + ck_fmt_moic + editorial_intro.
+- `data_public/underwriting_page.py` 48 → 82 — provenance
+  on Corpus and Model MOIC + ck_fmt_pct/moic +
+  editorial_intro.
+- `data_public/return_attribution_page.py` 47 → 93 —
+  ported bespoke 5-card KPI strip to ck_kpi_block +
+  provenance on Corpus MOIC/IRR P50 + ck_fmt_* throughout.
+- `data_public/covenant_monitor_page.py` 47 → 68 — fixed
+  `unit=`/`delta=` typo on 4 calls + provenance on Status
+  + editorial_intro. Stuck just below threshold; one more
+  push (KPI tile port) needed in cycle 45.
+
+**Latent `unit=`/`delta=` typos — 3 more pages.** Cumulative
+across cycles 40, 41, 44: **7 pages** had pre-existing
+`ck_kpi_block(unit=, delta=)` calls from a prior bulk-
+migration tool. The kit signature is `(label, value, sub=,
+trend=)`. All 7 pages 500'd in production before fixes.
+
+**Files touched this batch.**
+- 5 page files modified.
+
+**Compliance impact.**
+- V5 fidelity passers: **190 of 299 (63.5%)** — up from
+  186. Eight straight cycles of net-new passers.
+- One page (covenant_monitor 68) stuck just below
+  threshold — within reach next cycle.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 45 — keep grinding the 30-49
+tier. Eight pages remain in the 44-49 zone:
+qoe_analyzer_page, deal_flow_heatmap_page, entry_multiple_
+page, partner_review_page, exit_multiple sub-pages, and
+covenant_monitor (one provenance away from 70). Plus the
+five 25-score giants still pending real ports
+(analysis_workbench, dashboard_page, hcris_xray,
+physician_attrition, exit_timing per-deal). The pattern
+holds: 30 min per smaller page should net 5+ more
+passers. Forward-only.
+

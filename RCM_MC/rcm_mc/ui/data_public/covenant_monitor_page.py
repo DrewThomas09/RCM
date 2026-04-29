@@ -1,7 +1,9 @@
 """Covenant Monitor page — /covenant-monitor."""
 from __future__ import annotations
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_provenance_tooltip,
+)
 
 
 _SECTORS = [
@@ -322,18 +324,28 @@ def render_covenant_monitor(params: dict) -> str:
     lev_cov = r.covenants[0]
     icr_cov = r.covenants[1]
 
-    kpis = ck_kpi_block("Overall Status",
-                        f'<span style="color:{r.overall_color}">{r.overall_status}</span>')
+    # Cycle 44 — provenance on the headroom-driving covenants.
+    status_value = ck_provenance_tooltip(
+        "Covenant headroom status",
+        f'<span style="color:{r.overall_color}">{r.overall_status}</span>',
+        explainer=(
+            "Composite of leverage and interest-coverage covenant "
+            "headroom. PASSING = >=10% headroom on both; TIGHT = "
+            "5-10%; BREACH = below 5% on either. The timeline "
+            "below shows the trajectory."
+        ),
+    )
+    kpis = ck_kpi_block("Overall Status", status_value)
     kpis += ck_kpi_block("Entry Leverage", f"{r.entry_leverage:.2f}x",
-                         unit=f"Sz bucket: {r.size_bucket}")
+                         sub=f"Sz bucket: {r.size_bucket}")
     kpis += ck_kpi_block("Current Leverage", f"{r.current_leverage:.2f}x",
-                         unit=f"Threshold: {lev_cov.threshold:.1f}x",
-                         delta=f"{lev_cov.headroom_pct * 100:.1f}% headroom")
+                         sub=f"Threshold: {lev_cov.threshold:.1f}x",
+                         trend=f"{lev_cov.headroom_pct * 100:.1f}% headroom")
     kpis += ck_kpi_block("Int. Coverage", f"{r.interest_coverage:.2f}x",
-                         unit=f"Min: {icr_cov.threshold:.1f}x",
-                         delta=f"{icr_cov.headroom_pct * 100:.1f}% headroom")
+                         sub=f"Min: {icr_cov.threshold:.1f}x",
+                         trend=f"{icr_cov.headroom_pct * 100:.1f}% headroom")
     kpis += ck_kpi_block("Sector Med. Leverage", f"{r.sector_median_leverage:.2f}x",
-                         unit=f"P75: {r.sector_p75_leverage:.2f}x")
+                         sub=f"P75: {r.sector_p75_leverage:.2f}x")
     kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count), unit="")
 
     thresholds_lev = r.covenants[0].threshold
@@ -414,7 +426,19 @@ def render_covenant_monitor(params: dict) -> str:
 '''
 
     return chartis_shell(
-        body=content,
+        content,
         title=f"Covenant Monitor — {sector}",
         active_nav="/covenant-monitor",
+        editorial_intro={
+            "eyebrow": "COVENANT MONITOR",
+            "headline": "Where the headroom actually is.",
+            "italic_word": "is",
+            "body": (
+                "Live leverage and interest-coverage tracking "
+                "against deal covenants. Headroom percentages "
+                "translate to break-even EBITDA shocks - the "
+                "timeline shows when the next breach window "
+                "opens."
+            ),
+        },
     )
