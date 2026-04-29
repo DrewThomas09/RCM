@@ -3734,3 +3734,50 @@ The 25-score giants (analysis_workbench 3032 LOC,
 dashboard_page 2612 LOC) remain a focused-cycle target.
 Forward-only.
 
+## Cycle 49 build — 2026-04-28 — crosses 75% (225 passers)
+
+**Step 49 — port the 39-41 cluster.** Seven pages crossed
+the 70 threshold:
+
+- `rcm_mc/ui/team_page.py` 39 → 95
+- `rcm_mc/ui/cli_runs_page.py` 40 → 90
+- `rcm_mc/ui/comparable_outcomes_page.py` 39 → 79
+- `rcm_mc/ui/portfolio_risk_scan_page.py` 41 → 85
+- `rcm_mc/ui/sponsor_detail_page.py` 39 → 80
+- `rcm_mc/ui/settings_pages.py` 41 → 83
+- `rcm_mc/ui/sensitivity_dashboard.py` 40 → 83
+
+Pattern unchanged: KPI strip + 1-2 ck_provenance_tooltip +
+ck_fmt_* helpers + editorial_intro + ck_eyebrow.
+
+**Files touched this batch.**
+- 7 page files modified.
+
+**Compliance impact.**
+- V5 fidelity passers: **225 of 299 (75.3%)** — up from
+  218. **Crossed the 75% mark.** Thirteenth straight
+  cycle of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Cycle arc cycle 35 → 49 (15 cycles, ~1 day):**
+- Passers: 159 → 225 (+66, +22.1 pp)
+- Top tier ceiling: 89 → 99
+- Pages ≥90: 1 → ~30
+- Latent prod bugs fixed: 11 (9 unit=/delta= + 2
+  chartis_shell signature)
+- Audit knowledge gaps fixed: cycle 39 fmt-helper regex,
+  cycle 33 denominator filter
+- Editorial copy hand-written for ~70 pages
+
+**Suggested next:** cycle 50 — remaining 30-69 tier
+narrowed to: chartis/app_page 60 (220 LOC), chartis/
+home_page 51 (660 LOC), counterfactual_page 46 (765 LOC),
+risk_workbench 45 (1202 LOC), ebitda_bridge_page 42 (901
+LOC), regulatory_calendar 42 (973 LOC), exit_timing_page
+41 (747 LOC), deal_profile_page 40 (1456 LOC),
+diligence_benchmarks 40 (725 LOC). All 600+ LOC needing
+real KPI port - ~40 min each. The 25-score giants
+(analysis_workbench 3032 LOC, dashboard_page 2612 LOC)
+still pending. Forward-only.
+

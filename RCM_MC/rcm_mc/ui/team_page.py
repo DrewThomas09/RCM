@@ -8,7 +8,10 @@ from __future__ import annotations
 import html as _html
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from ..portfolio.store import PortfolioStore
 from .brand import PALETTE
 
@@ -35,19 +38,36 @@ def render_team_dashboard(db_path: str) -> str:
     actors = sorted(set(a["actor"] for a in activity if a["actor"]))
     n_hospitals = len(hospitals)
 
-    # KPIs
+    # Cycle 49 — port to ck_kpi_block + provenance.
+    n_comments = sum(1 for a in activity if a["action"] == "comment")
+    members_value = ck_provenance_tooltip(
+        "Active team members",
+        ck_fmt_num(len(actors)),
+        explainer=(
+            "Distinct authors with at least one action in the "
+            "recent-activity window. Below the team size means "
+            "some members aren't engaging; check the activity "
+            "feed for who's been quiet."
+        ),
+    )
+    actions_value = ck_provenance_tooltip(
+        "Recent team actions",
+        ck_fmt_num(len(activity)),
+        explainer=(
+            "Audit-log events in the recent window: comments, "
+            "stage changes, assignments, deal additions. Steady "
+            "action volume = healthy engagement; lulls often "
+            "precede deals slipping into the attention list."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(4,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(actors)}</div>'
-        f'<div class="cad-kpi-label">Team Members</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(activity)}</div>'
-        f'<div class="cad-kpi-label">Recent Actions</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_hospitals}</div>'
-        f'<div class="cad-kpi-label">Pipeline Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{sum(1 for a in activity if a["action"] == "comment")}</div>'
-        f'<div class="cad-kpi-label">Comments</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);">'
+        + ck_kpi_block("Team Members", members_value, "with recent actions")
+        + ck_kpi_block("Recent Actions", actions_value, "audit-log events")
+        + ck_kpi_block("Pipeline Hospitals", ck_fmt_num(n_hospitals), "in pipeline")
+        + ck_kpi_block("Comments", ck_fmt_num(n_comments), "in feed")
+        + '</div>'
     )
 
     # Activity feed
@@ -133,4 +153,15 @@ def render_team_dashboard(db_path: str) -> str:
         body, "Team",
         active_nav="/pipeline",
         subtitle=f"{len(actors)} members | {len(activity)} actions | {n_hospitals} pipeline deals",
+        editorial_intro={
+            "eyebrow": "TEAM",
+            "headline": "Where the team's work shows up.",
+            "italic_word": "shows",
+            "body": (
+                "Active partners, recent actions, and the deals "
+                "each team member is moving forward. Use this "
+                "to read team velocity and to see whether any "
+                "deals are stuck waiting on a single owner."
+            ),
+        },
     )

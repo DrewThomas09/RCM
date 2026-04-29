@@ -191,7 +191,10 @@ def _sector_pie(sectors_with_counts: Dict[str, int]) -> str:
 def render_sponsor_detail_page(qs: Dict[str, Any],
                                *, db_path: Optional[str] = None) -> str:
     from . import _web_components as _wc
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
     from ..data_public.deals_corpus import DealsCorpus
     from ..data_public.sponsor_track_record import (
         build_sponsor_records,
@@ -430,8 +433,39 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         filter_placeholder="Filter by deal name or sector…",
     )
 
+    # Cycle 49 — KPI strip with provenance.
+    sponsors_value = ck_provenance_tooltip(
+        "Sponsors in corpus",
+        ck_fmt_num(len(records)),
+        explainer=(
+            "Distinct GPs with at least one realized deal in "
+            "the corpus. Type a partial name above to find a "
+            "specific sponsor; their realized track record "
+            "appears below."
+        ),
+    )
+    deals_value = ck_provenance_tooltip(
+        "Sponsor's realized deals",
+        ck_fmt_num(len(rows)),
+        explainer=(
+            f"Number of {matched_name}'s deals in the realized "
+            f"corpus. Below ~3 deals the track record is too "
+            f"thin to support a sponsor-quality verdict; above "
+            f"~10 the distribution stabilizes."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Sponsors Tracked", sponsors_value, "in corpus")
+        + ck_kpi_block("Sponsor Deals", deals_value, "realized")
+        + '</div>'
+    )
+
     inner = (
-        header
+        ck_eyebrow("Sponsor Track Record")
+        + kpi_strip
+        + header
         + _input_form(qs)
         + _suggestions_datalist(records)
         + f'<h2 style="font-size:18px;margin:8px 0 12px;'
@@ -451,4 +485,16 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         + _wc.sortable_table_js()
     )
     return chartis_shell(body, "Sponsor track record",
-                         active_nav="/diligence/sponsor-detail")
+                         active_nav="/diligence/sponsor-detail",
+        editorial_intro={
+            "eyebrow": "SPONSOR TRACK RECORD",
+            "headline": "Where the sponsor has actually been.",
+            "italic_word": "actually",
+            "body": (
+                "Sponsor's realized-deal record across the "
+                "corpus - which sectors, what hold periods, "
+                "what MOICs. Use this to read whether the "
+                "sponsor's claimed competence is supported by "
+                "their actual exits."
+            ),
+        })

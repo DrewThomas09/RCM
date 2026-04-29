@@ -236,7 +236,10 @@ def render_comparable_outcomes_page(
     *, db_path: Optional[str] = None,
 ) -> str:
     from . import _web_components as _wc
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
     from ..diligence.comparable_outcomes import benchmark_deal
     from ..data_public.deals_corpus import DealsCorpus
 
@@ -388,8 +391,45 @@ def render_comparable_outcomes_page(
         '</div>'
     )
 
+    # Cycle 49 — KPI strip with provenance.
+    n_comp = summary.get("n_comparables", 0) if summary else 0
+    moic_p50 = summary.get("moic_p50") if summary else None
+    win_rate = summary.get("win_rate_2_5x") if summary else None
+    comp_value = ck_provenance_tooltip(
+        "Comparable deals matched",
+        ck_fmt_num(n_comp),
+        explainer=(
+            f"Realized corpus deals matching the target profile "
+            f"by sector / size / vintage. Higher count = denser "
+            f"distribution to read against. Below ~10 the bands "
+            f"start to swing on individual exits."
+        ),
+    )
+    moic_value = ck_provenance_tooltip(
+        "Comparables P50 MOIC",
+        f"{moic_p50:.2f}x" if moic_p50 else "—",
+        explainer=(
+            "Median realized MOIC across the matched comparables. "
+            "This is the underwriting reality check - if your "
+            "target's projected MOIC is above corpus P75, the "
+            "bear case has to refute that path."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Comparables", comp_value, "matched")
+        + ck_kpi_block("Comp P50 MOIC", moic_value, "median realized")
+        + ck_kpi_block("Win Rate (2.5x+)",
+                       f"{win_rate*100:.0f}%" if win_rate else "—",
+                       "share above 2.5x")
+        + '</div>'
+    )
+
     inner = (
-        header
+        ck_eyebrow("Comparable Outcomes")
+        + kpi_strip
+        + header
         + form
         + _outcome_strip(summary)
         + export_bar
@@ -404,4 +444,16 @@ def render_comparable_outcomes_page(
         + _wc.sortable_table_js()
     )
     return chartis_shell(body, "Comparable outcomes",
-                         active_nav="/diligence/comparable-outcomes")
+                         active_nav="/diligence/comparable-outcomes",
+        editorial_intro={
+            "eyebrow": "COMPARABLE OUTCOMES",
+            "headline": "What deals like this actually returned.",
+            "italic_word": "actually",
+            "body": (
+                "Realized-MOIC distribution across corpus deals "
+                "matched on profile distance - sector, size, "
+                "vintage, payer mix. Use the bands as the "
+                "underwriting reality check; the bear case "
+                "should land near the corpus P25."
+            ),
+        })

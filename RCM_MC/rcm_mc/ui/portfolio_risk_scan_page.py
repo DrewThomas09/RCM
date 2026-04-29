@@ -345,7 +345,10 @@ def _priority_rank(deal: Dict[str, Any]) -> int:
 
 def render_portfolio_risk_scan(db_path: str) -> str:
     from . import _web_components as _wc
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
 
     deals = _gather_per_deal(db_path)
 
@@ -511,8 +514,44 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         '⬇ Export CSV</a>'
     )
 
+    # Cycle 49 — KPI strip with provenance.
+    n_deals = len(deals)
+    n_red = sum(1 for d in deals if d.get("highest_severity") == "red")
+    n_amber = sum(1 for d in deals if d.get("highest_severity") == "amber")
+    deals_value = ck_provenance_tooltip(
+        "Deals scanned",
+        ck_fmt_num(n_deals),
+        explainer=(
+            "Active (non-archived) deals included in the scan. "
+            "Each row is one deal; the row priority sums health "
+            "score gap, covenant headroom shortfall, days since "
+            "last snapshot, and overdue deadlines."
+        ),
+    )
+    red_value = ck_provenance_tooltip(
+        "Red-severity deals",
+        ck_fmt_num(n_red),
+        explainer=(
+            f"Deals carrying at least one red-severity signal: "
+            f"covenant breach, distress probability above 35%, "
+            f"or stale snapshot beyond 90 days. Currently "
+            f"{n_amber} deals are amber. Reds need partner "
+            f"attention this week."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Deals Scanned", deals_value, "active portfolio")
+        + ck_kpi_block("Red Severity", red_value, "need decision")
+        + ck_kpi_block("Amber Severity", ck_fmt_num(n_amber), "watch list")
+        + '</div>'
+    )
+
     inner = (
-        header
+        ck_eyebrow("Portfolio Risk Scan")
+        + kpi_strip
+        + header
         + summary_strip
         + legend
         + csv_link
@@ -528,4 +567,16 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         + _wc.sortable_table_js()
     )
     return chartis_shell(body, "Portfolio risk scan",
-                         active_nav="/portfolio/risk-scan")
+                         active_nav="/portfolio/risk-scan",
+        editorial_intro={
+            "eyebrow": "PORTFOLIO RISK SCAN",
+            "headline": "Where portfolio risk concentrates.",
+            "italic_word": "concentrates",
+            "body": (
+                "Portfolio-level risk view: covenant headroom, "
+                "concentration exposures, distress probabilities, "
+                "and exit-window timing. The deals that show up "
+                "across multiple risk dimensions are the ones "
+                "that need partner attention this quarter."
+            ),
+        })
