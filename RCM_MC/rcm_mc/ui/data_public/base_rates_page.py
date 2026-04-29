@@ -256,10 +256,10 @@ def render_base_rates(params: dict = None) -> str:
     p90v = p50_mult.p90 if p50_mult else 16.0
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Base-Rate Engine</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">P25/P50/P75/P90 percentile cuts across EV/EBITDA, margin, MOIC, IRR — filterable by sector / size / region — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Base-Rate Engine</h1>
+    <p class="ck-page-sub">P25/P50/P75/P90 percentile cuts across EV/EBITDA, margin, MOIC, IRR — filterable by sector / size / region — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>

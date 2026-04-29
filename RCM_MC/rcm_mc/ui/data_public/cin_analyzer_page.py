@@ -209,10 +209,10 @@ def render_cin_analyzer(params: dict = None) -> str:
     total_q_upside = sum(q.financial_impact_mm for q in r.quality_measures)
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Clinical Integration Network Analyzer</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">Provider roster · payer contracts · quality measures · network adequacy · compliance — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Clinical Integration Network Analyzer</h1>
+    <p class="ck-page-sub">Provider roster · payer contracts · quality measures · network adequacy · compliance — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>

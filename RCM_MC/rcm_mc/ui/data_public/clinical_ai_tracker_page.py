@@ -208,10 +208,10 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
 
     total_revenue = sum(o.revenue_impact_m for o in r.outcomes)
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Clinical AI / ML Deployment Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_systems} AI systems deployed across {r.total_deals_with_ai} portcos · ${r.total_annual_spend_m:.1f}M annual license spend · {r.total_cases_monthly_k:,}K monthly case volume · {r.avg_adoption_pct * 100:.1f}% daily usage · {r.avg_accuracy_pct * 100:.1f}% avg accuracy — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Clinical AI / ML Deployment Tracker</h1>
+    <p class="ck-page-sub">{r.total_systems} AI systems deployed across {r.total_deals_with_ai} portcos · ${r.total_annual_spend_m:.1f}M annual license spend · {r.total_cases_monthly_k:,}K monthly case volume · {r.avg_adoption_pct * 100:.1f}% daily usage · {r.avg_accuracy_pct * 100:.1f}% avg accuracy — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">AI Systems in Production</div>{s_tbl}</div>

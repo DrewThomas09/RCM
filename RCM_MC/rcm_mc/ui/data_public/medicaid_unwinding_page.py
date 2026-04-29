@@ -204,10 +204,10 @@ def render_medicaid_unwinding(params: dict = None) -> str:
     revenue_preserved = sum(p.revenue_preserved_m for p in r.programs)
     accel_states = sum(1 for t in r.timelines if t.current_pace == "accelerated")
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Medicaid Redetermination / Coverage Unwinding Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_deals_exposed} portcos exposed · {r.total_medicaid_lives_pre_phe_m:.1f}M pre-PHE Medicaid lives → {r.total_disenrolled_m:.1f}M disenrolled · ${r.total_revenue_impact_m:.1f}M net revenue impact · {r.active_retention_programs} active retention programs — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Medicaid Redetermination / Coverage Unwinding Tracker</h1>
+    <p class="ck-page-sub">{r.total_deals_exposed} portcos exposed · {r.total_medicaid_lives_pre_phe_m:.1f}M pre-PHE Medicaid lives → {r.total_disenrolled_m:.1f}M disenrolled · ${r.total_revenue_impact_m:.1f}M net revenue impact · {r.active_retention_programs} active retention programs — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Portfolio Deal Impact</div>{d_tbl}</div>

@@ -198,10 +198,10 @@ def render_peer_transactions(params: dict = None) -> str:
     latest_info = f"{latest.period}: {latest.total_deals} deals, ${latest.total_volume_b:.2f}B, {latest.median_multiple:.2f}x median" if latest else "n/a"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Peer Transaction Database / Comps Library</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_transactions} comparable transactions · ${r.total_volume_b:.2f}B aggregate value · median {r.median_ev_ebitda:.2f}x EV/EBITDA · {r.median_ev_revenue:.2f}x EV/Revenue · {latest_info} — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Peer Transaction Database / Comps Library</h1>
+    <p class="ck-page-sub">{r.total_transactions} comparable transactions · ${r.total_volume_b:.2f}B aggregate value · median {r.median_ev_ebitda:.2f}x EV/EBITDA · {r.median_ev_revenue:.2f}x EV/Revenue · {latest_info} — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Recent Comparable Transactions</div>{d_tbl}</div>

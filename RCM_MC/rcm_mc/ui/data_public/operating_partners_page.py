@@ -211,10 +211,10 @@ def render_operating_partners(params: dict = None) -> str:
     avg_outcome = sum(e.outcome_score for e in r.engagement) / len(r.engagement) if r.engagement else 0
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Operating Partner / CEO Rolodex Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_operating_partners} operating partners · {r.total_exec_placements} exec placements LTM · {r.active_searches} active searches · {r.total_bench_count} bench roster · {r.total_engagement_hours_ltm:,} engagement hours · ${r.total_value_creation_m:.1f}M value creation attributed — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Operating Partner / CEO Rolodex Tracker</h1>
+    <p class="ck-page-sub">{r.total_operating_partners} operating partners · {r.total_exec_placements} exec placements LTM · {r.active_searches} active searches · {r.total_bench_count} bench roster · {r.total_engagement_hours_ltm:,} engagement hours · ${r.total_value_creation_m:.1f}M value creation attributed — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Operating Partner Roster</div>{p_tbl}</div>

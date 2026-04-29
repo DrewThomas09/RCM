@@ -199,10 +199,10 @@ def render_treasury_tracker(params: dict = None) -> str:
     ic_total = sum(ic.balance_m for ic in r.intercompany)
     avg_yield = sum(a.yield_pct * a.balance_m for a in r.accounts) / sum(a.balance_m for a in r.accounts) if r.accounts else 0
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Treasury / Cash Position Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">${r.total_portfolio_liquidity_m:,.1f}M total liquidity · ${r.total_cash_and_investments_m:,.1f}M cash + investments · {r.weighted_revolver_utilization_pct * 100:.1f}% revolver utilization · {r.at_risk_deals} deal{"s" if r.at_risk_deals != 1 else ""} at risk · {len(r.hedging)} hedging positions — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Treasury / Cash Position Tracker</h1>
+    <p class="ck-page-sub">${r.total_portfolio_liquidity_m:,.1f}M total liquidity · ${r.total_cash_and_investments_m:,.1f}M cash + investments · {r.weighted_revolver_utilization_pct * 100:.1f}% revolver utilization · {r.at_risk_deals} deal{"s" if r.at_risk_deals != 1 else ""} at risk · {len(r.hedging)} hedging positions — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Cash Position & Revolver Utilization</div>{c_tbl}</div>

@@ -241,10 +241,10 @@ def render_esg_impact(params: dict = None) -> str:
     sbti_validated = sum(1 for e in r.emissions if "validated" in e.sbti_commitment)
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">ESG / Impact Reporting Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_portcos} portcos · {r.avg_composite_score:.2f}/10 average ESG score (+{r.prior_year_delta:.2f} YoY) · ${r.total_charity_care_m:.1f}M charity care · {r.total_scope_12_mtco2e:,.0f} MTCO2e Scope 1+2 · {r.frameworks_tracked} frameworks tracked — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">ESG / Impact Reporting Tracker</h1>
+    <p class="ck-page-sub">{r.total_portcos} portcos · {r.avg_composite_score:.2f}/10 average ESG score (+{r.prior_year_delta:.2f} YoY) · ${r.total_charity_care_m:.1f}M charity care · {r.total_scope_12_mtco2e:,.0f} MTCO2e Scope 1+2 · {r.frameworks_tracked} frameworks tracked — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">ESG Composite Scorecards</div>{s_tbl}</div>

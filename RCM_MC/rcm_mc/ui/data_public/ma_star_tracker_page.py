@@ -209,10 +209,10 @@ def render_ma_star_tracker(params: dict = None) -> str:
     stars_up = sum(1 for p in r.plans if p.star_rating_2026 > p.star_rating_2025)
     stars_down = sum(1 for p in r.plans if p.star_rating_2026 < p.star_rating_2025)
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Medicare Advantage / Star Ratings Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_plans} MA plans · {r.total_enrollment_m:.1f}M enrolled · {r.avg_star_rating:.2f}★ weighted average · {r.pct_4star_plus * 100:.1f}% of lives in 4+★ plans · ${r.total_portfolio_ma_revenue_m:,.1f}M portfolio MA revenue · ${r.total_radv_exposure_m:,.1f}M industry RADV exposure — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Medicare Advantage / Star Ratings Tracker</h1>
+    <p class="ck-page-sub">{r.total_plans} MA plans · {r.total_enrollment_m:.1f}M enrolled · {r.avg_star_rating:.2f}★ weighted average · {r.pct_4star_plus * 100:.1f}% of lives in 4+★ plans · ${r.total_portfolio_ma_revenue_m:,.1f}M portfolio MA revenue · ${r.total_radv_exposure_m:,.1f}M industry RADV exposure — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">MA Plan Economics — Star Ratings, Rebates, MLR</div>{p_tbl}</div>

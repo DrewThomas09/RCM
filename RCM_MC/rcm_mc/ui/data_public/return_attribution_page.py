@@ -156,7 +156,7 @@ def _slice_table(slices: list, corpus_p50: Optional[float] = None) -> str:
 def _dim_panel(title: str, slices: list, corpus_p50: Optional[float]) -> str:
     chart = _range_bar_chart(slices, title, corpus_p50)
     table = _slice_table(slices, corpus_p50)
-    return f"""<div style="margin-bottom:20px">
+    return f"""<div class="ck-page-head">
   <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.1em;
               margin-bottom:8px;border-bottom:1px solid {P['border']};padding-bottom:4px">
     {html.escape(title)}

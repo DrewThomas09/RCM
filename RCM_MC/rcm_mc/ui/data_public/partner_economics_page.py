@@ -231,10 +231,10 @@ def render_partner_economics(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Partner Economics / Physician Buy-in</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">Partnership tiers, buy-in structures, tax flow, exit proceeds, recruitment economics — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Partner Economics / Physician Buy-in</h1>
+    <p class="ck-page-sub">Partnership tiers, buy-in structures, tax flow, exit proceeds, recruitment economics — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>

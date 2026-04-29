@@ -34,145 +34,145 @@ Run `python tools/v5_fidelity_audit.py` to refresh.
 | 80 | `rcm_mc/ui/chartis/corpus_backtest_page.py` | 385 | 14 (3.6/100) | high inline-style count: 27 |
 | 80 | `rcm_mc/ui/chartis/market_structure_page.py` | 276 | 8 (2.9/100) | high inline-style count: 20 |
 | 80 | `rcm_mc/ui/chartis/sponsor_track_record_page.py` | 294 | 9 (3.1/100) | high inline-style count: 24 |
+| 80 | `rcm_mc/ui/data_public/biosimilars_opp_page.py` | 160 | 43 (26.9/100) | high inline-style count: 20; high non-ck-class <div> count: 12 |
+| 80 | `rcm_mc/ui/data_public/direct_employer_page.py` | 163 | 41 (25.2/100) | high inline-style count: 21; high non-ck-class <div> count: 12 |
+| 80 | `rcm_mc/ui/data_public/direct_lending_page.py` | 159 | 37 (23.3/100) | high inline-style count: 22; high non-ck-class <div> count: 12 |
+| 80 | `rcm_mc/ui/data_public/hcit_platform_page.py` | 164 | 37 (22.6/100) | high inline-style count: 22; high non-ck-class <div> count: 12 |
+| 80 | `rcm_mc/ui/data_public/health_equity_page.py` | 142 | 31 (21.8/100) | high inline-style count: 21 |
+| 80 | `rcm_mc/ui/data_public/module_index_page.py` | 135 | 23 (17.0/100) | high inline-style count: 19 |
 | 80 | `rcm_mc/ui/data_public/sector_intel_page.py` | 255 | 9 (3.5/100) | high inline-style count: 32 |
-| 79 | `rcm_mc/ui/data_public/biosimilars_opp_page.py` | 160 | 43 (26.9/100) | high inline-style count: 24; high non-ck-class <div> count: 14 |
+| 80 | `rcm_mc/ui/data_public/trial_site_econ_page.py` | 162 | 41 (25.3/100) | high inline-style count: 20; high non-ck-class <div> count: 12 |
+| 79 | `rcm_mc/ui/data_public/board_governance_page.py` | 193 | 42 (21.8/100) | high inline-style count: 27; high non-ck-class <div> count: 14 |
+| 79 | `rcm_mc/ui/data_public/cms_data_browser_page.py` | 196 | 44 (22.4/100) | high inline-style count: 27; high non-ck-class <div> count: 14 |
+| 79 | `rcm_mc/ui/data_public/data_sources_admin_page.py` | 247 | 18 (7.3/100) | high inline-style count: 24; high non-ck-class <div> count: 11 |
+| 79 | `rcm_mc/ui/data_public/deal_origination_page.py` | 193 | 47 (24.4/100) | high inline-style count: 23; high non-ck-class <div> count: 14 |
+| 79 | `rcm_mc/ui/data_public/denovo_expansion_page.py` | 192 | 43 (22.4/100) | high inline-style count: 24; high non-ck-class <div> count: 14 |
 | 79 | `rcm_mc/ui/data_public/diligence_checklist_page.py` | 193 | 7 (3.6/100) | high inline-style count: 30 |
-| 79 | `rcm_mc/ui/data_public/direct_employer_page.py` | 163 | 41 (25.2/100) | high inline-style count: 25; high non-ck-class <div> count: 14 |
-| 79 | `rcm_mc/ui/data_public/direct_lending_page.py` | 159 | 37 (23.3/100) | high inline-style count: 26; high non-ck-class <div> count: 14 |
-| 79 | `rcm_mc/ui/data_public/hcit_platform_page.py` | 164 | 37 (22.6/100) | high inline-style count: 26; high non-ck-class <div> count: 14 |
-| 79 | `rcm_mc/ui/data_public/health_equity_page.py` | 142 | 31 (21.8/100) | high inline-style count: 25; high non-ck-class <div> count: 12 |
+| 79 | `rcm_mc/ui/data_public/diligence_vendors_page.py` | 160 | 36 (22.5/100) | high inline-style count: 25; high non-ck-class <div> count: 12 |
 | 79 | `rcm_mc/ui/data_public/hold_optimizer_page.py` | 352 | 9 (2.6/100) | high inline-style count: 12 |
+| 79 | `rcm_mc/ui/data_public/lbo_stress_page.py` | 201 | 36 (17.9/100) | high inline-style count: 26; high non-ck-class <div> count: 14 |
 | 79 | `rcm_mc/ui/data_public/leverage_intel_page.py` | 237 | 9 (3.8/100) | high inline-style count: 33 |
-| 79 | `rcm_mc/ui/data_public/module_index_page.py` | 135 | 23 (17.0/100) | high inline-style count: 23; high non-ck-class <div> count: 12 |
+| 79 | `rcm_mc/ui/data_public/msa_concentration_page.py` | 168 | 37 (22.0/100) | high inline-style count: 27; high non-ck-class <div> count: 12 |
+| 79 | `rcm_mc/ui/data_public/peer_transactions_page.py` | 204 | 52 (25.5/100) | high inline-style count: 26; high non-ck-class <div> count: 14 |
+| 79 | `rcm_mc/ui/data_public/physician_labor_page.py` | 162 | 33 (20.4/100) | high inline-style count: 26; high non-ck-class <div> count: 12 |
+| 79 | `rcm_mc/ui/data_public/risk_adjustment_page.py` | 207 | 52 (25.1/100) | high inline-style count: 25; high non-ck-class <div> count: 14 |
 | 79 | `rcm_mc/ui/data_public/size_intel_page.py` | 204 | 10 (4.9/100) | high inline-style count: 32 |
-| 79 | `rcm_mc/ui/data_public/trial_site_econ_page.py` | 162 | 41 (25.3/100) | high inline-style count: 24; high non-ck-class <div> count: 14 |
+| 79 | `rcm_mc/ui/data_public/specialty_benchmarks_page.py` | 191 | 50 (26.2/100) | high inline-style count: 25; high non-ck-class <div> count: 14 |
+| 79 | `rcm_mc/ui/data_public/telehealth_econ_page.py` | 175 | 44 (25.1/100) | high inline-style count: 23; high non-ck-class <div> count: 14 |
 | 79 | `rcm_mc/ui/data_public/vintage_perf_page.py` | 224 | 10 (4.5/100) | high inline-style count: 33 |
-| 78 | `rcm_mc/ui/data_public/data_sources_admin_page.py` | 247 | 18 (7.3/100) | high inline-style count: 28; high non-ck-class <div> count: 13 |
-| 78 | `rcm_mc/ui/data_public/deal_origination_page.py` | 193 | 47 (24.4/100) | high inline-style count: 27; high non-ck-class <div> count: 16 |
-| 78 | `rcm_mc/ui/data_public/diligence_vendors_page.py` | 160 | 36 (22.5/100) | high inline-style count: 29; high non-ck-class <div> count: 14 |
-| 78 | `rcm_mc/ui/data_public/mgmt_comp_page.py` | 271 | 31 (11.4/100) | high inline-style count: 32; high non-ck-class <div> count: 14 |
-| 78 | `rcm_mc/ui/data_public/msa_concentration_page.py` | 168 | 37 (22.0/100) | high inline-style count: 31; high non-ck-class <div> count: 14 |
-| 78 | `rcm_mc/ui/data_public/nsa_tracker_page.py` | 185 | 41 (22.2/100) | high inline-style count: 32; high non-ck-class <div> count: 14 |
-| 78 | `rcm_mc/ui/data_public/physician_labor_page.py` | 162 | 33 (20.4/100) | high inline-style count: 30; high non-ck-class <div> count: 14 |
-| 78 | `rcm_mc/ui/data_public/telehealth_econ_page.py` | 175 | 44 (25.1/100) | high inline-style count: 27; high non-ck-class <div> count: 16 |
+| 78 | `rcm_mc/ui/data_public/base_rates_page.py` | 267 | 44 (16.5/100) | high inline-style count: 27; high non-ck-class <div> count: 15 |
+| 78 | `rcm_mc/ui/data_public/capex_budget_page.py` | 210 | 49 (23.3/100) | high inline-style count: 32; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/capital_call_tracker_page.py` | 216 | 50 (23.1/100) | high inline-style count: 33; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/capital_pacing_page.py` | 206 | 42 (20.4/100) | high inline-style count: 32; high non-ck-class <div> count: 12 |
+| 78 | `rcm_mc/ui/data_public/capital_schedule_page.py` | 291 | 25 (8.6/100) | high inline-style count: 33; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/cin_analyzer_page.py` | 213 | 48 (22.5/100) | high inline-style count: 32; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/cms_apm_tracker_page.py` | 202 | 44 (21.8/100) | high inline-style count: 29; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/coinvest_pipeline_page.py` | 213 | 54 (25.4/100) | high inline-style count: 29; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/cost_structure_page.py` | 255 | 25 (9.8/100) | high inline-style count: 29; high non-ck-class <div> count: 13 |
+| 78 | `rcm_mc/ui/data_public/covenant_headroom_page.py` | 204 | 39 (19.1/100) | high inline-style count: 32; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/deal_sourcing_page.py` | 204 | 44 (21.6/100) | high inline-style count: 32; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/debt_financing_page.py` | 217 | 49 (22.6/100) | high inline-style count: 33; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/digital_front_door_page.py` | 192 | 41 (21.4/100) | high inline-style count: 31; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/fund_attribution_page.py` | 272 | 26 (9.6/100) | high inline-style count: 30; high non-ck-class <div> count: 11 |
+| 78 | `rcm_mc/ui/data_public/fundraising_tracker_page.py` | 212 | 45 (21.2/100) | high inline-style count: 33; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/gpo_supply_tracker_page.py` | 215 | 47 (21.9/100) | high inline-style count: 31; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/lp_reporting_page.py` | 200 | 46 (23.0/100) | high inline-style count: 29; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/ma_star_tracker_page.py` | 214 | 46 (21.5/100) | high inline-style count: 31; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/medicaid_unwinding_page.py` | 209 | 50 (23.9/100) | high inline-style count: 29; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/medical_realestate_page.py` | 203 | 47 (23.2/100) | high inline-style count: 29; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/mgmt_comp_page.py` | 271 | 31 (11.4/100) | high inline-style count: 28; high non-ck-class <div> count: 12 |
+| 78 | `rcm_mc/ui/data_public/nav_loan_tracker_page.py` | 197 | 49 (24.9/100) | high inline-style count: 28; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/nsa_tracker_page.py` | 185 | 41 (22.2/100) | high inline-style count: 28; high non-ck-class <div> count: 12 |
+| 78 | `rcm_mc/ui/data_public/physician_productivity_page.py` | 286 | 27 (9.4/100) | high inline-style count: 32; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/platform_maturity_page.py` | 164 | 38 (23.2/100) | high inline-style count: 27; high non-ck-class <div> count: 16 |
+| 78 | `rcm_mc/ui/data_public/reit_analyzer_page.py` | 217 | 46 (21.2/100) | high inline-style count: 30; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/rw_insurance_page.py` | 208 | 48 (23.1/100) | high inline-style count: 33; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/secondaries_tracker_page.py` | 184 | 34 (18.5/100) | high inline-style count: 32; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/sponsor_heatmap_page.py` | 250 | 48 (19.2/100) | high inline-style count: 29; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/treasury_tracker_page.py` | 206 | 48 (23.3/100) | high inline-style count: 30; high non-ck-class <div> count: 14 |
+| 78 | `rcm_mc/ui/data_public/vintage_cohorts_page.py` | 218 | 53 (24.3/100) | high inline-style count: 28; high non-ck-class <div> count: 14 |
 | 77 | `rcm_mc/ui/chartis/white_space_page.py` | 310 | 9 (2.9/100) | high inline-style count: 28; high non-ck-class <div> count: 14 |
-| 77 | `rcm_mc/ui/data_public/base_rates_page.py` | 267 | 44 (16.5/100) | high inline-style count: 31; high non-ck-class <div> count: 17 |
-| 77 | `rcm_mc/ui/data_public/board_governance_page.py` | 193 | 42 (21.8/100) | high inline-style count: 31; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/capital_pacing_page.py` | 206 | 42 (20.4/100) | high inline-style count: 36; high non-ck-class <div> count: 14 |
-| 77 | `rcm_mc/ui/data_public/cms_apm_tracker_page.py` | 202 | 44 (21.8/100) | high inline-style count: 33; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/cms_data_browser_page.py` | 196 | 44 (22.4/100) | high inline-style count: 31; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/coinvest_pipeline_page.py` | 213 | 54 (25.4/100) | high inline-style count: 33; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/cost_structure_page.py` | 255 | 25 (9.8/100) | high inline-style count: 33; high non-ck-class <div> count: 15 |
-| 77 | `rcm_mc/ui/data_public/denovo_expansion_page.py` | 192 | 43 (22.4/100) | high inline-style count: 28; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/fund_attribution_page.py` | 272 | 26 (9.6/100) | high inline-style count: 34; high non-ck-class <div> count: 13 |
-| 77 | `rcm_mc/ui/data_public/lbo_stress_page.py` | 201 | 36 (17.9/100) | high inline-style count: 30; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/lp_reporting_page.py` | 200 | 46 (23.0/100) | high inline-style count: 33; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/medicaid_unwinding_page.py` | 209 | 50 (23.9/100) | high inline-style count: 33; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/medical_realestate_page.py` | 203 | 47 (23.2/100) | high inline-style count: 33; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/nav_loan_tracker_page.py` | 197 | 49 (24.9/100) | high inline-style count: 32; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/peer_transactions_page.py` | 204 | 52 (25.5/100) | high inline-style count: 30; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/platform_maturity_page.py` | 164 | 38 (23.2/100) | high inline-style count: 31; high non-ck-class <div> count: 18 |
+| 77 | `rcm_mc/ui/data_public/clinical_ai_tracker_page.py` | 214 | 37 (17.3/100) | high inline-style count: 38; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/deal_pipeline_page.py` | 272 | 32 (11.8/100) | high inline-style count: 33; high non-ck-class <div> count: 15 |
+| 77 | `rcm_mc/ui/data_public/dpi_tracker_page.py` | 205 | 45 (22.0/100) | high inline-style count: 34; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/drug_pricing_340b_page.py` | 235 | 52 (22.1/100) | high inline-style count: 33; high non-ck-class <div> count: 16 |
+| 77 | `rcm_mc/ui/data_public/drug_shortage_page.py` | 174 | 33 (19.0/100) | high inline-style count: 33; high non-ck-class <div> count: 16 |
+| 77 | `rcm_mc/ui/data_public/escrow_earnout_page.py` | 227 | 48 (21.1/100) | high inline-style count: 37; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/hospital_anchor_page.py` | 211 | 45 (21.3/100) | high inline-style count: 35; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/litigation_tracker_page.py` | 207 | 44 (21.3/100) | high inline-style count: 37; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/locum_tracker_page.py` | 222 | 45 (20.3/100) | high inline-style count: 35; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/operating_partners_page.py` | 215 | 47 (21.9/100) | high inline-style count: 35; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/payer_contracts_page.py` | 214 | 45 (21.0/100) | high inline-style count: 35; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/phys_comp_plan_page.py` | 222 | 42 (18.9/100) | high inline-style count: 36; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/pmi_playbook_page.py` | 181 | 41 (22.7/100) | high inline-style count: 30; high non-ck-class <div> count: 16 |
 | 77 | `rcm_mc/ui/data_public/portfolio_optimizer_page.py` | 235 | 9 (3.8/100) | high inline-style count: 34; high non-ck-class <div> count: 14 |
-| 77 | `rcm_mc/ui/data_public/risk_adjustment_page.py` | 207 | 52 (25.1/100) | high inline-style count: 29; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/specialty_benchmarks_page.py` | 191 | 50 (26.2/100) | high inline-style count: 29; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/sponsor_heatmap_page.py` | 250 | 48 (19.2/100) | high inline-style count: 33; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/vintage_cohorts_page.py` | 218 | 53 (24.3/100) | high inline-style count: 32; high non-ck-class <div> count: 16 |
-| 77 | `rcm_mc/ui/data_public/zbb_tracker_page.py` | 172 | 38 (22.1/100) | high inline-style count: 33; high non-ck-class <div> count: 18 |
+| 77 | `rcm_mc/ui/data_public/refi_optimizer_page.py` | 204 | 51 (25.0/100) | high inline-style count: 32; high non-ck-class <div> count: 18 |
+| 77 | `rcm_mc/ui/data_public/sellside_process_page.py` | 220 | 47 (21.4/100) | high inline-style count: 37; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/tax_credits_page.py` | 207 | 46 (22.2/100) | high inline-style count: 34; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/tracker_340b_page.py` | 201 | 40 (19.9/100) | high inline-style count: 36; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/vcp_tracker_page.py` | 217 | 42 (19.4/100) | high inline-style count: 38; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/workforce_retention_page.py` | 199 | 39 (19.6/100) | high inline-style count: 35; high non-ck-class <div> count: 14 |
+| 77 | `rcm_mc/ui/data_public/zbb_tracker_page.py` | 172 | 38 (22.1/100) | high inline-style count: 29; high non-ck-class <div> count: 16 |
 | 77 | `rcm_mc/ui/settings_ai_page.py` | 257 | 9 (3.5/100) | high inline-style count: 35; high non-ck-class <div> count: 14 |
 | 76 | `rcm_mc/ui/chartis/deal_screening_page.py` | 375 | 9 (2.4/100) | high inline-style count: 21 |
-| 76 | `rcm_mc/ui/data_public/capex_budget_page.py` | 210 | 49 (23.3/100) | high inline-style count: 36; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/capital_call_tracker_page.py` | 216 | 50 (23.1/100) | high inline-style count: 37; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/capital_schedule_page.py` | 291 | 25 (8.6/100) | high inline-style count: 37; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/cin_analyzer_page.py` | 213 | 48 (22.5/100) | high inline-style count: 36; high non-ck-class <div> count: 16 |
+| 76 | `rcm_mc/ui/data_public/aco_economics_page.py` | 210 | 40 (19.0/100) | high inline-style count: 36; high non-ck-class <div> count: 16 |
+| 76 | `rcm_mc/ui/data_public/bolton_analyzer_page.py` | 368 | 28 (7.6/100) | high inline-style count: 44; high non-ck-class <div> count: 13 |
+| 76 | `rcm_mc/ui/data_public/competitive_intel_page.py` | 289 | 25 (8.7/100) | high inline-style count: 43; high non-ck-class <div> count: 14 |
+| 76 | `rcm_mc/ui/data_public/compliance_attestation_page.py` | 235 | 41 (17.4/100) | high inline-style count: 40; high non-ck-class <div> count: 14 |
 | 76 | `rcm_mc/ui/data_public/corpus_dashboard_page.py` | 299 | 11 (3.7/100) | high inline-style count: 44 |
-| 76 | `rcm_mc/ui/data_public/covenant_headroom_page.py` | 204 | 39 (19.1/100) | high inline-style count: 36; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/deal_pipeline_page.py` | 272 | 32 (11.8/100) | high inline-style count: 37; high non-ck-class <div> count: 17 |
-| 76 | `rcm_mc/ui/data_public/deal_sourcing_page.py` | 204 | 44 (21.6/100) | high inline-style count: 36; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/debt_financing_page.py` | 217 | 49 (22.6/100) | high inline-style count: 37; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/digital_front_door_page.py` | 192 | 41 (21.4/100) | high inline-style count: 35; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/dpi_tracker_page.py` | 205 | 45 (22.0/100) | high inline-style count: 38; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/drug_pricing_340b_page.py` | 235 | 52 (22.1/100) | high inline-style count: 37; high non-ck-class <div> count: 18 |
-| 76 | `rcm_mc/ui/data_public/drug_shortage_page.py` | 174 | 33 (19.0/100) | high inline-style count: 37; high non-ck-class <div> count: 18 |
-| 76 | `rcm_mc/ui/data_public/fundraising_tracker_page.py` | 212 | 45 (21.2/100) | high inline-style count: 37; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/gpo_supply_tracker_page.py` | 215 | 47 (21.9/100) | high inline-style count: 35; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/lp_dashboard_page.py` | 427 | 49 (11.5/100) | high inline-style count: 55; high non-ck-class <div> count: 23 |
-| 76 | `rcm_mc/ui/data_public/ma_contracts_page.py` | 247 | 51 (20.6/100) | high inline-style count: 38; high non-ck-class <div> count: 18 |
-| 76 | `rcm_mc/ui/data_public/ma_star_tracker_page.py` | 214 | 46 (21.5/100) | high inline-style count: 35; high non-ck-class <div> count: 16 |
+| 76 | `rcm_mc/ui/data_public/deal_postmortem_page.py` | 192 | 33 (17.2/100) | high inline-style count: 35; high non-ck-class <div> count: 18 |
+| 76 | `rcm_mc/ui/data_public/demand_forecast_page.py` | 221 | 36 (16.3/100) | high inline-style count: 37; high non-ck-class <div> count: 17 |
+| 76 | `rcm_mc/ui/data_public/fraud_detection_page.py` | 190 | 39 (20.5/100) | high inline-style count: 34; high non-ck-class <div> count: 18 |
+| 76 | `rcm_mc/ui/data_public/geo_market_page.py` | 293 | 32 (10.9/100) | high inline-style count: 35; high non-ck-class <div> count: 15 |
+| 76 | `rcm_mc/ui/data_public/ic_memo_generator_page.py` | 198 | 36 (18.2/100) | high inline-style count: 34; high non-ck-class <div> count: 18 |
+| 76 | `rcm_mc/ui/data_public/insurance_tracker_page.py` | 198 | 36 (18.2/100) | high inline-style count: 40; high non-ck-class <div> count: 14 |
+| 76 | `rcm_mc/ui/data_public/lp_dashboard_page.py` | 427 | 49 (11.5/100) | high inline-style count: 51; high non-ck-class <div> count: 21 |
+| 76 | `rcm_mc/ui/data_public/ma_contracts_page.py` | 247 | 51 (20.6/100) | high inline-style count: 34; high non-ck-class <div> count: 16 |
+| 76 | `rcm_mc/ui/data_public/payer_concentration_page.py` | 218 | 33 (15.1/100) | high inline-style count: 39; high non-ck-class <div> count: 14 |
 | 76 | `rcm_mc/ui/data_public/payer_intel_page.py` | 282 | 9 (3.2/100) | high inline-style count: 41; high non-ck-class <div> count: 12 |
-| 76 | `rcm_mc/ui/data_public/physician_productivity_page.py` | 286 | 27 (9.4/100) | high inline-style count: 36; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/pmi_playbook_page.py` | 181 | 41 (22.7/100) | high inline-style count: 34; high non-ck-class <div> count: 18 |
-| 76 | `rcm_mc/ui/data_public/reit_analyzer_page.py` | 217 | 46 (21.2/100) | high inline-style count: 34; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/rw_insurance_page.py` | 208 | 48 (23.1/100) | high inline-style count: 37; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/secondaries_tracker_page.py` | 184 | 34 (18.5/100) | high inline-style count: 36; high non-ck-class <div> count: 16 |
+| 76 | `rcm_mc/ui/data_public/peer_valuation_page.py` | 264 | 27 (10.2/100) | high inline-style count: 39; high non-ck-class <div> count: 13 |
+| 76 | `rcm_mc/ui/data_public/pmi_integration_page.py` | 218 | 41 (18.8/100) | high inline-style count: 40; high non-ck-class <div> count: 14 |
+| 76 | `rcm_mc/ui/data_public/quality_scorecard_page.py` | 257 | 26 (10.1/100) | high inline-style count: 39; high non-ck-class <div> count: 13 |
+| 76 | `rcm_mc/ui/data_public/real_estate_page.py` | 273 | 25 (9.2/100) | high inline-style count: 42; high non-ck-class <div> count: 12 |
+| 76 | `rcm_mc/ui/data_public/ref_pricing_page.py` | 289 | 25 (8.7/100) | high inline-style count: 43; high non-ck-class <div> count: 13 |
 | 76 | `rcm_mc/ui/data_public/sponsor_league_page.py` | 276 | 8 (2.9/100) | high inline-style count: 44 |
-| 76 | `rcm_mc/ui/data_public/tax_credits_page.py` | 207 | 46 (22.2/100) | high inline-style count: 38; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/treasury_tracker_page.py` | 206 | 48 (23.3/100) | high inline-style count: 34; high non-ck-class <div> count: 16 |
-| 76 | `rcm_mc/ui/data_public/unit_economics_page.py` | 311 | 30 (9.6/100) | high inline-style count: 38; high non-ck-class <div> count: 18 |
-| 75 | `rcm_mc/ui/data_public/aco_economics_page.py` | 210 | 40 (19.0/100) | high inline-style count: 40; high non-ck-class <div> count: 18 |
-| 75 | `rcm_mc/ui/data_public/ai_operating_model_page.py` | 180 | 33 (18.3/100) | high inline-style count: 43; high non-ck-class <div> count: 18 |
-| 75 | `rcm_mc/ui/data_public/clinical_ai_tracker_page.py` | 214 | 37 (17.3/100) | high inline-style count: 42; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/compliance_attestation_page.py` | 235 | 41 (17.4/100) | high inline-style count: 44; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/demand_forecast_page.py` | 221 | 36 (16.3/100) | high inline-style count: 41; high non-ck-class <div> count: 19 |
-| 75 | `rcm_mc/ui/data_public/escrow_earnout_page.py` | 227 | 48 (21.1/100) | high inline-style count: 41; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/fraud_detection_page.py` | 190 | 39 (20.5/100) | high inline-style count: 38; high non-ck-class <div> count: 20 |
-| 75 | `rcm_mc/ui/data_public/geo_market_page.py` | 293 | 32 (10.9/100) | high inline-style count: 39; high non-ck-class <div> count: 17 |
-| 75 | `rcm_mc/ui/data_public/hospital_anchor_page.py` | 211 | 45 (21.3/100) | high inline-style count: 39; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/ic_memo_generator_page.py` | 198 | 36 (18.2/100) | high inline-style count: 38; high non-ck-class <div> count: 20 |
-| 75 | `rcm_mc/ui/data_public/insurance_tracker_page.py` | 198 | 36 (18.2/100) | high inline-style count: 44; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/litigation_tracker_page.py` | 207 | 44 (21.3/100) | high inline-style count: 41; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/locum_tracker_page.py` | 222 | 45 (20.3/100) | high inline-style count: 39; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/operating_partners_page.py` | 215 | 47 (21.9/100) | high inline-style count: 39; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/patient_experience_page.py` | 229 | 35 (15.3/100) | high inline-style count: 44; high non-ck-class <div> count: 19 |
-| 75 | `rcm_mc/ui/data_public/payer_concentration_page.py` | 218 | 33 (15.1/100) | high inline-style count: 43; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/payer_contracts_page.py` | 214 | 45 (21.0/100) | high inline-style count: 39; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/peer_valuation_page.py` | 264 | 27 (10.2/100) | high inline-style count: 43; high non-ck-class <div> count: 15 |
-| 75 | `rcm_mc/ui/data_public/phys_comp_plan_page.py` | 222 | 42 (18.9/100) | high inline-style count: 40; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/pmi_integration_page.py` | 218 | 41 (18.8/100) | high inline-style count: 44; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/quality_scorecard_page.py` | 257 | 26 (10.1/100) | high inline-style count: 43; high non-ck-class <div> count: 15 |
-| 75 | `rcm_mc/ui/data_public/real_estate_page.py` | 273 | 25 (9.2/100) | high inline-style count: 46; high non-ck-class <div> count: 14 |
-| 75 | `rcm_mc/ui/data_public/refi_optimizer_page.py` | 204 | 51 (25.0/100) | high inline-style count: 36; high non-ck-class <div> count: 20 |
-| 75 | `rcm_mc/ui/data_public/reinvestment_page.py` | 231 | 34 (14.7/100) | high inline-style count: 43; high non-ck-class <div> count: 17 |
-| 75 | `rcm_mc/ui/data_public/sellside_process_page.py` | 220 | 47 (21.4/100) | high inline-style count: 41; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/tracker_340b_page.py` | 201 | 40 (19.9/100) | high inline-style count: 40; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/transition_services_page.py` | 289 | 29 (10.0/100) | high inline-style count: 43; high non-ck-class <div> count: 17 |
-| 75 | `rcm_mc/ui/data_public/vcp_tracker_page.py` | 217 | 42 (19.4/100) | high inline-style count: 42; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/vdr_tracker_page.py` | 229 | 36 (15.7/100) | high inline-style count: 43; high non-ck-class <div> count: 16 |
-| 75 | `rcm_mc/ui/data_public/workforce_retention_page.py` | 199 | 39 (19.6/100) | high inline-style count: 39; high non-ck-class <div> count: 16 |
+| 76 | `rcm_mc/ui/data_public/tax_structure_analyzer_page.py` | 180 | 30 (16.7/100) | high inline-style count: 38; high non-ck-class <div> count: 18 |
+| 76 | `rcm_mc/ui/data_public/unit_economics_page.py` | 311 | 30 (9.6/100) | high inline-style count: 34; high non-ck-class <div> count: 16 |
+| 76 | `rcm_mc/ui/data_public/vdr_tracker_page.py` | 229 | 36 (15.7/100) | high inline-style count: 39; high non-ck-class <div> count: 14 |
+| 75 | `rcm_mc/ui/data_public/ai_operating_model_page.py` | 180 | 33 (18.3/100) | high inline-style count: 39; high non-ck-class <div> count: 16 |
+| 75 | `rcm_mc/ui/data_public/antitrust_screener_page.py` | 207 | 42 (20.3/100) | high inline-style count: 39; high non-ck-class <div> count: 18 |
+| 75 | `rcm_mc/ui/data_public/cap_structure_page.py` | 320 | 20 (6.2/100) | high inline-style count: 47; high non-ck-class <div> count: 13 |
+| 75 | `rcm_mc/ui/data_public/clinical_outcomes_page.py` | 290 | 34 (11.7/100) | high inline-style count: 43; high non-ck-class <div> count: 15 |
+| 75 | `rcm_mc/ui/data_public/cyber_risk_page.py` | 199 | 32 (16.1/100) | high inline-style count: 42; high non-ck-class <div> count: 18 |
+| 75 | `rcm_mc/ui/data_public/esg_impact_page.py` | 246 | 46 (18.7/100) | high inline-style count: 42; high non-ck-class <div> count: 16 |
+| 75 | `rcm_mc/ui/data_public/exit_readiness_page.py` | 320 | 23 (7.2/100) | high inline-style count: 44; high non-ck-class <div> count: 15 |
+| 75 | `rcm_mc/ui/data_public/key_person_page.py` | 312 | 33 (10.6/100) | high inline-style count: 43; high non-ck-class <div> count: 15 |
+| 75 | `rcm_mc/ui/data_public/patient_experience_page.py` | 229 | 35 (15.3/100) | high inline-style count: 40; high non-ck-class <div> count: 17 |
+| 75 | `rcm_mc/ui/data_public/redflag_scanner_page.py` | 194 | 25 (12.9/100) | high inline-style count: 47; high non-ck-class <div> count: 14 |
+| 75 | `rcm_mc/ui/data_public/regulatory_risk_page.py` | 276 | 21 (7.6/100) | high inline-style count: 49; high non-ck-class <div> count: 13 |
+| 75 | `rcm_mc/ui/data_public/reinvestment_page.py` | 231 | 34 (14.7/100) | high inline-style count: 39; high non-ck-class <div> count: 15 |
+| 75 | `rcm_mc/ui/data_public/revenue_leakage_page.py` | 306 | 28 (9.2/100) | high inline-style count: 41; high non-ck-class <div> count: 16 |
+| 75 | `rcm_mc/ui/data_public/rollup_economics_page.py` | 280 | 53 (18.9/100) | high inline-style count: 44; high non-ck-class <div> count: 18 |
+| 75 | `rcm_mc/ui/data_public/transition_services_page.py` | 289 | 29 (10.0/100) | high inline-style count: 39; high non-ck-class <div> count: 15 |
+| 75 | `rcm_mc/ui/data_public/value_creation_plan_page.py` | 299 | 27 (9.0/100) | high inline-style count: 42; high non-ck-class <div> count: 15 |
 | 74 | `rcm_mc/ui/chartis/rcm_benchmarks_page.py` | 337 | 7 (2.1/100) | high inline-style count: 21 |
-| 74 | `rcm_mc/ui/data_public/antitrust_screener_page.py` | 207 | 42 (20.3/100) | high inline-style count: 43; high non-ck-class <div> count: 20 |
-| 74 | `rcm_mc/ui/data_public/bolton_analyzer_page.py` | 368 | 28 (7.6/100) | high inline-style count: 48; high non-ck-class <div> count: 15 |
-| 74 | `rcm_mc/ui/data_public/clinical_outcomes_page.py` | 290 | 34 (11.7/100) | high inline-style count: 47; high non-ck-class <div> count: 17 |
 | 74 | `rcm_mc/ui/data_public/cms_sources_page.py` | 253 | 9 (3.6/100) | high inline-style count: 45; high non-ck-class <div> count: 18 |
-| 74 | `rcm_mc/ui/data_public/competitive_intel_page.py` | 289 | 25 (8.7/100) | high inline-style count: 47; high non-ck-class <div> count: 16 |
-| 74 | `rcm_mc/ui/data_public/deal_postmortem_page.py` | 192 | 33 (17.2/100) | high inline-style count: 39; high non-ck-class <div> count: 20 |
-| 74 | `rcm_mc/ui/data_public/esg_impact_page.py` | 246 | 46 (18.7/100) | high inline-style count: 46; high non-ck-class <div> count: 18 |
-| 74 | `rcm_mc/ui/data_public/exit_readiness_page.py` | 320 | 23 (7.2/100) | high inline-style count: 48; high non-ck-class <div> count: 17 |
-| 74 | `rcm_mc/ui/data_public/key_person_page.py` | 312 | 33 (10.6/100) | high inline-style count: 47; high non-ck-class <div> count: 17 |
-| 74 | `rcm_mc/ui/data_public/ref_pricing_page.py` | 289 | 25 (8.7/100) | high inline-style count: 47; high non-ck-class <div> count: 15 |
-| 74 | `rcm_mc/ui/data_public/revenue_leakage_page.py` | 306 | 28 (9.2/100) | high inline-style count: 45; high non-ck-class <div> count: 18 |
-| 74 | `rcm_mc/ui/data_public/tax_structure_analyzer_page.py` | 180 | 30 (16.7/100) | high inline-style count: 42; high non-ck-class <div> count: 20 |
-| 74 | `rcm_mc/ui/data_public/value_creation_plan_page.py` | 299 | 27 (9.0/100) | high inline-style count: 46; high non-ck-class <div> count: 17 |
-| 73 | `rcm_mc/ui/data_public/cap_structure_page.py` | 320 | 20 (6.2/100) | high inline-style count: 51; high non-ck-class <div> count: 15 |
-| 73 | `rcm_mc/ui/data_public/continuation_vehicle_page.py` | 328 | 29 (8.8/100) | high inline-style count: 52; high non-ck-class <div> count: 19 |
-| 73 | `rcm_mc/ui/data_public/cyber_risk_page.py` | 199 | 32 (16.1/100) | high inline-style count: 46; high non-ck-class <div> count: 20 |
-| 73 | `rcm_mc/ui/data_public/dividend_recap_page.py` | 324 | 24 (7.4/100) | high inline-style count: 54; high non-ck-class <div> count: 17 |
-| 73 | `rcm_mc/ui/data_public/earnout_page.py` | 314 | 24 (7.6/100) | high inline-style count: 51; high non-ck-class <div> count: 19 |
-| 73 | `rcm_mc/ui/data_public/esg_dashboard_page.py` | 296 | 29 (9.8/100) | high inline-style count: 46; high non-ck-class <div> count: 22 |
-| 73 | `rcm_mc/ui/data_public/partner_economics_page.py` | 230 | 40 (17.4/100) | high inline-style count: 52; high non-ck-class <div> count: 18 |
-| 73 | `rcm_mc/ui/data_public/provider_retention_page.py` | 239 | 36 (15.1/100) | high inline-style count: 52; high non-ck-class <div> count: 19 |
-| 73 | `rcm_mc/ui/data_public/redflag_scanner_page.py` | 194 | 25 (12.9/100) | high inline-style count: 51; high non-ck-class <div> count: 16 |
-| 73 | `rcm_mc/ui/data_public/regulatory_risk_page.py` | 276 | 21 (7.6/100) | high inline-style count: 53; high non-ck-class <div> count: 15 |
-| 73 | `rcm_mc/ui/data_public/rollup_economics_page.py` | 280 | 53 (18.9/100) | high inline-style count: 48; high non-ck-class <div> count: 20 |
-| 73 | `rcm_mc/ui/data_public/scenario_mc_page.py` | 325 | 20 (6.2/100) | high inline-style count: 50; high non-ck-class <div> count: 18 |
-| 73 | `rcm_mc/ui/data_public/supply_chain_page.py` | 234 | 35 (15.0/100) | high inline-style count: 51; high non-ck-class <div> count: 19 |
-| 73 | `rcm_mc/ui/data_public/tech_stack_page.py` | 307 | 25 (8.1/100) | high inline-style count: 53; high non-ck-class <div> count: 17 |
-| 73 | `rcm_mc/ui/data_public/workforce_planning_page.py` | 303 | 29 (9.6/100) | high inline-style count: 50; high non-ck-class <div> count: 17 |
-| 72 | `rcm_mc/ui/data_public/growth_runway_page.py` | 354 | 25 (7.1/100) | high inline-style count: 51; high non-ck-class <div> count: 20 |
-| 72 | `rcm_mc/ui/data_public/payer_shift_page.py` | 348 | 22 (6.3/100) | high inline-style count: 52; high non-ck-class <div> count: 20 |
-| 72 | `rcm_mc/ui/data_public/value_backtester_page.py` | 267 | 41 (15.4/100) | high inline-style count: 50; high non-ck-class <div> count: 22 |
-| 71 | `rcm_mc/ui/data_public/debt_service_page.py` | 358 | 34 (9.5/100) | high inline-style count: 57; high non-ck-class <div> count: 20 |
-| 70 | `rcm_mc/ui/data_public/tax_structure_page.py` | 356 | 28 (7.9/100) | high inline-style count: 62; high non-ck-class <div> count: 22 |
-| 70 | `rcm_mc/ui/data_public/working_capital_page.py` | 297 | 24 (8.1/100) | high inline-style count: 39; high non-ck-class <div> count: 16; lazy labels found: 1 (Run / Click here / TBD) |
+| 74 | `rcm_mc/ui/data_public/continuation_vehicle_page.py` | 328 | 29 (8.8/100) | high inline-style count: 48; high non-ck-class <div> count: 17 |
+| 74 | `rcm_mc/ui/data_public/earnout_page.py` | 314 | 24 (7.6/100) | high inline-style count: 47; high non-ck-class <div> count: 17 |
+| 74 | `rcm_mc/ui/data_public/esg_dashboard_page.py` | 296 | 29 (9.8/100) | high inline-style count: 42; high non-ck-class <div> count: 20 |
+| 74 | `rcm_mc/ui/data_public/growth_runway_page.py` | 354 | 25 (7.1/100) | high inline-style count: 47; high non-ck-class <div> count: 18 |
+| 74 | `rcm_mc/ui/data_public/partner_economics_page.py` | 230 | 40 (17.4/100) | high inline-style count: 48; high non-ck-class <div> count: 16 |
+| 74 | `rcm_mc/ui/data_public/payer_shift_page.py` | 348 | 22 (6.3/100) | high inline-style count: 48; high non-ck-class <div> count: 18 |
+| 74 | `rcm_mc/ui/data_public/provider_retention_page.py` | 239 | 36 (15.1/100) | high inline-style count: 48; high non-ck-class <div> count: 17 |
+| 74 | `rcm_mc/ui/data_public/scenario_mc_page.py` | 325 | 20 (6.2/100) | high inline-style count: 46; high non-ck-class <div> count: 16 |
+| 74 | `rcm_mc/ui/data_public/supply_chain_page.py` | 234 | 35 (15.0/100) | high inline-style count: 47; high non-ck-class <div> count: 17 |
+| 74 | `rcm_mc/ui/data_public/tech_stack_page.py` | 307 | 25 (8.1/100) | high inline-style count: 49; high non-ck-class <div> count: 15 |
+| 74 | `rcm_mc/ui/data_public/workforce_planning_page.py` | 303 | 29 (9.6/100) | high inline-style count: 46; high non-ck-class <div> count: 15 |
+| 73 | `rcm_mc/ui/data_public/debt_service_page.py` | 358 | 34 (9.5/100) | high inline-style count: 53; high non-ck-class <div> count: 18 |
+| 73 | `rcm_mc/ui/data_public/dividend_recap_page.py` | 324 | 24 (7.4/100) | high inline-style count: 50; high non-ck-class <div> count: 15 |
+| 73 | `rcm_mc/ui/data_public/value_backtester_page.py` | 267 | 41 (15.4/100) | high inline-style count: 46; high non-ck-class <div> count: 20 |
+| 72 | `rcm_mc/ui/data_public/working_capital_page.py` | 297 | 24 (8.1/100) | high inline-style count: 35; high non-ck-class <div> count: 14; lazy labels found: 1 (Run / Click here / TBD) |
+| 71 | `rcm_mc/ui/data_public/tax_structure_page.py` | 356 | 28 (7.9/100) | high inline-style count: 58; high non-ck-class <div> count: 20 |
 
 ## Below threshold
 
@@ -208,14 +208,14 @@ Sorted highest score first — these pages are partially editorial. Lowest score
 | 48 | `rcm_mc/ui/data_public/underwriting_model_page.py` | 347 | 7 (2.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 64; high non-ck-class <div> count: 14 |
 | 48 | `rcm_mc/ui/data_public/underwriting_page.py` | 318 | 8 (2.5/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 63; high non-ck-class <div> count: 31 |
 | 47 | `rcm_mc/ui/data_public/covenant_monitor_page.py` | 350 | 7 (2.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 64; high non-ck-class <div> count: 18 |
-| 47 | `rcm_mc/ui/data_public/return_attribution_page.py` | 179 | 2 (1.1/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 33; high non-ck-class <div> count: 11 |
+| 47 | `rcm_mc/ui/data_public/return_attribution_page.py` | 179 | 2 (1.1/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 32 |
 | 46 | `rcm_mc/ui/counterfactual_page.py` | 753 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 23; high non-ck-class <div> count: 58 |
 | 45 | `rcm_mc/ui/data_public/entry_multiple_page.py` | 197 | 2 (1.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 29; high non-ck-class <div> count: 15 |
 | 45 | `rcm_mc/ui/exports_index_page.py` | 130 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing) |
 | 45 | `rcm_mc/ui/portfolio_map.py` | 111 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing) |
 | 45 | `rcm_mc/ui/risk_workbench_page.py` | 1202 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 54; high non-ck-class <div> count: 30 |
 | 44 | `rcm_mc/ui/chartis/partner_review_page.py` | 652 | 13 (2.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 68; high non-ck-class <div> count: 25 |
-| 44 | `rcm_mc/ui/data_public/deal_flow_heatmap_page.py` | 259 | 2 (0.8/100) | low ck_* primitive density (0.8/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 32; high non-ck-class <div> count: 13 |
+| 44 | `rcm_mc/ui/data_public/deal_flow_heatmap_page.py` | 259 | 2 (0.8/100) | low ck_* primitive density (0.8/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 30; high non-ck-class <div> count: 11 |
 | 44 | `rcm_mc/ui/data_public/qoe_analyzer_page.py` | 357 | 7 (2.0/100) | no italic-serif highlight (chartis cadence missing); high inline-style count: 63; high non-ck-class <div> count: 31 |
 | 44 | `rcm_mc/ui/deal_timeline.py` | 213 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing) |
 | 44 | `rcm_mc/ui/global_search.py` | 486 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing) |
@@ -226,7 +226,7 @@ Sorted highest score first — these pages are partially editorial. Lowest score
 | 43 | `rcm_mc/ui/feature_importance_viz.py` | 268 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 9 |
 | 43 | `rcm_mc/ui/scenarios_page.py` | 62 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 13 |
 | 42 | `rcm_mc/ui/calibration_page.py` | 161 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 20 |
-| 42 | `rcm_mc/ui/data_public/corpus_coverage_page.py` | 210 | 2 (1.0/100) | low ck_* primitive density (1.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 42; high non-ck-class <div> count: 16 |
+| 42 | `rcm_mc/ui/data_public/corpus_coverage_page.py` | 210 | 2 (1.0/100) | low ck_* primitive density (1.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 41; high non-ck-class <div> count: 15 |
 | 42 | `rcm_mc/ui/pressure_page.py` | 83 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 7; high non-ck-class <div> count: 13 |
 | 42 | `rcm_mc/ui/regulatory_calendar_page.py` | 973 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); high inline-style count: 46; high non-ck-class <div> count: 99 |
 | 42 | `rcm_mc/ui/surrogate_page.py` | 56 | 0 (0.0/100) | low ck_* primitive density (0.0/100LOC); no italic-serif highlight (chartis cadence missing); high inline-style count: 13 |

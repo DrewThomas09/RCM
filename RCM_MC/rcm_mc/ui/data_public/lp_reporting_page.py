@@ -190,10 +190,10 @@ def render_lp_reporting(params: dict = None) -> str:
 
     top_quartile = sum(1 for f in r.funds if f.quartile == "top quartile")
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">LP Reporting Dashboard</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{_html.escape(r.reporting_quarter)} · {r.fund_count} active funds · ${r.total_aum_mm:,.0f}M AUM · blended {r.blended_tvpi:.2f}x TVPI — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">LP Reporting Dashboard</h1>
+    <p class="ck-page-sub">{_html.escape(r.reporting_quarter)} · {r.fund_count} active funds · ${r.total_aum_mm:,.0f}M AUM · blended {r.blended_tvpi:.2f}x TVPI — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Fund-Level Performance Summary</div>{f_tbl}</div>

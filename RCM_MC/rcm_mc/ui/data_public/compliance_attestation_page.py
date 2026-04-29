@@ -233,10 +233,10 @@ def render_compliance_attestation(params: dict = None) -> str:
     total_incident_cost = sum(i.cost_m for i in r.incidents)
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Compliance Attestation / Security Posture Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_portcos} portcos · {r.soc2_type_ii_count} SOC 2 Type II · {r.hitrust_certified_count} HITRUST certified · avg {r.avg_posture_score:.2f}/10 posture · {r.audits_in_progress} audits in progress · {r.high_risk_vendors} vendors elevated risk — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Compliance Attestation / Security Posture Tracker</h1>
+    <p class="ck-page-sub">{r.total_portcos} portcos · {r.soc2_type_ii_count} SOC 2 Type II · {r.hitrust_certified_count} HITRUST certified · avg {r.avg_posture_score:.2f}/10 posture · {r.audits_in_progress} audits in progress · {r.high_risk_vendors} vendors elevated risk — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Attestation Status — SOC 2, HITRUST, HIPAA, PCI, ISO</div>{a_tbl}</div>

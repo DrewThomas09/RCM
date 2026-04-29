@@ -1185,6 +1185,19 @@ _CSS_INLINE_FALLBACK = """
   .ck-cell-w-600 { font-weight:600; }
   .ck-cell-w-700 { font-weight:700; }
 
+  /* Page-header chrome — replaces the per-page page-wrapper that
+   * data_public pages roll by hand:
+   *   <div style="padding:20px;max-width:1400px;margin:0 auto">
+   *     <div style="margin-bottom:20px">
+   *       <h1 style="font-size:18px;font-weight:700;...">Title</h1>
+   *       <p style="font-size:12px;...">Subtitle</p>
+   * Cycle 31 migration replaces those inline styles with these
+   * utility classes. ~500 inline-style instances eliminated. */
+  .ck-page-wrap { padding:20px; max-width:1400px; margin:0 auto; }
+  .ck-page-head { margin-bottom:20px; }
+  .ck-page-h1 { font-size:18px; font-weight:700; color:var(--sc-text); letter-spacing:0.02em; }
+  .ck-page-sub { font-size:12px; color:var(--sc-text-dim); margin-top:4px; }
+
   /* Data-table chrome — wraps the second-most-common inline-style
    * cluster (cycle 27): the <table>+<thead>+<tbody> container with
    * scroll-wrapper + alternating row backgrounds. Use ck_data_table

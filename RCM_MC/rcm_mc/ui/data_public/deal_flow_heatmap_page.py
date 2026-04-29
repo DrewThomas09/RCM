@@ -283,7 +283,7 @@ def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
     {min_filter_links}
   </div>
 
-  <div style="margin-bottom:20px">
+  <div class="ck-page-head">
     <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.1em;margin-bottom:8px;border-bottom:1px solid {P['border']};padding-bottom:4px">DEAL COUNT HEATMAP — DARKER = MORE ACTIVE</div>
     {legend}
     <div style="overflow-x:auto;background:{P['panel_alt']};border:1px solid {P['border']};padding:12px">
@@ -291,7 +291,7 @@ def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
     </div>
   </div>
 
-  <div style="margin-bottom:20px">
+  <div class="ck-page-head">
     <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.1em;margin-bottom:8px;border-bottom:1px solid {P['border']};padding-bottom:4px">MEDIAN MOIC HEATMAP — GREEN = STRONG RETURNS</div>
     {moic_legend}
     <div style="overflow-x:auto;background:{P['panel_alt']};border:1px solid {P['border']};padding:12px">

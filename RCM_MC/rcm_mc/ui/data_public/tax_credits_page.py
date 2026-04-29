@@ -201,10 +201,10 @@ def render_tax_credits(params: dict = None) -> str:
     pipeline_annual = sum(p.estimated_annual_benefit_m * (p.probability_pct / 100.0) for p in r.pipeline)
     qoz_deferred = sum(z.deferred_gain_m for z in r.opportunity_zones)
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Tax Credits / Incentives Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">${r.total_credits_gross_m:.1f}M gross federal credits · ${r.total_state_incentives_annual_m:.1f}M annual state incentives · ${r.total_annual_benefit_m:.1f}M total annual benefit · {r.total_deals} deals claiming · ${pipeline_annual:.1f}M probability-weighted pipeline — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Tax Credits / Incentives Tracker</h1>
+    <p class="ck-page-sub">${r.total_credits_gross_m:.1f}M gross federal credits · ${r.total_state_incentives_annual_m:.1f}M annual state incentives · ${r.total_annual_benefit_m:.1f}M total annual benefit · {r.total_deals} deals claiming · ${pipeline_annual:.1f}M probability-weighted pipeline — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Federal + State Tax Credits (Claimed)</div>{c_tbl}</div>

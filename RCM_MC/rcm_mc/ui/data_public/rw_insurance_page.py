@@ -201,10 +201,10 @@ def render_rw_insurance(params: dict = None) -> str:
     total_claimed = sum(c.claimed_amount_m for c in r.claims)
     spec_prem = sum(s.premium_m for s in r.specialty)
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">R&W Insurance / M&A Insurance Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_policies} active policies · ${r.total_tower_limit_m:,.1f}M total tower · ${r.total_premium_m:.1f}M premium · {r.weighted_avg_rate_pct * 100:.2f}% weighted rate · {r.weighted_avg_retention_pct * 100:.2f}% avg retention · {r.open_claims} open claims — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">R&W Insurance / M&A Insurance Tracker</h1>
+    <p class="ck-page-sub">{r.total_policies} active policies · ${r.total_tower_limit_m:,.1f}M total tower · ${r.total_premium_m:.1f}M premium · {r.weighted_avg_rate_pct * 100:.2f}% weighted rate · {r.weighted_avg_retention_pct * 100:.2f}% avg retention · {r.open_claims} open claims — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active R&W Policies</div>{p_tbl}</div>

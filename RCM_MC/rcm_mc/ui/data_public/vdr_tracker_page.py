@@ -227,10 +227,10 @@ def render_vdr_tracker(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">VDR / Diligence Request Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{_html.escape(r.deal_name)} · {r.days_since_vdr_open} days since VDR open · {r.total_requests} requests across {len(r.workstreams)} workstreams · {r.overdue_count} overdue · {r.material_findings_count} material findings — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">VDR / Diligence Request Tracker</h1>
+    <p class="ck-page-sub">{_html.escape(r.deal_name)} · {r.days_since_vdr_open} days since VDR open · {r.total_requests} requests across {len(r.workstreams)} workstreams · {r.overdue_count} overdue · {r.material_findings_count} material findings — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Workstream Completion Summary</div>{ws_tbl}</div>

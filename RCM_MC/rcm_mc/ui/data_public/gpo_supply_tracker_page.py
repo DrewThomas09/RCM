@@ -211,10 +211,10 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
     bulk_incremental = sum(b.incremental_savings_m for b in r.bulk_buys)
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">GPO / Supply Chain Savings Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">${r.total_annual_spend_m:,.1f}M annual supply-chain spend across {r.portfolio_deals_covered} deals · ${r.total_realized_savings_m:.1f}M net savings ({r.average_savings_rate_pct * 100:.1f}% rate) · ${r.total_rebates_m:.1f}M rebate capture · {r.contracts_active} active contracts — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">GPO / Supply Chain Savings Tracker</h1>
+    <p class="ck-page-sub">${r.total_annual_spend_m:,.1f}M annual supply-chain spend across {r.portfolio_deals_covered} deals · ${r.total_realized_savings_m:.1f}M net savings ({r.average_savings_rate_pct * 100:.1f}% rate) · ${r.total_rebates_m:.1f}M rebate capture · {r.contracts_active} active contracts — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">GPO Affiliations — Scale, Savings, Rebates</div>{a_tbl}</div>

@@ -214,10 +214,10 @@ def render_pmi_integration(params: dict = None) -> str:
     high_risk = sum(1 for risk in r.risks if risk.severity == "high")
     late_milestones = sum(1 for m in r.milestones if m.variance_days > 0)
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">PMI / Post-Merger Integration Scorecard</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_integrations} active integrations · ${r.total_synergy_target_m:.1f}M synergy target · ${r.total_synergy_realized_m:.1f}M realized ({r.weighted_realization_pct * 100:.0f}%) · ${r.total_integration_cost_m:.1f}M integration cost · {r.on_track_count}/{r.total_integrations} on track — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">PMI / Post-Merger Integration Scorecard</h1>
+    <p class="ck-page-sub">{r.total_integrations} active integrations · ${r.total_synergy_target_m:.1f}M synergy target · ${r.total_synergy_realized_m:.1f}M realized ({r.weighted_realization_pct * 100:.0f}%) · ${r.total_integration_cost_m:.1f}M integration cost · {r.on_track_count}/{r.total_integrations} on track — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Integration Deals — Synergy Realization</div>{d_tbl}</div>

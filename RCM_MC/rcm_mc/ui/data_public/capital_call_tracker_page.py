@@ -209,10 +209,10 @@ def render_capital_call_tracker(params: dict = None) -> str:
     pending_reports = sum(1 for r2 in r.reporting if r2.completion_status not in ("distributed",))
     active_requests = sum(1 for c in r.lp_comms if c.status in ("in progress", "discussing", "in review"))
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Capital Call / LP Communication Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_funds} active funds · ${r.total_committed_b:.2f}B committed · ${r.total_called_b:.2f}B called · ${r.total_distributed_b:.2f}B distributed · LTM net ${r.net_ltm_m:+,.1f}M · {pending_reports} reports pending · {active_requests} LP requests active — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Capital Call / LP Communication Tracker</h1>
+    <p class="ck-page-sub">{r.total_funds} active funds · ${r.total_committed_b:.2f}B committed · ${r.total_called_b:.2f}B called · ${r.total_distributed_b:.2f}B distributed · LTM net ${r.net_ltm_m:+,.1f}M · {pending_reports} reports pending · {active_requests} LP requests active — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Fund Cashflow Roll-up</div>{cf_tbl}</div>

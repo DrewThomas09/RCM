@@ -226,7 +226,7 @@ def render_corpus_coverage() -> str:
   {trust_panel}
   {kpi_strip}
 
-  <div style="margin-bottom:20px">
+  <div class="ck-page-head">
     <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.1em;margin-bottom:8px;border-bottom:1px solid {P['border']};padding-bottom:4px">
       FIELD COVERAGE RATES — {n:,} DEALS
     </div>

@@ -183,10 +183,10 @@ def render_digital_front_door(params: dict = None) -> str:
 
     total_th_rev = sum(t.telehealth_revenue_m for t in r.telehealth)
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Digital Front Door / Patient Experience Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_portcos} portcos · {r.weighted_portal_adoption_pct * 100:.1f}% active portal · avg NPS +{r.avg_nps} · {r.avg_google_rating:.2f}★ Google · {r.total_telehealth_visits_monthly_k:,}K monthly telehealth visits · ${total_th_rev:.1f}M telehealth revenue — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Digital Front Door / Patient Experience Tracker</h1>
+    <p class="ck-page-sub">{r.total_portcos} portcos · {r.weighted_portal_adoption_pct * 100:.1f}% active portal · avg NPS +{r.avg_nps} · {r.avg_google_rating:.2f}★ Google · {r.total_telehealth_visits_monthly_k:,}K monthly telehealth visits · ${total_th_rev:.1f}M telehealth revenue — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Digital Channel Adoption</div>{a_tbl}</div>

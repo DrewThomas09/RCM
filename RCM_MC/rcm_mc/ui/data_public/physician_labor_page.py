@@ -153,10 +153,10 @@ def render_physician_labor(params: dict = None) -> str:
 
     total_shortage_2030 = sum(s.projected_2030_shortage for s in r.specialties)
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Physician Labor Market Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">Supply/demand by specialty · wage inflation · NP/PA extender economics · burnout index · geographic HPSA mapping — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Physician Labor Market Tracker</h1>
+    <p class="ck-page-sub">Supply/demand by specialty · wage inflation · NP/PA extender economics · burnout index · geographic HPSA mapping — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Specialty-Level Supply/Demand &amp; 2030 Shortage Projection</div>{s_tbl}</div>
