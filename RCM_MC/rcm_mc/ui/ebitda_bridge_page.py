@@ -18,7 +18,10 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
 from .provenance import build_provenance_graph
@@ -576,24 +579,43 @@ def render_ebitda_bridge(
 
     # ── KPI Cards ──
     ebitda_color = _color_for_value(bridge["total_ebitda_impact"])
+    # Cycle 52 — port to ck_kpi_block + provenance.
+    uplift_value = ck_provenance_tooltip(
+        "RCM EBITDA uplift",
+        f'<span style="color:{ebitda_color};">+{_fm(bridge["total_ebitda_impact"])}</span>',
+        explainer=(
+            f"Sum of EBITDA deltas across the 7-lever bridge "
+            f"(denials, AR, write-offs, RCM operations, etc.). "
+            f"+{bridge['margin_improvement_bps']:.0f}bps margin "
+            f"improvement on net revenue. Pro forma EBITDA "
+            f"reflects this uplift."
+        ),
+    )
+    bps_value = ck_provenance_tooltip(
+        "Margin improvement",
+        f"+{bridge['margin_improvement_bps']:.0f}bps",
+        explainer=(
+            "EBITDA margin lift from current to pro-forma. The "
+            "bridge below decomposes by lever; each lever has a "
+            "confidence band based on whether the data came "
+            "from the seller's filings or from the platform's "
+            "ML predictor."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(rev)}</div>'
-        f'<div class="cad-kpi-label">Net Revenue {source_tag(Source.HCRIS, "FY2022")}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(bridge["current_ebitda"])}</div>'
-        f'<div class="cad-kpi-label">Current EBITDA {source_tag(Source.COMPUTED)}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{ebitda_color};">'
-        f'+{_fm(bridge["total_ebitda_impact"])}</div>'
-        f'<div class="cad-kpi-label">RCM EBITDA Uplift</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-        f'{_fm(bridge["new_ebitda"])}</div>'
-        f'<div class="cad-kpi-label">Pro Forma EBITDA</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'+{bridge["margin_improvement_bps"]:.0f}bps</div>'
-        f'<div class="cad-kpi-label">Margin Improvement</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(bridge["total_wc_released"])}</div>'
-        f'<div class="cad-kpi-label">WC Released (1x)</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
+        + ck_kpi_block("Net Revenue", _fm(rev),
+                       f"HCRIS FY2022 {source_tag(Source.HCRIS, 'FY2022')}")
+        + ck_kpi_block("Current EBITDA", _fm(bridge["current_ebitda"]),
+                       f"computed {source_tag(Source.COMPUTED)}")
+        + ck_kpi_block("RCM Uplift", uplift_value, "7-lever bridge")
+        + ck_kpi_block("Pro Forma EBITDA", f'<span style="color:var(--cad-pos);">{_fm(bridge["new_ebitda"])}</span>',
+                       "post-RCM")
+        + ck_kpi_block("Margin Improvement", bps_value, "of net revenue")
+        + ck_kpi_block("WC Released", _fm(bridge["total_wc_released"]),
+                       "1x cash benefit")
+        + '</div>'
     )
 
     # ── Waterfall (CSS bars) ──
@@ -1060,4 +1082,16 @@ def render_ebitda_bridge(
             f"Pro Forma {_fm(bridge['new_ebitda'])} "
             f"(+{_fm(bridge['total_ebitda_impact'])})"
         ),
+        editorial_intro={
+            "eyebrow": "EBITDA BRIDGE",
+            "headline": "Where the value creation comes from.",
+            "italic_word": "from",
+            "body": (
+                "7-lever EBITDA decomposition: denials, AR, "
+                "write-offs, RCM operations, payer mix, and "
+                "structural levers. Each lever cites the data "
+                "source and a confidence band so the partner "
+                "knows what's hard signal vs. ML estimate."
+            ),
+        },
     )

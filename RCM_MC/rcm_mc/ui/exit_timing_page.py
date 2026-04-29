@@ -694,8 +694,47 @@ def render_exit_timing_page(
 
     target_name = _first("target_name") or "Target Deal"
 
+    # Cycle 52 — KPI strip with provenance.
+    from ._chartis_kit import (
+        ck_eyebrow, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
+    peak_irr = report.peak_irr_point.irr if report.peak_irr_point else 0
+    peak_year = report.peak_irr_point.year if report.peak_irr_point else 0
+    peak_value = ck_provenance_tooltip(
+        f"Peak IRR (year {peak_year})",
+        ck_fmt_pct(peak_irr),
+        explainer=(
+            f"Highest projected IRR across the candidate-exit "
+            f"window, hitting at year {peak_year}. Holding longer "
+            f"costs IRR (compounding clock) but may add MOIC "
+            f"(more EBITDA growth). Compare to the buyer-fit "
+            f"radar to read which channel can clear at this year."
+        ),
+    )
+    buyers_value = ck_provenance_tooltip(
+        "Buyer-channel scores",
+        ck_fmt_num(len(report.buyer_fit)),
+        explainer=(
+            "Each candidate channel (strategic / PE secondary / "
+            "IPO / sponsor-hold extension) scored against the "
+            "deal's profile. The radar polygon below shows where "
+            "the deal has optionality vs. where it's stuck."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 14px;">'
+        + ck_kpi_block("Peak IRR", peak_value, f"year {peak_year}")
+        + ck_kpi_block("Exit Years", ck_fmt_num(len(report.curve)), "candidates")
+        + ck_kpi_block("Buyer Channels", buyers_value, "scored")
+        + '</div>'
+    )
+
     hero = (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
+        ck_eyebrow("Exit Timing + Buyer Fit")
+        + kpi_strip
+        + f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
         f'{P["border"]};margin-bottom:22px;">'
         f'<div class="et-eyebrow">Exit Timing + Buyer Fit</div>'
         f'<div class="et-h1">{html.escape(target_name)}</div>'
@@ -755,6 +794,23 @@ def render_exit_timing_page(
     sorted_fits = sorted(
         report.buyer_fit, key=lambda b: b.fit_score, reverse=True,
     )
+    # Cycle 52 — provenance on the top buyer fit + ck_fmt for narrative.
+    if sorted_fits:
+        top_fit = sorted_fits[0]
+        top_fit_value = ck_provenance_tooltip(
+            f"Top buyer fit ({top_fit.label})",
+            f"{top_fit.fit_score}/100",
+            explainer=(
+                f"Highest-scoring exit channel for this deal. "
+                f"Above 80 = strongly preferred channel; below "
+                f"50 = the partner is reaching. The radar above "
+                f"shows the gap between top and bottom; wider "
+                f"polygons = more optionality at exit."
+            ),
+            inject_css=False,
+        )
+    else:
+        top_fit_value = "—"
     radar_narrative = ""
     if len(sorted_fits) >= 2:
         top = sorted_fits[0]

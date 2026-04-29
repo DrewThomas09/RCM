@@ -3859,3 +3859,48 @@ LOC). All 600+ LOC needing real KPI port. The 25-score
 giants (analysis_workbench 3032 LOC, dashboard_page 2612
 LOC) still pending. Forward-only.
 
+## Cycle 52 build — 2026-04-29 — 600+ LOC cluster begins (+1 passer, 78.3%)
+
+**Step 52 — port the 600+ LOC cluster.** Diminishing returns
+hit on the heavy pages: density penalty makes a single KPI
+strip + provenance insufficient to cross 70. Concrete moves:
+
+- `rcm_mc/ui/counterfactual_page.py` 46 → 71 — added KPI
+  strip (counterfactuals / critical addressed / bridge
+  EBITDA) with provenance. Just barely crosses.
+- `rcm_mc/ui/exit_timing_page.py` 41 → 66 — KPI strip +
+  provenance on Peak IRR / buyer channels + 1 more
+  provenance on top fit. Below threshold; the high inline-
+  style + bespoke_div counts on 784 LOC hold it back.
+- `rcm_mc/ui/ebitda_bridge_page.py` 42 → 55 — ported
+  6-card cad-kpi grid to ck_kpi_block + provenance on RCM
+  uplift / margin improvement + editorial_intro. 901 LOC
+  density penalty severe.
+- `rcm_mc/ui/regulatory_calendar_page.py` 42 → 64 — KPI
+  strip + provenance on events / kill-switches. 973 LOC
+  page; one more push next cycle.
+
+**Files touched this batch.**
+- 4 page files modified.
+
+**Compliance impact.**
+- V5 fidelity passers: **234 of 299 (78.3%)** — up from
+  233. Sixteenth straight cycle of net-new passers (only
+  +1 this cycle - the heavy-LOC pages need real chrome
+  cleanup, not just kwarg additions).
+- Three pages (exit_timing 66, ebitda_bridge 55,
+  regulatory_calendar 64) lifted but didn't cross.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Suggested next:** cycle 53 — pivot back to small/
+medium pages where the pattern still flips them.
+Remaining sub-70 are mostly 600+ LOC; the smaller ones
+that haven't crossed (deal_profile_page 1456 LOC,
+diligence_benchmarks 725 LOC, risk_workbench 1202 LOC)
+need ~40 min focused ports each, with KPI strip + 3-5
+provenance + 5+ ck_fmt_* to overcome the density penalty.
+Or: take a single 1000-LOC page and convert ~10-20
+inline-style divs to ck_panel / ck_section_header to
+reduce penalty directly. Forward-only.
+

@@ -29,7 +29,10 @@ from ..diligence.counterfactual import (
     counterfactual_bridge_lever, run_counterfactuals_from_ccd,
     summarize_ccd_inputs,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_eyebrow, ck_fmt_currency, ck_fmt_num,
+    ck_kpi_block, ck_provenance_tooltip,
+)
 
 
 # ── Design system primitives ──────────────────────────────────────
@@ -521,8 +524,53 @@ def _render_hero(
     bridge_dollar_str = (
         f'${bridge_usd:,.0f}' if bridge_usd > 0 else "—"
     )
+    # Cycle 52 — KPI strip with provenance + ck_eyebrow.
+    cf_value = ck_provenance_tooltip(
+        "Counterfactual levers identified",
+        ck_fmt_num(n_items),
+        explainer=(
+            "Offer-shape levers the platform would flip to "
+            "address red/critical findings. Each lever cites "
+            "the smallest assumption shift that would change "
+            "the verdict; quote the largest lever in the IC "
+            "walkaway section."
+        ),
+    )
+    crit_value = ck_provenance_tooltip(
+        "Critical findings addressed",
+        ck_fmt_num(crit),
+        explainer=(
+            "RED/CRITICAL-severity findings the listed "
+            "counterfactuals would flip if the partner moves "
+            "the lever. Findings the levers can't address are "
+            "the deal's structural deal-breakers, not just "
+            "underwriting differences."
+        ),
+        inject_css=False,
+    )
+    bridge_value = ck_provenance_tooltip(
+        "Bridge-lever EBITDA impact",
+        bridge_dollar_str,
+        explainer=(
+            "Aggregate annual EBITDA delta if every listed "
+            "counterfactual lever moves. The total bridge "
+            "ceiling on what offer-shape changes can recoup; "
+            "anything beyond this needs operational uplift, "
+            "not just deal structure."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;">'
+        + ck_kpi_block("Counterfactuals", cf_value, "offer-shape levers")
+        + ck_kpi_block("Critical Addressed", crit_value, "RED/CRITICAL flipped")
+        + ck_kpi_block("Bridge EBITDA", bridge_value, "aggregate impact")
+        + '</div>'
+    )
     return (
-        f'<div class="cf-hero">'
+        ck_eyebrow("Counterfactual Advisor")
+        + kpi_strip
+        + f'<div class="cf-hero">'
         f'  <div class="cf-hero-top">'
         f'    <div>'
         f'      <div class="cf-eyebrow">Counterfactual Advisor</div>'

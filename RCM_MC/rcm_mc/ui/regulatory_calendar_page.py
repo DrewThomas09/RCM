@@ -28,7 +28,10 @@ from ..diligence.regulatory_calendar.impact_mapper import (
 from ..diligence.regulatory_calendar.killswitch import (
     DriverKillTimeline, EbitdaOverlay,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import (
+    P, chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
     export_json_panel, interpret_callout, provenance, sortable_table,
@@ -950,8 +953,45 @@ def render_regulatory_calendar_page(
 
     target_name = target.get("target_name", "Target Deal")
 
+    # Cycle 52 — KPI strip with provenance.
+    n_kill = sum(1 for e in report.events if getattr(e, "verdict", "") == "KILL")
+    n_dmg = sum(1 for e in report.events if getattr(e, "verdict", "") == "DAMAGE")
+    events_value = ck_provenance_tooltip(
+        "Regulatory events scanned",
+        ck_fmt_num(len(report.events)),
+        explainer=(
+            f"Calendar dates within the {horizon}-month horizon "
+            f"with material impact on at least one thesis driver. "
+            f"Each event carries a KILL/DAMAGE/NEUTRAL verdict "
+            f"per driver based on the platform's policy-impact "
+            f"library."
+        ),
+    )
+    kill_value = ck_provenance_tooltip(
+        "Kill-switch events",
+        ck_fmt_num(n_kill),
+        explainer=(
+            "Events that would invalidate at least one thesis "
+            "driver if they land at the projected effective "
+            "date. The verdict card below names the worst-case "
+            "outcome - if a kill-switch fires, the underwriting "
+            "needs full re-examination."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 14px;">'
+        + ck_kpi_block("Events", events_value, f"in {horizon}m horizon")
+        + ck_kpi_block("Kill-switches", kill_value, "thesis-invalidating")
+        + ck_kpi_block("Damages", ck_fmt_num(n_dmg), "thesis-impairing")
+        + ck_kpi_block("Drivers Tracked", ck_fmt_num(len(report.driver_timelines)), "thesis components")
+        + '</div>'
+    )
+
     hero = (
-        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
+        ck_eyebrow("Regulatory Calendar")
+        + kpi_strip
+        + f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
         f'{P["border"]};margin-bottom:22px;">'
         f'<div class="rc-eyebrow">Regulatory Calendar × Kill-Switch</div>'
         f'<div class="rc-h1">{html.escape(target_name)}</div>'
