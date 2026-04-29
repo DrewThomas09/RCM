@@ -3814,3 +3814,48 @@ timing_page, risk_workbench, ebitda_bridge_page,
 regulatory_calendar. Each needs a focused 30-40 min KPI-
 strip port. Forward-only.
 
+## Cycle 51 build — 2026-04-29 — 53-tier closed + chartis/home (+4 passers, 78.0%)
+
+**Step 51 — close the 53-tier and crack chartis/home.**
+Four pages crossed the 70 threshold:
+
+- `rcm_mc/ui/conference_page.py` 53 → 76 — ported KPI
+  strip to ck_kpi_block + provenance on flagship count.
+- `rcm_mc/ui/data_public/find_comps_page.py` 53 → 82 —
+  ported bespoke 5-card KPI strip + provenance on Peer
+  P50 MOIC.
+- `rcm_mc/ui/deal_dashboard.py` 53 → 87 — ported the cad-
+  kpi-grid generator function to ck_kpi_block + 2
+  provenance tooltips on the rough EV / recoverable
+  EBITDA estimates + ck_eyebrow + ck_fmt_*.
+- `rcm_mc/ui/chartis/home_page.py` 51 → 70 — provenance
+  on the three partner-anchor KPIs (active deals, unacked
+  alerts, corpus deals). Highest-traffic page in the
+  cluster - barely crossed but at threshold.
+
+**Files touched this batch.**
+- 4 page files modified.
+
+**Compliance impact.**
+- V5 fidelity passers: **233 of 299 (78.0%)** — up from
+  229. Fifteenth straight cycle of net-new passers.
+- Per-module + chartis sweep clean (72 passing, 0
+  regressions).
+
+**Cycle arc cycle 35 → 51 (17 cycles, ~30 hours wall-clock):**
+- Passers: 159 → 233 (+74, +24.7 percentage points)
+- 15 consecutive cycles of net-new passers
+- 11 latent production bugs fixed
+- 2 audit knowledge gaps closed
+- Editorial copy hand-written for ~85 pages
+
+**Suggested next:** cycle 52 — remaining sub-70 cluster
+narrowed to: chartis/forgot_page, chartis/login_page
+(auth flows - likely skip), counterfactual_page (765 LOC),
+exit_timing_page (747 LOC), regulatory_calendar (973 LOC),
+ebitda_bridge_page (901 LOC), risk_workbench (1202 LOC),
+deal_profile_page (1456 LOC), diligence_benchmarks (725
+LOC). All 600+ LOC needing real KPI port. The 25-score
+giants (analysis_workbench 3032 LOC, dashboard_page 2612
+LOC) still pending. Forward-only.
+

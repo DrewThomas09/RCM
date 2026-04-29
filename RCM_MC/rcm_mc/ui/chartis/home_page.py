@@ -460,6 +460,7 @@ def _corpus_insights() -> str:
 
 
 def _kpi_strip(store: Any, db_path: str) -> str:
+    from .._chartis_kit import ck_fmt_num, ck_provenance_tooltip
     try:
         deals = store.list_deals()
         rows = deals.to_dict("records") if hasattr(deals, "to_dict") else list(deals or [])
@@ -475,10 +476,44 @@ def _kpi_strip(store: Any, db_path: str) -> str:
     except Exception:
         n_alerts = 0
     n_corpus = len(_load_all_seed_deals())
+
+    # Cycle 51 — provenance on the partner-anchor stats.
+    deals_value = ck_provenance_tooltip(
+        "Active deals",
+        ck_fmt_num(n_deals),
+        explainer=(
+            "Non-archived deals in this fund's working set. "
+            "These are the deals the partner is responsible "
+            "for moving forward; archived deals are visible via "
+            "the portfolio explorer."
+        ),
+    )
+    alerts_value = ck_provenance_tooltip(
+        "Unacked alerts",
+        ck_fmt_num(n_alerts),
+        explainer=(
+            "Open alerts across the portfolio that haven't been "
+            "acknowledged or snoozed. The /alerts page details "
+            "each one - covenant breaches, EBITDA misses, signal "
+            "clusters, stage regress."
+        ),
+        inject_css=False,
+    )
+    corpus_value = ck_provenance_tooltip(
+        "Corpus deals available",
+        ck_fmt_num(n_corpus),
+        explainer=(
+            "Realized PE-healthcare deals indexed in the corpus, "
+            "with disclosed financials. Each one a comparable "
+            "data point - the broader the corpus, the tighter "
+            "the percentile bands the platform reports against."
+        ),
+        inject_css=False,
+    )
     tiles = (
-        ck_kpi_block("Active Deals", f"{n_deals}", "in portfolio")
-        + ck_kpi_block("Unacked Alerts", f"{n_alerts}", "across portfolio")
-        + ck_kpi_block("Corpus Deals", f"{n_corpus}", "benchmarkable comps")
+        ck_kpi_block("Active Deals", deals_value, "in portfolio")
+        + ck_kpi_block("Unacked Alerts", alerts_value, "across portfolio")
+        + ck_kpi_block("Corpus Deals", corpus_value, "benchmarkable comps")
         + ck_kpi_block("PE Intel Modules", "278", "partner reflexes codified")
     )
     return f'<div class="ck-kpi-grid">{tiles}</div>'

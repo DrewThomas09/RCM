@@ -25,7 +25,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_moic, ck_fmt_num,
+    ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+)
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -257,14 +260,27 @@ def _benchmark_strip(comps: List[Dict], corpus: List[Dict]) -> str:
         ("PEER MULT P50",  f"{peer_mult_p50:.1f}×"   if peer_mult_p50 else "—", P["text"]),
     ]
 
-    items = "".join(
-        f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:7px 12px">'
-        f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:2px">{lbl}</div>'
-        f'<div style="font-size:14px;font-family:{_MONO};color:{col};font-variant-numeric:tabular-nums">{val}</div>'
-        f'</div>'
-        for lbl, val, col in kpis
+    # Cycle 51 — port to ck_kpi_block + provenance on the anchor stat.
+    peer_moic_value = ck_provenance_tooltip(
+        "Peer P50 MOIC",
+        ck_fmt_moic(peer_moic_p50) if peer_moic_p50 else "—",
+        explainer=(
+            f"Median realized MOIC across the {len(comps)} "
+            f"matched comparables. Compare to corpus P50 "
+            f"({ck_fmt_moic(corp_moic_p50)}); when peer P50 is "
+            f"materially above corpus, the matched cluster has "
+            f"a structural edge worth understanding."
+        ),
     )
-    return f'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px">{items}{vs_corpus}</div>'
+    blocks = []
+    for lbl, val, _col in kpis:
+        if lbl == "PEER MOIC P50":
+            blocks.append(ck_kpi_block(lbl.title(), peer_moic_value))
+        elif lbl == "PEER COUNT":
+            blocks.append(ck_kpi_block(lbl.title(), ck_fmt_num(len(comps))))
+        else:
+            blocks.append(ck_kpi_block(lbl.title(), val))
+    return f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px;">{"".join(blocks)}{vs_corpus}</div>'
 
 
 def render_find_comps(params: Dict[str, str]) -> str:

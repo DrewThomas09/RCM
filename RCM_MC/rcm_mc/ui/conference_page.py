@@ -9,7 +9,9 @@ import html as _html
 import urllib.parse as _urlparse
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 CONFERENCES = [
@@ -367,16 +369,25 @@ def render_conference_roadmap(category: str = "all") -> str:
             f'<span class="cad-mono">{count}</span></div>'
         )
 
+    # Cycle 51 — port to ck_kpi_block + provenance.
+    flagship_value = ck_provenance_tooltip(
+        "Flagship conferences",
+        ck_fmt_num(flagship_count),
+        explainer=(
+            "Conferences flagged as flagship by partner attendance "
+            "rules - JPM, HLTH, RBC, BarCap, KKR HC, etc. These "
+            "are the calendar anchors; secondary events are "
+            "attended only when a specific deal opportunity "
+            "warrants the trip."
+        ),
+    )
     summary = (
         f'<div class="cad-card" style="margin-bottom:12px;">'
         f'<h2 style="font-size:13px;margin-bottom:8px;">Event Summary</h2>'
-        f'<div class="cad-kpi-grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="font-size:20px;">{total}</div>'
-        f'<div class="cad-kpi-label">Total Events</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="font-size:20px;color:var(--cad-pos);">'
-        f'{flagship_count}</div>'
-        f'<div class="cad-kpi-label">Flagship</div></div>'
-        f'</div>'
+        f'<div class="ck-kpi-grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">'
+        + ck_kpi_block("Total Events", ck_fmt_num(total), "in roadmap")
+        + ck_kpi_block("Flagship", flagship_value, "must-attend")
+        + f'</div>'
         f'{cat_breakdown}</div>'
     )
 
