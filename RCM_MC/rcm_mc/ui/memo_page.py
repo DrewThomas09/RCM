@@ -79,7 +79,18 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
 
     return chartis_shell(body, f"IC Memo — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"{len(sections)} sections | {'AI-generated' if llm_used else 'Template-based'}")
+                    subtitle=f"{len(sections)} sections | {'AI-generated' if llm_used else 'Template-based'}",
+        editorial_intro={
+            "eyebrow": "IC MEMO",
+            "headline": "Where the deal earns its hour at IC.",
+            "italic_word": "earns",
+            "body": (
+                "Auto-assembled IC memo with thesis, comps, "
+                "exit, and bear case. Use as a draft anchor; "
+                "the partner adds judgment in the gaps the "
+                "platform can't reason about."
+            ),
+        })
 
 
 def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, Any]) -> str:
@@ -142,7 +153,18 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
 
     return chartis_shell(body, f"Validation — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"{'Valid' if is_valid else f'{len(issues)} issues'} | {len(warnings)} warnings | {fields} fields")
+                    subtitle=f"{'Valid' if is_valid else f'{len(issues)} issues'} | {len(warnings)} warnings | {fields} fields",
+        editorial_intro={
+            "eyebrow": "DEAL VALIDATION",
+            "headline": "Where the deal record fails its checks.",
+            "italic_word": "fails",
+            "body": (
+                "Hard validation issues + soft warnings against "
+                "the deal record. Issues block analysis runs; "
+                "warnings flag suspicious values that may "
+                "compromise the predictions."
+            ),
+        })
 
 
 def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[str, Any]) -> str:
@@ -198,4 +220,15 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
 
     return chartis_shell(body, f"Completeness — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Grade: {grade} | {pct:.0f}% coverage | {present}/{total} fields")
+                    subtitle=f"Grade: {grade} | {pct:.0f}% coverage | {present}/{total} fields",
+        editorial_intro={
+            "eyebrow": "DATA COMPLETENESS",
+            "headline": "Where the deal record has gaps.",
+            "italic_word": "gaps",
+            "body": (
+                "Field-by-field completeness against the canonical "
+                "data model. Lower grades mean the analyses below "
+                "lean more on Bayesian priors than observed data; "
+                "fix the gaps via the Data Request action."
+            ),
+        })
