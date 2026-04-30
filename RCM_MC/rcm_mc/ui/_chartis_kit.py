@@ -1394,6 +1394,40 @@ _CSS_INLINE_FALLBACK = """
 </style>
 """
 
+_CSRF_JS = """
+<script>
+/* CSRF token patcher — reads rcm_csrf cookie and:
+ *   1. Injects csrf_token hidden input into every POST form
+ *   2. Sets X-CSRF-Token header on every non-GET fetch()
+ * Without this, every "Acknowledge alert", "Save note", "Create deal",
+ * etc. fails silently with 403. Drop-in safe — harmless if cookie absent.
+ */
+(function(){
+  function c(n){var m=document.cookie.match(new RegExp('(?:^|; )'+n+'=([^;]*)'));
+    return m?decodeURIComponent(m[1]):null;}
+  document.addEventListener('submit',function(e){
+    var t=c('rcm_csrf');if(!t)return;
+    var f=e.target;if(!f||f.tagName!=='FORM')return;
+    if(f.method&&f.method.toLowerCase()!=='post')return;
+    var x=f.querySelector('input[name=csrf_token]');
+    if(!x){x=document.createElement('input');x.type='hidden';
+      x.name='csrf_token';f.appendChild(x);}
+    x.value=t;
+  },true);
+  var of=window.fetch;
+  if(of){window.fetch=function(u,o){
+    o=o||{};var t=c('rcm_csrf');
+    if(t&&o.method&&o.method.toUpperCase()!=='GET'){
+      o.headers=o.headers||{};
+      if(!o.headers['X-CSRF-Token'])o.headers['X-CSRF-Token']=t;
+    }
+    return of(u,o);
+  };}
+})();
+</script>
+"""
+
+
 _PALETTE_JS = """
 <script>
 (function(){
@@ -1604,6 +1638,7 @@ def chartis_shell(
         f"{chrome_html}"
         f'<main class="{main_class}">{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
+        f"{_CSRF_JS}"
         f"{_PALETTE_JS}"
         "</body></html>"
     )
