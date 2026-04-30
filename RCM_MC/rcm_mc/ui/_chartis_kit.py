@@ -1062,7 +1062,13 @@ def ck_provenance_tooltip(
             graph=graph, metric_key=metric_key,
             inject_css=inject_css,
         )
-    safe_value = _html.escape(value)
+    # Honour SafeHtml: callers that pass already-escaped markup (e.g.
+    # `<span class="mn neg">14.8%</span>`) shouldn't have it re-
+    # escaped into literal text on the page.
+    safe_value = (
+        str(value) if isinstance(value, SafeHtml)
+        else _html.escape(value)
+    )
     if not explainer:
         return SafeHtml(safe_value)
     safe_label = _html.escape(label)
@@ -1505,15 +1511,23 @@ _CSRF_JS = """
 
 _INTRO_DISMISS_JS = """
 <script>
-/* Editorial section-intro dismiss — × button in the corner hides the
- * block; the per-key flag persists in localStorage so a partner who
- * hides /app's intro doesn't see it again next visit. Different pages
- * have different keys (e.g. command-center vs pipeline) so dismissing
- * one doesn't blanket-hide the rest. */
+/* Editorial section-intro behaviour:
+ *   - Hidden by default. A partner only sees them when they opt into
+ *     "tutorial mode" via the user dropdown → "Tutorial intros".
+ *   - When tutorial mode IS on, the × button still dismisses an
+ *     individual intro per-page (writes ck-intro-dismissed:<key>).
+ *   - The global toggle is the localStorage flag `ck-intro-mode`;
+ *     value "on" shows intros, anything else hides them. */
 (function(){
+  var GLOBAL_KEY = 'ck-intro-mode';
   var STORAGE_PREFIX = 'ck-intro-dismissed:';
+  var enabled = (function(){
+    try { return localStorage.getItem(GLOBAL_KEY) === 'on'; }
+    catch (e) { return false; }
+  })();
   var intros = document.querySelectorAll('[data-ck-intro]');
   intros.forEach(function(el){
+    if (!enabled) { el.hidden = true; return; }
     var key = el.getAttribute('data-ck-intro');
     if (key && localStorage.getItem(STORAGE_PREFIX + key) === '1') {
       el.hidden = true;
@@ -1521,14 +1535,38 @@ _INTRO_DISMISS_JS = """
   });
   document.addEventListener('click', function(e){
     var btn = e.target.closest && e.target.closest('[data-ck-intro-dismiss]');
-    if (!btn) return;
-    var key = btn.getAttribute('data-ck-intro-dismiss');
-    var host = btn.closest('[data-ck-intro]');
-    if (host) host.hidden = true;
-    if (key) {
-      try { localStorage.setItem(STORAGE_PREFIX + key, '1'); } catch (e) {}
+    if (btn) {
+      var key = btn.getAttribute('data-ck-intro-dismiss');
+      var host = btn.closest('[data-ck-intro]');
+      if (host) host.hidden = true;
+      if (key) {
+        try { localStorage.setItem(STORAGE_PREFIX + key, '1'); } catch (e) {}
+      }
+      return;
+    }
+    var tog = e.target.closest && e.target.closest('[data-ck-intro-toggle]');
+    if (tog) {
+      e.preventDefault();
+      try {
+        var now = localStorage.getItem(GLOBAL_KEY) === 'on' ? 'off' : 'on';
+        localStorage.setItem(GLOBAL_KEY, now);
+        // Reflect in the menu label without a full reload
+        tog.textContent = (now === 'on'
+          ? 'Tutorial intros: on'
+          : 'Tutorial intros: off');
+        // Show / hide intros immediately
+        document.querySelectorAll('[data-ck-intro]').forEach(function(el){
+          el.hidden = (now !== 'on');
+        });
+      } catch (e) {}
     }
   });
+  /* On load, set the menu-item label to match current state. */
+  var label = document.querySelector('[data-ck-intro-toggle]');
+  if (label) {
+    label.textContent = enabled ? 'Tutorial intros: on'
+                                : 'Tutorial intros: off';
+  }
 })();
 </script>
 """
@@ -1700,6 +1738,9 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'
         '<a href="/admin" class="ck-user-dropdown-item">Admin</a>'
         '<a href="/audit" class="ck-user-dropdown-item">Audit Log</a>'
+        '<div class="ck-user-dropdown-divider"></div>'
+        '<button type="button" class="ck-user-dropdown-item" '
+        'data-ck-intro-toggle>Tutorial intros: off</button>'
         '<div class="ck-user-dropdown-divider"></div>'
         '<form action="/api/logout" method="post" class="ck-user-dropdown-form">'
         '<button type="submit" class="ck-user-dropdown-item ck-user-dropdown-logout">'

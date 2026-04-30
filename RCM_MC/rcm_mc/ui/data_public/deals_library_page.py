@@ -118,7 +118,7 @@ _COLUMNS = [
 
 def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     from rcm_mc.ui._chartis_kit import (
-        ck_kpi_block, ck_fmt_number, ck_provenance_tooltip,
+        ck_kpi_block, ck_fmt_number, ck_provenance_tooltip, SafeHtml,
     )
 
     total = len(deals)
@@ -128,7 +128,14 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     loss_count = sum(1 for m in moics if m < 1.0)
     sectors = len({d.get("sector") for d in deals if d.get("sector")})
 
-    p50_html = f"{ck_fmt_number(p50, precision=2)}x" if p50 else '<span class="faint">—</span>'
+    # Pre-built numeric markup for KPIs whose values include a class
+    # for tone (loss-rate red) or fallback (em-dash placeholder).
+    # SafeHtml marks the string as already-escaped so ck_kpi_block
+    # doesn't double-escape and render the tag as literal text.
+    p50_html = (
+        SafeHtml(f"{ck_fmt_number(p50, precision=2)}x") if p50
+        else SafeHtml('<span class="faint">—</span>')
+    )
     loss_pct = f"{loss_count/len(moics)*100:.1f}%" if moics else "—"
 
     # Cycle 34 — partner-grade explainers for the two values that
@@ -146,7 +153,7 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     )
     loss_explainer = ck_provenance_tooltip(
         "Loss Rate",
-        f'<span class="mn neg">{loss_pct}</span>',
+        SafeHtml(f'<span class="mn neg">{loss_pct}</span>'),
         explainer=(
             "Share of realized deals that returned less than 1.0× "
             "MOIC (capital impaired). Industry baseline for HC PE: "
@@ -158,11 +165,11 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
 
     return (
         f'<div class="ck-kpi-grid">'
-        + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', sub="in corpus")
-        + ck_kpi_block("Realized", f'<span class="mn">{len(realized)}</span>', sub=f"{len(realized)/total*100:.0f}% of corpus")
+        + ck_kpi_block("Total Deals", f"{total}", sub="in corpus")
+        + ck_kpi_block("Realized", f"{len(realized)}", sub=f"{len(realized)/total*100:.0f}% of corpus")
         + ck_kpi_block("Corpus P50 MOIC", p50_explainer, sub="realized deals")
         + ck_kpi_block("Loss Rate", loss_explainer, sub="MOIC < 1.0×")
-        + ck_kpi_block("Sectors", f'<span class="mn">{sectors}</span>', sub="covered")
+        + ck_kpi_block("Sectors", f"{sectors}", sub="covered")
         + '</div>'
     )
 
