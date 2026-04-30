@@ -1253,7 +1253,7 @@ _CSS_INLINE_FALLBACK = """
 
   /* Top bar — navy + white + teal accent rule, mirrors chartis.com */
   .ck-topbar { position:sticky; top:0; z-index:50; background:var(--sc-navy); border-bottom:2px solid var(--sc-teal); }
-  .ck-topbar-inner { display:flex; align-items:center; gap:var(--sc-s-6); padding:18px var(--sc-s-6); max-width:1440px; margin:0 auto; }
+  .ck-topbar-inner { display:flex; align-items:center; gap:var(--sc-s-6); padding:18px var(--sc-s-7); max-width:1720px; margin:0 auto; }
   .ck-wordmark { display:flex; align-items:center; gap:10px; font-family:var(--sc-serif); font-weight:500; font-size:19px; color:var(--sc-on-navy); letter-spacing:-0.005em; text-decoration:none; }
   .ck-wordmark em { font-style:italic; font-weight:400; color:var(--sc-teal-2); }
   .ck-wordmark-mark { width:28px; height:28px; border-radius:50%; background:transparent; border:1.5px solid var(--sc-on-navy); position:relative; flex-shrink:0; }
@@ -1285,11 +1285,11 @@ _CSS_INLINE_FALLBACK = """
    * second-level page (Alerts, Heatmap, Find Comps, etc.) without
    * landing on a section index first. */
   .ck-subnav { background:var(--sc-bone,#f5f1ea); border-bottom:1px solid var(--sc-rule); position:sticky; top:60px; z-index:40; }
-  .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px var(--sc-s-6); max-width:1440px; margin:0 auto; overflow-x:auto; }
+  .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px var(--sc-s-7); max-width:1720px; margin:0 auto; overflow-x:auto; }
   .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.04em; color:var(--sc-text-dim); text-decoration:none; padding:5px 10px; border-radius:2px; white-space:nowrap; transition:color 0.15s, background 0.15s; }
   .ck-subnav-link:hover { color:var(--sc-teal-ink); background:#fff; }
   .ck-subnav-link.active { color:var(--sc-navy); background:#fff; box-shadow:inset 0 -2px 0 var(--sc-teal); }
-  .ck-breadcrumbs { display:flex; gap:8px; padding:14px var(--sc-s-6); max-width:1440px; margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--sc-rule); }
+  .ck-breadcrumbs { display:flex; gap:8px; padding:14px var(--sc-s-7); max-width:1720px; margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--sc-rule); }
   .ck-breadcrumbs a { color:var(--sc-text-dim); text-decoration:none; }
   .ck-breadcrumbs a:hover { color:var(--sc-teal-ink); }
   .ck-breadcrumbs .sep { color:var(--sc-rule-2); }
@@ -1360,7 +1360,7 @@ _CSS_INLINE_FALLBACK = """
    * teal chevron. Sits in the page-header stack, between the KPI
    * strip (above) and the filter rail + table (below). */
   .ck-search-hero { position:relative; background:var(--sc-navy); color:var(--sc-on-navy); padding:48px 0 56px; margin:0 0 var(--sc-s-7); overflow:hidden; }
-  .ck-search-hero-inner { max-width:1280px; margin:0 auto; padding:0 var(--sc-s-7); display:flex; align-items:baseline; gap:var(--sc-s-7); }
+  .ck-search-hero-inner { max-width:1720px; margin:0 auto; padding:0 var(--sc-s-7); display:flex; align-items:baseline; gap:var(--sc-s-7); }
   .ck-search-hero-label { font-family:var(--sc-serif); font-size:36px; font-weight:400; font-style:italic; letter-spacing:-0.01em; color:var(--sc-on-navy); flex-shrink:0; }
   .ck-search-hero-form { flex:1; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--sc-on-navy-dim); padding-bottom:8px; transition:border-color 0.15s; }
   .ck-search-hero-form:focus-within { border-bottom-color:var(--sc-teal); }
@@ -1450,7 +1450,7 @@ _CSS_INLINE_FALLBACK = """
    *       <p style="font-size:12px;...">Subtitle</p>
    * Cycle 31 migration replaces those inline styles with these
    * utility classes. ~500 inline-style instances eliminated. */
-  .ck-page-wrap { padding:20px; max-width:1400px; margin:0 auto; }
+  .ck-page-wrap { padding:20px; max-width:1720px; margin:0 auto; }
   .ck-page-head { margin-bottom:20px; }
   .ck-page-h1 { font-size:18px; font-weight:700; color:var(--sc-text); letter-spacing:0.02em; }
   .ck-page-sub { font-size:12px; color:var(--sc-text-dim); margin-top:4px; }
@@ -1513,7 +1513,7 @@ _CSS_INLINE_FALLBACK = """
   .cp-route { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); }
 
   /* Main content frame */
-  .ck-main { padding:var(--sc-s-7) var(--sc-s-6); max-width:1440px; margin:0 auto; }
+  .ck-main { padding:var(--sc-s-7); max-width:1720px; margin:0 auto; }
 
   /* Print — for /memo/<id>, /ic-packet/<id> */
   @media print {
