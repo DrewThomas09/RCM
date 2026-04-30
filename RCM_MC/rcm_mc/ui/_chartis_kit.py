@@ -416,6 +416,10 @@ def ck_section_intro(
     If ``italic_word`` is provided it is wrapped in ``<em>`` inside the
     headline (case-insensitive substring match), reproducing the
     "Reasons to *believe* in better" cadence on chartis.com.
+
+    A small ``×`` close button in the corner hides the block; the
+    dismissal is persisted in ``localStorage`` keyed off the eyebrow
+    so it stays dismissed across page navigation.
     """
     h = _esc(headline)
     if italic_word:
@@ -427,8 +431,14 @@ def ck_section_intro(
     body_html = (
         f'<p class="ck-section-body">{_esc(body)}</p>' if body else ""
     )
+    # Stable per-section key so dismissals don't bleed across pages
+    # (a partner who hides /app's intro should still see /pipeline's).
+    dismiss_key = _esc(eyebrow.lower().replace(" ", "-"))
     return (
-        '<div class="ck-section-intro">'
+        f'<div class="ck-section-intro" data-ck-intro="{dismiss_key}">'
+        '<button type="button" class="ck-section-intro-dismiss" '
+        'aria-label="Hide section intro" '
+        f'data-ck-intro-dismiss="{dismiss_key}">&times;</button>'
         f'{ck_eyebrow(eyebrow, on_navy=on_navy)}'
         f'<h2>{h}</h2>'
         f'{body_html}'
@@ -1243,10 +1253,13 @@ _CSS_INLINE_FALLBACK = """
   .ck-eyebrow::before { content:''; display:inline-block; width:24px; height:2px; background:var(--sc-teal); }
   .ck-eyebrow.on-navy { color:var(--sc-on-navy-dim); }
   .ck-eyebrow.on-navy::before { background:var(--sc-teal); }
-  .ck-section-intro { margin:var(--sc-s-9) 0 var(--sc-s-7); }
-  .ck-section-intro h2 { font-family:var(--sc-serif); font-weight:400; font-size:clamp(28px, 3.4vw, 40px); line-height:1.1; letter-spacing:-0.015em; color:var(--sc-navy); margin:var(--sc-s-5) 0 0; max-width:24ch; }
+  .ck-section-intro { position:relative; margin:var(--sc-s-6) 0 var(--sc-s-5); padding-right:32px; }
+  .ck-section-intro h2 { font-family:var(--sc-serif); font-weight:400; font-size:clamp(20px, 2.2vw, 26px); line-height:1.2; letter-spacing:-0.01em; color:var(--sc-navy); margin:var(--sc-s-3) 0 0; max-width:32ch; }
   .ck-section-intro h2 em { font-style:italic; font-weight:400; color:var(--sc-teal-ink); }
-  .ck-section-intro .ck-section-body { font-family:var(--sc-serif); font-size:17px; line-height:1.6; color:var(--sc-text-dim); margin-top:var(--sc-s-5); max-width:54ch; }
+  .ck-section-intro .ck-section-body { font-family:var(--sc-serif); font-size:14px; line-height:1.55; color:var(--sc-text-dim); margin-top:var(--sc-s-3); max-width:64ch; }
+  .ck-section-intro-dismiss { position:absolute; top:0; right:0; width:24px; height:24px; padding:0; background:transparent; border:0; color:var(--sc-text-faint); font-size:20px; line-height:1; cursor:pointer; border-radius:50%; transition:color 0.12s, background 0.12s; }
+  .ck-section-intro-dismiss:hover { color:var(--sc-navy); background:var(--sc-bone,#ece6db); }
+  .ck-section-intro[hidden] { display:none !important; }
   .ck-arrow { display:inline-flex; align-items:center; gap:6px; font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-teal-ink); text-decoration:none; }
   .ck-arrow::after { content:'\\2197'; font-size:14px; line-height:1; }
   .ck-arrow:hover { color:var(--sc-navy); }
@@ -1485,6 +1498,37 @@ _CSRF_JS = """
     }
     return of(u,o);
   };}
+})();
+</script>
+"""
+
+
+_INTRO_DISMISS_JS = """
+<script>
+/* Editorial section-intro dismiss — × button in the corner hides the
+ * block; the per-key flag persists in localStorage so a partner who
+ * hides /app's intro doesn't see it again next visit. Different pages
+ * have different keys (e.g. command-center vs pipeline) so dismissing
+ * one doesn't blanket-hide the rest. */
+(function(){
+  var STORAGE_PREFIX = 'ck-intro-dismissed:';
+  var intros = document.querySelectorAll('[data-ck-intro]');
+  intros.forEach(function(el){
+    var key = el.getAttribute('data-ck-intro');
+    if (key && localStorage.getItem(STORAGE_PREFIX + key) === '1') {
+      el.hidden = true;
+    }
+  });
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('[data-ck-intro-dismiss]');
+    if (!btn) return;
+    var key = btn.getAttribute('data-ck-intro-dismiss');
+    var host = btn.closest('[data-ck-intro]');
+    if (host) host.hidden = true;
+    if (key) {
+      try { localStorage.setItem(STORAGE_PREFIX + key, '1'); } catch (e) {}
+    }
+  });
 })();
 </script>
 """
@@ -1819,6 +1863,7 @@ def chartis_shell(
         f"{palette_html}"
         f"{_CSRF_JS}"
         f"{_USER_MENU_JS}"
+        f"{_INTRO_DISMISS_JS}"
         f"{_PALETTE_JS}"
         "</body></html>"
     )
