@@ -747,6 +747,7 @@ def render_insights_page(
     extra_chips: Optional[Sequence[Mapping[str, str]]] = None,
     omit_auto_chips: Optional[Sequence[str]] = None,
     prelude_html: str = "",
+    prelude_position: str = "after",
 ) -> str:
     """Compose the chartis Insights triplet around a body of items.
 
@@ -887,11 +888,19 @@ def render_insights_page(
     )
 
     # ``prelude_html`` is full-width content the caller wants between
-    # the search hero and the rail layout (e.g. /library puts a KPI
-    # strip + page-explainer block there). Empty string when unused.
-    full_body = (
-        intro_html + search_hero + prelude_html + rail_layout
-    )
+    # the search hero and the rail layout (default) — e.g. a KPI
+    # strip + explainer card. Set ``prelude_position="before"`` to
+    # render it above the search bar instead, which makes the search
+    # feel like part of one continuous header that flows into the
+    # results table.
+    if prelude_position == "before":
+        full_body = (
+            intro_html + prelude_html + search_hero + rail_layout
+        )
+    else:
+        full_body = (
+            intro_html + search_hero + prelude_html + rail_layout
+        )
 
     return chartis_shell(
         full_body,
@@ -1309,16 +1318,24 @@ _CSS_INLINE_FALLBACK = """
 
   /* Search hero — navy panel + italic-serif label + circular submit
    * + teal chevron-cut bottom-right corner. Mirrors chartis.com/insights. */
-  .ck-search-hero { position:relative; background:var(--sc-navy); color:var(--sc-on-navy); padding:56px 0 64px; margin:0 0 var(--sc-s-9); overflow:hidden; }
-  .ck-search-hero-inner { max-width:1280px; margin:0 auto; padding:0 var(--sc-s-7); display:flex; align-items:baseline; gap:var(--sc-s-7); }
-  .ck-search-hero-label { font-family:var(--sc-serif); font-size:36px; font-weight:400; font-style:italic; letter-spacing:-0.01em; color:var(--sc-on-navy); flex-shrink:0; }
-  .ck-search-hero-form { flex:1; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--sc-on-navy-dim); padding-bottom:8px; transition:border-color 0.15s; }
-  .ck-search-hero-form:focus-within { border-bottom-color:var(--sc-teal); }
-  .ck-search-hero-input { flex:1; background:transparent; border:0; font-family:var(--sc-serif); font-size:22px; color:var(--sc-on-navy); padding:8px 0; outline:none; min-width:0; }
-  .ck-search-hero-input::placeholder { color:var(--sc-on-navy-faint); font-style:italic; }
-  .ck-search-hero-submit { background:transparent; border:1px solid var(--sc-on-navy-dim); border-radius:50%; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; color:var(--sc-on-navy); cursor:pointer; flex-shrink:0; transition:color 0.15s, border-color 0.15s; }
-  .ck-search-hero-submit:hover { color:var(--sc-teal); border-color:var(--sc-teal); }
-  .ck-search-hero-chevron { position:absolute; right:0; bottom:0; width:0; height:0; border-style:solid; border-width:0 0 64px 64px; border-color:transparent transparent var(--sc-teal) transparent; pointer-events:none; }
+  /* Search bar — slim integrated band that connects the page header
+   * (KPIs / chrome above) to the data area (filter rail + table) below.
+   * Replaced the prior 56/64px-padded full-bleed navy hero with a
+   * compact 18/20px white card sitting on the parchment, hairline
+   * border, teal focus underline. Reads as part of the table chrome,
+   * not as a standalone marketing hero. */
+  .ck-search-hero { position:relative; background:#fff; color:var(--sc-text); padding:0; margin:0 0 var(--sc-s-5); overflow:hidden; border:1px solid var(--sc-rule); border-radius:2px; box-shadow:var(--sc-shadow-1); }
+  .ck-search-hero-inner { max-width:none; margin:0; padding:14px 18px; display:flex; align-items:center; gap:14px; }
+  .ck-search-hero-label { font-family:var(--sc-mono); font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; font-style:normal; color:var(--sc-text-faint); flex-shrink:0; }
+  .ck-search-hero-form { flex:1; display:flex; align-items:center; gap:10px; border-bottom:1px solid transparent; padding-bottom:0; transition:border-color 0.15s; }
+  .ck-search-hero-form:focus-within { border-bottom-color:transparent; }
+  .ck-search-hero-input { flex:1; background:transparent; border:0; font-family:var(--sc-sans); font-size:14px; color:var(--sc-text); padding:6px 0; outline:none; min-width:0; }
+  .ck-search-hero-input::placeholder { color:var(--sc-text-faint); font-style:normal; }
+  .ck-search-hero-submit { background:transparent; border:1px solid var(--sc-rule); border-radius:50%; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--sc-text-dim); cursor:pointer; flex-shrink:0; transition:color 0.15s, border-color 0.15s, background 0.15s; }
+  .ck-search-hero-submit:hover { color:#fff; border-color:var(--sc-teal); background:var(--sc-teal); }
+  /* Decorative chevron from the prior hero — irrelevant on the slim
+   * white bar; collapse it to nothing so it doesn't bleed in. */
+  .ck-search-hero-chevron { display:none; }
 
   /* Filter sidebar — chartis.com/insights left rail. Eyebrow-style
    * group headers, radio/checkbox rows, progressive-disclosure More

@@ -295,7 +295,7 @@ def render_deals_library(
         body_html=table,
         title="Deals Library",
         active_nav="/library",
-        keyword_placeholder="Deal name, sponsor, sector…",
+        keyword_placeholder="Search deal name, sponsor, sector…",
         section_title="All healthcare PE transactions",
         section_eyebrow="DEAL CORPUS",
         intro={
@@ -308,13 +308,16 @@ def render_deals_library(
                 "regime, or MOIC bucket to assemble comparables."
             ),
         },
-        # Regime chip should label as Title-cased so the chip reads
-        # "Peak" not "peak"; MOIC bucket chips use the canonical
-        # bucket label ("2.0x – 3.0x") not the URL key ("2to3").
         chip_label_overrides={
             "regime": lambda v: v.title(),
             "moic_bucket": lambda v: _MOIC_BUCKETS.get(v, (v, None))[0],
         },
-        prelude_html=explainer + kpis,
-        subtitle=f"{len(rows):,} deals · {len({r['sector'] for r in rows})} sectors · sorted by {sort_by} {sort_dir}",
+        # KPIs are the page header — sit above the search bar so the
+        # partner reads corpus stats first, then the search/filter
+        # controls feel like part of one continuous header that flows
+        # into the results table. The methodology explainer lives in
+        # the dismissible intro, not the prelude — keeping the prelude
+        # tight to a single-row stat strip.
+        prelude_html=kpis,
+        prelude_position="before",
     )
