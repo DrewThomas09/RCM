@@ -11818,22 +11818,39 @@ class RCMHandler(BaseHTTPRequestHandler):
         ))
 
     def _route_watchlist(self) -> None:
-        """B111: list of starred deals with their latest metrics."""
+        """B111: list of starred deals with their latest metrics.
+
+        Editorial render: page title + KPI strip + clean cad-table
+        with full deal names (joined from the deals table). Replaces
+        the bare <h2>+raw <table> that read as visually unstyled
+        next to the rest of the editorial chrome.
+        """
         from .portfolio.portfolio_snapshots import latest_per_deal
         from .deals.watchlist import list_starred
+        from .ui._chartis_kit import ck_page_title, ck_kpi_block
         store = PortfolioStore(self.config.db_path)
         starred = list_starred(store)
+
+        title_html = ck_page_title(
+            "Watchlist",
+            eyebrow="PINNED DEALS",
+            meta="Click ★ on any deal page to add it here",
+        )
+
         if not starred:
             body = (
-                '<div class="card">'
-                '<p class="muted">No starred deals yet. Open any deal '
-                'and click the <strong>★ Star</strong> button to pin it '
-                'here for quick access.</p></div>'
+                f"{title_html}"
+                '<div class="cad-card" style="text-align:center;padding:48px 32px;">'
+                '<p style="font-family:var(--sc-serif,Georgia,serif);'
+                'font-size:15px;color:var(--sc-text-dim,#465366);max-width:48ch;'
+                'margin:0 auto;line-height:1.55;">'
+                'No starred deals yet. Open any deal and click the '
+                '<strong>★ Star</strong> button to pin it here for quick '
+                'access during diligence reviews.</p></div>'
             )
             self._send_html(shell(
                 body=body, title="Watchlist",
                 subtitle="Pinned deals",
-                back_href="/",
                 active_nav="/watchlist",
             ))
             return
@@ -11841,52 +11858,157 @@ class RCMHandler(BaseHTTPRequestHandler):
         df = latest_per_deal(store)
         df = df[df["deal_id"].isin(starred)].copy() if not df.empty else df
 
+        # Join friendly deal names so the table reads
+        # "Cypress Crossing Health" instead of slug "ccf".
+        name_map = {}
+        try:
+            with store.connect() as _con:
+                for r in _con.execute("SELECT deal_id, name FROM deals"):
+                    name_map[r["deal_id"]] = r["name"]
+        except Exception:
+            pass
+
         if df.empty:
-            body = (
-                f'<div class="card">'
-                f'<p class="muted">You have starred deals '
-                f'({", ".join(starred)}) but none have snapshots yet.</p>'
-                f'</div>'
+            missing_names = ", ".join(
+                html.escape(name_map.get(d, d)) for d in starred
             )
-        else:
-            # Preserve star order (most-recently starred first)
-            order_map = {d: i for i, d in enumerate(starred)}
-            df["_star_order"] = df["deal_id"].map(order_map)
-            df = df.sort_values("_star_order").drop(columns=["_star_order"])
-
-            def _fmt(v, pct=False):
-                if v is None or (isinstance(v, float) and v != v):
-                    return "—"
-                return f"{float(v)*100:.1f}%" if pct else f"{float(v):.2f}x"
-
-            rows = []
-            for _, r in df.iterrows():
-                did = str(r["deal_id"])
-                rows.append(
-                    f"<tr>"
-                    f"<td>★ <a href='/deal/{urllib.parse.quote(did)}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(did)}</a></td>"
-                    f"{_health_cell(store, did)}"
-                    f"<td>{html.escape(str(r.get('stage') or '—'))}</td>"
-                    f"<td>{html.escape(str(r.get('covenant_status') or '—'))}</td>"
-                    f"<td class='num'>{_fmt(r.get('moic'))}</td>"
-                    f"<td class='num'>{_fmt(r.get('irr'), pct=True)}</td>"
-                    f"</tr>"
-                )
             body = (
-                f'<div class="card">'
-                f'<h2>Watchlist ({len(df)})</h2>'
-                f'<table><thead><tr>'
-                f'<th>Deal</th><th>Health</th><th>Stage</th><th>Covenant</th>'
-                f'<th>MOIC</th><th>IRR</th>'
-                f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
+                f"{title_html}"
+                f'<div class="cad-card" style="padding:32px;">'
+                f'<p style="font-family:var(--sc-serif,Georgia,serif);'
+                f'font-size:15px;color:var(--sc-text-dim,#465366);">'
+                f'You have starred deals ({missing_names}) but none have '
+                f'snapshots yet. Open a deal and run a simulation to populate '
+                f'the watchlist.</p></div>'
             )
+            self._send_html(shell(
+                body=body, title="Watchlist",
+                subtitle="Pinned deals",
+                active_nav="/watchlist",
+            ))
+            return
+
+        # Preserve star order (most-recently starred first)
+        order_map = {d: i for i, d in enumerate(starred)}
+        df["_star_order"] = df["deal_id"].map(order_map)
+        df = df.sort_values("_star_order").drop(columns=["_star_order"])
+
+        def _fmt(v, pct=False):
+            if v is None or (isinstance(v, float) and v != v):
+                return "—"
+            return f"{float(v)*100:.1f}%" if pct else f"{float(v):.2f}x"
+
+        # KPI strip — at-a-glance summary of pinned-deal portfolio
+        moics = [r.get("moic") for _, r in df.iterrows() if r.get("moic") is not None]
+        irrs = [r.get("irr") for _, r in df.iterrows() if r.get("irr") is not None]
+        avg_moic = sum(moics) / len(moics) if moics else None
+        avg_irr = sum(irrs) / len(irrs) if irrs else None
+        cov_trips = sum(
+            1 for _, r in df.iterrows()
+            if str(r.get("covenant_status") or "").lower() == "tripped"
+        )
+        kpi_html = (
+            '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+            + ck_kpi_block("Pinned", f"{len(df)}", sub="deals on watchlist")
+            + ck_kpi_block(
+                "Avg MOIC",
+                f"{avg_moic:.2f}x" if avg_moic is not None else "—",
+                sub="across pinned",
+            )
+            + ck_kpi_block(
+                "Avg IRR",
+                f"{avg_irr*100:.1f}%" if avg_irr is not None else "—",
+                sub="across pinned",
+            )
+            + ck_kpi_block(
+                "Covenant Trips",
+                f"{cov_trips}",
+                sub="tripped status",
+            )
+            + '</div>'
+        )
+
+        rows = []
+        for _, r in df.iterrows():
+            did = str(r["deal_id"])
+            display_name = html.escape(name_map.get(did, did))
+            cov = str(r.get("covenant_status") or "")
+            cov_lower = cov.lower()
+            cov_color = (
+                "var(--sc-negative,#b5321e)" if cov_lower == "tripped"
+                else "var(--sc-warning,#b8732a)" if cov_lower == "tight"
+                else "var(--sc-positive,#0a8a5f)" if cov_lower in ("ok", "headroom")
+                else "var(--sc-text-faint,#7a8699)"
+            )
+            cov_html = (
+                f'<span style="color:{cov_color};font-weight:600;'
+                f'text-transform:uppercase;font-size:11px;'
+                f'letter-spacing:0.06em;">'
+                f'{html.escape(cov.upper() if cov else "—")}</span>'
+            )
+            stage = html.escape(str(r.get('stage') or '—').title())
+            rows.append(
+                f"<tr>"
+                f'<td><span style="color:var(--sc-warning,#b8732a);'
+                f'margin-right:8px;">★</span>'
+                f"<a href='/deal/{urllib.parse.quote(did)}' "
+                f'style="color:var(--sc-navy,#0b2341);font-weight:600;'
+                f'text-decoration:none;">{display_name}</a>'
+                f'<div style="font-family:var(--sc-mono,monospace);'
+                f'font-size:10.5px;color:var(--sc-text-faint,#7a8699);'
+                f'letter-spacing:0.06em;text-transform:uppercase;'
+                f'margin-top:2px;">{html.escape(did)}</div>'
+                f"</td>"
+                f"{_health_cell(store, did)}"
+                f"<td>{stage}</td>"
+                f"<td>{cov_html}</td>"
+                f"<td class='num' style='font-variant-numeric:tabular-nums;"
+                f"font-weight:600;'>{_fmt(r.get('moic'))}</td>"
+                f"<td class='num' style='font-variant-numeric:tabular-nums;"
+                f"font-weight:600;'>{_fmt(r.get('irr'), pct=True)}</td>"
+                f"</tr>"
+            )
+
+        table_css = (
+            '<style>'
+            '.ck-watchlist-table{width:100%;border-collapse:collapse;'
+            'font-family:var(--sc-sans,Inter,sans-serif);}'
+            '.ck-watchlist-table thead th{text-align:left;'
+            'font-family:var(--sc-mono,JetBrains Mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:var(--sc-text-dim,#465366);'
+            'padding:10px 14px;border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+            '.ck-watchlist-table thead th.r{text-align:right;}'
+            '.ck-watchlist-table tbody td{padding:14px;'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'font-size:13.5px;color:var(--sc-text,#1a2332);'
+            'vertical-align:middle;}'
+            '.ck-watchlist-table tbody tr:last-child td{border-bottom:0;}'
+            '.ck-watchlist-table tbody tr:hover td{'
+            'background:var(--sc-bone,#ece6db);}'
+            '.ck-watchlist-table .num{text-align:right;'
+            'font-family:var(--sc-mono,monospace);}'
+            '</style>'
+        )
+
+        body = (
+            f"{title_html}"
+            f"{kpi_html}"
+            f"{table_css}"
+            '<div class="cad-card" style="padding:0;overflow:hidden;">'
+            '<table class="ck-watchlist-table">'
+            '<thead><tr>'
+            '<th>Deal</th><th>Health</th><th>Stage</th>'
+            '<th>Covenant</th><th class="r">MOIC</th>'
+            '<th class="r">IRR</th>'
+            '</tr></thead>'
+            f'<tbody>{"".join(rows)}</tbody>'
+            '</table></div>'
+        )
 
         self._send_html(shell(
             body=body, title="Watchlist",
             subtitle="Pinned deals",
-            back_href="/",
             active_nav="/watchlist",
         ))
 
