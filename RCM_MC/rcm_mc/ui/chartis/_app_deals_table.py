@@ -87,8 +87,7 @@ def _row_html(
 
     return (
         f'<tr class="{cls}">'
-        f'<td>{a(f"<span class=\"id\">{_html.escape(deal_id)}</span>"
-               f"<span class=\"name\">{_html.escape(name)}</span>")}</td>'
+        f'<td>{a(f"<span class=\"name\">{_html.escape(name or deal_id)}</span>")}</td>'
         f'<td>{a(stage_pill(_STAGE_LABEL.get(stage, stage.title())))}</td>'
         f'<td class="r">{a(number_maybe(ev, format="ev"))}</td>'
         f'<td class="r">{a(number_maybe(moic, format="moic"))}</td>'

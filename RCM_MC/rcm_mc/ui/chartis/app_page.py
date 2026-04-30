@@ -105,6 +105,18 @@ def render_app_page(
         store, focused_deal_id,
     )
 
+    # Snapshots store deal_id but not display name; join the friendly
+    # name from the deals table so the deals-table cell shows
+    # "Cypress Crossing Health" instead of the 3-letter slug "ccf".
+    if not deals_df.empty and "name" not in deals_df.columns:
+        with store.connect() as _con:
+            _name_rows = _con.execute(
+                "SELECT deal_id, name FROM deals"
+            ).fetchall()
+        _name_map = {r["deal_id"]: r["name"] for r in _name_rows}
+        deals_df = deals_df.copy()
+        deals_df["name"] = deals_df["deal_id"].map(_name_map)
+
     # Resolve focused row from already-fetched deals_df — no extra query.
     focused_row = _resolve_focused_row(deals_df, focused_deal_id)
 

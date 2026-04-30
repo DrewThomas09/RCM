@@ -257,7 +257,7 @@ def render_command_center(
         deal_rows = ""
         for d in deals[:8]:
             did = _html.escape(d["deal_id"])
-            dname = _html.escape(str(d["name"])[:30])
+            dname = _html.escape(str(d["name"]))
             deal_rows += (
                 f'<tr>'
                 f'<td><a href="/deal/{did}" '
@@ -292,7 +292,7 @@ def render_command_center(
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
             f'<div style="display:flex;align-items:center;gap:10px;">'
             f'<h2 style="margin:0;">Active Deals ({len(deals)})</h2>'
-            f'<span class="cad-section-code">DLS</span></div>'
+            f'</div>'
             f'<a href="/portfolio/monitor" style="font-size:10.5px;font-family:var(--cad-mono);'
             f'letter-spacing:0.06em;text-transform:uppercase;color:var(--cad-link);'
             f'text-decoration:none;">Monitor &rarr;</a></div>'
