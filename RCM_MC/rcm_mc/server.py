@@ -11834,6 +11834,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 body=body, title="Watchlist",
                 subtitle="Pinned deals",
                 back_href="/",
+                active_nav="/watchlist",
             ))
             return
 
@@ -11886,6 +11887,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             body=body, title="Watchlist",
             subtitle="Pinned deals",
             back_href="/",
+            active_nav="/watchlist",
         ))
 
     def _route_notes_search(self) -> None:
@@ -12201,6 +12203,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             body=body, title="LP Update",
             subtitle=f"Portfolio snapshot · window {days} days",
             back_href="/",
+            active_nav="/lp-update",
         )
 
         if download:

@@ -306,4 +306,4 @@ def render_alerts(
         f"alert{'s' if len(alerts) != 1 else ''}"
         f"{f' · owner = {html.escape(owner_filter)}' if owner_filter else ''}"
     )
-    return chartis_shell(body, "Alerts", subtitle=subtitle)
+    return chartis_shell(body, "Alerts", active_nav="/alerts", subtitle=subtitle)

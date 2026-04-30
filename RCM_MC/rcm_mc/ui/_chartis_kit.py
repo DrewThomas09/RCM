@@ -133,6 +133,52 @@ _CORPUS_NAV = [
     {"label": "Portfolio", "href": "/portfolio", "key": "portfolio"},
 ]
 
+# Per-section sub-nav. Surfaces the most-clicked second-level pages
+# directly under the topbar so a partner doesn't have to drill into
+# section landing pages to find common surfaces.
+_SUB_NAV = {
+    "home": [
+        {"label": "Command Center",      "href": "/app"},
+        {"label": "My Dashboard",        "href": "/my/AT"},
+        {"label": "Alerts",              "href": "/alerts"},
+        {"label": "Escalations",         "href": "/escalations"},
+        {"label": "Watchlist",           "href": "/watchlist"},
+    ],
+    "pipeline": [
+        {"label": "Pipeline",            "href": "/pipeline"},
+        {"label": "Deal Sourcing",       "href": "/source"},
+        {"label": "Hospital Screener",   "href": "/screen"},
+        {"label": "Predictive Screener", "href": "/predictive-screener"},
+        {"label": "Find Comps",          "href": "/find-comps"},
+        {"label": "Conferences",         "href": "/conferences"},
+    ],
+    "library": [
+        {"label": "Deals Library",       "href": "/deals-library"},
+        {"label": "Methodology",         "href": "/methodology"},
+        {"label": "Metric Glossary",     "href": "/metric-glossary"},
+        {"label": "Data Catalog",        "href": "/data"},
+        {"label": "Comparables",         "href": "/comparables"},
+        {"label": "Market Rates",        "href": "/market-rates"},
+    ],
+    "research": [
+        {"label": "Research Hub",        "href": "/research"},
+        {"label": "Notes",               "href": "/notes"},
+        {"label": "Sector Momentum",     "href": "/sector-momentum"},
+        {"label": "IRR Dispersion",      "href": "/irr-dispersion"},
+        {"label": "Hold Analysis",       "href": "/hold-analysis"},
+        {"label": "Backtest",            "href": "/backtest"},
+    ],
+    "portfolio": [
+        {"label": "Portfolio",           "href": "/portfolio"},
+        {"label": "Portfolio Map",       "href": "/portfolio/map"},
+        {"label": "Heatmap",             "href": "/portfolio/heatmap"},
+        {"label": "Risk Scan",           "href": "/portfolio/risk-scan"},
+        {"label": "Alerts",              "href": "/alerts"},
+        {"label": "Escalations",         "href": "/escalations"},
+        {"label": "LP Update",           "href": "/lp-update"},
+    ],
+}
+
 # Legacy navigation kept for callers that haven't migrated.
 _LEGACY_NAV = [
     {"label": "Deals",        "href": "/deals",        "key": "deals"},
@@ -1170,7 +1216,26 @@ _CSS_INLINE_FALLBACK = """
   .ck-cta { display:inline-flex; align-items:center; gap:8px; font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-on-navy); border:1px solid var(--sc-on-navy); padding:8px 14px; border-radius:2px; text-decoration:none; transition:background 0.15s, color 0.15s; }
   .ck-cta:hover { background:var(--sc-teal); border-color:var(--sc-teal); color:var(--sc-navy); }
   .ck-cta-arrow { display:inline-block; width:10px; height:10px; }
-  .ck-user-chip { width:34px; height:34px; border-radius:50%; background:var(--sc-teal); color:var(--sc-navy); display:flex; align-items:center; justify-content:center; font-family:var(--sc-sans); font-weight:700; font-size:12px; letter-spacing:0.04em; cursor:pointer; }
+  .ck-user-chip { width:34px; height:34px; border-radius:50%; background:var(--sc-teal); color:var(--sc-navy); display:flex; align-items:center; justify-content:center; font-family:var(--sc-sans); font-weight:700; font-size:12px; letter-spacing:0.04em; cursor:pointer; border:0; padding:0; }
+  .ck-user-chip:hover { background:var(--sc-teal-2,var(--sc-teal)); }
+  .ck-search-form { margin:0; }
+  .ck-user-menu { position:relative; }
+  .ck-user-dropdown { position:absolute; top:calc(100% + 10px); right:0; min-width:200px; background:#fff; border:1px solid var(--sc-rule); box-shadow:var(--sc-shadow-2,0 8px 24px rgba(11,32,55,0.14)); border-radius:2px; padding:6px 0; z-index:60; }
+  .ck-user-dropdown[hidden] { display:none !important; }
+  .ck-user-dropdown-item { display:block; width:100%; text-align:left; padding:9px 16px; font-family:var(--sc-sans); font-size:13px; color:var(--sc-text); text-decoration:none; background:transparent; border:0; cursor:pointer; letter-spacing:0; text-transform:none; font-weight:500; }
+  .ck-user-dropdown-item:hover { background:var(--sc-bone,#f5f1ea); color:var(--sc-teal-ink); }
+  .ck-user-dropdown-divider { height:1px; background:var(--sc-rule); margin:4px 0; }
+  .ck-user-dropdown-form { margin:0; }
+  .ck-user-dropdown-logout { color:var(--sc-negative,#c0392b); }
+  /* Sub-nav rail — parchment strip with section pills, sits sticky
+   * just below the navy topbar. Lets a partner click into a common
+   * second-level page (Alerts, Heatmap, Find Comps, etc.) without
+   * landing on a section index first. */
+  .ck-subnav { background:var(--sc-bone,#f5f1ea); border-bottom:1px solid var(--sc-rule); position:sticky; top:60px; z-index:40; }
+  .ck-subnav-inner { display:flex; gap:var(--sc-s-5); align-items:center; padding:10px var(--sc-s-6); max-width:1440px; margin:0 auto; overflow-x:auto; }
+  .ck-subnav-link { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.04em; color:var(--sc-text-dim); text-decoration:none; padding:5px 10px; border-radius:2px; white-space:nowrap; transition:color 0.15s, background 0.15s; }
+  .ck-subnav-link:hover { color:var(--sc-teal-ink); background:#fff; }
+  .ck-subnav-link.active { color:var(--sc-navy); background:#fff; box-shadow:inset 0 -2px 0 var(--sc-teal); }
   .ck-breadcrumbs { display:flex; gap:8px; padding:14px var(--sc-s-6); max-width:1440px; margin:0 auto; font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--sc-rule); }
   .ck-breadcrumbs a { color:var(--sc-text-dim); text-decoration:none; }
   .ck-breadcrumbs a:hover { color:var(--sc-teal-ink); }
@@ -1428,6 +1493,34 @@ _CSRF_JS = """
 """
 
 
+_USER_MENU_JS = """
+<script>
+/* User dropdown — click chip to open, click-outside or Escape to close.
+ * Marks aria-expanded for screen readers. Drop-in safe; renders nothing
+ * if a page omits the chip entirely. */
+(function(){
+  var btn = document.querySelector('[data-ck-user-toggle]');
+  if (!btn) return;
+  var menu = btn.parentElement.querySelector('.ck-user-dropdown');
+  if (!menu) return;
+  function open(){ menu.hidden = false; btn.setAttribute('aria-expanded','true'); }
+  function close(){ menu.hidden = true; btn.setAttribute('aria-expanded','false'); }
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    if (menu.hidden) open(); else close();
+  });
+  document.addEventListener('click', function(e){
+    if (menu.hidden) return;
+    if (!menu.contains(e.target) && e.target !== btn) close();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !menu.hidden) close();
+  });
+})();
+</script>
+"""
+
+
 _PALETTE_JS = """
 <script>
 (function(){
@@ -1460,6 +1553,51 @@ _PALETTE_JS = """
 """
 
 
+# Map raw active_nav values (as passed by page renderers) to a sub-nav
+# section key. Keys can arrive as bare-key ("home"), leading-slash
+# ("/portfolio"), or a sub-path ("/portfolio/monitor", "/analysis").
+# Mapping is intentionally explicit so a typo doesn't silently route to
+# the wrong section.
+_SUB_SECTION_MAP = {
+    # bare keys
+    "home": "home", "pipeline": "pipeline", "library": "library",
+    "research": "research", "portfolio": "portfolio",
+    "alerts": "home", "escalations": "home", "watchlist": "home",
+    # leading-slash forms
+    "/home": "home", "/app": "home", "/alerts": "home",
+    "/escalations": "home", "/watchlist": "home", "/my": "home",
+    "/pipeline": "pipeline", "/source": "pipeline",
+    "/screen": "pipeline", "/predictive-screener": "pipeline",
+    "/find-comps": "pipeline", "/conferences": "pipeline",
+    "/library": "library", "/deals-library": "library",
+    "/methodology": "library", "/metric-glossary": "library",
+    "/data": "library", "/comparables": "library",
+    "/market-rates": "library", "/data-catalog": "library",
+    "/research": "research", "/notes": "research",
+    "/sector-momentum": "research", "/irr-dispersion": "research",
+    "/hold-analysis": "research", "/backtest": "research",
+    "/portfolio": "portfolio", "/lp-update": "portfolio",
+    # cross-section common deep paths
+    "/analysis": "research", "/quant-lab": "research",
+    "/market-data/map": "library",
+}
+
+
+def _resolve_sub_section(active_nav: Optional[str]) -> Optional[str]:
+    """Pick the sub-nav section key for an active_nav value."""
+    if not active_nav:
+        return None
+    key = str(active_nav).strip().lower()
+    if key in _SUB_SECTION_MAP:
+        return _SUB_SECTION_MAP[key]
+    # Try the first path segment ("/portfolio/monitor" → "/portfolio")
+    if key.startswith("/"):
+        first = "/" + key.lstrip("/").split("/", 1)[0]
+        if first in _SUB_SECTION_MAP:
+            return _SUB_SECTION_MAP[first]
+    return None
+
+
 def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     """Editorial topbar mirroring chartis.com chrome.
 
@@ -1467,11 +1605,37 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     nav links with teal active underline, search anchored to the
     right with a teal-on-navy user chip. The thin teal stripe on the
     bottom edge is a Chartis signature.
+
+    When ``active_nav`` matches a key in ``_SUB_NAV``, a parchment
+    sub-nav rail renders directly below with the section's most-clicked
+    second-level pages — saves a partner the click into a section
+    landing page just to find a common surface.
     """
     links = "".join(
         f'<a href="{_esc(item["href"])}" class="{"active" if item["key"] == active_nav else ""}">{_esc(item["label"])}</a>'
         for item in _CORPUS_NAV
     )
+
+    # Sub-nav rail. Page renderers historically pass active_nav in
+    # mixed conventions: bare key ("home"), leading-slash path
+    # ("/portfolio"), or a sub-path ("/portfolio/monitor",
+    # "/analysis"). Normalise to a section key so we can look up
+    # _SUB_NAV regardless of caller. Falls back to nothing if the
+    # section has no entry (e.g. /login, /admin, debug pages).
+    sub_section = _resolve_sub_section(active_nav)
+    sub_links_html = ""
+    if sub_section and sub_section in _SUB_NAV:
+        sub_links = "".join(
+            f'<a href="{_esc(item["href"])}" class="ck-subnav-link">'
+            f'{_esc(item["label"])}</a>'
+            for item in _SUB_NAV[sub_section]
+        )
+        sub_links_html = (
+            '<nav class="ck-subnav" aria-label="Section">'
+            f'<div class="ck-subnav-inner">{sub_links}</div>'
+            '</nav>'
+        )
+
     return (
         '<header class="ck-topbar">'
         '<div class="ck-topbar-inner">'
@@ -1481,12 +1645,30 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '</a>'
         f'<nav class="ck-nav" aria-label="Primary">{links}</nav>'
         '<div class="ck-topbar-right">'
-        '<input class="ck-search" type="search" '
+        '<form class="ck-search-form" action="/search" method="get" role="search">'
+        '<input class="ck-search" type="search" name="q" '
         'placeholder="Search deals, hospitals, routes — ⌘K" '
-        'aria-label="Open command palette" />'
-        f'<span class="ck-user-chip" title="Signed in">{_esc(user_initials)}</span>'
+        'aria-label="Search" />'
+        '</form>'
+        '<div class="ck-user-menu">'
+        f'<button class="ck-user-chip" type="button" aria-haspopup="true" '
+        f'aria-expanded="false" title="Signed in" '
+        f'data-ck-user-toggle>{_esc(user_initials)}</button>'
+        '<div class="ck-user-dropdown" hidden>'
+        '<a href="/my/AT" class="ck-user-dropdown-item">My Dashboard</a>'
+        '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'
+        '<a href="/admin" class="ck-user-dropdown-item">Admin</a>'
+        '<a href="/audit" class="ck-user-dropdown-item">Audit Log</a>'
+        '<div class="ck-user-dropdown-divider"></div>'
+        '<form action="/api/logout" method="post" class="ck-user-dropdown-form">'
+        '<button type="submit" class="ck-user-dropdown-item ck-user-dropdown-logout">'
+        'Sign out</button>'
+        '</form>'
+        '</div>'
+        '</div>'
         "</div>"
         "</div>"
+        f"{sub_links_html}"
         "</header>"
     )
 
@@ -1639,6 +1821,7 @@ def chartis_shell(
         f'<main class="{main_class}">{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
         f"{_CSRF_JS}"
+        f"{_USER_MENU_JS}"
         f"{_PALETTE_JS}"
         "</body></html>"
     )

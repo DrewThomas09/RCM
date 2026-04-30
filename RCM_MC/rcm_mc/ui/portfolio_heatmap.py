@@ -101,6 +101,7 @@ def render_heatmap(
             '<div class="cad-card"><p style="color:var(--cad-text3);">No deals to display. '
             '<a href="/import" style="color:var(--cad-link);">Create your first deal &rarr;</a></p></div>',
             "Portfolio Heatmap",
+            active_nav="/portfolio",
             subtitle="No deals yet",
         )
 

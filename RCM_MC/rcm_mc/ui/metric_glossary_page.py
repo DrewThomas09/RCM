@@ -138,6 +138,7 @@ def render_metric_glossary() -> str:
     return chartis_shell(
         body,
         "Metric Glossary",
+        active_nav="/metric-glossary",
         subtitle=f"{len(keys)} metrics — definitions, rationale, formulas",
         editorial_intro={
             "eyebrow": "METRIC GLOSSARY",
