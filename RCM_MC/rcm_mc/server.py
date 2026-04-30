@@ -12181,6 +12181,18 @@ class RCMHandler(BaseHTTPRequestHandler):
         events_df = digest_to_frame(build_digest(store, since=since))
         cohorts_df = cohort_rollup(store)
 
+        from .ui._chartis_kit import ck_page_title, ck_kpi_block
+
+        # Friendly deal names for any deal_id we surface in tables
+        # ("Cypress Crossing Health" instead of slug "ccf").
+        name_map: Dict[str, str] = {}
+        try:
+            with store.connect() as _con:
+                for r in _con.execute("SELECT deal_id, name FROM deals"):
+                    name_map[r["deal_id"]] = r["name"]
+        except Exception:
+            pass
+
         def _fmt(v, pct=False, suffix=""):
             if v is None:
                 return "—"
@@ -12190,141 +12202,267 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return f"{float(v)*100:.1f}%"
             return f"{float(v):.2f}{suffix}"
 
-        # ── Headline KPIs ──
-        headline = (
-            f'<div class="kpi-grid">'
-            f'<div class="kpi-card"><div class="kpi-value">'
-            f'{rollup["deal_count"]}</div>'
-            f'<div class="kpi-label">Active deals</div></div>'
-            f'<div class="kpi-card"><div class="kpi-value">'
-            f'{_fmt(rollup.get("weighted_moic"), suffix="x")}</div>'
-            f'<div class="kpi-label">Weighted MOIC</div></div>'
-            f'<div class="kpi-card"><div class="kpi-value">'
-            f'{_fmt(rollup.get("weighted_irr"), pct=True)}</div>'
-            f'<div class="kpi-label">Weighted IRR</div></div>'
-            f'<div class="kpi-card"><div class="kpi-value">'
-            f'{rollup["covenant_trips"]}</div>'
-            f'<div class="kpi-label">Covenant trips</div></div>'
-            f'</div>'
+        def _deal_link(did: str) -> str:
+            display = html.escape(name_map.get(did, did))
+            return (
+                f'<a href="/deal/{urllib.parse.quote(did)}" '
+                f'style="color:var(--sc-navy,#0b2341);font-weight:600;'
+                f'text-decoration:none;">{display}</a>'
+            )
+
+        # ── Page title with eyebrow + meta ──
+        title_html = ck_page_title(
+            "LP Update",
+            eyebrow="PORTFOLIO SNAPSHOT",
+            meta=f"Window: last {days} days · {len(events_df)} events captured",
         )
 
-        # ── Active alerts section ──
+        # ── Window picker + download (sit beneath title in a thin
+        #     control row that mirrors the editorial chip patterns) ──
+        picker_options = "".join(
+            f'<option value="{opt}"{" selected" if opt == days else ""}>'
+            f'{opt} days</option>' for opt in (7, 14, 30, 60, 90)
+        )
+        controls = (
+            '<div class="ck-lp-controls">'
+            '<form method="GET" action="/lp-update" class="ck-lp-window">'
+            '<label class="ck-lp-window-label">Window</label>'
+            '<select name="days" onchange="this.form.submit()" '
+            'class="ck-lp-window-select">'
+            f'{picker_options}'
+            '</select>'
+            '</form>'
+            f'<a href="/lp-update?days={days}&download=1" '
+            'class="ck-lp-download">'
+            '<span aria-hidden="true">↓</span>&nbsp;Download HTML</a>'
+            '</div>'
+        )
+
+        # ── Headline KPIs (4-tile editorial strip) ──
+        headline = (
+            '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+            + ck_kpi_block(
+                "Active Deals",
+                f"{rollup['deal_count']}",
+                sub="in portfolio",
+            )
+            + ck_kpi_block(
+                "Weighted MOIC",
+                _fmt(rollup.get("weighted_moic"), suffix="x"),
+                sub="EV-weighted",
+            )
+            + ck_kpi_block(
+                "Weighted IRR",
+                _fmt(rollup.get("weighted_irr"), pct=True),
+                sub="EV-weighted",
+            )
+            + ck_kpi_block(
+                "Covenant Trips",
+                f"{rollup['covenant_trips']}",
+                sub="active",
+            )
+            + '</div>'
+        )
+
+        # ── Active alerts ──
         red = [a for a in alerts if a.severity == "red"]
         amber = [a for a in alerts if a.severity == "amber"]
-        alerts_rows = []
-        for a in red + amber:
-            badge_cls = "badge-red" if a.severity == "red" else "badge-amber"
-            alerts_rows.append(
-                f"<li style='padding: 0.4rem 0; border-bottom: 1px solid "
-                f"var(--border);'>"
-                f"<span class='badge {badge_cls}'>{a.severity.upper()}</span> "
-                f"<a href='/deal/{urllib.parse.quote(a.deal_id)}' "
-                f"style='color: var(--accent); font-weight: 600; "
-                f"text-decoration: none;'>{html.escape(a.deal_id)}</a> — "
-                f"{html.escape(a.title)} "
-                f"<span class='muted' style='font-size: 0.85rem;'>"
-                f"{html.escape(a.detail)}</span></li>"
-            )
-        if alerts_rows:
+        if red or amber:
+            alerts_items = []
+            for a in red + amber:
+                tone = (
+                    "var(--sc-negative,#b5321e)" if a.severity == "red"
+                    else "var(--sc-warning,#b8732a)"
+                )
+                alerts_items.append(
+                    '<li class="ck-lp-alert">'
+                    f'<span class="ck-lp-alert-sev" style="color:{tone};">'
+                    f'{html.escape(a.severity.upper())}</span>'
+                    f'<span class="ck-lp-alert-deal">'
+                    f'{_deal_link(a.deal_id)}</span>'
+                    f'<span class="ck-lp-alert-title">'
+                    f'{html.escape(a.title)}</span>'
+                    f'<span class="ck-lp-alert-detail">'
+                    f'{html.escape(a.detail)}</span>'
+                    '</li>'
+                )
             alerts_section = (
-                f'<div class="card"><h2>Active alerts '
-                f'({len(red)} red / {len(amber)} amber)</h2>'
-                f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                f'{"".join(alerts_rows)}</ul></div>'
+                '<section class="cad-card ck-lp-section">'
+                '<header class="ck-lp-section-head">'
+                f'<h2>Active alerts</h2>'
+                f'<span class="ck-lp-section-count">'
+                f'{len(red)} red · {len(amber)} amber</span>'
+                '</header>'
+                '<ul class="ck-lp-alert-list">'
+                + "".join(alerts_items)
+                + '</ul></section>'
             )
         else:
             alerts_section = (
-                '<div class="card"><h2>Active alerts</h2>'
-                '<p class="muted">None — portfolio is clean.</p></div>'
+                '<section class="cad-card ck-lp-section">'
+                '<header class="ck-lp-section-head">'
+                '<h2>Active alerts</h2>'
+                '</header>'
+                '<p class="ck-lp-empty">None — portfolio is clean.</p>'
+                '</section>'
             )
 
-        # ── Recent activity section ──
+        # ── Recent activity table ──
         if events_df.empty:
             activity_section = (
-                f'<div class="card"><h2>Recent activity</h2>'
-                f'<p class="muted">No material changes in the last '
-                f'{days} days.</p></div>'
+                '<section class="cad-card ck-lp-section">'
+                '<header class="ck-lp-section-head">'
+                '<h2>Recent activity</h2>'
+                '</header>'
+                f'<p class="ck-lp-empty">No material changes in the last '
+                f'{days} days.</p>'
+                '</section>'
             )
         else:
             act_rows = []
             for _, r in events_df.head(30).iterrows():
                 act_rows.append(
-                    f"<tr>"
-                    f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['timestamp'])[:10])}</td>"
-                    f"<td><a href='/deal/{urllib.parse.quote(str(r['deal_id']))}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(str(r['deal_id']))}</a></td>"
-                    f"<td>{html.escape(str(r['change_type']))}</td>"
-                    f"<td class='muted' style='font-size: 0.85rem;'>"
-                    f"{html.escape(str(r['detail']))}</td>"
-                    f"</tr>"
+                    "<tr>"
+                    f'<td class="ck-lp-mono">{html.escape(str(r["timestamp"])[:10])}</td>'
+                    f'<td>{_deal_link(str(r["deal_id"]))}</td>'
+                    f'<td>{html.escape(str(r["change_type"]))}</td>'
+                    f'<td class="ck-lp-detail">{html.escape(str(r["detail"]))}</td>'
+                    "</tr>"
                 )
             activity_section = (
-                f'<div class="card"><h2>Recent activity (last {days} days, '
-                f'{len(events_df)} events)</h2>'
-                f'<table><thead><tr>'
-                f'<th>Date</th><th>Deal</th><th>Change</th><th>Detail</th>'
-                f'</tr></thead><tbody>{"".join(act_rows)}</tbody></table></div>'
+                '<section class="cad-card ck-lp-section" style="padding:0;overflow:hidden;">'
+                '<header class="ck-lp-section-head" style="padding:18px 22px 12px;">'
+                f'<h2>Recent activity</h2>'
+                f'<span class="ck-lp-section-count">{len(events_df)} events · last {days} days</span>'
+                '</header>'
+                '<table class="ck-lp-table">'
+                '<thead><tr>'
+                '<th>Date</th><th>Deal</th><th>Change</th><th>Detail</th>'
+                '</tr></thead>'
+                f'<tbody>{"".join(act_rows)}</tbody></table>'
+                '</section>'
             )
 
-        # ── Cohort section (optional) ──
+        # ── Cohort breakdown ──
         if cohorts_df.empty:
             cohort_section = ""
         else:
             cohort_rows = []
             for _, r in cohorts_df.iterrows():
                 cohort_rows.append(
-                    f"<tr>"
-                    f"<td><a href='/cohort/{urllib.parse.quote(str(r['tag']))}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(str(r['tag']))}</a></td>"
-                    f"<td class='num'>{int(r['deal_count'])}</td>"
-                    f"<td class='num'>{_fmt(r['weighted_moic'], suffix='x')}</td>"
-                    f"<td class='num'>{_fmt(r['weighted_irr'], pct=True)}</td>"
-                    f"<td class='num'>{int(r['covenant_trips'])}</td>"
-                    f"</tr>"
+                    "<tr>"
+                    f'<td><a href="/cohort/{urllib.parse.quote(str(r["tag"]))}" '
+                    f'class="ck-lp-link">{html.escape(str(r["tag"]))}</a></td>'
+                    f'<td class="r ck-lp-mono">{int(r["deal_count"])}</td>'
+                    f'<td class="r ck-lp-mono">{_fmt(r["weighted_moic"], suffix="x")}</td>'
+                    f'<td class="r ck-lp-mono">{_fmt(r["weighted_irr"], pct=True)}</td>'
+                    f'<td class="r ck-lp-mono">{int(r["covenant_trips"])}</td>'
+                    "</tr>"
                 )
             cohort_section = (
-                f'<div class="card"><h2>Cohort breakdown</h2>'
-                f'<table><thead><tr>'
-                f'<th>Cohort</th><th>Deals</th><th>W. MOIC</th>'
-                f'<th>W. IRR</th><th>Trips</th>'
-                f'</tr></thead><tbody>{"".join(cohort_rows)}</tbody></table></div>'
+                '<section class="cad-card ck-lp-section" style="padding:0;overflow:hidden;">'
+                '<header class="ck-lp-section-head" style="padding:18px 22px 12px;">'
+                '<h2>Cohort breakdown</h2>'
+                f'<span class="ck-lp-section-count">{len(cohorts_df)} cohorts</span>'
+                '</header>'
+                '<table class="ck-lp-table">'
+                '<thead><tr>'
+                '<th>Cohort</th>'
+                '<th class="r">Deals</th>'
+                '<th class="r">W. MOIC</th>'
+                '<th class="r">W. IRR</th>'
+                '<th class="r">Trips</th>'
+                '</tr></thead>'
+                f'<tbody>{"".join(cohort_rows)}</tbody></table>'
+                '</section>'
             )
 
-        # Window picker + download link
-        picker = (
-            '<form method="GET" action="/lp-update" '
-            'style="display: inline-flex; gap: 0.3rem; align-items: center; '
-            'margin-bottom: 1rem; font-size: 0.85rem;">'
-            '<label>Window</label>'
-            '<select name="days" onchange="this.form.submit()" '
-            'style="font-size: 0.85rem; padding: 0.1rem;">'
-        )
-        for opt in (7, 14, 30, 60, 90):
-            sel = " selected" if opt == days else ""
-            picker += f'<option value="{opt}"{sel}>{opt} days</option>'
-        picker += "</select></form>"
-        download_link = (
-            f'<a href="/lp-update?days={days}&download=1" '
-            f'style="color: var(--accent); margin-left: 1rem; '
-            f'font-size: 0.85rem; text-decoration: none; '
-            f'border-bottom: 1px dotted var(--accent);">↓ Download</a>'
+        page_css = (
+            '<style>'
+            '.ck-lp-controls{display:flex;align-items:center;gap:18px;'
+            'margin:0 0 24px;}'
+            '.ck-lp-window{display:inline-flex;align-items:center;gap:10px;'
+            'margin:0;}'
+            '.ck-lp-window-label{font-family:var(--sc-mono,monospace);'
+            'font-size:11px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
+            '.ck-lp-window-select{font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:13px;padding:7px 12px;border:1px solid var(--sc-rule,#d6cfc3);'
+            'background:#fff;color:var(--sc-text,#1a2332);border-radius:2px;'
+            'cursor:pointer;}'
+            '.ck-lp-window-select:focus{outline:none;'
+            'border-color:var(--sc-teal,#155752);}'
+            '.ck-lp-download{font-family:var(--sc-mono,monospace);font-size:11px;'
+            'font-weight:700;letter-spacing:0.1em;text-transform:uppercase;'
+            'color:var(--sc-teal,#155752);text-decoration:none;'
+            'padding:7px 12px;border:1px solid var(--sc-teal,#155752);'
+            'border-radius:2px;transition:background 0.15s,color 0.15s;}'
+            '.ck-lp-download:hover{background:var(--sc-teal,#155752);color:#fff;}'
+
+            '.ck-lp-section{padding:22px 26px;margin:0 0 20px;}'
+            '.ck-lp-section-head{display:flex;align-items:baseline;'
+            'justify-content:space-between;gap:12px;margin:0 0 12px;}'
+            '.ck-lp-section-head h2{font-family:var(--sc-serif,Georgia,serif);'
+            'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
+            'margin:0;letter-spacing:-0.01em;}'
+            '.ck-lp-section-count{font-family:var(--sc-mono,monospace);'
+            'font-size:11px;color:var(--sc-text-faint,#7a8699);'
+            'letter-spacing:0.08em;text-transform:uppercase;}'
+            '.ck-lp-empty{font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:14px;color:var(--sc-text-dim,#465366);margin:0;'
+            'font-style:italic;}'
+
+            '.ck-lp-alert-list{list-style:none;padding:0;margin:0;}'
+            '.ck-lp-alert{display:grid;'
+            'grid-template-columns:62px 1fr 1.5fr 2fr;gap:14px;'
+            'align-items:baseline;padding:12px 0;'
+            'border-top:1px solid var(--sc-rule,#d6cfc3);'
+            'font-size:13px;}'
+            '.ck-lp-alert:first-child{border-top:0;}'
+            '.ck-lp-alert-sev{font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.1em;}'
+            '.ck-lp-alert-title{color:var(--sc-text,#1a2332);font-weight:500;}'
+            '.ck-lp-alert-detail{color:var(--sc-text-dim,#465366);font-size:12.5px;}'
+
+            '.ck-lp-table{width:100%;border-collapse:collapse;'
+            'font-family:var(--sc-sans,Inter,sans-serif);}'
+            '.ck-lp-table thead th{text-align:left;'
+            'font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:var(--sc-text-dim,#465366);'
+            'padding:10px 22px;border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'background:var(--sc-bone,#ece6db);}'
+            '.ck-lp-table thead th.r{text-align:right;}'
+            '.ck-lp-table tbody td{padding:12px 22px;'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'font-size:13px;color:var(--sc-text,#1a2332);'
+            'vertical-align:middle;}'
+            '.ck-lp-table tbody td.r{text-align:right;}'
+            '.ck-lp-table tbody tr:last-child td{border-bottom:0;}'
+            '.ck-lp-table tbody tr:hover td{background:var(--sc-bone,#ece6db);}'
+            '.ck-lp-mono{font-family:var(--sc-mono,monospace);'
+            'font-variant-numeric:tabular-nums;'
+            'color:var(--sc-text-dim,#465366);font-size:12.5px;}'
+            '.ck-lp-detail{color:var(--sc-text-dim,#465366);font-size:12.5px;}'
+            '.ck-lp-link{color:var(--sc-navy,#0b2341);font-weight:600;'
+            'text-decoration:none;}'
+            '.ck-lp-link:hover{color:var(--sc-teal,#155752);}'
+            '</style>'
         )
 
         body = (
-            f"<div>{picker}{download_link}</div>"
+            f"{title_html}"
+            f"{controls}"
             f"{headline}"
             f"{alerts_section}"
             f"{activity_section}"
             f"{cohort_section}"
+            f"{page_css}"
         )
 
         doc = shell(
             body=body, title="LP Update",
             subtitle=f"Portfolio snapshot · window {days} days",
-            back_href="/",
             active_nav="/lp-update",
         )
 
