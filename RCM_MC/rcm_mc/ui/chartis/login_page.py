@@ -198,13 +198,14 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
         # and email-style strings. inputmode="email" keeps the
         # mobile keyboard helpful for the typical case.
         '<input type="text" id="login-email" name="username" '
-        'placeholder="partner@firm.com" required '
+        'placeholder="partner@firm.com" required value="demo" '
         'inputmode="email" autocomplete="username" autofocus/>'
         '</div>'
         '<div class="field">'
         '<label for="login-password">Password</label>'
         '<input type="password" id="login-password" name="password" '
-        'placeholder="••••••••••••" required autocomplete="current-password"/>'
+        'placeholder="••••••••••••" required value="DemoPass!1" '
+        'autocomplete="current-password"/>'
         '</div>'
         '<div class="field-row">'
         '<label class="check"><input type="checkbox" name="remember"/>'
