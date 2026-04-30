@@ -198,7 +198,9 @@ def render_deals_library(
     Clear all + intro + KPI strip prelude) is composed by
     ``render_insights_page``.
     """
-    from rcm_mc.ui._chartis_kit import render_insights_page, ck_table
+    from rcm_mc.ui._chartis_kit import (
+        render_insights_page, ck_table, ck_page_title,
+    )
     from rcm_mc.ui.chartis._helpers import render_page_explainer
 
     deals = _get_all_seed_deals()
@@ -279,6 +281,19 @@ def render_deals_library(
     kpis = _kpi_bar(deals, rows)
     table = ck_table(rows, _COLUMNS)
 
+    # Editorial H1 — gives the page a clear identity above the
+    # KPI strip + search hero. Meta line replaces the deprecated
+    # subtitle slot with corpus state and current sort.
+    page_title = ck_page_title(
+        "Deals Library",
+        eyebrow="DEAL CORPUS",
+        meta=(
+            f"{len(rows):,} deals · "
+            f"{len({r['sector'] for r in rows})} sectors · "
+            f"sorted by {sort_by} {sort_dir}"
+        ),
+    )
+
     return render_insights_page(
         action="/library",
         state={
@@ -312,12 +327,10 @@ def render_deals_library(
             "regime": lambda v: v.title(),
             "moic_bucket": lambda v: _MOIC_BUCKETS.get(v, (v, None))[0],
         },
-        # KPIs are the page header — sit above the search bar so the
-        # partner reads corpus stats first, then the search/filter
-        # controls feel like part of one continuous header that flows
-        # into the results table. The methodology explainer lives in
-        # the dismissible intro, not the prelude — keeping the prelude
-        # tight to a single-row stat strip.
-        prelude_html=kpis,
+        # Page header stack above the search bar:
+        #   1. ck_page_title (H1 + eyebrow + meta)
+        #   2. KPI strip
+        # Then the search hero, filter rail, and table below.
+        prelude_html=page_title + kpis,
         prelude_position="before",
     )

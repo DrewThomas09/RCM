@@ -452,6 +452,37 @@ def ck_arrow_link(text: str, href: str, *, on_navy: bool = False) -> str:
     return f'<a class="{cls}" href="{_esc(href)}">{_esc(text)}</a>'
 
 
+def ck_page_title(
+    title: str,
+    *,
+    eyebrow: Optional[str] = None,
+    meta: Optional[str] = None,
+) -> str:
+    """Editorial page title — small mono eyebrow, navy serif title,
+    optional mono meta line. Sits at the top of a content page above
+    KPIs / search / table to give the page a clear identity. Bigger
+    than ck_section_intro's headline (which acts more like an article
+    deck) — this is the equivalent of an H1.
+
+    ``meta`` renders as a faint mono row beneath the title, useful for
+    "655 deals · 99 sectors · sorted by entry_year desc" style page
+    state without ballooning the title block.
+    """
+    eyebrow_html = (
+        f'<div class="ck-eyebrow">{_esc(eyebrow)}</div>' if eyebrow else ""
+    )
+    meta_html = (
+        f'<div class="ck-page-title-meta">{_esc(meta)}</div>' if meta else ""
+    )
+    return (
+        '<header class="ck-page-title">'
+        f'{eyebrow_html}'
+        f'<h1>{_esc(title)}</h1>'
+        f'{meta_html}'
+        '</header>'
+    )
+
+
 def ck_image_card(
     *,
     image_html: str,
@@ -1318,24 +1349,26 @@ _CSS_INLINE_FALLBACK = """
 
   /* Search hero — navy panel + italic-serif label + circular submit
    * + teal chevron-cut bottom-right corner. Mirrors chartis.com/insights. */
-  /* Search bar — slim integrated band that connects the page header
-   * (KPIs / chrome above) to the data area (filter rail + table) below.
-   * Replaced the prior 56/64px-padded full-bleed navy hero with a
-   * compact 18/20px white card sitting on the parchment, hairline
-   * border, teal focus underline. Reads as part of the table chrome,
-   * not as a standalone marketing hero. */
-  .ck-search-hero { position:relative; background:#fff; color:var(--sc-text); padding:0; margin:0 0 var(--sc-s-5); overflow:hidden; border:1px solid var(--sc-rule); border-radius:2px; box-shadow:var(--sc-shadow-1); }
-  .ck-search-hero-inner { max-width:none; margin:0; padding:14px 18px; display:flex; align-items:center; gap:14px; }
-  .ck-search-hero-label { font-family:var(--sc-mono); font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; font-style:normal; color:var(--sc-text-faint); flex-shrink:0; }
-  .ck-search-hero-form { flex:1; display:flex; align-items:center; gap:10px; border-bottom:1px solid transparent; padding-bottom:0; transition:border-color 0.15s; }
-  .ck-search-hero-form:focus-within { border-bottom-color:transparent; }
-  .ck-search-hero-input { flex:1; background:transparent; border:0; font-family:var(--sc-sans); font-size:14px; color:var(--sc-text); padding:6px 0; outline:none; min-width:0; }
-  .ck-search-hero-input::placeholder { color:var(--sc-text-faint); font-style:normal; }
-  .ck-search-hero-submit { background:transparent; border:1px solid var(--sc-rule); border-radius:50%; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--sc-text-dim); cursor:pointer; flex-shrink:0; transition:color 0.15s, border-color 0.15s, background 0.15s; }
-  .ck-search-hero-submit:hover { color:#fff; border-color:var(--sc-teal); background:var(--sc-teal); }
-  /* Decorative chevron from the prior hero — irrelevant on the slim
-   * white bar; collapse it to nothing so it doesn't bleed in. */
-  .ck-search-hero-chevron { display:none; }
+  /* Page title — H1-equivalent header for content pages
+   * (/library, /research, /pipeline). Sits above KPIs and search. */
+  .ck-page-title { margin:0 0 var(--sc-s-6); display:flex; flex-direction:column; gap:8px; }
+  .ck-page-title h1 { font-family:var(--sc-serif); font-weight:400; font-size:clamp(28px, 3.4vw, 40px); line-height:1.1; letter-spacing:-0.015em; color:var(--sc-navy); margin:0; }
+  .ck-page-title h1 em { font-style:italic; font-weight:400; color:var(--sc-teal-ink); }
+  .ck-page-title-meta { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; }
+
+  /* Search hero — full-bleed navy panel with italic-serif label and
+   * teal chevron. Sits in the page-header stack, between the KPI
+   * strip (above) and the filter rail + table (below). */
+  .ck-search-hero { position:relative; background:var(--sc-navy); color:var(--sc-on-navy); padding:48px 0 56px; margin:0 0 var(--sc-s-7); overflow:hidden; }
+  .ck-search-hero-inner { max-width:1280px; margin:0 auto; padding:0 var(--sc-s-7); display:flex; align-items:baseline; gap:var(--sc-s-7); }
+  .ck-search-hero-label { font-family:var(--sc-serif); font-size:36px; font-weight:400; font-style:italic; letter-spacing:-0.01em; color:var(--sc-on-navy); flex-shrink:0; }
+  .ck-search-hero-form { flex:1; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--sc-on-navy-dim); padding-bottom:8px; transition:border-color 0.15s; }
+  .ck-search-hero-form:focus-within { border-bottom-color:var(--sc-teal); }
+  .ck-search-hero-input { flex:1; background:transparent; border:0; font-family:var(--sc-serif); font-size:22px; color:var(--sc-on-navy); padding:8px 0; outline:none; min-width:0; }
+  .ck-search-hero-input::placeholder { color:var(--sc-on-navy-faint); font-style:italic; }
+  .ck-search-hero-submit { background:transparent; border:1px solid var(--sc-on-navy-dim); border-radius:50%; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; color:var(--sc-on-navy); cursor:pointer; flex-shrink:0; transition:color 0.15s, border-color 0.15s; }
+  .ck-search-hero-submit:hover { color:var(--sc-teal); border-color:var(--sc-teal); }
+  .ck-search-hero-chevron { position:absolute; right:0; bottom:0; width:0; height:0; border-style:solid; border-width:0 0 64px 64px; border-color:transparent transparent var(--sc-teal) transparent; pointer-events:none; }
 
   /* Filter sidebar — chartis.com/insights left rail. Eyebrow-style
    * group headers, radio/checkbox rows, progressive-disclosure More
@@ -1937,6 +1970,7 @@ __all__ = [
     "ck_section_header",
     "ck_table",
     "ck_kpi_block",
+    "ck_page_title",
     "ck_signal_badge",
     "ck_command_palette",
     "ck_fmt_currency",
