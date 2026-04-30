@@ -1770,7 +1770,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<div class="ck-topbar-inner">'
         '<a href="/" class="ck-wordmark" aria-label="SeekingChartis home">'
         '<span class="ck-wordmark-mark"></span>'
-        'Seeking<em>Chartis</em>'
+        '<span class="ck-wordmark-text">Seeking<em>Chartis</em></span>'
         '</a>'
         f'<nav class="ck-nav" aria-label="Primary">{links}</nav>'
         '<div class="ck-topbar-right">'
