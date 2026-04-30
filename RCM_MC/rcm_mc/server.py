@@ -1817,6 +1817,30 @@ class RCMHandler(BaseHTTPRequestHandler):
         return "; Secure" if self._is_https() else ""
 
     def _send_html(self, body: str, status: int = HTTPStatus.OK) -> None:
+        # Editorial-chrome safety net: any HTML fragment that lacks a
+        # full <!doctype>+<html> envelope gets auto-wrapped in
+        # chartis_shell so 404/500 fragments and one-off raw bodies
+        # render the navy topbar + parchment palette instead of
+        # stark unstyled text. This covers ~8 hand-rolled error
+        # returns in this file plus any future caller that forgets
+        # to wrap.
+        body_lower_head = body[:200].lower()
+        if ("<!doctype" not in body_lower_head
+                and "<html" not in body_lower_head):
+            try:
+                from .ui._chartis_kit import chartis_shell
+                # Pick a sensible page title from the fragment if it
+                # opens with an <h1>; otherwise generic.
+                import re as _re_title
+                m = _re_title.search(
+                    r"<h1[^>]*>([^<]+)</h1>", body[:500],
+                )
+                title = m.group(1) if m else "SeekingChartis"
+                if status >= 400:
+                    title = f"{status} · {title}" if title != "SeekingChartis" else f"{status} · SeekingChartis"
+                body = chartis_shell(body, title=title)
+            except Exception:  # noqa: BLE001 — never let this safety net 500
+                pass
         # PHI banner safety net: any HTML response that doesn't already
         # carry the banner gets it injected near the top of <body>. The
         # chartis_shell dispatcher also injects it, so well-behaved

@@ -571,7 +571,40 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         )
     elif injection:
         html_str = html_str + injection
-    return html_str
+
+    # Editorial port (2026-04-29): the IC-packet HTML format is shared
+    # with the standalone-export download (rcm_mc/exports/ic_packet.py)
+    # so it ships its own <!DOCTYPE>+<head>+<body>. For the in-app
+    # /diligence/ic-packet route we strip the body and re-wrap in
+    # chartis_shell so the partner sees the navy topbar + parchment
+    # palette consistent with every other partner page. The export
+    # download path renders this HTML standalone elsewhere.
+    import re
+    body_match = re.search(
+        r"<body[^>]*>(.*)</body>", html_str, re.DOTALL,
+    )
+    style_match = re.search(
+        r"<style[^>]*>(.*?)</style>", html_str, re.DOTALL,
+    )
+    inner_body = body_match.group(1) if body_match else html_str
+    extra_css = style_match.group(1) if style_match else None
+    return chartis_shell(
+        inner_body,
+        title=f"IC Packet — {meta.deal_name}",
+        active_nav="/pe-intelligence",
+        extra_css=extra_css,
+        editorial_intro={
+            "eyebrow": "IC PACKET",
+            "headline": "What the committee will read on this deal.",
+            "italic_word": "will",
+            "body": (
+                "Auto-assembled IC deliverable for "
+                f"{meta.deal_name} — thesis, base case, bear case, "
+                "comparables, exit path, and the questions partners "
+                "expect to be asked. Generated against the live packet."
+            ),
+        },
+    )
 
 
 def _render_regulatory_block(report: Any) -> str:

@@ -1104,7 +1104,17 @@ def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
 # Shell
 # ---------------------------------------------------------------------------
 
-_CSS_LINK = '<link rel="stylesheet" href="/static/chartis_tokens.css">'
+# Two stylesheets:
+#   chartis_tokens.css — CSS custom-property tokens (--sc-navy, --cad-bg, ...)
+#   v3/chartis.css — actual class definitions (.cad-card, .cad-kpi, .cad-btn,
+#                    .cad-table, etc.) that ~25 pages still emit. Without
+#                    this second link, those pages fall back to unstyled
+#                    browser defaults and look broken under the editorial
+#                    chrome wrapper.
+_CSS_LINK = (
+    '<link rel="stylesheet" href="/static/chartis_tokens.css">'
+    '<link rel="stylesheet" href="/static/v3/chartis.css">'
+)
 
 # Inline fallback — if static serving of chartis_tokens.css isn't wired up,
 # the class names defined here keep pages readable. Prefer the linked file.

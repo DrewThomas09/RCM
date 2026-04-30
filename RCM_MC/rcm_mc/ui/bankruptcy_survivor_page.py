@@ -234,12 +234,12 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         f"<li>{html.escape(q)}</li>" for q in scan.diligence_questions
     ) or "<li>No structural questions generated — target profile is clean.</li>"
 
-    return (
-        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-        f"<title>Bankruptcy-Survivor Scan — {html.escape(scan.target_name)}</title>"
-        f"{_style()}</head><body>"
-        "<div class='eyebrow'>Pre-screening result</div>"
-        f"<h1>Bankruptcy-Survivor Scan</h1>"
+    # Editorial port (2026-04-29): wrap the scan result body in
+    # chartis_shell so it inherits the navy topbar + parchment palette
+    # + italic-serif headings instead of standing alone in the legacy
+    # _style() doctype.
+    from ._chartis_kit import chartis_shell, ck_kpi_block, ck_provenance_tooltip
+    body = (
         f"<p style='font-size:13pt;color:#2a2a2a;'>{html.escape(scan.target_name)}</p>"
         f"<div class='verdict' style='border-color:{color};'>"
         f"<div class='verdict-band' style='color:{color};'>"
@@ -262,5 +262,20 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         "Every case-study comparison cites the named historical deal's "
         "entry EV and outcome from the public-deals corpus.</div>"
         f"<div class='caveat'>Computed {html.escape(scan.computed_at)}.</div>"
-        "</body></html>"
+    )
+    return chartis_shell(
+        body,
+        title=f"Bankruptcy-Survivor Scan — {scan.target_name}",
+        subtitle=f"{scan.patterns_hit}/12 patterns hit · {scan.critical_hits} critical matches",
+        extra_css=_style(),
+        editorial_intro={
+            "eyebrow": "BANKRUPTCY SURVIVOR",
+            "headline": f"Whether {scan.target_name} survives the playbook.",
+            "italic_word": "survives",
+            "body": (
+                f"Verdict: {scan.verdict.value}. {copy} "
+                "Each fired pattern cites a falsifiable historical "
+                "precedent — refute or confirm before proceeding."
+            ),
+        },
     )
