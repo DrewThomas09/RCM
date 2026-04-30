@@ -15,17 +15,39 @@ from .brand import PALETTE
 
 
 def _stage_badge(stage: str) -> str:
-    colors = {
-        "screening": "var(--cad-text3)", "outreach": "var(--cad-accent)",
-        "loi": "#8b5cf6", "diligence": "var(--cad-warn)",
-        "ic": "#e67e22", "closed": "var(--cad-pos)", "passed": "var(--cad-neg)",
+    """Stage pill — uses the editorial navy/teal palette uniformly so
+    the funnel reads as a coherent gradient instead of a multi-coloured
+    candy bar. Tone shifts subtly by stage progression: muted-bone for
+    early funnel (screening/outreach), teal-deep for mid-funnel
+    (loi/diligence/ic), navy/positive/negative for terminal states.
+    """
+    tone_map = {
+        "screening": ("var(--sc-bone,#ece6db)",  "var(--sc-navy,#0b2341)"),
+        "outreach":  ("var(--sc-teal-2,#3d7d77)", "#fff"),
+        "loi":       ("var(--sc-teal,#155752)",  "#fff"),
+        "diligence": ("var(--sc-navy-3,#1d3c69)","#fff"),
+        "ic":        ("var(--sc-navy-2,#13294a)","#fff"),
+        "closed":    ("var(--sc-positive,#0a8a5f)", "#fff"),
+        "passed":    ("var(--sc-text-faint,#7a8699)", "#fff"),
     }
-    c = colors.get(stage, "var(--cad-text3)")
+    bg, fg = tone_map.get(stage, ("var(--sc-bone,#ece6db)", "var(--sc-navy,#0b2341)"))
     return (
-        f'<span style="background:{c};color:#fff;padding:2px 8px;border-radius:3px;'
-        f'font-size:10px;font-weight:600;text-transform:uppercase;">'
-        f'{_html.escape(stage)}</span>'
+        f'<span style="background:{bg};color:{fg};padding:4px 10px;'
+        f'border-radius:2px;font-family:var(--sc-sans);'
+        f'font-size:10.5px;font-weight:700;letter-spacing:0.08em;'
+        f'text-transform:uppercase;">{_html.escape(stage)}</span>'
     )
+
+
+def _funnel_bar_color(stage: str) -> str:
+    """Bar fill — same family as the badge, but always the deep teal
+    spine so the eye reads counts left-to-right without colour jumping
+    around. Terminal states (closed/passed) shift to status colours."""
+    if stage == "closed":
+        return "var(--sc-positive,#0a8a5f)"
+    if stage == "passed":
+        return "var(--sc-text-faint,#7a8699)"
+    return "var(--sc-teal,#155752)"
 
 
 def _priority_dot(priority: str) -> str:
@@ -81,25 +103,64 @@ def render_pipeline(db_path: str) -> str:
     )
 
     # ── Funnel visualization ──
+    # Editorial table-style: stage badge | description | bar | count.
+    # Roomier than the prior 4px/20px-bar layout — 14px row padding,
+    # 32px bar height, named description column so the partner sees
+    # the stage's plain-English meaning without hovering anything.
     funnel_bars = ""
     max_count = max(summary.values()) if summary else 1
     for stage_key, stage_label, stage_desc in PIPELINE_STAGES:
         count = summary.get(stage_key, 0)
         pct = count / max_count * 100 if max_count > 0 and count > 0 else 0
+        bar_color = _funnel_bar_color(stage_key)
+        # Greyed row when the stage is empty — keeps the structure
+        # present (every stage visible) but doesn't draw the eye.
+        empty_cls = ' style="opacity:0.45;"' if count == 0 else ""
         funnel_bars += (
-            f'<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">'
-            f'<div style="width:90px;font-size:11px;font-weight:500;">{_stage_badge(stage_key)}</div>'
-            f'<div style="flex:1;background:var(--cad-bg3);border-radius:3px;height:20px;">'
-            f'<div style="width:{max(pct, 2):.0f}%;background:var(--cad-accent);border-radius:3px;'
-            f'height:20px;display:flex;align-items:center;justify-content:center;'
-            f'font-size:10px;color:#fff;font-weight:600;min-width:20px;">'
-            f'{count}</div></div></div>'
+            f'<div class="ck-funnel-row"{empty_cls}>'
+            f'<div class="ck-funnel-stage">{_stage_badge(stage_key)}'
+            f'<span class="ck-funnel-stage-desc">{_html.escape(stage_desc)}</span>'
+            f'</div>'
+            f'<div class="ck-funnel-track">'
+            f'<div class="ck-funnel-fill" style="width:{max(pct, 1.5):.1f}%;'
+            f'background:{bar_color};"></div>'
+            f'</div>'
+            f'<div class="ck-funnel-count">{count}</div>'
+            f'</div>'
         )
 
+    funnel_css = (
+        '<style>'
+        '.ck-funnel-row{display:grid;grid-template-columns:230px 1fr 56px;'
+        'align-items:center;gap:18px;padding:12px 4px;'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+        '.ck-funnel-row:last-child{border-bottom:0;}'
+        '.ck-funnel-stage{display:flex;flex-direction:column;gap:4px;}'
+        '.ck-funnel-stage-desc{font-family:var(--sc-serif,Georgia,serif);'
+        'font-size:12.5px;color:var(--sc-text-dim,#465366);line-height:1.35;}'
+        '.ck-funnel-track{position:relative;height:28px;'
+        'background:var(--sc-bone,#ece6db);border-radius:2px;overflow:hidden;}'
+        '.ck-funnel-fill{position:absolute;top:0;left:0;height:100%;'
+        'border-radius:2px;transition:width 0.25s ease-out;}'
+        '.ck-funnel-count{font-family:var(--sc-mono,JetBrains Mono,monospace);'
+        'font-size:18px;font-weight:600;color:var(--sc-navy,#0b2341);'
+        'text-align:right;font-variant-numeric:tabular-nums;}'
+        '@media (max-width:720px){.ck-funnel-row{grid-template-columns:1fr 56px;}'
+        '.ck-funnel-track{grid-column:1/-1;}}'
+        '</style>'
+    )
+
     funnel = (
-        f'<div class="cad-card">'
-        f'<h2>Pipeline Funnel</h2>'
-        f'{funnel_bars}</div>'
+        f'{funnel_css}'
+        f'<div class="cad-card" style="padding:24px 28px;">'
+        f'<h2 style="margin:0 0 4px;">Pipeline Funnel</h2>'
+        f'<p style="margin:0 0 18px;font-family:var(--sc-serif,Georgia,serif);'
+        f'font-size:13.5px;color:var(--sc-text-dim,#465366);">'
+        f'How prospects flow from screening to close. '
+        f'Empty stages remain visible at low opacity so the funnel '
+        f'shape stays readable.</p>'
+        f'{funnel_bars}'
+        f'</div>'
     )
 
     # ── Saved searches ──
