@@ -145,7 +145,6 @@ _SUB_NAV = {
         {"label": "Watchlist",           "href": "/watchlist"},
     ],
     "pipeline": [
-        {"label": "Pipeline",            "href": "/pipeline"},
         {"label": "Deal Sourcing",       "href": "/source"},
         {"label": "Hospital Screener",   "href": "/screen"},
         {"label": "Predictive Screener", "href": "/predictive-screener"},
@@ -161,7 +160,6 @@ _SUB_NAV = {
         {"label": "Market Rates",        "href": "/market-rates"},
     ],
     "research": [
-        {"label": "Research Hub",        "href": "/research"},
         {"label": "Notes",               "href": "/notes"},
         {"label": "Sector Momentum",     "href": "/sector-momentum"},
         {"label": "IRR Dispersion",      "href": "/irr-dispersion"},
@@ -169,7 +167,6 @@ _SUB_NAV = {
         {"label": "Backtest",            "href": "/backtest"},
     ],
     "portfolio": [
-        {"label": "Portfolio",           "href": "/portfolio"},
         {"label": "Portfolio Map",       "href": "/portfolio/map"},
         {"label": "Heatmap",             "href": "/portfolio/heatmap"},
         {"label": "Risk Scan",           "href": "/portfolio/risk-scan"},

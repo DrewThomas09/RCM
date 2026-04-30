@@ -149,8 +149,15 @@ _PALETTE_V2: Dict[str, str] = {
 def _active_palette() -> Dict[str, str]:
     """Return the palette matching ``CHARTIS_UI_V2``. Resolved at
     import time by default; callers that need per-request flipping
-    can read this function directly."""
-    flag = os.environ.get("CHARTIS_UI_V2", "0") != "0"
+    can read this function directly.
+
+    Default is ``"1"`` — matches ``_chartis_kit.UI_V2_ENABLED`` so a
+    process started without the env var set picks the editorial
+    palette (parchment background + dark ink text). Defaulting to
+    ``"0"`` here while the shell defaulted to ``"1"`` produced the
+    off-white-text-on-parchment contrast bug.
+    """
+    flag = os.environ.get("CHARTIS_UI_V2", "1") != "0"
     return dict(_PALETTE_V2 if flag else _PALETTE_LEGACY)
 
 
