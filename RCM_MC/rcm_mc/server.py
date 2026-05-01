@@ -16197,6 +16197,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and not raw_next.startswith("//")
                 and "://" not in raw_next
             ) else "/alerts"
+            # Append a ?flash so the destination's editorial shell
+            # surfaces the toast confirmation. The kit's _TOAST_JS
+            # scrubs ?flash + ?kind from the URL after rendering so
+            # a refresh doesn't repeat the toast.
+            nxt = self._with_flash(nxt, "Alert acknowledged", "success")
             self._redirect(nxt)
             return
 
@@ -16688,6 +16693,35 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", "0")
         self._send_security_headers()
         self.end_headers()
+
+    def _with_flash(
+        self, location: str, message: str, kind: str = "info",
+    ) -> str:
+        """Append a ?flash=… &kind=… query-string to a redirect target.
+
+        The editorial kit's _TOAST_JS picks these up on load, renders
+        the toast, then scrubs the params from history so refresh
+        doesn't repeat the message. ``kind`` is one of:
+        success / info / warning / error.
+
+        Safe to call against locations that already have a query
+        string — uses urlencode and merges into existing params.
+        """
+        if not location:
+            return location
+        try:
+            import urllib.parse as _up
+            parsed = _up.urlparse(location)
+            params = _up.parse_qsl(parsed.query, keep_blank_values=False)
+            # Replace any prior flash so we don't stack messages.
+            params = [(k, v) for k, v in params if k not in ("flash", "kind")]
+            params.append(("flash", str(message)))
+            if kind:
+                params.append(("kind", str(kind)))
+            new_query = _up.urlencode(params)
+            return _up.urlunparse(parsed._replace(query=new_query))
+        except Exception:  # noqa: BLE001 — never let flashing break a redirect
+            return location
 
 
 # ── Server lifecycle ───────────────────────────────────────────────────────

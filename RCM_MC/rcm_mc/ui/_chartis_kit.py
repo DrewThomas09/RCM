@@ -1647,6 +1647,17 @@ _CSS_INLINE_FALLBACK = """
   .ck-palette-list li.cp-recent:hover { background:var(--sc-bone); }
   .cp-route { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); }
 
+  /* Toast / flash notifications — bottom-right slide-in stack */
+  .ck-toast-host { position:fixed; bottom:24px; right:24px; display:flex; flex-direction:column; gap:10px; z-index:120; pointer-events:none; max-width:380px; }
+  .ck-toast { pointer-events:auto; display:flex; align-items:center; gap:14px; padding:13px 18px; background:#fff; border:1px solid var(--sc-rule); border-left:3px solid var(--sc-teal); border-radius:2px; box-shadow:var(--sc-shadow-2); font-family:var(--sc-sans); font-size:13.5px; color:var(--sc-text); transform:translateX(20px); opacity:0; transition:transform 0.22s ease-out, opacity 0.22s ease-out; }
+  .ck-toast.ck-toast-show { transform:translateX(0); opacity:1; }
+  .ck-toast-success { border-left-color:var(--sc-positive); }
+  .ck-toast-info    { border-left-color:var(--sc-teal); }
+  .ck-toast-warning { border-left-color:var(--sc-warning); }
+  .ck-toast-error   { border-left-color:var(--sc-negative); }
+  .ck-toast-close { margin-left:auto; flex-shrink:0; width:22px; height:22px; padding:0; background:transparent; border:0; color:var(--sc-text-faint); font-size:16px; line-height:1; cursor:pointer; border-radius:50%; }
+  .ck-toast-close:hover { background:var(--sc-bone); color:var(--sc-navy); }
+
   /* Keyboard shortcut help dialog (press ?) */
   .ck-shortcuts { position:fixed; inset:0; background:rgba(11,35,65,0.45); display:flex; align-items:flex-start; justify-content:center; padding-top:10vh; z-index:110; }
   .ck-shortcuts[hidden] { display:none; }
@@ -1705,6 +1716,82 @@ _CSRF_JS = """
     }
     return of(u,o);
   };}
+})();
+</script>
+"""
+
+
+_TOAST_HTML = """
+<div class="ck-toast-host" id="ck-toast-host" aria-live="polite"></div>
+"""
+
+
+_TOAST_JS = """
+<script>
+/* Toast / flash notification system.
+ *   Any page can fire one via:
+ *     window.ckToast('Saved', 'success')   // success | info | warning | error
+ *   Or embed a one-shot at render time:
+ *     <meta name="ck-flash" content="Alert acknowledged">
+ *     <meta name="ck-flash-kind" content="success">
+ *   Or via query string after a redirect:
+ *     /alerts?flash=Acknowledged&kind=success
+ *   The query-string variant scrubs ?flash + ?kind from history so a
+ *   partner refreshing the page doesn't see the toast again. */
+(function(){
+  var host = document.getElementById('ck-toast-host');
+  if (!host) return;
+
+  function show(msg, kind){
+    if (!msg) return;
+    var t = document.createElement('div');
+    t.className = 'ck-toast ck-toast-' + (kind || 'info');
+    t.setAttribute('role', 'status');
+    t.textContent = msg;
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'ck-toast-close';
+    x.setAttribute('aria-label', 'Dismiss');
+    x.innerHTML = '&times;';
+    x.addEventListener('click', function(){ dismiss(t); });
+    t.appendChild(x);
+    host.appendChild(t);
+    /* Slide in on next frame so transition fires */
+    requestAnimationFrame(function(){ t.classList.add('ck-toast-show'); });
+    /* Auto-dismiss after 3.6s (5.5s for warning/error) */
+    var ms = (kind === 'warning' || kind === 'error') ? 5500 : 3600;
+    setTimeout(function(){ dismiss(t); }, ms);
+  }
+  function dismiss(t){
+    if (!t || !t.parentNode) return;
+    t.classList.remove('ck-toast-show');
+    setTimeout(function(){
+      if (t.parentNode) t.parentNode.removeChild(t);
+    }, 220);
+  }
+  window.ckToast = show;
+
+  /* Render meta-tag flashes on load */
+  var meta = document.querySelector('meta[name="ck-flash"]');
+  if (meta && meta.getAttribute('content')) {
+    var kind = (document.querySelector('meta[name="ck-flash-kind"]') || {}).content || 'info';
+    show(meta.getAttribute('content'), kind);
+  }
+
+  /* Render query-string flashes on load + clean history */
+  try {
+    var sp = new URLSearchParams(window.location.search);
+    var qmsg = sp.get('flash');
+    if (qmsg) {
+      var qkind = sp.get('kind') || 'info';
+      show(qmsg, qkind);
+      sp.delete('flash');
+      sp.delete('kind');
+      var qs = sp.toString();
+      var newUrl = window.location.pathname + (qs ? ('?' + qs) : '') + window.location.hash;
+      window.history.replaceState({}, '', newUrl);
+    }
+  } catch (e) {}
 })();
 </script>
 """
@@ -2351,11 +2438,13 @@ def chartis_shell(
         f'<main class="{main_class}">{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
         f"{_SHORTCUTS_HTML}"
+        f"{_TOAST_HTML}"
         f"{_CSRF_JS}"
         f"{_USER_MENU_JS}"
         f"{_INTRO_DISMISS_JS}"
         f"{_PALETTE_JS}"
         f"{_SHORTCUTS_JS}"
+        f"{_TOAST_JS}"
         f"{extra_js_html}"
         "</body></html>"
     )
