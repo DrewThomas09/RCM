@@ -3488,6 +3488,30 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(
                 render_research(q=r_q, topic=r_topic, kind=r_kind),
             )
+        # Research-tab card targets — page modules already existed
+        # but were never wired to routes, so each card click 404'd.
+        if path == "/comparable-outcomes":
+            from .ui.comparable_outcomes_page import (
+                render_comparable_outcomes_page,
+            )
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(
+                render_comparable_outcomes_page(
+                    _qs, db_path=self.config.db_path,
+                ),
+            )
+        if path == "/regulatory-calendar":
+            from .ui.regulatory_calendar_page import (
+                render_regulatory_calendar_page,
+            )
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(
+                render_regulatory_calendar_page(_qs),
+            )
+        if path == "/bear-cases":
+            from .ui.bear_case_page import render_bear_case_page
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_bear_case_page(_qs))
         # Screener API
         if path == "/api/screener/run":
             return self._send_json({"error": "use POST"}, status=HTTPStatus.METHOD_NOT_ALLOWED)

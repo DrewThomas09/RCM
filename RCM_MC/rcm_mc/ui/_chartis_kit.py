@@ -1859,6 +1859,11 @@ def chartis_shell(
     # forgot_page rely on this to land their grid + panel CSS;
     # without it, content stacks as one unstyled column.
     extra_css: Optional[str] = None,
+    # Page-specific JS injected before </body>. analysis_workbench
+    # ships its tab-switching + scenario-form + explain-panel
+    # handlers via this kwarg — without it the RCM Profile tab
+    # (and every other workbench tab) was inert.
+    extra_js: Optional[str] = None,
     # Editorial PHI-banner toggle (consumed by the editorial
     # variant). No-op in this v2 shell.
     show_phi_banner: bool = False,
@@ -1938,6 +1943,12 @@ def chartis_shell(
     extra_css_html = (
         f"<style>{extra_css}</style>" if extra_css else ""
     )
+    # Page-specific JS sits at the end of body so the kit's
+    # standard handlers (CSRF, user-menu, etc.) load first and
+    # the page can rely on the DOM being parsed.
+    extra_js_html = (
+        f"<script>{extra_js}</script>" if extra_js else ""
+    )
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -1956,6 +1967,7 @@ def chartis_shell(
         f"{_USER_MENU_JS}"
         f"{_INTRO_DISMISS_JS}"
         f"{_PALETTE_JS}"
+        f"{extra_js_html}"
         "</body></html>"
     )
 
