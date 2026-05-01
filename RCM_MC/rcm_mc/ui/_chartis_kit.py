@@ -1223,6 +1223,91 @@ def ck_affirm_empty(
 # Command palette (⌘K) — feed it the module catalog
 # ---------------------------------------------------------------------------
 
+# Default Cmd+K palette — the full platform tools index. Lets a
+# partner jump to ANY surface (the long-tail of ~70 analytic
+# tools beyond the editorial top-nav) without trawling URLs.
+# Every entry must resolve to a real route; verified by the audit
+# in tests/test_palette_routes.py.
+_DEFAULT_PALETTE_MODULES = [
+    # Home + ops
+    {"id": "home",        "title": "Command Center",       "route": "/app"},
+    {"id": "my",          "title": "My Dashboard",         "route": "/my/AT"},
+    {"id": "alerts",      "title": "Alerts",               "route": "/alerts"},
+    {"id": "escalations", "title": "Escalations",          "route": "/escalations"},
+    {"id": "watchlist",   "title": "Watchlist",            "route": "/watchlist"},
+    # Pipeline / sourcing
+    {"id": "pipeline",    "title": "Pipeline",             "route": "/pipeline"},
+    {"id": "source",      "title": "Deal Sourcing",        "route": "/source"},
+    {"id": "screen",      "title": "Hospital Screener",    "route": "/screen"},
+    {"id": "predictive",  "title": "Predictive Screener",  "route": "/predictive-screener"},
+    {"id": "pe-intel",    "title": "PE Intelligence",      "route": "/pe-intelligence"},
+    {"id": "deal-screen", "title": "Deal Screening",       "route": "/deal-screening"},
+    {"id": "find-comps",  "title": "Find Comps",           "route": "/find-comps"},
+    {"id": "conferences", "title": "Conferences",          "route": "/conferences"},
+    # Diligence playbook
+    {"id": "deal-profile",  "title": "Deal Profile",       "route": "/diligence/deal"},
+    {"id": "thesis-pipe",   "title": "Thesis Pipeline",    "route": "/diligence/thesis-pipeline"},
+    {"id": "checklist",     "title": "Diligence Checklist","route": "/diligence/checklist"},
+    {"id": "ingest",        "title": "Ingestion",          "route": "/diligence/ingest"},
+    {"id": "benchmarks",    "title": "Benchmarks",         "route": "/diligence/benchmarks"},
+    {"id": "hcris-xray",    "title": "HCRIS X-Ray",        "route": "/diligence/hcris-xray"},
+    {"id": "root-cause",    "title": "Root Cause",         "route": "/diligence/root-cause"},
+    {"id": "value-create",  "title": "Value Creation",     "route": "/diligence/value"},
+    {"id": "risk-bench",    "title": "Risk Workbench",     "route": "/diligence/risk-workbench?demo=steward"},
+    {"id": "counterfact",   "title": "Counterfactual",     "route": "/diligence/counterfactual"},
+    {"id": "compare",       "title": "Compare Deals",      "route": "/diligence/compare"},
+    {"id": "bankruptcy",    "title": "Bankruptcy Scan",    "route": "/screening/bankruptcy-survivor"},
+    {"id": "qoe-memo",      "title": "QoE Memo",           "route": "/diligence/qoe-memo"},
+    {"id": "denial-pred",   "title": "Denial Prediction",  "route": "/diligence/denial-prediction"},
+    {"id": "deal-autopsy",  "title": "Deal Autopsy",       "route": "/diligence/deal-autopsy"},
+    {"id": "phys-attr",     "title": "Physician Attrition","route": "/diligence/physician-attrition"},
+    {"id": "phys-eu",       "title": "Provider Economics", "route": "/diligence/physician-eu"},
+    {"id": "management",    "title": "Management",         "route": "/diligence/management"},
+    {"id": "deal-mc",       "title": "Deal Monte Carlo",   "route": "/diligence/deal-mc"},
+    {"id": "exit-timing",   "title": "Exit Timing",        "route": "/diligence/exit-timing"},
+    {"id": "covenant-stress","title":"Covenant Stress",    "route": "/diligence/covenant-stress"},
+    {"id": "bridge-audit",  "title": "Bridge Audit",       "route": "/diligence/bridge-audit"},
+    {"id": "payer-stress",  "title": "Payer Stress",       "route": "/diligence/payer-stress"},
+    {"id": "ic-packet",     "title": "IC Packet",          "route": "/diligence/ic-packet"},
+    {"id": "engagements",   "title": "Engagements",        "route": "/engagements"},
+    # Library / reference
+    {"id": "library",       "title": "Deals Library",      "route": "/library"},
+    {"id": "deals-library", "title": "Deals Library (alt)","route": "/deals-library"},
+    {"id": "methodology",   "title": "Methodology",        "route": "/methodology"},
+    {"id": "metric-glos",   "title": "Metric Glossary",    "route": "/metric-glossary"},
+    {"id": "rcm-bench",     "title": "RCM Benchmarks",     "route": "/rcm-benchmarks"},
+    {"id": "data",          "title": "Data Catalog",       "route": "/data"},
+    {"id": "comparables",   "title": "Comparables",        "route": "/comparables"},
+    {"id": "market-rates",  "title": "Market Rates",       "route": "/market-rates"},
+    # Research
+    {"id": "research",      "title": "Research Hub",       "route": "/research"},
+    {"id": "notes",         "title": "Notes",              "route": "/notes"},
+    {"id": "sector-mom",    "title": "Sector Momentum",    "route": "/sector-momentum"},
+    {"id": "irr-disp",      "title": "IRR Dispersion",     "route": "/irr-dispersion"},
+    {"id": "hold-analysis", "title": "Hold Analysis",      "route": "/hold-analysis"},
+    {"id": "comp-outcomes", "title": "Comparable Outcomes","route": "/comparable-outcomes"},
+    {"id": "bear-cases",    "title": "Bear Cases",         "route": "/bear-cases"},
+    {"id": "reg-cal",       "title": "Regulatory Calendar","route": "/regulatory-calendar"},
+    {"id": "market-intel",  "title": "Market Intelligence","route": "/market-intel"},
+    {"id": "corpus-back",   "title": "Corpus Backtest",    "route": "/corpus-backtest"},
+    {"id": "backtest",      "title": "Backtest",           "route": "/backtest"},
+    # Portfolio
+    {"id": "portfolio",     "title": "Portfolio",          "route": "/portfolio"},
+    {"id": "port-map",      "title": "Portfolio Map",      "route": "/portfolio/map"},
+    {"id": "port-heat",     "title": "Portfolio Heatmap",  "route": "/portfolio/heatmap"},
+    {"id": "port-risk",     "title": "Portfolio Risk Scan","route": "/portfolio/risk-scan"},
+    {"id": "port-mon",      "title": "Portfolio Monitor",  "route": "/portfolio/monitor"},
+    {"id": "port-an",       "title": "Portfolio Analytics","route": "/portfolio-analytics"},
+    {"id": "sponsor-tr",    "title": "Sponsor Track Record","route": "/sponsor-track-record"},
+    {"id": "payer-intel",   "title": "Payer Intelligence", "route": "/payer-intelligence"},
+    {"id": "lp-update",     "title": "LP Update",          "route": "/lp-update"},
+    # Admin / system
+    {"id": "audit",         "title": "Audit Log",          "route": "/audit"},
+    {"id": "users",         "title": "Users",              "route": "/users"},
+    {"id": "import",        "title": "Import Deal",        "route": "/import"},
+]
+
+
 def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
     items = "".join(
         f'<li data-key="{_esc(m.get("id", ""))}" data-route="{_esc(m.get("route", ""))}">'
@@ -1991,8 +2076,13 @@ def chartis_shell(
         'family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">'
     )
     palette_html = ""
-    if include_palette and palette_modules:
-        palette_html = ck_command_palette(palette_modules)
+    if include_palette:
+        # Use the platform-wide default tools index if the caller
+        # didn't pass a curated list. Lets every editorial page jump
+        # to any tool via Cmd+K without each renderer having to
+        # re-enumerate the palette.
+        modules_to_use = palette_modules or _DEFAULT_PALETTE_MODULES
+        palette_html = ck_command_palette(modules_to_use)
     debug_tag = f'<div class="ck-debug-code">[{_esc(code)}]</div>' if code else ""
     # show_chrome=False: bare pages (login / forgot) without topnav
     chrome_html = (
