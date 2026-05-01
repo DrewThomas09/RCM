@@ -15819,7 +15819,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._send_json(
                     {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST,
                 )
-            self._redirect(f"/deal/{urllib.parse.quote(deal_id)}")
+            self._redirect(self._with_flash(
+                f"/deal/{urllib.parse.quote(deal_id)}",
+                "Note saved", "success",
+            ))
             return
 
         # POST /api/jobs/run  (B95: queue a simulation)
@@ -15894,7 +15897,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._send_json(
                     {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST,
                 )
-            self._redirect(f"/deal/{urllib.parse.quote(deal_id)}")
+            self._redirect(self._with_flash(
+                f"/deal/{urllib.parse.quote(deal_id)}",
+                "Deadline added", "success",
+            ))
             return
 
         # POST /api/deadlines/<id>/assign  (B116: change owner)
@@ -15914,7 +15920,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             accept = self.headers.get("Accept", "")
             if "application/json" in accept:
                 return self._send_json({"ok": True})
-            self._redirect("/deadlines")
+            self._redirect(self._with_flash(
+                "/deadlines", "Deadline owner updated", "success",
+            ))
             return
 
         # POST /api/deadlines/<id>/complete  (B114: mark done)
@@ -15936,7 +15944,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             accept = self.headers.get("Accept", "")
             if "application/json" in accept:
                 return self._send_json({"completed": ok})
-            self._redirect("/deadlines")
+            self._redirect(self._with_flash(
+                "/deadlines",
+                "Deadline marked complete" if ok else "Already complete",
+                "success" if ok else "info",
+            ))
             return
 
         # POST /api/notes/<id>/tags  (B123: add a tag)
@@ -16125,7 +16137,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._send_json(
                     {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST,
                 )
-            self._redirect(f"/deal/{urllib.parse.quote(deal_id)}")
+            owner_label = form.get("owner", "").strip() or "—"
+            self._redirect(self._with_flash(
+                f"/deal/{urllib.parse.quote(deal_id)}",
+                f"Owner set to {owner_label}", "success",
+            ))
             return
 
         # POST /api/deals/<id>/star  (B111: toggle watchlist star)
@@ -16139,7 +16155,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._send_json({
                     "deal_id": deal_id, "starred": new_state,
                 })
-            self._redirect(f"/deal/{urllib.parse.quote(deal_id)}")
+            flash_msg = (
+                "Pinned to watchlist" if new_state else "Removed from watchlist"
+            )
+            self._redirect(self._with_flash(
+                f"/deal/{urllib.parse.quote(deal_id)}",
+                flash_msg, "success",
+            ))
             return
 
         # POST /api/alerts/ack  (B102: acknowledge / snooze an alert instance)
