@@ -13652,106 +13652,215 @@ class RCMHandler(BaseHTTPRequestHandler):
     def _route_search(self, query: str) -> None:
         """Cross-deal search: match against deal_id, stage, note body, author.
 
-        Case-insensitive substring match. Results grouped into:
-          - Deal hits  (deal_id or current stage matches)
-          - Note hits  (note body or author matches)
-        Each result links to the relevant deal page with deal_id as anchor.
+        Editorial render: ck_page_title H1 + serif search hero +
+        section panels for deal and note matches. Replaces the bare
+        <form>+<div class="card"> chrome that read as legacy alongside
+        the rest of the v5 UI.
         """
+        from .ui._chartis_kit import (
+            ck_page_title, chartis_shell, ck_kpi_block,
+        )
         q = (query or "").strip().lower()
         store = PortfolioStore(self.config.db_path)
 
-        deal_hits_html = []
-        note_hits_html = []
+        # Friendly deal-name lookup so result cards read
+        # "Cypress Crossing Health" instead of slug "ccf".
+        name_map: Dict[str, str] = {}
+        try:
+            with store.connect() as _con:
+                for r in _con.execute("SELECT deal_id, name FROM deals"):
+                    name_map[r["deal_id"]] = r["name"]
+        except Exception:
+            pass
 
+        def _deal_link(did: str) -> str:
+            display = html.escape(name_map.get(did, did))
+            return (
+                f'<a href="/deal/{urllib.parse.quote(did)}" '
+                f'style="color:var(--sc-navy,#0b2341);font-weight:600;'
+                f'text-decoration:none;">{display}</a>'
+            )
+
+        deal_hits = []
+        note_hits = []
         if q:
             from .portfolio.portfolio_snapshots import latest_per_deal
             deals_df = latest_per_deal(store)
-            # Deals: match deal_id, stage, covenant, notes snippet
             for _, r in deals_df.iterrows():
                 fields = [
                     str(r.get("deal_id") or ""),
                     str(r.get("stage") or ""),
                     str(r.get("covenant_status") or ""),
                     str(r.get("notes") or ""),
+                    str(name_map.get(str(r.get("deal_id") or ""), "")),
                 ]
-                haystack = " ".join(fields).lower()
-                if q in haystack:
+                if q in " ".join(fields).lower():
                     did = str(r.get("deal_id") or "")
-                    deal_hits_html.append(
-                        f'<li style="padding: 0.5rem 0; '
-                        f'border-bottom: 1px solid var(--border);">'
-                        f'<a href="/deal/{urllib.parse.quote(did)}" '
-                        f'style="color: var(--accent); text-decoration: none;">'
-                        f'<strong>{html.escape(did)}</strong></a>'
-                        f' <span class="muted" style="font-size: 0.85rem;">· '
-                        f'{html.escape(str(r.get("stage") or "?")).title()}'
-                        f'{" · " + html.escape(str(r.get("covenant_status"))) if r.get("covenant_status") else ""}'
-                        f'</span></li>'
+                    stage = html.escape(str(r.get("stage") or "?").title())
+                    cov = str(r.get("covenant_status") or "")
+                    cov_html = (
+                        f' &middot; <span style="font-family:var(--sc-mono,monospace);'
+                        f'font-size:11px;letter-spacing:0.06em;'
+                        f'text-transform:uppercase;color:var(--sc-text-faint,#7a8699);">'
+                        f'{html.escape(cov)}</span>'
+                        if cov else ""
                     )
-
-            # Notes: full-text on body + author
+                    deal_hits.append(
+                        '<li class="ck-search-hit">'
+                        f'<div class="ck-search-hit-title">{_deal_link(did)}'
+                        f'<span class="ck-search-hit-slug">{html.escape(did)}</span>'
+                        '</div>'
+                        f'<div class="ck-search-hit-meta">{stage}{cov_html}</div>'
+                        '</li>'
+                    )
             notes_df = list_notes(store)
             for _, r in notes_df.iterrows():
-                body = str(r.get("body") or "")
+                body_text = str(r.get("body") or "")
                 author = str(r.get("author") or "")
-                if q in body.lower() or q in author.lower():
+                if q in body_text.lower() or q in author.lower():
                     did = str(r.get("deal_id") or "")
-                    # Highlight match in the body snippet
-                    snippet = body[:200]
-                    note_hits_html.append(
-                        f'<li style="padding: 0.75rem 0; '
-                        f'border-bottom: 1px solid var(--border);">'
-                        f'<a href="/deal/{urllib.parse.quote(did)}" '
-                        f'style="color: var(--accent); text-decoration: none;">'
-                        f'<strong>{html.escape(did)}</strong></a> '
-                        f'<span class="muted" style="font-size: 0.8rem;">· '
-                        f'{html.escape(author or "—")} · '
-                        f'{html.escape(str(r.get("created_at") or "")[:19])}'
-                        f'</span>'
-                        f'<div style="margin-top: 0.25rem; white-space: pre-wrap;">'
-                        f'{html.escape(snippet)}{"…" if len(body) > 200 else ""}'
-                        f'</div></li>'
+                    snippet = body_text[:240]
+                    more = "…" if len(body_text) > 240 else ""
+                    when = html.escape(str(r.get("created_at") or "")[:19])
+                    note_hits.append(
+                        '<li class="ck-search-hit">'
+                        f'<div class="ck-search-hit-title">{_deal_link(did)}'
+                        f'<span class="ck-search-hit-slug">{html.escape(did)}</span>'
+                        '</div>'
+                        f'<div class="ck-search-hit-meta">'
+                        f'{html.escape(author or "—")} &middot; '
+                        f'<span style="font-family:var(--sc-mono,monospace);">{when}</span>'
+                        '</div>'
+                        f'<p class="ck-search-hit-body">{html.escape(snippet)}{more}</p>'
+                        '</li>'
                     )
 
-        # Compose results panel
-        deals_panel = (
-            f'<div class="card"><h2>Deal matches ({len(deal_hits_html)})</h2>'
-            f'<ul style="list-style: none; padding: 0; margin: 0;">'
-            f'{"".join(deal_hits_html)}</ul></div>'
-        ) if deal_hits_html else ""
-        notes_panel = (
-            f'<div class="card"><h2>Note matches ({len(note_hits_html)})</h2>'
-            f'<ul style="list-style: none; padding: 0; margin: 0;">'
-            f'{"".join(note_hits_html)}</ul></div>'
-        ) if note_hits_html else ""
+        # KPI strip: total hits + deal hits + note hits + universe
+        kpi_html = (
+            '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+            + ck_kpi_block(
+                "Matches",
+                f"{len(deal_hits) + len(note_hits)}",
+                sub="across deals + notes",
+            )
+            + ck_kpi_block(
+                "Deal Hits", f"{len(deal_hits)}",
+                sub="deal_id / stage / covenant",
+            )
+            + ck_kpi_block(
+                "Note Hits", f"{len(note_hits)}",
+                sub="body + author full-text",
+            )
+            + ck_kpi_block(
+                "Query", f'"{html.escape(q)}"' if q else "—",
+                sub="case-insensitive substring",
+            )
+            + '</div>'
+        )
+
+        title_html = ck_page_title(
+            "Search",
+            eyebrow="PORTFOLIO-WIDE",
+            meta=(
+                f"Query: {q!r} · "
+                f"{len(deal_hits)} deal hits · {len(note_hits)} note hits"
+                if q else "Type a query to scan deals, stages, and notes"
+            ),
+        )
+
+        search_form = (
+            '<form method="GET" action="/search" class="ck-search-page-form">'
+            '<input type="text" name="q" value="' + html.escape(q) + '" '
+            'placeholder="Search deals, hospitals, notes, sponsors…" '
+            'autofocus class="ck-search-page-input">'
+            '<button type="submit" class="ck-search-page-submit">'
+            'Search &rarr;</button>'
+            '</form>'
+        )
+
+        deal_panel = (
+            '<section class="cad-card ck-lp-section">'
+            '<header class="ck-lp-section-head">'
+            f'<h2>Deals</h2>'
+            f'<span class="ck-lp-section-count">{len(deal_hits)} hits</span>'
+            '</header>'
+            '<ul class="ck-search-hits">'
+            + "".join(deal_hits) + '</ul>'
+            '</section>'
+        ) if deal_hits else ""
+        note_panel = (
+            '<section class="cad-card ck-lp-section">'
+            '<header class="ck-lp-section-head">'
+            f'<h2>Notes</h2>'
+            f'<span class="ck-lp-section-count">{len(note_hits)} hits</span>'
+            '</header>'
+            '<ul class="ck-search-hits">'
+            + "".join(note_hits) + '</ul>'
+            '</section>'
+        ) if note_hits else ""
         empty_panel = (
-            '<div class="card"><p class="muted">No matches. '
-            'Try a shorter query, or <a href="/">browse the dashboard</a>.</p></div>'
-        ) if q and not (deal_hits_html or note_hits_html) else ""
+            '<section class="cad-card ck-lp-section">'
+            '<p class="ck-lp-empty">No matches. Try a shorter query — '
+            'or open the <a href="/" style="color:var(--sc-teal-ink,#0f5e5a);">dashboard</a> '
+            'to browse.</p></section>'
+        ) if q and not (deal_hits or note_hits) else ""
         hint_panel = (
-            '<div class="card"><p class="muted">Type a query above. '
-            'Searches deal IDs, stages, and note content across the portfolio.</p></div>'
+            '<section class="cad-card ck-lp-section">'
+            '<p class="ck-lp-empty">Searches deal IDs, deal names, stages, '
+            'covenant status, and the full text of every note across the '
+            'portfolio. Press Cmd+K anywhere to jump to a tool by name.</p>'
+            '</section>'
         ) if not q else ""
 
-        # Search box carries current query for refinement
-        body = f"""
-        <form method="GET" action="/search" style="margin-bottom: 1rem;">
-          <input type="text" name="q" value="{html.escape(q)}"
-                 placeholder="Search deals, stages, notes..."
-                 autofocus
-                 style="width: 100%; padding: 0.75rem 1rem;
-                        border: 1px solid var(--border); border-radius: 8px;
-                        font-size: 1rem; font-family: inherit;">
-        </form>
-        {deals_panel}
-        {notes_panel}
-        {empty_panel}
-        {hint_panel}
-        """
-        self._send_html(shell(
-            body=body, title="Search",
-            subtitle=f"Results for: {q!r}" if q else "Portfolio-wide search",
-            back_href="/",
+        page_css = (
+            '<style>'
+            '.ck-search-page-form{display:flex;gap:12px;margin:0 0 24px;}'
+            '.ck-search-page-input{flex:1;padding:14px 18px;'
+            'font-family:var(--sc-serif,Georgia,serif);font-size:18px;'
+            'background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+            'color:var(--sc-text,#1a2332);border-radius:2px;'
+            'box-shadow:var(--sc-shadow-1);}'
+            '.ck-search-page-input:focus{outline:none;'
+            'border-color:var(--sc-teal,#155752);}'
+            '.ck-search-page-submit{padding:0 22px;background:var(--sc-navy,#0b2341);'
+            'color:#fff;border:0;font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:12px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;cursor:pointer;border-radius:2px;}'
+            '.ck-search-page-submit:hover{background:var(--sc-teal,#155752);}'
+            '.ck-search-hits{list-style:none;padding:0;margin:0;}'
+            '.ck-search-hit{padding:14px 0;'
+            'border-top:1px solid var(--sc-rule,#d6cfc3);}'
+            '.ck-search-hit:first-child{border-top:0;}'
+            '.ck-search-hit-title{display:flex;align-items:baseline;gap:10px;'
+            'margin-bottom:4px;}'
+            '.ck-search-hit-slug{font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;color:var(--sc-text-faint,#7a8699);'
+            'letter-spacing:0.06em;text-transform:uppercase;}'
+            '.ck-search-hit-meta{font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:12.5px;color:var(--sc-text-dim,#465366);}'
+            '.ck-search-hit-body{margin:8px 0 0;'
+            'font-family:var(--sc-serif,Georgia,serif);font-size:13.5px;'
+            'line-height:1.5;color:var(--sc-text,#1a2332);'
+            'white-space:pre-wrap;}'
+            '</style>'
+        )
+
+        body = (
+            f"{title_html}"
+            f"{search_form}"
+            f"{kpi_html}"
+            f"{deal_panel}"
+            f"{note_panel}"
+            f"{empty_panel}"
+            f"{hint_panel}"
+            f"{page_css}"
+        )
+        self._send_html(chartis_shell(
+            body, "Search",
+            active_nav="/search",
+            subtitle=(
+                f"Results for: {q!r}" if q else "Portfolio-wide search"
+            ),
         ))
 
     def _route_users_page(self) -> None:
