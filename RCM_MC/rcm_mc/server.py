@@ -1841,19 +1841,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                 body = chartis_shell(body, title=title)
             except Exception:  # noqa: BLE001 — never let this safety net 500
                 pass
-        # Subnav backfill: if a renderer omitted ``active_nav`` in its
-        # chartis_shell call, the topbar emits no subnav rail. Resolve
-        # the current request path against ``_SUB_SECTION_MAP`` and
-        # inject the matching section's pills before ``</header>`` so
-        # every page in a known section shows its subnav without each
-        # renderer having to remember the kwarg.
-        # Note: bare "ck-subnav" appears in inline CSS rules
-        # (.ck-subnav{...}) on every editorial page — match the
-        # element opener instead so the backfill triggers when no
-        # actual subnav is rendered.
-        if (status == HTTPStatus.OK
-                and "ck-topbar" in body
-                and '<nav class="ck-subnav"' not in body):
+        # Editorial-chrome augmentation: backfill the section subnav
+        # rail when the renderer didn't pass active_nav, and always
+        # promote the topbar nav-link + matching subnav pill to
+        # "active" based on the current request path.
+        # Bare "ck-subnav" appears in inline CSS (.ck-subnav{...}) on
+        # every editorial page — match the element opener instead so
+        # the rail backfill only triggers when no actual rail rendered.
+        needs_rail_backfill = (
+            status == HTTPStatus.OK
+            and "ck-topbar" in body
+            and '<nav class="ck-subnav"' not in body
+        )
+        needs_active_marks = (
+            status == HTTPStatus.OK and "ck-topbar" in body
+        )
+        if needs_active_marks:
             try:
                 from .ui._chartis_kit import (
                     _resolve_sub_section, _SUB_NAV, _CORPUS_NAV,
@@ -1861,8 +1864,8 @@ class RCMHandler(BaseHTTPRequestHandler):
                 import urllib.parse as _up
                 req_path = _up.urlparse(self.path).path or "/"
                 section = _resolve_sub_section(req_path)
-                if section and section in _SUB_NAV:
-                    import html as _h
+                import html as _h
+                if needs_rail_backfill and section and section in _SUB_NAV:
                     pills = "".join(
                         f'<a href="{_h.escape(item["href"], quote=True)}" '
                         f'class="ck-subnav-link">{_h.escape(item["label"])}</a>'
@@ -1873,27 +1876,47 @@ class RCMHandler(BaseHTTPRequestHandler):
                         f'<div class="ck-subnav-inner">{pills}</div>'
                         '</nav>'
                     )
-                    # Inject just before the topbar's closing </header>.
-                    # Only the FIRST </header> is the topbar — match
-                    # once with count=1.
                     import re as _re_subnav
                     body = _re_subnav.sub(
                         r"</header>", rail + "</header>",
                         body, count=1,
                     )
-                    # Mark the matching topbar nav link as active.
-                    # Find the _CORPUS_NAV entry whose key == section
-                    # and rewrite its `class=""` to `class="active"`.
+                # Topbar active-link mark: applies whether the rail
+                # was kit-emitted or backfill-injected.
+                if section:
                     for nav_item in _CORPUS_NAV:
                         if nav_item.get("key") == section:
                             href = _h.escape(nav_item["href"], quote=True)
-                            # Only the first occurrence inside .ck-nav
                             body = body.replace(
                                 f'<a href="{href}" class="">',
                                 f'<a href="{href}" class="active">',
                                 1,
                             )
                             break
+                # Always-on sub-nav pill highlight (works whether the
+                # rail came from the kit or from the backfill above):
+                # for every <a class="ck-subnav-link"> whose href
+                # matches the current request path, promote to
+                # "ck-subnav-link active". Strip query string from
+                # both sides before comparing so e.g.
+                # /diligence/risk-workbench?demo=steward still
+                # highlights the Risk Workbench pill on a hit to
+                # /diligence/risk-workbench.
+                req_path_clean = req_path.rstrip("/") or "/"
+                import re as _re_pill
+                def _mark_active(m):
+                    href_attr = m.group(1)
+                    href_clean = href_attr.split("?")[0].rstrip("/") or "/"
+                    if href_clean == req_path_clean:
+                        return (
+                            f'<a href="{href_attr}" '
+                            f'class="ck-subnav-link active">'
+                        )
+                    return m.group(0)
+                body = _re_pill.sub(
+                    r'<a href="([^"]+)" class="ck-subnav-link">',
+                    _mark_active, body,
+                )
             except Exception:  # noqa: BLE001
                 pass
         # PHI banner safety net: any HTML response that doesn't already

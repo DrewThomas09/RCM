@@ -1641,6 +1641,10 @@ _CSS_INLINE_FALLBACK = """
   .ck-palette-list { list-style:none; margin:0; padding:0; max-height:52vh; overflow:auto; }
   .ck-palette-list li { display:flex; justify-content:space-between; padding:10px 20px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--sc-bone); }
   .ck-palette-list li:hover { background:var(--sc-bone); }
+  .ck-palette-list li.cp-section { display:block; padding:10px 20px 6px; cursor:default; background:transparent; border-bottom:0; font-family:var(--sc-mono); font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-faint); }
+  .ck-palette-list li.cp-section:hover { background:transparent; }
+  .ck-palette-list li.cp-recent { background:linear-gradient(90deg, rgba(21,87,82,0.04) 0%, transparent 100%); }
+  .ck-palette-list li.cp-recent:hover { background:var(--sc-bone); }
   .cp-route { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); }
 
   /* Main content frame */
@@ -1783,30 +1787,95 @@ _USER_MENU_JS = """
 
 _PALETTE_JS = """
 <script>
+/* Cmd+K palette behaviour:
+ *   - Cmd/Ctrl+K opens, Esc closes.
+ *   - Recent visits (last 8) bubble to the top with a "Recent" header
+ *     so a partner can grab yesterday's tool in one keystroke.
+ *   - Arrow keys move the highlight; Enter navigates.
+ *   - Selecting an item records it in localStorage.ck-palette-recent.
+ */
 (function(){
   var p = document.getElementById('ck-palette');
   if (!p) return;
+  var RECENT_KEY = 'ck-palette-recent';
+  var MAX_RECENT = 8;
   var input = p.querySelector('.ck-palette-input');
-  var items = Array.from(p.querySelectorAll('li'));
-  function show() { p.hidden = false; setTimeout(function(){ input.focus(); }, 0); }
-  function hide() { p.hidden = true; input.value = ''; filter(''); }
-  function filter(q) {
+  var list  = p.querySelector('.ck-palette-list');
+  var allItems = Array.from(p.querySelectorAll('li'));
+  function loadRecent(){
+    try {
+      var s = localStorage.getItem(RECENT_KEY);
+      return s ? JSON.parse(s) : [];
+    } catch (e) { return []; }
+  }
+  function saveRecent(routes){
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(routes.slice(0, MAX_RECENT))); }
+    catch (e) {}
+  }
+  function rebuild(){
+    var recent = loadRecent();
+    if (!list) return;
+    /* Remove any prior recent header + clones */
+    Array.from(list.querySelectorAll('[data-recent-marker]')).forEach(function(el){
+      el.parentNode.removeChild(el);
+    });
+    if (!recent.length) return;
+    var header = document.createElement('li');
+    header.className = 'cp-section';
+    header.setAttribute('data-recent-marker', 'header');
+    header.textContent = 'Recent';
+    var firstChild = list.firstChild;
+    list.insertBefore(header, firstChild);
+    /* Insert a clone of each recent item right after header, in order */
+    var cursor = header;
+    recent.slice().reverse().forEach(function(route){
+      var src = allItems.filter(function(li){ return li.getAttribute('data-route') === route; })[0];
+      if (!src) return;
+      var clone = src.cloneNode(true);
+      clone.setAttribute('data-recent-marker', 'item');
+      clone.classList.add('cp-recent');
+      header.parentNode.insertBefore(clone, header.nextSibling);
+    });
+    /* Wire clones to the same click + nav behaviour */
+    Array.from(list.querySelectorAll('[data-recent-marker="item"]')).forEach(function(li){
+      li.addEventListener('click', function(){ navTo(li); });
+    });
+  }
+  function navTo(li){
+    var r = li.getAttribute('data-route');
+    if (!r) return;
+    var rec = loadRecent().filter(function(x){ return x !== r; });
+    rec.unshift(r);
+    saveRecent(rec);
+    window.location.href = r;
+  }
+  function show(){ rebuild(); p.hidden = false; setTimeout(function(){ input.focus(); }, 0); }
+  function hide(){ p.hidden = true; input.value = ''; filter(''); }
+  function filter(q){
     q = (q || '').toLowerCase();
-    items.forEach(function(li){
+    Array.from(p.querySelectorAll('li')).forEach(function(li){
+      if (li.classList.contains('cp-section')) {
+        /* Show the "Recent" header only when no query is active */
+        li.style.display = q ? 'none' : '';
+        return;
+      }
       var t = li.textContent.toLowerCase();
       li.style.display = t.indexOf(q) >= 0 ? '' : 'none';
     });
   }
   input.addEventListener('input', function(e){ filter(e.target.value); });
-  items.forEach(function(li){
-    li.addEventListener('click', function(){
-      var r = li.getAttribute('data-route');
-      if (r) window.location.href = r;
-    });
+  allItems.forEach(function(li){
+    li.addEventListener('click', function(){ navTo(li); });
   });
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); show(); }
     if (e.key === 'Escape' && !p.hidden) { e.preventDefault(); hide(); }
+    if (e.key === 'Enter' && !p.hidden) {
+      /* Pick first visible item */
+      var first = Array.from(p.querySelectorAll('li:not([style*="display: none"])'))
+        .find(function(li){ return !li.classList.contains('cp-section'); });
+      if (first) { e.preventDefault(); navTo(first); }
+    }
   });
 })();
 </script>
