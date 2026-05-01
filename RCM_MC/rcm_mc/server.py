@@ -1865,6 +1865,8 @@ class RCMHandler(BaseHTTPRequestHandler):
                 req_path = _up.urlparse(self.path).path or "/"
                 section = _resolve_sub_section(req_path)
                 import html as _h
+                # Cached cleaned path used by breadcrumbs + pill match
+                req_path_clean = req_path.rstrip("/") or "/"
                 if needs_rail_backfill and section and section in _SUB_NAV:
                     pills = "".join(
                         f'<a href="{_h.escape(item["href"], quote=True)}" '
@@ -1893,6 +1895,65 @@ class RCMHandler(BaseHTTPRequestHandler):
                                 1,
                             )
                             break
+                # Auto-breadcrumbs: every editorial page should
+                # surface its location in the nav hierarchy. Derive
+                # the crumb chain from the request path (Home →
+                # Section → Page) and inject as <nav class="ck-
+                # breadcrumbs"> right after the topbar's </header>.
+                # Skipped if a renderer already provided breadcrumbs
+                # (look for an existing .ck-breadcrumbs element).
+                if 'class="ck-breadcrumbs"' not in body and section:
+                    section_label = ""
+                    section_href = ""
+                    for nav_item in _CORPUS_NAV:
+                        if nav_item.get("key") == section:
+                            section_label = nav_item.get("label", "")
+                            section_href = nav_item.get("href", "")
+                            break
+                    page_label = ""
+                    if section in _SUB_NAV:
+                        for sub in _SUB_NAV[section]:
+                            sub_href_clean = sub.get("href", "").split("?")[0].rstrip("/") or "/"
+                            if sub_href_clean == req_path_clean:
+                                page_label = sub.get("label", "")
+                                break
+                    crumbs_parts = [
+                        '<a href="/home">Home</a>',
+                        '<span class="sep">/</span>',
+                    ]
+                    if section_label:
+                        if page_label:
+                            crumbs_parts.append(
+                                f'<a href="{_h.escape(section_href, quote=True)}">'
+                                f'{_h.escape(section_label)}</a>'
+                            )
+                            crumbs_parts.append('<span class="sep">/</span>')
+                            crumbs_parts.append(
+                                f'<strong style="color:var(--sc-navy);">'
+                                f'{_h.escape(page_label)}</strong>'
+                            )
+                        else:
+                            crumbs_parts.append(
+                                f'<strong style="color:var(--sc-navy);">'
+                                f'{_h.escape(section_label)}</strong>'
+                            )
+                    else:
+                        # Section unknown — just show "Home / <path>"
+                        crumbs_parts.append(
+                            f'<strong style="color:var(--sc-navy);">'
+                            f'{_h.escape(req_path_clean)}</strong>'
+                        )
+                    crumbs_html = (
+                        '<nav class="ck-breadcrumbs">'
+                        + "".join(crumbs_parts)
+                        + '</nav>'
+                    )
+                    # Inject right after the topbar's </header>.
+                    import re as _re_crumbs
+                    body = _re_crumbs.sub(
+                        r"</header>", "</header>" + crumbs_html,
+                        body, count=1,
+                    )
                 # Always-on sub-nav pill highlight (works whether the
                 # rail came from the kit or from the backfill above):
                 # for every <a class="ck-subnav-link"> whose href
@@ -1902,7 +1963,6 @@ class RCMHandler(BaseHTTPRequestHandler):
                 # /diligence/risk-workbench?demo=steward still
                 # highlights the Risk Workbench pill on a hit to
                 # /diligence/risk-workbench.
-                req_path_clean = req_path.rstrip("/") or "/"
                 import re as _re_pill
                 def _mark_active(m):
                     href_attr = m.group(1)
