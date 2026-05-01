@@ -503,11 +503,18 @@ def _parse_mgmt_revenue(qs: dict) -> Optional[Dict[str, float]]:
 
 def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
     """Small landing rendered when no fixture was picked (or the
-    pipeline errored). Intentionally a full HTML page, not the shell,
-    to match the memo itself."""
+    pipeline errored). Wraps in chartis_shell so the partner gets
+    the editorial topbar + sub-nav + Cmd+K palette during the
+    setup step. The rendered memo itself remains a standalone
+    printable document — only this picker is editorial-chromed.
+    """
     err_block = (
-        f'<p style="color:#b23a2d;"><strong>Could not render memo:</strong> '
-        f'{html.escape(error)}</p>'
+        '<div class="cad-card" style="border-left:3px solid '
+        'var(--sc-negative,#b5321e);margin-bottom:18px;padding:14px 18px;">'
+        '<strong style="color:var(--sc-negative,#b5321e);">'
+        'Could not render memo:</strong> '
+        f'<span style="color:var(--sc-text-dim,#465366);">'
+        f'{html.escape(error)}</span></div>'
         if error else ""
     )
     options = "".join(
@@ -516,28 +523,42 @@ def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
         f'{html.escape(label)}</option>'
         for name, label in AVAILABLE_FIXTURES
     )
-    return (
-        '<!DOCTYPE html><html><head><meta charset="utf-8">'
-        '<title>QoE Memo — pick a dataset</title>'
-        '<style>body{font-family:Georgia,serif;max-width:7.5in;'
-        'margin:0 auto;padding:0.75in 0.5in;color:#1a1a1a;}'
-        'h1{color:#0b2341;}label{display:block;margin:12pt 0 4pt 0;'
-        'font-size:9pt;letter-spacing:1pt;text-transform:uppercase;'
-        'color:#6b5d3c;font-family:Helvetica,Arial,sans-serif;}'
-        'select,input{width:100%;padding:6pt;font-size:11pt;'
-        'border:1px solid #c9b98a;font-family:inherit;}'
-        'button{margin-top:18pt;padding:8pt 18pt;background:#0b2341;'
-        'color:#fff;border:0;font-size:11pt;cursor:pointer;'
-        'font-family:Helvetica,Arial,sans-serif;letter-spacing:1pt;'
-        'text-transform:uppercase;}</style></head><body>'
-        '<h1>Quality of Earnings Memorandum</h1>'
-        '<p>Pick a canonical claims dataset and (optionally) provide '
-        "management-reported revenue for the QoR reconciliation. The "
-        "memo renders as a standalone, printable HTML document. Use "
-        "your browser's <em>Print → Save as PDF</em> to produce the "
-        "partner deliverable.</p>"
+    body = (
+        '<style>'
+        '.qoe-form{max-width:560px;}'
+        '.qoe-form label{display:block;margin:14px 0 6px;'
+        'font-family:var(--sc-mono,JetBrains Mono,monospace);'
+        'font-size:11px;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
+        '.qoe-form select,.qoe-form input{width:100%;padding:9px 12px;'
+        'font-size:13.5px;border:1px solid var(--sc-rule,#d6cfc3);'
+        'background:#fff;color:var(--sc-text,#1a2332);border-radius:2px;'
+        'font-family:var(--sc-sans,Inter,sans-serif);}'
+        '.qoe-form select:focus,.qoe-form input:focus{outline:none;'
+        'border-color:var(--sc-teal,#155752);}'
+        '.qoe-form button{margin-top:24px;padding:10px 22px;'
+        'background:var(--sc-navy,#0b2341);color:#fff;border:0;'
+        'font-size:12px;cursor:pointer;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;border-radius:2px;'
+        'font-family:var(--sc-sans,Inter,sans-serif);}'
+        '.qoe-form button:hover{background:var(--sc-teal,#155752);}'
+        '.qoe-lead{font-family:var(--sc-serif,Georgia,serif);'
+        'font-size:14.5px;line-height:1.6;color:var(--sc-text-dim,#465366);'
+        'max-width:640px;margin:0 0 24px;}'
+        '</style>'
+        '<header class="ck-page-title">'
+        '<div class="ck-eyebrow">QOE MEMO</div>'
+        '<h1>Quality of Earnings <em>Memorandum</em>.</h1>'
+        '<div class="ck-page-title-meta">Phase 3 deliverable · standalone printable HTML</div>'
+        '</header>'
+        '<p class="qoe-lead">Pick a canonical claims dataset and '
+        '(optionally) provide management-reported revenue for the QoR '
+        'reconciliation. The memo renders as a standalone, printable '
+        'HTML document. Use your browser&rsquo;s <em>Print → Save as '
+        'PDF</em> to produce the partner deliverable.</p>'
         f'{err_block}'
-        '<form method="GET" action="/diligence/qoe-memo">'
+        '<div class="cad-card" style="padding:24px 28px;">'
+        '<form class="qoe-form" method="GET" action="/diligence/qoe-memo">'
         '<label>Dataset</label>'
         f'<select name="dataset"><option value="">— pick —</option>{options}</select>'
         '<label>Deal name (shown on cover)</label>'
@@ -552,8 +573,13 @@ def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
         '<input name="mgmt_cohort" placeholder="2024-03">'
         '<label>Management revenue USD (optional)</label>'
         '<input name="mgmt_value" placeholder="6850.0">'
-        '<button type="submit">Render memo</button>'
-        '</form></body></html>'
+        '<button type="submit">Render Memo &rarr;</button>'
+        '</form></div>'
+    )
+    return chartis_shell(
+        body, "QoE Memo",
+        active_nav="/diligence/qoe-memo",
+        subtitle="Pick a dataset to render the partner deliverable",
     )
 
 

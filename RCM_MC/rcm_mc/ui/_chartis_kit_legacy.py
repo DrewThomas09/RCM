@@ -1,23 +1,35 @@
-"""Chartis Kit — dark institutional shared shell for Corpus Intelligence pages.
+"""Chartis Kit — FROZEN legacy helpers (do not modify).
 
-Bloomberg Terminal / Palantir Foundry aesthetic.
-Every number rendered in JetBrains Mono with tabular-nums.
-No gradients. No glows. No rounded corners beyond 4px.
+Status as of 2026-05-01: this module is no longer the active page
+shell. ``chartis_shell`` here is unreachable from the dispatcher
+(``_chartis_kit.UI_V2_ENABLED`` is hard-coded True; the legacy
+fallback branch was removed in Phase 6 of the v5 nav-integration
+work). The module is retained because:
 
-Usage:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_table, ck_fmt_num, ck_signal_badge
+  * ``_chartis_kit_editorial.py`` re-exports ~12 helper functions
+    from here unchanged (ck_table, ck_kpi_block, ck_section_header,
+    ck_signal_badge, ck_grade_badge, ck_regime_badge, ck_fmt_num,
+    ck_fmt_pct, ck_fmt_moic, ck_fmt_currency, ck_fmt_irr, plus the
+    _MONO / _SANS font tokens).
+  * ~25 page renderers reach those helpers indirectly through
+    ``_chartis_kit_editorial`` — moving the implementations would
+    require touching every importer.
 
-Public API:
-    chartis_shell(body, title, *, active_nav, subtitle, extra_css, extra_js) -> str
-    ck_table(rows, columns, *, caption, sortable) -> str
-    ck_fmt_num(value, decimals, suffix, na) -> str
-    ck_fmt_pct(value, decimals) -> str
-    ck_fmt_moic(value) -> str
-    ck_fmt_currency(value_mm, decimals) -> str
-    ck_signal_badge(signal) -> str
-    ck_grade_badge(grade) -> str
-    ck_kpi_block(label, value, unit, delta) -> str
-    ck_section_header(title, subtitle, count) -> str
+If you find yourself wanting to change behaviour here, stop and
+move the helper into ``_chartis_kit.py`` instead, then update
+``_chartis_kit_editorial`` to re-export from the new location.
+
+No new code should add imports against this file.
+
+Bloomberg Terminal / Palantir Foundry aesthetic. Every number
+rendered in JetBrains Mono with tabular-nums. No gradients. No
+glows. No rounded corners beyond 4px.
+
+Frozen API surface (re-exported by editorial kit):
+    ck_table, ck_kpi_block, ck_section_header
+    ck_signal_badge, ck_grade_badge, ck_regime_badge
+    ck_fmt_num, ck_fmt_pct, ck_fmt_moic, ck_fmt_currency, ck_fmt_irr
+    _MONO, _SANS, _CORPUS_NAV, _CORPUS_NAV_LEGACY, P
 """
 from __future__ import annotations
 
