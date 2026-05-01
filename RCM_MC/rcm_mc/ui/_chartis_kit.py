@@ -1731,6 +1731,20 @@ _SHORTCUTS_HTML = """
         </dl>
       </section>
       <section>
+        <h3>Quick jump (vim-style)</h3>
+        <dl>
+          <dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>Home</dd>
+          <dt><kbd>g</kbd> <kbd>p</kbd></dt><dd>Pipeline</dd>
+          <dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>Diligence (deal profile)</dd>
+          <dt><kbd>g</kbd> <kbd>l</kbd></dt><dd>Library</dd>
+          <dt><kbd>g</kbd> <kbd>r</kbd></dt><dd>Research</dd>
+          <dt><kbd>g</kbd> <kbd>o</kbd></dt><dd>Portfolio</dd>
+          <dt><kbd>g</kbd> <kbd>a</kbd></dt><dd>Alerts</dd>
+          <dt><kbd>g</kbd> <kbd>w</kbd></dt><dd>Watchlist</dd>
+          <dt><kbd>g</kbd> <kbd>m</kbd></dt><dd>My Dashboard</dd>
+        </dl>
+      </section>
+      <section>
         <h3>Workbench</h3>
         <dl>
           <dt><kbd>1</kbd>&ndash;<kbd>8</kbd></dt>
@@ -1756,7 +1770,54 @@ _SHORTCUTS_JS = """
 /* Keyboard shortcut help dialog: press '?' to toggle, Esc to close.
  * Shift+/ (the unshifted "?" key on most US keyboards) is what the
  * browser actually delivers — listen for it explicitly so the
- * shortcut works without relying on e.key === '?'. */
+ * shortcut works without relying on e.key === '?'.
+ *
+ * Also implements vim/Linear-style "g + letter" jump:
+ *   g h → /home          g p → /pipeline       g d → /diligence/deal
+ *   g l → /library       g r → /research       g o → /portfolio
+ *   g a → /alerts        g w → /watchlist      g k → opens palette
+ */
+(function(){
+  /* g+letter prefix-jump table. Keep separate from shortcut dialog
+   * so future expansion (g + I = ic packet, etc.) lives in one place. */
+  var GO_TARGETS = {
+    h: '/home', p: '/pipeline', d: '/diligence/deal',
+    l: '/library', r: '/research', o: '/portfolio',
+    a: '/alerts', w: '/watchlist', m: '/my/AT',
+  };
+  var goPending = false;
+  var goTimer = null;
+  function clearGo(){ goPending = false; if (goTimer){clearTimeout(goTimer); goTimer=null;} }
+  document.addEventListener('keydown', function(e){
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (goPending) {
+      var k = (e.key || '').toLowerCase();
+      if (GO_TARGETS[k]) {
+        e.preventDefault();
+        clearGo();
+        window.location.href = GO_TARGETS[k];
+        return;
+      }
+      if (k === 'k') {
+        /* Alias g+k → command palette to match the docs */
+        clearGo();
+        var p = document.getElementById('ck-palette');
+        if (p) { p.hidden = false; var inp = p.querySelector('.ck-palette-input'); if (inp) setTimeout(function(){ inp.focus(); }, 0); }
+        e.preventDefault();
+        return;
+      }
+      clearGo();
+      return;
+    }
+    if (e.key === 'g' && !e.shiftKey) {
+      goPending = true;
+      goTimer = setTimeout(clearGo, 1500);
+      e.preventDefault();
+    }
+  });
+})();
+
 (function(){
   var dlg = document.getElementById('ck-shortcuts');
   if (!dlg) return;
