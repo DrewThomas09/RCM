@@ -882,6 +882,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
     return chartis_shell(
         body, "RCM Diligence — Regulatory Calendar",
+        active_nav="/regulatory-calendar",
         subtitle="Kill-switch × thesis × calendar",
     )
 
@@ -1141,5 +1142,6 @@ def render_regulatory_calendar_page(
     )
     return chartis_shell(
         body, "RCM Diligence — Regulatory Calendar",
+        active_nav="/regulatory-calendar",
         subtitle=f"{target_name} · kill-switch verdict {report.verdict.value}",
     )

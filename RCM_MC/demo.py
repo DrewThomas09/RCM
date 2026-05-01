@@ -88,6 +88,71 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
         "buh": "Beacon Urban Health",
         "sth": "Sterling Heights Medical",
     }
+    # Per-deal RCM observed metrics so the analysis-workbench
+    # RCM Profile tab populates with real values instead of an
+    # empty header row. Worse-performing deals (ccf, mgh) get
+    # higher denial / AR / AR-over-90 to match their tripped /
+    # tight covenant headroom; healthy deals (buh, sth) get
+    # cleaner numbers. Keys must match RCM_METRIC_REGISTRY.
+    # Percent metrics are stored 0-100 (not 0-1) to match the
+    # registry's benchmark_pXX scale.
+    rcm_metrics_per_deal = {
+        "ccf": {  # tripped — broken RCM
+            "denial_rate":          14.2,
+            "final_denial_rate":     6.1,
+            "days_in_ar":           58.4,
+            "ar_over_90_pct":       22.4,
+            "clean_claim_rate":     84.2,
+            "net_collection_rate":  91.8,
+            "dnfb_days":             7.8,
+            "charge_lag_days":       4.2,
+            "cost_to_collect":       4.1,
+        },
+        "mgh": {  # tight — soft RCM
+            "denial_rate":          11.8,
+            "final_denial_rate":     4.4,
+            "days_in_ar":           52.1,
+            "ar_over_90_pct":       18.3,
+            "clean_claim_rate":     88.1,
+            "net_collection_rate":  93.7,
+            "dnfb_days":             6.4,
+            "charge_lag_days":       3.6,
+            "cost_to_collect":       3.4,
+        },
+        "nyp": {  # concerning cluster
+            "denial_rate":           9.7,
+            "final_denial_rate":     2.9,
+            "days_in_ar":           49.3,
+            "ar_over_90_pct":       15.1,
+            "clean_claim_rate":     90.6,
+            "net_collection_rate":  95.1,
+            "dnfb_days":             5.1,
+            "charge_lag_days":       2.9,
+            "cost_to_collect":       2.9,
+        },
+        "buh": {  # healthy
+            "denial_rate":           7.8,
+            "final_denial_rate":     2.2,
+            "days_in_ar":           42.6,
+            "ar_over_90_pct":       11.8,
+            "clean_claim_rate":     92.8,
+            "net_collection_rate":  96.4,
+            "dnfb_days":             4.2,
+            "charge_lag_days":       2.4,
+            "cost_to_collect":       2.6,
+        },
+        "sth": {  # healthy beat
+            "denial_rate":           6.2,
+            "final_denial_rate":     1.7,
+            "days_in_ar":           38.9,
+            "ar_over_90_pct":        9.4,
+            "clean_claim_rate":     94.3,
+            "net_collection_rate":  97.2,
+            "dnfb_days":             3.4,
+            "charge_lag_days":       2.1,
+            "cost_to_collect":       2.2,
+        },
+    }
     for deal_id, headroom, concerning in [
         ("ccf",  -0.5,  0),   # covenant TRIPPED → red alert
         ("mgh",   0.3,  2),   # covenant TIGHT → amber alert
@@ -95,7 +160,16 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
         ("buh",   2.0,  0),   # healthy
         ("sth",   2.0,  1),   # healthy
     ]:
-        store.upsert_deal(deal_id, name=deal_names[deal_id])
+        # Wrap each metric in the ObservedMetric shape the packet
+        # builder expects (value + quality flags).
+        observed = {
+            k: {"value": v, "quality_flags": []}
+            for k, v in rcm_metrics_per_deal.get(deal_id, {}).items()
+        }
+        store.upsert_deal(
+            deal_id, name=deal_names[deal_id],
+            profile={"observed_metrics": observed},
+        )
         ddir = os.path.join(run_dir, deal_id + "_run")
         os.makedirs(ddir, exist_ok=True)
         with open(os.path.join(ddir, "pe_bridge.json"), "w") as f:

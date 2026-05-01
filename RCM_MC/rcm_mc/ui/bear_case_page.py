@@ -378,6 +378,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
     return chartis_shell(
         body, "RCM Diligence — Bear Case Auto-Generator",
+        active_nav="/bear-cases",
         subtitle="Evidence synthesis × 6 source modules",
     )
 
@@ -703,6 +704,7 @@ def render_bear_case_page(
     )
     return chartis_shell(
         body, f"Bear Case — {deal_name}",
+        active_nav="/bear-cases",
         subtitle=(
             f"{report.critical_count} critical · "
             f"${report.combined_ebitda_at_risk_usd/1e6:,.1f}M at risk"
