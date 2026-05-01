@@ -1841,6 +1841,61 @@ class RCMHandler(BaseHTTPRequestHandler):
                 body = chartis_shell(body, title=title)
             except Exception:  # noqa: BLE001 — never let this safety net 500
                 pass
+        # Subnav backfill: if a renderer omitted ``active_nav`` in its
+        # chartis_shell call, the topbar emits no subnav rail. Resolve
+        # the current request path against ``_SUB_SECTION_MAP`` and
+        # inject the matching section's pills before ``</header>`` so
+        # every page in a known section shows its subnav without each
+        # renderer having to remember the kwarg.
+        # Note: bare "ck-subnav" appears in inline CSS rules
+        # (.ck-subnav{...}) on every editorial page — match the
+        # element opener instead so the backfill triggers when no
+        # actual subnav is rendered.
+        if (status == HTTPStatus.OK
+                and "ck-topbar" in body
+                and '<nav class="ck-subnav"' not in body):
+            try:
+                from .ui._chartis_kit import (
+                    _resolve_sub_section, _SUB_NAV, _CORPUS_NAV,
+                )
+                import urllib.parse as _up
+                req_path = _up.urlparse(self.path).path or "/"
+                section = _resolve_sub_section(req_path)
+                if section and section in _SUB_NAV:
+                    import html as _h
+                    pills = "".join(
+                        f'<a href="{_h.escape(item["href"], quote=True)}" '
+                        f'class="ck-subnav-link">{_h.escape(item["label"])}</a>'
+                        for item in _SUB_NAV[section]
+                    )
+                    rail = (
+                        '<nav class="ck-subnav" aria-label="Section">'
+                        f'<div class="ck-subnav-inner">{pills}</div>'
+                        '</nav>'
+                    )
+                    # Inject just before the topbar's closing </header>.
+                    # Only the FIRST </header> is the topbar — match
+                    # once with count=1.
+                    import re as _re_subnav
+                    body = _re_subnav.sub(
+                        r"</header>", rail + "</header>",
+                        body, count=1,
+                    )
+                    # Mark the matching topbar nav link as active.
+                    # Find the _CORPUS_NAV entry whose key == section
+                    # and rewrite its `class=""` to `class="active"`.
+                    for nav_item in _CORPUS_NAV:
+                        if nav_item.get("key") == section:
+                            href = _h.escape(nav_item["href"], quote=True)
+                            # Only the first occurrence inside .ck-nav
+                            body = body.replace(
+                                f'<a href="{href}" class="">',
+                                f'<a href="{href}" class="active">',
+                                1,
+                            )
+                            break
+            except Exception:  # noqa: BLE001
+                pass
         # PHI banner safety net: any HTML response that doesn't already
         # carry the banner gets it injected near the top of <body>. The
         # chartis_shell dispatcher also injects it, so well-behaved

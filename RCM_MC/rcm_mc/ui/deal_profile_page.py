@@ -1531,5 +1531,6 @@ def render_deal_profile_page(
         + lifecycle + form + grid_header + grid
         + bookmark_hint() + _inline_js(slug),
         f"Deal Profile — {slug}",
+        active_nav="/diligence/deal",
         subtitle="One source of truth",
     )

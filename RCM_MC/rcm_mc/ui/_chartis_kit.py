@@ -128,6 +128,7 @@ def ck_fmt_moic(v: Optional[float], *, dash: str = "—") -> str:
 _CORPUS_NAV = [
     {"label": "Home",      "href": "/home",      "key": "home"},
     {"label": "Pipeline",  "href": "/pipeline",  "key": "pipeline"},
+    {"label": "Diligence", "href": "/diligence/deal", "key": "diligence"},
     {"label": "Library",   "href": "/library",   "key": "library"},
     {"label": "Research",  "href": "/research",  "key": "research"},
     {"label": "Portfolio", "href": "/portfolio", "key": "portfolio"},
@@ -182,6 +183,37 @@ _SUB_NAV = {
         {"label": "Sponsor Track Record","href": "/sponsor-track-record"},
         {"label": "Payer Intelligence",  "href": "/payer-intelligence"},
         {"label": "LP Update",           "href": "/lp-update"},
+    ],
+    # Diligence — RCM analyst playbook surfaces. The 24 pages here
+    # span the four-phase diligence flow (intake → analysis → risk
+    # → output). Heavy daily-driver workspace; partner can dip in
+    # ad-hoc but the analyst lives here for a 3-week sprint.
+    "diligence": [
+        {"label": "Deal Profile",        "href": "/diligence/deal"},
+        {"label": "Thesis Pipeline",     "href": "/diligence/thesis-pipeline"},
+        {"label": "Checklist",           "href": "/diligence/checklist"},
+        {"label": "Ingestion",           "href": "/diligence/ingest"},
+        {"label": "Benchmarks",          "href": "/diligence/benchmarks"},
+        {"label": "HCRIS X-Ray",         "href": "/diligence/hcris-xray"},
+        {"label": "Root Cause",          "href": "/diligence/root-cause"},
+        {"label": "Value Creation",      "href": "/diligence/value"},
+        {"label": "Risk Workbench",      "href": "/diligence/risk-workbench?demo=steward"},
+        {"label": "Counterfactual",      "href": "/diligence/counterfactual"},
+        {"label": "Compare",             "href": "/diligence/compare"},
+        {"label": "Bankruptcy Scan",     "href": "/screening/bankruptcy-survivor"},
+        {"label": "QoE Memo",            "href": "/diligence/qoe-memo"},
+        {"label": "Denial Predict",      "href": "/diligence/denial-prediction"},
+        {"label": "Deal Autopsy",        "href": "/diligence/deal-autopsy"},
+        {"label": "Physician Attrition", "href": "/diligence/physician-attrition"},
+        {"label": "Provider Economics",  "href": "/diligence/physician-eu"},
+        {"label": "Management",          "href": "/diligence/management"},
+        {"label": "Deal MC",             "href": "/diligence/deal-mc"},
+        {"label": "Exit Timing",         "href": "/diligence/exit-timing"},
+        {"label": "Covenant Stress",     "href": "/diligence/covenant-stress"},
+        {"label": "Bridge Audit",        "href": "/diligence/bridge-audit"},
+        {"label": "Payer Stress",        "href": "/diligence/payer-stress"},
+        {"label": "IC Packet",           "href": "/diligence/ic-packet"},
+        {"label": "Engagements",         "href": "/engagements"},
     ],
 }
 
@@ -1700,7 +1732,13 @@ _SUB_SECTION_MAP = {
     # bare keys
     "home": "home", "pipeline": "pipeline", "library": "library",
     "research": "research", "portfolio": "portfolio",
+    "diligence": "diligence",
     "alerts": "home", "escalations": "home", "watchlist": "home",
+    # All /diligence/* sub-paths land in the Diligence section so
+    # the RCM playbook flow keeps a consistent active subnav.
+    "/diligence": "diligence",
+    "/screening/bankruptcy-survivor": "diligence",
+    "/engagements": "diligence",
     # leading-slash forms
     "/home": "home", "/app": "home", "/alerts": "home",
     "/escalations": "home", "/watchlist": "home", "/my": "home",
@@ -1736,17 +1774,34 @@ _SUB_SECTION_MAP = {
 
 
 def _resolve_sub_section(active_nav: Optional[str]) -> Optional[str]:
-    """Pick the sub-nav section key for an active_nav value."""
+    """Pick the sub-nav section key for an active_nav value.
+
+    Resolution order:
+      1. Exact match in ``_SUB_SECTION_MAP``.
+      2. First path segment match (``/portfolio/monitor`` → ``/portfolio``).
+      3. Path-prefix match — any path starting with a key in the map
+         resolves to that section. Used so every ``/diligence/*``
+         renderer lands the user in the Diligence subnav without
+         each file having to enumerate the active_nav string.
+    """
     if not active_nav:
         return None
     key = str(active_nav).strip().lower()
     if key in _SUB_SECTION_MAP:
         return _SUB_SECTION_MAP[key]
-    # Try the first path segment ("/portfolio/monitor" → "/portfolio")
     if key.startswith("/"):
         first = "/" + key.lstrip("/").split("/", 1)[0]
         if first in _SUB_SECTION_MAP:
             return _SUB_SECTION_MAP[first]
+        # Path-prefix fallback (longest match wins) so e.g.
+        # "/diligence/deal-mc" → "/diligence" → "diligence" without
+        # listing every sub-path.
+        for prefix in sorted(
+            (k for k in _SUB_SECTION_MAP if k.startswith("/") and "/" in k[1:]),
+            key=len, reverse=True,
+        ):
+            if key.startswith(prefix):
+                return _SUB_SECTION_MAP[prefix]
     return None
 
 
