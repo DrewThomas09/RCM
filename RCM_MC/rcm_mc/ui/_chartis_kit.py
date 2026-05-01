@@ -1647,6 +1647,22 @@ _CSS_INLINE_FALLBACK = """
   .ck-palette-list li.cp-recent:hover { background:var(--sc-bone); }
   .cp-route { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); }
 
+  /* Keyboard shortcut help dialog (press ?) */
+  .ck-shortcuts { position:fixed; inset:0; background:rgba(11,35,65,0.45); display:flex; align-items:flex-start; justify-content:center; padding-top:10vh; z-index:110; }
+  .ck-shortcuts[hidden] { display:none; }
+  .ck-shortcuts-box { width:min(540px, 92vw); background:#fff; border:1px solid var(--sc-rule); box-shadow:var(--sc-shadow-3); border-radius:2px; max-height:80vh; overflow:auto; }
+  .ck-shortcuts-head { display:flex; align-items:baseline; gap:14px; padding:18px 22px 10px; border-bottom:1px solid var(--sc-rule); position:relative; }
+  .ck-shortcuts-eyebrow { font-family:var(--sc-mono); font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-teal-ink, var(--sc-teal)); }
+  .ck-shortcuts-title { font-family:var(--sc-serif); font-weight:500; font-size:24px; color:var(--sc-navy); margin:0; letter-spacing:-0.01em; }
+  .ck-shortcuts-close { position:absolute; top:14px; right:14px; width:28px; height:28px; border:0; background:transparent; font-size:22px; line-height:1; color:var(--sc-text-faint); cursor:pointer; border-radius:50%; }
+  .ck-shortcuts-close:hover { background:var(--sc-bone); color:var(--sc-navy); }
+  .ck-shortcuts-body { padding:18px 22px 22px; display:grid; gap:18px; }
+  .ck-shortcuts-body section h3 { font-family:var(--sc-mono); font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim); margin:0 0 8px; }
+  .ck-shortcuts-body dl { display:grid; grid-template-columns:max-content 1fr; gap:6px 16px; margin:0; }
+  .ck-shortcuts-body dt { display:flex; align-items:center; gap:4px; font-family:var(--sc-sans); font-size:12px; color:var(--sc-text-dim); }
+  .ck-shortcuts-body dd { font-family:var(--sc-serif); font-size:13.5px; line-height:1.45; color:var(--sc-text); margin:0; }
+  .ck-shortcuts-body kbd { display:inline-block; padding:2px 7px; background:var(--sc-bone); border:1px solid var(--sc-rule); border-bottom-width:2px; border-radius:3px; font-family:var(--sc-mono); font-size:11px; font-weight:600; color:var(--sc-navy); min-width:14px; text-align:center; }
+
   /* Main content frame */
   .ck-main { padding:var(--sc-s-7); max-width:1720px; margin:0 auto; }
 
@@ -1689,6 +1705,82 @@ _CSRF_JS = """
     }
     return of(u,o);
   };}
+})();
+</script>
+"""
+
+
+_SHORTCUTS_HTML = """
+<div class="ck-shortcuts" id="ck-shortcuts" hidden>
+  <div class="ck-shortcuts-box" role="dialog" aria-label="Keyboard shortcuts">
+    <header class="ck-shortcuts-head">
+      <span class="ck-shortcuts-eyebrow">Keyboard</span>
+      <h2 class="ck-shortcuts-title">Shortcuts</h2>
+      <button type="button" class="ck-shortcuts-close" aria-label="Close">&times;</button>
+    </header>
+    <div class="ck-shortcuts-body">
+      <section>
+        <h3>Navigation</h3>
+        <dl>
+          <dt><kbd>⌘</kbd><kbd>K</kbd> &middot; <kbd>Ctrl</kbd><kbd>K</kbd></dt>
+            <dd>Open command palette &mdash; jump to any tool</dd>
+          <dt><kbd>Enter</kbd></dt>
+            <dd>In palette: open the first matching tool</dd>
+          <dt><kbd>Esc</kbd></dt>
+            <dd>Close palette / dialog / dropdown</dd>
+        </dl>
+      </section>
+      <section>
+        <h3>Workbench</h3>
+        <dl>
+          <dt><kbd>1</kbd>&ndash;<kbd>8</kbd></dt>
+            <dd>Switch tabs on /analysis/&lt;deal&gt; (Overview &rarr; Provenance)</dd>
+          <dt><kbd>Alt</kbd><kbd>&larr;</kbd> / <kbd>Alt</kbd><kbd>&rarr;</kbd></dt>
+            <dd>Previous / next tab</dd>
+        </dl>
+      </section>
+      <section>
+        <h3>This dialog</h3>
+        <dl>
+          <dt><kbd>?</kbd></dt><dd>Show / hide this list</dd>
+        </dl>
+      </section>
+    </div>
+  </div>
+</div>
+"""
+
+
+_SHORTCUTS_JS = """
+<script>
+/* Keyboard shortcut help dialog: press '?' to toggle, Esc to close.
+ * Shift+/ (the unshifted "?" key on most US keyboards) is what the
+ * browser actually delivers — listen for it explicitly so the
+ * shortcut works without relying on e.key === '?'. */
+(function(){
+  var dlg = document.getElementById('ck-shortcuts');
+  if (!dlg) return;
+  function show(){ dlg.hidden = false; }
+  function hide(){ dlg.hidden = true; }
+  document.addEventListener('keydown', function(e){
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+      e.preventDefault();
+      if (dlg.hidden) show(); else hide();
+    }
+    if (e.key === 'Escape' && !dlg.hidden) { e.preventDefault(); hide(); }
+  });
+  /* Close button + click-outside */
+  var close = dlg.querySelector('.ck-shortcuts-close');
+  if (close) close.addEventListener('click', hide);
+  dlg.addEventListener('click', function(e){
+    if (e.target === dlg) hide();
+  });
+  /* Open from the user-dropdown menu item */
+  document.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest && e.target.closest('[data-ck-shortcuts-open]');
+    if (btn) { e.preventDefault(); show(); }
+  });
 })();
 </script>
 """
@@ -2028,6 +2120,8 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<div class="ck-user-dropdown-divider"></div>'
         '<button type="button" class="ck-user-dropdown-item" '
         'data-ck-intro-toggle>Tutorial intros: off</button>'
+        '<button type="button" class="ck-user-dropdown-item" '
+        'data-ck-shortcuts-open>Keyboard shortcuts &middot; ?</button>'
         '<div class="ck-user-dropdown-divider"></div>'
         '<form action="/api/logout" method="post" class="ck-user-dropdown-form">'
         '<button type="submit" class="ck-user-dropdown-item ck-user-dropdown-logout">'
@@ -2195,10 +2289,12 @@ def chartis_shell(
         f"{chrome_html}"
         f'<main class="{main_class}">{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
+        f"{_SHORTCUTS_HTML}"
         f"{_CSRF_JS}"
         f"{_USER_MENU_JS}"
         f"{_INTRO_DISMISS_JS}"
         f"{_PALETTE_JS}"
+        f"{_SHORTCUTS_JS}"
         f"{extra_js_html}"
         "</body></html>"
     )
