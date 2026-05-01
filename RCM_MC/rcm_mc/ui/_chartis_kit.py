@@ -29,7 +29,12 @@ from typing import Any, Iterable, Mapping, Optional, Sequence
 # Feature flag — set CHARTIS_UI_V2=0 to fall back to the legacy dark shell.
 # ---------------------------------------------------------------------------
 
-UI_V2_ENABLED = os.environ.get("CHARTIS_UI_V2", "1") != "0"
+# Always-on editorial chrome. The legacy sidebar shell (which the
+# CHARTIS_UI_V2=0 env path used to switch to) is no longer reachable
+# through the dispatcher — kept as the constant ``True`` so any
+# downstream code that still reads the flag for a different purpose
+# (e.g. brand.py palette resolution) continues to read True.
+UI_V2_ENABLED = True
 
 # ---------------------------------------------------------------------------
 # Palette — editorial navy / teal / parchment
@@ -2056,16 +2061,6 @@ def chartis_shell(
         body_html = ""
     if title is None:
         title = "SeekingChartis"
-    if not UI_V2_ENABLED:
-        # Lazy-import the legacy shell so we don't pay the cost when v2 is on.
-        try:
-            from . import _chartis_kit_legacy as _legacy  # type: ignore
-            return _legacy.chartis_shell(
-                body_html, title,
-                active_nav=active_nav, breadcrumbs=breadcrumbs, code=code,
-            )
-        except Exception:
-            pass  # fall through to v2
 
     fonts = (
         '<link rel="preconnect" href="https://fonts.googleapis.com">'
