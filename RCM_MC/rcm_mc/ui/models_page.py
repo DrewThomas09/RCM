@@ -18,9 +18,14 @@ from .brand import PALETTE
 
 
 def _model_nav(deal_id: str, active: str = "") -> str:
-    """Shared Bloomberg-style model ribbon — section codes + amber active state."""
+    """Editorial deal-context ribbon — model + view shortcuts.
+
+    Replaces the old Bloomberg-dark + amber-on-black treatment that
+    looked alien against the editorial parchment. Now reads as a
+    horizontal pill rail with the same hairline + bone-on-hover feel
+    as the rest of the v5 chrome.
+    """
     did = html.escape(deal_id)
-    # (code, label, href, key)
     groups = [
         ("PRF", "Profile", f"/hospital/{did}", "profile"),
         ("MEM", "IC Memo", f"/ic-memo/{did}", "ic_memo"),
@@ -45,42 +50,52 @@ def _model_nav(deal_id: str, active: str = "") -> str:
     for code, label, href, key in groups:
         is_active = " active" if key == active else ""
         items.append(
-            f'<a href="{href}" class="cad-modelnav-item{is_active}">'
-            f'<span class="cad-modelnav-code">{code}</span>'
-            f'<span class="cad-modelnav-label">{html.escape(label)}</span>'
+            f'<a href="{href}" class="ck-model-pill{is_active}">'
+            f'<span class="ck-model-pill-code">{code}</span>'
+            f'<span class="ck-model-pill-label">{html.escape(label)}</span>'
             f'</a>'
         )
     return (
-        f'<style>'
-        f'.cad-modelnav{{display:flex;flex-wrap:wrap;gap:0;margin-bottom:14px;'
-        f'border:1px solid {PALETTE["border"]};background:{PALETTE["bg_secondary"]};'
-        f'border-left:3px solid {PALETTE["accent_amber"]};}}'
-        f'.cad-modelnav-dash{{display:flex;align-items:center;gap:6px;padding:8px 12px;'
-        f'text-decoration:none;color:{PALETTE["text_primary"]};'
-        f'background:#03050a;border-right:1px solid {PALETTE["border"]};'
-        f'font-family:var(--cad-mono);font-size:10px;font-weight:700;'
-        f'letter-spacing:0.14em;text-transform:uppercase;}}'
-        f'.cad-modelnav-dash:hover{{color:{PALETTE["accent_amber"]};}}'
-        f'.cad-modelnav-item{{display:flex;align-items:center;gap:6px;padding:6px 10px;'
-        f'text-decoration:none;color:{PALETTE["text_secondary"]};'
-        f'border-right:1px solid {PALETTE["border"]};'
-        f'transition:background 0.1s,color 0.1s;}}'
-        f'.cad-modelnav-item:hover{{background:{PALETTE["bg_tertiary"]};color:{PALETTE["text_primary"]};}}'
-        f'.cad-modelnav-item.active{{background:{PALETTE["bg_tertiary"]};'
-        f'color:{PALETTE["accent_amber"]};'
-        f'box-shadow:inset 0 -2px 0 {PALETTE["accent_amber"]};}}'
-        f'.cad-modelnav-code{{font-family:var(--cad-mono);font-size:9px;font-weight:700;'
-        f'letter-spacing:0.14em;color:{PALETTE["accent_amber"]};'
-        f'padding:1px 4px;border:1px solid {PALETTE["border_light"]};}}'
-        f'.cad-modelnav-item.active .cad-modelnav-code{{'
-        f'background:{PALETTE["accent_amber"]};color:#000;border-color:{PALETTE["accent_amber"]};}}'
-        f'.cad-modelnav-label{{font-size:11px;font-weight:600;'
-        f'letter-spacing:0.04em;text-transform:uppercase;}}'
-        f'</style>'
-        f'<div class="cad-modelnav">'
-        f'<a href="/deal/{did}" class="cad-modelnav-dash">&larr; Dashboard</a>'
-        f'{"".join(items)}'
-        f'</div>'
+        '<style>'
+        '.ck-model-rail{display:flex;flex-wrap:wrap;align-items:center;'
+        'gap:6px;padding:10px 14px;margin:0 0 18px;'
+        'background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+        'border-radius:2px;box-shadow:var(--sc-shadow-1);}'
+        '.ck-model-rail-back{display:inline-flex;align-items:center;gap:6px;'
+        'padding:5px 12px;margin-right:6px;'
+        'background:var(--sc-bone,#ece6db);'
+        'border:1px solid var(--sc-rule,#d6cfc3);border-radius:2px;'
+        'font-family:var(--sc-mono,JetBrains Mono,monospace);'
+        'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:var(--sc-text-dim,#465366);'
+        'text-decoration:none;}'
+        '.ck-model-rail-back:hover{background:var(--sc-navy,#0b2341);'
+        'color:#fff;border-color:var(--sc-navy,#0b2341);}'
+        '.ck-model-pill{display:inline-flex;align-items:center;gap:6px;'
+        'padding:5px 10px;border:1px solid transparent;border-radius:2px;'
+        'text-decoration:none;color:var(--sc-text-dim,#465366);'
+        'font-family:var(--sc-sans,Inter,sans-serif);'
+        'transition:background 0.12s,color 0.12s,border-color 0.12s;}'
+        '.ck-model-pill:hover{background:var(--sc-bone,#ece6db);'
+        'color:var(--sc-navy,#0b2341);'
+        'border-color:var(--sc-rule,#d6cfc3);}'
+        '.ck-model-pill.active{background:var(--sc-navy,#0b2341);'
+        'color:#fff;border-color:var(--sc-navy,#0b2341);}'
+        '.ck-model-pill-code{font-family:var(--sc-mono,JetBrains Mono,monospace);'
+        'font-size:9.5px;font-weight:700;letter-spacing:0.1em;'
+        'padding:1px 5px;background:var(--sc-bone,#ece6db);'
+        'color:var(--sc-text-dim,#465366);border-radius:2px;}'
+        '.ck-model-pill:hover .ck-model-pill-code{'
+        'background:#fff;color:var(--sc-navy,#0b2341);}'
+        '.ck-model-pill.active .ck-model-pill-code{'
+        'background:var(--sc-teal,#155752);color:#fff;}'
+        '.ck-model-pill-label{font-size:11px;font-weight:600;'
+        'letter-spacing:0.04em;}'
+        '</style>'
+        '<nav class="ck-model-rail" aria-label="Deal model navigation">'
+        f'<a href="/deal/{did}" class="ck-model-rail-back">&larr; Deal</a>'
+        + "".join(items) +
+        '</nav>'
     )
 
 

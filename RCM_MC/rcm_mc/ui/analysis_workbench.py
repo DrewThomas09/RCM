@@ -84,15 +84,18 @@ body.analysis-workbench {{
   font-variant-numeric: tabular-nums;
 }}
 
-/* Editorial hero band — dark navy ink with parchment text */
+/* Editorial hero band — dark navy ink with parchment text. Slimmer
+ * than the original (1.25/1.5rem instead of 2/2.25rem) so it reads
+ * as a deal-context strip rather than a second topbar stacked under
+ * the chartis_shell navy chrome. */
 .analysis-workbench .wb-hero {{
-  background: #0F1C2E;
-  color: #FAF7F0;
-  padding: 2rem 0 2.25rem;
-  border-bottom: 4px solid #1F7A75;
+  background: var(--sc-navy, #0b2341);
+  color: var(--sc-on-navy, #f5f1ea);
+  padding: 1.25rem 0 1.5rem;
+  border-bottom: 3px solid var(--sc-teal, var(--sc-teal-deep, #0f5e5a));
 }}
 .analysis-workbench .wb-hero-inner {{
-  max-width: 1400px; margin: 0 auto; padding: 0 2rem;
+  max-width: 1720px; margin: 0 auto; padding: 0 2rem;
 }}
 .analysis-workbench .wb-hero-eyebrow {{
   display: inline-flex; align-items: center; gap: .8rem;
@@ -102,7 +105,7 @@ body.analysis-workbench {{
   margin-bottom: .85rem;
 }}
 .analysis-workbench .wb-hero-eyebrow::before {{
-  content: ""; width: 28px; height: 2px; background: #1F7A75; display: inline-block;
+  content: ""; width: 28px; height: 2px; background: var(--sc-teal, var(--sc-teal-deep, #0f5e5a)); display: inline-block;
 }}
 .analysis-workbench .wb-hero-row {{
   display: grid; grid-template-columns: 1fr auto;
@@ -110,8 +113,8 @@ body.analysis-workbench {{
 }}
 .analysis-workbench .wb-hero-name {{
   font-family: "Source Serif 4", Georgia, serif;
-  font-size: 2.4rem; font-weight: 500; line-height: 1.05;
-  letter-spacing: -0.015em; margin: 0; color: #FAF7F0;
+  font-size: 1.85rem; font-weight: 500; line-height: 1.1;
+  letter-spacing: -0.015em; margin: 0; color: var(--sc-on-navy, #f5f1ea);
 }}
 .analysis-workbench .wb-hero-meta {{
   margin-top: .75rem;
@@ -127,7 +130,7 @@ body.analysis-workbench {{
   font-size: .62rem; font-weight: 600;
 }}
 .analysis-workbench .wb-hero-meta .m-val {{
-  color: #FAF7F0; font-weight: 600;
+  color: var(--sc-on-navy, #f5f1ea); font-weight: 600;
 }}
 .analysis-workbench .wb-hero-meta .m-sep {{
   color: rgba(250, 247, 240, 0.30); margin: 0 .15rem;
@@ -136,17 +139,17 @@ body.analysis-workbench {{
   display: flex; gap: .65rem; align-items: end;
 }}
 .analysis-workbench .wb-cta-primary {{
-  background: #1F7A75; color: #FFFFFF;
+  background: var(--sc-teal, var(--sc-teal-deep, #0f5e5a)); color: #FFFFFF;
   border: none; cursor: pointer;
   padding: .85rem 1.4rem;
   font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
   letter-spacing: .14em; text-transform: uppercase;
   text-decoration: none; display: inline-block;
 }}
-.analysis-workbench .wb-cta-primary:hover {{ background: #155752; }}
+.analysis-workbench .wb-cta-primary:hover {{ background: var(--sc-teal-deep, #0f5e5a); }}
 .analysis-workbench .wb-cta-ghost {{
   background: transparent;
-  color: #FAF7F0;
+  color: var(--sc-on-navy, #f5f1ea);
   border: 1px solid rgba(250, 247, 240, 0.35);
   padding: .85rem 1.4rem;
   font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
@@ -165,7 +168,7 @@ body.analysis-workbench {{
   padding: .75rem 0;
 }}
 .analysis-workbench .wb-utility-inner {{
-  max-width: 1400px; margin: 0 auto; padding: 0 2rem;
+  max-width: 1720px; margin: 0 auto; padding: 0 2rem;
   display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
 }}
 .analysis-workbench .wb-utility-bc {{
@@ -197,7 +200,7 @@ body.analysis-workbench {{
 .analysis-workbench .wb-hc-value {{
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 2.1rem; font-weight: 600;
-  line-height: 1; color: #0F1C2E;
+  line-height: 1; color: var(--sc-navy, #0b2341);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }}
@@ -216,12 +219,12 @@ body.analysis-workbench {{
 
 /* Partner review — dark navy footer band, mirrors hero band treatment */
 .analysis-workbench .wb-partner-review {{
-  background: #0F1C2E; color: #FAF7F0;
+  background: var(--sc-navy, #0b2341); color: var(--sc-on-navy, #f5f1ea);
   padding: 2.5rem 0; margin-top: 3rem;
-  border-top: 4px solid #1F7A75;
+  border-top: 4px solid var(--sc-teal, var(--sc-teal-deep, #0f5e5a));
 }}
 .analysis-workbench .wb-pr-inner {{
-  max-width: 1400px; margin: 0 auto; padding: 0 2rem;
+  max-width: 1720px; margin: 0 auto; padding: 0 2rem;
 }}
 .analysis-workbench .wb-pr-eyebrow {{
   display: inline-flex; align-items: center; gap: .8rem;
@@ -231,12 +234,12 @@ body.analysis-workbench {{
   margin-bottom: 1.25rem;
 }}
 .analysis-workbench .wb-pr-eyebrow::before {{
-  content: ""; width: 28px; height: 2px; background: #1F7A75; display: inline-block;
+  content: ""; width: 28px; height: 2px; background: var(--sc-teal, var(--sc-teal-deep, #0f5e5a)); display: inline-block;
 }}
 .analysis-workbench .wb-pr-quote {{
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.45rem; line-height: 1.45;
-  color: #FAF7F0; margin: 0 0 1.5rem 0;
+  color: var(--sc-on-navy, #f5f1ea); margin: 0 0 1.5rem 0;
   max-width: 1100px; font-style: italic;
 }}
 .analysis-workbench .wb-pr-meta {{
@@ -253,7 +256,7 @@ body.analysis-workbench {{
   color: rgba(250, 247, 240, 0.45);
 }}
 .analysis-workbench .wb-pr-meta .m-val {{
-  font-size: .82rem; color: #FAF7F0; font-weight: 600;
+  font-size: .82rem; color: var(--sc-on-navy, #f5f1ea); font-weight: 600;
   font-variant-numeric: tabular-nums;
 }}
 
