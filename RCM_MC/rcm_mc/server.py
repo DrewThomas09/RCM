@@ -312,69 +312,124 @@ def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
     qd = urllib.parse.quote(deal_id)
     deal_owner = _current_owner(store, deal_id) or ""
 
-    add_form = (
-        f'<form method="POST" action="/api/deals/{qd}/deadlines" '
-        f'style="display: flex; gap: 0.4rem; align-items: center; '
-        f'margin-top: 0.75rem; flex-wrap: wrap;">'
-        f'<input type="text" name="label" placeholder="Task / deadline label" '
-        f'required maxlength="120" '
-        f'style="flex: 1; min-width: 12rem; font-size: 0.85rem; padding: 0.25rem;">'
-        f'<input type="date" name="due_date" required '
-        f'style="font-size: 0.85rem; padding: 0.25rem;">'
-        f'<input type="text" name="owner" value="{html.escape(deal_owner)}" '
-        f'placeholder="Owner (optional)" maxlength="40" '
-        f'style="font-size: 0.85rem; padding: 0.25rem; width: 8rem;">'
-        f'<button type="submit" class="btn" '
-        f'style="font-size: 0.85rem; padding: 0.2rem 0.7rem;">+ Add</button>'
-        f'</form>'
-    )
-
     today = _date.today().isoformat()
     rows = []
     for _, r in df.iterrows():
         due = str(r["due_date"])
-        if due < today:
-            badge = '<span class="badge badge-red">OVERDUE</span>'
-        else:
-            badge = '<span class="badge badge-amber">OPEN</span>'
+        is_overdue = due < today
+        badge_color = (
+            "var(--sc-negative,#b5321e)" if is_overdue
+            else "var(--sc-warning,#b8732a)"
+        )
+        badge_text = "OVERDUE" if is_overdue else "OPEN"
+        badge = (
+            f'<span style="color:{badge_color};font-family:var(--sc-mono,monospace);'
+            f'font-weight:700;font-size:10px;letter-spacing:0.1em;'
+            f'text-transform:uppercase;">{badge_text}</span>'
+        )
         complete_form = (
             f'<form method="POST" '
             f'action="/api/deadlines/{int(r["deadline_id"])}/complete" '
-            f'style="display: inline;">'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.75rem; padding: 0.1rem 0.5rem;">✓</button>'
+            f'style="display:inline;margin:0 0 0 auto;">'
+            f'<button type="submit" class="ck-deal-deadline-done" '
+            f'aria-label="Mark complete" title="Mark complete">&check;</button>'
             f'</form>'
         )
         owner = str(r.get("owner") or "")
         owner_span = (
-            f"<span class='muted' style='font-size: 0.8rem;'>"
-            f"@{html.escape(owner)}</span>" if owner else ""
+            f'<span class="ck-deal-deadline-owner">@{html.escape(owner)}</span>'
+            if owner else ""
         )
         rows.append(
-            f"<li style='padding: 0.4rem 0; "
-            f"border-bottom: 1px solid var(--border); "
-            f"display: flex; gap: 0.5rem; align-items: center;'>"
-            f"{badge} "
-            f"<span style='font-weight: 600;'>{html.escape(str(r['label']))}</span>"
-            f"{owner_span}"
-            f"<span class='muted' style='font-size: 0.85rem;'>"
-            f"due {html.escape(due)}</span>"
-            f"<span style='margin-left: auto;'>{complete_form}</span>"
-            f"</li>"
+            '<li class="ck-deal-deadline-row">'
+            f'{badge}'
+            f'<span class="ck-deal-deadline-label">{html.escape(str(r["label"]))}</span>'
+            f'{owner_span}'
+            f'<span class="ck-deal-deadline-due">due {html.escape(due)}</span>'
+            f'{complete_form}'
+            '</li>'
         )
 
     list_html = (
-        f"<ul style='list-style: none; padding: 0; margin: 0;'>"
-        f"{''.join(rows)}</ul>"
-    ) if rows else "<p class='muted'>No open deadlines.</p>"
-
-    return (
-        f'<div class="card"><h2 style="margin-top: 0;">Deadlines '
-        f'({len(df)}) — '
-        f'<a href="/deadlines" style="color: var(--accent); '
-        f'font-size: 0.8rem; font-weight: 400;">all deadlines →</a></h2>'
-        f'{list_html}{add_form}</div>'
+        f'<ul class="ck-deal-deadline-list">{"".join(rows)}</ul>'
+    ) if rows else (
+        '<p class="ck-deal-empty" style="padding:0;">No open deadlines.</p>'
     )
+
+    add_form = (
+        f'<form class="ck-deal-deadline-form" method="POST" '
+        f'action="/api/deals/{qd}/deadlines">'
+        f'<input type="text" name="label" placeholder="Task / deadline label" '
+        f'required maxlength="120" class="ck-deal-deadline-label-input">'
+        f'<input type="date" name="due_date" required class="ck-deal-deadline-date">'
+        f'<input type="text" name="owner" value="{html.escape(deal_owner)}" '
+        f'placeholder="Owner" maxlength="40" class="ck-deal-deadline-owner-input">'
+        f'<button type="submit" class="ck-deal-deadline-add">+ Add</button>'
+        f'</form>'
+    )
+
+    return f"""
+    <style>
+      .ck-deal-deadlines-card{{padding:0;overflow:hidden;margin:0 0 20px;}}
+      .ck-deal-deadlines-head{{display:flex;align-items:baseline;
+        justify-content:space-between;gap:12px;
+        padding:18px 22px 12px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+      .ck-deal-deadlines-head h2{{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0;letter-spacing:-0.01em;}}
+      .ck-deal-deadlines-meta{{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.08em;text-transform:uppercase;}}
+      .ck-deal-deadlines-meta a{{color:var(--sc-teal-ink,#0f5e5a);
+        text-decoration:none;}}
+      .ck-deal-deadlines-meta a:hover{{color:var(--sc-navy,#0b2341);}}
+      .ck-deal-deadline-list{{list-style:none;padding:0;margin:0;}}
+      .ck-deal-deadline-row{{display:flex;align-items:center;gap:14px;
+        padding:11px 22px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);font-size:13px;}}
+      .ck-deal-deadline-row:last-child{{border-bottom:0;}}
+      .ck-deal-deadline-label{{color:var(--sc-text,#1a2332);font-weight:600;}}
+      .ck-deal-deadline-owner{{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);letter-spacing:0.04em;}}
+      .ck-deal-deadline-due{{font-family:var(--sc-mono,monospace);font-size:12px;
+        color:var(--sc-text-dim,#465366);letter-spacing:0.04em;}}
+      .ck-deal-deadline-done{{padding:4px 10px;
+        background:#fff;border:1px solid var(--sc-rule,#d6cfc3);
+        color:var(--sc-positive,#0a8a5f);font-weight:700;cursor:pointer;
+        font-size:14px;line-height:1;border-radius:2px;}}
+      .ck-deal-deadline-done:hover{{background:var(--sc-positive,#0a8a5f);
+        color:#fff;border-color:var(--sc-positive,#0a8a5f);}}
+      .ck-deal-deadline-form{{padding:14px 22px;
+        border-top:1px solid var(--sc-rule,#d6cfc3);
+        background:var(--sc-bone,#ece6db);
+        display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
+      .ck-deal-deadline-form input{{padding:7px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;}}
+      .ck-deal-deadline-form input:focus{{outline:none;
+        border-color:var(--sc-teal,#155752);}}
+      .ck-deal-deadline-label-input{{flex:1;min-width:14rem;}}
+      .ck-deal-deadline-owner-input{{width:7rem;}}
+      .ck-deal-deadline-add{{padding:7px 14px;
+        background:var(--sc-navy,#0b2341);color:#fff;border:0;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;}}
+      .ck-deal-deadline-add:hover{{background:var(--sc-teal,#155752);}}
+    </style>
+    <section class="cad-card ck-deal-deadlines-card">
+      <header class="ck-deal-deadlines-head">
+        <h2>Deadlines</h2>
+        <span class="ck-deal-deadlines-meta">
+          {len(df)} entries · <a href="/deadlines">all deadlines →</a>
+        </span>
+      </header>
+      {list_html}
+      {add_form}
+    </section>
+    """
 
 
 def _render_deal_alerts(store: PortfolioStore, deal_id: str) -> str:
