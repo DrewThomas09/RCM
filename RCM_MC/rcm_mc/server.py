@@ -3477,6 +3477,8 @@ class RCMHandler(BaseHTTPRequestHandler):
                 hold_years=_qfloat("hold_years"),
                 exit_multiple=_qfloat("exit_multiple"),
             ))
+        if path == "/tools":
+            return self._route_tools_index()
         if path == "/comparables":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qf(k, default=None):
@@ -16782,6 +16784,110 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "Strict-Transport-Security",
                 "max-age=31536000; includeSubDomains",
             )
+
+    def _route_tools_index(self) -> None:
+        """GET /tools — full platform tool index grouped by section.
+
+        Discoverability fallback for partners who haven't learned the
+        Cmd+K palette yet. Groups every editorial surface by its
+        section (Home / Pipeline / Diligence / Library / Research /
+        Portfolio / Admin) and renders each as a cad-card panel with
+        link rows. Same source-of-truth as the Cmd+K palette
+        (_DEFAULT_PALETTE_MODULES + _SUB_NAV) so the lists stay in
+        sync.
+        """
+        from .ui._chartis_kit import (
+            chartis_shell, ck_page_title, _DEFAULT_PALETTE_MODULES,
+            _resolve_sub_section,
+        )
+        # Bucket palette entries by their resolved section. Uses the
+        # same _resolve_sub_section that the subnav highlight uses,
+        # so a tool's section here matches what the partner sees in
+        # the active subnav pill.
+        sections: Dict[str, List[Dict[str, str]]] = {
+            "home": [], "pipeline": [], "diligence": [],
+            "library": [], "research": [], "portfolio": [],
+            "other": [],
+        }
+        section_labels = {
+            "home":      "Home & Operations",
+            "pipeline":  "Pipeline & Sourcing",
+            "diligence": "Diligence Workspace",
+            "library":   "Library & Reference",
+            "research":  "Research & Backtesting",
+            "portfolio": "Portfolio & LP",
+            "other":     "Admin & System",
+        }
+        for m in _DEFAULT_PALETTE_MODULES:
+            section = _resolve_sub_section(m["route"]) or "other"
+            sections.setdefault(section, []).append(m)
+        # Build cards in canonical order
+        cards = []
+        order = ["home", "pipeline", "diligence", "library",
+                 "research", "portfolio", "other"]
+        for sec in order:
+            entries = sections.get(sec, [])
+            if not entries:
+                continue
+            rows = []
+            for m in entries:
+                rows.append(
+                    f'<a href="{html.escape(m["route"], quote=True)}" class="ck-tool-row">'
+                    f'<span class="ck-tool-title">{html.escape(m["title"])}</span>'
+                    f'<span class="ck-tool-route">{html.escape(m["route"])}</span>'
+                    '</a>'
+                )
+            cards.append(
+                '<section class="cad-card ck-tool-card">'
+                '<header class="ck-tool-card-head">'
+                f'<h2>{html.escape(section_labels.get(sec, sec.title()))}</h2>'
+                f'<span class="ck-tool-card-count">{len(entries)} tools</span>'
+                '</header>'
+                f'<div class="ck-tool-list">{"".join(rows)}</div>'
+                '</section>'
+            )
+
+        title_html = ck_page_title(
+            "Tools",
+            eyebrow="PLATFORM INDEX",
+            meta=(
+                f"{len(_DEFAULT_PALETTE_MODULES)} surfaces · "
+                "press Cmd+K anywhere to jump to one"
+            ),
+        )
+        page_css = (
+            '<style>'
+            '.ck-tool-card{padding:22px 26px;margin:0 0 20px;}'
+            '.ck-tool-card-head{display:flex;align-items:baseline;'
+            'justify-content:space-between;gap:12px;margin:0 0 14px;}'
+            '.ck-tool-card-head h2{font-family:var(--sc-serif,Georgia,serif);'
+            'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
+            'margin:0;letter-spacing:-0.01em;}'
+            '.ck-tool-card-count{font-family:var(--sc-mono,monospace);'
+            'font-size:11px;color:var(--sc-text-faint,#7a8699);'
+            'letter-spacing:0.08em;text-transform:uppercase;}'
+            '.ck-tool-list{display:grid;'
+            'grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
+            'gap:0;border-top:1px solid var(--sc-rule,#d6cfc3);}'
+            '.ck-tool-row{display:flex;align-items:baseline;'
+            'justify-content:space-between;gap:18px;padding:11px 14px;'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'text-decoration:none;color:var(--sc-text,#1a2332);'
+            'font-family:var(--sc-sans,Inter,sans-serif);font-size:13.5px;}'
+            '.ck-tool-row:hover{background:var(--sc-bone,#ece6db);}'
+            '.ck-tool-title{font-weight:600;color:var(--sc-navy,#0b2341);}'
+            '.ck-tool-route{font-family:var(--sc-mono,monospace);'
+            'font-size:11px;color:var(--sc-text-faint,#7a8699);}'
+            '</style>'
+        )
+        body = f"{title_html}{page_css}{''.join(cards)}"
+        self._send_html(chartis_shell(
+            body, "Tools",
+            active_nav="/tools",
+            subtitle=(
+                f"All {len(_DEFAULT_PALETTE_MODULES)} platform surfaces"
+            ),
+        ))
 
     def _redirect(self, location: str) -> None:
         """See Other redirect — browser re-GETs the target after form POST.

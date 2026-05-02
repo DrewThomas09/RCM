@@ -2262,6 +2262,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         f'data-ck-user-toggle>{_esc(user_initials)}</button>'
         '<div class="ck-user-dropdown" hidden>'
         '<a href="/my/AT" class="ck-user-dropdown-item">My Dashboard</a>'
+        '<a href="/tools" class="ck-user-dropdown-item">All Tools &middot; ⌘K</a>'
         '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'
         '<a href="/admin" class="ck-user-dropdown-item">Admin</a>'
         '<a href="/audit" class="ck-user-dropdown-item">Audit Log</a>'
