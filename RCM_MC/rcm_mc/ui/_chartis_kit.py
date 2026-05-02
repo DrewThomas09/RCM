@@ -1409,6 +1409,14 @@ _CSS_INLINE_FALLBACK = """
   .ck-user-dropdown-item { display:block; width:100%; text-align:left; padding:9px 16px; font-family:var(--sc-sans); font-size:13px; color:var(--sc-text); text-decoration:none; background:transparent; border:0; cursor:pointer; letter-spacing:0; text-transform:none; font-weight:500; }
   .ck-user-dropdown-item:hover { background:var(--sc-bone,#f5f1ea); color:var(--sc-teal-ink); }
   .ck-user-dropdown-divider { height:1px; background:var(--sc-rule); margin:4px 0; }
+  .ck-user-recent { padding:6px 0 4px; border-bottom:1px solid var(--sc-rule); margin-bottom:4px; }
+  .ck-user-recent[hidden] { display:none !important; }
+  .ck-user-recent-head { padding:4px 16px 6px; font-family:var(--sc-mono); font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-faint); }
+  .ck-user-recent-item { display:flex; flex-direction:column; padding:6px 16px; text-decoration:none; color:var(--sc-text); font-size:13px; }
+  .ck-user-recent-item:hover { background:var(--sc-bone); color:var(--sc-teal-ink); }
+  .ck-user-recent-name { font-weight:500; color:var(--sc-navy); }
+  .ck-user-recent-item:hover .ck-user-recent-name { color:var(--sc-teal-ink); }
+  .ck-user-recent-slug { font-family:var(--sc-mono); font-size:10.5px; color:var(--sc-text-faint); letter-spacing:0.04em; }
   .ck-user-dropdown-form { margin:0; }
   .ck-user-dropdown-logout { color:var(--sc-negative,#c0392b); }
   /* Sub-nav rail — parchment strip with section pills, sits sticky
@@ -2001,7 +2009,12 @@ _USER_MENU_JS = """
 <script>
 /* User dropdown — click chip to open, click-outside or Escape to close.
  * Marks aria-expanded for screen readers. Drop-in safe; renders nothing
- * if a page omits the chip entirely. */
+ * if a page omits the chip entirely.
+ *
+ * Also populates the "Recent deals" group from localStorage on every
+ * page load. Storage key: rcm-mc-recent-deals-v1, written by the deal
+ * page (server.py) as [{id, name}, ...] (legacy entries are bare strings;
+ * we tolerate both shapes). */
 (function(){
   var btn = document.querySelector('[data-ck-user-toggle]');
   if (!btn) return;
@@ -2020,6 +2033,42 @@ _USER_MENU_JS = """
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape' && !menu.hidden) close();
   });
+
+  /* Hydrate recent-deals group */
+  try {
+    var REC_KEY = 'rcm-mc-recent-deals-v1';
+    var MAX_DROPDOWN = 5;
+    var box = menu.querySelector('[data-ck-recent-deals]');
+    var list = menu.querySelector('[data-ck-recent-list]');
+    if (box && list) {
+      var arr = [];
+      try { arr = JSON.parse(localStorage.getItem(REC_KEY) || '[]'); }
+      catch (e) { arr = []; }
+      arr = arr.map(function(x) {
+        return (typeof x === 'string') ? {id: x, name: x} : x;
+      }).filter(function(x) { return x && x.id; });
+      if (arr.length) {
+        box.hidden = false;
+        list.innerHTML = '';
+        arr.slice(0, MAX_DROPDOWN).forEach(function(d) {
+          var a = document.createElement('a');
+          a.className = 'ck-user-recent-item';
+          a.href = '/deal/' + encodeURIComponent(d.id);
+          var nm = document.createElement('span');
+          nm.className = 'ck-user-recent-name';
+          nm.textContent = d.name || d.id;
+          a.appendChild(nm);
+          if (d.name && d.name !== d.id) {
+            var sl = document.createElement('span');
+            sl.className = 'ck-user-recent-slug';
+            sl.textContent = d.id;
+            a.appendChild(sl);
+          }
+          list.appendChild(a);
+        });
+      }
+    }
+  } catch (e) { /* storage unavailable — skip */ }
 })();
 </script>
 """
@@ -2261,6 +2310,12 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         f'aria-expanded="false" title="Signed in" '
         f'data-ck-user-toggle>{_esc(user_initials)}</button>'
         '<div class="ck-user-dropdown" hidden>'
+        # Recently-viewed deals — populated client-side from
+        # localStorage by _USER_MENU_JS. Hidden when empty.
+        '<div class="ck-user-recent" data-ck-recent-deals hidden>'
+        '<div class="ck-user-recent-head">Recent deals</div>'
+        '<div class="ck-user-recent-list" data-ck-recent-list></div>'
+        '</div>'
         '<a href="/my/AT" class="ck-user-dropdown-item">My Dashboard</a>'
         '<a href="/tools" class="ck-user-dropdown-item">All Tools &middot; ⌘K</a>'
         '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'

@@ -1000,18 +1000,23 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     }
 
     <script>
-    // B98: record this deal in the browser's recently-viewed list so the
-    // dashboard can offer a quick-nav shortcut. Caps at 10 entries.
+    // B98: record this deal in the browser's recently-viewed list so
+    // the user dropdown can surface "Recently viewed" shortcuts.
+    // Stores [{{id, name}}] objects (newer shape) but tolerates the
+    // legacy string-only entries by upgrading them on read.
     (function() {{
       try {{
         var KEY = 'rcm-mc-recent-deals-v1';
         var MAX = 10;
         var did = {repr(deal_id)};
+        var dname = {repr(deal_name)};
         var arr = [];
         try {{ arr = JSON.parse(localStorage.getItem(KEY) || '[]'); }} catch (e) {{ arr = []; }}
-        // Put this deal at the front, dedupe
-        arr = [did].concat(arr.filter(function(x) {{ return x !== did; }}));
-        arr = arr.slice(0, MAX);
+        // Normalise to {{id, name}} objects; drop stale stringified entries.
+        arr = arr.map(function(x) {{
+          return (typeof x === 'string') ? {{id: x, name: x}} : x;
+        }}).filter(function(x) {{ return x && x.id && x.id !== did; }});
+        arr = [{{id: did, name: dname || did}}].concat(arr).slice(0, MAX);
         localStorage.setItem(KEY, JSON.stringify(arr));
       }} catch (e) {{ /* storage unavailable — skip */ }}
     }})();
