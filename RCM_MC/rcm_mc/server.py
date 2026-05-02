@@ -517,18 +517,58 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
             return "—"
         return v
 
+    # Severity → tone mapping shared by variance + initiative tables
+    def _severity_pill(sev: str) -> str:
+        s = (sev or "").lower()
+        if s in ("critical", "red"):
+            color = "var(--sc-negative,#b5321e)"
+        elif s in ("warning", "amber", "concerning"):
+            color = "var(--sc-warning,#b8732a)"
+        elif s in ("ok", "green", "good"):
+            color = "var(--sc-positive,#0a8a5f)"
+        elif s:
+            color = "var(--sc-text-faint,#7a8699)"
+        else:
+            return ""
+        return (
+            f'<span style="color:{color};font-family:var(--sc-mono,monospace);'
+            f'font-weight:700;font-size:10.5px;letter-spacing:0.08em;'
+            f'text-transform:uppercase;">{html.escape(str(sev))}</span>'
+        )
+
     # Snapshot audit trail — oldest→newest, inline table
     trail_rows = []
     for _, r in snaps.sort_values("created_at").iterrows():
         notes = str(r.get("notes") or "")
+        cov_raw = str(r.get("covenant_status") or "")
+        cov_lo = cov_raw.lower()
+        cov_color = (
+            "var(--sc-negative,#b5321e)" if cov_lo == "tripped"
+            else "var(--sc-warning,#b8732a)" if cov_lo == "tight"
+            else "var(--sc-positive,#0a8a5f)" if cov_lo == "safe"
+            else "var(--sc-text-faint,#7a8699)"
+        )
+        cov_html = (
+            f'<span style="color:{cov_color};font-weight:700;'
+            f'font-family:var(--sc-mono,monospace);font-size:10.5px;'
+            f'letter-spacing:0.08em;text-transform:uppercase;">'
+            f'{html.escape(cov_raw.upper() if cov_raw else "—")}</span>'
+        )
+        moic = _fmt(r.get('moic'))
+        irr = _fmt(r.get('irr'))
+        if isinstance(moic, float):
+            moic = f"{moic:.2f}x"
+        if isinstance(irr, float):
+            irr = f"{irr*100:.1f}%"
         trail_rows.append(
             f"<tr>"
-            f"<td>{html.escape(str(r.get('created_at') or '')[:19])}</td>"
-            f"<td><strong>{html.escape(str(r.get('stage') or '?'))}</strong></td>"
-            f"<td class='num'>{_fmt(r.get('moic'))}</td>"
-            f"<td class='num'>{_fmt(r.get('irr'))}</td>"
-            f"<td>{html.escape(str(r.get('covenant_status') or '—'))}</td>"
-            f"<td class='muted'>{html.escape(notes[:120])}</td>"
+            f'<td class="ck-deal-mono">'
+            f'{html.escape(str(r.get("created_at") or "")[:19])}</td>'
+            f"<td>{html.escape(str(r.get('stage') or '?')).title()}</td>"
+            f"<td class='r ck-deal-mono'>{moic}</td>"
+            f"<td class='r ck-deal-mono'>{irr}</td>"
+            f"<td>{cov_html}</td>"
+            f"<td class='ck-deal-detail'>{html.escape(notes[:120])}</td>"
             f"</tr>"
         )
 
@@ -537,14 +577,20 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     var_rows = []
     if not var_df.empty:
         for _, r in var_df.sort_values(["quarter", "kpi"]).iterrows():
+            varp = _fmt(r.get('variance_pct'))
+            if isinstance(varp, float):
+                varp_str = f"{varp*100:+.1f}%"
+            else:
+                varp_str = str(varp)
             var_rows.append(
                 f"<tr>"
-                f"<td>{html.escape(str(r.get('quarter') or ''))}</td>"
+                f'<td class="ck-deal-mono">'
+                f'{html.escape(str(r.get("quarter") or ""))}</td>'
                 f"<td>{html.escape(str(r.get('kpi') or ''))}</td>"
-                f"<td class='num'>{r.get('actual')}</td>"
-                f"<td class='num'>{_fmt(r.get('plan'))}</td>"
-                f"<td class='num'>{_fmt(r.get('variance_pct'))}</td>"
-                f"<td>{html.escape(str(r.get('severity') or ''))}</td>"
+                f"<td class='r ck-deal-mono'>{r.get('actual')}</td>"
+                f"<td class='r ck-deal-mono'>{_fmt(r.get('plan'))}</td>"
+                f"<td class='r ck-deal-mono'>{varp_str}</td>"
+                f"<td>{_severity_pill(str(r.get('severity') or ''))}</td>"
                 f"</tr>"
             )
 
@@ -553,14 +599,20 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     init_rows = []
     if not init_df.empty:
         for _, r in init_df.iterrows():
+            varp = _fmt(r.get('variance_pct'))
+            if isinstance(varp, float):
+                varp_str = f"{varp*100:+.1f}%"
+            else:
+                varp_str = str(varp)
             init_rows.append(
                 f"<tr>"
-                f"<td><strong>{html.escape(str(r.get('initiative_id') or ''))}</strong></td>"
-                f"<td class='num'>{r.get('cumulative_actual')}</td>"
-                f"<td class='num'>{_fmt(r.get('cumulative_plan'))}</td>"
-                f"<td class='num'>{_fmt(r.get('variance_pct'))}</td>"
-                f"<td>{html.escape(str(r.get('severity') or ''))}</td>"
-                f"<td class='num'>{r.get('quarters_active')}</td>"
+                f"<td><strong style='color:var(--sc-navy,#0b2341);'>"
+                f"{html.escape(str(r.get('initiative_id') or ''))}</strong></td>"
+                f"<td class='r ck-deal-mono'>{r.get('cumulative_actual')}</td>"
+                f"<td class='r ck-deal-mono'>{_fmt(r.get('cumulative_plan'))}</td>"
+                f"<td class='r ck-deal-mono'>{varp_str}</td>"
+                f"<td>{_severity_pill(str(r.get('severity') or ''))}</td>"
+                f"<td class='r ck-deal-mono'>{r.get('quarters_active')}</td>"
                 f"</tr>"
             )
 
@@ -715,6 +767,37 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         'color:#fff;border-color:var(--sc-teal,#155752);}'
         '.ck-deal-action-star.is-on:hover{background:var(--sc-navy,#0b2341);'
         'border-color:var(--sc-navy,#0b2341);color:#fff;}'
+        # Editorial section panels for the snapshot trail / variance /
+        # initiative-attribution tables further down the page.
+        '.ck-deal-section{padding:0;overflow:hidden;margin:0 0 20px;}'
+        '.ck-deal-section-head{display:flex;align-items:baseline;'
+        'justify-content:space-between;gap:12px;'
+        'padding:18px 22px 12px;border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+        '.ck-deal-section-head h2{font-family:var(--sc-serif,Georgia,serif);'
+        'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
+        'margin:0;letter-spacing:-0.01em;}'
+        '.ck-deal-section-count{font-family:var(--sc-mono,monospace);'
+        'font-size:11px;color:var(--sc-text-faint,#7a8699);'
+        'letter-spacing:0.08em;text-transform:uppercase;}'
+        '.ck-deal-table{width:100%;border-collapse:collapse;'
+        'font-family:var(--sc-sans,Inter,sans-serif);}'
+        '.ck-deal-table thead th{text-align:left;'
+        'font-family:var(--sc-mono,monospace);font-size:10.5px;'
+        'font-weight:700;letter-spacing:0.1em;text-transform:uppercase;'
+        'color:var(--sc-text-dim,#465366);padding:10px 22px;'
+        'background:var(--sc-bone,#ece6db);'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+        '.ck-deal-table thead th.r{text-align:right;}'
+        '.ck-deal-table tbody td{padding:11px 22px;'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+        'font-size:13px;color:var(--sc-text,#1a2332);vertical-align:middle;}'
+        '.ck-deal-table tbody td.r{text-align:right;}'
+        '.ck-deal-table tbody tr:last-child td{border-bottom:0;}'
+        '.ck-deal-table tbody tr:hover td{background:var(--sc-bone,#ece6db);}'
+        '.ck-deal-mono{font-family:var(--sc-mono,monospace);'
+        'font-variant-numeric:tabular-nums;color:var(--sc-text-dim,#465366);'
+        'font-size:12.5px;}'
+        '.ck-deal-detail{color:var(--sc-text-dim,#465366);font-size:12.5px;}'
         '</style>'
     )
 
@@ -726,34 +809,50 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
 
     {_render_deal_alerts(store, deal_id)}
 
-    <div class="card">
-      <h2>Snapshot audit trail ({len(snaps)} entries)</h2>
-      <table>
+    <section class="cad-card ck-deal-section">
+      <header class="ck-deal-section-head">
+        <h2>Snapshot audit trail</h2>
+        <span class="ck-deal-section-count">{len(snaps)} entries</span>
+      </header>
+      <table class="ck-deal-table">
         <thead><tr>
-          <th>Timestamp</th><th>Stage</th><th>MOIC</th><th>IRR</th>
+          <th>Timestamp</th><th>Stage</th>
+          <th class="r">MOIC</th><th class="r">IRR</th>
           <th>Covenant</th><th>Notes</th>
         </tr></thead>
         <tbody>{"".join(trail_rows)}</tbody>
       </table>
-    </div>
+    </section>
 
     {_render_ebitda_sparkline(var_df)}
 
     {
-      f'<div class="card"><h2>Quarterly variance ({len(var_df)} rows)</h2>'
-      f'<table><thead><tr>'
-      f'<th>Quarter</th><th>KPI</th><th>Actual</th><th>Plan</th>'
-      f'<th>Variance</th><th>Severity</th>'
-      f'</tr></thead><tbody>{"".join(var_rows)}</tbody></table></div>'
+      '<section class="cad-card ck-deal-section">'
+      '<header class="ck-deal-section-head">'
+      '<h2>Quarterly variance</h2>'
+      f'<span class="ck-deal-section-count">{len(var_df)} rows</span>'
+      '</header>'
+      '<table class="ck-deal-table"><thead><tr>'
+      '<th>Quarter</th><th>KPI</th>'
+      '<th class="r">Actual</th><th class="r">Plan</th>'
+      '<th class="r">Variance</th><th>Severity</th>'
+      f'</tr></thead><tbody>{"".join(var_rows)}</tbody></table>'
+      '</section>'
       if var_rows else ""
     }
 
     {
-      f'<div class="card"><h2>Initiative attribution ({len(init_df)} initiatives)</h2>'
-      f'<table><thead><tr>'
-      f'<th>Initiative</th><th>Cum. actual</th><th>Cum. plan</th>'
-      f'<th>Variance</th><th>Severity</th><th>Quarters</th>'
-      f'</tr></thead><tbody>{"".join(init_rows)}</tbody></table></div>'
+      '<section class="cad-card ck-deal-section">'
+      '<header class="ck-deal-section-head">'
+      '<h2>Initiative attribution</h2>'
+      f'<span class="ck-deal-section-count">{len(init_df)} initiatives</span>'
+      '</header>'
+      '<table class="ck-deal-table"><thead><tr>'
+      '<th>Initiative</th><th class="r">Cum. actual</th>'
+      '<th class="r">Cum. plan</th><th class="r">Variance</th>'
+      '<th>Severity</th><th class="r">Quarters</th>'
+      f'</tr></thead><tbody>{"".join(init_rows)}</tbody></table>'
+      '</section>'
       if init_rows else ""
     }
 
