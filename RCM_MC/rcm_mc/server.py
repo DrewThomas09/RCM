@@ -226,81 +226,123 @@ def _render_deal_rerun(store: PortfolioStore, deal_id: str) -> str:
     qd = urllib.parse.quote(deal_id)
     inputs = get_inputs(store, deal_id)
 
+    rerun_css = """
+    <style>
+      .ck-deal-rerun-card{padding:18px 22px;margin:0 0 20px;}
+      .ck-deal-rerun-head{display:flex;align-items:baseline;gap:10px;
+        margin:0 0 10px;}
+      .ck-deal-rerun-head h2{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0;letter-spacing:-0.01em;}
+      .ck-deal-rerun-meta{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.04em;}
+      .ck-deal-rerun-form{display:flex;gap:10px;align-items:center;
+        flex-wrap:wrap;margin-top:10px;}
+      .ck-deal-rerun-form label{display:inline-flex;align-items:center;gap:6px;
+        font-family:var(--sc-mono,monospace);font-size:10.5px;
+        font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+        color:var(--sc-text-dim,#465366);}
+      .ck-deal-rerun-form input{padding:6px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;width:5rem;}
+      .ck-deal-rerun-form input:focus{outline:none;
+        border-color:var(--sc-teal,#155752);}
+      .ck-deal-rerun-go{padding:7px 14px;
+        background:var(--sc-navy,#0b2341);color:#fff;border:0;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;}
+      .ck-deal-rerun-go:hover{background:var(--sc-teal,#155752);}
+      .ck-deal-rerun-paths{margin-top:10px;}
+      .ck-deal-rerun-paths summary{cursor:pointer;
+        font-family:var(--sc-mono,monospace);font-size:10.5px;
+        font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+        color:var(--sc-text-dim,#465366);}
+      .ck-deal-rerun-paths form{display:grid;gap:6px;margin-top:8px;
+        max-width:40rem;}
+      .ck-deal-rerun-paths input{padding:6px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-mono,monospace);font-size:11.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;width:100%;
+        box-sizing:border-box;}
+      .ck-deal-rerun-paths button{justify-self:start;
+        padding:5px 12px;background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc3);
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:10.5px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        color:var(--sc-navy,#0b2341);cursor:pointer;border-radius:2px;}
+      .ck-deal-rerun-paths button:hover{background:var(--sc-bone,#ece6db);
+        border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+      .ck-deal-rerun-empty{font-family:var(--sc-serif,Georgia,serif);
+        font-size:13.5px;color:var(--sc-text-dim,#465366);
+        line-height:1.55;margin:0 0 12px;}
+    </style>
+    """
+
     if inputs:
         actual = html.escape(inputs["actual_path"])
         bench = html.escape(inputs["benchmark_path"])
         base = html.escape(inputs.get("outdir_base") or "")
-        rerun_form = (
-            f'<form method="POST" action="/api/deals/{qd}/rerun" '
-            f'style="display: flex; gap: 0.4rem; align-items: center; '
-            f'flex-wrap: wrap; margin-top: 0.5rem;">'
-            f'<label style="font-size: 0.85rem;">n_sims '
-            f'<input type="number" name="n_sims" value="5000" min="100" '
-            f'style="font-size: 0.85rem; padding: 0.2rem; width: 5rem;">'
-            f'</label>'
-            f'<label style="font-size: 0.85rem;">seed '
-            f'<input type="number" name="seed" value="42" '
-            f'style="font-size: 0.85rem; padding: 0.2rem; width: 4rem;">'
-            f'</label>'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.85rem; padding: 0.2rem 0.8rem; '
-            f'background: var(--accent); color: white; border: none; '
-            f'border-radius: 4px; cursor: pointer; font-weight: 600;">'
-            f'▶ Rerun simulation</button>'
-            f'</form>'
-        )
-        change_form = (
-            f'<details style="margin-top: 0.5rem; font-size: 0.85rem;">'
-            f'<summary class="muted" style="cursor: pointer;">'
-            f'change paths</summary>'
-            f'<form method="POST" action="/api/deals/{qd}/sim-inputs" '
-            f'style="display: grid; gap: 0.3rem; margin-top: 0.4rem; '
-            f'grid-template-columns: 1fr; max-width: 40rem;">'
-            f'<input type="text" name="actual_path" value="{actual}" '
-            f'style="font-size: 0.85rem; padding: 0.25rem;">'
-            f'<input type="text" name="benchmark_path" value="{bench}" '
-            f'style="font-size: 0.85rem; padding: 0.25rem;">'
-            f'<input type="text" name="outdir_base" value="{base}" '
-            f'placeholder="outdir_base (optional)" '
-            f'style="font-size: 0.85rem; padding: 0.25rem;">'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.85rem; padding: 0.2rem 0.6rem; '
-            f'width: fit-content;">Save paths</button>'
-            f'</form></details>'
-        )
-        return (
-            f'<div class="card"><h2 style="margin-top: 0;">Rerun simulation'
-            f'<span class="muted" style="font-weight: 400; '
-            f'font-size: 0.8rem; margin-left: 0.5rem;">'
-            f'{actual} · {bench}</span></h2>'
-            f'{rerun_form}{change_form}</div>'
-        )
+        return f"""
+        {rerun_css}
+        <section class="cad-card ck-deal-rerun-card">
+          <div class="ck-deal-rerun-head">
+            <h2>Rerun simulation</h2>
+            <span class="ck-deal-rerun-meta">{actual} · {bench}</span>
+          </div>
+          <form class="ck-deal-rerun-form" method="POST"
+                action="/api/deals/{qd}/rerun">
+            <label>n_sims
+              <input type="number" name="n_sims" value="5000" min="100">
+            </label>
+            <label>seed
+              <input type="number" name="seed" value="42" style="width:4rem;">
+            </label>
+            <button type="submit" class="ck-deal-rerun-go">
+              ▶ Rerun simulation
+            </button>
+          </form>
+          <details class="ck-deal-rerun-paths">
+            <summary>change paths</summary>
+            <form method="POST" action="/api/deals/{qd}/sim-inputs">
+              <input type="text" name="actual_path" value="{actual}">
+              <input type="text" name="benchmark_path" value="{bench}">
+              <input type="text" name="outdir_base" value="{base}"
+                     placeholder="outdir_base (optional)">
+              <button type="submit">Save paths</button>
+            </form>
+          </details>
+        </section>
+        """
 
     # No stored inputs — show setup form
-    return (
-        f'<div class="card"><h2 style="margin-top: 0;">Rerun simulation '
-        f'<span class="muted" style="font-weight: 400; font-size: 0.8rem;">'
-        f'(not configured)</span></h2>'
-        f'<p class="muted" style="font-size: 0.85rem;">'
-        f'Set this deal\'s simulation input paths once; then any partner '
-        f'can rerun the sim with one click (no CLI needed).'
-        f'</p>'
-        f'<form method="POST" action="/api/deals/{qd}/sim-inputs" '
-        f'style="display: grid; gap: 0.3rem; max-width: 40rem;">'
-        f'<input type="text" name="actual_path" required '
-        f'placeholder="/path/to/actual.yaml" '
-        f'style="font-size: 0.85rem; padding: 0.3rem;">'
-        f'<input type="text" name="benchmark_path" required '
-        f'placeholder="/path/to/benchmark.yaml" '
-        f'style="font-size: 0.85rem; padding: 0.3rem;">'
-        f'<input type="text" name="outdir_base" '
-        f'placeholder="outdir_base (optional — e.g. runs/ccf)" '
-        f'style="font-size: 0.85rem; padding: 0.3rem;">'
-        f'<button type="submit" class="btn" '
-        f'style="font-size: 0.85rem; padding: 0.25rem 0.7rem; '
-        f'width: fit-content;">Save paths</button>'
-        f'</form></div>'
-    )
+    return f"""
+    {rerun_css}
+    <section class="cad-card ck-deal-rerun-card">
+      <div class="ck-deal-rerun-head">
+        <h2>Rerun simulation</h2>
+        <span class="ck-deal-rerun-meta">not configured</span>
+      </div>
+      <p class="ck-deal-rerun-empty">
+        Set this deal&rsquo;s simulation input paths once; then any partner
+        can rerun the sim with one click (no CLI needed).
+      </p>
+      <details class="ck-deal-rerun-paths" open>
+        <summary>configure paths</summary>
+        <form method="POST" action="/api/deals/{qd}/sim-inputs">
+          <input type="text" name="actual_path" required
+                 placeholder="/path/to/actual.yaml">
+          <input type="text" name="benchmark_path" required
+                 placeholder="/path/to/benchmark.yaml">
+          <input type="text" name="outdir_base"
+                 placeholder="outdir_base (optional — e.g. runs/ccf)">
+          <button type="submit">Save paths</button>
+        </form>
+      </details>
+    </section>
+    """
 
 
 def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
@@ -446,71 +488,117 @@ def _render_deal_alerts(store: PortfolioStore, deal_id: str) -> str:
     if not alerts:
         return ""
 
-    sev_meta = {
-        "red":   ("badge-red",   "RED"),
-        "amber": ("badge-amber", "AMBER"),
-        "info":  ("badge-blue",  "INFO"),
-    }
     # Sort red→amber→info
     sev_order = {"red": 0, "amber": 1, "info": 2}
     alerts.sort(key=lambda a: sev_order.get(a.severity, 9))
+    sev_color = {
+        "red":   "var(--sc-negative,#b5321e)",
+        "amber": "var(--sc-warning,#b8732a)",
+        "info":  "var(--sc-teal,#155752)",
+    }
+    # Pick the strongest severity as the panel's left-border accent.
+    top_sev = alerts[0].severity if alerts else "info"
+    panel_accent = sev_color.get(top_sev, "var(--sc-text-faint,#7a8699)")
 
     from .alerts.alert_history import age_hint
     rows = []
     for a in alerts:
-        cls, label = sev_meta.get(a.severity, ("badge-muted", a.severity.upper()))
+        color = sev_color.get(a.severity, "var(--sc-text-faint,#7a8699)")
         tk = trigger_key_for(a)
         age = age_hint(a.first_seen_at)
         age_span = (
-            f'<span class="muted" style="font-size: 0.75rem;">'
+            f'<span class="ck-deal-alert-age">'
             f'seen {html.escape(age)}</span>' if age else ""
         )
         ack_form = (
             f'<form method="POST" action="/api/alerts/ack" '
-            f'style="display: inline-flex; gap: 0.3rem; align-items: center;">'
+            f'class="ck-deal-alert-ack-form">'
             f'<input type="hidden" name="kind" value="{html.escape(a.kind)}">'
             f'<input type="hidden" name="deal_id" value="{html.escape(a.deal_id)}">'
             f'<input type="hidden" name="trigger_key" value="{html.escape(tk)}">'
-            f'<select name="snooze_days" '
-            f'style="font-size: 0.75rem; padding: 0.1rem;">'
+            f'<select name="snooze_days" class="ck-deal-alert-snooze">'
             f'<option value="0">Ack</option>'
             f'<option value="7">Snooze 7d</option>'
             f'<option value="30">Snooze 30d</option>'
             f'</select>'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.75rem; padding: 0.15rem 0.5rem;">Ack</button>'
+            f'<button type="submit" class="ck-deal-alert-go">Apply</button>'
             f'</form>'
         )
         returning_badge = (
-            '<span class="badge badge-amber" '
-            'style="font-size: 0.7rem;" '
+            '<span class="ck-deal-alert-returning" '
             'title="Returned after snooze expired">↩ returning</span>'
             if a.returning else ""
         )
         rows.append(
-            f'<li style="padding: 0.5rem 0; '
-            f'border-bottom: 1px solid var(--border); '
-            f'display: flex; gap: 0.6rem; align-items: center; '
-            f'flex-wrap: wrap;">'
-            f'<span class="badge {cls}">{label}</span>'
+            '<li class="ck-deal-alert-row">'
+            f'<span class="ck-deal-alert-sev" style="color:{color};">'
+            f'{html.escape(a.severity.upper())}</span>'
             f'{returning_badge}'
-            f'<span style="font-weight: 600;">{html.escape(a.title)}</span>'
-            f'<span class="muted" style="font-size: 0.85rem;">'
-            f'{html.escape(a.detail)}</span>'
+            f'<span class="ck-deal-alert-title">{html.escape(a.title)}</span>'
+            f'<span class="ck-deal-alert-detail">{html.escape(a.detail)}</span>'
             f'{age_span}'
             f'{ack_form}'
-            f'</li>'
+            '</li>'
         )
 
-    return (
-        f'<div class="card" style="border-left: 3px solid var(--red-text);">'
-        f'<h2 style="margin-top: 0;">Active alerts '
-        f'<span class="muted" style="font-weight: 400; font-size: 0.8rem;">'
-        f'({len(alerts)}) — <a href="/alerts" style="color: var(--accent);">'
-        f'all alerts →</a></span></h2>'
-        f'<ul style="list-style: none; padding: 0; margin: 0;">'
-        f'{"".join(rows)}</ul></div>'
-    )
+    return f"""
+    <style>
+      .ck-deal-alerts-card{{padding:0;overflow:hidden;margin:0 0 20px;
+        border-left:3px solid {panel_accent};}}
+      .ck-deal-alerts-head{{display:flex;align-items:baseline;
+        justify-content:space-between;gap:12px;
+        padding:18px 22px 12px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+      .ck-deal-alerts-head h2{{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0;letter-spacing:-0.01em;}}
+      .ck-deal-alerts-meta{{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.08em;text-transform:uppercase;}}
+      .ck-deal-alerts-meta a{{color:var(--sc-teal-ink,#0f5e5a);
+        text-decoration:none;}}
+      .ck-deal-alerts-meta a:hover{{color:var(--sc-navy,#0b2341);}}
+      .ck-deal-alerts-list{{list-style:none;padding:0;margin:0;}}
+      .ck-deal-alert-row{{display:flex;align-items:center;gap:12px;
+        padding:11px 22px;flex-wrap:wrap;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);font-size:13px;}}
+      .ck-deal-alert-row:last-child{{border-bottom:0;}}
+      .ck-deal-alert-sev{{font-family:var(--sc-mono,monospace);
+        font-weight:700;font-size:10.5px;letter-spacing:0.1em;
+        text-transform:uppercase;}}
+      .ck-deal-alert-returning{{font-family:var(--sc-mono,monospace);
+        font-size:10px;letter-spacing:0.08em;text-transform:uppercase;
+        color:var(--sc-warning,#b8732a);font-weight:700;}}
+      .ck-deal-alert-title{{font-weight:600;color:var(--sc-text,#1a2332);}}
+      .ck-deal-alert-detail{{color:var(--sc-text-dim,#465366);
+        font-size:12.5px;}}
+      .ck-deal-alert-age{{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.04em;}}
+      .ck-deal-alert-ack-form{{display:inline-flex;gap:6px;align-items:center;
+        margin:0 0 0 auto;}}
+      .ck-deal-alert-snooze{{padding:5px 8px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;}}
+      .ck-deal-alert-go{{padding:5px 12px;background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc3);
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:10.5px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        color:var(--sc-navy,#0b2341);cursor:pointer;border-radius:2px;}}
+      .ck-deal-alert-go:hover{{background:var(--sc-bone,#ece6db);
+        border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}}
+    </style>
+    <section class="cad-card ck-deal-alerts-card">
+      <header class="ck-deal-alerts-head">
+        <h2>Active alerts</h2>
+        <span class="ck-deal-alerts-meta">
+          {len(alerts)} entries · <a href="/alerts">all alerts →</a>
+        </span>
+      </header>
+      <ul class="ck-deal-alerts-list">{"".join(rows)}</ul>
+    </section>
+    """
 
 
 def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
@@ -1504,98 +1592,117 @@ def _deal_action_forms(deal_id: str) -> str:
         for s in DEAL_STAGES
     )
 
-    # Compact inline form styling — keeps the deal page readable
-    form_css = (
-        'style="display: grid; grid-template-columns: 180px 1fr; '
-        'gap: 0.5rem 1rem; align-items: center; max-width: 600px;"'
-    )
-    input_css = (
-        'style="padding: 0.4rem 0.6rem; border: 1px solid var(--border); '
-        'border-radius: 6px; font-size: 0.9rem; font-family: inherit;"'
-    )
-    submit_css = (
-        'style="padding: 0.5rem 1.25rem; border: none; border-radius: 6px; '
-        'background: var(--accent); color: white; font-weight: 600; '
-        'cursor: pointer; font-size: 0.9rem; font-family: inherit;"'
-    )
+    actions_css = """
+    <style>
+      .ck-deal-action-card{padding:18px 22px;margin:0 0 20px;}
+      .ck-deal-action-card h2{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0 0 6px;letter-spacing:-0.01em;}
+      .ck-deal-action-card .ck-deal-action-lede{
+        font-family:var(--sc-serif,Georgia,serif);font-size:13.5px;
+        line-height:1.55;color:var(--sc-text-dim,#465366);margin:0 0 14px;
+        max-width:64ch;}
+      .ck-deal-action-grid{display:grid;
+        grid-template-columns:160px 1fr;gap:8px 14px;align-items:center;
+        max-width:620px;}
+      .ck-deal-action-grid label{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;font-weight:700;letter-spacing:0.1em;
+        text-transform:uppercase;color:var(--sc-text-dim,#465366);}
+      .ck-deal-action-grid input,
+      .ck-deal-action-grid select{padding:7px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;width:100%;
+        box-sizing:border-box;}
+      .ck-deal-action-grid input:focus,
+      .ck-deal-action-grid select:focus{outline:none;
+        border-color:var(--sc-teal,#155752);}
+      .ck-deal-action-submit{padding:9px 18px;
+        background:var(--sc-navy,#0b2341);color:#fff;border:0;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;justify-self:start;}
+      .ck-deal-action-submit:hover{background:var(--sc-teal,#155752);}
+      .ck-deal-remark-form{display:flex;gap:10px;align-items:center;
+        flex-wrap:wrap;}
+      .ck-deal-remark-form label{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;font-weight:700;letter-spacing:0.1em;
+        text-transform:uppercase;color:var(--sc-text-dim,#465366);}
+      .ck-deal-remark-form input{padding:7px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;max-width:200px;}
+    </style>
+    """
 
     return f"""
-    <div class="card">
+    {actions_css}
+    <section class="cad-card ck-deal-action-card">
       <h2>Record quarterly actuals</h2>
-      <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">
+      <p class="ck-deal-action-lede">
         Enter the management-deck numbers for the current quarter. Plan
-        values are optional; leave blank to use the snapshot's underwritten
-        EBITDA as the plan.
+        values are optional; leave blank to use the snapshot&rsquo;s
+        underwritten EBITDA as the plan.
       </p>
-      <form method="POST" action="/api/deals/{qd}/actuals" {form_css}>
+      <form class="ck-deal-action-grid" method="POST"
+            action="/api/deals/{qd}/actuals">
         <label>Quarter (YYYYQn)</label>
-        <input type="text" name="quarter" required placeholder="2026Q2" {input_css}>
-
+        <input type="text" name="quarter" required placeholder="2026Q2">
         <label>EBITDA ($)</label>
-        <input type="number" step="any" name="ebitda" {input_css}>
-
+        <input type="number" step="any" name="ebitda">
         <label>Plan EBITDA ($)</label>
-        <input type="number" step="any" name="plan_ebitda" {input_css}>
-
+        <input type="number" step="any" name="plan_ebitda">
         <label>NPSR ($)</label>
-        <input type="number" step="any" name="net_patient_revenue" {input_css}>
-
+        <input type="number" step="any" name="net_patient_revenue">
         <label>IDR (decimal)</label>
-        <input type="number" step="0.001" name="idr_blended" {input_css}>
-
+        <input type="number" step="0.001" name="idr_blended">
         <label>DAR (days)</label>
-        <input type="number" step="0.1" name="dar_clean_days" {input_css}>
-
+        <input type="number" step="0.1" name="dar_clean_days">
         <label>Notes</label>
-        <input type="text" name="notes" {input_css}>
-
+        <input type="text" name="notes">
         <div></div>
-        <button type="submit" {submit_css}>Record quarter</button>
+        <button type="submit" class="ck-deal-action-submit">Record quarter</button>
       </form>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="cad-card ck-deal-action-card">
       <h2>Re-mark underwrite</h2>
-      <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">
-        Recompute MOIC / IRR from the latest TTM EBITDA and persist as a new
-        hold-stage snapshot. Shows whether the original thesis still holds
-        after this quarter's management report.
+      <p class="ck-deal-action-lede">
+        Recompute MOIC / IRR from the latest TTM EBITDA and persist as a
+        new hold-stage snapshot. Shows whether the original thesis still
+        holds after this quarter&rsquo;s management report.
       </p>
-      <form method="POST" action="/api/deals/{qd}/remark"
-            onsubmit="return confirm('Persist a new re-mark snapshot?');"
-            style="display: flex; gap: 0.5rem; align-items: center;">
-        <label style="font-size: 0.9rem; color: var(--muted);">
-          As of quarter (optional):
-        </label>
-        <input type="text" name="as_of" placeholder="auto-detect latest"
-               {input_css} style="max-width: 180px;">
-        <button type="submit" {submit_css}>Compute &amp; persist</button>
+      <form class="ck-deal-remark-form" method="POST"
+            action="/api/deals/{qd}/remark"
+            onsubmit="return confirm('Persist a new re-mark snapshot?');">
+        <label>As of quarter</label>
+        <input type="text" name="as_of" placeholder="auto-detect latest">
+        <button type="submit" class="ck-deal-action-submit">Compute &amp; persist</button>
       </form>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="cad-card ck-deal-action-card">
       <h2>Advance stage</h2>
-      <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">
+      <p class="ck-deal-action-lede">
         Register a new snapshot at a different pipeline stage. The snapshot
-        trail is append-only — advancing stage doesn't erase the prior one.
+        trail is append-only — advancing stage doesn&rsquo;t erase the
+        prior one.
       </p>
-      <form method="POST" action="/api/deals/{qd}/snapshots" {form_css}>
+      <form class="ck-deal-action-grid" method="POST"
+            action="/api/deals/{qd}/snapshots">
         <label>New stage</label>
-        <select name="stage" required {input_css}>
+        <select name="stage" required>
           <option value="" disabled selected>— pick stage —</option>
           {stage_opts}
         </select>
-
-        <label>Run directory (optional)</label>
-        <input type="text" name="run_dir" placeholder="/path/to/run" {input_css}>
-
+        <label>Run directory</label>
+        <input type="text" name="run_dir" placeholder="/path/to/run (optional)">
         <label>Notes</label>
-        <input type="text" name="notes" {input_css}>
-
+        <input type="text" name="notes">
         <div></div>
-        <button type="submit" {submit_css}>Advance stage</button>
+        <button type="submit" class="ck-deal-action-submit">Advance stage</button>
       </form>
-    </div>
+    </section>
     """
 
 
