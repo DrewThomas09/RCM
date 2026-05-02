@@ -462,17 +462,52 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     """Per-deal detail page: snapshot audit + variance + initiative attribution.
 
     Composed inline from the existing data readers — no new HTML shell
-    code, just layout. Uses the shared ``_ui_kit.shell`` for consistency.
+    code, just layout. The header (page title + action row + KPIs) uses
+    editorial primitives; the body sections (audit trail, variance,
+    notes, deadlines) keep their legacy <table>/<div class="card">
+    markup and render cleanly under the editorial CSS.
     """
+    from .ui._chartis_kit import (
+        chartis_shell, ck_page_title, ck_kpi_block, SafeHtml,
+    )
     store = PortfolioStore(config.db_path)
     snaps = list_snapshots(store, deal_id=deal_id)
+
+    # Friendly deal-name lookup so the page title reads
+    # "Cypress Crossing Health" instead of "ccf".
+    deal_name = deal_id
+    try:
+        with store.connect() as _con:
+            row = _con.execute(
+                "SELECT name FROM deals WHERE deal_id = ? LIMIT 1",
+                (deal_id,),
+            ).fetchone()
+            if row and row["name"]:
+                deal_name = row["name"]
+    except Exception:
+        pass
+
     if snaps.empty:
-        body = (
-            f'<div class="card"><p class="muted">No snapshots for deal '
-            f'<strong>{html.escape(deal_id)}</strong>. Register the deal '
-            'via <code>rcm-mc portfolio register</code> first.</p></div>'
+        title_html = ck_page_title(
+            deal_name,
+            eyebrow="DEAL",
+            meta=f"slug: {deal_id} · no snapshots yet",
         )
-        return shell(body, title=f"Deal: {deal_id}", back_href="/")
+        body = (
+            f"{title_html}"
+            '<div class="cad-card" style="padding:32px;">'
+            '<p style="font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:15px;color:var(--sc-text-dim,#465366);line-height:1.55;">'
+            f'No snapshots for deal <strong>{html.escape(deal_id)}</strong>. '
+            'Register the deal via <code>rcm-mc portfolio register</code> '
+            'or run a simulation to populate the audit trail.'
+            '</p></div>'
+        )
+        return chartis_shell(
+            body, title=f"{deal_name} — Deal",
+            active_nav="/portfolio",
+            subtitle="No snapshots yet",
+        )
 
     latest = snaps.iloc[0]
     def _fmt(v):
@@ -529,14 +564,22 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
                 f"</tr>"
             )
 
-    # Stage + covenant headline
+    # Stage + covenant headline (rendered as editorial pill)
     stage = latest.get("stage") or "—"
     cov = latest.get("covenant_status") or "—"
-    cov_badge = {
-        "SAFE":    '<span class="badge badge-green">SAFE</span>',
-        "TIGHT":   '<span class="badge badge-amber">TIGHT</span>',
-        "TRIPPED": '<span class="badge badge-red">TRIPPED</span>',
-    }.get(str(cov), f'<span class="badge badge-muted">{html.escape(str(cov))}</span>')
+    cov_lower = str(cov).lower()
+    cov_color = (
+        "var(--sc-negative,#b5321e)" if cov_lower == "tripped"
+        else "var(--sc-warning,#b8732a)" if cov_lower == "tight"
+        else "var(--sc-positive,#0a8a5f)" if cov_lower == "safe"
+        else "var(--sc-text-faint,#7a8699)"
+    )
+    cov_badge = SafeHtml(
+        f'<span style="color:{cov_color};font-weight:700;'
+        f'font-family:var(--sc-mono,monospace);font-size:14px;'
+        f'letter-spacing:0.06em;text-transform:uppercase;">'
+        f'{html.escape(str(cov).upper())}</span>'
+    )
 
     qd = urllib.parse.quote(deal_id)
     from .deals.deal_owners import current_owner as _current_owner
@@ -545,28 +588,22 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     owner = _current_owner(store, deal_id) or ""
     owner_form = (
         f'<form method="POST" action="/api/deals/{qd}/owner" '
-        f'style="display: inline-flex; gap: 0.25rem; align-items: center;">'
-        f'<label style="font-size: 0.8rem;" class="muted">Owner</label>'
+        f'class="ck-deal-owner-form">'
+        f'<label class="ck-deal-owner-label">Owner</label>'
         f'<input type="text" name="owner" value="{html.escape(owner)}" '
         f'placeholder="e.g. AT" maxlength="40" '
-        f'style="font-size: 0.8rem; padding: 0.15rem 0.35rem; width: 6rem;">'
-        f'<button type="submit" class="btn" '
-        f'style="font-size: 0.75rem; padding: 0.1rem 0.5rem;">Assign</button>'
+        f'class="ck-deal-owner-input">'
+        f'<button type="submit" class="ck-deal-action">Assign</button>'
         f'</form>'
     )
-    star_label = "★ Starred" if starred else "☆ Star"
-    star_style = (
-        "background: var(--amber-soft); color: var(--amber-text);"
-        if starred else
-        "background: var(--card); color: var(--accent);"
+    star_label = "★ Pinned" if starred else "☆ Pin"
+    star_btn_cls = "ck-deal-action ck-deal-action-star" + (
+        " is-on" if starred else ""
     )
     star_btn = (
         f'<form method="POST" action="/api/deals/{qd}/star" '
-        f'style="display: inline;">'
-        f'<button type="submit" '
-        f'style="{star_style} border: 1px solid var(--border); '
-        f'border-radius: 6px; padding: 0.25rem 0.7rem; font-size: 0.85rem; '
-        f'font-weight: 600; cursor: pointer;">{star_label}</button>'
+        f'style="display:inline;margin:0;">'
+        f'<button type="submit" class="{star_btn_cls}">{star_label}</button>'
         f'</form>'
     )
 
@@ -607,43 +644,85 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         for c in health.get("components", [])
     ) or "No deductions — healthy."
 
-    body = f"""
-    <div style="display: flex; justify-content: flex-end; gap: 1rem;
-         margin-bottom: 1rem; font-size: 0.85rem; align-items: center;">
-      {owner_form}
-      {star_btn}
-      <a href="/deal/{qd}?download=1"
-         style="color: var(--accent); text-decoration: none;
-                border-bottom: 1px dotted var(--accent);">
-        ↓ Download deal page
-      </a>
-    </div>
+    title_html = ck_page_title(
+        deal_name,
+        eyebrow="DEAL",
+        meta=(
+            f"slug: {deal_id} · "
+            f"stage: {str(stage).title()} · "
+            f"{len(snaps)} snapshot{'s' if len(snaps) != 1 else ''} · "
+            f"reading {os.path.basename(config.db_path)}"
+        ),
+    )
+    action_row = (
+        '<div class="ck-deal-action-row">'
+        f'{owner_form}'
+        f'{star_btn}'
+        f'<a href="/deal/{qd}?download=1" class="ck-deal-action">'
+        '↓ Download HTML</a>'
+        '</div>'
+    )
+    # Health KPI value: pre-built coloured number + sparkline; wrap in
+    # SafeHtml so ck_kpi_block doesn't escape it.
+    health_value = SafeHtml(
+        f'<span style="color:{health_band_color};">'
+        f'{health_score_display_html}</span>'
+    )
+    moic_v = _fmt(latest.get("moic"))
+    irr_v = _fmt(latest.get("irr"))
+    if isinstance(moic_v, float):
+        moic_v = f"{moic_v:.2f}x"
+    if isinstance(irr_v, float):
+        irr_v = f"{irr_v*100:.1f}%"
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+        + ck_kpi_block(
+            "Health", health_value,
+            sub=f'{html.escape(health["band"])} band',
+        )
+        + ck_kpi_block(
+            "Stage", html.escape(str(stage)).title(),
+            sub="lifecycle",
+        )
+        + ck_kpi_block("Covenant", cov_badge, sub="latest snapshot")
+        + ck_kpi_block("MOIC", str(moic_v), sub="latest snapshot")
+        + ck_kpi_block("IRR", str(irr_v), sub="latest snapshot")
+        + '</div>'
+    )
 
-    <div class="kpi-grid">
-      <div class="kpi-card" title="{html.escape(comp_lines)}">
-        <div class="kpi-value" style="color: {health_band_color};">
-          {health_score_display_html}
-        </div>
-        <div class="kpi-label">Health ({html.escape(health["band"])})</div>
-        {_render_health_sparkline(store, deal_id)}
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value">{html.escape(str(stage)).title()}</div>
-        <div class="kpi-label">Stage</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value">{cov_badge}</div>
-        <div class="kpi-label">Covenant</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value">{_fmt(latest.get('moic'))}</div>
-        <div class="kpi-label">MOIC (latest)</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value">{_fmt(latest.get('irr'))}</div>
-        <div class="kpi-label">IRR (latest)</div>
-      </div>
-    </div>
+    deal_header_css = (
+        '<style>'
+        '.ck-deal-action-row{display:flex;align-items:center;gap:14px;'
+        'margin:0 0 24px;flex-wrap:wrap;}'
+        '.ck-deal-owner-form{display:inline-flex;align-items:center;gap:8px;'
+        'margin:0;background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+        'border-radius:2px;padding:6px 10px;}'
+        '.ck-deal-owner-label{font-family:var(--sc-mono,monospace);'
+        'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
+        '.ck-deal-owner-input{padding:4px 8px;border:0;'
+        'font-family:var(--sc-sans,Inter,sans-serif);font-size:13px;'
+        'background:transparent;color:var(--sc-text,#1a2332);width:6rem;outline:none;}'
+        '.ck-deal-action{padding:7px 14px;background:#fff;'
+        'border:1px solid var(--sc-rule,#d6cfc3);border-radius:2px;'
+        'font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;'
+        'font-weight:700;letter-spacing:0.08em;text-transform:uppercase;'
+        'color:var(--sc-navy,#0b2341);cursor:pointer;text-decoration:none;'
+        'display:inline-flex;align-items:center;}'
+        '.ck-deal-action:hover{background:var(--sc-bone,#ece6db);'
+        'border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}'
+        '.ck-deal-action-star.is-on{background:var(--sc-teal,#155752);'
+        'color:#fff;border-color:var(--sc-teal,#155752);}'
+        '.ck-deal-action-star.is-on:hover{background:var(--sc-navy,#0b2341);'
+        'border-color:var(--sc-navy,#0b2341);color:#fff;}'
+        '</style>'
+    )
+
+    body = f"""
+    {deal_header_css}
+    {title_html}
+    {action_row}
+    {kpi_strip}
 
     {_render_deal_alerts(store, deal_id)}
 
@@ -706,11 +785,11 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
 
     {_deal_action_forms(deal_id)}
     """
-    return shell(
-        body=body,
-        title=f"Deal: {deal_id}",
-        subtitle=f"Live view · reading {config.db_path}",
-        back_href="/",
+    return chartis_shell(
+        body,
+        title=f"{deal_name} — Deal",
+        active_nav="/portfolio",
+        subtitle="",
     )
 
 
