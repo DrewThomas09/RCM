@@ -57,9 +57,9 @@ from ._chartis_kit import (
     chartis_shell,
     ck_affirm_empty,
     ck_arrow_link,
-    ck_eyebrow,
+    ck_kpi_block,
+    ck_page_title,
     ck_provenance_tooltip,
-    ck_severity_panel,
 )
 
 
@@ -71,6 +71,102 @@ _SEV_META = {
     "info":  ("INFO", "Informational — stage advance or new note."),
 }
 
+_SEV_TONE_COLOR = {
+    "red":   "var(--sc-negative,#b5321e)",
+    "amber": "var(--sc-warning,#b8732a)",
+    "info":  "var(--sc-teal,#155752)",
+}
+
+
+def _name_lookup(store: PortfolioStore) -> Dict[str, str]:
+    """Best-effort deal_id → friendly name. Empty dict on any error
+    so a stale schema can't 500 the alerts page."""
+    out: Dict[str, str] = {}
+    try:
+        with store.connect() as con:
+            for r in con.execute("SELECT deal_id, name FROM deals"):
+                if r["name"]:
+                    out[r["deal_id"]] = r["name"]
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+
+
+_ALERTS_CSS = """
+<style>
+  .ck-alerts-card{padding:0;overflow:hidden;margin:0 0 20px;}
+  .ck-alerts-card-red    { border-left:3px solid var(--sc-negative,#b5321e); }
+  .ck-alerts-card-amber  { border-left:3px solid var(--sc-warning,#b8732a); }
+  .ck-alerts-card-info   { border-left:3px solid var(--sc-teal,#155752); }
+  .ck-alerts-head{display:flex;align-items:baseline;justify-content:space-between;
+    gap:12px;padding:18px 22px 12px;
+    border-bottom:1px solid var(--sc-rule,#d6cfc3);}
+  .ck-alerts-head h2{font-family:var(--sc-serif,Georgia,serif);
+    font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+    margin:0;letter-spacing:-0.01em;}
+  .ck-alerts-head .meta{font-family:var(--sc-mono,monospace);font-size:11px;
+    color:var(--sc-text-faint,#7a8699);letter-spacing:0.08em;
+    text-transform:uppercase;}
+  .ck-alerts-list{list-style:none;padding:0;margin:0;}
+  .ck-alert-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:12px 22px;border-bottom:1px solid var(--sc-rule,#d6cfc3);
+    font-size:13px;}
+  .ck-alert-row:last-child{border-bottom:0;}
+  .ck-alert-sev{font-family:var(--sc-mono,monospace);font-weight:700;
+    font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;}
+  .ck-alert-deal{color:var(--sc-navy,#0b2341);font-weight:600;
+    text-decoration:none;}
+  .ck-alert-deal:hover{color:var(--sc-teal,#155752);}
+  .ck-alert-slug{font-family:var(--sc-mono,monospace);font-size:10.5px;
+    color:var(--sc-text-faint,#7a8699);letter-spacing:0.04em;}
+  .ck-alert-title{color:var(--sc-text,#1a2332);font-weight:600;}
+  .ck-alert-detail{color:var(--sc-text-dim,#465366);font-size:12.5px;
+    flex-basis:100%;margin-top:4px;}
+  .ck-alert-age{font-family:var(--sc-mono,monospace);font-size:10.5px;
+    color:var(--sc-text-faint,#7a8699);letter-spacing:0.04em;}
+  .ck-alert-returning{font-family:var(--sc-mono,monospace);font-size:10px;
+    letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--sc-warning,#b8732a);font-weight:700;}
+  .ck-alert-ack-form{display:inline-flex;gap:6px;align-items:center;
+    margin:0 0 0 auto;}
+  .ck-alert-snooze{padding:5px 10px;
+    border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+    font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
+    color:var(--sc-text,#1a2332);border-radius:2px;}
+  .ck-alert-go{padding:5px 12px;background:#fff;
+    border:1px solid var(--sc-rule,#d6cfc3);
+    font-family:var(--sc-sans,Inter,sans-serif);font-size:10.5px;
+    font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--sc-navy,#0b2341);cursor:pointer;border-radius:2px;}
+  .ck-alert-go:hover{background:var(--sc-bone,#ece6db);
+    border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+
+  .ck-alerts-filter-row{display:flex;align-items:center;gap:10px;
+    margin:0 0 24px;flex-wrap:wrap;}
+  .ck-alerts-filter-form{display:inline-flex;align-items:center;gap:8px;
+    background:#fff;border:1px solid var(--sc-rule,#d6cfc3);
+    border-radius:2px;padding:6px 10px;}
+  .ck-alerts-filter-label{font-family:var(--sc-mono,monospace);font-size:10.5px;
+    font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--sc-text-dim,#465366);}
+  .ck-alerts-filter-form input{padding:5px 10px;border:0;
+    font-family:var(--sc-sans,Inter,sans-serif);font-size:13px;
+    background:transparent;color:var(--sc-text,#1a2332);width:10rem;outline:none;}
+  .ck-alerts-filter-form button{padding:5px 12px;
+    background:var(--sc-navy,#0b2341);color:#fff;border:0;
+    font-family:var(--sc-sans,Inter,sans-serif);font-size:10.5px;
+    font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    cursor:pointer;border-radius:2px;}
+  .ck-alerts-filter-form button:hover{background:var(--sc-teal,#155752);}
+  .ck-alerts-toggle{font-family:var(--sc-mono,monospace);font-size:11px;
+    font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--sc-teal-ink,#0f5e5a);text-decoration:none;
+    padding:6px 12px;border:1px solid var(--sc-teal-ink,#0f5e5a);
+    border-radius:2px;}
+  .ck-alerts-toggle:hover{background:var(--sc-teal,#155752);color:#fff;}
+</style>
+"""
+
 
 def _toggle_link(show_all: bool, owner_filter: Optional[str]) -> str:
     base_qs: Dict[str, str] = {}
@@ -80,85 +176,88 @@ def _toggle_link(show_all: bool, owner_filter: Optional[str]) -> str:
         href = "/alerts" + (
             "?" + urllib.parse.urlencode(base_qs) if base_qs else ""
         )
-        return ck_arrow_link("Show active only", href)
-    toggle_qs = dict(base_qs, show="all")
-    href = "/alerts?" + urllib.parse.urlencode(toggle_qs)
-    return ck_arrow_link("Show acknowledged + all", href)
+        label = "Show active only"
+    else:
+        href = "/alerts?" + urllib.parse.urlencode(dict(base_qs, show="all"))
+        label = "Show acknowledged + all"
+    return (
+        f'<a href="{html.escape(href)}" class="ck-alerts-toggle">'
+        f'{html.escape(label)}</a>'
+    )
 
 
 def _owner_form(show_all: bool, owner_filter: Optional[str]) -> str:
-    """Editorial filter strip — eyebrow label + monospace input + tonal
-    submit. Replaces the inline-styled form from the legacy route."""
-    clear_link = (
-        f'<a href="/alerts" class="ck-arrow" style="margin-left:8px;">'
-        f'Clear filter</a>' if owner_filter else ""
-    )
+    """Editorial filter row — bone-bordered owner input with mono label
+    and navy → teal Apply button. Sits inline with the show/all toggle
+    so the partner's filter controls share one row."""
     return (
-        '<form method="GET" action="/alerts" class="ck-alerts-filter" '
-        'style="display:flex;align-items:center;gap:14px;'
-        'padding:14px 18px;background:#fff;border:1px solid var(--sc-rule);'
-        'border-radius:2px;margin:0 0 24px;box-shadow:var(--sc-shadow-1);">'
-        '<span style="font-family:var(--sc-mono);font-size:11px;'
-        'font-weight:600;letter-spacing:0.14em;text-transform:uppercase;'
-        'color:var(--sc-text-dim);">Filter by owner</span>'
+        '<form class="ck-alerts-filter-form" method="GET" action="/alerts">'
+        '<span class="ck-alerts-filter-label">Owner</span>'
         f'<input type="text" name="owner" '
         f'value="{html.escape(owner_filter or "")}" '
-        'placeholder="initials, e.g. AT" maxlength="40" '
-        'style="font-family:var(--sc-mono);font-size:13px;padding:6px 10px;'
-        'border:1px solid var(--sc-rule);border-radius:2px;width:14ch;">'
+        'placeholder="initials e.g. AT" maxlength="40">'
         f'{"<input type=\"hidden\" name=\"show\" value=\"all\">" if show_all else ""}'
-        '<button type="submit" '
-        'style="font-family:var(--sc-sans);font-size:12px;font-weight:600;'
-        'letter-spacing:0.08em;text-transform:uppercase;padding:7px 16px;'
-        'border:1px solid var(--sc-navy);background:var(--sc-navy);'
-        'color:var(--sc-on-navy);border-radius:2px;cursor:pointer;">'
-        'Apply</button>'
-        f'{clear_link}'
+        '<button type="submit">Apply</button>'
         '</form>'
     )
 
 
-def _row(a) -> str:
-    """Editorial alert row — severity-toned panel item with deal link,
-    title, age, ack form, and detail copy. Replaces the inline-styled
-    ``<li>`` from the legacy route."""
+def _row(a, name_map: Dict[str, str]) -> str:
+    """Editorial alert row — matches the .ck-deal-alert-row chrome on
+    the per-deal alerts panel so the inline + standalone views read as
+    the same surface."""
     tk = trigger_key_for(a)
     age = age_hint(a.first_seen_at)
     age_html = (
-        f'<span class="age">seen {html.escape(age)}</span>' if age else ""
+        f'<span class="ck-alert-age">seen {html.escape(age)}</span>'
+        if age else ""
     )
     returning_html = (
-        '<span class="ck-badge tone-warning" style="font-size:10px;" '
-        'title="Returned after snooze expired">↩ Returning</span>'
+        '<span class="ck-alert-returning" '
+        'title="Returned after snooze expired">↩ returning</span>'
         if getattr(a, "returning", False) else ""
+    )
+    sev_color = _SEV_TONE_COLOR.get(
+        a.severity, "var(--sc-text-faint,#7a8699)",
+    )
+    deal_name = name_map.get(a.deal_id, a.deal_id)
+    deal_link = (
+        f'<a class="ck-alert-deal" '
+        f'href="/deal/{urllib.parse.quote(a.deal_id)}">'
+        f'{html.escape(deal_name)}</a>'
+    )
+    slug_html = (
+        f'<span class="ck-alert-slug">{html.escape(a.deal_id)}</span>'
+        if deal_name != a.deal_id else ""
     )
     ack_form = (
         f'<form method="POST" action="/api/alerts/ack" '
-        f'class="ck-severity-actions">'
+        f'class="ck-alert-ack-form">'
         f'<input type="hidden" name="kind" value="{html.escape(a.kind)}">'
         f'<input type="hidden" name="deal_id" '
         f'value="{html.escape(a.deal_id)}">'
         f'<input type="hidden" name="trigger_key" '
         f'value="{html.escape(tk)}">'
-        f'<select name="snooze_days" aria-label="Snooze duration">'
-        f'<option value="0">Acknowledge — clears on state change</option>'
-        f'<option value="7">Snooze for 7 days</option>'
-        f'<option value="30">Snooze for 30 days</option>'
+        f'<select name="snooze_days" aria-label="Snooze duration" '
+        f'class="ck-alert-snooze">'
+        f'<option value="0">Ack</option>'
+        f'<option value="7">Snooze 7d</option>'
+        f'<option value="30">Snooze 30d</option>'
         f'</select>'
-        f'<button type="submit">Acknowledge</button>'
+        f'<button type="submit" class="ck-alert-go">Apply</button>'
         f'</form>'
     )
     return (
-        '<li>'
-        '<div class="ck-severity-row">'
-        f'<a class="deal" href="/deal/{urllib.parse.quote(a.deal_id)}">'
-        f'{html.escape(a.deal_id)}</a>'
-        f'<span class="title">{html.escape(a.title)}</span>'
+        '<li class="ck-alert-row">'
+        f'<span class="ck-alert-sev" style="color:{sev_color};">'
+        f'{html.escape(a.severity.upper())}</span>'
+        f'{deal_link}'
+        f'{slug_html}'
+        f'<span class="ck-alert-title">{html.escape(a.title)}</span>'
         f'{returning_html}'
         f'{age_html}'
-        '</div>'
-        f'<div class="ck-severity-detail">{html.escape(a.detail)}</div>'
         f'{ack_form}'
+        f'<div class="ck-alert-detail">{html.escape(a.detail)}</div>'
         '</li>'
     )
 
@@ -183,26 +282,60 @@ def render_alerts(
             scope = set()
         alerts = [a for a in alerts if a.deal_id in scope]
 
-    toggle = _toggle_link(show_all, owner_filter)
-    owner_form = _owner_form(show_all, owner_filter)
+    name_map = _name_lookup(store)
+    grouped: Dict[str, List] = {"red": [], "amber": [], "info": []}
+    for a in alerts:
+        grouped.setdefault(a.severity, []).append(a)
+    n_red = len(grouped.get("red") or [])
+    n_amber = len(grouped.get("amber") or [])
+    n_info = len(grouped.get("info") or [])
 
-    intro = (
-        '<div style="margin:0 0 24px;">'
-        f'{ck_eyebrow("Portfolio alerts")}'
-        '<h1 style="font-family:var(--sc-serif);font-weight:400;'
-        'font-size:clamp(28px, 3.4vw, 40px);line-height:1.1;'
-        'letter-spacing:-0.015em;color:var(--sc-navy);'
-        'margin:12px 0 0;">Where the portfolio '
-        '<em style="font-style:italic;font-weight:400;'
-        'color:var(--sc-teal-ink);">needs</em> attention</h1>'
-        '<p style="font-family:var(--sc-serif);font-size:17px;'
-        'line-height:1.6;color:var(--sc-text-dim);margin-top:12px;'
-        'max-width:62ch;">Evaluators run on every page load. They '
-        'check covenant headroom, latest-quarter EBITDA variance, '
-        'concerning-signal clusters, and stage regress. Acknowledged '
-        'alerts hide until the underlying state changes or the '
-        'snooze expires.</p>'
-        '</div>'
+    # Page header
+    title_html = ck_page_title(
+        "Alerts",
+        eyebrow=("ACKNOWLEDGED + ALL" if show_all else "PORTFOLIO ALERTS"),
+        meta=(
+            f"{len(alerts):,} {'total' if show_all else 'active'} "
+            f"alert{'s' if len(alerts) != 1 else ''}"
+            + (f" · owner = {html.escape(owner_filter)}"
+               if owner_filter else "")
+        ),
+    )
+
+    # KPI strip — total, red, amber, info
+    kpi_html = (
+        '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+        + ck_kpi_block(
+            "Total" if not show_all else "Total (incl. acked)",
+            f"{len(alerts):,}",
+            sub=("active alerts" if not show_all
+                 else "acknowledged + active"),
+        )
+        + ck_kpi_block(
+            "Critical", f"{n_red}",
+            sub="covenant trip / breach",
+        )
+        + ck_kpi_block(
+            "Warning", f"{n_amber}",
+            sub="tight covenant / EBITDA miss",
+        )
+        + ck_kpi_block(
+            "Info", f"{n_info}",
+            sub="stage advance / new note",
+        )
+        + '</div>'
+    )
+
+    filter_row = (
+        '<div class="ck-alerts-filter-row">'
+        + _owner_form(show_all, owner_filter)
+        + (
+            f'<a class="ck-alert-go" href="/alerts" '
+            f'style="text-decoration:none;">Clear filter</a>'
+            if owner_filter else ""
+        )
+        + _toggle_link(show_all, owner_filter)
+        + '</div>'
     )
 
     if not alerts:
@@ -235,8 +368,10 @@ def render_alerts(
                 qs["owner"] = owner_filter
             cta_href = "/alerts?" + urllib.parse.urlencode(qs)
         body = (
-            intro
-            + owner_form
+            _ALERTS_CSS
+            + title_html
+            + kpi_html
+            + filter_row
             + ck_affirm_empty(
                 headline=empty_headline,
                 body=empty_body,
@@ -245,65 +380,38 @@ def render_alerts(
             )
         )
     else:
-        grouped: Dict[str, List] = {"red": [], "amber": [], "info": []}
-        for a in alerts:
-            grouped.setdefault(a.severity, []).append(a)
-        # Cycle 35 — wrap the headline count with provenance so the
-        # partner sees what "active" means and what evaluators ran
-        # without leaving the page.
-        count_label = "All alerts (incl. acked)" if show_all else "Active alerts"
-        count_explainer = (
-            "Evaluators run on every page load: covenant headroom, "
-            "latest-quarter EBITDA variance, concerning-signal "
-            "clusters, and stage regress. "
-        ) + (
-            "'Show all' includes acknowledged and snoozed alerts."
-            if show_all else
-            "Acknowledged and snoozed alerts are hidden until the "
-            "underlying state changes or the snooze expires."
-        )
-        count_display = ck_provenance_tooltip(
-            count_label,
-            f"{len(alerts):,}",
-            explainer=count_explainer,
-        )
-        # Severity tally line — red / amber / info sub-counts inline.
-        sev_tally = " · ".join(
-            f'{label} {len(grouped.get(sev) or [])}'
-            for sev, (label, _) in _SEV_META.items()
-            if (grouped.get(sev) or [])
-        )
-        count_strip = (
-            '<div class="ck-results-header" style="margin:0 0 20px;">'
-            f'<span class="ck-results-count">{count_display}</span>'
-            f'<span class="ck-results-label" style="margin-left:6px;">'
-            f'{count_label}</span>'
-            + (
-                f'<span style="margin-left:14px;color:var(--sc-text-dim);'
-                f'font-size:13px;">{sev_tally}</span>'
-                if sev_tally else ""
-            )
-            + '</div>'
-        )
         blocks: List[str] = []
         for sev in ("red", "amber", "info"):
             bucket = grouped.get(sev) or []
             if not bucket:
                 continue
             label, _description = _SEV_META[sev]
-            rows = "".join(_row(a) for a in bucket)
-            blocks.append(ck_severity_panel(
-                tone=sev, label=label, count=len(bucket), rows_html=rows,
-            ))
-        blocks.append(
-            f'<p style="margin-top:24px;">{toggle}</p>'
+            rows = "".join(_row(a, name_map) for a in bucket)
+            blocks.append(
+                f'<section class="cad-card ck-alerts-card ck-alerts-card-{sev}">'
+                '<header class="ck-alerts-head">'
+                f'<h2>{html.escape(label.title())} '
+                f'({"critical" if sev == "red" else "warning" if sev == "amber" else "informational"})</h2>'
+                f'<span class="meta">{len(bucket)} '
+                f'alert{"s" if len(bucket) != 1 else ""}</span>'
+                '</header>'
+                f'<ul class="ck-alerts-list">{rows}</ul>'
+                '</section>'
+            )
+        body = (
+            _ALERTS_CSS
+            + title_html
+            + kpi_html
+            + filter_row
+            + "".join(blocks)
         )
-        body = intro + owner_form + count_strip + "".join(blocks)
 
-    subtitle = (
-        f"{len(alerts)} "
-        f"{'total' if show_all else 'active'} "
-        f"alert{'s' if len(alerts) != 1 else ''}"
-        f"{f' · owner = {html.escape(owner_filter)}' if owner_filter else ''}"
+    return chartis_shell(
+        body, "Alerts", active_nav="/alerts",
+        subtitle=(
+            f"{len(alerts)} "
+            f"{'total' if show_all else 'active'} "
+            f"alert{'s' if len(alerts) != 1 else ''}"
+            f"{f' · owner = {html.escape(owner_filter)}' if owner_filter else ''}"
+        ),
     )
-    return chartis_shell(body, "Alerts", active_nav="/alerts", subtitle=subtitle)
