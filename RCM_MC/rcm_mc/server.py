@@ -904,50 +904,64 @@ def _render_deal_tags(store: PortfolioStore, deal_id: str) -> str:
     pills = []
     for tag in tags:
         pills.append(
-            f'<span class="badge badge-blue" style="margin-right: 0.35rem; '
-            f'display: inline-flex; align-items: center; gap: 0.25rem;">'
+            f'<span class="ck-deal-tag-pill">'
             f'{html.escape(tag)}'
             f'<form method="POST" action="/api/deals/{qd}/tags/{urllib.parse.quote(tag)}/remove" '
-            f'style="display: inline; margin: 0;" '
+            f'style="display:inline;margin:0;" '
             f'onsubmit="return confirm(\'Remove tag {html.escape(tag)}?\');">'
-            f'<button type="submit" style="background: none; border: none; '
-            f'color: inherit; cursor: pointer; padding: 0 0 0 0.25rem; '
-            f'font-size: 0.9rem; line-height: 1;">×</button>'
+            f'<button type="submit" class="ck-deal-tag-remove" '
+            f'aria-label="Remove tag {html.escape(tag)}">×</button>'
             f'</form>'
             f'</span>'
         )
     pills_html = "".join(pills) if pills else (
-        '<span class="muted" style="font-size: 0.85rem;">No tags yet.</span>'
+        '<span class="ck-deal-tag-empty">No tags yet</span>'
     )
 
-    input_css = (
-        'style="padding: 0.35rem 0.6rem; border: 1px solid var(--border); '
-        'border-radius: 6px; font-size: 0.85rem; font-family: inherit;"'
-    )
     return f"""
-    <div class="card" style="padding: 0.75rem 1.25rem;">
-      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
-        <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;
-              text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.5rem;">
-          Tags
-        </span>
-        {pills_html}
-        <form method="POST" action="/api/deals/{qd}/tags"
-              style="display: inline-flex; gap: 0.4rem; margin-left: auto;">
-          <input type="text" name="tag" required
-                 placeholder="add tag (e.g. watch, region:tx)"
-                 pattern="[a-z0-9][a-z0-9_:.\\-]{{0,39}}"
-                 title="lowercase alnum / dash / underscore / colon / period"
-                 {input_css}>
-          <button type="submit"
-                  style="padding: 0.35rem 0.85rem; border: none;
-                         border-radius: 6px; background: var(--accent);
-                         color: white; font-weight: 600; cursor: pointer;
-                         font-size: 0.85rem;">
-            +
-          </button>
-        </form>
-      </div>
+    <style>
+      .ck-deal-tags-card{{padding:14px 22px;margin:0 0 20px;
+        display:flex;flex-wrap:wrap;align-items:center;gap:10px;}}
+      .ck-deal-tags-label{{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;font-weight:700;letter-spacing:0.1em;
+        text-transform:uppercase;color:var(--sc-text-dim,#465366);
+        margin-right:4px;}}
+      .ck-deal-tag-pill{{display:inline-flex;align-items:center;gap:4px;
+        padding:4px 10px;background:var(--sc-bone,#ece6db);
+        border:1px solid var(--sc-rule,#d6cfc3);border-radius:2px;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
+        font-weight:600;color:var(--sc-navy,#0b2341);
+        letter-spacing:0.04em;}}
+      .ck-deal-tag-remove{{background:none;border:0;color:inherit;
+        cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;
+        opacity:0.6;}}
+      .ck-deal-tag-remove:hover{{opacity:1;color:var(--sc-negative,#b5321e);}}
+      .ck-deal-tag-empty{{font-family:var(--sc-serif,Georgia,serif);
+        font-size:13px;color:var(--sc-text-faint,#7a8699);font-style:italic;}}
+      .ck-deal-tag-form{{display:inline-flex;gap:6px;margin-left:auto;}}
+      .ck-deal-tag-form input{{padding:5px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12px;
+        color:var(--sc-text,#1a2332);border-radius:2px;}}
+      .ck-deal-tag-form input:focus{{outline:none;
+        border-color:var(--sc-teal,#155752);}}
+      .ck-deal-tag-form button{{padding:5px 12px;
+        background:var(--sc-navy,#0b2341);color:#fff;border:0;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;}}
+      .ck-deal-tag-form button:hover{{background:var(--sc-teal,#155752);}}
+    </style>
+    <div class="cad-card ck-deal-tags-card">
+      <span class="ck-deal-tags-label">Tags</span>
+      {pills_html}
+      <form class="ck-deal-tag-form" method="POST" action="/api/deals/{qd}/tags">
+        <input type="text" name="tag" required
+               placeholder="add tag (e.g. watch, region:tx)"
+               pattern="[a-z0-9][a-z0-9_:.\\-]{{0,39}}"
+               title="lowercase alnum / dash / underscore / colon / period">
+        <button type="submit">Add</button>
+      </form>
     </div>
     """
 
