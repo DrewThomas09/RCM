@@ -976,37 +976,26 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
         escaped = html.escape(body_text).replace("\n", "<br>")
         note_id = int(r.get("note_id") or 0)
         items_html.append(
-            f'<li class="deal-note" style="padding: 0.75rem 0; '
-            f'border-bottom: 1px solid var(--border);">'
-            f'<div style="display: flex; justify-content: space-between; '
-            f'align-items: baseline; margin-bottom: 0.25rem;">'
-            f'<span style="font-size: 0.8rem; color: var(--muted);">'
-            f'<strong>{html.escape(author)}</strong> · {html.escape(ts)}'
-            f'</span>'
+            f'<li class="ck-deal-note">'
+            f'<div class="ck-deal-note-head">'
+            f'<span class="ck-deal-note-author">{html.escape(author)}</span>'
+            f'<span class="ck-deal-note-ts">{html.escape(ts)}</span>'
             f'<form method="POST" action="/api/deals/{qd}/notes/{note_id}/delete" '
-            f'style="display: inline; margin: 0;" '
+            f'style="display:inline;margin:0 0 0 auto;" '
             f'onsubmit="return confirm(\'Delete this note?\');">'
-            f'<button type="submit" style="background: none; border: none; '
-            f'color: var(--red-text); cursor: pointer; font-size: 0.75rem; '
-            f'padding: 0;">delete</button>'
+            f'<button type="submit" class="ck-deal-note-delete">delete</button>'
             f'</form>'
             f'</div>'
-            f'<div style="white-space: pre-wrap; line-height: 1.45;">'
-            f'{escaped}</div>'
+            f'<div class="ck-deal-note-body">{escaped}</div>'
             f'</li>'
         )
     note_list = (
-        '<ul style="list-style: none; padding: 0; margin: 0;">'
+        '<ul class="ck-deal-notes-list">'
         + "".join(items_html) + '</ul>'
     ) if items_html else (
-        '<p class="muted" style="font-size: 0.88rem; margin-top: 0.5rem;">'
+        '<p class="ck-deal-empty">'
         'No notes yet. Use the form below to capture call notes, '
         'management commentary, or pending data asks.</p>'
-    )
-
-    input_css = (
-        'style="padding: 0.4rem 0.6rem; border: 1px solid var(--border); '
-        'border-radius: 6px; font-size: 0.9rem; font-family: inherit; width: 100%;"'
     )
     # B91: recently-deleted bin with Restore / Purge buttons
     trash_html = ""
@@ -1057,28 +1046,75 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
         )
 
     return f"""
-    <div class="card">
-      <h2>Notes ({len(notes_df)})</h2>
+    <style>
+      .ck-deal-notes-card{{padding:0;overflow:hidden;margin:0 0 20px;}}
+      .ck-deal-notes-head{{display:flex;align-items:baseline;
+        justify-content:space-between;gap:12px;
+        padding:18px 22px 12px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+      .ck-deal-notes-head h2{{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0;letter-spacing:-0.01em;}}
+      .ck-deal-notes-count{{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.08em;text-transform:uppercase;}}
+      .ck-deal-notes-list{{list-style:none;padding:0;margin:0;}}
+      .ck-deal-note{{padding:14px 22px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+      .ck-deal-note:last-child{{border-bottom:0;}}
+      .ck-deal-note-head{{display:flex;align-items:baseline;gap:10px;
+        margin-bottom:6px;font-size:12px;}}
+      .ck-deal-note-author{{font-family:var(--sc-sans,Inter,sans-serif);
+        font-weight:600;color:var(--sc-navy,#0b2341);}}
+      .ck-deal-note-ts{{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.04em;}}
+      .ck-deal-note-delete{{background:none;border:0;
+        color:var(--sc-negative,#b5321e);cursor:pointer;
+        font-family:var(--sc-mono,monospace);font-size:10px;
+        letter-spacing:0.08em;text-transform:uppercase;font-weight:700;}}
+      .ck-deal-note-delete:hover{{color:var(--sc-navy,#0b2341);}}
+      .ck-deal-note-body{{white-space:pre-wrap;line-height:1.55;
+        font-family:var(--sc-serif,Georgia,serif);font-size:13.5px;
+        color:var(--sc-text,#1a2332);}}
+      .ck-deal-empty{{padding:18px 22px;margin:0;
+        font-family:var(--sc-serif,Georgia,serif);font-style:italic;
+        font-size:13.5px;color:var(--sc-text-dim,#465366);}}
+      .ck-deal-note-form{{padding:18px 22px;
+        border-top:1px solid var(--sc-rule,#d6cfc3);
+        display:grid;gap:10px;background:var(--sc-bone,#ece6db);}}
+      .ck-deal-note-form input,
+      .ck-deal-note-form textarea{{padding:9px 12px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:13px;
+        color:var(--sc-text,#1a2332);border-radius:2px;width:100%;
+        box-sizing:border-box;}}
+      .ck-deal-note-form textarea{{font-family:var(--sc-serif,Georgia,serif);
+        line-height:1.5;}}
+      .ck-deal-note-form input:focus,
+      .ck-deal-note-form textarea:focus{{outline:none;
+        border-color:var(--sc-teal,#155752);}}
+      .ck-deal-note-form button{{justify-self:start;
+        padding:9px 18px;background:var(--sc-navy,#0b2341);color:#fff;
+        border:0;font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;}}
+      .ck-deal-note-form button:hover{{background:var(--sc-teal,#155752);}}
+    </style>
+    <section class="cad-card ck-deal-notes-card">
+      <header class="ck-deal-notes-head">
+        <h2>Notes</h2>
+        <span class="ck-deal-notes-count">{len(notes_df)} entries</span>
+      </header>
       {note_list}
-      <form method="POST" action="/api/deals/{qd}/notes"
-            style="margin-top: 1rem; display: grid; gap: 0.5rem;">
-        <input type="text" name="author" placeholder="Your name (optional)"
-               {input_css}>
+      <form class="ck-deal-note-form" method="POST" action="/api/deals/{qd}/notes">
+        <input type="text" name="author" placeholder="Your name (optional)">
         <textarea name="body" required rows="3"
-                  placeholder="New note — call notes, management commentary, data asks..."
-                  {input_css}></textarea>
-        <div>
-          <button type="submit"
-                  style="padding: 0.5rem 1.25rem; border: none;
-                         border-radius: 6px; background: var(--accent);
-                         color: white; font-weight: 600; cursor: pointer;
-                         font-size: 0.9rem;">
-            Add note
-          </button>
-        </div>
+                  placeholder="New note — call notes, management commentary, data asks…"></textarea>
+        <button type="submit">Add note &rarr;</button>
       </form>
       {trash_html}
-    </div>
+    </section>
     """
 
 
