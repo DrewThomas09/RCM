@@ -9,6 +9,7 @@ import html
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
+    SafeHtml,
     chartis_shell,
     ck_eyebrow,
     ck_kpi_block,
@@ -372,7 +373,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     # Cycle 39 — port LBO KPI strip + add IRR provenance.
     irr_value = ck_provenance_tooltip(
         "Levered IRR to equity",
-        f'<span style="color:{irr_color};">{_fmt_pct(irr)}</span>',
+        SafeHtml(f'<span style="color:{irr_color};">{_fmt_pct(irr)}</span>'),
         explainer=(
             "Internal rate of return to the LP equity check over "
             "a {hold}yr hold. >20% green, 15-20% amber, below "

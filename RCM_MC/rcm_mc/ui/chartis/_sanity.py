@@ -30,7 +30,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from .._chartis_kit import P
+from .._chartis_kit import P, SafeHtml
 
 
 UNIT_MONEY = "money"    # rendered as $X.XXm or $X.XXb
@@ -393,13 +393,15 @@ def render_number(
     unit = fmt or mr.unit
     f = _coerce(value)
     if f is None:
-        return f'<span class="ck-num-nil" style="color:{P["text_faint"]};">—</span>'
+        return SafeHtml(
+            f'<span class="ck-num-nil" style="color:{P["text_faint"]};">—</span>'
+        )
 
     in_range = (mr.plausible_min <= f <= mr.plausible_max)
     formatted = _fmt(f, unit)
 
     if in_range:
-        return (
+        return SafeHtml(
             f'<span class="ck-num" '
             f'style="font-family:var(--ck-mono);'
             f'font-variant-numeric:tabular-nums;color:{P["text"]};">'
@@ -413,7 +415,7 @@ def render_number(
         f"Value outside expected range "
         f"({_fmt_range(mr)} for {metric_name}). Check inputs."
     )
-    return (
+    return SafeHtml(
         f'<span class="ck-num-bad" '
         f'title="{_html.escape(tooltip)}" '
         f'style="display:inline-block;'
