@@ -30,7 +30,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from ..ui._chartis_kit import chartis_shell
+from ..ui._chartis_kit import chartis_shell, ck_page_title
 from ..ui.brand import PALETTE
 
 
@@ -55,23 +55,25 @@ AVAILABLE_FIXTURES: List[Tuple[str, str]] = [
 
 # ── Shared fragments ────────────────────────────────────────────────
 
-def _hero(title: str, sub: str) -> str:
+def _hero(title: str, sub: str, *, eyebrow: str = "RCM DILIGENCE") -> str:
+    """Editorial hero for diligence pages. Replaces the old hand-
+    rolled inline-styled block with ck_page_title + a serif lede so
+    every diligence surface reads like the rest of v5. Emits the
+    shared diligence CSS the first time it's called per render —
+    multiple calls in one render are harmless duplicates the browser
+    coalesces, but most pages only use one hero.
+    """
     return (
-        f'<div style="padding:24px 0 12px 0;">'
-        f'  <div style="font-size:11px;color:{PALETTE["text_faint"]};'
-        f'letter-spacing:.75px;text-transform:uppercase;margin-bottom:6px;">'
-        f'RCM Diligence Workspace</div>'
-        f'  <div style="font-size:20px;color:{PALETTE["text"]};font-weight:600;'
-        f'margin-bottom:8px;">{html.escape(title)}</div>'
-        f'  <div style="font-size:13px;color:{PALETTE["text_dim"]};'
-        f'max-width:720px;line-height:1.55;">{html.escape(sub)}</div>'
-        f'</div>'
+        _DILIGENCE_CSS
+        + ck_page_title(title, eyebrow=eyebrow)
+        + f'<p class="ck-diligence-lede">{html.escape(sub)}</p>'
     )
 
 
 def _fixture_selector(current_tab_route: str, current_dataset: str = "") -> str:
-    """Render a compact dropdown with every fixture. Submitting the
-    form reloads the same tab with ``?dataset=<picked>``."""
+    """Editorial fixture picker — bone-bordered select + navy → teal
+    hover Load button. Used as the dataset-gate at the top of every
+    diligence tab so the partner can drive the page without leaving."""
     options = "".join(
         f'<option value="{html.escape(name)}"'
         f'{" selected" if name == current_dataset else ""}>'
@@ -80,21 +82,61 @@ def _fixture_selector(current_tab_route: str, current_dataset: str = "") -> str:
     )
     return (
         f'<form method="GET" action="{html.escape(current_tab_route)}" '
-        f'style="display:flex;align-items:center;gap:12px;margin:16px 0;">'
-        f'<label style="font-size:11px;color:{PALETTE["text_faint"]};'
-        f'letter-spacing:.14em;text-transform:uppercase;">Dataset:</label>'
-        f'<select name="dataset" style="padding:6px 10px;'
-        f'border:1px solid {PALETTE["border"]};background:{PALETTE["panel"]};'
-        f'color:{PALETTE["text"]};font-size:12px;font-family:inherit;'
-        f'min-width:320px;">'
+        f'class="ck-diligence-fixture">'
+        f'<label class="ck-diligence-fixture-label">Dataset</label>'
+        f'<select name="dataset" class="ck-diligence-fixture-select">'
         f'<option value="">— pick a fixture —</option>{options}'
         f'</select>'
-        f'<button type="submit" style="padding:6px 14px;'
-        f'background:{PALETTE["brand_primary"]};color:{PALETTE["panel"]};'
-        f'border:0;font-size:11px;font-weight:600;letter-spacing:.08em;'
-        f'text-transform:uppercase;cursor:pointer;">Load</button>'
+        f'<button type="submit" class="ck-diligence-fixture-go">'
+        f'Load &rarr;</button>'
         f'</form>'
     )
+
+
+_DILIGENCE_CSS = """
+<style>
+  .ck-diligence-lede { font-family: var(--sc-serif, Georgia, serif);
+    font-size: 14px; line-height: 1.6; color: var(--sc-text-dim, #465366);
+    margin: 0 0 18px; max-width: 72ch; }
+  .ck-diligence-fixture { display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; margin: 0 0 22px;
+    background: #fff; border: 1px solid var(--sc-rule, #d6cfc3);
+    border-radius: 2px; box-shadow: var(--sc-shadow-1);
+    flex-wrap: wrap; }
+  .ck-diligence-fixture-label { font-family: var(--sc-mono, monospace);
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--sc-text-dim, #465366); }
+  .ck-diligence-fixture-select { padding: 7px 12px; min-width: 320px;
+    border: 1px solid var(--sc-rule, #d6cfc3); background: #fff;
+    color: var(--sc-text, #1a2332);
+    font-family: var(--sc-sans, Inter, sans-serif); font-size: 13px;
+    border-radius: 2px; }
+  .ck-diligence-fixture-select:focus { outline: none;
+    border-color: var(--sc-teal, #155752); }
+  .ck-diligence-fixture-go { padding: 7px 16px;
+    background: var(--sc-navy, #0b2341); color: #fff; border: 0;
+    font-family: var(--sc-sans, Inter, sans-serif); font-size: 11.5px;
+    font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; border-radius: 2px; }
+  .ck-diligence-fixture-go:hover { background: var(--sc-teal, #155752); }
+  .ck-diligence-info { padding: 14px 18px; margin: 0 0 18px;
+    background: #fff; border: 1px solid var(--sc-rule, #d6cfc3);
+    border-left: 3px solid var(--sc-teal, #155752); border-radius: 2px;
+    font-family: var(--sc-serif, Georgia, serif); font-size: 13.5px;
+    line-height: 1.6; color: var(--sc-text-dim, #465366);
+    max-width: 72ch; }
+  .ck-diligence-error { padding: 14px 18px; margin: 0 0 18px;
+    background: #fff; border: 1px solid var(--sc-rule, #d6cfc3);
+    border-left: 3px solid var(--sc-negative, #b5321e); border-radius: 2px; }
+  .ck-diligence-error h3 { font-family: var(--sc-mono, monospace);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--sc-negative, #b5321e);
+    margin: 0 0 6px; }
+  .ck-diligence-error p { font-family: var(--sc-mono, monospace);
+    font-size: 12px; color: var(--sc-text-dim, #465366); margin: 0;
+    word-break: break-word; }
+</style>
+"""
 
 
 def _ccd_summary_card(ccd: Any) -> str:
@@ -156,21 +198,16 @@ def _resolve_dataset(dataset: str) -> Optional[Path]:
 
 def _err_panel(title: str, msg: str) -> str:
     return (
-        f'<div style="background:{PALETTE["panel"]};'
-        f'border-left:3px solid {PALETTE["negative"]};'
-        f'padding:14px 16px;margin:12px 0;">'
-        f'<div style="color:{PALETTE["negative"]};font-weight:600;'
-        f'margin-bottom:4px;">{html.escape(title)}</div>'
-        f'<div style="color:{PALETTE["text_dim"]};font-size:13px;">'
-        f'{html.escape(msg)}</div></div>'
+        '<div class="ck-diligence-error">'
+        f'<h3>{html.escape(title)}</h3>'
+        f'<p>{html.escape(msg)}</p>'
+        '</div>'
     )
 
 
 def _info_strip(text: str) -> str:
     return (
-        f'<div style="padding:10px 16px;background:{PALETTE["panel_alt"]};'
-        f'border-left:3px solid {PALETTE["accent"]};font-size:12px;'
-        f'color:{PALETTE["text_dim"]};margin:8px 0;">{html.escape(text)}</div>'
+        f'<div class="ck-diligence-info">{html.escape(text)}</div>'
     )
 
 
