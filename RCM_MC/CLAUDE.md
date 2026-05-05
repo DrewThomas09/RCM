@@ -120,18 +120,43 @@ Partner-facing operations:
 ## Coding conventions
 
 ### UI
-- **Dark mode is the default** — pages should render cleanly on
-  dark backgrounds. Primary accent is the Chartis blue
-  `var(--accent) = #1F4E78`. Severity palette: green `#10B981`,
-  amber `#F59E0B`, red `#EF4444`.
+- **Editorial Chartis is the default** — pages render on a
+  parchment background `#f5f1ea` with navy `#0b2341` topbar +
+  teal `#155752` accents + near-ink `#1a2332` text. Primary
+  fonts: Source Serif 4 (display + body), Inter Tight (UI sans),
+  JetBrains Mono (numerics + eyebrows). Severity palette stays
+  semantic (positive `#0a8a5f` / warning `#b8732a` /
+  negative `#b5321e`) but desaturated for print.
 - **Monospace numerics**: use `font-variant-numeric: tabular-nums`
-  on every cell/value that is a number so columns align. Already
-  built into `_ui_kit.py`'s `.kpi-value` and `.num` classes.
-- **Every page uses the shared shell** `rcm_mc/_ui_kit.py::shell()`
-  (moves to `rcm_mc/ui/` in the refactor). Never build bespoke
-  HTML pages.
-- **All forms POST** (never GET for state-changing action) and the
-  shared CSRF-patching JS automatically adds the token.
+  on every cell/value that is a number so columns align. Built
+  into `.ck-kpi-value`, `.ck-cell-mono`, `.num`, and
+  `.sc-num` utility classes.
+- **Every page uses `chartis_shell`** from
+  `rcm_mc/ui/_chartis_kit.py`. Never build bespoke HTML pages.
+  Open every editorial page with `ck_page_title(title, eyebrow=,
+  meta=)`. The legacy `_ui_kit.shell()` is a back-compat alias
+  that forwards to `chartis_shell`.
+- **Top-nav structure**: Home / Pipeline / Diligence / Library /
+  Research / Portfolio. Each section's sub-nav rail is defined
+  in `_chartis_kit._SUB_NAV`. New routes that should appear in
+  the nav must add an entry there AND in `_SUB_SECTION_MAP` so
+  breadcrumbs resolve. See `_CORPUS_NAV` for the top-level keys.
+- **Editorial primitives** — reach for `ck_page_title`,
+  `ck_kpi_block`, `ck_empty_state`, `ck_section_intro` (opt-in),
+  `ck_provenance_tooltip`, `ck_signal_badge`,
+  `render_insights_page` (filter-rail + search-hero + table
+  composer). See `rcm_mc/ui/README.md` for the full list.
+- **State-changing POSTs flash a toast** via the
+  `_with_flash(message, tone)` helper — wire any new
+  POST handler that mutates state into this pattern so partners
+  get confirmation. The toast/flash JS lives in `_chartis_kit`.
+- **All forms POST** (never GET for state-changing action) and
+  the shared CSRF-patching JS auto-adds the `csrf_token` field
+  and `X-CSRF-Token` header.
+- **Cmd+K palette** — every analytic surface should appear in
+  `_DEFAULT_PALETTE_MODULES` so a partner can jump there
+  without trawling URLs. Routes in the palette are verified by
+  `tests/test_palette_routes.py`.
 
 ### Number formatting
 - **Financial figures → 2 decimal places** (`$450.25M`,

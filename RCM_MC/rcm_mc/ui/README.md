@@ -1,6 +1,26 @@
 # UI
 
-Server-rendered HTML pages for the web application. All pages use a shared design system (`_ui_kit`) with no external JavaScript framework -- everything is inline CSS/SVG/vanilla JS for offline compatibility.
+Server-rendered HTML pages for the SeekingChartis web app. The
+v5 editorial design system replaces the legacy Bloomberg dark
+shell — every partner-facing page builds against `_chartis_kit.py`
+and renders through `chartis_shell()`. No external JS framework;
+small vanilla-JS shims for CSRF / palette / dropdown / breadcrumbs.
+
+**Design language**: navy `#0b2341` topbar + parchment `#f5f1ea`
+body + teal `#155752` accents + near-ink `#1a2332` text. Source
+Serif 4 (display + body), Inter Tight (UI + sans), JetBrains Mono
+(numerics + eyebrows). Editorial cadence (eyebrow + serif H1 +
+meta + body + table) borrowed from chartis.com.
+
+**Top nav**: Home / Pipeline / Diligence / Library / Research /
+Portfolio. Each section has a sub-nav rail with pinned secondary
+links. Breadcrumbs auto-derive from the request path. Cmd+K
+opens a 69-surface command palette over every analytic tool.
+A toast/flash system confirms state-changing POSTs.
+
+For a list of every page renderer see [Pages](#pages) below.
+For the editorial primitives a new page should reach for see
+[Editorial Kit](#editorial-kit-_chartis_kitpy).
 
 ## Pages
 
@@ -97,13 +117,20 @@ Key kwargs: `active_nav`, `breadcrumbs`, `subtitle`, `extra_css`, `editorial_int
 | `ck_image_card(image_html, eyebrow, title, body, cta_text, cta_href)` | chartis.com-style image-top editorial card. |
 | `ck_panel(body, *, title, code)` | White panel with navy header strip + optional `[CODE]` debug tag. |
 
+### Page-level chrome
+
+| helper | purpose |
+|---|---|
+| `ck_page_title(title, *, eyebrow, meta)` | **The H1 of every editorial page.** Eyebrow + serif title + optional faint mono meta line. Used on /library, /watchlist, /lp-update, /alerts, every /diligence sub-page, /tools, error pages. |
+| `ck_empty_state(title, body, *, eyebrow, icon, cta_label, cta_href, tone)` | Editorial empty-state card — eyebrow + icon-in-bone-circle + serif title + body + optional primary CTA. Tone variants: neutral / positive / warning. Sits where a list / table / chart has no data. |
+
 ### Severity / status
 
 | helper | purpose |
 |---|---|
 | `ck_severity_panel(*, tone, label, count, rows_html)` | Toned panel (red / amber / info / positive / neutral) for alerts and escalations. |
 | `ck_signal_badge(text, *, tone)` | Inline pill badge — positive / warning / negative / critical / neutral. |
-| `ck_affirm_empty(*, headline, body, cta_text, cta_href)` | Affirmative empty-state band — never a blank pane. |
+| `ck_affirm_empty(*, headline, body, cta_text, cta_href)` | Affirmative empty-state band — for "all clear" success states. Use `ck_empty_state` for "no data yet"; use this for "nothing to worry about". |
 
 ### Insights triplet (`/library`, `/notes`, `/research`, `/escalations`)
 
@@ -151,10 +178,12 @@ Key kwargs: `active_nav`, `breadcrumbs`, `subtitle`, `extra_css`, `editorial_int
 When building a new partner-facing page:
 
 1. **Always use `chartis_shell` or `render_insights_page`** — never roll your own layout.
-2. **Italic-serif headline** — every page should have one, via `ck_section_intro` or the `editorial_intro` kwarg on `chartis_shell`. This is the chartis cadence signal.
-3. **No inline styles** — use the kit's utility classes (`ck-cell`, `tone-dim`, `ck-kpi-grid` etc.) or write a class in `_CSS_INLINE_FALLBACK`.
-4. **Helper-first for tables** — prefer `ck_data_cell` over hand-rolled `<td>`; prefer `ck_table` for simple tables; prefer `render_insights_page` for content-listing pages.
-5. **Affirmative empty states** — use `ck_affirm_empty` with a CTA, never a bare "no data" line.
-6. **Accept the audit score** — run `python tools/v5_fidelity_audit.py` after adding a new page; aim for ≥70.
+2. **Open with `ck_page_title`** — every editorial page should start with an H1 block (eyebrow + serif title + meta). Don't ship a bare `<h2>`.
+3. **Italic-serif intro is opt-in** — `ck_section_intro` and the `editorial_intro` kwarg are still supported but are hidden by default; they only render when a partner toggles "Tutorial intros: on" in the user dropdown. Don't rely on them for primary chrome.
+4. **No inline styles** — use the kit's utility classes (`ck-cell`, `tone-dim`, `ck-kpi-grid` etc.) or write a class in `_CSS_INLINE_FALLBACK`.
+5. **Helper-first for tables** — prefer `ck_data_cell` over hand-rolled `<td>`; prefer `ck_table` for simple tables; prefer `render_insights_page` for content-listing pages.
+6. **Editorial empty states** — use `ck_empty_state` (icon + title + body + CTA) for "no data yet"; use `ck_affirm_empty` for "nothing to worry about". Never a bare `<p class="muted">No items</p>`.
+7. **Hook `active_nav`** — pass the section path (e.g. `active_nav="/diligence/benchmarks"`) so the sub-nav rail's active-pill highlight and breadcrumb chain resolve correctly.
+8. **Accept the audit score** — run `python tools/v5_fidelity_audit.py` after adding a new page; aim for ≥70.
 
 For the editorial fidelity rationale (chartis.com cadence, palette, typography), see `docs/CHARTIS_MATCH_NOTES.md`. For the campaign log of what shipped when, see `docs/EDITORIAL_POLISH_LOG.md`.
