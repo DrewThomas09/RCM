@@ -5665,7 +5665,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/api/"):
             return self._route_api(path)
 
-        self.send_error(HTTPStatus.NOT_FOUND, f"Unknown path: {path}")
+        # Catch-all: editorial 404 instead of stdlib's plain text page.
+        # Authenticated path only — anonymous visitors land here only
+        # after auth check, so we can render the chrome safely.
+        return self._error_page(
+            "Page not found",
+            f"Unknown path: {path}",
+            code="404",
+        )
 
     # ── Route handlers ──
 
@@ -5820,53 +5827,169 @@ class RCMHandler(BaseHTTPRequestHandler):
         return re.sub(r'[^A-Za-z0-9]', '', raw)[:10]
 
     def _error_page(self, title: str, message: str, *, code: str = "404") -> None:
-        """Bloomberg-style terminal error page — code, timestamp, actions."""
-        from .ui._chartis_kit import chartis_shell
+        """Editorial error page — page title + reassurance + suggested
+        next moves. Replaces the legacy Bloomberg-dark error card so a
+        404 / 500 still feels like the same product.
+        """
+        from .ui._chartis_kit import chartis_shell, ck_page_title
         from datetime import datetime, timezone
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         req_path = html.escape(getattr(self, "path", "—")[:120])
-        body = (
-            f'<div class="cad-card" style="border-left:3px solid var(--cad-neg);'
-            f'padding:18px 22px;">'
-            f'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
-            f'<span class="cad-section-code" style="color:var(--cad-neg);'
-            f'border-color:var(--cad-neg);padding:3px 10px;font-size:11px;">ERR · {html.escape(code)}</span>'
-            f'<h2 style="margin:0;color:var(--cad-text);font-size:15px;'
-            f'letter-spacing:0.1em;text-transform:uppercase;">{html.escape(title)}</h2>'
-            f'</div>'
-            f'<div style="font-family:var(--cad-mono);font-size:11.5px;'
-            f'color:var(--cad-text2);background:#03050a;border:1px solid var(--cad-border);'
-            f'padding:12px 14px;line-height:1.7;letter-spacing:0.02em;">'
-            f'<div><span style="color:var(--cad-text3);">&gt; CODE&nbsp;&nbsp;</span>'
-            f'<span style="color:var(--cad-neg);">{html.escape(code)}</span></div>'
-            f'<div><span style="color:var(--cad-text3);">&gt; PATH&nbsp;&nbsp;</span>'
-            f'<span>{req_path}</span></div>'
-            f'<div><span style="color:var(--cad-text3);">&gt; TIME&nbsp;&nbsp;</span>'
-            f'<span>{ts}</span></div>'
-            f'<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--cad-border);">'
-            f'<span style="color:var(--cad-text3);">&gt; MSG&nbsp;&nbsp;&nbsp;</span>'
-            f'<span style="color:var(--cad-text);">{html.escape(message)}</span></div>'
-            f'</div>'
-            f'<div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;">'
-            f'<a href="javascript:history.back()" class="cad-btn" '
-            f'style="text-decoration:none;">&larr; Back</a>'
-            f'<a href="/home" class="cad-btn cad-btn-primary" '
-            f'style="text-decoration:none;">Home</a>'
-            f'<a href="/portfolio" class="cad-btn" style="text-decoration:none;">Portfolio</a>'
-            f'<a href="/predictive-screener" class="cad-btn" '
-            f'style="text-decoration:none;">Screener</a>'
-            f'<a href="/api/docs" class="cad-btn" style="text-decoration:none;">API Docs</a>'
-            f'</div>'
-            f'<div style="margin-top:14px;padding-top:10px;'
-            f'border-top:1px solid var(--cad-border);'
-            f'font-family:var(--cad-mono);font-size:9.5px;'
-            f'letter-spacing:0.12em;color:var(--cad-text3);text-transform:uppercase;">'
-            f'<span style="color:var(--cad-pos);">&#9679;</span> Platform healthy &middot; '
-            f'this is a specific resource error &middot; <kbd>&#8984;K</kbd> palette &middot; '
-            f'<kbd>?</kbd> shortcuts</div>'
-            f'</div>'
+        # Tone the eyebrow + meta differently for "page not found"
+        # vs "something broke" — same chrome, different reassurance.
+        is_500 = str(code).startswith("5")
+        eyebrow = "ERROR · SERVER" if is_500 else "ERROR · NOT FOUND"
+        title_text = "Something broke." if is_500 else "Page not found."
+        explainer = (
+            "An unexpected error occurred while loading this surface. "
+            "The platform is otherwise healthy — try the page again, "
+            "or jump to one of the surfaces below."
+        ) if is_500 else (
+            "The URL you followed doesn't match a surface in the "
+            "platform. The path may have been renamed, or you may "
+            "have lost a session. Try one of the surfaces below."
         )
-        return self._send_html(chartis_shell(body, title))
+
+        page_title = ck_page_title(
+            title_text,
+            eyebrow=eyebrow,
+            meta=f"Code {html.escape(str(code))} · {req_path} · {ts}",
+        )
+
+        # Suggested-next chip cards. Sized for one screen-fold so the
+        # partner sees the way out without scrolling. Mirrors the
+        # /diligence pillar treatment but smaller per-card.
+        chips_html = (
+            '<div class="ck-err-chips">'
+            '<a class="ck-err-chip" href="/app">'
+            '<div class="ck-err-chip-eyebrow">DAILY DRIVER</div>'
+            '<div class="ck-err-chip-label">Command Center</div>'
+            '<div class="ck-err-chip-blurb">Today\'s alerts, deals, '
+            'and pipeline at a glance.</div>'
+            '</a>'
+            '<a class="ck-err-chip" href="/portfolio">'
+            '<div class="ck-err-chip-eyebrow">YOUR PORTFOLIO</div>'
+            '<div class="ck-err-chip-label">Portfolio</div>'
+            '<div class="ck-err-chip-blurb">Active deals, health, '
+            'covenant status, IRR.</div>'
+            '</a>'
+            '<a class="ck-err-chip" href="/diligence">'
+            '<div class="ck-err-chip-eyebrow">RCM PLAYBOOK</div>'
+            '<div class="ck-err-chip-label">Diligence</div>'
+            '<div class="ck-err-chip-blurb">24 surfaces grouped into '
+            'four pillars.</div>'
+            '</a>'
+            '<a class="ck-err-chip" href="/library">'
+            '<div class="ck-err-chip-eyebrow">DEAL CORPUS</div>'
+            '<div class="ck-err-chip-label">Library</div>'
+            '<div class="ck-err-chip-blurb">655 healthcare-PE deals '
+            'with realized returns.</div>'
+            '</a>'
+            '</div>'
+        )
+
+        message_card = ""
+        if message and not is_500:
+            # 404 with a specific message ("Unknown path: /xyz") —
+            # surface it discreetly so the partner can confirm what
+            # they tried to reach.
+            message_card = (
+                '<div class="ck-err-msg">'
+                '<div class="ck-err-msg-label">DETAIL</div>'
+                f'<div class="ck-err-msg-body">{html.escape(message[:240])}</div>'
+                '</div>'
+            )
+        elif message:
+            # 500 — message is partial traceback; show in a quieter
+            # mono block but limit length.
+            message_card = (
+                '<div class="ck-err-msg">'
+                '<div class="ck-err-msg-label">DETAIL</div>'
+                '<div class="ck-err-msg-body" style="font-family:var(--sc-mono,monospace);'
+                'font-size:11.5px;line-height:1.55;white-space:pre-wrap;">'
+                f'{html.escape(message[:480])}</div>'
+                '</div>'
+            )
+
+        css = (
+            '<style>'
+            '.ck-err-lede{font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:15px;line-height:1.6;color:var(--sc-text-dim,#465366);'
+            'max-width:64ch;margin:0 0 24px;}'
+            '.ck-err-actions{display:flex;gap:8px;margin:0 0 32px;}'
+            '.ck-err-back,.ck-err-home{font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:12px;font-weight:600;letter-spacing:0.06em;'
+            'text-transform:uppercase;padding:9px 16px;border-radius:2px;'
+            'text-decoration:none;cursor:pointer;border:1px solid;}'
+            '.ck-err-home{color:#fff;background:var(--sc-navy,#0b2341);'
+            'border-color:var(--sc-navy,#0b2341);}'
+            '.ck-err-home:hover{background:var(--sc-teal,#155752);'
+            'border-color:var(--sc-teal,#155752);}'
+            '.ck-err-back{color:var(--sc-navy,#0b2341);background:#fff;'
+            'border-color:var(--sc-rule,#d6cfc3);}'
+            '.ck-err-back:hover{border-color:var(--sc-navy,#0b2341);}'
+            '.ck-err-msg{background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+            'border-left:3px solid var(--sc-warning,#b8732a);'
+            'border-radius:2px;padding:14px 18px;margin:0 0 28px;'
+            'max-width:760px;}'
+            '.ck-err-msg-label{font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:var(--sc-warning,#b8732a);'
+            'margin-bottom:6px;}'
+            '.ck-err-msg-body{font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:13px;color:var(--sc-text,#1a2332);line-height:1.55;}'
+            '.ck-err-chips{display:grid;'
+            'grid-template-columns:repeat(auto-fit,minmax(220px,1fr));'
+            'gap:14px;margin:0 0 24px;}'
+            '.ck-err-chip{display:block;text-decoration:none;color:inherit;'
+            'background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+            'border-radius:2px;padding:18px 20px;'
+            'transition:border-color 0.12s,transform 0.12s;}'
+            '.ck-err-chip:hover{border-color:var(--sc-teal,#155752);'
+            'transform:translateY(-1px);}'
+            '.ck-err-chip-eyebrow{font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.12em;'
+            'text-transform:uppercase;color:var(--sc-text-faint,#7a8699);'
+            'margin-bottom:8px;}'
+            '.ck-err-chip-label{font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:18px;font-weight:500;color:var(--sc-navy,#0b2341);'
+            'margin-bottom:6px;letter-spacing:-0.01em;}'
+            '.ck-err-chip-blurb{font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:13px;line-height:1.5;color:var(--sc-text-dim,#465366);}'
+            '</style>'
+        )
+
+        body = (
+            f"{css}"
+            f"{page_title}"
+            f'<p class="ck-err-lede">{html.escape(explainer)}</p>'
+            '<div class="ck-err-actions">'
+            '<a class="ck-err-home" href="/app">Open Command Center</a>'
+            '<a class="ck-err-back" href="javascript:history.back()">'
+            '&larr; Back</a>'
+            '</div>'
+            f"{message_card}"
+            '<div class="ck-eyebrow" style="margin:0 0 12px;">'
+            'TRY ONE OF THESE'
+            '</div>'
+            f"{chips_html}"
+        )
+        # Map error code -> HTTP status so the response carries the
+        # correct status line. Defaults to 404 for "404"-ish codes,
+        # 500 for "5xx", and 400 otherwise.
+        try:
+            status_code = int(str(code))
+        except (TypeError, ValueError):
+            status_code = 404
+        if status_code < 400 or status_code > 599:
+            status_code = 404
+        return self._send_html(
+            chartis_shell(
+                body, title,
+                active_nav=None,  # Errors don't belong to a section
+            ),
+            status=status_code,
+        )
 
     def _route_ml_insights(self) -> None:
         """GET /ml-insights — national ML analysis dashboard."""
