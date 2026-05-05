@@ -12527,15 +12527,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         )
 
         if not starred:
+            from .ui._chartis_kit import ck_empty_state
             body = (
                 f"{title_html}"
-                '<div class="cad-card" style="text-align:center;padding:48px 32px;">'
-                '<p style="font-family:var(--sc-serif,Georgia,serif);'
-                'font-size:15px;color:var(--sc-text-dim,#465366);max-width:48ch;'
-                'margin:0 auto;line-height:1.55;">'
-                'No starred deals yet. Open any deal and click the '
-                '<strong>★ Star</strong> button to pin it here for quick '
-                'access during diligence reviews.</p></div>'
+                + ck_empty_state(
+                    "No starred deals yet.",
+                    body=(
+                        "Open any deal and click the ★ Star button to "
+                        "pin it here for quick access during diligence "
+                        "reviews. Most partners star the 5–10 deals "
+                        "they're actively monitoring this quarter."
+                    ),
+                    eyebrow="GET STARTED",
+                    icon="★",
+                    cta_label="Browse Portfolio",
+                    cta_href="/portfolio",
+                )
             )
             self._send_html(shell(
                 body=body, title="Watchlist",

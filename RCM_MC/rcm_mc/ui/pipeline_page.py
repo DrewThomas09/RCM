@@ -276,14 +276,26 @@ def render_pipeline(db_path: str) -> str:
             f'<th>Revenue</th><th>Margin</th><th>Stage</th><th>Actions</th>'
             f'</tr></thead><tbody>{hospital_rows}</tbody></table>'
         )
+        pipeline_table += '</div>'
     else:
-        pipeline_table += (
-            f'<p style="font-size:12px;color:var(--cad-text3);padding:8px 0;">'
-            f'No hospitals in the pipeline yet. '
-            f'<a href="/predictive-screener" style="color:var(--cad-link);">Screen hospitals</a> '
-            f'and click "Add to Pipeline" on any profile page.</p>'
+        # Replace the bare "No hospitals" line with an editorial
+        # empty-state card so the page reads as deliberate and gives
+        # the partner a one-click path to fill it.
+        from ._chartis_kit import ck_empty_state
+        pipeline_table += '</div>'
+        pipeline_table += ck_empty_state(
+            "No hospitals in the pipeline yet.",
+            body=(
+                "Run the Predictive Screener against your thesis "
+                "and click “+ PIPE” on any result row to "
+                "add a target. The funnel above shows zero counts "
+                "until you add at least one hospital."
+            ),
+            eyebrow="GET STARTED",
+            icon="◆",
+            cta_label="Open Predictive Screener",
+            cta_href="/predictive-screener",
         )
-    pipeline_table += '</div>'
 
     # ── Recent activity ──
     activity_items = ""

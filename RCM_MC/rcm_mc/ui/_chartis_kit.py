@@ -492,6 +492,68 @@ def ck_section_intro(
     )
 
 
+def ck_empty_state(
+    title: str,
+    body: Optional[str] = None,
+    *,
+    eyebrow: Optional[str] = None,
+    cta_label: Optional[str] = None,
+    cta_href: Optional[str] = None,
+    icon: Optional[str] = None,
+    tone: str = "neutral",
+) -> str:
+    """Editorial empty-state card — eyebrow + serif title + body + CTA.
+
+    The "no data here yet" surface every page reaches for when its
+    table / list / chart has nothing to show. Replaces the various
+    legacy ``<p class="muted">No items.</p>`` one-liners that read
+    as bare and unfinished.
+
+    Args:
+        title:      Serif headline. e.g. "No starred deals yet."
+        body:       Optional paragraph explaining what to do next.
+        eyebrow:    Optional small mono caps line above title.
+        cta_label:  If provided with cta_href, renders a primary
+                    button — the recommended action that fills the
+                    empty state.
+        cta_href:   Destination for the CTA.
+        icon:       Optional unicode glyph or HTML snippet rendered
+                    in a circular bone-tinted slot above the eyebrow.
+                    e.g. "★" for watchlist, "✓" for done states.
+        tone:       "neutral" (default), "positive" (green left
+                    accent — useful for "all clear" empty-as-success
+                    states like "no active alerts"), or "warning".
+    """
+    tone = tone if tone in ("neutral", "positive", "warning") else "neutral"
+    eyebrow_html = (
+        f'<div class="ck-eyebrow">{_esc(eyebrow)}</div>' if eyebrow else ""
+    )
+    icon_html = (
+        f'<div class="ck-empty-state-icon">{icon}</div>'  # pre-escaped/glyph
+        if icon else ""
+    )
+    body_html = (
+        f'<p class="ck-empty-state-body">{_esc(body)}</p>' if body else ""
+    )
+    cta_html = ""
+    if cta_label and cta_href:
+        cta_html = (
+            '<div class="ck-empty-state-actions">'
+            f'<a class="ck-empty-state-cta" '
+            f'href="{_esc(cta_href)}">{_esc(cta_label)}</a>'
+            '</div>'
+        )
+    return (
+        f'<div class="ck-empty-state ck-empty-state-{tone}">'
+        f'{icon_html}'
+        f'{eyebrow_html}'
+        f'<h2 class="ck-empty-state-title">{_esc(title)}</h2>'
+        f'{body_html}'
+        f'{cta_html}'
+        '</div>'
+    )
+
+
 def ck_arrow_link(text: str, href: str, *, on_navy: bool = False) -> str:
     """Teal "VIEW MORE ↗" arrow link, the primary editorial CTA."""
     cls = "ck-arrow on-navy" if on_navy else "ck-arrow"
@@ -1438,6 +1500,18 @@ _CSS_INLINE_FALLBACK = """
   .ck-eyebrow::before { content:''; display:inline-block; width:24px; height:2px; background:var(--sc-teal); }
   .ck-eyebrow.on-navy { color:var(--sc-on-navy-dim); }
   .ck-eyebrow.on-navy::before { background:var(--sc-teal); }
+  /* Empty state — the "no data here yet" surface every page reaches
+   * for. Reads as a deliberate editorial card, not a forgotten gap. */
+  .ck-empty-state { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; padding:48px 40px; max-width:640px; margin:24px auto; text-align:center; box-shadow:var(--sc-shadow-1); display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .ck-empty-state.ck-empty-state-positive { border-left:3px solid var(--sc-positive); }
+  .ck-empty-state.ck-empty-state-warning { border-left:3px solid var(--sc-warning); }
+  .ck-empty-state-icon { width:56px; height:56px; border-radius:50%; background:var(--sc-bone); display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--sc-teal-ink); margin-bottom:4px; }
+  .ck-empty-state .ck-eyebrow { margin-bottom:2px; }
+  .ck-empty-state-title { font-family:var(--sc-serif); font-weight:500; font-size:22px; color:var(--sc-navy); letter-spacing:-0.01em; line-height:1.2; margin:0; max-width:32ch; }
+  .ck-empty-state-body { font-family:var(--sc-serif); font-size:14.5px; line-height:1.6; color:var(--sc-text-dim); max-width:48ch; margin:0; }
+  .ck-empty-state-actions { display:flex; gap:10px; margin-top:8px; }
+  .ck-empty-state-cta { font-family:var(--sc-sans); font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#fff; background:var(--sc-navy); padding:10px 18px; border:1px solid var(--sc-navy); border-radius:2px; text-decoration:none; transition:background 0.12s, border-color 0.12s; }
+  .ck-empty-state-cta:hover { background:var(--sc-teal); border-color:var(--sc-teal); }
   .ck-section-intro { position:relative; margin:var(--sc-s-6) 0 var(--sc-s-5); padding-right:32px; }
   .ck-section-intro h2 { font-family:var(--sc-serif); font-weight:400; font-size:clamp(20px, 2.2vw, 26px); line-height:1.2; letter-spacing:-0.01em; color:var(--sc-navy); margin:var(--sc-s-3) 0 0; max-width:32ch; }
   .ck-section-intro h2 em { font-style:italic; font-weight:400; color:var(--sc-teal-ink); }
@@ -2515,6 +2589,7 @@ __all__ = [
     "ck_panel",
     "ck_section_header",
     "ck_table",
+    "ck_empty_state",
     "ck_kpi_block",
     "ck_page_title",
     "ck_signal_badge",
