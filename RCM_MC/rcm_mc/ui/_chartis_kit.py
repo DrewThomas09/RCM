@@ -304,10 +304,20 @@ def ck_panel(body_html: str, *, title: Optional[str] = None, code: Optional[str]
     """White panel with navy header strip and optional [CODE] tag."""
     head = ""
     if title or code:
+        # Pre-build the code chip outside the f-string so the
+        # nested quotes don't trip Python 3.11/3.12's parser
+        # ("SyntaxError: f-string expression part cannot include
+        # a backslash"). 3.12.0+ relaxed this via PEP 701, but
+        # CI runs against 3.11 too — keep this stdlib-safe.
+        title_html = _esc(title) if title else ""
+        code_chip = (
+            '<div class="ck-panel-code">[' + _esc(code) + ']</div>'
+            if code else ""
+        )
         head = (
             '<div class="ck-panel-head">'
-            f'<div class="ck-panel-title">{_esc(title) if title else ""}</div>'
-            f'{"<div class=\"ck-panel-code\">[" + _esc(code) + "]</div>" if code else ""}'
+            f'<div class="ck-panel-title">{title_html}</div>'
+            f'{code_chip}'
             "</div>"
         )
     return f'<section class="ck-panel">{head}<div class="ck-panel-body">{body_html}</div></section>'
