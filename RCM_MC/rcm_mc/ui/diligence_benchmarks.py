@@ -26,7 +26,7 @@ from ..diligence.benchmarks import (
     QOR_THRESHOLD_IMMATERIAL, QOR_THRESHOLD_WATCH,
     WaterfallCohort, WaterfallStep,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 
 
 # HFMA benchmark bands. Ranges are partner-facing; sourced from HFMA
@@ -100,8 +100,16 @@ def render_benchmarks_page(
     if bundle is None:
         return _placeholder_page()
 
+    page_title = ck_page_title(
+        "Benchmarks",
+        eyebrow="RCM DILIGENCE",
+        meta=(
+            f"Phase 2 of 4 · as-of {bundle.as_of_date.isoformat()}"
+        ),
+    )
     body = (
-        _hero(bundle)
+        page_title
+        + _hero(bundle)
         + _cash_waterfall_section(cash_waterfall)
         + _kpi_scorecard(bundle)
         + _cohort_section(cohort_report)
@@ -111,6 +119,7 @@ def render_benchmarks_page(
     return chartis_shell(
         body,
         "RCM Diligence — Benchmarks",
+        active_nav="/diligence/benchmarks",
         subtitle=f"Phase 2 of 4 · as-of {bundle.as_of_date.isoformat()}",
     )
 

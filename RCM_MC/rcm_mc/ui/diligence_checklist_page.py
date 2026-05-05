@@ -26,7 +26,7 @@ from ..diligence.checklist import (
     summarize_coverage,
 )
 from ..diligence.checklist.items import build_checklist
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -545,8 +545,24 @@ def render_diligence_checklist_page(
         name="diligence_checklist_state",
     )
 
+    # Compute a quick completion ratio for the meta line — done over total.
+    _items = getattr(state, "items", []) or []
+    _done = sum(
+        1 for s in _items
+        if getattr(getattr(s, "status", None), "value", None) == "done"
+    )
+    _pct = (_done / len(_items) * 100.0) if _items else 0.0
+    title = ck_page_title(
+        "Diligence Checklist",
+        eyebrow="RCM DILIGENCE",
+        meta=(
+            f"Orchestration layer · {_pct:.0f}% complete · "
+            "auto-tracked from live analytics"
+        ),
+    )
     body = (
         _scoped_styles()
+        + title
         + '<div class="dc-wrap">'
         + hero_and_oq
         + '<div class="dc-section-label">'
@@ -560,5 +576,6 @@ def render_diligence_checklist_page(
     )
     return chartis_shell(
         body, "RCM Diligence — Checklist",
+        active_nav="/diligence/checklist",
         subtitle="Orchestration layer · auto-tracked from live analytics",
     )
