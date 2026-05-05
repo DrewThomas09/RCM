@@ -2852,6 +2852,13 @@ class RCMHandler(BaseHTTPRequestHandler):
         # HCRIS X-Ray — Medicare cost-report peer benchmarking.
         if path == "/diligence/hcris-xray":
             return self._route_hcris_xray_page()
+        # Diligence section landing — was 404, now an editorial
+        # index that groups the 24 RCM playbook surfaces into four
+        # pillars (Profile/Health, Thesis/Playbook, Audit/Stress,
+        # Exit/Synthesis). Top-nav DILIGENCE button points here.
+        if path == "/diligence" or path == "/diligence/":
+            from .ui.diligence_index_page import render_diligence_index
+            return self._send_html(render_diligence_index())
         # Diligence Checklist — orchestration layer + open-questions tracker.
         if path == "/diligence/checklist":
             return self._route_diligence_checklist_page()

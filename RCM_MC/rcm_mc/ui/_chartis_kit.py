@@ -133,7 +133,7 @@ def ck_fmt_moic(v: Optional[float], *, dash: str = "—") -> str:
 _CORPUS_NAV = [
     {"label": "Home",      "href": "/home",      "key": "home"},
     {"label": "Pipeline",  "href": "/pipeline",  "key": "pipeline"},
-    {"label": "Diligence", "href": "/diligence/deal", "key": "diligence"},
+    {"label": "Diligence", "href": "/diligence", "key": "diligence"},
     {"label": "Library",   "href": "/library",   "key": "library"},
     {"label": "Research",  "href": "/research",  "key": "research"},
     {"label": "Portfolio", "href": "/portfolio", "key": "portfolio"},

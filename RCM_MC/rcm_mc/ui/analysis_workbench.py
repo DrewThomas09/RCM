@@ -1524,7 +1524,21 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
         <div class="wb-tab-panel" data-panel="bridge">
           <div class="wb-card">
             <div class="wb-card-title">EBITDA bridge</div>
-            <div class="dim">Bridge not available: {_esc(br.reason or "no impacts computed")}</div>
+            <p class="dim" style="margin:0 0 8px;">
+              The EBITDA bridge needs a revenue baseline + at least one
+              RCM metric to model improvements against. This deal has
+              none yet.
+            </p>
+            <p class="dim" style="margin:0 0 12px;">
+              <strong>To populate this tab:</strong> open
+              <a href="/diligence/ingest" class="wb-link">Ingest</a> and
+              attach a Canonical Claims Dataset, or upload management-
+              reported quarterly actuals on the
+              <a href="/deal/{_esc(packet.deal_id)}" class="wb-link">deal page</a>.
+            </p>
+            <p class="dim" style="margin:0;font-size:11px;">
+              Reason: {_esc(br.reason or "no impacts computed")}
+            </p>
           </div>
         </div>
         """
@@ -1702,7 +1716,21 @@ def _render_mc(packet: DealAnalysisPacket) -> str:
         <div class="wb-tab-panel" data-panel="mc">
           <div class="wb-card">
             <div class="wb-card-title">Monte Carlo</div>
-            <div class="dim">Simulation unavailable: {_esc(reason)}</div>
+            <p class="dim" style="margin:0 0 8px;">
+              Monte Carlo runs N simulated trajectories of EBITDA
+              improvement to give the partner a P10 / P50 / P90 band
+              instead of a single point estimate.
+            </p>
+            <p class="dim" style="margin:0 0 12px;">
+              <strong>To populate this tab:</strong> click
+              <strong>REBUILD</strong> at the top of the workbench, or
+              run <code style="font-family:'JetBrains Mono',monospace;">
+              rcm-mc analysis {_esc(packet.deal_id)}</code> from the
+              CLI to refresh the packet with simulation enabled.
+            </p>
+            <p class="dim" style="margin:0;font-size:11px;">
+              Reason: {_esc(reason)}
+            </p>
           </div>
         </div>
         """
