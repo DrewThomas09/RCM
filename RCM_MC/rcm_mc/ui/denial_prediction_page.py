@@ -19,7 +19,7 @@ from ..diligence.denial_prediction import (
     DenialPredictionReport, analyze_ccd,
 )
 from ..diligence.denial_prediction.model import CalibrationBucket
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 from .power_ui import provenance, sortable_table
 
 
@@ -456,7 +456,12 @@ def render_denial_prediction_page(
         )
 
     body = (
-        _hero(report)
+        ck_page_title(
+            "Denial Prediction",
+            eyebrow="RCM DILIGENCE",
+            meta=f"Dataset: {dataset} · ML-trained on labeled CCD",
+        )
+        + _hero(report)
         + _calibration_block(report)
         + f'<div style="font-size:10px;color:{P["text_faint"]};'
           f'letter-spacing:1.5px;text-transform:uppercase;font-weight:700;'
@@ -470,5 +475,6 @@ def render_denial_prediction_page(
     )
     return chartis_shell(
         body, f"Denial Prediction — {dataset}",
+        active_nav="/diligence/denial-prediction",
         subtitle="Predictive RCM analytic",
     )
