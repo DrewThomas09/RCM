@@ -85,9 +85,12 @@ def _row_html(
         f'<a href="{href}">{inner}</a>'
     )
 
+    # Pre-build the name span outside the inner f-string so the
+    # nested escaped quotes don't trip Python 3.11's parser.
+    name_span = f'<span class="name">{_html.escape(name or deal_id)}</span>'
     return (
         f'<tr class="{cls}">'
-        f'<td>{a(f"<span class=\"name\">{_html.escape(name or deal_id)}</span>")}</td>'
+        f'<td>{a(name_span)}</td>'
         f'<td>{a(stage_pill(_STAGE_LABEL.get(stage, stage.title())))}</td>'
         f'<td class="r">{a(number_maybe(ev, format="ev"))}</td>'
         f'<td class="r">{a(number_maybe(moic, format="moic"))}</td>'

@@ -183,7 +183,8 @@ def breadcrumbs(items: Iterable[Tuple[str, Optional[str]]]) -> str:
             parts.append(f'<a href="{_html.escape(href)}">{label_esc}</a>')
         else:
             parts.append(f'<span>{label_esc}</span>')
-    return f'<nav class="wc-breadcrumbs">{("<span class=\"sep\">/</span>").join(parts)}</nav>'
+    sep = '<span class="sep">/</span>'
+    return f'<nav class="wc-breadcrumbs">{sep.join(parts)}</nav>'
 
 
 def page_header(title: str, *, subtitle: Optional[str] = None,

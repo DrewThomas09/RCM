@@ -143,10 +143,21 @@ def _ccd_summary_card(ccd: Any) -> str:
     """Compact one-card CCD summary: ingest_id, claim count, source
     files, content hash."""
     from .ingest.ccd import CanonicalClaimsDataset  # noqa: F401
+    # JetBrains Mono is used as a monospace fallback. The escaped
+    # quotes inside an f-string expression part trip Python 3.11 —
+    # build the font-family string once outside the f-string.
+    JBMONO = "'JetBrains Mono',monospace"
     source_list = "".join(
-        f'<li style="font-family:\'JetBrains Mono\',monospace;font-size:11px;'
+        f'<li style="font-family:{JBMONO};font-size:11px;'
         f'color:{PALETTE["text_dim"]};">{html.escape(str(f))}</li>'
         for f in (ccd.source_files or [])
+    )
+    # Pre-build the optional <ul> wrapper outside the f-string so the
+    # nested escaped quotes don't trip Python 3.11's parser.
+    source_block = (
+        '<ul style="margin:10px 0 0 20px;padding:0;">'
+        + source_list + '</ul>'
+        if source_list else ''
     )
     return (
         f'<div style="background:{PALETTE["panel"]};'
@@ -179,7 +190,7 @@ def _ccd_summary_card(ccd: Any) -> str:
         f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;'
         f'color:{PALETTE["text"]};">{html.escape(ccd.content_hash()[:12])}…</div></div>'
         f'</div>'
-        f'{("<ul style=\"margin:10px 0 0 20px;padding:0;\">" + source_list + "</ul>") if source_list else ""}'
+        f'{source_block}'
         f'</div>'
     )
 
@@ -821,6 +832,13 @@ def _repricer_summary(ccd: Any) -> str:
         f'</tr>'
         for pc, lev in sorted(leverage.items(), key=lambda x: -x[1])
     )
+    # Pre-build the empty-state row outside the f-string so the
+    # nested escaped quotes don't trip Python 3.11's parser.
+    empty_row = (
+        '<tr><td colspan=2 style="padding:8px 10px;font-size:11px;'
+        'color:#7a8699;">No matched claims — contract lacks rates '
+        "for this fixture's CPTs.</td></tr>"
+    )
     return (
         f'<div style="margin:16px 0;">'
         f'<div style="font-size:11px;color:{PALETTE["text_dim"]};'
@@ -837,7 +855,7 @@ def _repricer_summary(ccd: Any) -> str:
         f'<th style="padding:6px 10px;text-align:right;font-size:10px;'
         f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
         f'text-transform:uppercase;">Leverage vs Commercial</th>'
-        f'</tr></thead><tbody>{rows or "<tr><td colspan=2 style=\"padding:8px 10px;font-size:11px;color:#7a8699;\">No matched claims — contract lacks rates for this fixture's CPTs.</td></tr>"}</tbody></table>'
+        f'</tr></thead><tbody>{rows or empty_row}</tbody></table>'
         f'{_info_strip("These values drop into BridgeAssumptions.payer_revenue_leverage; the v2 bridge uses them instead of the module-level defaults.")}'
         f'</div>'
     )

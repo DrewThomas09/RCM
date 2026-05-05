@@ -281,7 +281,7 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
         f'{"above" if data["margin"] > st_med_margin else "below"} the state median. '
         f'Among {data["n_comps"]} size-comparable peers ({data["beds"]*0.5:.0f}-{data["beds"]*2:.0f} beds), '
         f'the median margin is {_pct(comp_med_margin)}. '
-        f'{"The target\'s below-peer margin suggests operational improvement opportunity." if data["margin"] < comp_med_margin else "The target performs in line with or above peers."}'
+        f'{("The target’s below-peer margin suggests operational improvement opportunity." if data["margin"] < comp_med_margin else "The target performs in line with or above peers.")}'
         f'</p></div>'
     )
 

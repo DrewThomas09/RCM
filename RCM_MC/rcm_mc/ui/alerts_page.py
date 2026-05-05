@@ -190,13 +190,22 @@ def _owner_form(show_all: bool, owner_filter: Optional[str]) -> str:
     """Editorial filter row — bone-bordered owner input with mono label
     and navy → teal Apply button. Sits inline with the show/all toggle
     so the partner's filter controls share one row."""
+    # Pre-build the show-all hidden input outside the f-string so the
+    # nested escaped quotes don't trip Python 3.11's parser
+    # ("SyntaxError: f-string expression part cannot include a
+    # backslash"). PEP 701 lifted the restriction in 3.12+, but CI
+    # also runs against 3.11 — keep this 3.10–3.11 compatible.
+    show_all_hidden = (
+        '<input type="hidden" name="show" value="all">'
+        if show_all else ""
+    )
     return (
         '<form class="ck-alerts-filter-form" method="GET" action="/alerts">'
         '<span class="ck-alerts-filter-label">Owner</span>'
         f'<input type="text" name="owner" '
         f'value="{html.escape(owner_filter or "")}" '
         'placeholder="initials e.g. AT" maxlength="40">'
-        f'{"<input type=\"hidden\" name=\"show\" value=\"all\">" if show_all else ""}'
+        f'{show_all_hidden}'
         '<button type="submit">Apply</button>'
         '</form>'
     )
