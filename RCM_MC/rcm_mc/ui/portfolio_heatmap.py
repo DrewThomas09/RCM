@@ -101,6 +101,7 @@ def render_heatmap(
             '<div class="cad-card"><p style="color:var(--cad-text3);">No deals to display. '
             '<a href="/import" style="color:var(--cad-link);">Create your first deal &rarr;</a></p></div>',
             "Portfolio Heatmap",
+            active_nav="/portfolio",
             subtitle="No deals yet",
         )
 
@@ -159,8 +160,66 @@ def render_heatmap(
         f'<thead><tr><th>Deal</th><th>Grade</th>{header}</tr></thead>'
         f'<tbody>{"".join(rows_html)}</tbody></table>'
     )
-    body = f'<div class="cad-card">{table}</div>'
+    # Cycle 46 — KPI strip + provenance + chartis chrome.
+    from ._chartis_kit import (
+        ck_eyebrow, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    )
+    grade_counts = {"A": 0, "B": 0, "C": 0, "D": 0}
+    for p in packets:
+        g = p.completeness.grade if p.completeness else "—"
+        if g in grade_counts:
+            grade_counts[g] += 1
+    a_share = grade_counts["A"] / len(packets) * 100 if packets else 0
+    a_share_value = ck_provenance_tooltip(
+        "A-grade share",
+        f"{a_share:.0f}%",
+        explainer=(
+            f"Share of portfolio deals at completeness grade A "
+            f">=80% of expected fields populated). Below 50% "
+            f"flags a portfolio with thin underlying data; the "
+            f"heatmap cells from D-grade deals are less reliable "
+            f"than from A-grade ones."
+        ),
+    )
+    deals_value = ck_provenance_tooltip(
+        "Deals in heatmap",
+        ck_fmt_num(len(packets)),
+        explainer=(
+            "Active (non-archived) deals with completed analysis "
+            "packets. Each row is one deal; cells are colored by "
+            "percentile rank against the corpus benchmark per "
+            "metric."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Deals Mapped", deals_value, "with packets")
+        + ck_kpi_block("Grade A Share", a_share_value, ">=80% complete")
+        + ck_kpi_block("Metrics Tracked", ck_fmt_num(len(_TOP_METRICS)), "per deal")
+        + ck_kpi_block("Color Bins", "5", "percentile cuts")
+        + '</div>'
+    )
+
+    body = (
+        ck_eyebrow("Portfolio Heatmap")
+        + kpi_strip
+        + f'<div class="cad-card">{table}</div>'
+    )
     return chartis_shell(body, "Portfolio Heatmap",
                     active_nav="/portfolio",
                     subtitle=f"{len(packets)} deals — cells coloured by percentile rank",
-                    extra_css=css)
+                    extra_css=css,
+                    editorial_intro={
+                        "eyebrow": "PORTFOLIO HEATMAP",
+                        "headline": "Where the deals stand against benchmarks.",
+                        "italic_word": "stand",
+                        "body": (
+                            "Per-deal RCM metrics colored by "
+                            "percentile rank against the corpus "
+                            "benchmark. Read across a row to find "
+                            "the deal's weak spots; read down a "
+                            "column to find the portfolio's "
+                            "concentration risk on that metric."
+                        ),
+                    })

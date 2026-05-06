@@ -79,3 +79,9 @@ output*/
 * [0-9].js
 * [0-9].gitignore
 .gitignore [0-9]
+
+# Design reference — large bundled HTML and reference images
+# Source components and tokens live in design_reference/ separately.
+design_reference/SeekingChartis Command Center (standalone).html
+design_reference/handoff/SeekingChartis Rework (standalone).html
+design_reference/uploads/

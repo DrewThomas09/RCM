@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _share_landscape_svg(competitors, our_share: float) -> str:
@@ -114,19 +114,19 @@ def _competitors_table(competitors) -> str:
         tc = threat_colors.get(c.threat_level, text_dim)
         sc = strat_colors.get(c.competitive_strategy, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.name)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.name)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.ownership)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{c.est_market_share_pct:.1f}%</td>',
+            f'{ck_data_cell(f"""{c.est_market_share_pct:.1f}%""", align="right", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.footprint)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.est_revenue_mm:,.0f}</td>',
+            f'{ck_data_cell(f"""${c.est_revenue_mm:,.0f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:200px">{_html.escape(c.positioning)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{c.competitive_strategy}</span></td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{c.threat_level}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{c.competitive_strategy}</span>""")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{c.threat_level}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -146,17 +146,17 @@ def _moves_table(moves) -> str:
         tc = threat_colors.get(m.threat_to_us, text_dim)
         val_str = f"${m.value_mm:,.1f}" if m.value_mm > 0 else (f"${-m.value_mm:,.1f} (impairment)" if m.value_mm < 0 else "—")
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(m.quarter)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.company)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.quarter)}""", mono=True)}',
+            f'{ck_data_cell(f"""{_html.escape(m.company)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.move_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{val_str}</td>',
+            f'{ck_data_cell(f"""{val_str}""", align="right", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:320px">{_html.escape(m.description)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.threat_to_us}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.threat_to_us}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -174,16 +174,16 @@ def _vs_us_table(vs_us) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         gc = P["negative"] if v.gap <= -25 else (P["warning"] if v.gap <= -10 else P["positive"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(v.dimension)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(v.dimension)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]};font-weight:600">{v.our_score}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{v.top_competitor_score}</td>',
+            f'{ck_data_cell(f"""{v.top_competitor_score}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{gc};font-weight:600">{v.gap:+d}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(v.action)}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -202,17 +202,17 @@ def _opps_table(opps) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         fc = feas_colors.get(o.feasibility, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(o.segment)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(o.segment)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(o.current_leader)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{o.displacement_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${o.implied_revenue_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{o.displacement_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${o.implied_revenue_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(o.time_horizon)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{fc};border:1px solid {fc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{o.feasibility}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{fc};border:1px solid {fc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{o.feasibility}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -271,18 +271,18 @@ def render_competitive_intel(params: dict = None) -> str:
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
-    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
+<div class="ck-page-wrap">
 
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Competitive Intelligence Dashboard</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Competitive Intelligence Dashboard</h1>
+    <p class="ck-page-sub">
       Competitor landscape, strategic moves, gap analysis, share-shift opportunities for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
@@ -334,4 +334,9 @@ def render_competitive_intel(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Competitive Intel", active_nav="/competitive-intel")
+    return chartis_shell(body, "Competitive Intel", active_nav="/competitive-intel",
+        editorial_intro={
+            "eyebrow": "COMPETITIVE INTEL",
+            "headline": "What the competitive intel page reveals on this deal.",
+            "italic_word": "reveals",
+        })

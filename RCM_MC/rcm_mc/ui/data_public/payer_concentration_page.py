@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _payers_table(payers) -> str:
@@ -11,7 +11,7 @@ def _payers_table(payers) -> str:
     cols = [("Payer","left"),("Type","left"),("Net Rev ($M)","right"),("Share","right"),
             ("YoY","right"),("Expiry","center"),("Denial %","right"),("DAR","right"),
             ("Renewal Risk","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(payers):
         rb = panel_alt if i % 2 == 0 else bg
@@ -20,27 +20,27 @@ def _payers_table(payers) -> str:
         den_c = neg if p.denial_rate_pct > 0.10 else (warn if p.denial_rate_pct > 0.07 else text_dim)
         risk_c = neg if p.renewal_risk_score >= 65 else (warn if p.renewal_risk_score >= 40 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(p.payer_name)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(p.payer_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.annual_net_rev_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.payer_name)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(p.payer_type)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${p.annual_net_rev_mm:,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{share_c};font-weight:700">{p.revenue_share_pct * 100:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{yoy_c}">{p.yoy_delta_pct * 100:+.1f}%</td>',
-            f'<td style="text-align:center;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{_html.escape(p.contract_expiry)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.contract_expiry)}""", align="center", mono=True, tone="acc")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{den_c}">{p.denial_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{p.days_in_ar}</td>',
+            f'{ck_data_cell(f"""{p.days_in_ar}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{risk_c};font-weight:600">{p.renewal_risk_score}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(p.status)}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _metrics_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Metric","left"),("Value","right"),("Benchmark","right"),("Variance","right"),("Interpretation","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -55,15 +55,15 @@ def _metrics_table(items) -> str:
         else:
             var_c = neg if m.variance > 0 else pos
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(m.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{val_disp}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{bench_disp}</td>',
+            f'{ck_data_cell(f"""{_html.escape(m.metric)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{val_disp}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{bench_disp}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{var_c};font-weight:600">{var_disp}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.interpretation)}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _renewals_table(items) -> str:
@@ -71,24 +71,24 @@ def _renewals_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Payer","left"),("Expiry","center"),("Annual Rev ($M)","right"),("Type","left"),
             ("Rate Reset","left"),("Exposure","right"),("Priority","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     pri_c = {"critical": neg, "high": warn, "standard": text_dim}
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         pc = pri_c.get(r.priority, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.payer_name)}</td>',
-            f'<td style="text-align:center;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(r.expiry_quarter)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.annual_revenue_mm:,.2f}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(r.contract_type)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.payer_name)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(r.expiry_quarter)}""", align="center", mono=True)}',
+            f'{ck_data_cell(f"""${r.annual_revenue_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{_html.escape(r.contract_type)}""", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.rate_reset_clause)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn}">{r.exposure_pct * 100:.1f}%</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(r.priority)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(r.priority)}</span>""", align="center")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _denials_table(items) -> str:
@@ -96,23 +96,23 @@ def _denials_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Payer","left"),("Denial %","right"),("Top Reason","left"),
             ("Days to Overturn","right"),("Overturn %","right"),("Write-Off Exposure ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         den_c = neg if d.denials_pct > 0.10 else P["warning"]
         ov_c = pos if d.overturn_success_pct > 0.70 else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.payer_name)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.payer_name)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{den_c};font-weight:600">{d.denials_pct * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.top_denial_reason)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{d.days_to_overturn}</td>',
+            f'{ck_data_cell(f"""{d.days_to_overturn}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ov_c}">{d.overturn_success_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:600">${d.write_off_exposure_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${d.write_off_exposure_mm:,.2f}""", align="right", mono=True, tone="neg", weight=600)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _oon_table(items) -> str:
@@ -120,21 +120,21 @@ def _oon_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Service Line","left"),("OON Volume %","right"),("Avg Coll Rate","right"),
             ("Balance-Bill Risk ($M)","right"),("NSA Impact","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, o in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         oon_c = neg if o.oon_volume_pct > 0.20 else (warn if o.oon_volume_pct > 0.10 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(o.service_line)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(o.service_line)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{oon_c};font-weight:600">{o.oon_volume_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{o.avg_collection_rate * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{o.avg_collection_rate * 100:.1f}%""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn}">${o.balance_bill_risk_mm:,.2f}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(o.no_surprises_act_impact)}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _payer_share_svg(payers) -> str:
@@ -206,7 +206,7 @@ def render_payer_concentration(params: dict = None) -> str:
 <form method="GET" action="/payer-concentration" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
   <label style="font-size:11px;color:{text_dim}">Revenue ($M)<input name="revenue" value="{revenue}" type="number" step="25" style="margin-left:6px;background:{panel};border:1px solid {border};color:{text};padding:4px 8px;font-size:11px;font-family:JetBrains Mono,monospace;width:80px"/></label>
   <label style="font-size:11px;color:{text_dim}">Top Payer Share<input name="top_payer" value="{top_payer}" type="number" step="0.02" style="margin-left:6px;background:{panel};border:1px solid {border};color:{text};padding:4px 8px;font-size:11px;font-family:JetBrains Mono,monospace;width:80px"/></label>
-  <button type="submit" style="background:{border};color:{text};border:1px solid {border};padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+  <button type="submit" style="background:{border};color:{text};border:1px solid {border};padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
@@ -216,10 +216,10 @@ def render_payer_concentration(params: dict = None) -> str:
     total_oon_risk = sum(o.balance_bill_risk_mm for o in r.oon_exposure)
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Payer Concentration Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">CR1/CR3/CR5 · HHI · renewal schedule · denials · NSA OON exposure — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Payer Concentration Tracker</h1>
+    <p class="ck-page-sub">CR1/CR3/CR5 · HHI · renewal schedule · denials · NSA OON exposure — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
@@ -238,4 +238,9 @@ def render_payer_concentration(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Payer Concentration", active_nav="/payer-concentration")
+    return chartis_shell(body, "Payer Concentration", active_nav="/payer-concentration",
+        editorial_intro={
+            "eyebrow": "PAYER CONCENTRATION",
+            "headline": "What the payer concentration page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -8,6 +8,7 @@ from __future__ import annotations
 import html as _html
 import os
 import tempfile
+import urllib.parse
 from typing import Any, Dict, List, Optional
 
 
@@ -116,7 +117,9 @@ _COLUMNS = [
 
 
 def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
-    from rcm_mc.ui._chartis_kit import ck_kpi_block, ck_fmt_num
+    from rcm_mc.ui._chartis_kit import (
+        ck_kpi_block, ck_fmt_number, ck_provenance_tooltip, SafeHtml,
+    )
 
     total = len(deals)
     realized = [r for r in rows if r["moic"] is not None]
@@ -125,16 +128,48 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     loss_count = sum(1 for m in moics if m < 1.0)
     sectors = len({d.get("sector") for d in deals if d.get("sector")})
 
-    p50_html = ck_fmt_num(p50, 2, "x") if p50 else '<span class="faint">—</span>'
+    # Pre-built numeric markup for KPIs whose values include a class
+    # for tone (loss-rate red) or fallback (em-dash placeholder).
+    # SafeHtml marks the string as already-escaped so ck_kpi_block
+    # doesn't double-escape and render the tag as literal text.
+    p50_html = (
+        SafeHtml(f"{ck_fmt_number(p50, precision=2)}x") if p50
+        else SafeHtml('<span class="faint">—</span>')
+    )
     loss_pct = f"{loss_count/len(moics)*100:.1f}%" if moics else "—"
+
+    # Cycle 34 — partner-grade explainers for the two values that
+    # most often need defending in an LP review: corpus P50 MOIC
+    # (calibration-relevant) and loss rate (downside discipline).
+    p50_explainer = ck_provenance_tooltip(
+        "Corpus P50 MOIC",
+        p50_html,
+        explainer=(
+            "Median realized MOIC across the corpus's realized "
+            "deals (those with a known exit MOIC). Compare against "
+            "your fund's vintage-matched cohort to gauge your "
+            "calibration."
+        ),
+    )
+    loss_explainer = ck_provenance_tooltip(
+        "Loss Rate",
+        SafeHtml(f'<span class="mn neg">{loss_pct}</span>'),
+        explainer=(
+            "Share of realized deals that returned less than 1.0× "
+            "MOIC (capital impaired). Industry baseline for HC PE: "
+            "~10–15%. Loss rates above 20% signal sourcing or "
+            "underwriting drift."
+        ),
+        inject_css=False,  # CSS already in the page from the first call
+    )
 
     return (
         f'<div class="ck-kpi-grid">'
-        + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', "in corpus")
-        + ck_kpi_block("Realized", f'<span class="mn">{len(realized)}</span>', f"{len(realized)/total*100:.0f}% of corpus")
-        + ck_kpi_block("Corpus P50 MOIC", p50_html, "realized deals")
-        + ck_kpi_block("Loss Rate", f'<span class="mn neg">{loss_pct}</span>', "MOIC < 1.0×")
-        + ck_kpi_block("Sectors", f'<span class="mn">{sectors}</span>', "covered")
+        + ck_kpi_block("Total Deals", f"{total}", sub="in corpus")
+        + ck_kpi_block("Realized", f"{len(realized)}", sub=f"{len(realized)/total*100:.0f}% of corpus")
+        + ck_kpi_block("Corpus P50 MOIC", p50_explainer, sub="realized deals")
+        + ck_kpi_block("Loss Rate", loss_explainer, sub="MOIC < 1.0×")
+        + ck_kpi_block("Sectors", f"{sectors}", sub="covered")
         + '</div>'
     )
 
@@ -155,13 +190,72 @@ def render_deals_library(
     sort_dir: str = "desc",
     moic_bucket: str = "",
 ) -> str:
+    """Render /library via the cycle-18 Insights-triplet helper.
+
+    The page work is just (1) filter the corpus, (2) sort the rows,
+    (3) build facet options, (4) render the table; the chrome
+    (search hero + filter sidebar + results header + chips +
+    Clear all + intro + KPI strip prelude) is composed by
+    ``render_insights_page``.
+    """
     from rcm_mc.ui._chartis_kit import (
-        chartis_shell, ck_table, ck_section_header,
+        render_insights_page, ck_table, ck_page_title,
     )
     from rcm_mc.ui.chartis._helpers import render_page_explainer
 
     deals = _get_all_seed_deals()
     rows = _build_rows(deals)
+
+    # Server-side filters
+    if sector_filter:
+        rows = [r for r in rows if r["sector"] == sector_filter]
+    if regime_filter:
+        rows = [r for r in rows if r["regime"] == regime_filter]
+    bucket_entry = _MOIC_BUCKETS.get(moic_bucket)
+    if bucket_entry is not None:
+        _, _pred = bucket_entry
+        rows = [r for r in rows if _pred(r.get("moic"))]
+
+    # Sort
+    _SORT_KEY = {
+        "entry_year": "entry_year", "moic": "moic", "ev_mm": "ev_mm",
+        "multiple": "multiple", "deal_name": "deal_name",
+    }
+    sk = _SORT_KEY.get(sort_by, "entry_year")
+    rev = sort_dir == "desc"
+    rows.sort(key=lambda r: (r[sk] is None, r[sk] or 0 if isinstance(r[sk], (int, float)) else str(r[sk] or "")), reverse=rev)
+
+    # Facet options derived from full corpus, not the filtered subset
+    all_sectors = sorted({d.get("sector") for d in deals if d.get("sector")})
+    all_regimes = ["expansion", "peak", "contraction", "recovery", "correction", "normalization"]
+
+    facets = [
+        {
+            "title": "By sector", "name": "sector", "input_type": "radio",
+            "options": [
+                {"label": "All sectors", "value": "", "checked": not sector_filter},
+                *[{"label": s, "value": s, "checked": s == sector_filter}
+                  for s in all_sectors],
+            ],
+        },
+        {
+            "title": "By regime", "name": "regime", "input_type": "radio",
+            "options": [
+                {"label": "All regimes", "value": "", "checked": not regime_filter},
+                *[{"label": r.title(), "value": r, "checked": r == regime_filter}
+                  for r in all_regimes],
+            ],
+        },
+        {
+            "title": "By MOIC", "name": "moic_bucket", "input_type": "radio",
+            "options": [
+                {"label": "All MOIC", "value": "", "checked": not moic_bucket},
+                *[{"label": label, "value": key, "checked": key == moic_bucket}
+                  for key, (label, _pred) in _MOIC_BUCKETS.items()],
+            ],
+        },
+    ]
+
     explainer = render_page_explainer(
         what=(
             "Browsable 655-deal healthcare-PE corpus — name, sponsor, "
@@ -184,65 +278,59 @@ def render_deals_library(
         ),
         page_key="library",
     )
-
-    # Build filter options
-    all_sectors = sorted({d.get("sector") for d in deals if d.get("sector")})
-    all_regimes = ["expansion", "peak", "contraction", "recovery", "correction", "normalization"]
-
-    # Apply server-side filters (client-side search handles the rest)
-    if sector_filter:
-        rows = [r for r in rows if r["sector"] == sector_filter]
-    if regime_filter:
-        rows = [r for r in rows if r["regime"] == regime_filter]
-    bucket_entry = _MOIC_BUCKETS.get(moic_bucket)
-    if bucket_entry is not None:
-        _, _pred = bucket_entry
-        rows = [r for r in rows if _pred(r.get("moic"))]
-
-    # Sort
-    _SORT_KEY = {
-        "entry_year": "entry_year", "moic": "moic", "ev_mm": "ev_mm",
-        "multiple": "multiple", "deal_name": "deal_name",
-    }
-    sk = _SORT_KEY.get(sort_by, "entry_year")
-    rev = sort_dir == "desc"
-    rows.sort(key=lambda r: (r[sk] is None, r[sk] or 0 if isinstance(r[sk], (int, float)) else str(r[sk] or "")), reverse=rev)
-
-    # Sector <select> options
-    sec_opts = '<option value="">All Sectors</option>' + "".join(
-        f'<option value="{_html.escape(s)}" {"selected" if s==sector_filter else ""}>{_html.escape(s)}</option>'
-        for s in all_sectors
-    )
-    reg_opts = '<option value="">All Regimes</option>' + "".join(
-        f'<option value="{r}" {"selected" if r==regime_filter else ""}>{r.title()}</option>'
-        for r in all_regimes
-    )
-    moic_opts = '<option value="">All MOIC</option>' + "".join(
-        f'<option value="{key}" {"selected" if key==moic_bucket else ""}>{label}</option>'
-        for key, (label, _pred) in _MOIC_BUCKETS.items()
-    )
-
-    filter_bar = f"""
-<form method="get" action="/library" class="ck-filters" style="margin-bottom:10px;">
-  <span class="ck-filter-label">Sector</span>
-  <select name="sector" class="ck-sel" onchange="this.form.submit()">{sec_opts}</select>
-  <span class="ck-filter-label">Regime</span>
-  <select name="regime" class="ck-sel" onchange="this.form.submit()">{reg_opts}</select>
-  <span class="ck-filter-label">MOIC</span>
-  <select name="moic_bucket" class="ck-sel" onchange="this.form.submit()">{moic_opts}</select>
-  <span class="ck-filter-label">Search</span>
-  <input type="text" name="q" value="{_html.escape(search)}" placeholder="deal name, sponsor..." class="ck-input" data-search-target="#deals-tbl">
-</form>"""
-
     kpis = _kpi_bar(deals, rows)
-    section = ck_section_header("DEAL CORPUS", "all healthcare PE transactions", len(rows))
-    table = ck_table(rows, _COLUMNS, caption="", sortable=True, id="deals-tbl")
+    table = ck_table(rows, _COLUMNS)
 
-    body = explainer + kpis + filter_bar + section + table
+    # Editorial H1 — gives the page a clear identity above the
+    # KPI strip + search hero. Meta line replaces the deprecated
+    # subtitle slot with corpus state and current sort.
+    page_title = ck_page_title(
+        "Deals Library",
+        eyebrow="DEAL CORPUS",
+        meta=(
+            f"{len(rows):,} deals · "
+            f"{len({r['sector'] for r in rows})} sectors · "
+            f"sorted by {sort_by} {sort_dir}"
+        ),
+    )
 
-    return chartis_shell(
-        body,
+    return render_insights_page(
+        action="/library",
+        state={
+            "sector": sector_filter,
+            "regime": regime_filter,
+            "moic_bucket": moic_bucket,
+            "q": search,
+            "sort_by": sort_by,
+            "sort_dir": sort_dir,
+        },
+        facets=facets,
+        count=f"{len(rows):,}",
+        count_label="Deals",
+        body_html=table,
         title="Deals Library",
         active_nav="/library",
-        subtitle=f"{len(rows):,} deals · {len({r['sector'] for r in rows})} sectors · sorted by {sort_by} {sort_dir}",
+        keyword_placeholder="Search deal name, sponsor, sector…",
+        section_title="All healthcare PE transactions",
+        section_eyebrow="DEAL CORPUS",
+        intro={
+            "eyebrow": "DEAL CORPUS",
+            "headline": "The healthcare-PE deal universe, cataloged.",
+            "italic_word": "cataloged",
+            "body": (
+                "Every deal we've ingested — name, sponsor, vintage, "
+                "EV/EBITDA, realized MOIC and IRR. Filter by sector, "
+                "regime, or MOIC bucket to assemble comparables."
+            ),
+        },
+        chip_label_overrides={
+            "regime": lambda v: v.title(),
+            "moic_bucket": lambda v: _MOIC_BUCKETS.get(v, (v, None))[0],
+        },
+        # Page header stack above the search bar:
+        #   1. ck_page_title (H1 + eyebrow + meta)
+        #   2. KPI strip
+        # Then the search hero, filter rail, and table below.
+        prelude_html=page_title + kpis,
+        prelude_position="before",
     )

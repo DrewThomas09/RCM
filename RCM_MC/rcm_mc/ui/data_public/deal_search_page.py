@@ -121,7 +121,10 @@ def render_deal_search(
     sort_by: str = "realized_moic",
     page: int = 1,
 ) -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui._chartis_kit import (
+        chartis_shell, ck_fmt_moic, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip, ck_section_header,
+    )
     from rcm_mc.ui.chartis._helpers import render_page_explainer
 
     corpus = _load_corpus()
@@ -166,12 +169,34 @@ def render_deal_search(
     p50_m  = sorted(moics)[len(moics) // 2] if moics else 0
     avg_ev = sum(evs) / len(evs) if evs else 0
 
+    # Cycle 44 — provenance + ck_fmt_* on the filtered KPIs.
+    p50_value = ck_provenance_tooltip(
+        "Filtered P50 MOIC",
+        f'<span class="mn" style="color:{_moic_color(p50_m)}">{ck_fmt_moic(p50_m)}</span>',
+        explainer=(
+            f"Median realized MOIC across the {total} deals "
+            f"matching the active filter. Color: green >2.5x, "
+            f"amber 1.5-2.5x, red below. Compares to corpus "
+            f"baseline at the top of /market-rates."
+        ),
+    )
+    results_value = ck_provenance_tooltip(
+        "Filter results",
+        ck_fmt_num(total),
+        explainer=(
+            f"Out of {len(corpus):,} corpus deals. Filters AND "
+            f"together (sector + year + EV + MOIC range + deal "
+            f"type) - drop a chip from the row above to widen "
+            f"the result set."
+        ),
+        inject_css=False,
+    )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Results", f'<span class="mn">{total:,}</span>', f"of {len(corpus):,} corpus deals")
-        + ck_kpi_block("P50 MOIC", f'<span class="mn" style="color:{_moic_color(p50_m)}">{p50_m:.2f}x</span>', "filtered set")
-        + ck_kpi_block("Avg EV", f'<span class="mn">${avg_ev:.0f}M</span>', "filtered set")
-        + ck_kpi_block("Page", f'<span class="mn">{page}/{total_pages}</span>', f"{PAGE_SIZE} per page")
+        + ck_kpi_block("Results", results_value, f"of {ck_fmt_num(len(corpus))} corpus")
+        + ck_kpi_block("P50 MOIC", p50_value, "filtered set")
+        + ck_kpi_block("Avg EV", f"${avg_ev:.0f}M", "filtered set")
+        + ck_kpi_block("Page", f"{page}/{total_pages}", f"{PAGE_SIZE} per page")
         + '</div>'
     )
 
@@ -371,4 +396,15 @@ def render_deal_search(
             + (f" · sector: {sector}" if sector else "")
             + f" · sorted by {sort_by.replace('_', ' ')}"
         ),
+        editorial_intro={
+            "eyebrow": "DEAL SEARCH",
+            "headline": "Where the corpus is searchable.",
+            "italic_word": "searchable",
+            "body": (
+                "Full-text search across the realized-deal corpus "
+                "with sector / vintage / EV / MOIC / payer-regime "
+                "filters. Sortable by any column - the table is the "
+                "primary surface, the KPI strip the summary."
+            ),
+        },
     )

@@ -378,12 +378,27 @@ Public-tape context. Fourteen public healthcare operators (HCA, THC, CYH, UHS, E
 - **Persistence**: SQLite via stdlib `sqlite3` — 17 tables, `busy_timeout=5000`, idempotent `CREATE TABLE IF NOT EXISTS` migrations.
 - **HTTP**: stdlib `http.server.ThreadingHTTPServer`. No Flask, FastAPI, or Docker required.
 - **Auth**: stdlib `hashlib.scrypt` + session cookies + CSRF + rate-limited login + unified audit log.
-- **Rendering**: server-side HTML string concatenation through one shared `shell()` in [`_ui_kit.py`](RCM_MC/rcm_mc/ui/_ui_kit.py). Scoped CSS (Chartis dark palette, `var(--accent) = #1F4E78`). One small vanilla-JS shim for CSRF-patching forms.
+- **Rendering**: server-side HTML through one shared editorial shell `chartis_shell()` in [`rcm_mc/ui/_chartis_kit.py`](RCM_MC/rcm_mc/ui/_chartis_kit.py). Editorial Chartis palette — navy `#0b2341`, teal `#155752`, parchment `#f5f1ea`, near-ink text `#1a2332` — driven by CSS variables in `static/chartis_tokens.css` + the v3 class library in `static/v3/chartis.css`. Typography: Source Serif 4 + Inter Tight + JetBrains Mono. Top-nav with five sections (Home / Pipeline / Diligence / Library / Research / Portfolio), sub-nav rail per section, auto-breadcrumbs, Cmd+K command palette over 69 surfaces, and a toast/flash system on every state-changing POST. The legacy dark "Bloomberg" shell (`_chartis_kit_legacy.py`, `_ui_kit.shell`) still resolves through the kit for back-compat but is no longer the default render path. CSRF-patching JS, user dropdown, recently-viewed deals, vim-style `g+letter` jumps, keyboard help (`?`) all ship as part of the shared shell.
 - **Monte Carlo**: Beasley-Springer-Moro inverse normal throughout, seeded where reproducibility matters. No `np.random.default_rng` leakage between modules.
 - **Curated priors**: hand-written YAML / Python dataclass tuples with refresh cadence documented in each module README. No ML black boxes.
 - **Test coverage**: 2,971 passing tests via stdlib `unittest` driven by pytest. Multi-step workflows hit a real HTTP server on a free port via `urllib.request` — no mocks of our own code.
 
 Design philosophy: **boring stack so it runs on corporate-firewalled laptops offline**. No network calls in the hot path.
+
+### v5 editorial UI surface
+
+The browser UI was rebuilt into an editorial format in 2026 — partner-facing pages now read like Chartis.com / NYT-style content (eyebrow + serif H1 + meta + body + table) rather than a Bloomberg-dark dashboard. The five-pillar top nav resolves to:
+
+| Section | What it surfaces |
+|---|---|
+| **Home** (`/app`) | Daily-driver Command Center — alerts, watchlist, pipeline funnel, focused-deal bar |
+| **Pipeline** | Deal sourcing, hospital screener, predictive screener, find-comps, conferences |
+| **Diligence** (`/diligence`) | RCM playbook — 24 surfaces grouped into 4 pillars (Profile & Health · Thesis & Playbook · Audit & Stress · Exit & Synthesis) |
+| **Library** | Deal corpus, methodology, metric glossary, data catalog, comparables, market rates |
+| **Research** | Notes, sector momentum, IRR dispersion, hold analysis, backtest |
+| **Portfolio** | Portfolio map, heatmap, risk scan, alerts, escalations, LP update |
+
+Editorial primitives in the kit: `ck_page_title`, `ck_section_intro` (opt-in tutorial mode), `ck_kpi_block`, `ck_provenance_tooltip`, `ck_empty_state`, `ck_search_hero`, `ck_filter_sidebar`, `ck_results_header`. The 69-surface command palette (Cmd+K) makes any tool one keystroke away.
 
 ---
 

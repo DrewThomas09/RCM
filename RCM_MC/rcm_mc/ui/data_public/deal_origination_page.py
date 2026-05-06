@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _pipeline_table(items) -> str:
@@ -11,7 +11,7 @@ def _pipeline_table(items) -> str:
     cols = [("Deal","left"),("Sector","left"),("Stage","center"),("Est EV ($M)","right"),
             ("Target EBITDA ($M)","right"),("Entry Mult","right"),("Prob","right"),
             ("Weighted EV ($M)","right"),("Source","left"),("Owner","center"),("Next Milestone","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     stage_c = {"Screening": text_dim, "Diligence": acc, "IC Review": warn, "LOI": pos, "Closing": pos}
     for i, p in enumerate(items):
@@ -19,21 +19,21 @@ def _pipeline_table(items) -> str:
         sc = stage_c.get(p.stage, text_dim)
         prob_c = pos if p.probability_pct >= 0.60 else (acc if p.probability_pct >= 0.40 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(p.deal_name[:30])}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(p.sector[:22])}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.stage)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.est_ev_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${p.target_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{p.entry_multiple_proposed:.2f}x</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.deal_name[:30])}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(p.sector[:22])}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.stage)}</span>""", align="center")}',
+            f'{ck_data_cell(f"""${p.est_ev_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${p.target_ebitda_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{p.entry_multiple_proposed:.2f}x""", align="right", mono=True, tone="acc", weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{prob_c};font-weight:700">{p.probability_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${p.weighted_ev_mm:,.2f}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(p.source)}</td>',
-            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(p.owner)}</td>',
+            f'{ck_data_cell(f"""${p.weighted_ev_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{_html.escape(p.source)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(p.owner)}""", align="center", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.next_milestone_date)}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _bankers_table(items) -> str:
@@ -41,25 +41,25 @@ def _bankers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Banker Firm","left"),("Type","left"),("Seen LTM","right"),("Engaged","right"),
             ("Won","right"),("Win Rate","right"),("Avg Deal ($M)","right"),("Relationship","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         rel_c = pos if b.relationship_score >= 80 else (acc if b.relationship_score >= 70 else text_dim)
         wr_c = pos if b.win_rate_pct >= 0.22 else (acc if b.win_rate_pct >= 0.18 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(b.banker_firm)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(b.banker_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{b.deals_seen_ltm}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.deals_engaged_ltm}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{b.deals_won_ltm}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.banker_firm)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(b.banker_type)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{b.deals_seen_ltm}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{b.deals_engaged_ltm}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{b.deals_won_ltm}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{wr_c};font-weight:600">{b.win_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${b.avg_deal_size_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""${b.avg_deal_size_mm:,.1f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rel_c};font-weight:700">{b.relationship_score}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _whitespace_table(items) -> str:
@@ -67,7 +67,7 @@ def _whitespace_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Sector","left"),("Active Targets","right"),("Platforms Deployed","right"),
             ("Concentration","right"),("Whitespace Score","right"),("Priority","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     pri_c = {"high": pos, "medium": acc, "low": text_dim}
     for i, w in enumerate(items):
@@ -75,16 +75,16 @@ def _whitespace_table(items) -> str:
         pc = pri_c.get(w.priority, text_dim)
         ws_c = pos if w.whitespace_score >= 75 else (acc if w.whitespace_score >= 55 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(w.sector)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{w.active_targets}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{w.platforms_deployed}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{w.concentration_pct * 100:.2f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(w.sector)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{w.active_targets}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{w.platforms_deployed}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{w.concentration_pct * 100:.2f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ws_c};font-weight:700">{w.whitespace_score}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(w.priority)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(w.priority)}</span>""", align="center")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _winloss_table(items) -> str:
@@ -92,21 +92,21 @@ def _winloss_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
     cols = [("Category","left"),("Won","right"),("Lost - Price","right"),("Lost - Strategy","right"),
             ("Lost - Relationship","right"),("Rate","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, wl in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(wl.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{wl.won}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">{wl.lost_price}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">{wl.lost_strategy}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">{wl.lost_seller_relationship}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{wl.pass_rate_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(wl.category)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{wl.won}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{wl.lost_price}""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""{wl.lost_strategy}""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""{wl.lost_seller_relationship}""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""{wl.pass_rate_pct * 100:.1f}%""", align="right", mono=True)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _velocity_table(items) -> str:
@@ -114,21 +114,21 @@ def _velocity_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Quarter","left"),("Screened","right"),("Diligenced","right"),
             ("LOI Signed","right"),("Closed","right"),("Conversion","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, v in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(v.quarter)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{v.deals_screened}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{v.deals_diligenced}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{v.loi_signed}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{v.closed}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{v.conversion_rate_pct * 100:.2f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(v.quarter)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{v.deals_screened}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{v.deals_diligenced}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{v.loi_signed}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{v.closed}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{v.conversion_rate_pct * 100:.2f}%""", align="right", mono=True, tone="acc", weight=600)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _funnel_svg(vel) -> str:
@@ -184,10 +184,10 @@ def render_deal_origination(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Deal Origination / M&amp;A Pipeline Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">Active pipeline · probability-weighted EV · banker relationship matrix · sector whitespace · sourcing velocity — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Deal Origination / M&amp;A Pipeline Tracker</h1>
+    <p class="ck-page-sub">Active pipeline · probability-weighted EV · banker relationship matrix · sector whitespace · sourcing velocity — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sourcing Funnel — Latest Quarter</div>{funnel_svg}</div>
@@ -206,4 +206,9 @@ def render_deal_origination(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Deal Origination", active_nav="/deal-origination")
+    return chartis_shell(body, "Deal Origination", active_nav="/deal-origination",
+        editorial_intro={
+            "eyebrow": "DEAL ORIGINATION",
+            "headline": "What the deal origination page reveals on this deal.",
+            "italic_word": "reveals",
+        })

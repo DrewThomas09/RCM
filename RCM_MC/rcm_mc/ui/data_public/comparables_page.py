@@ -337,10 +337,10 @@ def render_comparables(
     realized_n = sum(1 for d in corpus if d.get("realized_moic") is not None)
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Corpus Size", f'<span class="mn">{total_corpus}</span>', "total deals")
-        + ck_kpi_block("Realized Deals", f'<span class="mn">{realized_n}</span>', "with MOIC data")
-        + ck_kpi_block("Comparables Found", f'<span class="mn">{len(comps)}</span>', subtitle_mode)
-        + ck_kpi_block("Sectors Covered", f'<span class="mn">{len(_all_sectors(corpus))}</span>', "in corpus")
+        + ck_kpi_block("Corpus Size", f"{total_corpus}", "total deals")
+        + ck_kpi_block("Realized Deals", f"{realized_n}", "with MOIC data")
+        + ck_kpi_block("Comparables Found", f"{len(comps)}", subtitle_mode)
+        + ck_kpi_block("Sectors Covered", f"{len(_all_sectors(corpus))}", "in corpus")
         + '</div>'
     )
 
@@ -379,4 +379,15 @@ def render_comparables(
             (f" · EV ${ev_mm:,.0f}M" if ev_mm else "") +
             entry_multiple_str
         ) if has_query else f"{total_corpus} deals · {realized_n} realized",
+        editorial_intro={
+            "eyebrow": "COMPARABLES",
+            "headline": "Which deals look like this one.",
+            "italic_word": "look",
+            "body": (
+                "Profile-distance match against the realized corpus "
+                "— sector, size, entry multiple, payer mix. The "
+                "bands you see at MOIC P25/P50/P75 anchor what "
+                "good and bad outcomes look like for this archetype."
+            ),
+        },
     )

@@ -315,4 +315,9 @@ def render_sponsor_league(
         title="Sponsor League Table",
         active_nav="/sponsor-league",
         subtitle=f"{len(records)} sponsors ranked · ≥{min_deals} corpus deals · sorted by {sort_by}",
+        editorial_intro={
+            "eyebrow": "SPONSOR LEAGUE TABLE",
+            "headline": "What the sponsor league table reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

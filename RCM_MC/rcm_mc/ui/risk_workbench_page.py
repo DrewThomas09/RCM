@@ -74,7 +74,7 @@ from ..diligence.working_capital import (
     compute_normalized_peg, detect_pre_close_pull_forward,
     estimate_dnfb,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 
 
 # ── Input dataclass ────────────────────────────────────────────────
@@ -1239,7 +1239,12 @@ def render_risk_workbench(inp: WorkbenchInput) -> str:
         f'</div>'
     )
     body = (
-        hero
+        ck_page_title(
+            "Risk Workbench",
+            eyebrow="RCM DILIGENCE",
+            meta="9-panel risk panorama · counterfactual advisor below",
+        )
+        + hero
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
         + _panel_bankruptcy_survivor(inp)
         + _panel_regulatory(inp)

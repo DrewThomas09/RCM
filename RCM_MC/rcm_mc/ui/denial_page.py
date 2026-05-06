@@ -7,7 +7,9 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -22,20 +24,35 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
     total_impact = summary.get("total_annual_impact", 0)
     denial_rate = summary.get("current_denial_rate", 0)
     target_rate = summary.get("target_denial_rate", 0)
+    # Cycle 50 — port to ck_kpi_block + provenance.
+    current_value = ck_provenance_tooltip(
+        "Current denial rate",
+        f'<span style="color:{PALETTE["negative"]};">{denial_rate:.1f}%</span>',
+        explainer=(
+            "Initial denial rate (IDR) = denied claims / total "
+            "claims submitted. Industry average is 8-12%; above "
+            "15% flags a roll-up audit-recovery opportunity. "
+            "The drivers below decompose by root cause."
+        ),
+    )
+    impact_value = ck_provenance_tooltip(
+        "Recoverable annual revenue",
+        f"${total_impact/1e6:.1f}M",
+        explainer=(
+            "Sum of EBITDA recovery opportunities across the "
+            "identified drivers, weighted by historical appeal-"
+            "success rates. Conservative; the 'addressable' "
+            "bucket only - not the gross denial dollar volume."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["negative"]};">'
-        f'{denial_rate:.1f}%</div>'
-        f'<div class="cad-kpi-label">Current Denial Rate</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["positive"]};">'
-        f'{target_rate:.1f}%</div>'
-        f'<div class="cad-kpi-label">Target Denial Rate</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'${total_impact/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Recoverable Annual Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(drivers)}</div>'
-        f'<div class="cad-kpi-label">Root Causes Identified</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("Current Denial Rate", current_value, "initial denial rate")
+        + ck_kpi_block("Target Denial Rate", f"{target_rate:.1f}%", "post-uplift goal")
+        + ck_kpi_block("Recoverable Revenue", impact_value, "annual EBITDA")
+        + ck_kpi_block("Root Causes", ck_fmt_num(len(drivers)), "drivers identified")
+        + '</div>'
     )
 
     # Drivers table
@@ -134,4 +151,16 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
         body, f"Denial Drivers — {html.escape(deal_name)}",
         active_nav="/analysis",
         subtitle=f"Current: {denial_rate:.1f}% | Recoverable: ${total_impact/1e6:.1f}M/year",
+        editorial_intro={
+            "eyebrow": "DENIAL DRIVERS",
+            "headline": "Where the denials actually come from.",
+            "italic_word": "actually",
+            "body": (
+                "Decompose this hospital's denial rate by payer, "
+                "denial code, and CARC category. Recoverable "
+                "EBITDA estimate weights each driver by historical "
+                "appeal-success rates - the addressable bucket, "
+                "not the gross denial rate."
+            ),
+        },
     )

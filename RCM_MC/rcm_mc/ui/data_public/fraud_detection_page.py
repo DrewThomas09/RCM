@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _billing_table(items) -> str:
@@ -10,7 +10,7 @@ def _billing_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Provider","left"),("Specialty","left"),("Pattern","left"),("Anomaly Score","right"),
             ("Peer Percentile","right"),("Exposure ($k)","right"),("Severity","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sev_c = {"critical": neg, "high": neg, "medium": warn, "low": text_dim}
     for i, b in enumerate(items):
@@ -18,17 +18,17 @@ def _billing_table(items) -> str:
         sc = sev_c.get(b.severity, text_dim)
         s_c = neg if b.anomaly_score >= 85 else (warn if b.anomaly_score >= 70 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(b.provider_id)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(b.specialty)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.provider_id)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(b.specialty)}""", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(b.billing_pattern)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{b.anomaly_score}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:600">P{b.peer_comparison_percentile}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${b.dollar_exposure_k:,.1f}</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.severity)}</span></td>',
+            f'{ck_data_cell(f"""P{b.peer_comparison_percentile}""", align="right", mono=True, tone="neg", weight=600)}',
+            f'{ck_data_cell(f"""${b.dollar_exposure_k:,.1f}""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.severity)}</span>""", align="center")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _upcoding_table(items) -> str:
@@ -36,23 +36,23 @@ def _upcoding_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("CPT","left"),("Description","left"),("Platform %","right"),("Peer %","right"),
             ("Delta","right"),("Volume","right"),("Clawback ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, u in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         d_c = neg if u.delta_pp >= 0.15 else (warn if u.delta_pp >= 0.10 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(u.cpt_code)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(u.cpt_code)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(u.description)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">{u.platform_pct_high_level * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{u.peer_pct_high_level * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{u.platform_pct_high_level * 100:.1f}%""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""{u.peer_pct_high_level * 100:.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">+{u.delta_pp * 100:.1f}pp</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{u.annual_volume:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${u.potential_clawback_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{u.annual_volume:,}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${u.potential_clawback_mm:,.2f}""", align="right", mono=True, tone="neg", weight=700)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _referrals_table(items) -> str:
@@ -60,23 +60,23 @@ def _referrals_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Referring Provider","left"),("Referred To","left"),("Referrals LTM","right"),
             ("Ownership Overlap","center"),("Stark Exception","left"),("AKS Risk Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, r in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         o_c = neg if r.ownership_overlap else pos
         r_c = neg if r.aks_risk_score >= 75 else (warn if r.aks_risk_score >= 55 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(r.referring_provider)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(r.referred_to)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{r.referral_count_ltm:,}</td>',
+            f'{ck_data_cell(f"""{_html.escape(r.referring_provider)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(r.referred_to)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{r.referral_count_ltm:,}""", align="right", mono=True)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{o_c};font-weight:700">{"YES" if r.ownership_overlap else "NO"}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.stark_exception)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{r.aks_risk_score}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _fingerprints_table(items) -> str:
@@ -84,21 +84,21 @@ def _fingerprints_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; acc = P["accent"]
     cols = [("Pattern","left"),("Description","left"),("Claims Flagged","right"),
             ("Dollar Impact ($M)","right"),("Payback Likelihood","right"),("Remediation","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(f.pattern)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(f.pattern)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.description)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{f.claims_flagged}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${f.dollar_impact_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{f.likelihood_of_payback * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{f.claims_flagged}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${f.dollar_impact_mm:,.2f}""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""{f.likelihood_of_payback * 100:.0f}%""", align="right", mono=True, tone="acc")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.remediation)}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _geo_table(items) -> str:
@@ -106,43 +106,43 @@ def _geo_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]
     cols = [("ZIP","left"),("Provider Count","right"),("Volume vs Pop (norm)","right"),
             ("Cluster Severity","center"),("Service Line","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sev_c = {"severe": neg, "moderate": warn, "mild": text_dim}
     for i, g in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         sc = sev_c.get(g.cluster_severity, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(g.zip_code)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{g.provider_count}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">{g.volume_vs_pop_norm:.2f}x</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(g.cluster_severity)}</span></td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(g.service_line)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(g.zip_code)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{g.provider_count}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{g.volume_vs_pop_norm:.2f}x""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(g.cluster_severity)}</span>""", align="center")}',
+            f'{ck_data_cell(f"""{_html.escape(g.service_line)}""", mono=True, tone="dim")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _events_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; pos = P["positive"]
     cols = [("Event","left"),("Date","left"),("Type","center"),("Resolution","left"),("Financial Impact ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         r_c = pos if e.resolution.startswith("dismissed") or e.resolution.startswith("closed") or "declined" in e.resolution else text_dim
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(e.event)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(e.event)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{_html.escape(e.date)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(e.type)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{r_c}">{_html.escape(e.resolution)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if e.financial_impact_mm > 0 else text_dim}">${e.financial_impact_mm:,.3f}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def render_fraud_detection(params: dict = None) -> str:
@@ -177,10 +177,10 @@ def render_fraud_detection(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Fraud / Waste / Abuse Detection</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">Billing anomaly surveillance · upcoding risk · Stark/AKS referral patterns · claim fingerprints · geographic anomalies · compliance events — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Fraud / Waste / Abuse Detection</h1>
+    <p class="ck-page-sub">Billing anomaly surveillance · upcoding risk · Stark/AKS referral patterns · claim fingerprints · geographic anomalies · compliance events — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
@@ -204,4 +204,9 @@ def render_fraud_detection(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "FWA Detection", active_nav="/fraud-detection")
+    return chartis_shell(body, "FWA Detection", active_nav="/fraud-detection",
+        editorial_intro={
+            "eyebrow": "FRAUD DETECTION",
+            "headline": "What the fraud detection page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -382,4 +382,14 @@ def render_investability(
             ("Investability", None),
         ],
         subtitle=f"{label} · composite {score}/100 · exit {exit_verdict.replace('_', ' ')}",
+        editorial_intro={
+            "eyebrow": "INVESTABILITY",
+            "headline": "Whether the deal earns the partner's hour.",
+            "italic_word": "earns",
+            "body": (
+                "A 0-100 composite that reads like a verdict — the "
+                "five inputs and their weights are right below the "
+                "score so the partner can see what would change it."
+            ),
+        },
     )

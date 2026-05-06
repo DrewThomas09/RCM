@@ -19,7 +19,11 @@ version: "3.9"
 #   ADMIN_PASSWORD=StrongPass!12
 #   ANTHROPIC_API_KEY=...          # optional, /settings/ai
 #   RCM_MC_PHI_MODE=disallowed     # recommended (shows banner)
-#   RCM_MC_HOMEPAGE=dashboard      # recommended (/ → /dashboard)
+#   RCM_MC_HOMEPAGE=app            # v5 editorial — "/" → "/app"
+#                                  # ("dashboard" was the legacy
+#                                  # value before the v5 rework;
+#                                  # /dashboard is being sunsetted)
+#   CHARTIS_UI_V2=1                # explicit — pin editorial UI on
 
 services:
   rcm-mc:
@@ -40,7 +44,16 @@ services:
       - RCM_MC_AUTH=${RCM_MC_AUTH:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - RCM_MC_PHI_MODE=${RCM_MC_PHI_MODE:-disallowed}
-      - RCM_MC_HOMEPAGE=${RCM_MC_HOMEPAGE:-dashboard}
+      # v5 editorial UI: "/" routes authenticated users to /app
+      # (the editorial Command Center). "dashboard" was the legacy
+      # default — /dashboard is the legacy chrome and is being
+      # sunsetted as the editorial pages roll out.
+      - RCM_MC_HOMEPAGE=${RCM_MC_HOMEPAGE:-app}
+      # Pin editorial UI on. Both _chartis_kit.UI_V2_ENABLED and
+      # brand._active_palette default to "1" since the v5 rollout,
+      # but setting it explicitly here makes the deploy spec
+      # self-documenting.
+      - CHARTIS_UI_V2=${CHARTIS_UI_V2:-1}
       - RCM_MC_SESSION_IDLE_MINUTES=${RCM_MC_SESSION_IDLE_MINUTES:-30}
     restart: unless-stopped
     logging:

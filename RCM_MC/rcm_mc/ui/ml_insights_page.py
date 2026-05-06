@@ -13,7 +13,14 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell,
+    ck_eyebrow,
+    ck_fmt_num,
+    ck_fmt_pct,
+    ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -59,19 +66,38 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
     n_distressed = sum(1 for d in distressed_list if d["distress_prob"] > 0.5)
     avg_margin = float(hcris_df.get("operating_margin", pd.Series(dtype=float)).dropna().median()) if "operating_margin" in df_clustered.columns else 0
 
+    # Cycle 39 — port hero KPI strip + add provenance on AUC and
+    # distress count.
+    auc_value = ck_provenance_tooltip(
+        "Distress model AUC",
+        f"{auc:.3f}",
+        explainer=(
+            "Area under the ROC curve for the gradient-boosted "
+            "distress predictor on a held-out test split. >0.85 "
+            "is industry-good; <0.75 means the model isn't "
+            "earning its keep against simpler alternatives."
+        ),
+    )
+    distress_value = ck_provenance_tooltip(
+        "High distress risk",
+        f"{n_distressed}",
+        explainer=(
+            "Hospitals with predicted distress probability above "
+            "the model's tuned threshold (calibrated to maximize "
+            "F1 on the holdout). These are screening targets "
+            "for opportunity-zone or turn-around theses, not "
+            "verdicts."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_hospitals:,}</div>'
-        f'<div class="cad-kpi-label">Hospitals Analyzed</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_clusters}</div>'
-        f'<div class="cad-kpi-label">Archetypes</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-neg);">{n_distressed}</div>'
-        f'<div class="cad-kpi-label">High Distress Risk</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{auc:.3f}</div>'
-        f'<div class="cad-kpi-label">Distress Model AUC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Median Op Margin</div></div>'
-        f'</div>'
+        f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
+        + ck_kpi_block("Hospitals Analyzed", ck_fmt_num(n_hospitals), "HCRIS corpus")
+        + ck_kpi_block("Archetypes", ck_fmt_num(n_clusters), "k-means clusters")
+        + ck_kpi_block("High Distress Risk", distress_value, "predicted >threshold")
+        + ck_kpi_block("Distress Model AUC", auc_value, "held-out test")
+        + ck_kpi_block("Median Op Margin", ck_fmt_pct(avg_margin), "credible filings")
+        + f'</div>'
     )
 
     # ── Cluster archetypes ──
@@ -240,6 +266,17 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             f"{n_hospitals:,} hospitals | {n_clusters} archetypes | "
             f"Distress AUC {auc:.3f} | {n_distressed} high-risk"
         ),
+        editorial_intro={
+            "eyebrow": "ML INSIGHTS",
+            "headline": "What the model sees that the spreadsheet misses.",
+            "italic_word": "sees",
+            "body": (
+                "Hospital archetypes, distress prediction, and RCM "
+                "opportunity scoring across the full HCRIS corpus. "
+                "Each model carries its training cutoff and AUC so "
+                "the partner sees the ground beneath each call."
+            ),
+        },
     )
 
 
@@ -375,42 +412,42 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'{turnaround_html}</div>'
         )
 
-    # ── KPIs ──
+    # ── KPIs ── cycle 39 ports to ck_kpi_block.
     kpi_parts = []
     if cluster_result:
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value" style="font-size:14px;">'
-            f'{_html.escape(cluster_result.label[:25])}</div>'
-            f'<div class="cad-kpi-label">Archetype</div></div>'
-        )
+        kpi_parts.append(ck_kpi_block(
+            "Archetype",
+            _html.escape(cluster_result.label[:25]),
+            "k-means cluster",
+        ))
     if distress_result:
         prob = distress_result.distress_probability
         prob_color = "var(--cad-pos)" if prob < 0.15 else ("var(--cad-warn)" if prob < 0.35 else "var(--cad-neg)")
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{prob_color};">'
-            f'{prob:.1%}</div>'
-            f'<div class="cad-kpi-label">Distress Risk</div></div>'
-        )
+        kpi_parts.append(ck_kpi_block(
+            "Distress Risk",
+            f'<span style="color:{prob_color};">{prob:.1%}</span>',
+            "predicted probability",
+        ))
     if rcm_result:
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value">'
-            f'{_fmt_money(rcm_result.risk_adjusted_opportunity)}</div>'
-            f'<div class="cad-kpi-label">RCM Opportunity</div></div>'
-        )
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value">'
-            f'{_grade_badge(rcm_result.grade)}</div>'
-            f'<div class="cad-kpi-label">Opportunity Grade</div></div>'
-        )
-        kpi_parts.append(
-            f'<div class="cad-kpi"><div class="cad-kpi-value">'
-            f'{rcm_result.projected_margin:.1%}</div>'
-            f'<div class="cad-kpi-label">Projected Margin</div></div>'
-        )
+        kpi_parts.append(ck_kpi_block(
+            "RCM Opportunity",
+            _fmt_money(rcm_result.risk_adjusted_opportunity),
+            "risk-adjusted uplift",
+        ))
+        kpi_parts.append(ck_kpi_block(
+            "Opportunity Grade",
+            _grade_badge(rcm_result.grade),
+            "tiered scoring",
+        ))
+        kpi_parts.append(ck_kpi_block(
+            "Projected Margin",
+            f"{rcm_result.projected_margin:.1%}",
+            "post-RCM uplift",
+        ))
 
     if kpi_parts:
         sections.append(
-            f'<div class="cad-kpi-grid" style="grid-template-columns:repeat({len(kpi_parts)},1fr);">'
+            f'<div class="ck-kpi-grid" style="grid-template-columns:repeat({len(kpi_parts)},1fr);">'
             + "".join(kpi_parts) + '</div>'
         )
 
@@ -574,4 +611,15 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
         body,
         f"ML Analysis — {_html.escape(name)}",
         subtitle=f"CCN {_html.escape(ccn)} | Clustering + Distress + RCM Opportunity",
+        editorial_intro={
+            "eyebrow": "HOSPITAL ML",
+            "headline": "What the model says about this one hospital.",
+            "italic_word": "says",
+            "body": (
+                "Cluster archetype, distress probability, and RCM "
+                "opportunity score for this CCN. Each panel surfaces "
+                "the model's confidence so the partner can weigh the "
+                "signal against their own diligence."
+            ),
+        },
     )

@@ -134,7 +134,13 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
             '</div>'
         )
         return chartis_shell(body, "Deal Comparison",
-                        subtitle="Side-by-side deal analysis")
+                        subtitle="Side-by-side deal analysis",
+            editorial_intro={
+                "eyebrow": "DEAL COMPARISON",
+                "headline": "Where these deals diverge.",
+                "italic_word": "diverge",
+                "body": "Pick deals from the portfolio to compare side-by-side.",
+            })
 
     header_cells = "".join(
         f'<th>{_esc(p.deal_name or p.deal_id)}</th>'
@@ -216,6 +222,18 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
     return chartis_shell(
         body, "Deal Comparison",
         subtitle=f"Comparing {len(packets)} deals",
+        editorial_intro={
+            "eyebrow": "DEAL COMPARISON",
+            "headline": "Where these deals diverge.",
+            "italic_word": "diverge",
+            "body": (
+                "Side-by-side metrics across the selected deals "
+                "with a radar chart for visual divergence. Use "
+                "this when picking which of two competing deals "
+                "to advance, or to see how a deal compares to a "
+                "recently closed peer."
+            ),
+        },
     )
 
 
@@ -327,4 +345,15 @@ def render_screen_page(
     body = f'{form}{results_block}'
     n = len(results) if results else 0
     sub = f"{n} matches from {total_scanned:,} hospitals" if results else f"Screen {total_scanned:,} HCRIS hospitals by metrics"
-    return chartis_shell(body, "Hospital Screener", active_nav="/screen", subtitle=sub)
+    return chartis_shell(body, "Hospital Screener", active_nav="/screen", subtitle=sub,
+        editorial_intro={
+            "eyebrow": "HOSPITAL SCREENER",
+            "headline": "Where the universe filters down to candidates.",
+            "italic_word": "filters",
+            "body": (
+                "Filter the HCRIS universe by bed count, revenue, "
+                "margins, payer mix, and ML predictions. Use "
+                "this to source new deals or to find peers for "
+                "an existing target."
+            ),
+        })

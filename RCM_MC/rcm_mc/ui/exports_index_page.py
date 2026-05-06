@@ -112,7 +112,10 @@ def _deal_format_guide() -> str:
 
 
 def render_exports_index(db_path: str) -> str:
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
 
     header = _wc.page_header(
         "Downloads",
@@ -140,8 +143,39 @@ def render_exports_index(db_path: str) -> str:
         ),
     )
 
+    # Cycle 47 — KPI strip with provenance.
+    portfolio_value = ck_provenance_tooltip(
+        "Portfolio-scope exports",
+        ck_fmt_num(len(_PORTFOLIO_EXPORTS)),
+        explainer=(
+            "Exports that operate across the active portfolio - "
+            "cohort summaries, alerts CSVs, watchlists. For "
+            "deal-specific exports (IC memo, bridge, Monte "
+            "Carlo) open a deal and use its export menu."
+        ),
+    )
+    corpus_value = ck_provenance_tooltip(
+        "Corpus browsers",
+        ck_fmt_num(len(_DATA_EXPORTS)),
+        explainer=(
+            "Read-only exports of the realized-deal corpus + "
+            "public-data inputs (HCRIS hospitals, IRS 990 "
+            "filings, sector reference data). These are the "
+            "canonical sources the platform calibrates against."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Portfolio Exports", portfolio_value, "across active deals")
+        + ck_kpi_block("Corpus Browsers", corpus_value, "public-data sources")
+        + '</div>'
+    )
+
     inner = (
-        header
+        ck_eyebrow("Downloads")
+        + kpi_strip
+        + header
         + _deal_format_guide()
         + portfolio_card
         + corpus_card
@@ -151,4 +185,16 @@ def render_exports_index(db_path: str) -> str:
         + _wc.responsive_container(inner)
         + _wc.sortable_table_js()
     )
-    return chartis_shell(body, "Downloads", active_nav="/exports")
+    return chartis_shell(body, "Downloads", active_nav="/exports",
+        editorial_intro={
+            "eyebrow": "DOWNLOADS",
+            "headline": "Every export in one place.",
+            "italic_word": "every",
+            "body": (
+                "Portfolio-scope exports here, deal-specific "
+                "exports inside each deal page. CSV exports are "
+                "defanged for Excel formula injection; JSON "
+                "exports are the canonical machine-readable "
+                "format."
+            ),
+        })

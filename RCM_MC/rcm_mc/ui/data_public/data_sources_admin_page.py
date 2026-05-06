@@ -8,7 +8,7 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_section_header,
+    P, chartis_shell, ck_kpi_block, ck_section_header, ck_data_cell,
 )
 
 
@@ -55,7 +55,7 @@ def _sources_table(sources) -> str:
         f'font-size:10px;color:{text_dim};letter-spacing:0.05em;white-space:nowrap">{col}</th>'
         for col, align in header_cols
     )
-    header = f'<thead><tr style="background:{bg}">{ths}</tr></thead>'
+    header = f'<thead><tr>{ths}</tr></thead>'
 
     trs = []
     for i, s in enumerate(sources):
@@ -68,19 +68,19 @@ def _sources_table(sources) -> str:
             if s.url else _html.escape(s.name)
         )
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{name_cell}</td>',
+            f'{ck_data_cell(f"""{name_cell}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{type_color}">{_html.escape(s.source_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{rec_str}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(s.last_updated)}</td>',
-            f'<td style="text-align:left;padding:5px 10px">{_status_badge(s.status)}</td>',
+            f'{ck_data_cell(f"""{rec_str}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{_html.escape(s.last_updated)}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{_status_badge(s.status)}""")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:280px">{_html.escape(s.coverage_notes)}</td>',
         ]
         trs.append(f'<tr style="background:{row_bg}">{"".join(cells)}</tr>')
 
     body = f'<tbody>{"".join(trs)}</tbody>'
     return (
-        f'<div style="overflow-x:auto;margin-top:12px">'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+        f'<div class="ck-data-table-scroll">'
+        f'<table class="ck-data-table">'
         f'{header}{body}</table></div>'
     )
 
@@ -101,24 +101,24 @@ def _scraper_table(scrapers) -> str:
         f'font-size:10px;color:{text_dim};letter-spacing:0.05em">{col}</th>'
         for col, align in header_cols
     )
-    header = f'<thead><tr style="background:{bg}">{ths}</tr></thead>'
+    header = f'<thead><tr>{ths}</tr></thead>'
 
     trs = []
     for i, s in enumerate(scrapers):
         row_bg = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(s.name)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.name)}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(s.module)}</td>',
-            f'<td style="text-align:left;padding:5px 10px">{_status_badge(s.status)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(s.last_run)}</td>',
+            f'{ck_data_cell(f"""{_status_badge(s.status)}""")}',
+            f'{ck_data_cell(f"""{_html.escape(s.last_run)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{P["negative"] if s.error_msg else text_dim}">{_html.escape(s.error_msg) if s.error_msg else "—"}</td>',
         ]
         trs.append(f'<tr style="background:{row_bg}">{"".join(cells)}</tr>')
 
     body = f'<tbody>{"".join(trs)}</tbody>'
     return (
-        f'<div style="overflow-x:auto;margin-top:12px">'
-        f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+        f'<div class="ck-data-table-scroll">'
+        f'<table class="ck-data-table">'
         f'{header}{body}</table></div>'
     )
 
@@ -238,11 +238,11 @@ def render_data_sources_admin() -> str:
     h3_style = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
+<div class="ck-page-wrap">
 
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Data Sources Admin</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Data Sources Admin</h1>
+    <p class="ck-page-sub">
       Corpus inventory, CMS public datasets, scraper status — {result.total_seed_deals:,} deals across {cov.sector_count} sectors
     </p>
   </div>
@@ -281,4 +281,9 @@ def render_data_sources_admin() -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Data Sources Admin", active_nav="/admin/data-sources")
+    return chartis_shell(body, "Data Sources Admin", active_nav="/admin/data-sources",
+        editorial_intro={
+            "eyebrow": "DATA SOURCES ADMIN",
+            "headline": "What the data sources admin page reveals on this deal.",
+            "italic_word": "reveals",
+        })

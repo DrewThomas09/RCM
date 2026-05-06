@@ -44,6 +44,7 @@ def shell(
     subtitle: Optional[str] = None,
     extra_css: str = "",
     extra_js: str = "",
+    active_nav: Optional[str] = None,
     generated: bool = True,  # noqa: ARG001 — kept for signature parity
     omit_h1: bool = False,  # noqa: ARG001 — kept for signature parity
 ) -> str:
@@ -71,6 +72,7 @@ def shell(
         subtitle=subtitle or "",
         extra_css=extra_css,
         extra_js=extra_js,
+        active_nav=active_nav,
     )
 
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _benchmark_svg(benchmarks) -> str:
@@ -151,19 +151,19 @@ def _provider_table(providers) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         pcolor = pctile_colors.get(p.percentile, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(p.specialty)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{p.fte_count:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{p.annual_wrvu_per_fte:,.0f}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pcolor};border:1px solid {pcolor};border-radius:2px">{_html.escape(p.percentile)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.total_annual_wrvu:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${p.total_comp_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.specialty)}""", mono=True)}',
+            f'{ck_data_cell(f"""{p.fte_count:.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{p.annual_wrvu_per_fte:,.0f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pcolor};border:1px solid {pcolor};border-radius:2px">{_html.escape(p.percentile)}</span>""")}',
+            f'{ck_data_cell(f"""{p.total_annual_wrvu:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${p.total_comp_mm:,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${p.collections_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.comp_to_collection_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{p.comp_to_collection_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -181,16 +181,16 @@ def _utilization_table(utilization) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         scolor = status_colors.get(u.status, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(u.metric)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{u.value:,.1f}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim}">{_html.escape(u.unit)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{u.benchmark:,.1f}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{scolor};border:1px solid {scolor};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{u.status}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(u.metric)}""", mono=True)}',
+            f'{ck_data_cell(f"""{u.value:,.1f}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(u.unit)}""", tone="dim")}',
+            f'{ck_data_cell(f"""{u.benchmark:,.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{scolor};border:1px solid {scolor};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{u.status}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -208,17 +208,17 @@ def _capacity_table(scenarios) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         ec = pos if s.implied_ev_uplift_mm >= 0 else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.productivity_pct_of_p75 * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.implied_wrvu_lift_pct * 100:+.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.implied_revenue_lift_mm:+,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.implied_ebitda_lift_mm:+,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True)}',
+            f'{ck_data_cell(f"""{s.productivity_pct_of_p75 * 100:.0f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.implied_wrvu_lift_pct * 100:+.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.implied_revenue_lift_mm:+,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.implied_ebitda_lift_mm:+,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ec};font-weight:600">${s.implied_ev_uplift_mm:+,.1f}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -276,18 +276,18 @@ def render_physician_productivity(params: dict = None) -> str:
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
-    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
+<div class="ck-page-wrap">
 
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Physician Productivity Analyzer</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Physician Productivity Analyzer</h1>
+    <p class="ck-page-sub">
       wRVU benchmarking vs MGMA/AMGA, utilization metrics, and capacity-to-EV scenarios — {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
@@ -335,4 +335,9 @@ def render_physician_productivity(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Physician Productivity", active_nav="/physician-productivity")
+    return chartis_shell(body, "Physician Productivity", active_nav="/physician-productivity",
+        editorial_intro={
+            "eyebrow": "PHYSICIAN PRODUCTIVITY",
+            "headline": "What the physician productivity page reveals on this deal.",
+            "italic_word": "reveals",
+        })

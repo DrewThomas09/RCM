@@ -12,7 +12,10 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 from .regression_page import _add_computed_features, _fmt_num, _COLLINEAR_PAIRS
 
@@ -157,19 +160,37 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
     margin = hospital.get("operating_margin", 0)
     occ = hospital.get("occupancy_rate", 0)
 
+    # Cycle 50 — port to ck_kpi_block + provenance.
+    margin_value = ck_provenance_tooltip(
+        "Operating margin",
+        ck_fmt_pct(margin),
+        explainer=(
+            "Net patient revenue minus operating expenses, "
+            "divided by net patient revenue. Healthcare hospital "
+            "median is roughly 2-4%; below 0% flags structural "
+            "distress unless the hospital is intentionally "
+            "trading margin for share."
+        ),
+    )
+    flags_value = ck_provenance_tooltip(
+        "Statistical outlier flags",
+        ck_fmt_num(len(outlier_flags)),
+        explainer=(
+            "Metrics where this hospital is more than 2 standard "
+            "deviations from the sector median - either a real "
+            "operational anomaly worth investigating or a data-"
+            "quality artifact worth disqualifying."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_val(beds, "count")}</div>'
-        f'<div class="cad-kpi-label">Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_val(rev, "dollars")}</div>'
-        f'<div class="cad-kpi-label">Net Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Op Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{occ:.1%}</div>'
-        f'<div class="cad-kpi-label">Occupancy</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(outlier_flags)}</div>'
-        f'<div class="cad-kpi-label">Outlier Flags</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("Beds", _fmt_val(beds, "count"), "licensed")
+        + ck_kpi_block("Net Revenue", _fmt_val(rev, "dollars"), "annual NPR")
+        + ck_kpi_block("Op Margin", margin_value, "EBIT/Revenue")
+        + ck_kpi_block("Occupancy", ck_fmt_pct(occ), "of licensed beds")
+        + ck_kpi_block("Outlier Flags", flags_value, ">=2 stdev from median")
+        + '</div>'
     )
 
     # Regression residuals — run quick regressions for key targets
@@ -263,4 +284,17 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
             f"CCN {_html.escape(ccn)} | {_html.escape(county)}, {_html.escape(state)} | "
             f"{len(outlier_flags)} outlier flags"
         ),
+        editorial_intro={
+            "eyebrow": "STATISTICAL PROFILE",
+            "headline": "Where this hospital sits in the corpus.",
+            "italic_word": "sits",
+            "body": (
+                "Per-metric percentile ranks against the HCRIS "
+                "corpus, with outlier flags where this hospital "
+                "is more than 2 standard deviations from the "
+                "sector median. Use this as the deal-day "
+                "anchor on whether the operations are typical "
+                "or extraordinary."
+            ),
+        },
     )

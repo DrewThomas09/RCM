@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _modernness_heatmap_svg(systems) -> str:
@@ -108,19 +108,19 @@ def _systems_table(systems) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         sc = stat_colors.get(s.status, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(s.system_type)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.system_type)}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(s.vendor)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.sites_using}</td>',
+            f'{ck_data_cell(f"""{s.sites_using}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(s.version_vintage)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.annual_cost_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${s.annual_cost_mm:,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sc};font-weight:600">{s.modernness_score}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.interop_score}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{s.status}</span></td>',
+            f'{ck_data_cell(f"""{s.interop_score}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{s.status}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -143,19 +143,19 @@ def _projects_table(projects) -> str:
         pc = prio_colors.get(p.priority, text_dim)
         rr_c = P["positive"] if p.annual_run_rate_delta_mm <= 0 else P["warning"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(p.project)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.project)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:280px">{_html.escape(p.scope)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${p.one_time_cost_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rr_c};font-weight:600">${p.annual_run_rate_delta_mm:+,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.timeline_months}</td>',
+            f'{ck_data_cell(f"""{p.timeline_months}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">+{p.moic_lift_pct * 100:.1f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{p.risk}</span></td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{p.priority}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{p.risk}</span>""")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{p.priority}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -174,17 +174,17 @@ def _cyber_table(cyber) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         uc = urg_colors.get(c.urgency, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.metric)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.metric)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.current_state)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.target_state)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{P["warning"]}">{_html.escape(c.gap)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${c.remediation_cost_mm:,.2f}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{uc};border:1px solid {uc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{c.urgency}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{uc};border:1px solid {uc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{c.urgency}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -203,16 +203,16 @@ def _buckets_table(buckets) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         vc = var_colors.get(b.variance, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(b.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${b.annual_spend_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.category)}""", mono=True)}',
+            f'{ck_data_cell(f"""${b.annual_spend_mm:,.2f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{vc};font-weight:600">{b.pct_of_revenue * 100:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.benchmark_pct * 100:.2f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{vc};border:1px solid {vc};border-radius:2px;letter-spacing:0.06em">{b.variance}</span></td>',
+            f'{ck_data_cell(f"""{b.benchmark_pct * 100:.2f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{vc};border:1px solid {vc};border-radius:2px;letter-spacing:0.06em">{b.variance}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -281,18 +281,18 @@ def render_tech_stack(params: dict = None) -> str:
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
-    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
+<div class="ck-page-wrap">
 
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Technology Stack Analyzer</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Technology Stack Analyzer</h1>
+    <p class="ck-page-sub">
       Systems inventory, modernness score, cyber posture, IT spend vs benchmark — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
@@ -346,4 +346,9 @@ def render_tech_stack(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Tech Stack", active_nav="/tech-stack")
+    return chartis_shell(body, "Tech Stack", active_nav="/tech-stack",
+        editorial_intro={
+            "eyebrow": "TECH STACK",
+            "headline": "What the tech stack page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _alignment_gauge_svg(score: float) -> str:
@@ -137,20 +137,20 @@ def _exec_table(executives) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"600" if e.role == "CEO" else "400"}">{_html.escape(e.role)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${e.base_salary_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{e.target_bonus_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${e.target_bonus_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${e.total_cash_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{e.rollover_equity_pct * 100:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${e.rollover_value_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{e.options_pct * 100:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${e.options_fair_value_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${e.total_at_risk_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${e.base_salary_k:,.0f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{e.target_bonus_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.target_bonus_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.total_cash_k:,.0f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{e.rollover_equity_pct * 100:.2f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.rollover_value_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""{e.options_pct * 100:.2f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.options_fair_value_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${e.total_at_risk_mm:,.2f}""", align="right", mono=True, weight=600)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -167,17 +167,17 @@ def _mip_table(tranches) -> str:
     for i, t in enumerate(tranches):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(t.tranche)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{t.allocation_pct * 100:.2f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim}">{_html.escape(t.vesting_type)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim}">{_html.escape(t.hurdle)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.tranche)}""", mono=True)}',
+            f'{ck_data_cell(f"""{t.allocation_pct * 100:.2f}%""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{_html.escape(t.vesting_type)}""", tone="dim")}',
+            f'{ck_data_cell(f"""{_html.escape(t.hurdle)}""", tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos if t.expected_payout_moic2 else text_dim}">{t.expected_payout_moic2:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{t.expected_payout_moic3:.2f}%</td>',
+            f'{ck_data_cell(f"""{t.expected_payout_moic3:.2f}%""", align="right", mono=True, tone="pos")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -194,20 +194,20 @@ def _scenario_table(scenarios) -> str:
     for i, s in enumerate(scenarios):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.exit_equity_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${s.exit_equity_mm:,.1f}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">${s.lp_net_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${s.gp_carry_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.mgmt_rollover_payout_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.mgmt_options_payout_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${s.mip_pool_payout_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${s.total_mgmt_payout_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.pct_going_to_mgmt * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""${s.mgmt_rollover_payout_mm:,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${s.mgmt_options_payout_mm:,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${s.mip_pool_payout_mm:,.2f}""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""${s.total_mgmt_payout_mm:,.2f}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{s.pct_going_to_mgmt * 100:.1f}%""", align="right", mono=True)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -259,18 +259,18 @@ def render_mgmt_comp(params: dict = None) -> str:
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
-    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
+<div class="ck-page-wrap">
 
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Management Compensation Analyzer</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Management Compensation Analyzer</h1>
+    <p class="ck-page-sub">
       Rollover equity, options, MIP economics &amp; sponsor alignment — {r.size_bucket} deal — {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
@@ -313,4 +313,9 @@ def render_mgmt_comp(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Mgmt Compensation Analyzer", active_nav="/mgmt-comp")
+    return chartis_shell(body, "Mgmt Compensation Analyzer", active_nav="/mgmt-comp",
+        editorial_intro={
+            "eyebrow": "MGMT COMP",
+            "headline": "What the mgmt comp page reveals on this deal.",
+            "italic_word": "reveals",
+        })

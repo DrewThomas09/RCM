@@ -19,7 +19,7 @@ from ..diligence.physician_eu import (
     analyze_roster_eu,
 )
 from ..diligence.physician_comp.comp_ingester import Provider
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -499,8 +499,14 @@ def render_physician_eu_page(
         f'</div>'
     )
 
+    title = ck_page_title(
+        "Provider Economics",
+        eyebrow="RCM DILIGENCE",
+        meta=f"Target: {target_name} · per-provider P&L",
+    )
     body = (
         _scoped_styles()
+        + title
         + '<div class="peu-wrap">'
         + hero_and_opt
         + crosslink
@@ -514,5 +520,6 @@ def render_physician_eu_page(
     return chartis_shell(
         body,
         f"Physician Economic Units — {target_name}",
+        active_nav="/diligence/physician-eu",
         subtitle="Per-provider P&L · bridge-lever analytic",
     )

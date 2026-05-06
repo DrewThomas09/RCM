@@ -11,7 +11,8 @@ from typing import List, Optional
 
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS,
-    chartis_shell, ck_section_header,
+    chartis_shell, ck_fmt_moic, ck_fmt_num, ck_fmt_pct,
+    ck_kpi_block, ck_provenance_tooltip, ck_section_header,
 )
 
 
@@ -133,7 +134,7 @@ def _slice_table(slices: list, corpus_p50: Optional[float] = None) -> str:
         irr_s = f"{s.irr_p50*100:.1f}%" if s.irr_p50 else "—"
         win_s = f"{s.win_rate*100:.0f}%" if s.win_rate is not None else "—"
 
-        rows += f"""<tr style="background:{bg}">
+        rows += f"""<tr>
   <td style="padding:4px 8px;font-size:11px;white-space:nowrap">{html.escape(s.label)}</td>
   <td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{s.deal_count}</td>
   <td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P['text_dim']};font-variant-numeric:tabular-nums">{p25_s}</td>
@@ -156,7 +157,7 @@ def _slice_table(slices: list, corpus_p50: Optional[float] = None) -> str:
 def _dim_panel(title: str, slices: list, corpus_p50: Optional[float]) -> str:
     chart = _range_bar_chart(slices, title, corpus_p50)
     table = _slice_table(slices, corpus_p50)
-    return f"""<div style="margin-bottom:20px">
+    return f"""<div class="ck-page-head">
   <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.1em;
               margin-bottom:8px;border-bottom:1px solid {P['border']};padding-bottom:4px">
     {html.escape(title)}
@@ -180,21 +181,37 @@ def render_return_attribution() -> str:
     p50_str = f"{cp50:.2f}×" if cp50 else "—"
     irr_str = f"{ci50*100:.1f}%" if ci50 else "—"
 
-    # KPI strip
-    kpis = "".join(
-        f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 14px">'
-        f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:3px">{lbl}</div>'
-        f'<div style="font-size:16px;font-family:{_MONO};font-variant-numeric:tabular-nums;color:{P["text"]}">{val}</div>'
-        f'</div>'
-        for lbl, val in [
-            ("CORPUS N", str(ra.corpus_size)),
-            ("CORPUS MOIC P50", p50_str),
-            ("CORPUS IRR P50", irr_str),
-            ("SECTORS TRACKED", str(len(ra.by_sector))),
-            ("VINTAGE BUCKETS", str(len(ra.by_vintage))),
-        ]
+    # Cycle 44 — port bespoke KPI strip + add provenance.
+    moic_value = ck_provenance_tooltip(
+        "Corpus P50 MOIC",
+        ck_fmt_moic(cp50) if cp50 else "—",
+        explainer=(
+            f"Median realized MOIC across {ra.corpus_size} corpus "
+            f"deals. Each per-dimension panel below shows P25/P50/"
+            f"P75 distributions with a delta vs. corpus P50 in the "
+            f"right column - that delta is the attribution."
+        ),
     )
-    kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'
+    irr_value = ck_provenance_tooltip(
+        "Corpus P50 IRR",
+        ck_fmt_pct(ci50) if ci50 else "—",
+        explainer=(
+            "Median realized IRR. Useful as a sanity check against "
+            "the MOIC distribution: high MOIC + low IRR = the "
+            "deals took a long hold to get there; the opposite = "
+            "fast exits."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px;">'
+        + ck_kpi_block("Corpus N", ck_fmt_num(ra.corpus_size), "transactions")
+        + ck_kpi_block("Corpus MOIC P50", moic_value, "median realized")
+        + ck_kpi_block("Corpus IRR P50", irr_value, "median realized")
+        + ck_kpi_block("Sectors Tracked", ck_fmt_num(len(ra.by_sector)), "in attribution")
+        + ck_kpi_block("Vintage Buckets", ck_fmt_num(len(ra.by_vintage)), "year ranges")
+        + '</div>'
+    )
 
     legend = (
         f'<div style="font-size:9px;color:{P["text_faint"]};font-family:{_SANS};margin-bottom:14px">'
@@ -216,4 +233,16 @@ def render_return_attribution() -> str:
   {_dim_panel("BY ENTRY MULTIPLE (EV/EBITDA) — MOIC DISTRIBUTION", ra.by_ev_ebitda_bucket, cp50)}
 </div>"""
 
-    return chartis_shell(body, "Return Attribution", active_nav="/return-attribution", subtitle=f"Corpus: {ra.corpus_size} deals")
+    return chartis_shell(body, "Return Attribution", active_nav="/return-attribution", subtitle=f"Corpus: {ra.corpus_size} deals",
+        editorial_intro={
+            "eyebrow": "RETURN ATTRIBUTION",
+            "headline": "Where the realized MOIC came from.",
+            "italic_word": "from",
+            "body": (
+                "MOIC distribution by sector, vintage, payer "
+                "regime, deal size, hold duration, and entry "
+                "multiple. Each delta vs. corpus P50 is a "
+                "falsifiable claim about which dimension drove "
+                "the spread."
+            ),
+        })

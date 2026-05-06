@@ -25,7 +25,9 @@ from ..data.catalog import (
     compute_data_estate_summary,
     inventory_data_sources,
 )
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from ._ui_kit import fmt_num
 
 
@@ -150,26 +152,37 @@ def render_data_catalog_page(store: Any) -> str:
     entries = inventory_data_sources(store)
     summary = compute_data_estate_summary(entries)
 
+    # Cycle 50 — port to ck_kpi_block + provenance.
+    quality_value = ck_provenance_tooltip(
+        "Average data quality",
+        f"{summary['avg_quality']:.2f}" if summary["avg_quality"] is not None else "—",
+        explainer=(
+            "Composite score per source: volume x coverage x "
+            "freshness, scaled 0-1. Above 0.7 is production-"
+            "ready; below 0.4 means partner reports leaning on "
+            "this source carry warnings about thin denominators."
+        ),
+    )
+    fresh_value = ck_provenance_tooltip(
+        "Fresh sources",
+        f"{summary['fresh_sources']} / {summary['n_sources']}",
+        explainer=(
+            "Sources loaded in the last 30 days. The remaining "
+            "are either at expected cadence (e.g., HCRIS is "
+            "annual) or genuinely stale - cross-check with the "
+            "/data/refresh page to see what's overdue."
+        ),
+        inject_css=False,
+    )
     kpi_html = (
-        '<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin:.75rem 0 1.25rem 0;">'
-        + _kpi_card("Sources", fmt_num(summary["n_sources"]))
-        + _kpi_card("Total records", fmt_num(summary["total_records"]))
-        + _kpi_card(
-            "Avg quality",
-            (f'<span class="num mono">{summary["avg_quality"]:.2f}</span>'
-             if summary["avg_quality"] is not None
-             else '<span class="num">—</span>'),
-        )
-        + _kpi_card(
-            "Fresh sources",
-            f'{fmt_num(summary["fresh_sources"])} / {fmt_num(summary["n_sources"])}',
-            sub="loaded ≤30 days",
-        )
-        + _kpi_card(
-            "Stale sources",
-            f'{fmt_num(summary["stale_sources"])} / {fmt_num(summary["n_sources"])}',
-            sub="loaded >90 days",
-        )
+        '<div class="ck-kpi-grid" style="display:flex;gap:.75rem;flex-wrap:wrap;margin:.75rem 0 1.25rem 0;">'
+        + ck_kpi_block("Sources", ck_fmt_num(summary["n_sources"]), "in catalog")
+        + ck_kpi_block("Total Records", ck_fmt_num(summary["total_records"]), "across sources")
+        + ck_kpi_block("Avg Quality", quality_value, "composite 0-1")
+        + ck_kpi_block("Fresh", fresh_value, "loaded <=30d")
+        + ck_kpi_block("Stale",
+                        f"{summary['stale_sources']} / {summary['n_sources']}",
+                        "loaded >90d")
         + '</div>'
     )
 
@@ -231,4 +244,16 @@ def render_data_catalog_page(store: Any) -> str:
         body,
         "Data Catalog",
         subtitle="public-data inventory",
+        editorial_intro={
+            "eyebrow": "DATA CATALOG",
+            "headline": "Where every dataset is registered.",
+            "italic_word": "every",
+            "body": (
+                "Inventory of public-data sources the platform "
+                "ingests, with row counts, freshness, and the "
+                "loader path. Use this as the canonical answer "
+                "to 'where does X come from?' before citing a "
+                "metric in a partner conversation."
+            ),
+        },
     )

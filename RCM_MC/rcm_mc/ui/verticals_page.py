@@ -7,7 +7,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from ..verticals.asc.ontology import ASC_METRIC_REGISTRY  # noqa: F401
 from ..verticals.behavioral_health.ontology import BH_METRIC_REGISTRY  # noqa: F401
 from ..verticals.mso.ontology import MSO_METRIC_REGISTRY  # noqa: F401
@@ -165,8 +168,31 @@ def render_verticals() -> str:
                 f'</tr></thead><tbody>{rows}</tbody></table></div>'
             )
 
+    # Cycle 48 — KPI strip with provenance.
+    n_verts = len(verticals)
+    full_coverage = sum(1 for v in verticals if v.get("status_cls") == "cad-badge-green")
+    verts_value = ck_provenance_tooltip(
+        "Verticals supported",
+        ck_fmt_num(n_verts),
+        explainer=(
+            f"Healthcare sub-sectors with their own metric "
+            f"registry and value-bridge model. Of these, "
+            f"{full_coverage} are at full coverage; the rest "
+            f"are at beta or planning stage. Pick the vertical "
+            f"first - it changes which metrics matter."
+        ),
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Verticals", verts_value, "supported")
+        + ck_kpi_block("Full Coverage", ck_fmt_num(full_coverage), "production-ready")
+        + '</div>'
+    )
+
     body = (
-        f'<div class="cad-card">'
+        ck_eyebrow("Healthcare Verticals")
+        + kpi_strip
+        + f'<div class="cad-card">'
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;">'
         f'SeekingChartis supports multiple healthcare sub-sectors beyond acute care. '
         f'Each vertical has its own metric registry, value bridge model, and diligence framework.</p>'
@@ -178,4 +204,16 @@ def render_verticals() -> str:
     return chartis_shell(
         body, "Healthcare Verticals",
         subtitle="Acute Care, ASC, Behavioral Health, MSO",
+        editorial_intro={
+            "eyebrow": "HEALTHCARE VERTICALS",
+            "headline": "Where the playbook actually changes.",
+            "italic_word": "actually",
+            "body": (
+                "Acute care, ASC, behavioral health, MSO, and "
+                "specialty practices each have their own value "
+                "bridge, key metrics, and diligence framework. "
+                "Pick the right vertical first; the analysis "
+                "modules calibrate themselves accordingly."
+            ),
+        },
     )

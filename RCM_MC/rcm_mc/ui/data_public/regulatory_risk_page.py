@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _risk_dial_svg(score: int, label: str) -> str:
@@ -74,10 +74,10 @@ def _risk_factors_table(factors) -> str:
             f'<td style="text-align:left;padding:6px 10px;font-size:10px;color:{text_dim};max-width:380px;line-height:1.5">{_html.escape(f.description)}</td>',
             f'<td style="text-align:left;padding:6px 10px;font-size:10px;color:{text_dim};max-width:280px;line-height:1.5">{_html.escape(f.mitigations)}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -100,18 +100,18 @@ def _events_table(events) -> str:
         sc = status_colors.get(e.status, text_dim)
         applies_color = P["negative"] if e.applies_to_deal else P["text_faint"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(e.name)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(e.name)}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(e.agency)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(e.effective_date)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{e.status}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{e.status}</span>""")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{dc}">{_html.escape(e.direction)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dc if e.applies_to_deal else text_dim}">{e.revenue_impact_pct * 100:+.1f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{applies_color};border:1px solid {applies_color};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{"yes" if e.applies_to_deal else "no"}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{applies_color};border:1px solid {applies_color};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{"yes" if e.applies_to_deal else "no"}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -132,16 +132,16 @@ def _materiality_table(schedule) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         tc = tier_colors.get(m.materiality_tier, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(m.impact_name)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">{m.revenue_impact_pct * 100:+.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">${m.ebitda_impact_mm:+,.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:600">${m.ev_impact_mm:+,.2f}M</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.materiality_tier}</span></td>',
+            f'{ck_data_cell(f"""{_html.escape(m.impact_name)}""", mono=True)}',
+            f'{ck_data_cell(f"""{m.revenue_impact_pct * 100:+.1f}%""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""${m.ebitda_impact_mm:+,.2f}M""", align="right", mono=True, tone="neg")}',
+            f'{ck_data_cell(f"""${m.ev_impact_mm:+,.2f}M""", align="right", mono=True, tone="neg", weight=600)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.materiality_tier}</span>""")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -160,16 +160,16 @@ def _gaps_table(gaps) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         sc = stat_colors.get(g.current_status, text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(g.area)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(g.area)}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:280px">{_html.escape(g.requirement)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{g.current_status}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{g.current_status}</span>""")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"] if g.remediation_cost_mm else text_dim}">${g.remediation_cost_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{g.days_to_close}</td>',
+            f'{ck_data_cell(f"""{g.days_to_close}""", align="right", mono=True, tone="dim")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -242,18 +242,18 @@ def render_regulatory_risk(params: dict = None) -> str:
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
-    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
+<div class="ck-page-wrap">
 
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Regulatory Risk Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Regulatory Risk Tracker</h1>
+    <p class="ck-page-sub">
       Sector-specific regulatory risk — Stark, AKS, HIPAA, OIG, 340B + active CMS/OIG events — {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
@@ -305,4 +305,9 @@ def render_regulatory_risk(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Regulatory Risk Tracker", active_nav="/regulatory-risk")
+    return chartis_shell(body, "Regulatory Risk Tracker", active_nav="/regulatory-risk",
+        editorial_intro={
+            "eyebrow": "REGULATORY RISK",
+            "headline": "What the regulatory risk page reveals on this deal.",
+            "italic_word": "reveals",
+        })

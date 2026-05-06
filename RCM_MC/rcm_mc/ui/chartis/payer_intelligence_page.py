@@ -375,4 +375,15 @@ def render_payer_intelligence(
         ],
         subtitle=f"{len(corpus)} corpus deals · {len(pi.regime_stats)} regimes · "
                  f"commercial-MOIC corr {pi.commercial_moic_corr:.3f}",
+        editorial_intro={
+            "eyebrow": "PAYER INTELLIGENCE",
+            "headline": "What the payer mix is really telling you.",
+            "italic_word": "telling",
+            "body": (
+                "Commercial-share regimes, payer concentration, and "
+                "their realized-MOIC fingerprints across the corpus. "
+                "Use this to read whether the deal's payer mix is "
+                "load-bearing or incidental to the thesis."
+            ),
+        },
     )

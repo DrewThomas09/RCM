@@ -293,4 +293,9 @@ def render_sector_intel(min_deals: int = 3, sort_by: str = "moic_p50") -> str:
             f"{len(stats)} sectors · {total_deals_with_sector} tagged deals · "
             f"avg P50 MOIC {avg_p50:.2f}x · sorted by {sort_by.replace('_', ' ')}"
         ),
+        editorial_intro={
+            "eyebrow": "SECTOR INTELLIGENCE",
+            "headline": "What the sector intelligence reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

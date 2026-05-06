@@ -8,7 +8,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -46,8 +49,27 @@ def render_custom_kpis_page(store: Any) -> str:
         if rows else f'<p style="color:{PALETTE["text_muted"]};">No custom KPIs defined yet. Use the API to create one.</p>'
         f'<a href="/api/metrics/custom" class="cad-btn" style="text-decoration:none;margin-top:8px;display:inline-block;">API Reference &rarr;</a>'
     )
+    # Cycle 49 — KPI strip with provenance.
+    metrics_value = ck_provenance_tooltip(
+        "Custom KPIs defined",
+        ck_fmt_num(len(metrics)),
+        explainer=(
+            "Fund-specific metrics that extend the canonical "
+            "38-metric registry. Each one carries a unit, "
+            "directionality, and category so the platform can "
+            "render it consistently across portfolio screens."
+        ),
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Custom KPIs", metrics_value, "fund-defined")
+        + ck_kpi_block("Built-in Registry", "38", "canonical metrics")
+        + '</div>'
+    )
     body = (
-        f'<div class="cad-card">'
+        ck_eyebrow("Custom KPIs")
+        + kpi_strip
+        + f'<div class="cad-card">'
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:12px;">'
         f'Define custom metrics your fund tracks beyond the 38-metric registry.</p>'
         f'{table}'
@@ -56,7 +78,19 @@ def render_custom_kpis_page(store: Any) -> str:
         f'API: GET /api/metrics/custom</a></div></div>'
     )
     return chartis_shell(body, "Custom KPIs", active_nav="/settings",
-                    subtitle="Define custom metrics for your fund")
+                    subtitle="Define custom metrics for your fund",
+        editorial_intro={
+            "eyebrow": "CUSTOM KPIS",
+            "headline": "Where the fund's vocabulary expands.",
+            "italic_word": "expands",
+            "body": (
+                "Custom KPIs that extend the canonical 38-metric "
+                "registry. Each entry maps a fund-specific name "
+                "to a formula and a rationale - useful when an "
+                "LP report needs a metric the platform doesn't "
+                "ship by default."
+            ),
+        })
 
 
 def render_automations_page(store: Any) -> str:
@@ -101,7 +135,19 @@ def render_automations_page(store: Any) -> str:
         f'API: GET /api/automations</a></div></div>'
     )
     return chartis_shell(body, "Automation Rules", active_nav="/settings",
-                    subtitle="Event-driven workflow automation")
+                    subtitle="Event-driven workflow automation",
+        editorial_intro={
+            "eyebrow": "AUTOMATION RULES",
+            "headline": "Where the platform acts on its own.",
+            "italic_word": "acts",
+            "body": (
+                "Event-driven rules that fire on alerts, deadlines, "
+                "stage changes, or new analysis runs. Use these "
+                "to escalate critical-severity alerts via webhook "
+                "or to auto-generate IC packets when a deal hits "
+                "diligence."
+            ),
+        })
 
 
 def _render_webhook_deliveries(store: Any) -> str:
@@ -215,4 +261,15 @@ def render_integrations_page(store: Any) -> str:
         f'API: GET /api/webhooks</a></div>'
     )
     return chartis_shell(body, "Integrations", active_nav="/settings",
-                    subtitle="Webhooks, exports & third-party connections")
+                    subtitle="Webhooks, exports & third-party connections",
+        editorial_intro={
+            "eyebrow": "INTEGRATIONS",
+            "headline": "Where the platform connects out.",
+            "italic_word": "connects",
+            "body": (
+                "Webhooks, CRM connectors, and export pipelines. "
+                "Use this to push deal events to DealCloud, "
+                "Salesforce, or Google Sheets, or to wire a "
+                "Slack channel for critical alerts."
+            ),
+        })

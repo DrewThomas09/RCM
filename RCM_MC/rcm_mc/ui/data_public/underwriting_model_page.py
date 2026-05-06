@@ -1,7 +1,9 @@
 """Underwriting Model page — /underwriting-model."""
 from __future__ import annotations
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip,
+)
 
 
 _SECTORS = [
@@ -328,13 +330,35 @@ def render_underwriting_model(params: dict) -> str:
     base_moic = f"{base_sc.moic:.2f}x" if base_sc else "—"
     base_irr = f"{base_sc.irr*100:.1f}%" if base_sc else "—"
 
+    leverage_value = ck_provenance_tooltip(
+        "Total leverage ratio",
+        f"{r.sources.leverage_ratio:.2f}x",
+        explainer=(
+            f"Total debt divided by EBITDA. Healthcare PE typical "
+            f"range: 4-6x; above 7x is cov-lite or aggressive. "
+            f"Equity check {r.sources.equity_pct*100:.0f}% / "
+            f"${r.sources.equity_mm:.0f}M."
+        ),
+    )
+    base_moic_value = ck_provenance_tooltip(
+        "Base-case MOIC (5yr)",
+        base_moic,
+        explainer=(
+            f"Underwriting case MOIC at 5-year hold. Compare "
+            f"to corpus P50 ({ck_fmt_moic(r.corpus_p50_moic)}) "
+            f"and P75 ({ck_fmt_moic(r.corpus_p75_moic)}). "
+            f"Underwriting above P75 means the bear case has to "
+            f"refute that path."
+        ),
+        inject_css=False,
+    )
     kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.1f}x",
-                         unit=f"EV: ${r.ev_mm:.0f}M / Size: {r.size_bucket}")
-    kpis += ck_kpi_block("Total Leverage", f"{r.sources.leverage_ratio:.2f}x",
-                          unit=f"Equity: {r.sources.equity_pct*100:.0f}% / ${r.sources.equity_mm:.0f}M")
-    kpis += ck_kpi_block("Base MOIC (5yr)", base_moic, unit=f"IRR: {base_irr}")
-    kpis += ck_kpi_block("Corpus P50 MOIC", f"{r.corpus_p50_moic:.2f}x",
-                          unit=f"P25: {r.corpus_p25_moic:.2f}x / P75: {r.corpus_p75_moic:.2f}x")
+                         sub=f"EV: ${r.ev_mm:.0f}M / Size: {r.size_bucket}")
+    kpis += ck_kpi_block("Total Leverage", leverage_value,
+                          sub=f"Equity: {r.sources.equity_pct*100:.0f}% / ${r.sources.equity_mm:.0f}M")
+    kpis += ck_kpi_block("Base MOIC (5yr)", base_moic_value, sub=f"IRR: {base_irr}")
+    kpis += ck_kpi_block("Corpus P50 MOIC", ck_fmt_moic(r.corpus_p50_moic),
+                          sub=f"P25: {ck_fmt_moic(r.corpus_p25_moic)} / P75: {ck_fmt_moic(r.corpus_p75_moic)}")
     kpis += ck_kpi_block("Interest Rate", f"{r.sources.senior_debt_mm:.0f}M sr / {r.sources.sub_debt_mm:.0f}M sub")
     kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count))
 
@@ -407,7 +431,18 @@ def render_underwriting_model(params: dict) -> str:
 '''
 
     return chartis_shell(
-        body=content,
+        content,
         title=f"Underwriting Model — {sector}",
         active_nav="/underwriting-model",
+        editorial_intro={
+            "eyebrow": "UNDERWRITING MODEL",
+            "headline": "What the leverage decides for you.",
+            "italic_word": "decides",
+            "body": (
+                "Sources & uses, projected cash flows, and a "
+                "MOIC sensitivity grid across exit-year x exit-"
+                "multiple. The grid tells you where the deal "
+                "stops working under realistic shocks."
+            ),
+        },
     )

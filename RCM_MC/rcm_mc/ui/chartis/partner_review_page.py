@@ -27,7 +27,9 @@ from typing import Any, Dict, List, Optional
 from .._chartis_kit import (
     P,
     chartis_shell,
+    ck_fmt_num,
     ck_kpi_block,
+    ck_provenance_tooltip,
     ck_section_header,
 )
 from ._helpers import related_views_panel, render_page_explainer
@@ -157,12 +159,34 @@ def _kpi_strip(review: Any) -> str:
 
     inv_val = render_number(inv_score, "investability_score")
 
+    # Cycle 45 — provenance on the verdict and investability score.
+    verdict_value = ck_provenance_tooltip(
+        "Partner-review verdict",
+        _html.escape(rec),
+        explainer=(
+            "Senior-PE verdict produced by the 278-module brain "
+            "run: PROCEED / DILIGENCE / WALK / RECONSIDER. "
+            "Composite of investability score, critical flags, "
+            "covenant headroom, and bear-pattern matches."
+        ),
+    )
+    inv_value = ck_provenance_tooltip(
+        "Investability composite",
+        inv_val,
+        explainer=(
+            "0-100 composite blending entry discipline, hold "
+            "economics, exit path certainty, and management "
+            "track record. Above 80 is a fundable thesis; "
+            "below 60 needs IC re-discussion before proceed."
+        ),
+        inject_css=False,
+    )
     tiles = (
-        ck_kpi_block("Verdict", _html.escape(rec), "")
+        ck_kpi_block("Verdict", verdict_value)
         + ck_kpi_block("Fundable", fundable, "narrative")
-        + ck_kpi_block("Critical Flags", str(critical), f"{high} high")
-        + ck_kpi_block("Bands Out", str(oob), f"{stretch} stretch")
-        + ck_kpi_block("Investability", inv_val, "composite 0-100")
+        + ck_kpi_block("Critical Flags", ck_fmt_num(critical), f"{high} high")
+        + ck_kpi_block("Bands Out", ck_fmt_num(oob), f"{stretch} stretch")
+        + ck_kpi_block("Investability", inv_value, "composite 0-100")
     )
     return f'<div class="ck-kpi-grid">{tiles}</div>'
 
@@ -716,4 +740,16 @@ def render_partner_review(
             ("Analysis", "/analysis"),
             ("Partner Review", None),
         ],
+        editorial_intro={
+            "eyebrow": "PARTNER REVIEW",
+            "headline": "What the 278-module brain decided.",
+            "italic_word": "decided",
+            "body": (
+                "The senior-PE judgment layer's full read on this "
+                "deal — covenant covenants, bear patterns, regulatory "
+                "items, secondary analytics, and related deals. "
+                "Each verdict is falsifiable; the partner's job is "
+                "to confirm or refute, not to explain away."
+            ),
+        },
     )

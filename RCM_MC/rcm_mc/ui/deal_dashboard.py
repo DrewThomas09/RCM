@@ -8,7 +8,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional, Tuple
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_currency, ck_fmt_num,
+    ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -188,13 +191,9 @@ def render_deal_dashboard(
                 display = f"{v:,.0f}"
         except (TypeError, ValueError):
             display = str(val)
-        kpi_cards += (
-            f'<div class="cad-kpi">'
-            f'<div class="cad-kpi-value">{html.escape(display)}</div>'
-            f'<div class="cad-kpi-label">{html.escape(label)}</div></div>'
-        )
+        kpi_cards += ck_kpi_block(label, html.escape(display))
 
-    profile_section = f'<div class="cad-kpi-grid">{kpi_cards}</div>' if kpi_cards else ""
+    profile_section = f'<div class="ck-kpi-grid">{kpi_cards}</div>' if kpi_cards else ""
 
     # Derived inline estimates
     rev_val = float(profile.get("net_revenue", 0) or 0)
@@ -208,6 +207,31 @@ def render_deal_dashboard(
         if equity_est > 0 else 0
     )
     recoverable = rev_val * max(0, dr_val - 8) / 100 * 0.3
+
+    # Cycle 51 — provenance on the rough EV estimate (used inside
+    # the model tiles below as inline previews).
+    ev_estimate_value = ck_provenance_tooltip(
+        "Rough enterprise-value estimate",
+        f"${ev_est/1e6:,.0f}M",
+        explainer=(
+            f"Quick estimate: net revenue x {margin_val:.0%} "
+            f"EBITDA margin x 11x EV/EBITDA. Indicative only; "
+            f"the DCF and LBO tiles below run a real model. Use "
+            f"this as a triage anchor before clicking through."
+        ),
+    )
+    recoverable_value = ck_provenance_tooltip(
+        "Recoverable EBITDA estimate",
+        f"${recoverable/1e6:,.1f}M",
+        explainer=(
+            f"Net revenue x (denial rate - 8% target) x 30% "
+            f"appeal-success rate. The 8% benchmark is the "
+            f"healthcare median; deals above it have addressable "
+            f"recovery. The Denial Drivers tile drills into the "
+            f"per-payer breakdown."
+        ),
+        inject_css=False,
+    )
 
     # Model grid — 17 tiles, each with a 3-letter code chip
     tiles: List[str] = [
@@ -377,11 +401,36 @@ def render_deal_dashboard(
         f'</div></div>'
     )
 
-    body = f'{header}{profile_section}{model_grid}{exports}'
+    # Cycle 51 — surface the ev_estimate / recoverable provenance values
+    # in a small headline strip so partner sees the rough estimates
+    # before clicking into the model tiles.
+    estimate_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 12px;">'
+        + ck_kpi_block("Rough EV", ev_estimate_value, "indicative")
+        + ck_kpi_block("Recoverable EBITDA", recoverable_value, f"vs {ck_fmt_pct(0.08)} target")
+        + ck_kpi_block("Active Models", ck_fmt_num(17), "click any tile")
+        + '</div>'
+    )
+    body = (
+        ck_eyebrow("Deal Dashboard")
+        + f'{header}{profile_section}{estimate_strip}{model_grid}{exports}'
+    )
 
     return chartis_shell(
         body, name,
         active_nav="/analysis",
         subtitle=f"Deal {deal_id} · 17 analytical models · click any tile",
         extra_css=_MODEL_TILE_CSS,
+        editorial_intro={
+            "eyebrow": "DEAL DASHBOARD",
+            "headline": "Where every analysis on this deal lives.",
+            "italic_word": "every",
+            "body": (
+                "All 17 analytical models for this deal in one "
+                "tile grid - DCF, LBO, market intel, denial, "
+                "scenarios, exit timing, and more. Click any "
+                "tile to drop into that model with the deal's "
+                "data pre-loaded."
+            ),
+        },
     )

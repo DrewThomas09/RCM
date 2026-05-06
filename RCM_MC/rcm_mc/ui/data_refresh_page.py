@@ -58,7 +58,7 @@ def _source_row(source_name: str, status: Dict[str, Any]) -> str:
         f'<td class="job-status" style="font-size:12px;">—</td>'
         f'<td style="text-align:right;">'
         f'<button class="refresh-btn" data-source="{name}" '
-        f'style="background:#1F4E78;color:#fff;border:none;padding:5px 12px;'
+        f'style="background:var(--sc-navy);color:#fff;border:none;padding:5px 12px;'
         f'border-radius:4px;font-size:12px;cursor:pointer;">Refresh</button>'
         f'</td>'
         f'</tr>'
@@ -148,7 +148,10 @@ _CLIENT_JS = r"""
 
 
 def render_data_refresh_page(db_path: str) -> str:
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
     from . import _web_components as _wc
 
     header = _wc.page_header(
@@ -217,12 +220,42 @@ def render_data_refresh_page(db_path: str) -> str:
     sources_card = _wc.section_card("Known data sources", table + actions,
                                     pad=True)
 
+    # Cycle 48 — KPI strip + provenance.
+    n_known = len(known)
+    sources_value = ck_provenance_tooltip(
+        "Public-data sources tracked",
+        ck_fmt_num(n_known),
+        explainer=(
+            "Sources the platform pulls from on a recurring "
+            "cadence: HCRIS, Care Compare, IRS 990, FRED macro "
+            "indicators, sector reference data. Each source has "
+            "its own freshness threshold and refresh schedule."
+        ),
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Sources Tracked", sources_value, "in pipeline")
+        + ck_kpi_block("Refresh Cadence", "1/hr/source", "rate-limited")
+        + '</div>'
+    )
+
     body = (
         _wc.web_styles()
-        + _wc.responsive_container(header + sources_card)
+        + _wc.responsive_container(ck_eyebrow("Data Refresh") + kpi_strip + header + sources_card)
         + _wc.sortable_table_js()
         + _wc.spinner_js()
         + f'<script>{_CLIENT_JS}</script>'
     )
     return chartis_shell(body, "Data refresh",
-                         active_nav="/data/refresh")
+                         active_nav="/data/refresh",
+        editorial_intro={
+            "eyebrow": "DATA REFRESH",
+            "headline": "Where the public-data pipelines stand.",
+            "italic_word": "stand",
+            "body": (
+                "Per-source freshness, row counts, and refresh "
+                "status. Stale sources mean stale benchmarks - "
+                "trigger a refresh from the action column when a "
+                "source ages past its expected cadence."
+            ),
+        })

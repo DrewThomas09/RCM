@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _drugs_table(items) -> str:
@@ -10,7 +10,7 @@ def _drugs_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Drug","left"),("Therapy","center"),("Shortage Status","left"),("Sole-Source","center"),
             ("Annual Volume","right"),("Substitute","center"),("Spend ($M)","right"),("Days on Hand","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -19,18 +19,18 @@ def _drugs_table(items) -> str:
         sub_c = pos if d.substitution_available else neg
         doh_c = neg if d.days_on_hand < 30 else (warn if d.days_on_hand < 60 else pos)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(d.drug)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(d.drug)}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(d.therapy_area)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{s_c}">{_html.escape(d.shortage_status)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{ss_c};font-weight:700">{"YES" if d.sole_source else "NO"}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{d.annual_volume_doses:,}</td>',
+            f'{ck_data_cell(f"""{d.annual_volume_doses:,}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{sub_c}">{"YES" if d.substitution_available else "NO"}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${d.platform_spend_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${d.platform_spend_mm:,.2f}""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{doh_c};font-weight:600">{d.days_on_hand}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _suppliers_table(items) -> str:
@@ -38,23 +38,23 @@ def _suppliers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Supplier","left"),("Category","left"),("Spend ($M)","right"),("Category Share","right"),
             ("Country","left"),("Audit History","left"),("Risk Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         r_c = neg if s.risk_score >= 60 else (warn if s.risk_score >= 45 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.supplier)}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(s.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.annual_spend_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.supplier)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(s.category)}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.annual_spend_mm:,.2f}""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn}">{s.share_of_category * 100:.0f}%</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(s.country_of_manufacture)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.country_of_manufacture)}""", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.audit_history)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{s.risk_score}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _geo_table(items) -> str:
@@ -62,7 +62,7 @@ def _geo_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Country","left"),("Product Categories","right"),("Spend Exposure ($M)","right"),
             ("Tariff Risk","right"),("Geopolitical Risk","center"),("Diversification Score","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     gr_c = {"very low": pos, "low": pos, "moderate": warn, "elevated": neg, "hurricane risk": warn}
     for i, g in enumerate(items):
@@ -70,16 +70,16 @@ def _geo_table(items) -> str:
         gc = gr_c.get(g.geopolitical_risk, text_dim)
         d_c = pos if g.diversification_score >= 85 else (warn if g.diversification_score >= 65 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(g.country)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{g.product_categories}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${g.spend_exposure_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(g.country)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{g.product_categories}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${g.spend_exposure_mm:,.2f}""", align="right", mono=True, tone="neg", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn if g.tariff_risk_pct > 0.10 else text_dim}">{g.tariff_risk_pct * 100:.1f}%</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{gc};border:1px solid {gc};border-radius:2px;letter-spacing:0.06em">{_html.escape(g.geopolitical_risk)}</span></td>',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{gc};border:1px solid {gc};border-radius:2px;letter-spacing:0.06em">{_html.escape(g.geopolitical_risk)}</span>""", align="center")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:700">{g.diversification_score}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _playbooks_table(items) -> str:
@@ -87,22 +87,22 @@ def _playbooks_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Scenario","left"),("Probability","right"),("Financial Impact ($M)","right"),
             ("Operational Impact","left"),("Mitigation","center"),("Lead Time (days)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         pr_c = neg if p.probability_pct >= 0.40 else (warn if p.probability_pct >= 0.20 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(p.scenario)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(p.scenario)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pr_c};font-weight:700">{p.probability_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg};font-weight:700">${p.financial_impact_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${p.financial_impact_mm:,.2f}""", align="right", mono=True, tone="neg", weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.operational_impact)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(p.mitigation_status)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.lead_time_days}</td>',
+            f'{ck_data_cell(f"""{p.lead_time_days}""", align="right", mono=True, tone="dim")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _gpo_table(items) -> str:
@@ -110,23 +110,23 @@ def _gpo_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]
     cols = [("GPO","left"),("Contracts","right"),("Annual Volume ($M)","right"),
             ("On-Time Fill","right"),("Backorder Rate","right"),("Price Stability","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, g in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         ot_c = pos if g.on_time_fill_rate_pct >= 0.95 else (P["warning"] if g.on_time_fill_rate_pct >= 0.93 else neg)
         bo_c = pos if g.backorder_rate_pct <= 0.03 else (P["warning"] if g.backorder_rate_pct <= 0.035 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(g.gpo_partner)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{g.contracts_count:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${g.annual_volume_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(g.gpo_partner)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{g.contracts_count:,}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${g.annual_volume_mm:,.2f}""", align="right", mono=True, tone="pos")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ot_c};font-weight:700">{g.on_time_fill_rate_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{bo_c}">{g.backorder_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{g.price_stability_pct * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{g.price_stability_pct * 100:.0f}%""", align="right", mono=True)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def render_drug_shortage(params: dict = None) -> str:
@@ -161,10 +161,10 @@ def render_drug_shortage(params: dict = None) -> str:
 
     weighted_impact = sum(p.probability_pct * p.financial_impact_mm for p in r.playbooks)
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Drug Shortage / Supply-Chain Risk</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">FDA shortage list · supplier concentration · geographic exposure · shortage playbooks · GPO reliability — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Drug Shortage / Supply-Chain Risk</h1>
+    <p class="ck-page-sub">FDA shortage list · supplier concentration · geographic exposure · shortage playbooks · GPO reliability — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
@@ -186,4 +186,9 @@ def render_drug_shortage(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Drug Shortage", active_nav="/drug-shortage")
+    return chartis_shell(body, "Drug Shortage", active_nav="/drug-shortage",
+        editorial_intro={
+            "eyebrow": "DRUG SHORTAGE",
+            "headline": "What the drug shortage page reveals on this deal.",
+            "italic_word": "reveals",
+        })

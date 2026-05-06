@@ -262,4 +262,9 @@ def render_leverage_intel() -> str:
             f"avg direct leverage {profile.avg_leverage_direct*100:.1f}% · "
             f"ρ(lev,MOIC)={corr:+.2f} · optimal: {profile.optimal_bucket}"
         ),
+        editorial_intro={
+            "eyebrow": "LEVERAGE INTELLIGENCE",
+            "headline": "What the leverage intelligence reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

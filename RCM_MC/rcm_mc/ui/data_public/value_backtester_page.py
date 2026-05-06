@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -11,22 +11,22 @@ def _levers_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]; acc = P["accent"]
     cols = [("Lever","left"),("Target ($M)","right"),("Base Rate P50 ($M)","right"),
             ("Base Rate P75 ($M)","right"),("Realization %","right"),("Risk-Adj ($M)","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, lv in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         real_c = pos if lv.realization_rate_pct >= 0.70 else (warn if lv.realization_rate_pct >= 0.55 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(lv.lever)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">${lv.target_contribution_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${lv.base_rate_p50_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${lv.base_rate_p75_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""{_html.escape(lv.lever)}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${lv.target_contribution_mm:,.2f}""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""${lv.base_rate_p50_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${lv.base_rate_p75_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{real_c};font-weight:700">{lv.realization_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${lv.risk_adjusted_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${lv.risk_adjusted_mm:,.2f}""", align="right", mono=True, tone="pos", weight=600)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _buckets_table(items) -> str:
@@ -34,25 +34,25 @@ def _buckets_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Sector","left"),("Vintage","center"),("Size","center"),("N","right"),
             ("Realized MOIC P25","right"),("P50","right"),("P75","right"),("Mean","right"),("IRR P50","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, b in enumerate(items[:40]):
         rb = panel_alt if i % 2 == 0 else bg
         moic_c = pos if b.realized_moic_p50 >= 2.5 else (acc if b.realized_moic_p50 >= 2.0 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(b.sector[:26])}</td>',
+            f'{ck_data_cell(f"""{_html.escape(b.sector[:26])}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(b.vintage_range)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(b.size_bucket)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{b.n_deals}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{b.realized_moic_p25:.2f}x</td>',
+            f'{ck_data_cell(f"""{b.n_deals}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{b.realized_moic_p25:.2f}x""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:700">{b.realized_moic_p50:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{b.realized_moic_p75:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{b.realized_moic_mean:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{b.realized_irr_p50 * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{b.realized_moic_p75:.2f}x""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""{b.realized_moic_mean:.2f}x""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{b.realized_irr_p50 * 100:.1f}%""", align="right", mono=True, tone="acc")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _calibration_table(items) -> str:
@@ -60,22 +60,22 @@ def _calibration_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Predicted MOIC","right"),("Realized P25","right"),("Realized P50","right"),
             ("Realized P75","right"),("N Deals","right"),("Calibration Error","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         err_c = pos if abs(c.calibration_error) < 0.10 else (warn if abs(c.calibration_error) < 0.25 else neg)
         cells = [
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{c.predicted_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.realized_moic_p25:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{c.realized_moic_p50:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.realized_moic_p75:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.n_deals}</td>',
+            f'{ck_data_cell(f"""{c.predicted_moic:.2f}x""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{c.realized_moic_p25:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.realized_moic_p50:.2f}x""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""{c.realized_moic_p75:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.n_deals}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{err_c};font-weight:600">{c.calibration_error * 100:+.1f}%</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _attribution_table(items) -> str:
@@ -83,7 +83,7 @@ def _attribution_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; neg = P["negative"]; warn = P["warning"]
     cols = [("Driver","left"),("Correlation","right"),("P50 Realized MOIC","right"),
             ("P75 Realized MOIC","right"),("Signal","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sig_c = {"strong": pos, "moderate": warn, "negative": neg}
     for i, a in enumerate(items):
@@ -91,15 +91,15 @@ def _attribution_table(items) -> str:
         sc = sig_c.get(a.signal_strength, text_dim)
         corr_c = pos if a.correlation > 0.40 else (text_dim if a.correlation > 0 else neg)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(a.driver)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(a.driver)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{corr_c};font-weight:700">{a.correlation:+.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{a.p50_realized_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">{a.p75_realized_moic:.2f}x</td>',
-            f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.signal_strength)}</span></td>',
+            f'{ck_data_cell(f"""{a.p50_realized_moic:.2f}x""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{a.p75_realized_moic:.2f}x""", align="right", mono=True, tone="pos")}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.signal_strength)}</span>""", align="center")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _comparables_table(items) -> str:
@@ -107,23 +107,23 @@ def _comparables_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; pos = P["positive"]; acc = P["accent"]
     cols = [("Comparable Deal","left"),("Sector","left"),("Year","right"),
             ("Entry Mult","right"),("Realized MOIC","right"),("Hold (yr)","right"),("Similarity","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         moic_c = pos if c.realized_moic >= 2.5 else (acc if c.realized_moic >= 1.8 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.deal_name[:30])}</td>',
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(c.sector[:24])}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.year}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.entry_multiple:.2f}x</td>',
+            f'{ck_data_cell(f"""{_html.escape(c.deal_name[:30])}""", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""{_html.escape(c.sector[:24])}""", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.year}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.entry_multiple:.2f}x""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:700">{c.realized_moic:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{c.hold_years:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{c.similarity_score:.3f}</td>',
+            f'{ck_data_cell(f"""{c.hold_years:.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.similarity_score:.3f}""", align="right", mono=True, tone="acc")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _calibration_svg(items) -> str:
@@ -253,10 +253,10 @@ def render_value_backtester(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Value-Creation Backtester</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">Predicted MOIC vs realized base rates · lever attribution · calibration chart · comparable deal cohort — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Value-Creation Backtester</h1>
+    <p class="ck-page-sub">Predicted MOIC vs realized base rates · lever attribution · calibration chart · comparable deal cohort — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   {form}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
@@ -293,4 +293,11 @@ def render_value_backtester(params: dict = None) -> str:
         source="data_public/value_backtester.py; base_rates.py.",
         page_key="value-backtester",
     )
-    return chartis_shell(explainer + body, "Value Backtester", active_nav="/backtester")
+    return chartis_shell(
+        explainer + body, "Value Backtester", active_nav="/backtester",
+        editorial_intro={
+            "eyebrow": "VALUE BACKTESTER",
+            "headline": "What the bridge looked like in retrospect.",
+            "italic_word": "retrospect",
+        },
+    )

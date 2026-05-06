@@ -14,7 +14,10 @@ from __future__ import annotations
 import html as _html
 from typing import List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .metric_glossary import (
     MetricDefinition,
     get_metric_definition,
@@ -107,10 +110,46 @@ def render_metric_glossary() -> str:
             continue
         cards.append(_metric_card(m))
 
-    body = _toc(keys) + "".join(cards)
+    metrics_value = ck_provenance_tooltip(
+        "Metrics in glossary",
+        ck_fmt_num(len(keys)),
+        explainer=(
+            "The canonical reference set for every numeric the "
+            "platform surfaces. Each entry has a definition, "
+            "rationale, formula, and the source documents that "
+            "support it - the source of truth when a partner asks "
+            "'what does this number mean'."
+        ),
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Metrics Defined", metrics_value, "with formulas")
+        + ck_kpi_block("Categories", "8", "RCM, PE, ML, ...")
+        + '</div>'
+    )
+
+    body = (
+        ck_eyebrow("Metric Glossary")
+        + kpi_strip
+        + _toc(keys)
+        + "".join(cards)
+    )
 
     return chartis_shell(
         body,
         "Metric Glossary",
+        active_nav="/metric-glossary",
         subtitle=f"{len(keys)} metrics — definitions, rationale, formulas",
+        editorial_intro={
+            "eyebrow": "METRIC GLOSSARY",
+            "headline": "Where every number has a definition.",
+            "italic_word": "every",
+            "body": (
+                "Cross-reference every number the platform "
+                "surfaces - definition, rationale, formula, and "
+                "the source documents that back it. Use this as "
+                "the canonical answer when a partner asks 'where "
+                "does that number come from?'."
+            ),
+        },
     )

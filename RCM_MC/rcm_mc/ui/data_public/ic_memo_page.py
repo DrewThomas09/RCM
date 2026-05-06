@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from rcm_mc.ui._chartis_kit import (
     P, _MONO, _SANS,
     chartis_shell, ck_fmt_moic, ck_fmt_pct, ck_fmt_num,
-    ck_section_header, ck_kpi_block,
+    ck_section_header, ck_kpi_block, ck_provenance_tooltip,
 )
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
@@ -224,7 +224,7 @@ def _peers_table(peers: list) -> str:
         name = html.escape(p.deal_name[:42])
         buyer = html.escape((p.buyer or "—")[:28])
         yr = str(p.year) if p.year else "—"
-        rows += f"""<tr style="background:{bg}">
+        rows += f"""<tr>
   <td style="padding:5px 8px;font-size:11px;font-family:{_MONO}">{yr}</td>
   <td style="padding:5px 8px;font-size:11px;white-space:nowrap">{name}</td>
   <td style="padding:5px 8px;font-size:10px;color:{P['text_dim']}">{sector}</td>
@@ -327,14 +327,42 @@ def render_ic_memo_gen(params: Dict[str, str]) -> str:
             ("CORPUS N", str(bm.corpus_size)),
             (f"SECTOR N ({bm.sector_label[:14]})", str(bm.sector_size)),
         ]
-        kpis = "".join(
-            f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 14px;">'
-            f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:3px">{lbl}</div>'
-            f'<div style="font-size:16px;font-family:{_MONO};font-variant-numeric:tabular-nums;color:{P["text"]}">{val}</div>'
-            f'</div>'
-            for lbl, val in kpi_items
+        # Cycle 43 — port to ck_kpi_block + provenance on the IC-
+        # debate values (target MOIC, target IRR).
+        moic_value = ck_provenance_tooltip(
+            "Target MOIC",
+            moic_str,
+            explainer=(
+                f"Underwriting target MOIC for the deal. Compare "
+                f"to corpus P50 ({ck_fmt_moic(bm.moic_p50)}) and "
+                f"sector P50 ({ck_fmt_moic(bm.sector_moic_p50)}). "
+                f"If target is meaningfully above sector P50, the "
+                f"bear case has to refute that path."
+            ),
         )
-        kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'
+        irr_value = ck_provenance_tooltip(
+            "Target IRR",
+            irr_str,
+            explainer=(
+                f"Levered IRR to LP equity at the target exit. "
+                f"Corpus P50 IRR is roughly 18-22% in healthcare "
+                f"PE; targets >25% imply a leverage-amplified or "
+                f"multiple-expansion thesis the IC will probe."
+            ),
+            inject_css=False,
+        )
+        kpi_blocks = []
+        for lbl, val in kpi_items:
+            display = val
+            if lbl == "TARGET MOIC":
+                display = moic_value
+            elif lbl == "TARGET IRR":
+                display = irr_value
+            kpi_blocks.append(ck_kpi_block(lbl.title(), display))
+        kpi_strip = (
+            f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px;">'
+            + "".join(kpi_blocks) + '</div>'
+        )
 
         # Percentile gauges
         gauges = "".join([
@@ -416,4 +444,15 @@ def render_ic_memo_gen(params: Dict[str, str]) -> str:
         page_key="corpus-ic-memo",
     )
     subtitle = f"Target: {html.escape(deal_name)}" if has_inputs else "Corpus benchmarking"
-    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/corpus-ic-memo", subtitle=subtitle)
+    return chartis_shell(explainer + body, "IC Memo Generator", active_nav="/corpus-ic-memo", subtitle=subtitle,
+        editorial_intro={
+            "eyebrow": "IC MEMO GENERATOR",
+            "headline": "Where the corpus drafts the memo for you.",
+            "italic_word": "drafts",
+            "body": (
+                "Enter the deal's headline economics; the corpus "
+                "writes the IC memo's benchmarking section, citing "
+                "sector and corpus percentile ranks. Use this as "
+                "a draft to review, not a final."
+            ),
+        })

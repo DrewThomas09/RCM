@@ -179,7 +179,7 @@ def _render_health_sparkline(
         f'<line x1="{pad}" x2="{width - pad}" y1="{y50:.1f}" y2="{y50:.1f}" '
         f'stroke="#EF4444" stroke-width="1" stroke-dasharray="2,3" '
         f'opacity="0.5"/>'
-        f'<polyline fill="none" stroke="#1F4E78" stroke-width="1.5" '
+        f'<polyline fill="none" stroke="var(--sc-navy)" stroke-width="1.5" '
         f'stroke-linejoin="round" points="{pts}"/>'
         f'<circle cx="{_x(n - 1):.1f}" cy="{_y(last_score):.1f}" r="3" '
         f'fill="{last_color}"/>'
@@ -226,81 +226,123 @@ def _render_deal_rerun(store: PortfolioStore, deal_id: str) -> str:
     qd = urllib.parse.quote(deal_id)
     inputs = get_inputs(store, deal_id)
 
+    rerun_css = """
+    <style>
+      .ck-deal-rerun-card{padding:18px 22px;margin:0 0 20px;}
+      .ck-deal-rerun-head{display:flex;align-items:baseline;gap:10px;
+        margin:0 0 10px;}
+      .ck-deal-rerun-head h2{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0;letter-spacing:-0.01em;}
+      .ck-deal-rerun-meta{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.04em;}
+      .ck-deal-rerun-form{display:flex;gap:10px;align-items:center;
+        flex-wrap:wrap;margin-top:10px;}
+      .ck-deal-rerun-form label{display:inline-flex;align-items:center;gap:6px;
+        font-family:var(--sc-mono,monospace);font-size:10.5px;
+        font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+        color:var(--sc-text-dim,#465366);}
+      .ck-deal-rerun-form input{padding:6px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;width:5rem;}
+      .ck-deal-rerun-form input:focus{outline:none;
+        border-color:var(--sc-teal,#155752);}
+      .ck-deal-rerun-go{padding:7px 14px;
+        background:var(--sc-navy,#0b2341);color:#fff;border:0;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;}
+      .ck-deal-rerun-go:hover{background:var(--sc-teal,#155752);}
+      .ck-deal-rerun-paths{margin-top:10px;}
+      .ck-deal-rerun-paths summary{cursor:pointer;
+        font-family:var(--sc-mono,monospace);font-size:10.5px;
+        font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+        color:var(--sc-text-dim,#465366);}
+      .ck-deal-rerun-paths form{display:grid;gap:6px;margin-top:8px;
+        max-width:40rem;}
+      .ck-deal-rerun-paths input{padding:6px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-mono,monospace);font-size:11.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;width:100%;
+        box-sizing:border-box;}
+      .ck-deal-rerun-paths button{justify-self:start;
+        padding:5px 12px;background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc3);
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:10.5px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        color:var(--sc-navy,#0b2341);cursor:pointer;border-radius:2px;}
+      .ck-deal-rerun-paths button:hover{background:var(--sc-bone,#ece6db);
+        border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+      .ck-deal-rerun-empty{font-family:var(--sc-serif,Georgia,serif);
+        font-size:13.5px;color:var(--sc-text-dim,#465366);
+        line-height:1.55;margin:0 0 12px;}
+    </style>
+    """
+
     if inputs:
         actual = html.escape(inputs["actual_path"])
         bench = html.escape(inputs["benchmark_path"])
         base = html.escape(inputs.get("outdir_base") or "")
-        rerun_form = (
-            f'<form method="POST" action="/api/deals/{qd}/rerun" '
-            f'style="display: flex; gap: 0.4rem; align-items: center; '
-            f'flex-wrap: wrap; margin-top: 0.5rem;">'
-            f'<label style="font-size: 0.85rem;">n_sims '
-            f'<input type="number" name="n_sims" value="5000" min="100" '
-            f'style="font-size: 0.85rem; padding: 0.2rem; width: 5rem;">'
-            f'</label>'
-            f'<label style="font-size: 0.85rem;">seed '
-            f'<input type="number" name="seed" value="42" '
-            f'style="font-size: 0.85rem; padding: 0.2rem; width: 4rem;">'
-            f'</label>'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.85rem; padding: 0.2rem 0.8rem; '
-            f'background: var(--accent); color: white; border: none; '
-            f'border-radius: 4px; cursor: pointer; font-weight: 600;">'
-            f'▶ Rerun simulation</button>'
-            f'</form>'
-        )
-        change_form = (
-            f'<details style="margin-top: 0.5rem; font-size: 0.85rem;">'
-            f'<summary class="muted" style="cursor: pointer;">'
-            f'change paths</summary>'
-            f'<form method="POST" action="/api/deals/{qd}/sim-inputs" '
-            f'style="display: grid; gap: 0.3rem; margin-top: 0.4rem; '
-            f'grid-template-columns: 1fr; max-width: 40rem;">'
-            f'<input type="text" name="actual_path" value="{actual}" '
-            f'style="font-size: 0.85rem; padding: 0.25rem;">'
-            f'<input type="text" name="benchmark_path" value="{bench}" '
-            f'style="font-size: 0.85rem; padding: 0.25rem;">'
-            f'<input type="text" name="outdir_base" value="{base}" '
-            f'placeholder="outdir_base (optional)" '
-            f'style="font-size: 0.85rem; padding: 0.25rem;">'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.85rem; padding: 0.2rem 0.6rem; '
-            f'width: fit-content;">Save paths</button>'
-            f'</form></details>'
-        )
-        return (
-            f'<div class="card"><h2 style="margin-top: 0;">Rerun simulation'
-            f'<span class="muted" style="font-weight: 400; '
-            f'font-size: 0.8rem; margin-left: 0.5rem;">'
-            f'{actual} · {bench}</span></h2>'
-            f'{rerun_form}{change_form}</div>'
-        )
+        return f"""
+        {rerun_css}
+        <section class="cad-card ck-deal-rerun-card">
+          <div class="ck-deal-rerun-head">
+            <h2>Rerun simulation</h2>
+            <span class="ck-deal-rerun-meta">{actual} · {bench}</span>
+          </div>
+          <form class="ck-deal-rerun-form" method="POST"
+                action="/api/deals/{qd}/rerun">
+            <label>n_sims
+              <input type="number" name="n_sims" value="5000" min="100">
+            </label>
+            <label>seed
+              <input type="number" name="seed" value="42" style="width:4rem;">
+            </label>
+            <button type="submit" class="ck-deal-rerun-go">
+              ▶ Rerun simulation
+            </button>
+          </form>
+          <details class="ck-deal-rerun-paths">
+            <summary>change paths</summary>
+            <form method="POST" action="/api/deals/{qd}/sim-inputs">
+              <input type="text" name="actual_path" value="{actual}">
+              <input type="text" name="benchmark_path" value="{bench}">
+              <input type="text" name="outdir_base" value="{base}"
+                     placeholder="outdir_base (optional)">
+              <button type="submit">Save paths</button>
+            </form>
+          </details>
+        </section>
+        """
 
     # No stored inputs — show setup form
-    return (
-        f'<div class="card"><h2 style="margin-top: 0;">Rerun simulation '
-        f'<span class="muted" style="font-weight: 400; font-size: 0.8rem;">'
-        f'(not configured)</span></h2>'
-        f'<p class="muted" style="font-size: 0.85rem;">'
-        f'Set this deal\'s simulation input paths once; then any partner '
-        f'can rerun the sim with one click (no CLI needed).'
-        f'</p>'
-        f'<form method="POST" action="/api/deals/{qd}/sim-inputs" '
-        f'style="display: grid; gap: 0.3rem; max-width: 40rem;">'
-        f'<input type="text" name="actual_path" required '
-        f'placeholder="/path/to/actual.yaml" '
-        f'style="font-size: 0.85rem; padding: 0.3rem;">'
-        f'<input type="text" name="benchmark_path" required '
-        f'placeholder="/path/to/benchmark.yaml" '
-        f'style="font-size: 0.85rem; padding: 0.3rem;">'
-        f'<input type="text" name="outdir_base" '
-        f'placeholder="outdir_base (optional — e.g. runs/ccf)" '
-        f'style="font-size: 0.85rem; padding: 0.3rem;">'
-        f'<button type="submit" class="btn" '
-        f'style="font-size: 0.85rem; padding: 0.25rem 0.7rem; '
-        f'width: fit-content;">Save paths</button>'
-        f'</form></div>'
-    )
+    return f"""
+    {rerun_css}
+    <section class="cad-card ck-deal-rerun-card">
+      <div class="ck-deal-rerun-head">
+        <h2>Rerun simulation</h2>
+        <span class="ck-deal-rerun-meta">not configured</span>
+      </div>
+      <p class="ck-deal-rerun-empty">
+        Set this deal&rsquo;s simulation input paths once; then any partner
+        can rerun the sim with one click (no CLI needed).
+      </p>
+      <details class="ck-deal-rerun-paths" open>
+        <summary>configure paths</summary>
+        <form method="POST" action="/api/deals/{qd}/sim-inputs">
+          <input type="text" name="actual_path" required
+                 placeholder="/path/to/actual.yaml">
+          <input type="text" name="benchmark_path" required
+                 placeholder="/path/to/benchmark.yaml">
+          <input type="text" name="outdir_base"
+                 placeholder="outdir_base (optional — e.g. runs/ccf)">
+          <button type="submit">Save paths</button>
+        </form>
+      </details>
+    </section>
+    """
 
 
 def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
@@ -312,69 +354,124 @@ def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
     qd = urllib.parse.quote(deal_id)
     deal_owner = _current_owner(store, deal_id) or ""
 
-    add_form = (
-        f'<form method="POST" action="/api/deals/{qd}/deadlines" '
-        f'style="display: flex; gap: 0.4rem; align-items: center; '
-        f'margin-top: 0.75rem; flex-wrap: wrap;">'
-        f'<input type="text" name="label" placeholder="Task / deadline label" '
-        f'required maxlength="120" '
-        f'style="flex: 1; min-width: 12rem; font-size: 0.85rem; padding: 0.25rem;">'
-        f'<input type="date" name="due_date" required '
-        f'style="font-size: 0.85rem; padding: 0.25rem;">'
-        f'<input type="text" name="owner" value="{html.escape(deal_owner)}" '
-        f'placeholder="Owner (optional)" maxlength="40" '
-        f'style="font-size: 0.85rem; padding: 0.25rem; width: 8rem;">'
-        f'<button type="submit" class="btn" '
-        f'style="font-size: 0.85rem; padding: 0.2rem 0.7rem;">+ Add</button>'
-        f'</form>'
-    )
-
     today = _date.today().isoformat()
     rows = []
     for _, r in df.iterrows():
         due = str(r["due_date"])
-        if due < today:
-            badge = '<span class="badge badge-red">OVERDUE</span>'
-        else:
-            badge = '<span class="badge badge-amber">OPEN</span>'
+        is_overdue = due < today
+        badge_color = (
+            "var(--sc-negative,#b5321e)" if is_overdue
+            else "var(--sc-warning,#b8732a)"
+        )
+        badge_text = "OVERDUE" if is_overdue else "OPEN"
+        badge = (
+            f'<span style="color:{badge_color};font-family:var(--sc-mono,monospace);'
+            f'font-weight:700;font-size:10px;letter-spacing:0.1em;'
+            f'text-transform:uppercase;">{badge_text}</span>'
+        )
         complete_form = (
             f'<form method="POST" '
             f'action="/api/deadlines/{int(r["deadline_id"])}/complete" '
-            f'style="display: inline;">'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.75rem; padding: 0.1rem 0.5rem;">✓</button>'
+            f'style="display:inline;margin:0 0 0 auto;">'
+            f'<button type="submit" class="ck-deal-deadline-done" '
+            f'aria-label="Mark complete" title="Mark complete">&check;</button>'
             f'</form>'
         )
         owner = str(r.get("owner") or "")
         owner_span = (
-            f"<span class='muted' style='font-size: 0.8rem;'>"
-            f"@{html.escape(owner)}</span>" if owner else ""
+            f'<span class="ck-deal-deadline-owner">@{html.escape(owner)}</span>'
+            if owner else ""
         )
         rows.append(
-            f"<li style='padding: 0.4rem 0; "
-            f"border-bottom: 1px solid var(--border); "
-            f"display: flex; gap: 0.5rem; align-items: center;'>"
-            f"{badge} "
-            f"<span style='font-weight: 600;'>{html.escape(str(r['label']))}</span>"
-            f"{owner_span}"
-            f"<span class='muted' style='font-size: 0.85rem;'>"
-            f"due {html.escape(due)}</span>"
-            f"<span style='margin-left: auto;'>{complete_form}</span>"
-            f"</li>"
+            '<li class="ck-deal-deadline-row">'
+            f'{badge}'
+            f'<span class="ck-deal-deadline-label">{html.escape(str(r["label"]))}</span>'
+            f'{owner_span}'
+            f'<span class="ck-deal-deadline-due">due {html.escape(due)}</span>'
+            f'{complete_form}'
+            '</li>'
         )
 
     list_html = (
-        f"<ul style='list-style: none; padding: 0; margin: 0;'>"
-        f"{''.join(rows)}</ul>"
-    ) if rows else "<p class='muted'>No open deadlines.</p>"
-
-    return (
-        f'<div class="card"><h2 style="margin-top: 0;">Deadlines '
-        f'({len(df)}) — '
-        f'<a href="/deadlines" style="color: var(--accent); '
-        f'font-size: 0.8rem; font-weight: 400;">all deadlines →</a></h2>'
-        f'{list_html}{add_form}</div>'
+        f'<ul class="ck-deal-deadline-list">{"".join(rows)}</ul>'
+    ) if rows else (
+        '<p class="ck-deal-empty" style="padding:0;">No open deadlines.</p>'
     )
+
+    add_form = (
+        f'<form class="ck-deal-deadline-form" method="POST" '
+        f'action="/api/deals/{qd}/deadlines">'
+        f'<input type="text" name="label" placeholder="Task / deadline label" '
+        f'required maxlength="120" class="ck-deal-deadline-label-input">'
+        f'<input type="date" name="due_date" required class="ck-deal-deadline-date">'
+        f'<input type="text" name="owner" value="{html.escape(deal_owner)}" '
+        f'placeholder="Owner" maxlength="40" class="ck-deal-deadline-owner-input">'
+        f'<button type="submit" class="ck-deal-deadline-add">+ Add</button>'
+        f'</form>'
+    )
+
+    return f"""
+    <style>
+      .ck-deal-deadlines-card{{padding:0;overflow:hidden;margin:0 0 20px;}}
+      .ck-deal-deadlines-head{{display:flex;align-items:baseline;
+        justify-content:space-between;gap:12px;
+        padding:18px 22px 12px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+      .ck-deal-deadlines-head h2{{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0;letter-spacing:-0.01em;}}
+      .ck-deal-deadlines-meta{{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.08em;text-transform:uppercase;}}
+      .ck-deal-deadlines-meta a{{color:var(--sc-teal-ink,#0f5e5a);
+        text-decoration:none;}}
+      .ck-deal-deadlines-meta a:hover{{color:var(--sc-navy,#0b2341);}}
+      .ck-deal-deadline-list{{list-style:none;padding:0;margin:0;}}
+      .ck-deal-deadline-row{{display:flex;align-items:center;gap:14px;
+        padding:11px 22px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);font-size:13px;}}
+      .ck-deal-deadline-row:last-child{{border-bottom:0;}}
+      .ck-deal-deadline-label{{color:var(--sc-text,#1a2332);font-weight:600;}}
+      .ck-deal-deadline-owner{{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);letter-spacing:0.04em;}}
+      .ck-deal-deadline-due{{font-family:var(--sc-mono,monospace);font-size:12px;
+        color:var(--sc-text-dim,#465366);letter-spacing:0.04em;}}
+      .ck-deal-deadline-done{{padding:4px 10px;
+        background:#fff;border:1px solid var(--sc-rule,#d6cfc3);
+        color:var(--sc-positive,#0a8a5f);font-weight:700;cursor:pointer;
+        font-size:14px;line-height:1;border-radius:2px;}}
+      .ck-deal-deadline-done:hover{{background:var(--sc-positive,#0a8a5f);
+        color:#fff;border-color:var(--sc-positive,#0a8a5f);}}
+      .ck-deal-deadline-form{{padding:14px 22px;
+        border-top:1px solid var(--sc-rule,#d6cfc3);
+        background:var(--sc-bone,#ece6db);
+        display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
+      .ck-deal-deadline-form input{{padding:7px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;}}
+      .ck-deal-deadline-form input:focus{{outline:none;
+        border-color:var(--sc-teal,#155752);}}
+      .ck-deal-deadline-label-input{{flex:1;min-width:14rem;}}
+      .ck-deal-deadline-owner-input{{width:7rem;}}
+      .ck-deal-deadline-add{{padding:7px 14px;
+        background:var(--sc-navy,#0b2341);color:#fff;border:0;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;}}
+      .ck-deal-deadline-add:hover{{background:var(--sc-teal,#155752);}}
+    </style>
+    <section class="cad-card ck-deal-deadlines-card">
+      <header class="ck-deal-deadlines-head">
+        <h2>Deadlines</h2>
+        <span class="ck-deal-deadlines-meta">
+          {len(df)} entries · <a href="/deadlines">all deadlines →</a>
+        </span>
+      </header>
+      {list_html}
+      {add_form}
+    </section>
+    """
 
 
 def _render_deal_alerts(store: PortfolioStore, deal_id: str) -> str:
@@ -391,88 +488,169 @@ def _render_deal_alerts(store: PortfolioStore, deal_id: str) -> str:
     if not alerts:
         return ""
 
-    sev_meta = {
-        "red":   ("badge-red",   "RED"),
-        "amber": ("badge-amber", "AMBER"),
-        "info":  ("badge-blue",  "INFO"),
-    }
     # Sort red→amber→info
     sev_order = {"red": 0, "amber": 1, "info": 2}
     alerts.sort(key=lambda a: sev_order.get(a.severity, 9))
+    sev_color = {
+        "red":   "var(--sc-negative,#b5321e)",
+        "amber": "var(--sc-warning,#b8732a)",
+        "info":  "var(--sc-teal,#155752)",
+    }
+    # Pick the strongest severity as the panel's left-border accent.
+    top_sev = alerts[0].severity if alerts else "info"
+    panel_accent = sev_color.get(top_sev, "var(--sc-text-faint,#7a8699)")
 
     from .alerts.alert_history import age_hint
     rows = []
     for a in alerts:
-        cls, label = sev_meta.get(a.severity, ("badge-muted", a.severity.upper()))
+        color = sev_color.get(a.severity, "var(--sc-text-faint,#7a8699)")
         tk = trigger_key_for(a)
         age = age_hint(a.first_seen_at)
         age_span = (
-            f'<span class="muted" style="font-size: 0.75rem;">'
+            f'<span class="ck-deal-alert-age">'
             f'seen {html.escape(age)}</span>' if age else ""
         )
         ack_form = (
             f'<form method="POST" action="/api/alerts/ack" '
-            f'style="display: inline-flex; gap: 0.3rem; align-items: center;">'
+            f'class="ck-deal-alert-ack-form">'
             f'<input type="hidden" name="kind" value="{html.escape(a.kind)}">'
             f'<input type="hidden" name="deal_id" value="{html.escape(a.deal_id)}">'
             f'<input type="hidden" name="trigger_key" value="{html.escape(tk)}">'
-            f'<select name="snooze_days" '
-            f'style="font-size: 0.75rem; padding: 0.1rem;">'
+            f'<select name="snooze_days" class="ck-deal-alert-snooze">'
             f'<option value="0">Ack</option>'
             f'<option value="7">Snooze 7d</option>'
             f'<option value="30">Snooze 30d</option>'
             f'</select>'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.75rem; padding: 0.15rem 0.5rem;">Ack</button>'
+            f'<button type="submit" class="ck-deal-alert-go">Apply</button>'
             f'</form>'
         )
         returning_badge = (
-            '<span class="badge badge-amber" '
-            'style="font-size: 0.7rem;" '
+            '<span class="ck-deal-alert-returning" '
             'title="Returned after snooze expired">↩ returning</span>'
             if a.returning else ""
         )
         rows.append(
-            f'<li style="padding: 0.5rem 0; '
-            f'border-bottom: 1px solid var(--border); '
-            f'display: flex; gap: 0.6rem; align-items: center; '
-            f'flex-wrap: wrap;">'
-            f'<span class="badge {cls}">{label}</span>'
+            '<li class="ck-deal-alert-row">'
+            f'<span class="ck-deal-alert-sev" style="color:{color};">'
+            f'{html.escape(a.severity.upper())}</span>'
             f'{returning_badge}'
-            f'<span style="font-weight: 600;">{html.escape(a.title)}</span>'
-            f'<span class="muted" style="font-size: 0.85rem;">'
-            f'{html.escape(a.detail)}</span>'
+            f'<span class="ck-deal-alert-title">{html.escape(a.title)}</span>'
+            f'<span class="ck-deal-alert-detail">{html.escape(a.detail)}</span>'
             f'{age_span}'
             f'{ack_form}'
-            f'</li>'
+            '</li>'
         )
 
-    return (
-        f'<div class="card" style="border-left: 3px solid var(--red-text);">'
-        f'<h2 style="margin-top: 0;">Active alerts '
-        f'<span class="muted" style="font-weight: 400; font-size: 0.8rem;">'
-        f'({len(alerts)}) — <a href="/alerts" style="color: var(--accent);">'
-        f'all alerts →</a></span></h2>'
-        f'<ul style="list-style: none; padding: 0; margin: 0;">'
-        f'{"".join(rows)}</ul></div>'
-    )
+    return f"""
+    <style>
+      .ck-deal-alerts-card{{padding:0;overflow:hidden;margin:0 0 20px;
+        border-left:3px solid {panel_accent};}}
+      .ck-deal-alerts-head{{display:flex;align-items:baseline;
+        justify-content:space-between;gap:12px;
+        padding:18px 22px 12px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+      .ck-deal-alerts-head h2{{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0;letter-spacing:-0.01em;}}
+      .ck-deal-alerts-meta{{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.08em;text-transform:uppercase;}}
+      .ck-deal-alerts-meta a{{color:var(--sc-teal-ink,#0f5e5a);
+        text-decoration:none;}}
+      .ck-deal-alerts-meta a:hover{{color:var(--sc-navy,#0b2341);}}
+      .ck-deal-alerts-list{{list-style:none;padding:0;margin:0;}}
+      .ck-deal-alert-row{{display:flex;align-items:center;gap:12px;
+        padding:11px 22px;flex-wrap:wrap;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);font-size:13px;}}
+      .ck-deal-alert-row:last-child{{border-bottom:0;}}
+      .ck-deal-alert-sev{{font-family:var(--sc-mono,monospace);
+        font-weight:700;font-size:10.5px;letter-spacing:0.1em;
+        text-transform:uppercase;}}
+      .ck-deal-alert-returning{{font-family:var(--sc-mono,monospace);
+        font-size:10px;letter-spacing:0.08em;text-transform:uppercase;
+        color:var(--sc-warning,#b8732a);font-weight:700;}}
+      .ck-deal-alert-title{{font-weight:600;color:var(--sc-text,#1a2332);}}
+      .ck-deal-alert-detail{{color:var(--sc-text-dim,#465366);
+        font-size:12.5px;}}
+      .ck-deal-alert-age{{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.04em;}}
+      .ck-deal-alert-ack-form{{display:inline-flex;gap:6px;align-items:center;
+        margin:0 0 0 auto;}}
+      .ck-deal-alert-snooze{{padding:5px 8px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;}}
+      .ck-deal-alert-go{{padding:5px 12px;background:#fff;
+        border:1px solid var(--sc-rule,#d6cfc3);
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:10.5px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        color:var(--sc-navy,#0b2341);cursor:pointer;border-radius:2px;}}
+      .ck-deal-alert-go:hover{{background:var(--sc-bone,#ece6db);
+        border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}}
+    </style>
+    <section class="cad-card ck-deal-alerts-card">
+      <header class="ck-deal-alerts-head">
+        <h2>Active alerts</h2>
+        <span class="ck-deal-alerts-meta">
+          {len(alerts)} entries · <a href="/alerts">all alerts →</a>
+        </span>
+      </header>
+      <ul class="ck-deal-alerts-list">{"".join(rows)}</ul>
+    </section>
+    """
 
 
 def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     """Per-deal detail page: snapshot audit + variance + initiative attribution.
 
     Composed inline from the existing data readers — no new HTML shell
-    code, just layout. Uses the shared ``_ui_kit.shell`` for consistency.
+    code, just layout. The header (page title + action row + KPIs) uses
+    editorial primitives; the body sections (audit trail, variance,
+    notes, deadlines) keep their legacy <table>/<div class="card">
+    markup and render cleanly under the editorial CSS.
     """
+    from .ui._chartis_kit import (
+        chartis_shell, ck_page_title, ck_kpi_block, SafeHtml,
+    )
     store = PortfolioStore(config.db_path)
     snaps = list_snapshots(store, deal_id=deal_id)
+
+    # Friendly deal-name lookup so the page title reads
+    # "Cypress Crossing Health" instead of "ccf".
+    deal_name = deal_id
+    try:
+        with store.connect() as _con:
+            row = _con.execute(
+                "SELECT name FROM deals WHERE deal_id = ? LIMIT 1",
+                (deal_id,),
+            ).fetchone()
+            if row and row["name"]:
+                deal_name = row["name"]
+    except Exception:
+        pass
+
     if snaps.empty:
-        body = (
-            f'<div class="card"><p class="muted">No snapshots for deal '
-            f'<strong>{html.escape(deal_id)}</strong>. Register the deal '
-            'via <code>rcm-mc portfolio register</code> first.</p></div>'
+        title_html = ck_page_title(
+            deal_name,
+            eyebrow="DEAL",
+            meta=f"slug: {deal_id} · no snapshots yet",
         )
-        return shell(body, title=f"Deal: {deal_id}", back_href="/")
+        body = (
+            f"{title_html}"
+            '<div class="cad-card" style="padding:32px;">'
+            '<p style="font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:15px;color:var(--sc-text-dim,#465366);line-height:1.55;">'
+            f'No snapshots for deal <strong>{html.escape(deal_id)}</strong>. '
+            'Register the deal via <code>rcm-mc portfolio register</code> '
+            'or run a simulation to populate the audit trail.'
+            '</p></div>'
+        )
+        return chartis_shell(
+            body, title=f"{deal_name} — Deal",
+            active_nav="/portfolio",
+            subtitle="No snapshots yet",
+        )
 
     latest = snaps.iloc[0]
     def _fmt(v):
@@ -482,18 +660,58 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
             return "—"
         return v
 
+    # Severity → tone mapping shared by variance + initiative tables
+    def _severity_pill(sev: str) -> str:
+        s = (sev or "").lower()
+        if s in ("critical", "red"):
+            color = "var(--sc-negative,#b5321e)"
+        elif s in ("warning", "amber", "concerning"):
+            color = "var(--sc-warning,#b8732a)"
+        elif s in ("ok", "green", "good"):
+            color = "var(--sc-positive,#0a8a5f)"
+        elif s:
+            color = "var(--sc-text-faint,#7a8699)"
+        else:
+            return ""
+        return (
+            f'<span style="color:{color};font-family:var(--sc-mono,monospace);'
+            f'font-weight:700;font-size:10.5px;letter-spacing:0.08em;'
+            f'text-transform:uppercase;">{html.escape(str(sev))}</span>'
+        )
+
     # Snapshot audit trail — oldest→newest, inline table
     trail_rows = []
     for _, r in snaps.sort_values("created_at").iterrows():
         notes = str(r.get("notes") or "")
+        cov_raw = str(r.get("covenant_status") or "")
+        cov_lo = cov_raw.lower()
+        cov_color = (
+            "var(--sc-negative,#b5321e)" if cov_lo == "tripped"
+            else "var(--sc-warning,#b8732a)" if cov_lo == "tight"
+            else "var(--sc-positive,#0a8a5f)" if cov_lo == "safe"
+            else "var(--sc-text-faint,#7a8699)"
+        )
+        cov_html = (
+            f'<span style="color:{cov_color};font-weight:700;'
+            f'font-family:var(--sc-mono,monospace);font-size:10.5px;'
+            f'letter-spacing:0.08em;text-transform:uppercase;">'
+            f'{html.escape(cov_raw.upper() if cov_raw else "—")}</span>'
+        )
+        moic = _fmt(r.get('moic'))
+        irr = _fmt(r.get('irr'))
+        if isinstance(moic, float):
+            moic = f"{moic:.2f}x"
+        if isinstance(irr, float):
+            irr = f"{irr*100:.1f}%"
         trail_rows.append(
             f"<tr>"
-            f"<td>{html.escape(str(r.get('created_at') or '')[:19])}</td>"
-            f"<td><strong>{html.escape(str(r.get('stage') or '?'))}</strong></td>"
-            f"<td class='num'>{_fmt(r.get('moic'))}</td>"
-            f"<td class='num'>{_fmt(r.get('irr'))}</td>"
-            f"<td>{html.escape(str(r.get('covenant_status') or '—'))}</td>"
-            f"<td class='muted'>{html.escape(notes[:120])}</td>"
+            f'<td class="ck-deal-mono">'
+            f'{html.escape(str(r.get("created_at") or "")[:19])}</td>'
+            f"<td>{html.escape(str(r.get('stage') or '?')).title()}</td>"
+            f"<td class='r ck-deal-mono'>{moic}</td>"
+            f"<td class='r ck-deal-mono'>{irr}</td>"
+            f"<td>{cov_html}</td>"
+            f"<td class='ck-deal-detail'>{html.escape(notes[:120])}</td>"
             f"</tr>"
         )
 
@@ -502,14 +720,20 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     var_rows = []
     if not var_df.empty:
         for _, r in var_df.sort_values(["quarter", "kpi"]).iterrows():
+            varp = _fmt(r.get('variance_pct'))
+            if isinstance(varp, float):
+                varp_str = f"{varp*100:+.1f}%"
+            else:
+                varp_str = str(varp)
             var_rows.append(
                 f"<tr>"
-                f"<td>{html.escape(str(r.get('quarter') or ''))}</td>"
+                f'<td class="ck-deal-mono">'
+                f'{html.escape(str(r.get("quarter") or ""))}</td>'
                 f"<td>{html.escape(str(r.get('kpi') or ''))}</td>"
-                f"<td class='num'>{r.get('actual')}</td>"
-                f"<td class='num'>{_fmt(r.get('plan'))}</td>"
-                f"<td class='num'>{_fmt(r.get('variance_pct'))}</td>"
-                f"<td>{html.escape(str(r.get('severity') or ''))}</td>"
+                f"<td class='r ck-deal-mono'>{r.get('actual')}</td>"
+                f"<td class='r ck-deal-mono'>{_fmt(r.get('plan'))}</td>"
+                f"<td class='r ck-deal-mono'>{varp_str}</td>"
+                f"<td>{_severity_pill(str(r.get('severity') or ''))}</td>"
                 f"</tr>"
             )
 
@@ -518,25 +742,39 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     init_rows = []
     if not init_df.empty:
         for _, r in init_df.iterrows():
+            varp = _fmt(r.get('variance_pct'))
+            if isinstance(varp, float):
+                varp_str = f"{varp*100:+.1f}%"
+            else:
+                varp_str = str(varp)
             init_rows.append(
                 f"<tr>"
-                f"<td><strong>{html.escape(str(r.get('initiative_id') or ''))}</strong></td>"
-                f"<td class='num'>{r.get('cumulative_actual')}</td>"
-                f"<td class='num'>{_fmt(r.get('cumulative_plan'))}</td>"
-                f"<td class='num'>{_fmt(r.get('variance_pct'))}</td>"
-                f"<td>{html.escape(str(r.get('severity') or ''))}</td>"
-                f"<td class='num'>{r.get('quarters_active')}</td>"
+                f"<td><strong style='color:var(--sc-navy,#0b2341);'>"
+                f"{html.escape(str(r.get('initiative_id') or ''))}</strong></td>"
+                f"<td class='r ck-deal-mono'>{r.get('cumulative_actual')}</td>"
+                f"<td class='r ck-deal-mono'>{_fmt(r.get('cumulative_plan'))}</td>"
+                f"<td class='r ck-deal-mono'>{varp_str}</td>"
+                f"<td>{_severity_pill(str(r.get('severity') or ''))}</td>"
+                f"<td class='r ck-deal-mono'>{r.get('quarters_active')}</td>"
                 f"</tr>"
             )
 
-    # Stage + covenant headline
+    # Stage + covenant headline (rendered as editorial pill)
     stage = latest.get("stage") or "—"
     cov = latest.get("covenant_status") or "—"
-    cov_badge = {
-        "SAFE":    '<span class="badge badge-green">SAFE</span>',
-        "TIGHT":   '<span class="badge badge-amber">TIGHT</span>',
-        "TRIPPED": '<span class="badge badge-red">TRIPPED</span>',
-    }.get(str(cov), f'<span class="badge badge-muted">{html.escape(str(cov))}</span>')
+    cov_lower = str(cov).lower()
+    cov_color = (
+        "var(--sc-negative,#b5321e)" if cov_lower == "tripped"
+        else "var(--sc-warning,#b8732a)" if cov_lower == "tight"
+        else "var(--sc-positive,#0a8a5f)" if cov_lower == "safe"
+        else "var(--sc-text-faint,#7a8699)"
+    )
+    cov_badge = SafeHtml(
+        f'<span style="color:{cov_color};font-weight:700;'
+        f'font-family:var(--sc-mono,monospace);font-size:14px;'
+        f'letter-spacing:0.06em;text-transform:uppercase;">'
+        f'{html.escape(str(cov).upper())}</span>'
+    )
 
     qd = urllib.parse.quote(deal_id)
     from .deals.deal_owners import current_owner as _current_owner
@@ -545,28 +783,22 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     owner = _current_owner(store, deal_id) or ""
     owner_form = (
         f'<form method="POST" action="/api/deals/{qd}/owner" '
-        f'style="display: inline-flex; gap: 0.25rem; align-items: center;">'
-        f'<label style="font-size: 0.8rem;" class="muted">Owner</label>'
+        f'class="ck-deal-owner-form">'
+        f'<label class="ck-deal-owner-label">Owner</label>'
         f'<input type="text" name="owner" value="{html.escape(owner)}" '
         f'placeholder="e.g. AT" maxlength="40" '
-        f'style="font-size: 0.8rem; padding: 0.15rem 0.35rem; width: 6rem;">'
-        f'<button type="submit" class="btn" '
-        f'style="font-size: 0.75rem; padding: 0.1rem 0.5rem;">Assign</button>'
+        f'class="ck-deal-owner-input">'
+        f'<button type="submit" class="ck-deal-action">Assign</button>'
         f'</form>'
     )
-    star_label = "★ Starred" if starred else "☆ Star"
-    star_style = (
-        "background: var(--amber-soft); color: var(--amber-text);"
-        if starred else
-        "background: var(--card); color: var(--accent);"
+    star_label = "★ Pinned" if starred else "☆ Pin"
+    star_btn_cls = "ck-deal-action ck-deal-action-star" + (
+        " is-on" if starred else ""
     )
     star_btn = (
         f'<form method="POST" action="/api/deals/{qd}/star" '
-        f'style="display: inline;">'
-        f'<button type="submit" '
-        f'style="{star_style} border: 1px solid var(--border); '
-        f'border-radius: 6px; padding: 0.25rem 0.7rem; font-size: 0.85rem; '
-        f'font-weight: 600; cursor: pointer;">{star_label}</button>'
+        f'style="display:inline;margin:0;">'
+        f'<button type="submit" class="{star_btn_cls}">{star_label}</button>'
         f'</form>'
     )
 
@@ -607,90 +839,184 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         for c in health.get("components", [])
     ) or "No deductions — healthy."
 
-    body = f"""
-    <div style="display: flex; justify-content: flex-end; gap: 1rem;
-         margin-bottom: 1rem; font-size: 0.85rem; align-items: center;">
-      {owner_form}
-      {star_btn}
-      <a href="/deal/{qd}?download=1"
-         style="color: var(--accent); text-decoration: none;
-                border-bottom: 1px dotted var(--accent);">
-        ↓ Download deal page
-      </a>
-    </div>
+    title_html = ck_page_title(
+        deal_name,
+        eyebrow="DEAL",
+        meta=(
+            f"slug: {deal_id} · "
+            f"stage: {str(stage).title()} · "
+            f"{len(snaps)} snapshot{'s' if len(snaps) != 1 else ''} · "
+            f"reading {os.path.basename(config.db_path)}"
+        ),
+    )
+    action_row = (
+        '<div class="ck-deal-action-row">'
+        f'{owner_form}'
+        f'{star_btn}'
+        f'<a href="/deal/{qd}?download=1" class="ck-deal-action">'
+        '↓ Download HTML</a>'
+        '</div>'
+    )
+    # Health KPI value: pre-built coloured number + sparkline; wrap in
+    # SafeHtml so ck_kpi_block doesn't escape it.
+    health_value = SafeHtml(
+        f'<span style="color:{health_band_color};">'
+        f'{health_score_display_html}</span>'
+    )
+    moic_v = _fmt(latest.get("moic"))
+    irr_v = _fmt(latest.get("irr"))
+    if isinstance(moic_v, float):
+        moic_v = f"{moic_v:.2f}x"
+    if isinstance(irr_v, float):
+        irr_v = f"{irr_v*100:.1f}%"
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+        + ck_kpi_block(
+            "Health", health_value,
+            sub=f'{html.escape(health["band"])} band',
+        )
+        + ck_kpi_block(
+            "Stage", html.escape(str(stage)).title(),
+            sub="lifecycle",
+        )
+        + ck_kpi_block("Covenant", cov_badge, sub="latest snapshot")
+        + ck_kpi_block("MOIC", str(moic_v), sub="latest snapshot")
+        + ck_kpi_block("IRR", str(irr_v), sub="latest snapshot")
+        + '</div>'
+    )
 
-    <div class="kpi-grid">
-      <div class="kpi-card" title="{html.escape(comp_lines)}">
-        <div class="kpi-value" style="color: {health_band_color};">
-          {health_score_display_html}
-        </div>
-        <div class="kpi-label">Health ({html.escape(health["band"])})</div>
-        {_render_health_sparkline(store, deal_id)}
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value">{html.escape(str(stage)).title()}</div>
-        <div class="kpi-label">Stage</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value">{cov_badge}</div>
-        <div class="kpi-label">Covenant</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value">{_fmt(latest.get('moic'))}</div>
-        <div class="kpi-label">MOIC (latest)</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value">{_fmt(latest.get('irr'))}</div>
-        <div class="kpi-label">IRR (latest)</div>
-      </div>
-    </div>
+    deal_header_css = (
+        '<style>'
+        '.ck-deal-action-row{display:flex;align-items:center;gap:14px;'
+        'margin:0 0 24px;flex-wrap:wrap;}'
+        '.ck-deal-owner-form{display:inline-flex;align-items:center;gap:8px;'
+        'margin:0;background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+        'border-radius:2px;padding:6px 10px;}'
+        '.ck-deal-owner-label{font-family:var(--sc-mono,monospace);'
+        'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
+        '.ck-deal-owner-input{padding:4px 8px;border:0;'
+        'font-family:var(--sc-sans,Inter,sans-serif);font-size:13px;'
+        'background:transparent;color:var(--sc-text,#1a2332);width:6rem;outline:none;}'
+        '.ck-deal-action{padding:7px 14px;background:#fff;'
+        'border:1px solid var(--sc-rule,#d6cfc3);border-radius:2px;'
+        'font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;'
+        'font-weight:700;letter-spacing:0.08em;text-transform:uppercase;'
+        'color:var(--sc-navy,#0b2341);cursor:pointer;text-decoration:none;'
+        'display:inline-flex;align-items:center;}'
+        '.ck-deal-action:hover{background:var(--sc-bone,#ece6db);'
+        'border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}'
+        '.ck-deal-action-star.is-on{background:var(--sc-teal,#155752);'
+        'color:#fff;border-color:var(--sc-teal,#155752);}'
+        '.ck-deal-action-star.is-on:hover{background:var(--sc-navy,#0b2341);'
+        'border-color:var(--sc-navy,#0b2341);color:#fff;}'
+        # Editorial section panels for the snapshot trail / variance /
+        # initiative-attribution tables further down the page.
+        '.ck-deal-section{padding:0;overflow:hidden;margin:0 0 20px;}'
+        '.ck-deal-section-head{display:flex;align-items:baseline;'
+        'justify-content:space-between;gap:12px;'
+        'padding:18px 22px 12px;border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+        '.ck-deal-section-head h2{font-family:var(--sc-serif,Georgia,serif);'
+        'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
+        'margin:0;letter-spacing:-0.01em;}'
+        '.ck-deal-section-count{font-family:var(--sc-mono,monospace);'
+        'font-size:11px;color:var(--sc-text-faint,#7a8699);'
+        'letter-spacing:0.08em;text-transform:uppercase;}'
+        '.ck-deal-table{width:100%;border-collapse:collapse;'
+        'font-family:var(--sc-sans,Inter,sans-serif);}'
+        '.ck-deal-table thead th{text-align:left;'
+        'font-family:var(--sc-mono,monospace);font-size:10.5px;'
+        'font-weight:700;letter-spacing:0.1em;text-transform:uppercase;'
+        'color:var(--sc-text-dim,#465366);padding:10px 22px;'
+        'background:var(--sc-bone,#ece6db);'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+        '.ck-deal-table thead th.r{text-align:right;}'
+        '.ck-deal-table tbody td{padding:11px 22px;'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+        'font-size:13px;color:var(--sc-text,#1a2332);vertical-align:middle;}'
+        '.ck-deal-table tbody td.r{text-align:right;}'
+        '.ck-deal-table tbody tr:last-child td{border-bottom:0;}'
+        '.ck-deal-table tbody tr:hover td{background:var(--sc-bone,#ece6db);}'
+        '.ck-deal-mono{font-family:var(--sc-mono,monospace);'
+        'font-variant-numeric:tabular-nums;color:var(--sc-text-dim,#465366);'
+        'font-size:12.5px;}'
+        '.ck-deal-detail{color:var(--sc-text-dim,#465366);font-size:12.5px;}'
+        '</style>'
+    )
+
+    body = f"""
+    {deal_header_css}
+    {title_html}
+    {action_row}
+    {kpi_strip}
 
     {_render_deal_alerts(store, deal_id)}
 
-    <div class="card">
-      <h2>Snapshot audit trail ({len(snaps)} entries)</h2>
-      <table>
+    <section class="cad-card ck-deal-section">
+      <header class="ck-deal-section-head">
+        <h2>Snapshot audit trail</h2>
+        <span class="ck-deal-section-count">{len(snaps)} entries</span>
+      </header>
+      <table class="ck-deal-table">
         <thead><tr>
-          <th>Timestamp</th><th>Stage</th><th>MOIC</th><th>IRR</th>
+          <th>Timestamp</th><th>Stage</th>
+          <th class="r">MOIC</th><th class="r">IRR</th>
           <th>Covenant</th><th>Notes</th>
         </tr></thead>
         <tbody>{"".join(trail_rows)}</tbody>
       </table>
-    </div>
+    </section>
 
     {_render_ebitda_sparkline(var_df)}
 
     {
-      f'<div class="card"><h2>Quarterly variance ({len(var_df)} rows)</h2>'
-      f'<table><thead><tr>'
-      f'<th>Quarter</th><th>KPI</th><th>Actual</th><th>Plan</th>'
-      f'<th>Variance</th><th>Severity</th>'
-      f'</tr></thead><tbody>{"".join(var_rows)}</tbody></table></div>'
+      '<section class="cad-card ck-deal-section">'
+      '<header class="ck-deal-section-head">'
+      '<h2>Quarterly variance</h2>'
+      f'<span class="ck-deal-section-count">{len(var_df)} rows</span>'
+      '</header>'
+      '<table class="ck-deal-table"><thead><tr>'
+      '<th>Quarter</th><th>KPI</th>'
+      '<th class="r">Actual</th><th class="r">Plan</th>'
+      '<th class="r">Variance</th><th>Severity</th>'
+      f'</tr></thead><tbody>{"".join(var_rows)}</tbody></table>'
+      '</section>'
       if var_rows else ""
     }
 
     {
-      f'<div class="card"><h2>Initiative attribution ({len(init_df)} initiatives)</h2>'
-      f'<table><thead><tr>'
-      f'<th>Initiative</th><th>Cum. actual</th><th>Cum. plan</th>'
-      f'<th>Variance</th><th>Severity</th><th>Quarters</th>'
-      f'</tr></thead><tbody>{"".join(init_rows)}</tbody></table></div>'
+      '<section class="cad-card ck-deal-section">'
+      '<header class="ck-deal-section-head">'
+      '<h2>Initiative attribution</h2>'
+      f'<span class="ck-deal-section-count">{len(init_df)} initiatives</span>'
+      '</header>'
+      '<table class="ck-deal-table"><thead><tr>'
+      '<th>Initiative</th><th class="r">Cum. actual</th>'
+      '<th class="r">Cum. plan</th><th class="r">Variance</th>'
+      '<th>Severity</th><th class="r">Quarters</th>'
+      f'</tr></thead><tbody>{"".join(init_rows)}</tbody></table>'
+      '</section>'
       if init_rows else ""
     }
 
     <script>
-    // B98: record this deal in the browser's recently-viewed list so the
-    // dashboard can offer a quick-nav shortcut. Caps at 10 entries.
+    // B98: record this deal in the browser's recently-viewed list so
+    // the user dropdown can surface "Recently viewed" shortcuts.
+    // Stores [{{id, name}}] objects (newer shape) but tolerates the
+    // legacy string-only entries by upgrading them on read.
     (function() {{
       try {{
         var KEY = 'rcm-mc-recent-deals-v1';
         var MAX = 10;
         var did = {repr(deal_id)};
+        var dname = {repr(deal_name)};
         var arr = [];
         try {{ arr = JSON.parse(localStorage.getItem(KEY) || '[]'); }} catch (e) {{ arr = []; }}
-        // Put this deal at the front, dedupe
-        arr = [did].concat(arr.filter(function(x) {{ return x !== did; }}));
-        arr = arr.slice(0, MAX);
+        // Normalise to {{id, name}} objects; drop stale stringified entries.
+        arr = arr.map(function(x) {{
+          return (typeof x === 'string') ? {{id: x, name: x}} : x;
+        }}).filter(function(x) {{ return x && x.id && x.id !== did; }});
+        arr = [{{id: did, name: dname || did}}].concat(arr).slice(0, MAX);
         localStorage.setItem(KEY, JSON.stringify(arr));
       }} catch (e) {{ /* storage unavailable — skip */ }}
     }})();
@@ -706,11 +1032,11 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
 
     {_deal_action_forms(deal_id)}
     """
-    return shell(
-        body=body,
-        title=f"Deal: {deal_id}",
-        subtitle=f"Live view · reading {config.db_path}",
-        back_href="/",
+    return chartis_shell(
+        body,
+        title=f"{deal_name} — Deal",
+        active_nav="/portfolio",
+        subtitle="",
     )
 
 
@@ -726,50 +1052,64 @@ def _render_deal_tags(store: PortfolioStore, deal_id: str) -> str:
     pills = []
     for tag in tags:
         pills.append(
-            f'<span class="badge badge-blue" style="margin-right: 0.35rem; '
-            f'display: inline-flex; align-items: center; gap: 0.25rem;">'
+            f'<span class="ck-deal-tag-pill">'
             f'{html.escape(tag)}'
             f'<form method="POST" action="/api/deals/{qd}/tags/{urllib.parse.quote(tag)}/remove" '
-            f'style="display: inline; margin: 0;" '
+            f'style="display:inline;margin:0;" '
             f'onsubmit="return confirm(\'Remove tag {html.escape(tag)}?\');">'
-            f'<button type="submit" style="background: none; border: none; '
-            f'color: inherit; cursor: pointer; padding: 0 0 0 0.25rem; '
-            f'font-size: 0.9rem; line-height: 1;">×</button>'
+            f'<button type="submit" class="ck-deal-tag-remove" '
+            f'aria-label="Remove tag {html.escape(tag)}">×</button>'
             f'</form>'
             f'</span>'
         )
     pills_html = "".join(pills) if pills else (
-        '<span class="muted" style="font-size: 0.85rem;">No tags yet.</span>'
+        '<span class="ck-deal-tag-empty">No tags yet</span>'
     )
 
-    input_css = (
-        'style="padding: 0.35rem 0.6rem; border: 1px solid var(--border); '
-        'border-radius: 6px; font-size: 0.85rem; font-family: inherit;"'
-    )
     return f"""
-    <div class="card" style="padding: 0.75rem 1.25rem;">
-      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
-        <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;
-              text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.5rem;">
-          Tags
-        </span>
-        {pills_html}
-        <form method="POST" action="/api/deals/{qd}/tags"
-              style="display: inline-flex; gap: 0.4rem; margin-left: auto;">
-          <input type="text" name="tag" required
-                 placeholder="add tag (e.g. watch, region:tx)"
-                 pattern="[a-z0-9][a-z0-9_:.\\-]{{0,39}}"
-                 title="lowercase alnum / dash / underscore / colon / period"
-                 {input_css}>
-          <button type="submit"
-                  style="padding: 0.35rem 0.85rem; border: none;
-                         border-radius: 6px; background: var(--accent);
-                         color: white; font-weight: 600; cursor: pointer;
-                         font-size: 0.85rem;">
-            +
-          </button>
-        </form>
-      </div>
+    <style>
+      .ck-deal-tags-card{{padding:14px 22px;margin:0 0 20px;
+        display:flex;flex-wrap:wrap;align-items:center;gap:10px;}}
+      .ck-deal-tags-label{{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;font-weight:700;letter-spacing:0.1em;
+        text-transform:uppercase;color:var(--sc-text-dim,#465366);
+        margin-right:4px;}}
+      .ck-deal-tag-pill{{display:inline-flex;align-items:center;gap:4px;
+        padding:4px 10px;background:var(--sc-bone,#ece6db);
+        border:1px solid var(--sc-rule,#d6cfc3);border-radius:2px;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
+        font-weight:600;color:var(--sc-navy,#0b2341);
+        letter-spacing:0.04em;}}
+      .ck-deal-tag-remove{{background:none;border:0;color:inherit;
+        cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;
+        opacity:0.6;}}
+      .ck-deal-tag-remove:hover{{opacity:1;color:var(--sc-negative,#b5321e);}}
+      .ck-deal-tag-empty{{font-family:var(--sc-serif,Georgia,serif);
+        font-size:13px;color:var(--sc-text-faint,#7a8699);font-style:italic;}}
+      .ck-deal-tag-form{{display:inline-flex;gap:6px;margin-left:auto;}}
+      .ck-deal-tag-form input{{padding:5px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12px;
+        color:var(--sc-text,#1a2332);border-radius:2px;}}
+      .ck-deal-tag-form input:focus{{outline:none;
+        border-color:var(--sc-teal,#155752);}}
+      .ck-deal-tag-form button{{padding:5px 12px;
+        background:var(--sc-navy,#0b2341);color:#fff;border:0;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;}}
+      .ck-deal-tag-form button:hover{{background:var(--sc-teal,#155752);}}
+    </style>
+    <div class="cad-card ck-deal-tags-card">
+      <span class="ck-deal-tags-label">Tags</span>
+      {pills_html}
+      <form class="ck-deal-tag-form" method="POST" action="/api/deals/{qd}/tags">
+        <input type="text" name="tag" required
+               placeholder="add tag (e.g. watch, region:tx)"
+               pattern="[a-z0-9][a-z0-9_:.\\-]{{0,39}}"
+               title="lowercase alnum / dash / underscore / colon / period">
+        <button type="submit">Add</button>
+      </form>
     </div>
     """
 
@@ -798,37 +1138,26 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
         escaped = html.escape(body_text).replace("\n", "<br>")
         note_id = int(r.get("note_id") or 0)
         items_html.append(
-            f'<li class="deal-note" style="padding: 0.75rem 0; '
-            f'border-bottom: 1px solid var(--border);">'
-            f'<div style="display: flex; justify-content: space-between; '
-            f'align-items: baseline; margin-bottom: 0.25rem;">'
-            f'<span style="font-size: 0.8rem; color: var(--muted);">'
-            f'<strong>{html.escape(author)}</strong> · {html.escape(ts)}'
-            f'</span>'
+            f'<li class="ck-deal-note">'
+            f'<div class="ck-deal-note-head">'
+            f'<span class="ck-deal-note-author">{html.escape(author)}</span>'
+            f'<span class="ck-deal-note-ts">{html.escape(ts)}</span>'
             f'<form method="POST" action="/api/deals/{qd}/notes/{note_id}/delete" '
-            f'style="display: inline; margin: 0;" '
+            f'style="display:inline;margin:0 0 0 auto;" '
             f'onsubmit="return confirm(\'Delete this note?\');">'
-            f'<button type="submit" style="background: none; border: none; '
-            f'color: var(--red-text); cursor: pointer; font-size: 0.75rem; '
-            f'padding: 0;">delete</button>'
+            f'<button type="submit" class="ck-deal-note-delete">delete</button>'
             f'</form>'
             f'</div>'
-            f'<div style="white-space: pre-wrap; line-height: 1.45;">'
-            f'{escaped}</div>'
+            f'<div class="ck-deal-note-body">{escaped}</div>'
             f'</li>'
         )
     note_list = (
-        '<ul style="list-style: none; padding: 0; margin: 0;">'
+        '<ul class="ck-deal-notes-list">'
         + "".join(items_html) + '</ul>'
     ) if items_html else (
-        '<p class="muted" style="font-size: 0.88rem; margin-top: 0.5rem;">'
+        '<p class="ck-deal-empty">'
         'No notes yet. Use the form below to capture call notes, '
         'management commentary, or pending data asks.</p>'
-    )
-
-    input_css = (
-        'style="padding: 0.4rem 0.6rem; border: 1px solid var(--border); '
-        'border-radius: 6px; font-size: 0.9rem; font-family: inherit; width: 100%;"'
     )
     # B91: recently-deleted bin with Restore / Purge buttons
     trash_html = ""
@@ -879,28 +1208,75 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
         )
 
     return f"""
-    <div class="card">
-      <h2>Notes ({len(notes_df)})</h2>
+    <style>
+      .ck-deal-notes-card{{padding:0;overflow:hidden;margin:0 0 20px;}}
+      .ck-deal-notes-head{{display:flex;align-items:baseline;
+        justify-content:space-between;gap:12px;
+        padding:18px 22px 12px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+      .ck-deal-notes-head h2{{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0;letter-spacing:-0.01em;}}
+      .ck-deal-notes-count{{font-family:var(--sc-mono,monospace);
+        font-size:11px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.08em;text-transform:uppercase;}}
+      .ck-deal-notes-list{{list-style:none;padding:0;margin:0;}}
+      .ck-deal-note{{padding:14px 22px;
+        border-bottom:1px solid var(--sc-rule,#d6cfc3);}}
+      .ck-deal-note:last-child{{border-bottom:0;}}
+      .ck-deal-note-head{{display:flex;align-items:baseline;gap:10px;
+        margin-bottom:6px;font-size:12px;}}
+      .ck-deal-note-author{{font-family:var(--sc-sans,Inter,sans-serif);
+        font-weight:600;color:var(--sc-navy,#0b2341);}}
+      .ck-deal-note-ts{{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;color:var(--sc-text-faint,#7a8699);
+        letter-spacing:0.04em;}}
+      .ck-deal-note-delete{{background:none;border:0;
+        color:var(--sc-negative,#b5321e);cursor:pointer;
+        font-family:var(--sc-mono,monospace);font-size:10px;
+        letter-spacing:0.08em;text-transform:uppercase;font-weight:700;}}
+      .ck-deal-note-delete:hover{{color:var(--sc-navy,#0b2341);}}
+      .ck-deal-note-body{{white-space:pre-wrap;line-height:1.55;
+        font-family:var(--sc-serif,Georgia,serif);font-size:13.5px;
+        color:var(--sc-text,#1a2332);}}
+      .ck-deal-empty{{padding:18px 22px;margin:0;
+        font-family:var(--sc-serif,Georgia,serif);font-style:italic;
+        font-size:13.5px;color:var(--sc-text-dim,#465366);}}
+      .ck-deal-note-form{{padding:18px 22px;
+        border-top:1px solid var(--sc-rule,#d6cfc3);
+        display:grid;gap:10px;background:var(--sc-bone,#ece6db);}}
+      .ck-deal-note-form input,
+      .ck-deal-note-form textarea{{padding:9px 12px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:13px;
+        color:var(--sc-text,#1a2332);border-radius:2px;width:100%;
+        box-sizing:border-box;}}
+      .ck-deal-note-form textarea{{font-family:var(--sc-serif,Georgia,serif);
+        line-height:1.5;}}
+      .ck-deal-note-form input:focus,
+      .ck-deal-note-form textarea:focus{{outline:none;
+        border-color:var(--sc-teal,#155752);}}
+      .ck-deal-note-form button{{justify-self:start;
+        padding:9px 18px;background:var(--sc-navy,#0b2341);color:#fff;
+        border:0;font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;}}
+      .ck-deal-note-form button:hover{{background:var(--sc-teal,#155752);}}
+    </style>
+    <section class="cad-card ck-deal-notes-card">
+      <header class="ck-deal-notes-head">
+        <h2>Notes</h2>
+        <span class="ck-deal-notes-count">{len(notes_df)} entries</span>
+      </header>
       {note_list}
-      <form method="POST" action="/api/deals/{qd}/notes"
-            style="margin-top: 1rem; display: grid; gap: 0.5rem;">
-        <input type="text" name="author" placeholder="Your name (optional)"
-               {input_css}>
+      <form class="ck-deal-note-form" method="POST" action="/api/deals/{qd}/notes">
+        <input type="text" name="author" placeholder="Your name (optional)">
         <textarea name="body" required rows="3"
-                  placeholder="New note — call notes, management commentary, data asks..."
-                  {input_css}></textarea>
-        <div>
-          <button type="submit"
-                  style="padding: 0.5rem 1.25rem; border: none;
-                         border-radius: 6px; background: var(--accent);
-                         color: white; font-weight: 600; cursor: pointer;
-                         font-size: 0.9rem;">
-            Add note
-          </button>
-        </div>
+                  placeholder="New note — call notes, management commentary, data asks…"></textarea>
+        <button type="submit">Add note &rarr;</button>
       </form>
       {trash_html}
-    </div>
+    </section>
     """
 
 
@@ -1190,7 +1566,7 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
         f'<line x1="{pad}" y1="{height - pad}" x2="{width - pad}" '
         f'y2="{height - pad}" stroke="#E5E7EB" stroke-width="1"/>'
         f'{plan_path}'
-        f'<polyline points="{actual_pts}" fill="none" stroke="#1F4E78" stroke-width="2.5"/>'
+        f'<polyline points="{actual_pts}" fill="none" stroke="var(--sc-navy)" stroke-width="2.5"/>'
         f'{dots}'
         f'{labels}'
         f'{y_labels}'
@@ -1221,98 +1597,117 @@ def _deal_action_forms(deal_id: str) -> str:
         for s in DEAL_STAGES
     )
 
-    # Compact inline form styling — keeps the deal page readable
-    form_css = (
-        'style="display: grid; grid-template-columns: 180px 1fr; '
-        'gap: 0.5rem 1rem; align-items: center; max-width: 600px;"'
-    )
-    input_css = (
-        'style="padding: 0.4rem 0.6rem; border: 1px solid var(--border); '
-        'border-radius: 6px; font-size: 0.9rem; font-family: inherit;"'
-    )
-    submit_css = (
-        'style="padding: 0.5rem 1.25rem; border: none; border-radius: 6px; '
-        'background: var(--accent); color: white; font-weight: 600; '
-        'cursor: pointer; font-size: 0.9rem; font-family: inherit;"'
-    )
+    actions_css = """
+    <style>
+      .ck-deal-action-card{padding:18px 22px;margin:0 0 20px;}
+      .ck-deal-action-card h2{font-family:var(--sc-serif,Georgia,serif);
+        font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);
+        margin:0 0 6px;letter-spacing:-0.01em;}
+      .ck-deal-action-card .ck-deal-action-lede{
+        font-family:var(--sc-serif,Georgia,serif);font-size:13.5px;
+        line-height:1.55;color:var(--sc-text-dim,#465366);margin:0 0 14px;
+        max-width:64ch;}
+      .ck-deal-action-grid{display:grid;
+        grid-template-columns:160px 1fr;gap:8px 14px;align-items:center;
+        max-width:620px;}
+      .ck-deal-action-grid label{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;font-weight:700;letter-spacing:0.1em;
+        text-transform:uppercase;color:var(--sc-text-dim,#465366);}
+      .ck-deal-action-grid input,
+      .ck-deal-action-grid select{padding:7px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;width:100%;
+        box-sizing:border-box;}
+      .ck-deal-action-grid input:focus,
+      .ck-deal-action-grid select:focus{outline:none;
+        border-color:var(--sc-teal,#155752);}
+      .ck-deal-action-submit{padding:9px 18px;
+        background:var(--sc-navy,#0b2341);color:#fff;border:0;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:11.5px;
+        font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+        cursor:pointer;border-radius:2px;justify-self:start;}
+      .ck-deal-action-submit:hover{background:var(--sc-teal,#155752);}
+      .ck-deal-remark-form{display:flex;gap:10px;align-items:center;
+        flex-wrap:wrap;}
+      .ck-deal-remark-form label{font-family:var(--sc-mono,monospace);
+        font-size:10.5px;font-weight:700;letter-spacing:0.1em;
+        text-transform:uppercase;color:var(--sc-text-dim,#465366);}
+      .ck-deal-remark-form input{padding:7px 10px;
+        border:1px solid var(--sc-rule,#d6cfc3);background:#fff;
+        font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;
+        color:var(--sc-text,#1a2332);border-radius:2px;max-width:200px;}
+    </style>
+    """
 
     return f"""
-    <div class="card">
+    {actions_css}
+    <section class="cad-card ck-deal-action-card">
       <h2>Record quarterly actuals</h2>
-      <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">
+      <p class="ck-deal-action-lede">
         Enter the management-deck numbers for the current quarter. Plan
-        values are optional; leave blank to use the snapshot's underwritten
-        EBITDA as the plan.
+        values are optional; leave blank to use the snapshot&rsquo;s
+        underwritten EBITDA as the plan.
       </p>
-      <form method="POST" action="/api/deals/{qd}/actuals" {form_css}>
+      <form class="ck-deal-action-grid" method="POST"
+            action="/api/deals/{qd}/actuals">
         <label>Quarter (YYYYQn)</label>
-        <input type="text" name="quarter" required placeholder="2026Q2" {input_css}>
-
+        <input type="text" name="quarter" required placeholder="2026Q2">
         <label>EBITDA ($)</label>
-        <input type="number" step="any" name="ebitda" {input_css}>
-
+        <input type="number" step="any" name="ebitda">
         <label>Plan EBITDA ($)</label>
-        <input type="number" step="any" name="plan_ebitda" {input_css}>
-
+        <input type="number" step="any" name="plan_ebitda">
         <label>NPSR ($)</label>
-        <input type="number" step="any" name="net_patient_revenue" {input_css}>
-
+        <input type="number" step="any" name="net_patient_revenue">
         <label>IDR (decimal)</label>
-        <input type="number" step="0.001" name="idr_blended" {input_css}>
-
+        <input type="number" step="0.001" name="idr_blended">
         <label>DAR (days)</label>
-        <input type="number" step="0.1" name="dar_clean_days" {input_css}>
-
+        <input type="number" step="0.1" name="dar_clean_days">
         <label>Notes</label>
-        <input type="text" name="notes" {input_css}>
-
+        <input type="text" name="notes">
         <div></div>
-        <button type="submit" {submit_css}>Record quarter</button>
+        <button type="submit" class="ck-deal-action-submit">Record quarter</button>
       </form>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="cad-card ck-deal-action-card">
       <h2>Re-mark underwrite</h2>
-      <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">
-        Recompute MOIC / IRR from the latest TTM EBITDA and persist as a new
-        hold-stage snapshot. Shows whether the original thesis still holds
-        after this quarter's management report.
+      <p class="ck-deal-action-lede">
+        Recompute MOIC / IRR from the latest TTM EBITDA and persist as a
+        new hold-stage snapshot. Shows whether the original thesis still
+        holds after this quarter&rsquo;s management report.
       </p>
-      <form method="POST" action="/api/deals/{qd}/remark"
-            onsubmit="return confirm('Persist a new re-mark snapshot?');"
-            style="display: flex; gap: 0.5rem; align-items: center;">
-        <label style="font-size: 0.9rem; color: var(--muted);">
-          As of quarter (optional):
-        </label>
-        <input type="text" name="as_of" placeholder="auto-detect latest"
-               {input_css} style="max-width: 180px;">
-        <button type="submit" {submit_css}>Compute &amp; persist</button>
+      <form class="ck-deal-remark-form" method="POST"
+            action="/api/deals/{qd}/remark"
+            onsubmit="return confirm('Persist a new re-mark snapshot?');">
+        <label>As of quarter</label>
+        <input type="text" name="as_of" placeholder="auto-detect latest">
+        <button type="submit" class="ck-deal-action-submit">Compute &amp; persist</button>
       </form>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="cad-card ck-deal-action-card">
       <h2>Advance stage</h2>
-      <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">
+      <p class="ck-deal-action-lede">
         Register a new snapshot at a different pipeline stage. The snapshot
-        trail is append-only — advancing stage doesn't erase the prior one.
+        trail is append-only — advancing stage doesn&rsquo;t erase the
+        prior one.
       </p>
-      <form method="POST" action="/api/deals/{qd}/snapshots" {form_css}>
+      <form class="ck-deal-action-grid" method="POST"
+            action="/api/deals/{qd}/snapshots">
         <label>New stage</label>
-        <select name="stage" required {input_css}>
+        <select name="stage" required>
           <option value="" disabled selected>— pick stage —</option>
           {stage_opts}
         </select>
-
-        <label>Run directory (optional)</label>
-        <input type="text" name="run_dir" placeholder="/path/to/run" {input_css}>
-
+        <label>Run directory</label>
+        <input type="text" name="run_dir" placeholder="/path/to/run (optional)">
         <label>Notes</label>
-        <input type="text" name="notes" {input_css}>
-
+        <input type="text" name="notes">
         <div></div>
-        <button type="submit" {submit_css}>Advance stage</button>
+        <button type="submit" class="ck-deal-action-submit">Advance stage</button>
       </form>
-    </div>
+    </section>
     """
 
 
@@ -1393,6 +1788,36 @@ def _sanitize_profile_margins(profile: Dict[str, Any]) -> Dict[str, Any]:
         except (TypeError, ValueError):
             pass
     return profile
+
+
+def _resolve_csrf_secret() -> bytes:
+    """Source the HMAC secret used for CSRF tokens.
+
+    When ``RCM_MC_CSRF_SECRET`` is set in the environment (Azure App
+    Service Configuration is the supported path), the secret is taken
+    from there so it persists across container restarts — partners
+    stay logged in across deploys. Required length: 32+ chars; an
+    env value shorter than that triggers a stderr warning and the
+    ephemeral fallback rather than weakening the HMAC silently.
+
+    With no env, falls back to a per-process random 32-byte secret.
+    Sessions don't survive restart in that mode (the documented
+    Phase-3 behavior in CLAUDE.md "Known limitations").
+    """
+    import secrets as _secrets
+    import sys as _sys
+    env = (os.environ.get("RCM_MC_CSRF_SECRET") or "").strip()
+    if env and len(env) >= 32:
+        return env.encode("utf-8")
+    if env:
+        _sys.stderr.write(
+            "[rcm-mc] WARNING: RCM_MC_CSRF_SECRET is too short "
+            f"({len(env)} chars; need >= 32). Falling back to an "
+            "ephemeral per-process secret — partners will be kicked "
+            "to /login on every container restart.\n"
+        )
+        _sys.stderr.flush()
+    return _secrets.token_bytes(32)
 
 
 class RCMHandler(BaseHTTPRequestHandler):
@@ -1523,10 +1948,19 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     # ── Auth gate (B89) ──
 
-    # B128: per-process HMAC secret for CSRF tokens. Ephemeral — rotates
-    # each server restart, which also invalidates old form tokens (but
-    # sessions survive via the server_secret mismatch check below).
-    _SERVER_SECRET: bytes = __import__("secrets").token_bytes(32)
+    # B128: per-process HMAC secret for CSRF tokens. Ephemeral by
+    # default — rotates each server restart, which also invalidates
+    # old form tokens (but sessions survive via the server_secret
+    # mismatch check below).
+    #
+    # Cycle 11 (Azure deploy-readiness): when ``RCM_MC_CSRF_SECRET``
+    # is set in the environment, the secret is sourced from there
+    # instead of ``secrets.token_bytes`` so Azure App Service can
+    # persist it across container restarts. This stops partners from
+    # being kicked back to the login screen on every deploy. Required
+    # length: 32+ chars. Anything shorter falls back to the ephemeral
+    # default with a stderr warning rather than weakening the HMAC.
+    _SERVER_SECRET: bytes = _resolve_csrf_secret()
 
     # B130: simple per-IP login rate limiter. Not a substitute for a
     # real WAF; enough to slow credential stuffing in dev deploys.
@@ -1778,6 +2212,168 @@ class RCMHandler(BaseHTTPRequestHandler):
         return "; Secure" if self._is_https() else ""
 
     def _send_html(self, body: str, status: int = HTTPStatus.OK) -> None:
+        # Editorial-chrome safety net: any HTML fragment that lacks a
+        # full <!doctype>+<html> envelope gets auto-wrapped in
+        # chartis_shell so 404/500 fragments and one-off raw bodies
+        # render the navy topbar + parchment palette instead of
+        # stark unstyled text. This covers ~8 hand-rolled error
+        # returns in this file plus any future caller that forgets
+        # to wrap.
+        body_lower_head = body[:200].lower()
+        if ("<!doctype" not in body_lower_head
+                and "<html" not in body_lower_head):
+            try:
+                from .ui._chartis_kit import chartis_shell
+                # Pick a sensible page title from the fragment if it
+                # opens with an <h1>; otherwise generic.
+                import re as _re_title
+                m = _re_title.search(
+                    r"<h1[^>]*>([^<]+)</h1>", body[:500],
+                )
+                title = m.group(1) if m else "SeekingChartis"
+                if status >= 400:
+                    title = f"{status} · {title}" if title != "SeekingChartis" else f"{status} · SeekingChartis"
+                body = chartis_shell(body, title=title)
+            except Exception:  # noqa: BLE001 — never let this safety net 500
+                pass
+        # Editorial-chrome augmentation: backfill the section subnav
+        # rail when the renderer didn't pass active_nav, and always
+        # promote the topbar nav-link + matching subnav pill to
+        # "active" based on the current request path.
+        # Bare "ck-subnav" appears in inline CSS (.ck-subnav{...}) on
+        # every editorial page — match the element opener instead so
+        # the rail backfill only triggers when no actual rail rendered.
+        needs_rail_backfill = (
+            status == HTTPStatus.OK
+            and "ck-topbar" in body
+            and '<nav class="ck-subnav"' not in body
+        )
+        needs_active_marks = (
+            status == HTTPStatus.OK and "ck-topbar" in body
+        )
+        if needs_active_marks:
+            try:
+                from .ui._chartis_kit import (
+                    _resolve_sub_section, _SUB_NAV, _CORPUS_NAV,
+                )
+                import urllib.parse as _up
+                req_path = _up.urlparse(self.path).path or "/"
+                section = _resolve_sub_section(req_path)
+                import html as _h
+                # Cached cleaned path used by breadcrumbs + pill match
+                req_path_clean = req_path.rstrip("/") or "/"
+                if needs_rail_backfill and section and section in _SUB_NAV:
+                    pills = "".join(
+                        f'<a href="{_h.escape(item["href"], quote=True)}" '
+                        f'class="ck-subnav-link">{_h.escape(item["label"])}</a>'
+                        for item in _SUB_NAV[section]
+                    )
+                    rail = (
+                        '<nav class="ck-subnav" aria-label="Section">'
+                        f'<div class="ck-subnav-inner">{pills}</div>'
+                        '</nav>'
+                    )
+                    import re as _re_subnav
+                    body = _re_subnav.sub(
+                        r"</header>", rail + "</header>",
+                        body, count=1,
+                    )
+                # Topbar active-link mark: applies whether the rail
+                # was kit-emitted or backfill-injected.
+                if section:
+                    for nav_item in _CORPUS_NAV:
+                        if nav_item.get("key") == section:
+                            href = _h.escape(nav_item["href"], quote=True)
+                            body = body.replace(
+                                f'<a href="{href}" class="">',
+                                f'<a href="{href}" class="active">',
+                                1,
+                            )
+                            break
+                # Auto-breadcrumbs: every editorial page should
+                # surface its location in the nav hierarchy. Derive
+                # the crumb chain from the request path (Home →
+                # Section → Page) and inject as <nav class="ck-
+                # breadcrumbs"> right after the topbar's </header>.
+                # Skipped if a renderer already provided breadcrumbs
+                # (look for an existing .ck-breadcrumbs element).
+                if 'class="ck-breadcrumbs"' not in body and section:
+                    section_label = ""
+                    section_href = ""
+                    for nav_item in _CORPUS_NAV:
+                        if nav_item.get("key") == section:
+                            section_label = nav_item.get("label", "")
+                            section_href = nav_item.get("href", "")
+                            break
+                    page_label = ""
+                    if section in _SUB_NAV:
+                        for sub in _SUB_NAV[section]:
+                            sub_href_clean = sub.get("href", "").split("?")[0].rstrip("/") or "/"
+                            if sub_href_clean == req_path_clean:
+                                page_label = sub.get("label", "")
+                                break
+                    crumbs_parts = [
+                        '<a href="/home">Home</a>',
+                        '<span class="sep">/</span>',
+                    ]
+                    if section_label:
+                        if page_label:
+                            crumbs_parts.append(
+                                f'<a href="{_h.escape(section_href, quote=True)}">'
+                                f'{_h.escape(section_label)}</a>'
+                            )
+                            crumbs_parts.append('<span class="sep">/</span>')
+                            crumbs_parts.append(
+                                f'<strong style="color:var(--sc-navy);">'
+                                f'{_h.escape(page_label)}</strong>'
+                            )
+                        else:
+                            crumbs_parts.append(
+                                f'<strong style="color:var(--sc-navy);">'
+                                f'{_h.escape(section_label)}</strong>'
+                            )
+                    else:
+                        # Section unknown — just show "Home / <path>"
+                        crumbs_parts.append(
+                            f'<strong style="color:var(--sc-navy);">'
+                            f'{_h.escape(req_path_clean)}</strong>'
+                        )
+                    crumbs_html = (
+                        '<nav class="ck-breadcrumbs">'
+                        + "".join(crumbs_parts)
+                        + '</nav>'
+                    )
+                    # Inject right after the topbar's </header>.
+                    import re as _re_crumbs
+                    body = _re_crumbs.sub(
+                        r"</header>", "</header>" + crumbs_html,
+                        body, count=1,
+                    )
+                # Always-on sub-nav pill highlight (works whether the
+                # rail came from the kit or from the backfill above):
+                # for every <a class="ck-subnav-link"> whose href
+                # matches the current request path, promote to
+                # "ck-subnav-link active". Strip query string from
+                # both sides before comparing so e.g.
+                # /diligence/risk-workbench?demo=steward still
+                # highlights the Risk Workbench pill on a hit to
+                # /diligence/risk-workbench.
+                import re as _re_pill
+                def _mark_active(m):
+                    href_attr = m.group(1)
+                    href_clean = href_attr.split("?")[0].rstrip("/") or "/"
+                    if href_clean == req_path_clean:
+                        return (
+                            f'<a href="{href_attr}" '
+                            f'class="ck-subnav-link active">'
+                        )
+                    return m.group(0)
+                body = _re_pill.sub(
+                    r'<a href="([^"]+)" class="ck-subnav-link">',
+                    _mark_active, body,
+                )
+            except Exception:  # noqa: BLE001
+                pass
         # PHI banner safety net: any HTML response that doesn't already
         # carry the banner gets it injected near the top of <body>. The
         # chartis_shell dispatcher also injects it, so well-behaved
@@ -1830,9 +2426,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(encoded)
 
-    def _send_file(self, abs_path: str) -> None:
+    def _send_file(self, abs_path: str, *, cache_control: Optional[str] = None) -> None:
         """Serve a static file from ``self.config.outdir``. Guarded against
         path-traversal by requiring the resolved path to live inside outdir.
+
+        ``cache_control`` lets callers opt into a ``Cache-Control``
+        header for known-immutable assets (design tokens, marketing
+        CSS); when omitted, no caching directive is sent so partner-
+        generated outputs in ``outdir`` stay fresh on every fetch.
         """
         try:
             with open(abs_path, "rb") as f:
@@ -1860,18 +2461,29 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", mime)
         self.send_header("Content-Length", str(len(data)))
+        if cache_control:
+            self.send_header("Cache-Control", cache_control)
         self.end_headers()
         self.wfile.write(data)
 
     def _route_static(self, filename: str) -> None:
-        """Serve a file from ``rcm_mc/ui/static/``. Path-traversal safe."""
+        """Serve a file from ``rcm_mc/ui/static/``. Path-traversal safe.
+
+        Static UI assets (design tokens, marketing CSS, etc.) are
+        immutable per deploy and CDN-friendly — we send a one-hour
+        ``Cache-Control: public, max-age=3600`` so Azure CDN /
+        browser cache spare the origin on every page load.
+        """
         import pathlib
         static_dir = pathlib.Path(__file__).parent / "ui" / "static"
         target = (static_dir / filename).resolve()
         if not str(target).startswith(str(static_dir.resolve())):
             self.send_error(HTTPStatus.FORBIDDEN)
             return
-        self._send_file(str(target))
+        self._send_file(
+            str(target),
+            cache_control="public, max-age=3600",
+        )
 
     # ── Route matching ──
 
@@ -1949,7 +2561,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         if ui_v2 in self._UI_EDITORIAL_VALUES:
             self._ui_choice = "editorial"
             return
-        self._ui_choice = "legacy"
+        if ui_v2 in self._UI_LEGACY_VALUES:
+            self._ui_choice = "legacy"
+            return
+        # Default: align with UI_V2_ENABLED (which defaults to True when
+        # CHARTIS_UI_V2 is unset). Without this default, /dashboard
+        # checks UI_V2_ENABLED → True → redirects to /app, while /app
+        # checks self._ui_choice → "legacy" → redirects back to
+        # /dashboard, producing an infinite redirect loop.
+        from .ui._chartis_kit import UI_V2_ENABLED as _v2_default
+        self._ui_choice = "editorial" if _v2_default else "legacy"
 
     def do_GET(self) -> None:
         if not self._auth_ok():
@@ -1991,6 +2612,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             # migration, not analytical content about a deal.
             from .ui.v3_status_page import render_v3_status
             return self._send_html(render_v3_status())
+        if path == "/v5-status":
+            # v5 campaign twin of /v3-status: reads docs/V5_ROUTE_INVENTORY.md
+            # (``python3 RCM_MC/tools/v3_route_inventory.py --v5``). Same
+            # DealAnalysisPacket exemption as /v3-status.
+            from .ui.v5_status_page import render_v5_status
+            return self._send_html(render_v5_status())
         if path == "/cli-runs":
             # CLI run-history browser (campaign target 3C). Reads
             # <outdir>/runs.sqlite via infra.run_history.list_runs.
@@ -2046,6 +2673,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._redirect("/app")
             return self._route_seekingchartis_home()
         if path == "/" or path == "/index.html":
+            # Explicit ?v2=1 / ?v3=1 query overrides bypass every other
+            # routing rule below — this is the legacy contract used by
+            # tests and bookmarked URLs ("show me the v3 dashboard at
+            # /, not the marketing splash"). Without this short-circuit
+            # the editorial-era / handler swallows the request before
+            # _route_dashboard's v2/v3 dispatch ever runs.
+            _qs_root = urllib.parse.parse_qs(parsed.query)
+            if _qs_root.get("v3") or _qs_root.get("v2"):
+                return self._route_dashboard()
             # Phase 13 of the UI v2 editorial rework: when
             # CHARTIS_UI_V2=1, the public marketing landing renders at
             # "/". Under the legacy flag (default), "/" continues to
@@ -2225,6 +2861,13 @@ class RCMHandler(BaseHTTPRequestHandler):
         # HCRIS X-Ray — Medicare cost-report peer benchmarking.
         if path == "/diligence/hcris-xray":
             return self._route_hcris_xray_page()
+        # Diligence section landing — was 404, now an editorial
+        # index that groups the 24 RCM playbook surfaces into four
+        # pillars (Profile/Health, Thesis/Playbook, Audit/Stress,
+        # Exit/Synthesis). Top-nav DILIGENCE button points here.
+        if path == "/diligence" or path == "/diligence/":
+            from .ui.diligence_index_page import render_diligence_index
+            return self._send_html(render_diligence_index())
         # Diligence Checklist — orchestration layer + open-questions tracker.
         if path == "/diligence/checklist":
             return self._route_diligence_checklist_page()
@@ -3166,6 +3809,8 @@ class RCMHandler(BaseHTTPRequestHandler):
                 hold_years=_qfloat("hold_years"),
                 exit_multiple=_qfloat("exit_multiple"),
             ))
+        if path == "/tools":
+            return self._route_tools_index()
         if path == "/comparables":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qf(k, default=None):
@@ -3380,6 +4025,44 @@ class RCMHandler(BaseHTTPRequestHandler):
                     moic_bucket=moic_bucket,
                 )
             )
+        if path == "/research":
+            # /research surfaces the curated research catalog —
+            # methodology hubs, frameworks, deep-dives, and field
+            # notes pulled from elsewhere in the platform. The
+            # nav anchor pointed here since the chartis_shell ship
+            # but had no backing route until cycle 9.
+            _qs = urllib.parse.parse_qs(parsed.query)
+            r_q = _qs.get("q", [""])[0]
+            r_topic = _qs.get("topic", [""])[0]
+            r_kind = _qs.get("kind", [""])[0]
+            from .ui.research_page import render_research
+            return self._send_html(
+                render_research(q=r_q, topic=r_topic, kind=r_kind),
+            )
+        # Research-tab card targets — page modules already existed
+        # but were never wired to routes, so each card click 404'd.
+        if path == "/comparable-outcomes":
+            from .ui.comparable_outcomes_page import (
+                render_comparable_outcomes_page,
+            )
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(
+                render_comparable_outcomes_page(
+                    _qs, db_path=self.config.db_path,
+                ),
+            )
+        if path == "/regulatory-calendar":
+            from .ui.regulatory_calendar_page import (
+                render_regulatory_calendar_page,
+            )
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(
+                render_regulatory_calendar_page(_qs),
+            )
+        if path == "/bear-cases":
+            from .ui.bear_case_page import render_bear_case_page
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_bear_case_page(_qs))
         # Screener API
         if path == "/api/screener/run":
             return self._send_json({"error": "use POST"}, status=HTTPStatus.METHOD_NOT_ALLOWED)
@@ -3973,8 +4656,21 @@ class RCMHandler(BaseHTTPRequestHandler):
                     assets=assets,
                 )
                 pv = compute_variance(snapshot)
-                return self._send_html(
-                    render_monitor_dashboard(pv))
+                # Wrap the bespoke dashboard body in chartis_shell so
+                # /portfolio/monitor renders inside the v5 chrome
+                # without rewriting the renderer.
+                from .ui._chartis_kit import chartis_shell
+                inner = render_monitor_dashboard(pv)
+                # The renderer returns a full <html>...</html> doc; pull
+                # out the <body> contents so chartis_shell can supply
+                # the page chrome around it.
+                import re as _re_pm
+                m = _re_pm.search(
+                    r"<body[^>]*>(.*?)</body>", inner, _re_pm.S)
+                body_html = m.group(1) if m else inner
+                return self._send_html(chartis_shell(
+                    body_html, "Portfolio Monitor",
+                    subtitle="plan-vs-actual variance, fund-level"))
             except Exception as exc:  # noqa: BLE001
                 return self._send_html(
                     f"<h1>500</h1><p>Monitor failed: "
@@ -4558,7 +5254,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "start_url": "/",
                 "display": "standalone",
                 "background_color": "#0F172A",
-                "theme_color": "#1F4E78",
+                "theme_color": "var(--sc-navy)",
             }
             body = _json.dumps(manifest, indent=2).encode("utf-8")
             self.send_response(HTTPStatus.OK)
@@ -4649,7 +5345,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/ops":
             return self._route_ops()
         if path == "/alerts":
-            return self._route_alerts()
+            from .ui.alerts_page import render_alerts
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            show_all = bool(qs.get("show"))
+            owner_filter = (qs.get("owner") or [""])[0].strip() or None
+            store = PortfolioStore(self.config.db_path)
+            return self._send_html(render_alerts(
+                store, show_all=show_all, owner_filter=owner_filter,
+            ))
         if path == "/escalations":
             return self._route_escalations()
         if path == "/cohorts":
@@ -4971,7 +5674,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/api/"):
             return self._route_api(path)
 
-        self.send_error(HTTPStatus.NOT_FOUND, f"Unknown path: {path}")
+        # Catch-all: editorial 404 instead of stdlib's plain text page.
+        # Authenticated path only — anonymous visitors land here only
+        # after auth check, so we can render the chrome safely.
+        return self._error_page(
+            "Page not found",
+            f"Unknown path: {path}",
+            code="404",
+        )
 
     # ── Route handlers ──
 
@@ -5126,53 +5836,169 @@ class RCMHandler(BaseHTTPRequestHandler):
         return re.sub(r'[^A-Za-z0-9]', '', raw)[:10]
 
     def _error_page(self, title: str, message: str, *, code: str = "404") -> None:
-        """Bloomberg-style terminal error page — code, timestamp, actions."""
-        from .ui._chartis_kit import chartis_shell
+        """Editorial error page — page title + reassurance + suggested
+        next moves. Replaces the legacy Bloomberg-dark error card so a
+        404 / 500 still feels like the same product.
+        """
+        from .ui._chartis_kit import chartis_shell, ck_page_title
         from datetime import datetime, timezone
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         req_path = html.escape(getattr(self, "path", "—")[:120])
-        body = (
-            f'<div class="cad-card" style="border-left:3px solid var(--cad-neg);'
-            f'padding:18px 22px;">'
-            f'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
-            f'<span class="cad-section-code" style="color:var(--cad-neg);'
-            f'border-color:var(--cad-neg);padding:3px 10px;font-size:11px;">ERR · {html.escape(code)}</span>'
-            f'<h2 style="margin:0;color:var(--cad-text);font-size:15px;'
-            f'letter-spacing:0.1em;text-transform:uppercase;">{html.escape(title)}</h2>'
-            f'</div>'
-            f'<div style="font-family:var(--cad-mono);font-size:11.5px;'
-            f'color:var(--cad-text2);background:#03050a;border:1px solid var(--cad-border);'
-            f'padding:12px 14px;line-height:1.7;letter-spacing:0.02em;">'
-            f'<div><span style="color:var(--cad-text3);">&gt; CODE&nbsp;&nbsp;</span>'
-            f'<span style="color:var(--cad-neg);">{html.escape(code)}</span></div>'
-            f'<div><span style="color:var(--cad-text3);">&gt; PATH&nbsp;&nbsp;</span>'
-            f'<span>{req_path}</span></div>'
-            f'<div><span style="color:var(--cad-text3);">&gt; TIME&nbsp;&nbsp;</span>'
-            f'<span>{ts}</span></div>'
-            f'<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--cad-border);">'
-            f'<span style="color:var(--cad-text3);">&gt; MSG&nbsp;&nbsp;&nbsp;</span>'
-            f'<span style="color:var(--cad-text);">{html.escape(message)}</span></div>'
-            f'</div>'
-            f'<div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;">'
-            f'<a href="javascript:history.back()" class="cad-btn" '
-            f'style="text-decoration:none;">&larr; Back</a>'
-            f'<a href="/home" class="cad-btn cad-btn-primary" '
-            f'style="text-decoration:none;">Home</a>'
-            f'<a href="/portfolio" class="cad-btn" style="text-decoration:none;">Portfolio</a>'
-            f'<a href="/predictive-screener" class="cad-btn" '
-            f'style="text-decoration:none;">Screener</a>'
-            f'<a href="/api/docs" class="cad-btn" style="text-decoration:none;">API Docs</a>'
-            f'</div>'
-            f'<div style="margin-top:14px;padding-top:10px;'
-            f'border-top:1px solid var(--cad-border);'
-            f'font-family:var(--cad-mono);font-size:9.5px;'
-            f'letter-spacing:0.12em;color:var(--cad-text3);text-transform:uppercase;">'
-            f'<span style="color:var(--cad-pos);">&#9679;</span> Platform healthy &middot; '
-            f'this is a specific resource error &middot; <kbd>&#8984;K</kbd> palette &middot; '
-            f'<kbd>?</kbd> shortcuts</div>'
-            f'</div>'
+        # Tone the eyebrow + meta differently for "page not found"
+        # vs "something broke" — same chrome, different reassurance.
+        is_500 = str(code).startswith("5")
+        eyebrow = "ERROR · SERVER" if is_500 else "ERROR · NOT FOUND"
+        title_text = "Something broke." if is_500 else "Page not found."
+        explainer = (
+            "An unexpected error occurred while loading this surface. "
+            "The platform is otherwise healthy — try the page again, "
+            "or jump to one of the surfaces below."
+        ) if is_500 else (
+            "The URL you followed doesn't match a surface in the "
+            "platform. The path may have been renamed, or you may "
+            "have lost a session. Try one of the surfaces below."
         )
-        return self._send_html(chartis_shell(body, title))
+
+        page_title = ck_page_title(
+            title_text,
+            eyebrow=eyebrow,
+            meta=f"Code {html.escape(str(code))} · {req_path} · {ts}",
+        )
+
+        # Suggested-next chip cards. Sized for one screen-fold so the
+        # partner sees the way out without scrolling. Mirrors the
+        # /diligence pillar treatment but smaller per-card.
+        chips_html = (
+            '<div class="ck-err-chips">'
+            '<a class="ck-err-chip" href="/app">'
+            '<div class="ck-err-chip-eyebrow">DAILY DRIVER</div>'
+            '<div class="ck-err-chip-label">Command Center</div>'
+            '<div class="ck-err-chip-blurb">Today\'s alerts, deals, '
+            'and pipeline at a glance.</div>'
+            '</a>'
+            '<a class="ck-err-chip" href="/portfolio">'
+            '<div class="ck-err-chip-eyebrow">YOUR PORTFOLIO</div>'
+            '<div class="ck-err-chip-label">Portfolio</div>'
+            '<div class="ck-err-chip-blurb">Active deals, health, '
+            'covenant status, IRR.</div>'
+            '</a>'
+            '<a class="ck-err-chip" href="/diligence">'
+            '<div class="ck-err-chip-eyebrow">RCM PLAYBOOK</div>'
+            '<div class="ck-err-chip-label">Diligence</div>'
+            '<div class="ck-err-chip-blurb">24 surfaces grouped into '
+            'four pillars.</div>'
+            '</a>'
+            '<a class="ck-err-chip" href="/library">'
+            '<div class="ck-err-chip-eyebrow">DEAL CORPUS</div>'
+            '<div class="ck-err-chip-label">Library</div>'
+            '<div class="ck-err-chip-blurb">655 healthcare-PE deals '
+            'with realized returns.</div>'
+            '</a>'
+            '</div>'
+        )
+
+        message_card = ""
+        if message and not is_500:
+            # 404 with a specific message ("Unknown path: /xyz") —
+            # surface it discreetly so the partner can confirm what
+            # they tried to reach.
+            message_card = (
+                '<div class="ck-err-msg">'
+                '<div class="ck-err-msg-label">DETAIL</div>'
+                f'<div class="ck-err-msg-body">{html.escape(message[:240])}</div>'
+                '</div>'
+            )
+        elif message:
+            # 500 — message is partial traceback; show in a quieter
+            # mono block but limit length.
+            message_card = (
+                '<div class="ck-err-msg">'
+                '<div class="ck-err-msg-label">DETAIL</div>'
+                '<div class="ck-err-msg-body" style="font-family:var(--sc-mono,monospace);'
+                'font-size:11.5px;line-height:1.55;white-space:pre-wrap;">'
+                f'{html.escape(message[:480])}</div>'
+                '</div>'
+            )
+
+        css = (
+            '<style>'
+            '.ck-err-lede{font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:15px;line-height:1.6;color:var(--sc-text-dim,#465366);'
+            'max-width:64ch;margin:0 0 24px;}'
+            '.ck-err-actions{display:flex;gap:8px;margin:0 0 32px;}'
+            '.ck-err-back,.ck-err-home{font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:12px;font-weight:600;letter-spacing:0.06em;'
+            'text-transform:uppercase;padding:9px 16px;border-radius:2px;'
+            'text-decoration:none;cursor:pointer;border:1px solid;}'
+            '.ck-err-home{color:#fff;background:var(--sc-navy,#0b2341);'
+            'border-color:var(--sc-navy,#0b2341);}'
+            '.ck-err-home:hover{background:var(--sc-teal,#155752);'
+            'border-color:var(--sc-teal,#155752);}'
+            '.ck-err-back{color:var(--sc-navy,#0b2341);background:#fff;'
+            'border-color:var(--sc-rule,#d6cfc3);}'
+            '.ck-err-back:hover{border-color:var(--sc-navy,#0b2341);}'
+            '.ck-err-msg{background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+            'border-left:3px solid var(--sc-warning,#b8732a);'
+            'border-radius:2px;padding:14px 18px;margin:0 0 28px;'
+            'max-width:760px;}'
+            '.ck-err-msg-label{font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:var(--sc-warning,#b8732a);'
+            'margin-bottom:6px;}'
+            '.ck-err-msg-body{font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:13px;color:var(--sc-text,#1a2332);line-height:1.55;}'
+            '.ck-err-chips{display:grid;'
+            'grid-template-columns:repeat(auto-fit,minmax(220px,1fr));'
+            'gap:14px;margin:0 0 24px;}'
+            '.ck-err-chip{display:block;text-decoration:none;color:inherit;'
+            'background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+            'border-radius:2px;padding:18px 20px;'
+            'transition:border-color 0.12s,transform 0.12s;}'
+            '.ck-err-chip:hover{border-color:var(--sc-teal,#155752);'
+            'transform:translateY(-1px);}'
+            '.ck-err-chip-eyebrow{font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.12em;'
+            'text-transform:uppercase;color:var(--sc-text-faint,#7a8699);'
+            'margin-bottom:8px;}'
+            '.ck-err-chip-label{font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:18px;font-weight:500;color:var(--sc-navy,#0b2341);'
+            'margin-bottom:6px;letter-spacing:-0.01em;}'
+            '.ck-err-chip-blurb{font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:13px;line-height:1.5;color:var(--sc-text-dim,#465366);}'
+            '</style>'
+        )
+
+        body = (
+            f"{css}"
+            f"{page_title}"
+            f'<p class="ck-err-lede">{html.escape(explainer)}</p>'
+            '<div class="ck-err-actions">'
+            '<a class="ck-err-home" href="/app">Open Command Center</a>'
+            '<a class="ck-err-back" href="javascript:history.back()">'
+            '&larr; Back</a>'
+            '</div>'
+            f"{message_card}"
+            '<div class="ck-eyebrow" style="margin:0 0 12px;">'
+            'TRY ONE OF THESE'
+            '</div>'
+            f"{chips_html}"
+        )
+        # Map error code -> HTTP status so the response carries the
+        # correct status line. Defaults to 404 for "404"-ish codes,
+        # 500 for "5xx", and 400 otherwise.
+        try:
+            status_code = int(str(code))
+        except (TypeError, ValueError):
+            status_code = 404
+        if status_code < 400 or status_code > 599:
+            status_code = 404
+        return self._send_html(
+            chartis_shell(
+                body, title,
+                active_nav=None,  # Errors don't belong to a section
+            ),
+            status=status_code,
+        )
 
     def _route_ml_insights(self) -> None:
         """GET /ml-insights — national ML analysis dashboard."""
@@ -11411,388 +12237,32 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     # ── Upload UI (B66) ──
 
-    def _route_alerts(self) -> None:
-        """B101 + B102: portfolio-wide alert review page with ack/snooze."""
-        from .alerts.alerts import evaluate_active, evaluate_all
-        from .alerts.alert_acks import trigger_key_for
-        store = PortfolioStore(self.config.db_path)
-
-        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        show_all = bool(qs.get("show"))
-        owner_filter = (qs.get("owner") or [""])[0].strip() or None
-        alerts = evaluate_all(store) if show_all else evaluate_active(store)
-        if owner_filter:
-            from .deals.deal_owners import deals_by_owner
-            try:
-                scope = set(deals_by_owner(store, owner_filter))
-            except ValueError:
-                scope = set()
-            alerts = [a for a in alerts if a.deal_id in scope]
-
-        sev_meta = {
-            "red":   ("badge-red",   "RED"),
-            "amber": ("badge-amber", "AMBER"),
-            "info":  ("badge-blue",  "INFO"),
-        }
-
-        # Toggle link between "active only" and "all (incl. acked)"
-        base_qs = {}
-        if owner_filter:
-            base_qs["owner"] = owner_filter
-        if show_all:
-            toggle_href = "/alerts" + (
-                "?" + urllib.parse.urlencode(base_qs) if base_qs else ""
-            )
-            toggle = (f'<a href="{toggle_href}" style="color: var(--accent); '
-                      f'font-size: 0.85rem;">← active only</a>')
-        else:
-            toggle_qs = dict(base_qs, show="all")
-            toggle_href = "/alerts?" + urllib.parse.urlencode(toggle_qs)
-            toggle = (f'<a href="{toggle_href}" style="color: var(--accent); '
-                      f'font-size: 0.85rem;">show acked / all →</a>')
-
-        # Owner-filter chip / form
-        owner_form = (
-            f'<form method="GET" action="/alerts" '
-            f'style="display: inline-flex; gap: 0.3rem; align-items: center; '
-            f'font-size: 0.85rem; margin-bottom: 0.75rem;">'
-            f'<label class="muted">Owner</label>'
-            f'<input type="text" name="owner" '
-            f'value="{html.escape(owner_filter or "")}" '
-            f'placeholder="e.g. AT" maxlength="40" '
-            f'style="font-size: 0.85rem; padding: 0.15rem; width: 6rem;">'
-            f'{"<input type=hidden name=show value=all>" if show_all else ""}'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.85rem; padding: 0.15rem 0.6rem;">Filter</button>'
-            f'{"<a href=/alerts style=color:var(--accent);font-size:0.85rem;margin-left:0.5rem;>× clear</a>" if owner_filter else ""}'
-            f'</form>'
-        )
-
-        if not alerts:
-            scope_prefix = (
-                f"No {owner_filter!r} " if owner_filter else "No active "
-            )
-            body = (
-                f"{owner_form}"
-                '<div class="card">'
-                '<p style="color: var(--green-text); font-weight: 600;">'
-                f'{scope_prefix}alerts. Portfolio looks clean.</p>'
-                '<p class="muted" style="font-size: 0.85rem;">'
-                'Evaluators run on every page load. They check covenant '
-                'status, latest-quarter EBITDA variance, concerning-signal '
-                'clusters, and stage regress. Acked alerts are hidden until '
-                'their underlying state changes or snooze expires.'
-                f'</p><p>{toggle}</p></div>'
-            )
-        else:
-            grouped: Dict[str, list] = {"red": [], "amber": [], "info": []}
-            for a in alerts:
-                grouped.setdefault(a.severity, []).append(a)
-
-            blocks = []
-            for sev in ("red", "amber", "info"):
-                bucket = grouped.get(sev) or []
-                if not bucket:
-                    continue
-                cls, label = sev_meta[sev]
-                rows = []
-                for a in bucket:
-                    tk = trigger_key_for(a)
-                    from .alerts.alert_history import age_hint
-                    age = age_hint(a.first_seen_at)
-                    age_span = (
-                        f'<span class="muted" style="font-size: 0.75rem;">'
-                        f'seen {html.escape(age)}</span>' if age else ""
-                    )
-                    ack_form = (
-                        f'<form method="POST" action="/api/alerts/ack" '
-                        f'style="display: inline-flex; gap: 0.3rem; '
-                        f'align-items: center; margin-left: 1rem;">'
-                        f'<input type="hidden" name="kind" value="{html.escape(a.kind)}">'
-                        f'<input type="hidden" name="deal_id" value="{html.escape(a.deal_id)}">'
-                        f'<input type="hidden" name="trigger_key" value="{html.escape(tk)}">'
-                        f'<select name="snooze_days" '
-                        f'style="font-size: 0.75rem; padding: 0.1rem;">'
-                        f'<option value="0">Ack (until state changes)</option>'
-                        f'<option value="7">Snooze 7d</option>'
-                        f'<option value="30">Snooze 30d</option>'
-                        f'</select>'
-                        f'<button type="submit" class="btn" '
-                        f'style="font-size: 0.75rem; padding: 0.15rem 0.5rem;">'
-                        f'Ack</button>'
-                        f'</form>'
-                    )
-                    returning_badge = (
-                        '<span class="badge badge-amber" '
-                        'style="font-size: 0.7rem;" '
-                        'title="Returned after snooze expired">'
-                        '↩ returning</span>'
-                        if getattr(a, "returning", False) else ""
-                    )
-                    rows.append(
-                        f'<li style="padding: 0.6rem 0; '
-                        f'border-bottom: 1px solid var(--border);">'
-                        f'<div style="display: flex; gap: 0.5rem; '
-                        f'align-items: center; flex-wrap: wrap;">'
-                        f'<span class="badge {cls}">{label}</span>'
-                        f'{returning_badge}'
-                        f'<a href="/deal/{urllib.parse.quote(a.deal_id)}" '
-                        f'style="color: var(--accent); text-decoration: none; '
-                        f'font-weight: 600;">{html.escape(a.deal_id)}</a>'
-                        f'<span style="color: var(--text);">— '
-                        f'{html.escape(a.title)}</span>'
-                        f'{age_span}'
-                        f'{ack_form}'
-                        f'</div>'
-                        f'<div class="muted" style="font-size: 0.85rem; '
-                        f'margin-top: 0.2rem; margin-left: 1rem;">'
-                        f'{html.escape(a.detail)}</div>'
-                        f'</li>'
-                    )
-                blocks.append(
-                    f'<div class="card"><h2>{label} ({len(bucket)})</h2>'
-                    f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                    f'{"".join(rows)}</ul></div>'
-                )
-            blocks.append(f'<p style="margin-top: 1rem;">{toggle}</p>')
-            body = owner_form + "".join(blocks)
-
-        subtitle = (
-            f"{len(alerts)} "
-            f"{'total' if show_all else 'active'} "
-            f"alert{'s' if len(alerts) != 1 else ''}"
-            f"{f' · owner = {owner_filter}' if owner_filter else ''}"
-        )
-        self._send_html(shell(
-            body=body, title="Alerts",
-            subtitle=subtitle, back_href="/",
-        ))
-
     def _route_my_dashboard(self, owner: str) -> None:
         """B117: single-pane view of one analyst's work.
 
         Pulls together: deals currently owned, alerts on those deals,
         and deadlines assigned to them (overdue + upcoming). Lets an
         analyst start Monday on one URL instead of five.
+
+        Renders through ``rcm_mc.ui.my_dashboard_page.render_my_dashboard``
+        (chartis editorial chrome — italic-serif intro + pulse strip +
+        health-mix bar + ck_severity_panel for alerts / deadlines +
+        editorial deals table + affirm-empty bands on each empty
+        section). Server-side data semantics unchanged. The ValueError
+        guard on `deals_by_owner` is kept here so we surface a 400
+        instead of letting the renderer 500 on a bad owner string.
         """
-        from .alerts.alerts import evaluate_active
-        from .deals.deal_deadlines import overdue, upcoming
         from .deals.deal_owners import deals_by_owner
-        from .portfolio.portfolio_snapshots import latest_per_deal
         store = PortfolioStore(self.config.db_path)
         if not owner:
             return self.send_error(HTTPStatus.BAD_REQUEST, "owner required")
         try:
-            my_deals = set(deals_by_owner(store, owner))
+            deals_by_owner(store, owner)  # validate; renderer re-fetches
         except ValueError as exc:
             return self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
-
-        my_alerts = [a for a in evaluate_active(store)
-                     if a.deal_id in my_deals]
-        my_od = overdue(store, owner=owner)
-        my_up = upcoming(store, days_ahead=14, owner=owner)
-
-        # ── Deals card ──
-        if not my_deals:
-            deals_html = (
-                '<div class="card">'
-                f'<p class="muted">No deals currently assigned to '
-                f'<code>{html.escape(owner)}</code>. Open a deal and use '
-                f'the <em>Assign</em> form on its page.</p></div>'
-            )
-        else:
-            df = latest_per_deal(store)
-            df = df[df["deal_id"].isin(my_deals)] if not df.empty else df
-
-            def _fmt(v, pct=False):
-                if v is None or (isinstance(v, float) and v != v):
-                    return "—"
-                return f"{float(v)*100:.1f}%" if pct else f"{float(v):.2f}x"
-
-            rows = []
-            if not df.empty:
-                for _, r in df.iterrows():
-                    did = str(r["deal_id"])
-                    rows.append(
-                        f"<tr>"
-                        f"<td><a href='/deal/{urllib.parse.quote(did)}' "
-                        f"style='color: var(--accent); font-weight: 600; "
-                        f"text-decoration: none;'>{html.escape(did)}</a></td>"
-                        f"{_health_cell(store, did)}"
-                        f"<td>{html.escape(str(r.get('stage') or '—'))}</td>"
-                        f"<td>{html.escape(str(r.get('covenant_status') or '—'))}</td>"
-                        f"<td class='num'>{_fmt(r.get('moic'))}</td>"
-                        f"<td class='num'>{_fmt(r.get('irr'), pct=True)}</td>"
-                        f"</tr>"
-                    )
-            deals_html = (
-                f'<div class="card"><h2 style="margin-top: 0;">'
-                f'My deals ({len(my_deals)})</h2>'
-                f'<table><thead><tr>'
-                f'<th>Deal</th><th>Health</th><th>Stage</th><th>Covenant</th>'
-                f'<th>MOIC</th><th>IRR</th>'
-                f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
-            )
-
-        # ── Alerts card ──
-        red = [a for a in my_alerts if a.severity == "red"]
-        amber = [a for a in my_alerts if a.severity == "amber"]
-        if my_alerts:
-            alert_rows = []
-            for a in red + amber:
-                cls = "badge-red" if a.severity == "red" else "badge-amber"
-                alert_rows.append(
-                    f"<li style='padding: 0.4rem 0; "
-                    f"border-bottom: 1px solid var(--border); "
-                    f"display: flex; gap: 0.5rem; align-items: center; "
-                    f"flex-wrap: wrap;'>"
-                    f"<span class='badge {cls}'>{a.severity.upper()}</span>"
-                    f"<a href='/deal/{urllib.parse.quote(a.deal_id)}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(a.deal_id)}</a>"
-                    f"<span>{html.escape(a.title)}</span>"
-                    f"<span class='muted' style='font-size: 0.85rem;'>"
-                    f"{html.escape(a.detail)}</span>"
-                    f"</li>"
-                )
-            alerts_html = (
-                f'<div class="card"><h2 style="margin-top: 0;">'
-                f'My alerts ({len(red)} red / {len(amber)} amber)</h2>'
-                f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                f'{"".join(alert_rows)}</ul></div>'
-            )
-        else:
-            alerts_html = (
-                '<div class="card"><h2 style="margin-top: 0;">My alerts</h2>'
-                '<p class="muted">Nothing active on your deals.</p></div>'
-            )
-
-        # ── Deadlines card ──
-        def _deadline_li(r, *, badge):
-            did = str(r["deal_id"])
-            return (
-                f"<li style='padding: 0.4rem 0; "
-                f"border-bottom: 1px solid var(--border); "
-                f"display: flex; gap: 0.5rem; align-items: center;'>"
-                f"{badge} "
-                f"<a href='/deal/{urllib.parse.quote(did)}' "
-                f"style='color: var(--accent); font-weight: 600; "
-                f"text-decoration: none;'>{html.escape(did)}</a>"
-                f"<span>{html.escape(str(r['label']))}</span>"
-                f"<span class='muted' style='font-size: 0.85rem;'>"
-                f"due {html.escape(str(r['due_date']))}</span>"
-                f"</li>"
-            )
-
-        deadline_rows = []
-        for _, r in my_od.iterrows():
-            badge = (
-                f'<span class="badge badge-red">'
-                f'{int(r["days_overdue"])}d OVERDUE</span>'
-            )
-            deadline_rows.append(_deadline_li(r, badge=badge))
-        for _, r in my_up.iterrows():
-            deadline_rows.append(_deadline_li(
-                r, badge='<span class="badge badge-amber">UPCOMING</span>',
-            ))
-        if deadline_rows:
-            deadlines_html = (
-                f'<div class="card"><h2 style="margin-top: 0;">'
-                f'My deadlines ({len(my_od)} overdue, {len(my_up)} upcoming)'
-                f'</h2>'
-                f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                f'{"".join(deadline_rows)}</ul></div>'
-            )
-        else:
-            deadlines_html = (
-                '<div class="card"><h2 style="margin-top: 0;">My deadlines</h2>'
-                '<p class="muted">Nothing assigned.</p></div>'
-            )
-
-        # B141: personalized pulse + health mix at the top of the page
-        pulse_parts = []
-        n_red = sum(1 for a in my_alerts if a.severity == "red")
-        n_amber = sum(1 for a in my_alerts if a.severity == "amber")
-        if n_red:
-            pulse_parts.append(
-                f'<span style="color: var(--red-text); font-weight: 700;">'
-                f'{n_red} red</span>'
-            )
-        if n_amber:
-            pulse_parts.append(
-                f'<span style="color: var(--amber-text); font-weight: 700;">'
-                f'{n_amber} amber</span>'
-            )
-        if not my_od.empty:
-            pulse_parts.append(
-                f'<span style="color: var(--red-text); font-weight: 600;">'
-                f'{len(my_od)} overdue</span>'
-            )
-        if not my_up.empty:
-            pulse_parts.append(
-                f'<span class="muted">{len(my_up)} upcoming</span>'
-            )
-        sep = ' <span class="muted">·</span> '
-        pulse_html = (
-            f'<div style="margin-bottom: 1rem; font-size: 0.95rem;">'
-            f'<span class="muted" style="font-size: 0.82rem; '
-            f'text-transform: uppercase; letter-spacing: 0.05em; '
-            f'font-weight: 600; margin-right: 0.5rem;">Your pulse</span>'
-            f'{sep.join(pulse_parts)}</div>'
-            if pulse_parts else ""
-        )
-
-        # B141: health mix over my deals
-        health_html = ""
-        if my_deals:
-            from .deals.health_score import compute_health
-            counts = {"green": 0, "amber": 0, "red": 0}
-            for did in my_deals:
-                h = compute_health(store, did)
-                if h["score"] is None:
-                    continue
-                if h["band"] in counts:
-                    counts[h["band"]] += 1
-            total = sum(counts.values())
-            if total > 0:
-                def pct(n):
-                    return (n / total) * 100.0
-                health_html = f"""
-    <div class="card">
-      <h2 style="margin-top: 0;">Your health mix</h2>
-      <div style="display: flex; align-items: center; gap: 1rem;
-                  flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 20rem; display: flex;
-                    height: 1.2rem; border-radius: 6px; overflow: hidden;
-                    border: 1px solid var(--border);">
-          <div style="background: var(--green); width: {pct(counts['green']):.1f}%;"
-               title="{counts['green']} green"></div>
-          <div style="background: var(--amber); width: {pct(counts['amber']):.1f}%;"
-               title="{counts['amber']} amber"></div>
-          <div style="background: var(--red); width: {pct(counts['red']):.1f}%;"
-               title="{counts['red']} red"></div>
-        </div>
-        <div style="font-size: 0.9rem;">
-          <span style="color: var(--green-text); font-weight: 700;">●
-            {counts['green']}</span>
-          <span style="color: var(--amber-text); font-weight: 700;
-                       margin-left: 0.75rem;">● {counts['amber']}</span>
-          <span style="color: var(--red-text); font-weight: 700;
-                       margin-left: 0.75rem;">● {counts['red']}</span>
-        </div>
-      </div>
-    </div>
-"""
-
-        body = pulse_html + health_html + alerts_html + deadlines_html + deals_html
-        self._send_html(shell(
-            body=body, title=f"My work: {owner}",
-            subtitle=(
-                f"{len(my_deals)} deals · "
-                f"{len(my_alerts)} alerts · "
-                f"{len(my_od)} overdue · {len(my_up)} upcoming"
-            ),
-            back_href="/",
+        from .ui.my_dashboard_page import render_my_dashboard
+        return self._send_html(render_my_dashboard(
+            store=store, owner=owner,
         ))
 
     def _route_deadlines(self) -> None:
@@ -12046,198 +12516,224 @@ class RCMHandler(BaseHTTPRequestHandler):
         ))
 
     def _route_watchlist(self) -> None:
-        """B111: list of starred deals with their latest metrics."""
+        """B111: list of starred deals with their latest metrics.
+
+        Editorial render: page title + KPI strip + clean cad-table
+        with full deal names (joined from the deals table). Replaces
+        the bare <h2>+raw <table> that read as visually unstyled
+        next to the rest of the editorial chrome.
+        """
         from .portfolio.portfolio_snapshots import latest_per_deal
         from .deals.watchlist import list_starred
+        from .ui._chartis_kit import ck_page_title, ck_kpi_block
         store = PortfolioStore(self.config.db_path)
         starred = list_starred(store)
+
+        title_html = ck_page_title(
+            "Watchlist",
+            eyebrow="PINNED DEALS",
+            meta="Click ★ on any deal page to add it here",
+        )
+
         if not starred:
+            from .ui._chartis_kit import ck_empty_state
             body = (
-                '<div class="card">'
-                '<p class="muted">No starred deals yet. Open any deal '
-                'and click the <strong>★ Star</strong> button to pin it '
-                'here for quick access.</p></div>'
+                f"{title_html}"
+                + ck_empty_state(
+                    "No starred deals yet.",
+                    body=(
+                        "Open any deal and click the ★ Star button to "
+                        "pin it here for quick access during diligence "
+                        "reviews. Most partners star the 5–10 deals "
+                        "they're actively monitoring this quarter."
+                    ),
+                    eyebrow="GET STARTED",
+                    icon="★",
+                    cta_label="Browse Portfolio",
+                    cta_href="/portfolio",
+                )
             )
             self._send_html(shell(
                 body=body, title="Watchlist",
                 subtitle="Pinned deals",
-                back_href="/",
+                active_nav="/watchlist",
             ))
             return
 
         df = latest_per_deal(store)
         df = df[df["deal_id"].isin(starred)].copy() if not df.empty else df
 
+        # Join friendly deal names so the table reads
+        # "Cypress Crossing Health" instead of slug "ccf".
+        name_map = {}
+        try:
+            with store.connect() as _con:
+                for r in _con.execute("SELECT deal_id, name FROM deals"):
+                    name_map[r["deal_id"]] = r["name"]
+        except Exception:
+            pass
+
         if df.empty:
-            body = (
-                f'<div class="card">'
-                f'<p class="muted">You have starred deals '
-                f'({", ".join(starred)}) but none have snapshots yet.</p>'
-                f'</div>'
+            missing_names = ", ".join(
+                html.escape(name_map.get(d, d)) for d in starred
             )
-        else:
-            # Preserve star order (most-recently starred first)
-            order_map = {d: i for i, d in enumerate(starred)}
-            df["_star_order"] = df["deal_id"].map(order_map)
-            df = df.sort_values("_star_order").drop(columns=["_star_order"])
-
-            def _fmt(v, pct=False):
-                if v is None or (isinstance(v, float) and v != v):
-                    return "—"
-                return f"{float(v)*100:.1f}%" if pct else f"{float(v):.2f}x"
-
-            rows = []
-            for _, r in df.iterrows():
-                did = str(r["deal_id"])
-                rows.append(
-                    f"<tr>"
-                    f"<td>★ <a href='/deal/{urllib.parse.quote(did)}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(did)}</a></td>"
-                    f"{_health_cell(store, did)}"
-                    f"<td>{html.escape(str(r.get('stage') or '—'))}</td>"
-                    f"<td>{html.escape(str(r.get('covenant_status') or '—'))}</td>"
-                    f"<td class='num'>{_fmt(r.get('moic'))}</td>"
-                    f"<td class='num'>{_fmt(r.get('irr'), pct=True)}</td>"
-                    f"</tr>"
-                )
             body = (
-                f'<div class="card">'
-                f'<h2>Watchlist ({len(df)})</h2>'
-                f'<table><thead><tr>'
-                f'<th>Deal</th><th>Health</th><th>Stage</th><th>Covenant</th>'
-                f'<th>MOIC</th><th>IRR</th>'
-                f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
+                f"{title_html}"
+                f'<div class="cad-card" style="padding:32px;">'
+                f'<p style="font-family:var(--sc-serif,Georgia,serif);'
+                f'font-size:15px;color:var(--sc-text-dim,#465366);">'
+                f'You have starred deals ({missing_names}) but none have '
+                f'snapshots yet. Open a deal and run a simulation to populate '
+                f'the watchlist.</p></div>'
             )
+            self._send_html(shell(
+                body=body, title="Watchlist",
+                subtitle="Pinned deals",
+                active_nav="/watchlist",
+            ))
+            return
+
+        # Preserve star order (most-recently starred first)
+        order_map = {d: i for i, d in enumerate(starred)}
+        df["_star_order"] = df["deal_id"].map(order_map)
+        df = df.sort_values("_star_order").drop(columns=["_star_order"])
+
+        def _fmt(v, pct=False):
+            if v is None or (isinstance(v, float) and v != v):
+                return "—"
+            return f"{float(v)*100:.1f}%" if pct else f"{float(v):.2f}x"
+
+        # KPI strip — at-a-glance summary of pinned-deal portfolio
+        moics = [r.get("moic") for _, r in df.iterrows() if r.get("moic") is not None]
+        irrs = [r.get("irr") for _, r in df.iterrows() if r.get("irr") is not None]
+        avg_moic = sum(moics) / len(moics) if moics else None
+        avg_irr = sum(irrs) / len(irrs) if irrs else None
+        cov_trips = sum(
+            1 for _, r in df.iterrows()
+            if str(r.get("covenant_status") or "").lower() == "tripped"
+        )
+        kpi_html = (
+            '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+            + ck_kpi_block("Pinned", f"{len(df)}", sub="deals on watchlist")
+            + ck_kpi_block(
+                "Avg MOIC",
+                f"{avg_moic:.2f}x" if avg_moic is not None else "—",
+                sub="across pinned",
+            )
+            + ck_kpi_block(
+                "Avg IRR",
+                f"{avg_irr*100:.1f}%" if avg_irr is not None else "—",
+                sub="across pinned",
+            )
+            + ck_kpi_block(
+                "Covenant Trips",
+                f"{cov_trips}",
+                sub="tripped status",
+            )
+            + '</div>'
+        )
+
+        rows = []
+        for _, r in df.iterrows():
+            did = str(r["deal_id"])
+            display_name = html.escape(name_map.get(did, did))
+            cov = str(r.get("covenant_status") or "")
+            cov_lower = cov.lower()
+            cov_color = (
+                "var(--sc-negative,#b5321e)" if cov_lower == "tripped"
+                else "var(--sc-warning,#b8732a)" if cov_lower == "tight"
+                else "var(--sc-positive,#0a8a5f)" if cov_lower in ("ok", "headroom")
+                else "var(--sc-text-faint,#7a8699)"
+            )
+            cov_html = (
+                f'<span style="color:{cov_color};font-weight:600;'
+                f'text-transform:uppercase;font-size:11px;'
+                f'letter-spacing:0.06em;">'
+                f'{html.escape(cov.upper() if cov else "—")}</span>'
+            )
+            stage = html.escape(str(r.get('stage') or '—').title())
+            rows.append(
+                f"<tr>"
+                f'<td><span style="color:var(--sc-warning,#b8732a);'
+                f'margin-right:8px;">★</span>'
+                f"<a href='/deal/{urllib.parse.quote(did)}' "
+                f'style="color:var(--sc-navy,#0b2341);font-weight:600;'
+                f'text-decoration:none;">{display_name}</a>'
+                f'<div style="font-family:var(--sc-mono,monospace);'
+                f'font-size:10.5px;color:var(--sc-text-faint,#7a8699);'
+                f'letter-spacing:0.06em;text-transform:uppercase;'
+                f'margin-top:2px;">{html.escape(did)}</div>'
+                f"</td>"
+                f"{_health_cell(store, did)}"
+                f"<td>{stage}</td>"
+                f"<td>{cov_html}</td>"
+                f"<td class='num' style='font-variant-numeric:tabular-nums;"
+                f"font-weight:600;'>{_fmt(r.get('moic'))}</td>"
+                f"<td class='num' style='font-variant-numeric:tabular-nums;"
+                f"font-weight:600;'>{_fmt(r.get('irr'), pct=True)}</td>"
+                f"</tr>"
+            )
+
+        table_css = (
+            '<style>'
+            '.ck-watchlist-table{width:100%;border-collapse:collapse;'
+            'font-family:var(--sc-sans,Inter,sans-serif);}'
+            '.ck-watchlist-table thead th{text-align:left;'
+            'font-family:var(--sc-mono,JetBrains Mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:var(--sc-text-dim,#465366);'
+            'padding:10px 14px;border-bottom:1px solid var(--sc-rule,#d6cfc3);}'
+            '.ck-watchlist-table thead th.r{text-align:right;}'
+            '.ck-watchlist-table tbody td{padding:14px;'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'font-size:13.5px;color:var(--sc-text,#1a2332);'
+            'vertical-align:middle;}'
+            '.ck-watchlist-table tbody tr:last-child td{border-bottom:0;}'
+            '.ck-watchlist-table tbody tr:hover td{'
+            'background:var(--sc-bone,#ece6db);}'
+            '.ck-watchlist-table .num{text-align:right;'
+            'font-family:var(--sc-mono,monospace);}'
+            '</style>'
+        )
+
+        body = (
+            f"{title_html}"
+            f"{kpi_html}"
+            f"{table_css}"
+            '<div class="cad-card" style="padding:0;overflow:hidden;">'
+            '<table class="ck-watchlist-table">'
+            '<thead><tr>'
+            '<th>Deal</th><th>Health</th><th>Stage</th>'
+            '<th>Covenant</th><th class="r">MOIC</th>'
+            '<th class="r">IRR</th>'
+            '</tr></thead>'
+            f'<tbody>{"".join(rows)}</tbody>'
+            '</table></div>'
+        )
 
         self._send_html(shell(
             body=body, title="Watchlist",
             subtitle="Pinned deals",
-            back_href="/",
+            active_nav="/watchlist",
         ))
 
     def _route_notes_search(self) -> None:
-        """B110 + B123: full-text + tag-filtered notes search."""
-        from .deals.deal_notes import search_notes
-        from .deals.note_tags import tags_for_notes
+        """B110 + B123: full-text + tag-filtered notes search.
+
+        Renders through ``rcm_mc.ui.notes_search_page.render_notes_search``
+        (chartis Insights triplet — search hero + filter sidebar + results
+        header). Server-side search semantics unchanged from the original
+        inline implementation; this dispatcher is the seam between the
+        URL parser and the editorial renderer.
+        """
+        from .ui.notes_search_page import render_notes_search
         store = PortfolioStore(self.config.db_path)
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         q = (qs.get("q") or [""])[0]
         deal_id = (qs.get("deal_id") or [""])[0].strip()
         tags_raw = (qs.get("tags") or [""])[0].strip()
-        tag_list = [t for t in tags_raw.split() if t]
-
-        try:
-            df = search_notes(store, q, deal_id=deal_id or None,
-                              tags=tag_list or None)
-            tag_err = None
-        except ValueError as exc:
-            df = None
-            tag_err = str(exc)
-
-        # Simple highlight for matches (case-insensitive)
-        def _highlight(body: str) -> str:
-            esc = html.escape(body)
-            if not q:
-                return esc
-            import re as _re
-            try:
-                return _re.sub(
-                    "(" + _re.escape(html.escape(q)) + ")",
-                    r'<mark style="background: var(--amber-soft); '
-                    r'padding: 0 2px;">\1</mark>',
-                    esc, flags=_re.IGNORECASE,
-                )
-            except _re.error:
-                return esc
-
-        search_form = (
-            f'<form method="GET" action="/notes" '
-            f'style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">'
-            f'<input type="text" name="q" value="{html.escape(q)}" '
-            f'placeholder="Search note text…" '
-            f'style="flex: 1; font-size: 1rem; padding: 0.35rem 0.5rem;" '
-            f'autofocus>'
-            f'<input type="text" name="deal_id" value="{html.escape(deal_id)}" '
-            f'placeholder="deal_id (optional)" '
-            f'style="font-size: 1rem; padding: 0.35rem 0.5rem; width: 10rem;">'
-            f'<input type="text" name="tags" value="{html.escape(tags_raw)}" '
-            f'placeholder="tags (space-separated)" '
-            f'style="font-size: 1rem; padding: 0.35rem 0.5rem; width: 14rem;">'
-            f'<button type="submit" class="btn" '
-            f'style="font-size: 0.9rem; padding: 0.25rem 0.8rem;">Search</button>'
-            f'</form>'
-        )
-
-        if tag_err:
-            body = (
-                f"{search_form}"
-                f'<div class="card"><p class="err">'
-                f'Invalid tag: {html.escape(tag_err)}</p></div>'
-            )
-        elif not q and not tag_list:
-            body = (
-                f"{search_form}"
-                '<div class="card">'
-                '<p class="muted">Enter a query above. Searches are '
-                'case-insensitive and match any substring of the note '
-                'body. Optionally scope to a specific deal, or filter by '
-                'space-separated tags (AND semantics).</p></div>'
-            )
-        elif df.empty:
-            body = (
-                f"{search_form}"
-                f'<div class="card">'
-                f'<p class="muted">No notes match '
-                f'<code>{html.escape(q)}</code>'
-                f'{" for deal <code>" + html.escape(deal_id) + "</code>" if deal_id else ""}'
-                f'.</p></div>'
-            )
-        else:
-            rows = []
-            note_ids = [int(r["note_id"]) for _, r in df.iterrows()]
-            tags_map = tags_for_notes(store, note_ids)
-            for _, r in df.iterrows():
-                author = str(r.get("author") or "—")
-                note_id = int(r["note_id"])
-                pills = "".join(
-                    f'<a href="/notes?tags={urllib.parse.quote(t)}" '
-                    f'class="badge badge-blue" '
-                    f'style="text-decoration: none; font-size: 0.7rem; '
-                    f'margin-right: 0.25rem;">{html.escape(t)}</a>'
-                    for t in tags_map.get(note_id, [])
-                )
-                rows.append(
-                    f"<li style='padding: 0.6rem 0; "
-                    f"border-bottom: 1px solid var(--border);'>"
-                    f"<div style='display: flex; gap: 0.5rem; "
-                    f"align-items: baseline; margin-bottom: 0.2rem; "
-                    f"flex-wrap: wrap;'>"
-                    f"<a href='/deal/{urllib.parse.quote(str(r['deal_id']))}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(str(r['deal_id']))}</a>"
-                    f"<span class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['created_at'])[:19])}"
-                    f"{' · ' + html.escape(author) if author != '—' else ''}</span>"
-                    f"{pills}"
-                    f"</div>"
-                    f"<div style='white-space: pre-wrap; font-size: 0.9rem;'>"
-                    f"{_highlight(str(r['body']))}</div>"
-                    f"</li>"
-                )
-            body = (
-                f"{search_form}"
-                f'<div class="card">'
-                f'<h2>{len(df)} match{"es" if len(df) != 1 else ""} '
-                f'for <code>{html.escape(q)}</code></h2>'
-                f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                f'{"".join(rows)}</ul></div>'
-            )
-
-        self._send_html(shell(
-            body=body, title="Notes search",
-            subtitle="Full-text search across deal notes",
-            back_href="/",
+        self._send_html(render_notes_search(
+            store=store, q=q, deal_id=deal_id, tags_raw=tags_raw,
         ))
 
     def _route_variance(self) -> None:
@@ -12390,6 +12886,18 @@ class RCMHandler(BaseHTTPRequestHandler):
         events_df = digest_to_frame(build_digest(store, since=since))
         cohorts_df = cohort_rollup(store)
 
+        from .ui._chartis_kit import ck_page_title, ck_kpi_block
+
+        # Friendly deal names for any deal_id we surface in tables
+        # ("Cypress Crossing Health" instead of slug "ccf").
+        name_map: Dict[str, str] = {}
+        try:
+            with store.connect() as _con:
+                for r in _con.execute("SELECT deal_id, name FROM deals"):
+                    name_map[r["deal_id"]] = r["name"]
+        except Exception:
+            pass
+
         def _fmt(v, pct=False, suffix=""):
             if v is None:
                 return "—"
@@ -12399,141 +12907,268 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return f"{float(v)*100:.1f}%"
             return f"{float(v):.2f}{suffix}"
 
-        # ── Headline KPIs ──
-        headline = (
-            f'<div class="kpi-grid">'
-            f'<div class="kpi-card"><div class="kpi-value">'
-            f'{rollup["deal_count"]}</div>'
-            f'<div class="kpi-label">Active deals</div></div>'
-            f'<div class="kpi-card"><div class="kpi-value">'
-            f'{_fmt(rollup.get("weighted_moic"), suffix="x")}</div>'
-            f'<div class="kpi-label">Weighted MOIC</div></div>'
-            f'<div class="kpi-card"><div class="kpi-value">'
-            f'{_fmt(rollup.get("weighted_irr"), pct=True)}</div>'
-            f'<div class="kpi-label">Weighted IRR</div></div>'
-            f'<div class="kpi-card"><div class="kpi-value">'
-            f'{rollup["covenant_trips"]}</div>'
-            f'<div class="kpi-label">Covenant trips</div></div>'
-            f'</div>'
+        def _deal_link(did: str) -> str:
+            display = html.escape(name_map.get(did, did))
+            return (
+                f'<a href="/deal/{urllib.parse.quote(did)}" '
+                f'style="color:var(--sc-navy,#0b2341);font-weight:600;'
+                f'text-decoration:none;">{display}</a>'
+            )
+
+        # ── Page title with eyebrow + meta ──
+        title_html = ck_page_title(
+            "LP Update",
+            eyebrow="PORTFOLIO SNAPSHOT",
+            meta=f"Window: last {days} days · {len(events_df)} events captured",
         )
 
-        # ── Active alerts section ──
+        # ── Window picker + download (sit beneath title in a thin
+        #     control row that mirrors the editorial chip patterns) ──
+        picker_options = "".join(
+            f'<option value="{opt}"{" selected" if opt == days else ""}>'
+            f'{opt} days</option>' for opt in (7, 14, 30, 60, 90)
+        )
+        controls = (
+            '<div class="ck-lp-controls">'
+            '<form method="GET" action="/lp-update" class="ck-lp-window">'
+            '<label class="ck-lp-window-label">Window</label>'
+            '<select name="days" onchange="this.form.submit()" '
+            'class="ck-lp-window-select">'
+            f'{picker_options}'
+            '</select>'
+            '</form>'
+            f'<a href="/lp-update?days={days}&download=1" '
+            'class="ck-lp-download">'
+            '<span aria-hidden="true">↓</span>&nbsp;Download HTML</a>'
+            '</div>'
+        )
+
+        # ── Headline KPIs (4-tile editorial strip) ──
+        headline = (
+            '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+            + ck_kpi_block(
+                "Active Deals",
+                f"{rollup['deal_count']}",
+                sub="in portfolio",
+            )
+            + ck_kpi_block(
+                "Weighted MOIC",
+                _fmt(rollup.get("weighted_moic"), suffix="x"),
+                sub="EV-weighted",
+            )
+            + ck_kpi_block(
+                "Weighted IRR",
+                _fmt(rollup.get("weighted_irr"), pct=True),
+                sub="EV-weighted",
+            )
+            + ck_kpi_block(
+                "Covenant Trips",
+                f"{rollup['covenant_trips']}",
+                sub="active",
+            )
+            + '</div>'
+        )
+
+        # ── Active alerts ──
         red = [a for a in alerts if a.severity == "red"]
         amber = [a for a in alerts if a.severity == "amber"]
-        alerts_rows = []
-        for a in red + amber:
-            badge_cls = "badge-red" if a.severity == "red" else "badge-amber"
-            alerts_rows.append(
-                f"<li style='padding: 0.4rem 0; border-bottom: 1px solid "
-                f"var(--border);'>"
-                f"<span class='badge {badge_cls}'>{a.severity.upper()}</span> "
-                f"<a href='/deal/{urllib.parse.quote(a.deal_id)}' "
-                f"style='color: var(--accent); font-weight: 600; "
-                f"text-decoration: none;'>{html.escape(a.deal_id)}</a> — "
-                f"{html.escape(a.title)} "
-                f"<span class='muted' style='font-size: 0.85rem;'>"
-                f"{html.escape(a.detail)}</span></li>"
-            )
-        if alerts_rows:
+        if red or amber:
+            alerts_items = []
+            for a in red + amber:
+                tone = (
+                    "var(--sc-negative,#b5321e)" if a.severity == "red"
+                    else "var(--sc-warning,#b8732a)"
+                )
+                alerts_items.append(
+                    '<li class="ck-lp-alert">'
+                    f'<span class="ck-lp-alert-sev" style="color:{tone};">'
+                    f'{html.escape(a.severity.upper())}</span>'
+                    f'<span class="ck-lp-alert-deal">'
+                    f'{_deal_link(a.deal_id)}</span>'
+                    f'<span class="ck-lp-alert-title">'
+                    f'{html.escape(a.title)}</span>'
+                    f'<span class="ck-lp-alert-detail">'
+                    f'{html.escape(a.detail)}</span>'
+                    '</li>'
+                )
             alerts_section = (
-                f'<div class="card"><h2>Active alerts '
-                f'({len(red)} red / {len(amber)} amber)</h2>'
-                f'<ul style="list-style: none; padding: 0; margin: 0;">'
-                f'{"".join(alerts_rows)}</ul></div>'
+                '<section class="cad-card ck-lp-section">'
+                '<header class="ck-lp-section-head">'
+                f'<h2>Active alerts</h2>'
+                f'<span class="ck-lp-section-count">'
+                f'{len(red)} red · {len(amber)} amber</span>'
+                '</header>'
+                '<ul class="ck-lp-alert-list">'
+                + "".join(alerts_items)
+                + '</ul></section>'
             )
         else:
             alerts_section = (
-                '<div class="card"><h2>Active alerts</h2>'
-                '<p class="muted">None — portfolio is clean.</p></div>'
+                '<section class="cad-card ck-lp-section">'
+                '<header class="ck-lp-section-head">'
+                '<h2>Active alerts</h2>'
+                '</header>'
+                '<p class="ck-lp-empty">None — portfolio is clean.</p>'
+                '</section>'
             )
 
-        # ── Recent activity section ──
+        # ── Recent activity table ──
         if events_df.empty:
             activity_section = (
-                f'<div class="card"><h2>Recent activity</h2>'
-                f'<p class="muted">No material changes in the last '
-                f'{days} days.</p></div>'
+                '<section class="cad-card ck-lp-section">'
+                '<header class="ck-lp-section-head">'
+                '<h2>Recent activity</h2>'
+                '</header>'
+                f'<p class="ck-lp-empty">No material changes in the last '
+                f'{days} days.</p>'
+                '</section>'
             )
         else:
             act_rows = []
             for _, r in events_df.head(30).iterrows():
                 act_rows.append(
-                    f"<tr>"
-                    f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['timestamp'])[:10])}</td>"
-                    f"<td><a href='/deal/{urllib.parse.quote(str(r['deal_id']))}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(str(r['deal_id']))}</a></td>"
-                    f"<td>{html.escape(str(r['change_type']))}</td>"
-                    f"<td class='muted' style='font-size: 0.85rem;'>"
-                    f"{html.escape(str(r['detail']))}</td>"
-                    f"</tr>"
+                    "<tr>"
+                    f'<td class="ck-lp-mono">{html.escape(str(r["timestamp"])[:10])}</td>'
+                    f'<td>{_deal_link(str(r["deal_id"]))}</td>'
+                    f'<td>{html.escape(str(r["change_type"]))}</td>'
+                    f'<td class="ck-lp-detail">{html.escape(str(r["detail"]))}</td>'
+                    "</tr>"
                 )
             activity_section = (
-                f'<div class="card"><h2>Recent activity (last {days} days, '
-                f'{len(events_df)} events)</h2>'
-                f'<table><thead><tr>'
-                f'<th>Date</th><th>Deal</th><th>Change</th><th>Detail</th>'
-                f'</tr></thead><tbody>{"".join(act_rows)}</tbody></table></div>'
+                '<section class="cad-card ck-lp-section" style="padding:0;overflow:hidden;">'
+                '<header class="ck-lp-section-head" style="padding:18px 22px 12px;">'
+                f'<h2>Recent activity</h2>'
+                f'<span class="ck-lp-section-count">{len(events_df)} events · last {days} days</span>'
+                '</header>'
+                '<table class="ck-lp-table">'
+                '<thead><tr>'
+                '<th>Date</th><th>Deal</th><th>Change</th><th>Detail</th>'
+                '</tr></thead>'
+                f'<tbody>{"".join(act_rows)}</tbody></table>'
+                '</section>'
             )
 
-        # ── Cohort section (optional) ──
+        # ── Cohort breakdown ──
         if cohorts_df.empty:
             cohort_section = ""
         else:
             cohort_rows = []
             for _, r in cohorts_df.iterrows():
                 cohort_rows.append(
-                    f"<tr>"
-                    f"<td><a href='/cohort/{urllib.parse.quote(str(r['tag']))}' "
-                    f"style='color: var(--accent); font-weight: 600; "
-                    f"text-decoration: none;'>{html.escape(str(r['tag']))}</a></td>"
-                    f"<td class='num'>{int(r['deal_count'])}</td>"
-                    f"<td class='num'>{_fmt(r['weighted_moic'], suffix='x')}</td>"
-                    f"<td class='num'>{_fmt(r['weighted_irr'], pct=True)}</td>"
-                    f"<td class='num'>{int(r['covenant_trips'])}</td>"
-                    f"</tr>"
+                    "<tr>"
+                    f'<td><a href="/cohort/{urllib.parse.quote(str(r["tag"]))}" '
+                    f'class="ck-lp-link">{html.escape(str(r["tag"]))}</a></td>'
+                    f'<td class="r ck-lp-mono">{int(r["deal_count"])}</td>'
+                    f'<td class="r ck-lp-mono">{_fmt(r["weighted_moic"], suffix="x")}</td>'
+                    f'<td class="r ck-lp-mono">{_fmt(r["weighted_irr"], pct=True)}</td>'
+                    f'<td class="r ck-lp-mono">{int(r["covenant_trips"])}</td>'
+                    "</tr>"
                 )
             cohort_section = (
-                f'<div class="card"><h2>Cohort breakdown</h2>'
-                f'<table><thead><tr>'
-                f'<th>Cohort</th><th>Deals</th><th>W. MOIC</th>'
-                f'<th>W. IRR</th><th>Trips</th>'
-                f'</tr></thead><tbody>{"".join(cohort_rows)}</tbody></table></div>'
+                '<section class="cad-card ck-lp-section" style="padding:0;overflow:hidden;">'
+                '<header class="ck-lp-section-head" style="padding:18px 22px 12px;">'
+                '<h2>Cohort breakdown</h2>'
+                f'<span class="ck-lp-section-count">{len(cohorts_df)} cohorts</span>'
+                '</header>'
+                '<table class="ck-lp-table">'
+                '<thead><tr>'
+                '<th>Cohort</th>'
+                '<th class="r">Deals</th>'
+                '<th class="r">W. MOIC</th>'
+                '<th class="r">W. IRR</th>'
+                '<th class="r">Trips</th>'
+                '</tr></thead>'
+                f'<tbody>{"".join(cohort_rows)}</tbody></table>'
+                '</section>'
             )
 
-        # Window picker + download link
-        picker = (
-            '<form method="GET" action="/lp-update" '
-            'style="display: inline-flex; gap: 0.3rem; align-items: center; '
-            'margin-bottom: 1rem; font-size: 0.85rem;">'
-            '<label>Window</label>'
-            '<select name="days" onchange="this.form.submit()" '
-            'style="font-size: 0.85rem; padding: 0.1rem;">'
-        )
-        for opt in (7, 14, 30, 60, 90):
-            sel = " selected" if opt == days else ""
-            picker += f'<option value="{opt}"{sel}>{opt} days</option>'
-        picker += "</select></form>"
-        download_link = (
-            f'<a href="/lp-update?days={days}&download=1" '
-            f'style="color: var(--accent); margin-left: 1rem; '
-            f'font-size: 0.85rem; text-decoration: none; '
-            f'border-bottom: 1px dotted var(--accent);">↓ Download</a>'
+        page_css = (
+            '<style>'
+            '.ck-lp-controls{display:flex;align-items:center;gap:18px;'
+            'margin:0 0 24px;}'
+            '.ck-lp-window{display:inline-flex;align-items:center;gap:10px;'
+            'margin:0;}'
+            '.ck-lp-window-label{font-family:var(--sc-mono,monospace);'
+            'font-size:11px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
+            '.ck-lp-window-select{font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:13px;padding:7px 12px;border:1px solid var(--sc-rule,#d6cfc3);'
+            'background:#fff;color:var(--sc-text,#1a2332);border-radius:2px;'
+            'cursor:pointer;}'
+            '.ck-lp-window-select:focus{outline:none;'
+            'border-color:var(--sc-teal,#155752);}'
+            '.ck-lp-download{font-family:var(--sc-mono,monospace);font-size:11px;'
+            'font-weight:700;letter-spacing:0.1em;text-transform:uppercase;'
+            'color:var(--sc-teal,#155752);text-decoration:none;'
+            'padding:7px 12px;border:1px solid var(--sc-teal,#155752);'
+            'border-radius:2px;transition:background 0.15s,color 0.15s;}'
+            '.ck-lp-download:hover{background:var(--sc-teal,#155752);color:#fff;}'
+
+            '.ck-lp-section{padding:22px 26px;margin:0 0 20px;}'
+            '.ck-lp-section-head{display:flex;align-items:baseline;'
+            'justify-content:space-between;gap:12px;margin:0 0 12px;}'
+            '.ck-lp-section-head h2{font-family:var(--sc-serif,Georgia,serif);'
+            'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
+            'margin:0;letter-spacing:-0.01em;}'
+            '.ck-lp-section-count{font-family:var(--sc-mono,monospace);'
+            'font-size:11px;color:var(--sc-text-faint,#7a8699);'
+            'letter-spacing:0.08em;text-transform:uppercase;}'
+            '.ck-lp-empty{font-family:var(--sc-serif,Georgia,serif);'
+            'font-size:14px;color:var(--sc-text-dim,#465366);margin:0;'
+            'font-style:italic;}'
+
+            '.ck-lp-alert-list{list-style:none;padding:0;margin:0;}'
+            '.ck-lp-alert{display:grid;'
+            'grid-template-columns:62px 1fr 1.5fr 2fr;gap:14px;'
+            'align-items:baseline;padding:12px 0;'
+            'border-top:1px solid var(--sc-rule,#d6cfc3);'
+            'font-size:13px;}'
+            '.ck-lp-alert:first-child{border-top:0;}'
+            '.ck-lp-alert-sev{font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.1em;}'
+            '.ck-lp-alert-title{color:var(--sc-text,#1a2332);font-weight:500;}'
+            '.ck-lp-alert-detail{color:var(--sc-text-dim,#465366);font-size:12.5px;}'
+
+            '.ck-lp-table{width:100%;border-collapse:collapse;'
+            'font-family:var(--sc-sans,Inter,sans-serif);}'
+            '.ck-lp-table thead th{text-align:left;'
+            'font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:var(--sc-text-dim,#465366);'
+            'padding:10px 22px;border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'background:var(--sc-bone,#ece6db);}'
+            '.ck-lp-table thead th.r{text-align:right;}'
+            '.ck-lp-table tbody td{padding:12px 22px;'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'font-size:13px;color:var(--sc-text,#1a2332);'
+            'vertical-align:middle;}'
+            '.ck-lp-table tbody td.r{text-align:right;}'
+            '.ck-lp-table tbody tr:last-child td{border-bottom:0;}'
+            '.ck-lp-table tbody tr:hover td{background:var(--sc-bone,#ece6db);}'
+            '.ck-lp-mono{font-family:var(--sc-mono,monospace);'
+            'font-variant-numeric:tabular-nums;'
+            'color:var(--sc-text-dim,#465366);font-size:12.5px;}'
+            '.ck-lp-detail{color:var(--sc-text-dim,#465366);font-size:12.5px;}'
+            '.ck-lp-link{color:var(--sc-navy,#0b2341);font-weight:600;'
+            'text-decoration:none;}'
+            '.ck-lp-link:hover{color:var(--sc-teal,#155752);}'
+            '</style>'
         )
 
         body = (
-            f"<div>{picker}{download_link}</div>"
+            f"{title_html}"
+            f"{controls}"
             f"{headline}"
             f"{alerts_section}"
             f"{activity_section}"
             f"{cohort_section}"
+            f"{page_css}"
         )
 
         doc = shell(
             body=body, title="LP Update",
             subtitle=f"Portfolio snapshot · window {days} days",
-            back_href="/",
+            active_nav="/lp-update",
         )
 
         if download:
@@ -12721,6 +13356,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         ≥ ``min_days`` (default 30) days old. This is what a partner
         reviews before an LP update: "anything we've failed to resolve
         for 30+ days needs a decision."
+
+        Renders through ``rcm_mc.ui.escalations_page.render_escalations``
+        (chartis editorial chrome — search hero + min-days filter rail
+        + results header + ck_severity_panel). Server-side semantics
+        unchanged from the original inline implementation; this
+        dispatcher is the seam between the URL parser and the renderer.
+        The CSV-download branch stays inline because it shortcuts
+        directly to ``_send_csv_df`` without rendering HTML.
         """
         from .alerts.alert_acks import is_acked
         from .alerts.alert_history import days_red
@@ -12732,94 +13375,26 @@ class RCMHandler(BaseHTTPRequestHandler):
             default=30, min_v=0, max_v=3650,
         )
 
-        df = days_red(store, min_days=min_days)
-
-        # Mark rows that have an active ack so partners can see what's
-        # "known but still open" vs "silenced".
-        ack_flags = []
-        for _, r in df.iterrows():
-            ack_flags.append(is_acked(
-                store,
-                kind=str(r["kind"]),
-                deal_id=str(r["deal_id"]),
-                trigger_key=str(r["trigger_key"]),
-            ))
-        df_acked = df.assign(acked=ack_flags) if not df.empty else df
-
+        # CSV branch is unchanged — surfaces the raw days_red output
+        # rather than running through the editorial renderer.
         if (qs.get("format") or [""])[0] == "csv":
+            df = days_red(store, min_days=min_days)
+            ack_flags = []
+            for _, r in df.iterrows():
+                ack_flags.append(is_acked(
+                    store,
+                    kind=str(r["kind"]),
+                    deal_id=str(r["deal_id"]),
+                    trigger_key=str(r["trigger_key"]),
+                ))
+            df_acked = df.assign(acked=ack_flags) if not df.empty else df
             return self._send_csv_df(
                 df_acked, filename=f"escalations_{min_days}d.csv",
             )
 
-        picker = (
-            '<form method="GET" action="/escalations" '
-            'style="display: inline-flex; gap: 0.3rem; align-items: center; '
-            'margin-bottom: 1rem; font-size: 0.85rem;">'
-            '<label>Min days open</label>'
-            '<select name="min_days" onchange="this.form.submit()" '
-            'style="font-size: 0.85rem; padding: 0.1rem;">'
-        )
-        for opt in (7, 14, 30, 60, 90):
-            sel = " selected" if opt == min_days else ""
-            picker += f'<option value="{opt}"{sel}>{opt}</option>'
-        picker += "</select></form>"
-        picker += (
-            f'<a href="/escalations?min_days={min_days}&format=csv" '
-            f'style="color: var(--accent); font-size: 0.85rem; '
-            f'text-decoration: none; border-bottom: 1px dotted var(--accent); '
-            f'margin-left: 1rem;">↓ Download CSV</a>'
-        )
-
-        if df_acked.empty:
-            body = (
-                f"{picker}"
-                '<div class="card">'
-                '<p style="color: var(--green-text); font-weight: 600;">'
-                f'No red alerts open ≥ {min_days} days.</p>'
-                '<p class="muted" style="font-size: 0.85rem;">'
-                'Escalations show only red-severity alerts whose first '
-                'sighting is older than the threshold. History is built '
-                'up from every /alerts or /api/alerts/active call.'
-                '</p></div>'
-            )
-        else:
-            rows = []
-            for _, r in df_acked.iterrows():
-                days_open = int(r["days_open"])
-                ack_badge = (
-                    ' <span class="badge badge-muted" '
-                    'style="font-size: 0.7rem;">ACKED</span>'
-                    if r["acked"] else ""
-                )
-                rows.append(
-                    f"<tr>"
-                    f"<td class='num' style='color: var(--red-text); "
-                    f"font-weight: 700;'>{days_open}d</td>"
-                    f"<td><a href='/deal/{urllib.parse.quote(str(r['deal_id']))}' "
-                    f"style='color: var(--accent); text-decoration: none; "
-                    f"font-weight: 600;'>{html.escape(str(r['deal_id']))}</a></td>"
-                    f"<td>{html.escape(str(r.get('title') or ''))}</td>"
-                    f"<td class='muted' style='font-size: 0.85rem;'>"
-                    f"{html.escape(str(r.get('detail') or ''))}</td>"
-                    f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['first_seen_at'])[:10])}"
-                    f"{ack_badge}</td>"
-                    f"</tr>"
-                )
-            body = (
-                f"{picker}"
-                f'<div class="card">'
-                f'<h2>Red alerts open ≥ {min_days} days ({len(df_acked)})</h2>'
-                f'<table><thead><tr>'
-                f'<th>Open</th><th>Deal</th><th>Alert</th>'
-                f'<th>Detail</th><th>First seen</th>'
-                f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
-            )
-
-        self._send_html(shell(
-            body=body, title="Escalations",
-            subtitle=f"Red alerts ≥ {min_days} days old",
-            back_href="/alerts",
+        from .ui.escalations_page import render_escalations
+        self._send_html(render_escalations(
+            store=store, min_days=min_days,
         ))
 
     def _route_jobs_index(self) -> None:
@@ -13680,106 +14255,215 @@ class RCMHandler(BaseHTTPRequestHandler):
     def _route_search(self, query: str) -> None:
         """Cross-deal search: match against deal_id, stage, note body, author.
 
-        Case-insensitive substring match. Results grouped into:
-          - Deal hits  (deal_id or current stage matches)
-          - Note hits  (note body or author matches)
-        Each result links to the relevant deal page with deal_id as anchor.
+        Editorial render: ck_page_title H1 + serif search hero +
+        section panels for deal and note matches. Replaces the bare
+        <form>+<div class="card"> chrome that read as legacy alongside
+        the rest of the v5 UI.
         """
+        from .ui._chartis_kit import (
+            ck_page_title, chartis_shell, ck_kpi_block,
+        )
         q = (query or "").strip().lower()
         store = PortfolioStore(self.config.db_path)
 
-        deal_hits_html = []
-        note_hits_html = []
+        # Friendly deal-name lookup so result cards read
+        # "Cypress Crossing Health" instead of slug "ccf".
+        name_map: Dict[str, str] = {}
+        try:
+            with store.connect() as _con:
+                for r in _con.execute("SELECT deal_id, name FROM deals"):
+                    name_map[r["deal_id"]] = r["name"]
+        except Exception:
+            pass
 
+        def _deal_link(did: str) -> str:
+            display = html.escape(name_map.get(did, did))
+            return (
+                f'<a href="/deal/{urllib.parse.quote(did)}" '
+                f'style="color:var(--sc-navy,#0b2341);font-weight:600;'
+                f'text-decoration:none;">{display}</a>'
+            )
+
+        deal_hits = []
+        note_hits = []
         if q:
             from .portfolio.portfolio_snapshots import latest_per_deal
             deals_df = latest_per_deal(store)
-            # Deals: match deal_id, stage, covenant, notes snippet
             for _, r in deals_df.iterrows():
                 fields = [
                     str(r.get("deal_id") or ""),
                     str(r.get("stage") or ""),
                     str(r.get("covenant_status") or ""),
                     str(r.get("notes") or ""),
+                    str(name_map.get(str(r.get("deal_id") or ""), "")),
                 ]
-                haystack = " ".join(fields).lower()
-                if q in haystack:
+                if q in " ".join(fields).lower():
                     did = str(r.get("deal_id") or "")
-                    deal_hits_html.append(
-                        f'<li style="padding: 0.5rem 0; '
-                        f'border-bottom: 1px solid var(--border);">'
-                        f'<a href="/deal/{urllib.parse.quote(did)}" '
-                        f'style="color: var(--accent); text-decoration: none;">'
-                        f'<strong>{html.escape(did)}</strong></a>'
-                        f' <span class="muted" style="font-size: 0.85rem;">· '
-                        f'{html.escape(str(r.get("stage") or "?")).title()}'
-                        f'{" · " + html.escape(str(r.get("covenant_status"))) if r.get("covenant_status") else ""}'
-                        f'</span></li>'
+                    stage = html.escape(str(r.get("stage") or "?").title())
+                    cov = str(r.get("covenant_status") or "")
+                    cov_html = (
+                        f' &middot; <span style="font-family:var(--sc-mono,monospace);'
+                        f'font-size:11px;letter-spacing:0.06em;'
+                        f'text-transform:uppercase;color:var(--sc-text-faint,#7a8699);">'
+                        f'{html.escape(cov)}</span>'
+                        if cov else ""
                     )
-
-            # Notes: full-text on body + author
+                    deal_hits.append(
+                        '<li class="ck-search-hit">'
+                        f'<div class="ck-search-hit-title">{_deal_link(did)}'
+                        f'<span class="ck-search-hit-slug">{html.escape(did)}</span>'
+                        '</div>'
+                        f'<div class="ck-search-hit-meta">{stage}{cov_html}</div>'
+                        '</li>'
+                    )
             notes_df = list_notes(store)
             for _, r in notes_df.iterrows():
-                body = str(r.get("body") or "")
+                body_text = str(r.get("body") or "")
                 author = str(r.get("author") or "")
-                if q in body.lower() or q in author.lower():
+                if q in body_text.lower() or q in author.lower():
                     did = str(r.get("deal_id") or "")
-                    # Highlight match in the body snippet
-                    snippet = body[:200]
-                    note_hits_html.append(
-                        f'<li style="padding: 0.75rem 0; '
-                        f'border-bottom: 1px solid var(--border);">'
-                        f'<a href="/deal/{urllib.parse.quote(did)}" '
-                        f'style="color: var(--accent); text-decoration: none;">'
-                        f'<strong>{html.escape(did)}</strong></a> '
-                        f'<span class="muted" style="font-size: 0.8rem;">· '
-                        f'{html.escape(author or "—")} · '
-                        f'{html.escape(str(r.get("created_at") or "")[:19])}'
-                        f'</span>'
-                        f'<div style="margin-top: 0.25rem; white-space: pre-wrap;">'
-                        f'{html.escape(snippet)}{"…" if len(body) > 200 else ""}'
-                        f'</div></li>'
+                    snippet = body_text[:240]
+                    more = "…" if len(body_text) > 240 else ""
+                    when = html.escape(str(r.get("created_at") or "")[:19])
+                    note_hits.append(
+                        '<li class="ck-search-hit">'
+                        f'<div class="ck-search-hit-title">{_deal_link(did)}'
+                        f'<span class="ck-search-hit-slug">{html.escape(did)}</span>'
+                        '</div>'
+                        f'<div class="ck-search-hit-meta">'
+                        f'{html.escape(author or "—")} &middot; '
+                        f'<span style="font-family:var(--sc-mono,monospace);">{when}</span>'
+                        '</div>'
+                        f'<p class="ck-search-hit-body">{html.escape(snippet)}{more}</p>'
+                        '</li>'
                     )
 
-        # Compose results panel
-        deals_panel = (
-            f'<div class="card"><h2>Deal matches ({len(deal_hits_html)})</h2>'
-            f'<ul style="list-style: none; padding: 0; margin: 0;">'
-            f'{"".join(deal_hits_html)}</ul></div>'
-        ) if deal_hits_html else ""
-        notes_panel = (
-            f'<div class="card"><h2>Note matches ({len(note_hits_html)})</h2>'
-            f'<ul style="list-style: none; padding: 0; margin: 0;">'
-            f'{"".join(note_hits_html)}</ul></div>'
-        ) if note_hits_html else ""
+        # KPI strip: total hits + deal hits + note hits + universe
+        kpi_html = (
+            '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+            + ck_kpi_block(
+                "Matches",
+                f"{len(deal_hits) + len(note_hits)}",
+                sub="across deals + notes",
+            )
+            + ck_kpi_block(
+                "Deal Hits", f"{len(deal_hits)}",
+                sub="deal_id / stage / covenant",
+            )
+            + ck_kpi_block(
+                "Note Hits", f"{len(note_hits)}",
+                sub="body + author full-text",
+            )
+            + ck_kpi_block(
+                "Query", f'"{html.escape(q)}"' if q else "—",
+                sub="case-insensitive substring",
+            )
+            + '</div>'
+        )
+
+        title_html = ck_page_title(
+            "Search",
+            eyebrow="PORTFOLIO-WIDE",
+            meta=(
+                f"Query: {q!r} · "
+                f"{len(deal_hits)} deal hits · {len(note_hits)} note hits"
+                if q else "Type a query to scan deals, stages, and notes"
+            ),
+        )
+
+        search_form = (
+            '<form method="GET" action="/search" class="ck-search-page-form">'
+            '<input type="text" name="q" value="' + html.escape(q) + '" '
+            'placeholder="Search deals, hospitals, notes, sponsors…" '
+            'autofocus class="ck-search-page-input">'
+            '<button type="submit" class="ck-search-page-submit">'
+            'Search &rarr;</button>'
+            '</form>'
+        )
+
+        deal_panel = (
+            '<section class="cad-card ck-lp-section">'
+            '<header class="ck-lp-section-head">'
+            f'<h2>Deals</h2>'
+            f'<span class="ck-lp-section-count">{len(deal_hits)} hits</span>'
+            '</header>'
+            '<ul class="ck-search-hits">'
+            + "".join(deal_hits) + '</ul>'
+            '</section>'
+        ) if deal_hits else ""
+        note_panel = (
+            '<section class="cad-card ck-lp-section">'
+            '<header class="ck-lp-section-head">'
+            f'<h2>Notes</h2>'
+            f'<span class="ck-lp-section-count">{len(note_hits)} hits</span>'
+            '</header>'
+            '<ul class="ck-search-hits">'
+            + "".join(note_hits) + '</ul>'
+            '</section>'
+        ) if note_hits else ""
         empty_panel = (
-            '<div class="card"><p class="muted">No matches. '
-            'Try a shorter query, or <a href="/">browse the dashboard</a>.</p></div>'
-        ) if q and not (deal_hits_html or note_hits_html) else ""
+            '<section class="cad-card ck-lp-section">'
+            '<p class="ck-lp-empty">No matches. Try a shorter query — '
+            'or open the <a href="/" style="color:var(--sc-teal-ink,#0f5e5a);">dashboard</a> '
+            'to browse.</p></section>'
+        ) if q and not (deal_hits or note_hits) else ""
         hint_panel = (
-            '<div class="card"><p class="muted">Type a query above. '
-            'Searches deal IDs, stages, and note content across the portfolio.</p></div>'
+            '<section class="cad-card ck-lp-section">'
+            '<p class="ck-lp-empty">Searches deal IDs, deal names, stages, '
+            'covenant status, and the full text of every note across the '
+            'portfolio. Press Cmd+K anywhere to jump to a tool by name.</p>'
+            '</section>'
         ) if not q else ""
 
-        # Search box carries current query for refinement
-        body = f"""
-        <form method="GET" action="/search" style="margin-bottom: 1rem;">
-          <input type="text" name="q" value="{html.escape(q)}"
-                 placeholder="Search deals, stages, notes..."
-                 autofocus
-                 style="width: 100%; padding: 0.75rem 1rem;
-                        border: 1px solid var(--border); border-radius: 8px;
-                        font-size: 1rem; font-family: inherit;">
-        </form>
-        {deals_panel}
-        {notes_panel}
-        {empty_panel}
-        {hint_panel}
-        """
-        self._send_html(shell(
-            body=body, title="Search",
-            subtitle=f"Results for: {q!r}" if q else "Portfolio-wide search",
-            back_href="/",
+        page_css = (
+            '<style>'
+            '.ck-search-page-form{display:flex;gap:12px;margin:0 0 24px;}'
+            '.ck-search-page-input{flex:1;padding:14px 18px;'
+            'font-family:var(--sc-serif,Georgia,serif);font-size:18px;'
+            'background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+            'color:var(--sc-text,#1a2332);border-radius:2px;'
+            'box-shadow:var(--sc-shadow-1);}'
+            '.ck-search-page-input:focus{outline:none;'
+            'border-color:var(--sc-teal,#155752);}'
+            '.ck-search-page-submit{padding:0 22px;background:var(--sc-navy,#0b2341);'
+            'color:#fff;border:0;font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:12px;font-weight:700;letter-spacing:0.1em;'
+            'text-transform:uppercase;cursor:pointer;border-radius:2px;}'
+            '.ck-search-page-submit:hover{background:var(--sc-teal,#155752);}'
+            '.ck-search-hits{list-style:none;padding:0;margin:0;}'
+            '.ck-search-hit{padding:14px 0;'
+            'border-top:1px solid var(--sc-rule,#d6cfc3);}'
+            '.ck-search-hit:first-child{border-top:0;}'
+            '.ck-search-hit-title{display:flex;align-items:baseline;gap:10px;'
+            'margin-bottom:4px;}'
+            '.ck-search-hit-slug{font-family:var(--sc-mono,monospace);'
+            'font-size:10.5px;color:var(--sc-text-faint,#7a8699);'
+            'letter-spacing:0.06em;text-transform:uppercase;}'
+            '.ck-search-hit-meta{font-family:var(--sc-sans,Inter,sans-serif);'
+            'font-size:12.5px;color:var(--sc-text-dim,#465366);}'
+            '.ck-search-hit-body{margin:8px 0 0;'
+            'font-family:var(--sc-serif,Georgia,serif);font-size:13.5px;'
+            'line-height:1.5;color:var(--sc-text,#1a2332);'
+            'white-space:pre-wrap;}'
+            '</style>'
+        )
+
+        body = (
+            f"{title_html}"
+            f"{search_form}"
+            f"{kpi_html}"
+            f"{deal_panel}"
+            f"{note_panel}"
+            f"{empty_panel}"
+            f"{hint_panel}"
+            f"{page_css}"
+        )
+        self._send_html(chartis_shell(
+            body, "Search",
+            active_nav="/search",
+            subtitle=(
+                f"Results for: {q!r}" if q else "Portfolio-wide search"
+            ),
         ))
 
     def _route_users_page(self) -> None:
@@ -15678,7 +16362,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._send_json(
                     {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST,
                 )
-            self._redirect(f"/deal/{urllib.parse.quote(deal_id)}")
+            self._redirect(self._with_flash(
+                f"/deal/{urllib.parse.quote(deal_id)}",
+                "Note saved", "success",
+            ))
             return
 
         # POST /api/jobs/run  (B95: queue a simulation)
@@ -15753,7 +16440,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._send_json(
                     {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST,
                 )
-            self._redirect(f"/deal/{urllib.parse.quote(deal_id)}")
+            self._redirect(self._with_flash(
+                f"/deal/{urllib.parse.quote(deal_id)}",
+                "Deadline added", "success",
+            ))
             return
 
         # POST /api/deadlines/<id>/assign  (B116: change owner)
@@ -15773,7 +16463,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             accept = self.headers.get("Accept", "")
             if "application/json" in accept:
                 return self._send_json({"ok": True})
-            self._redirect("/deadlines")
+            self._redirect(self._with_flash(
+                "/deadlines", "Deadline owner updated", "success",
+            ))
             return
 
         # POST /api/deadlines/<id>/complete  (B114: mark done)
@@ -15795,7 +16487,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             accept = self.headers.get("Accept", "")
             if "application/json" in accept:
                 return self._send_json({"completed": ok})
-            self._redirect("/deadlines")
+            self._redirect(self._with_flash(
+                "/deadlines",
+                "Deadline marked complete" if ok else "Already complete",
+                "success" if ok else "info",
+            ))
             return
 
         # POST /api/notes/<id>/tags  (B123: add a tag)
@@ -15984,7 +16680,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._send_json(
                     {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST,
                 )
-            self._redirect(f"/deal/{urllib.parse.quote(deal_id)}")
+            owner_label = form.get("owner", "").strip() or "—"
+            self._redirect(self._with_flash(
+                f"/deal/{urllib.parse.quote(deal_id)}",
+                f"Owner set to {owner_label}", "success",
+            ))
             return
 
         # POST /api/deals/<id>/star  (B111: toggle watchlist star)
@@ -15998,7 +16698,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._send_json({
                     "deal_id": deal_id, "starred": new_state,
                 })
-            self._redirect(f"/deal/{urllib.parse.quote(deal_id)}")
+            flash_msg = (
+                "Pinned to watchlist" if new_state else "Removed from watchlist"
+            )
+            self._redirect(self._with_flash(
+                f"/deal/{urllib.parse.quote(deal_id)}",
+                flash_msg, "success",
+            ))
             return
 
         # POST /api/alerts/ack  (B102: acknowledge / snooze an alert instance)
@@ -16056,6 +16762,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                 and not raw_next.startswith("//")
                 and "://" not in raw_next
             ) else "/alerts"
+            # Append a ?flash so the destination's editorial shell
+            # surfaces the toast confirmation. The kit's _TOAST_JS
+            # scrubs ?flash + ?kind from the URL after rendering so
+            # a refresh doesn't repeat the toast.
+            nxt = self._with_flash(nxt, "Alert acknowledged", "success")
             self._redirect(nxt)
             return
 
@@ -16536,6 +17247,110 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "max-age=31536000; includeSubDomains",
             )
 
+    def _route_tools_index(self) -> None:
+        """GET /tools — full platform tool index grouped by section.
+
+        Discoverability fallback for partners who haven't learned the
+        Cmd+K palette yet. Groups every editorial surface by its
+        section (Home / Pipeline / Diligence / Library / Research /
+        Portfolio / Admin) and renders each as a cad-card panel with
+        link rows. Same source-of-truth as the Cmd+K palette
+        (_DEFAULT_PALETTE_MODULES + _SUB_NAV) so the lists stay in
+        sync.
+        """
+        from .ui._chartis_kit import (
+            chartis_shell, ck_page_title, _DEFAULT_PALETTE_MODULES,
+            _resolve_sub_section,
+        )
+        # Bucket palette entries by their resolved section. Uses the
+        # same _resolve_sub_section that the subnav highlight uses,
+        # so a tool's section here matches what the partner sees in
+        # the active subnav pill.
+        sections: Dict[str, List[Dict[str, str]]] = {
+            "home": [], "pipeline": [], "diligence": [],
+            "library": [], "research": [], "portfolio": [],
+            "other": [],
+        }
+        section_labels = {
+            "home":      "Home & Operations",
+            "pipeline":  "Pipeline & Sourcing",
+            "diligence": "Diligence Workspace",
+            "library":   "Library & Reference",
+            "research":  "Research & Backtesting",
+            "portfolio": "Portfolio & LP",
+            "other":     "Admin & System",
+        }
+        for m in _DEFAULT_PALETTE_MODULES:
+            section = _resolve_sub_section(m["route"]) or "other"
+            sections.setdefault(section, []).append(m)
+        # Build cards in canonical order
+        cards = []
+        order = ["home", "pipeline", "diligence", "library",
+                 "research", "portfolio", "other"]
+        for sec in order:
+            entries = sections.get(sec, [])
+            if not entries:
+                continue
+            rows = []
+            for m in entries:
+                rows.append(
+                    f'<a href="{html.escape(m["route"], quote=True)}" class="ck-tool-row">'
+                    f'<span class="ck-tool-title">{html.escape(m["title"])}</span>'
+                    f'<span class="ck-tool-route">{html.escape(m["route"])}</span>'
+                    '</a>'
+                )
+            cards.append(
+                '<section class="cad-card ck-tool-card">'
+                '<header class="ck-tool-card-head">'
+                f'<h2>{html.escape(section_labels.get(sec, sec.title()))}</h2>'
+                f'<span class="ck-tool-card-count">{len(entries)} tools</span>'
+                '</header>'
+                f'<div class="ck-tool-list">{"".join(rows)}</div>'
+                '</section>'
+            )
+
+        title_html = ck_page_title(
+            "Tools",
+            eyebrow="PLATFORM INDEX",
+            meta=(
+                f"{len(_DEFAULT_PALETTE_MODULES)} surfaces · "
+                "press Cmd+K anywhere to jump to one"
+            ),
+        )
+        page_css = (
+            '<style>'
+            '.ck-tool-card{padding:22px 26px;margin:0 0 20px;}'
+            '.ck-tool-card-head{display:flex;align-items:baseline;'
+            'justify-content:space-between;gap:12px;margin:0 0 14px;}'
+            '.ck-tool-card-head h2{font-family:var(--sc-serif,Georgia,serif);'
+            'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
+            'margin:0;letter-spacing:-0.01em;}'
+            '.ck-tool-card-count{font-family:var(--sc-mono,monospace);'
+            'font-size:11px;color:var(--sc-text-faint,#7a8699);'
+            'letter-spacing:0.08em;text-transform:uppercase;}'
+            '.ck-tool-list{display:grid;'
+            'grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
+            'gap:0;border-top:1px solid var(--sc-rule,#d6cfc3);}'
+            '.ck-tool-row{display:flex;align-items:baseline;'
+            'justify-content:space-between;gap:18px;padding:11px 14px;'
+            'border-bottom:1px solid var(--sc-rule,#d6cfc3);'
+            'text-decoration:none;color:var(--sc-text,#1a2332);'
+            'font-family:var(--sc-sans,Inter,sans-serif);font-size:13.5px;}'
+            '.ck-tool-row:hover{background:var(--sc-bone,#ece6db);}'
+            '.ck-tool-title{font-weight:600;color:var(--sc-navy,#0b2341);}'
+            '.ck-tool-route{font-family:var(--sc-mono,monospace);'
+            'font-size:11px;color:var(--sc-text-faint,#7a8699);}'
+            '</style>'
+        )
+        body = f"{title_html}{page_css}{''.join(cards)}"
+        self._send_html(chartis_shell(
+            body, "Tools",
+            active_nav="/tools",
+            subtitle=(
+                f"All {len(_DEFAULT_PALETTE_MODULES)} platform surfaces"
+            ),
+        ))
+
     def _redirect(self, location: str) -> None:
         """See Other redirect — browser re-GETs the target after form POST.
 
@@ -16547,6 +17362,35 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", "0")
         self._send_security_headers()
         self.end_headers()
+
+    def _with_flash(
+        self, location: str, message: str, kind: str = "info",
+    ) -> str:
+        """Append a ?flash=… &kind=… query-string to a redirect target.
+
+        The editorial kit's _TOAST_JS picks these up on load, renders
+        the toast, then scrubs the params from history so refresh
+        doesn't repeat the message. ``kind`` is one of:
+        success / info / warning / error.
+
+        Safe to call against locations that already have a query
+        string — uses urlencode and merges into existing params.
+        """
+        if not location:
+            return location
+        try:
+            import urllib.parse as _up
+            parsed = _up.urlparse(location)
+            params = _up.parse_qsl(parsed.query, keep_blank_values=False)
+            # Replace any prior flash so we don't stack messages.
+            params = [(k, v) for k, v in params if k not in ("flash", "kind")]
+            params.append(("flash", str(message)))
+            if kind:
+                params.append(("kind", str(kind)))
+            new_query = _up.urlencode(params)
+            return _up.urlunparse(parsed._replace(query=new_query))
+        except Exception:  # noqa: BLE001 — never let flashing break a redirect
+            return location
 
 
 # ── Server lifecycle ───────────────────────────────────────────────────────

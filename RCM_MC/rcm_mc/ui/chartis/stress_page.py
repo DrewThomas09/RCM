@@ -18,6 +18,7 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_kpi_block,
+    ck_provenance_tooltip,
     ck_section_header,
 )
 from ._helpers import (
@@ -187,9 +188,33 @@ def render_stress(
     for o in outcomes:
         by_sev[str(o.get("severity", "") or "").lower()].append(o)
 
+    # Cycle 36 — wrap two key KPIs with provenance so the partner sees
+    # the grade thresholds and the scenario universe without leaving
+    # the page.
+    grade_value = ck_provenance_tooltip(
+        "Robustness grade",
+        grade,
+        explainer=(
+            "A = >=90% downside pass and zero covenant breaches; "
+            "B = >=80% pass and <=1 breach; C = >=60% pass; "
+            "D = >=40%; F = below 40%. Source: "
+            "pe_intelligence/stress_test.py::_robustness_grade."
+        ),
+    )
+    pass_value = ck_provenance_tooltip(
+        "Downside pass rate",
+        fmt_pct(pass_rate, digits=0),
+        explainer=(
+            "Share of downside scenarios in the stress grid that "
+            "leave EBITDA above the covenant threshold. Grid covers "
+            "rate, volume, multiple-compression, lever-slip, and "
+            "labor-shock shocks."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        ck_kpi_block("Robustness", grade, "grade A-F")
-        + ck_kpi_block("Downside Pass", fmt_pct(pass_rate, digits=0), "of scenarios")
+        ck_kpi_block("Robustness", grade_value, "grade A-F")
+        + ck_kpi_block("Downside Pass", pass_value, "of scenarios")
         + ck_kpi_block("Upside Capture", fmt_pct(upside_capture, digits=0), "of scenarios")
         + ck_kpi_block("Covenant Breaches", str(n_breaches), "across grid")
         + ck_kpi_block("Worst Case",
@@ -264,6 +289,11 @@ def render_stress(
         ],
         subtitle=f"{label} · grade {grade} · {pass_rate*100:.0f}% downside pass · "
                  f"{n_breaches} breach{'es' if n_breaches != 1 else ''}",
+        editorial_intro={
+            "eyebrow": "STRESS GRID",
+            "headline": "Where the deal breaks under pressure.",
+            "italic_word": "breaks",
+        },
     )
 
 

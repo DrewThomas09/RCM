@@ -64,7 +64,7 @@ def _input_form(qs: Dict[str, Any]) -> str:
         'style="padding:6px 8px;border:1px solid #e5e7eb;'
         'border-radius:4px;font-size:13px;width:200px;"></div>'
         '<button type="submit" '
-        'style="padding:8px 16px;background:#1F4E78;color:#fff;'
+        'style="padding:8px 16px;background:var(--sc-navy);color:#fff;'
         'border:0;border-radius:4px;font-size:13px;font-weight:500;'
         'cursor:pointer;">Find comparables</button>'
         '</form>'
@@ -111,7 +111,7 @@ def _outcome_strip(summary: Dict[str, Any]) -> str:
             f'<div style="font-size:10px;color:#6b7280;font-weight:600;'
             f'text-transform:uppercase;letter-spacing:0.05em;">'
             f'{label}</div>'
-            f'<div style="font-size:24px;font-weight:700;color:#1F4E78;'
+            f'<div style="font-size:24px;font-weight:700;color:var(--sc-navy);'
             f'margin-top:4px;font-variant-numeric:tabular-nums;">{big}</div>'
             f'<div style="font-size:11px;color:#6b7280;margin-top:4px;'
             f'font-variant-numeric:tabular-nums;">{sub}</div>'
@@ -139,7 +139,7 @@ def _breakdown_bar(breakdown: Dict[str, float]) -> str:
     if not breakdown:
         return ""
     feature_palette = {
-        "sector":     "#1F4E78",  # navy — the heaviest weight
+        "sector":     "var(--sc-navy)",  # navy — the heaviest weight
         "size":       "#3b82f6",  # blue
         "year":       "#10b981",  # green
         "payer_mix":  "#f59e0b",  # amber
@@ -236,7 +236,10 @@ def render_comparable_outcomes_page(
     *, db_path: Optional[str] = None,
 ) -> str:
     from . import _web_components as _wc
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
     from ..diligence.comparable_outcomes import benchmark_deal
     from ..data_public.deals_corpus import DealsCorpus
 
@@ -342,7 +345,7 @@ def render_comparable_outcomes_page(
         'text-transform:uppercase;letter-spacing:0.05em;">'
         'Match-score bar</span>'
         '<span><span style="display:inline-block;width:10px;'
-        'height:8px;background:#1F4E78;margin-right:4px;'
+        'height:8px;background:var(--sc-navy);margin-right:4px;'
         'vertical-align:middle;"></span>sector (35)</span>'
         '<span><span style="display:inline-block;width:10px;'
         'height:8px;background:#3b82f6;margin-right:4px;'
@@ -371,7 +374,7 @@ def render_comparable_outcomes_page(
     btn_style = (
         "display:inline-flex;align-items:center;gap:6px;"
         "padding:8px 14px;border:1px solid #d1d5db;border-radius:6px;"
-        "background:#fff;color:#1F4E78;font-size:13px;font-weight:600;"
+        "background:#fff;color:var(--sc-navy);font-size:13px;font-weight:600;"
         "text-decoration:none;cursor:pointer;"
     )
     export_bar = (
@@ -388,8 +391,45 @@ def render_comparable_outcomes_page(
         '</div>'
     )
 
+    # Cycle 49 — KPI strip with provenance.
+    n_comp = summary.get("n_comparables", 0) if summary else 0
+    moic_p50 = summary.get("moic_p50") if summary else None
+    win_rate = summary.get("win_rate_2_5x") if summary else None
+    comp_value = ck_provenance_tooltip(
+        "Comparable deals matched",
+        ck_fmt_num(n_comp),
+        explainer=(
+            f"Realized corpus deals matching the target profile "
+            f"by sector / size / vintage. Higher count = denser "
+            f"distribution to read against. Below ~10 the bands "
+            f"start to swing on individual exits."
+        ),
+    )
+    moic_value = ck_provenance_tooltip(
+        "Comparables P50 MOIC",
+        f"{moic_p50:.2f}x" if moic_p50 else "—",
+        explainer=(
+            "Median realized MOIC across the matched comparables. "
+            "This is the underwriting reality check - if your "
+            "target's projected MOIC is above corpus P75, the "
+            "bear case has to refute that path."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Comparables", comp_value, "matched")
+        + ck_kpi_block("Comp P50 MOIC", moic_value, "median realized")
+        + ck_kpi_block("Win Rate (2.5x+)",
+                       f"{win_rate*100:.0f}%" if win_rate else "—",
+                       "share above 2.5x")
+        + '</div>'
+    )
+
     inner = (
-        header
+        ck_eyebrow("Comparable Outcomes")
+        + kpi_strip
+        + header
         + form
         + _outcome_strip(summary)
         + export_bar
@@ -404,4 +444,16 @@ def render_comparable_outcomes_page(
         + _wc.sortable_table_js()
     )
     return chartis_shell(body, "Comparable outcomes",
-                         active_nav="/diligence/comparable-outcomes")
+                         active_nav="/diligence/comparable-outcomes",
+        editorial_intro={
+            "eyebrow": "COMPARABLE OUTCOMES",
+            "headline": "What deals like this actually returned.",
+            "italic_word": "actually",
+            "body": (
+                "Realized-MOIC distribution across corpus deals "
+                "matched on profile distance - sector, size, "
+                "vintage, payer mix. Use the bands as the "
+                "underwriting reality check; the bear case "
+                "should land near the corpus P25."
+            ),
+        })

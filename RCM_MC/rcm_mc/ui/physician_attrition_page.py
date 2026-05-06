@@ -26,7 +26,7 @@ from ..diligence.physician_attrition import (
     analyze_roster,
 )
 from ..diligence.physician_comp.comp_ingester import Provider
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -1078,6 +1078,11 @@ def render_physician_attrition_page(
 
     body = (
         _scoped_styles()
+        + ck_page_title(
+            "Physician Attrition",
+            eyebrow="RCM DILIGENCE",
+            meta=f"Target: {target_name} · predictive churn analytic",
+        )
         + '<div class="pa-wrap">'
         + hero_and_bridge
         + crosslink
@@ -1102,5 +1107,6 @@ def render_physician_attrition_page(
 
     return chartis_shell(
         body, f"Physician Attrition — {target_name}",
+        active_nav="/diligence/physician-attrition",
         subtitle="Predictive RCM analytic",
     )

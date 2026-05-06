@@ -269,8 +269,13 @@ def render_capital_efficiency(params: Dict[str, str]) -> str:
 """
 
     return chartis_shell(
-        body=body,
+        body,
         title="Capital Efficiency Analysis",
         active_nav="/capital-efficiency",
         subtitle="Return density per unit of entry multiple — corpus-wide and by segment",
+        editorial_intro={
+            "eyebrow": "CAPITAL EFFICIENCY",
+            "headline": "How much return each entry dollar bought.",
+            "italic_word": "bought",
+        },
     )

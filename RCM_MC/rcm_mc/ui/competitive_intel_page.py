@@ -12,7 +12,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+)
 from ._glossary_link import metric_label_link
 from ._provenance_tooltip import provenance_tooltip
 from .brand import PALETTE
@@ -184,19 +186,25 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
     nat_margins = df["operating_margin"].dropna()
     nat_pctile = float((nat_margins < margin).mean() * 100) if len(nat_margins) > 10 else 50
 
+    margin_value = ck_provenance_tooltip(
+        "Operating margin (national percentile)",
+        ck_fmt_pct(margin),
+        explainer=(
+            f"P{nat_pctile:.0f} nationally - this hospital sits "
+            f"above {nat_pctile:.0f}% of the HCRIS universe on "
+            f"operating margin. P75+ = top quartile; below P25 "
+            f"flags structural margin pressure that the value-"
+            f"creation thesis has to fix."
+        ),
+    )
     kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(rev)}</div>'
-        f'<div class="cad-kpi-label">Net Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Margin (P{nat_pctile:.0f})</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{beds:.0f}</div>'
-        f'<div class="cad-kpi-label">Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(df):,}</div>'
-        f'<div class="cad-kpi-label">National Universe</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(peer_groups)}</div>'
-        f'<div class="cad-kpi-label">Peer Groups</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
+        + ck_kpi_block("Net Revenue", _fm(rev), "annual NPR")
+        + ck_kpi_block(f"Margin (P{nat_pctile:.0f})", margin_value, "national rank")
+        + ck_kpi_block("Beds", ck_fmt_num(int(beds)), "licensed")
+        + ck_kpi_block("National Universe", ck_fmt_num(len(df)), "HCRIS hospitals")
+        + ck_kpi_block("Peer Groups", ck_fmt_num(len(peer_groups)), "comparison sets")
+        + '</div>'
     )
 
     # ── Multi-group percentile table ──
@@ -414,4 +422,16 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
             f"CCN {_html.escape(ccn)} | {_html.escape(state)} | {beds:.0f} beds | "
             f"Nat'l margin P{nat_pctile:.0f} | {len(gap_opportunities)} gaps to P75"
         ),
+        editorial_intro={
+            "eyebrow": "COMPETITIVE INTELLIGENCE",
+            "headline": "Where this hospital wins or loses vs. peers.",
+            "italic_word": "wins",
+            "body": (
+                "Per-metric percentile ranks against state and "
+                "national benchmarks, with named gap opportunities "
+                "that would lift this hospital to P75 of its "
+                "cohort. Read the gap rows as the value-creation "
+                "thesis the deal needs to support."
+            ),
+        },
     )

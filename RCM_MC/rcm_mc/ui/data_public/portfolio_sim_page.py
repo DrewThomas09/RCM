@@ -296,9 +296,14 @@ def render_portfolio_sim(params: Dict[str, str]) -> str:
 """
 
     return chartis_shell(
-        body=body,
+        body,
         title="Portfolio Scenario Simulator",
         active_nav="/portfolio-sim",
         subtitle="Stress-test custom portfolio composition against 5 macro scenarios",
         extra_css=extra_css,
+        editorial_intro={
+            "eyebrow": "PORTFOLIO SIMULATOR",
+            "headline": "Where macro shocks reshape the cohort.",
+            "italic_word": "reshape",
+        },
     )

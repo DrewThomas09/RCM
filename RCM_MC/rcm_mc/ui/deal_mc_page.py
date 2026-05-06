@@ -25,7 +25,7 @@ from ..diligence.deal_mc.charts import (
     attribution_chart, fan_chart, moic_histogram_chart,
     sensitivity_tornado,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 from .power_ui import deal_context_bar, provenance
 
 
@@ -597,7 +597,12 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
 
     body = (
-        deal_context_bar(qs, active_surface="deal_mc")
+        ck_page_title(
+            "Deal Monte Carlo",
+            eyebrow="RCM DILIGENCE",
+            meta=f"Scenario: {scenario_name} · 5-year forward distribution",
+        )
+        + deal_context_bar(qs, active_surface="deal_mc")
         + _hero_stats(result, scenario_name)
         + revenue_fan
         + ebitda_fan
@@ -610,5 +615,6 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
     return chartis_shell(
         body, f"Deal MC — {scenario_name}",
+        active_nav="/diligence/deal-mc",
         subtitle="5-year forward distribution",
     )

@@ -66,23 +66,56 @@ class ThesisMatch:
 
 # ── Predefined theses ─────────────────────────────────────────────
 
+# Theses are scored against the HCRIS hospital corpus, so every
+# metric_key here MUST resolve to a column emitted by
+# ``rcm_mc.data.hcris._row_to_dict`` (or a derived field added by
+# ``find_thesis_matches`` below — currently ``commercial_payer_pct``
+# computed as 1 - medicare_day_pct - medicaid_day_pct, and
+# ``operating_margin_pct`` computed from net_income / net_patient_revenue).
+# Reaching for RCM-style metrics like ``denial_rate`` produces a
+# zero-match scoreboard because HCRIS doesn't carry those fields.
 THESIS_LIBRARY: Dict[str, InvestmentThesis] = {
-    "denial_turnaround": InvestmentThesis(
-        name="Denial turnaround",
-        criteria=[
-            ThesisCriterion("denial_rate", ">", 10.0, weight=2.0),
-        ],
-    ),
-    "ar_optimization": InvestmentThesis(
-        name="AR optimization",
-        criteria=[
-            ThesisCriterion("days_in_ar", ">", 50.0, weight=2.0),
-        ],
-    ),
     "rural_consolidation": InvestmentThesis(
         name="Rural consolidation",
         criteria=[
-            ThesisCriterion("bed_count", "<", 200, weight=1.5),
+            # Small-bed independent hospitals are the standard target
+            # for roll-up plays.
+            ThesisCriterion("beds", "between", (25, 200), weight=2.0),
+        ],
+    ),
+    "regional_platform": InvestmentThesis(
+        name="Regional platform",
+        criteria=[
+            # Mid-size hospitals (200-500 beds) with meaningful
+            # commercial mix that anchor a regional roll-up.
+            ThesisCriterion("beds", "between", (200, 500), weight=1.5),
+            ThesisCriterion("commercial_payer_pct", ">", 0.30, weight=2.0),
+        ],
+    ),
+    "margin_turnaround": InvestmentThesis(
+        name="Margin turnaround",
+        criteria=[
+            # Hospitals running negative operating margins — typical
+            # turnaround / value-creation sourcing target.
+            ThesisCriterion("operating_margin_pct", "<", 0.0, weight=2.5),
+            ThesisCriterion("beds", ">", 100, weight=1.0),
+        ],
+    ),
+    "commercial_payer_mix": InvestmentThesis(
+        name="High commercial payer mix",
+        criteria=[
+            # Hospitals with strong commercial mix — premium asset for
+            # PE buyers given commercial-rate uplift potential.
+            ThesisCriterion("commercial_payer_pct", ">", 0.50, weight=2.0),
+            ThesisCriterion("beds", ">", 150, weight=1.0),
+        ],
+    ),
+    "high_revenue_target": InvestmentThesis(
+        name="Large revenue target",
+        criteria=[
+            # Top-tier revenue scale — often ~$500M+ NPR — for
+            # platform-defining acquisitions.
+            ThesisCriterion("net_patient_revenue", ">", 500_000_000, weight=2.0),
         ],
     ),
 }
@@ -160,6 +193,21 @@ def find_thesis_matches(
     matches: List[ThesisMatch] = []
     for _, row in df.iterrows():
         rec = _row_to_dict(row)
+        # Derived fields that THESIS_LIBRARY criteria reference but
+        # HCRIS doesn't ship directly. Computed once per row so the
+        # scorer can match on them like any other metric.
+        try:
+            mc = float(rec.get("medicare_day_pct") or 0)
+            md = float(rec.get("medicaid_day_pct") or 0)
+            rec["commercial_payer_pct"] = max(0.0, 1.0 - mc - md)
+        except (TypeError, ValueError):
+            rec["commercial_payer_pct"] = None
+        try:
+            npr = float(rec.get("net_patient_revenue") or 0)
+            ni = float(rec.get("net_income") or 0)
+            rec["operating_margin_pct"] = ni / npr if npr > 0 else None
+        except (TypeError, ValueError):
+            rec["operating_margin_pct"] = None
         score, per_crit = score_hospital_against_thesis(rec, thesis)
         if score <= 0:
             continue

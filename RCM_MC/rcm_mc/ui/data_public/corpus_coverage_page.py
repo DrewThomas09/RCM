@@ -27,7 +27,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip, ck_section_header,
+)
 
 
 TRACKED_FIELDS = [
@@ -126,7 +129,7 @@ def _sector_breadth_table(corpus: List[Dict]) -> str:
             return f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{col};font-variant-numeric:tabular-nums">{pct:.0f}%</td>'
 
         rows += (
-            f'<tr style="background:{bg}">'
+            f'<tr>'
             f'<td style="padding:4px 8px;font-size:11px;white-space:nowrap">{html.escape(sec[:30])}</td>'
             f'<td style="padding:4px 8px;font-size:11px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{n}</td>'
             + cov_cell(moic_cov) + cov_cell(irr_cov) + cov_cell(payer_cov) + cov_cell(ev_cov) +
@@ -181,13 +184,39 @@ def _quality_kpi_grid(corpus: List[Dict]) -> str:
         ("AVG COMPLETENESS",f"{avg_completeness:.0f}%",  P["positive"] if avg_completeness >= 70 else P["warning"]),
     ]
 
-    return "".join(
-        f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 14px">'
-        f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:3px">{lbl}</div>'
-        f'<div style="font-size:16px;font-family:{_MONO};font-variant-numeric:tabular-nums;color:{col}">{val}</div>'
-        f'</div>'
-        for lbl, val, col in kpis
+    # Cycle 47 — port to ck_kpi_block + provenance on completeness.
+    completeness_value = ck_provenance_tooltip(
+        "Average corpus completeness",
+        f"{avg_completeness:.0f}%",
+        explainer=(
+            f"Mean share of tracked fields populated across "
+            f"{n} corpus deals. Below 70% means the corpus's "
+            f"average deal is missing data the audit panels "
+            f"depend on - cells fall back to '—' and percentile "
+            f"comparisons get noisier."
+        ),
     )
+    moic_cov_value = ck_provenance_tooltip(
+        "MOIC coverage",
+        f"{has_moic/n*100:.0f}%",
+        explainer=(
+            f"Share of corpus with disclosed realized MOIC. "
+            f"This is the highest-stakes coverage stat - MOIC "
+            f"benchmarking on /market-rates and /backtest "
+            f"weights by this denominator."
+        ),
+        inject_css=False,
+    )
+    blocks = []
+    for lbl, val, _col in kpis:
+        # Provide provenance only for the two anchor stats.
+        if lbl == "AVG COMPLETENESS":
+            blocks.append(ck_kpi_block(lbl.title(), completeness_value))
+        elif lbl == "MOIC COVERAGE":
+            blocks.append(ck_kpi_block(lbl.title(), moic_cov_value))
+        else:
+            blocks.append(ck_kpi_block(lbl.title(), val))
+    return "".join(blocks)
 
 
 def render_corpus_coverage() -> str:
@@ -195,7 +224,7 @@ def render_corpus_coverage() -> str:
     n = len(corpus)
 
     kpi_grid = _quality_kpi_grid(corpus)
-    kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin-bottom:16px">{kpi_grid}</div>'
+    kpi_strip = f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(9,1fr);gap:6px;margin-bottom:16px;">{kpi_grid}</div>'
 
     cov_table = _coverage_table(corpus)
     sector_table = _sector_breadth_table(corpus)
@@ -226,7 +255,7 @@ def render_corpus_coverage() -> str:
   {trust_panel}
   {kpi_strip}
 
-  <div style="margin-bottom:20px">
+  <div class="ck-page-head">
     <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.1em;margin-bottom:8px;border-bottom:1px solid {P['border']};padding-bottom:4px">
       FIELD COVERAGE RATES — {n:,} DEALS
     </div>
@@ -245,4 +274,17 @@ def render_corpus_coverage() -> str:
 </div>"""
 
     return chartis_shell(body, "Corpus Coverage Report", active_nav="/corpus-coverage",
-                         subtitle=f"{n:,} deals — Trust grade {trust_grade}")
+                         subtitle=f"{n:,} deals — Trust grade {trust_grade}",
+        editorial_intro={
+            "eyebrow": "CORPUS COVERAGE",
+            "headline": "How much of the corpus you can trust.",
+            "italic_word": "trust",
+            "body": (
+                "Field-by-field coverage rates across the realized "
+                "deal corpus. Trust grade A means MOIC coverage "
+                ">=75%; below B and the corpus benchmarks lean on "
+                "a thin denominator. Coverage by sector below "
+                "shows which sectors are well-papered and which "
+                "are sparse."
+            ),
+        })

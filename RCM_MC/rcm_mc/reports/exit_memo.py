@@ -40,7 +40,7 @@ from ..portfolio.portfolio_snapshots import list_snapshots
 # ── Shared palette (matches partner brief + dashboard) ──
 _PALETTE = {
     "bg": "#FAFAFA", "card": "#FFFFFF", "border": "#E5E7EB",
-    "text": "#111827", "muted": "#6B7280", "accent": "#1F4E78",
+    "text": "#111827", "muted": "#6B7280", "accent": "var(--sc-navy)",
     "green": "#10B981", "amber": "#F59E0B", "red": "#EF4444",
 }
 
@@ -281,7 +281,7 @@ def _render_risk_factors(snapshot: pd.Series) -> str:
 
 _CSS = """
 :root { --bg: #FAFAFA; --card: #FFFFFF; --border: #E5E7EB;
-        --text: #111827; --muted: #6B7280; --accent: #1F4E78;
+        --text: #111827; --muted: #6B7280; --accent: var(--sc-navy);
         --green: #10B981; --amber: #F59E0B; --red: #EF4444; }
 * { box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;

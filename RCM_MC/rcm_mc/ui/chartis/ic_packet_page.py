@@ -24,7 +24,8 @@ import html as _html
 import json as _json
 from typing import Any, Dict, List, Optional
 
-from .._chartis_kit import (
+from .._chartis_kit import (  # ck_provenance_tooltip added cycle 41
+    ck_provenance_tooltip,
     P,
     chartis_shell,
     ck_kpi_block,
@@ -480,9 +481,32 @@ def render_ic_packet(
         healthcare_checks.get("total_hits")
         or len(healthcare_checks.get("hits") or [])
     )
+    bear_n = len(b.get("bear_patterns") or [])
+    bear_value = ck_provenance_tooltip(
+        "Bear-pattern matches",
+        str(bear_n),
+        explainer=(
+            "Number of falsifiable bear-thesis triggers fired "
+            "against this deal from the corpus pattern library "
+            "(Steward, Envision, Mednax precedents). Each is a "
+            "claim with evidence the partner must confirm or "
+            "refute - not a verdict."
+        ),
+    )
+    sections_value = ck_provenance_tooltip(
+        "IC packet sections",
+        str(populated),
+        explainer=(
+            f"Bundled sections out of {len(_SECTION_DEFS)} the IC "
+            f"expects: thesis, base case, bear case, comparables, "
+            f"exit path, diligence questions. Lower coverage means "
+            f"more open questions for committee."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        ck_kpi_block("Sections", str(populated), f"of {len(_SECTION_DEFS)} bundled")
-        + ck_kpi_block("Bear Patterns", str(len(b.get("bear_patterns") or [])), "matches")
+        ck_kpi_block("Sections", sections_value, f"of {len(_SECTION_DEFS)} bundled")
+        + ck_kpi_block("Bear Patterns", bear_value, "matches")
         + ck_kpi_block("Regulatory Items",
                         str(len(b.get("regulatory_items") or [])), "in registry")
         + ck_kpi_block("Extra Heuristics",
@@ -581,4 +605,16 @@ def render_ic_packet(
             ("Deals", "/deals"),
             ("IC Packet", None),
         ],
+        editorial_intro={
+            "eyebrow": "IC PACKET",
+            "headline": "What the committee actually decides on.",
+            "italic_word": "decides",
+            "body": (
+                "Every section the IC needs to read on this deal — "
+                "thesis, base case, bear case, comparables, exit "
+                "path, and the questions a partner expects to be "
+                "asked. Generated against the live packet, so the "
+                "version on screen is the version in the room."
+            ),
+        },
     )

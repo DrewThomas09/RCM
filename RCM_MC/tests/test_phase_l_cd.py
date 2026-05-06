@@ -94,7 +94,7 @@ class TestDealSourcer(unittest.TestCase):
         self.assertEqual(s, 0.0)
 
     def test_find_matches_sorted(self):
-        thesis = THESIS_LIBRARY["denial_turnaround"]
+        thesis = THESIS_LIBRARY["rural_consolidation"]
         matches = find_thesis_matches(thesis, limit=10)
         if len(matches) >= 2:
             self.assertGreaterEqual(
@@ -107,9 +107,9 @@ class TestDealSourcer(unittest.TestCase):
         self.assertEqual(d["score"], 80.0)
 
     def test_investment_thesis_to_dict(self):
-        t = THESIS_LIBRARY["denial_turnaround"]
+        t = THESIS_LIBRARY["rural_consolidation"]
         d = t.to_dict()
-        self.assertEqual(d["name"], "Denial turnaround")
+        self.assertEqual(d["name"], "Rural consolidation")
 
     def test_thesis_library_has_entries(self):
         self.assertGreaterEqual(len(THESIS_LIBRARY), 3)

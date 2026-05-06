@@ -8,14 +8,25 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    SafeHtml,
+    chartis_shell,
+    ck_eyebrow,
+    ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
 def _model_nav(deal_id: str, active: str = "") -> str:
-    """Shared Bloomberg-style model ribbon — section codes + amber active state."""
+    """Editorial deal-context ribbon — model + view shortcuts.
+
+    Replaces the old Bloomberg-dark + amber-on-black treatment that
+    looked alien against the editorial parchment. Now reads as a
+    horizontal pill rail with the same hairline + bone-on-hover feel
+    as the rest of the v5 chrome.
+    """
     did = html.escape(deal_id)
-    # (code, label, href, key)
     groups = [
         ("PRF", "Profile", f"/hospital/{did}", "profile"),
         ("MEM", "IC Memo", f"/ic-memo/{did}", "ic_memo"),
@@ -40,42 +51,52 @@ def _model_nav(deal_id: str, active: str = "") -> str:
     for code, label, href, key in groups:
         is_active = " active" if key == active else ""
         items.append(
-            f'<a href="{href}" class="cad-modelnav-item{is_active}">'
-            f'<span class="cad-modelnav-code">{code}</span>'
-            f'<span class="cad-modelnav-label">{html.escape(label)}</span>'
+            f'<a href="{href}" class="ck-model-pill{is_active}">'
+            f'<span class="ck-model-pill-code">{code}</span>'
+            f'<span class="ck-model-pill-label">{html.escape(label)}</span>'
             f'</a>'
         )
     return (
-        f'<style>'
-        f'.cad-modelnav{{display:flex;flex-wrap:wrap;gap:0;margin-bottom:14px;'
-        f'border:1px solid {PALETTE["border"]};background:{PALETTE["bg_secondary"]};'
-        f'border-left:3px solid {PALETTE["accent_amber"]};}}'
-        f'.cad-modelnav-dash{{display:flex;align-items:center;gap:6px;padding:8px 12px;'
-        f'text-decoration:none;color:{PALETTE["text_primary"]};'
-        f'background:#03050a;border-right:1px solid {PALETTE["border"]};'
-        f'font-family:var(--cad-mono);font-size:10px;font-weight:700;'
-        f'letter-spacing:0.14em;text-transform:uppercase;}}'
-        f'.cad-modelnav-dash:hover{{color:{PALETTE["accent_amber"]};}}'
-        f'.cad-modelnav-item{{display:flex;align-items:center;gap:6px;padding:6px 10px;'
-        f'text-decoration:none;color:{PALETTE["text_secondary"]};'
-        f'border-right:1px solid {PALETTE["border"]};'
-        f'transition:background 0.1s,color 0.1s;}}'
-        f'.cad-modelnav-item:hover{{background:{PALETTE["bg_tertiary"]};color:{PALETTE["text_primary"]};}}'
-        f'.cad-modelnav-item.active{{background:{PALETTE["bg_tertiary"]};'
-        f'color:{PALETTE["accent_amber"]};'
-        f'box-shadow:inset 0 -2px 0 {PALETTE["accent_amber"]};}}'
-        f'.cad-modelnav-code{{font-family:var(--cad-mono);font-size:9px;font-weight:700;'
-        f'letter-spacing:0.14em;color:{PALETTE["accent_amber"]};'
-        f'padding:1px 4px;border:1px solid {PALETTE["border_light"]};}}'
-        f'.cad-modelnav-item.active .cad-modelnav-code{{'
-        f'background:{PALETTE["accent_amber"]};color:#000;border-color:{PALETTE["accent_amber"]};}}'
-        f'.cad-modelnav-label{{font-size:11px;font-weight:600;'
-        f'letter-spacing:0.04em;text-transform:uppercase;}}'
-        f'</style>'
-        f'<div class="cad-modelnav">'
-        f'<a href="/deal/{did}" class="cad-modelnav-dash">&larr; Dashboard</a>'
-        f'{"".join(items)}'
-        f'</div>'
+        '<style>'
+        '.ck-model-rail{display:flex;flex-wrap:wrap;align-items:center;'
+        'gap:6px;padding:10px 14px;margin:0 0 18px;'
+        'background:#fff;border:1px solid var(--sc-rule,#d6cfc3);'
+        'border-radius:2px;box-shadow:var(--sc-shadow-1);}'
+        '.ck-model-rail-back{display:inline-flex;align-items:center;gap:6px;'
+        'padding:5px 12px;margin-right:6px;'
+        'background:var(--sc-bone,#ece6db);'
+        'border:1px solid var(--sc-rule,#d6cfc3);border-radius:2px;'
+        'font-family:var(--sc-mono,JetBrains Mono,monospace);'
+        'font-size:10.5px;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:var(--sc-text-dim,#465366);'
+        'text-decoration:none;}'
+        '.ck-model-rail-back:hover{background:var(--sc-navy,#0b2341);'
+        'color:#fff;border-color:var(--sc-navy,#0b2341);}'
+        '.ck-model-pill{display:inline-flex;align-items:center;gap:6px;'
+        'padding:5px 10px;border:1px solid transparent;border-radius:2px;'
+        'text-decoration:none;color:var(--sc-text-dim,#465366);'
+        'font-family:var(--sc-sans,Inter,sans-serif);'
+        'transition:background 0.12s,color 0.12s,border-color 0.12s;}'
+        '.ck-model-pill:hover{background:var(--sc-bone,#ece6db);'
+        'color:var(--sc-navy,#0b2341);'
+        'border-color:var(--sc-rule,#d6cfc3);}'
+        '.ck-model-pill.active{background:var(--sc-navy,#0b2341);'
+        'color:#fff;border-color:var(--sc-navy,#0b2341);}'
+        '.ck-model-pill-code{font-family:var(--sc-mono,JetBrains Mono,monospace);'
+        'font-size:9.5px;font-weight:700;letter-spacing:0.1em;'
+        'padding:1px 5px;background:var(--sc-bone,#ece6db);'
+        'color:var(--sc-text-dim,#465366);border-radius:2px;}'
+        '.ck-model-pill:hover .ck-model-pill-code{'
+        'background:#fff;color:var(--sc-navy,#0b2341);}'
+        '.ck-model-pill.active .ck-model-pill-code{'
+        'background:var(--sc-teal,#155752);color:#fff;}'
+        '.ck-model-pill-label{font-size:11px;font-weight:600;'
+        'letter-spacing:0.04em;}'
+        '</style>'
+        '<nav class="ck-model-rail" aria-label="Deal model navigation">'
+        f'<a href="/deal/{did}" class="ck-model-rail-back">&larr; Deal</a>'
+        + "".join(items) +
+        '</nav>'
     )
 
 
@@ -140,21 +161,41 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     tv = dcf.get("terminal_value", 0)
 
     # KPIs
+    # Cycle 39 — port DCF KPI strip to ck_kpi_block + provenance.
+    ev_value = ck_provenance_tooltip(
+        "DCF enterprise value",
+        _fmt_m(ev),
+        explainer=(
+            "PV of explicit-period free cash flows + PV of terminal "
+            "value, discounted at WACC. Sensitive to terminal "
+            "growth and WACC assumptions in the sensitivity grid "
+            "below."
+        ),
+    )
+    wacc_value = ck_provenance_tooltip(
+        "Weighted average cost of capital",
+        _fmt_pct(assumptions.get("wacc")),
+        explainer=(
+            "Cost-of-equity (CAPM with healthcare beta) blended "
+            "with after-tax cost of debt at the deal's target "
+            "leverage. Lower WACC = higher EV - the sensitivity "
+            "grid shows the effect of +/-1% shifts."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(ev)}</div>'
-        f'<div class="cad-kpi-label">Enterprise Value</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(pv_cf)}</div>'
-        f'<div class="cad-kpi-label">PV of Cash Flows</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(pv_term)}</div>'
-        f'<div class="cad-kpi-label">PV of Terminal Value</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(tv)}</div>'
-        f'<div class="cad-kpi-label">Terminal Value</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_pct(assumptions.get("wacc"))}</div>'
-        f'<div class="cad-kpi-label">WACC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_pct(assumptions.get("terminal_growth"))}</div>'
-        f'<div class="cad-kpi-label">Terminal Growth</div></div>'
-        f'</div>'
+        f'<div class="ck-kpi-grid">'
+        + ck_kpi_block("Enterprise Value", ev_value, "PV of FCF + terminal")
+        + ck_kpi_block("PV of Cash Flows", _fmt_m(pv_cf), "explicit period")
+        + ck_kpi_block("PV of Terminal", _fmt_m(pv_term), "Gordon growth")
+        + ck_kpi_block("Terminal Value", _fmt_m(tv), "exit-year FCF / (WACC - g)")
+        + ck_kpi_block("WACC", wacc_value, "discount rate")
+        + ck_kpi_block(
+            "Terminal Growth",
+            _fmt_pct(assumptions.get("terminal_growth")),
+            "perpetual FCF growth",
+        )
+        + f'</div>'
     )
 
     # Projections table
@@ -298,7 +339,18 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     body = f'{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}'
     return chartis_shell(body, f"DCF — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Enterprise Value: {_fmt_m(ev)}")
+                    subtitle=f"Enterprise Value: {_fmt_m(ev)}",
+                    editorial_intro={
+                        "eyebrow": "DCF MODEL",
+                        "headline": "What the cash flows are worth.",
+                        "italic_word": "worth",
+                        "body": (
+                            "Discounted free-cash-flow valuation with a "
+                            "WACC + terminal-multiple sensitivity grid. "
+                            "Pair this with the LBO and 3-statement "
+                            "models for a full investment-committee view."
+                        ),
+                    })
 
 
 def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
@@ -318,20 +370,35 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     irr_color = PALETTE["positive"] if irr and irr > 0.20 else (
         PALETTE["warning"] if irr and irr > 0.15 else PALETTE["negative"])
 
+    # Cycle 39 — port LBO KPI strip + add IRR provenance.
+    irr_value = ck_provenance_tooltip(
+        "Levered IRR to equity",
+        SafeHtml(f'<span style="color:{irr_color};">{_fmt_pct(irr)}</span>'),
+        explainer=(
+            "Internal rate of return to the LP equity check over "
+            "a {hold}yr hold. >20% green, 15-20% amber, below "
+            "15% negative. Sensitive to exit multiple, leverage, "
+            "and EBITDA growth — all tunable below."
+        ).replace('{hold}', str(hold_years)),
+    )
+    moic_value = ck_provenance_tooltip(
+        "Multiple of invested capital",
+        _fmt_x(moic),
+        explainer=(
+            "Total equity proceeds at exit divided by equity "
+            "invested at entry. 2.5x is the rough industry "
+            "median over a 5-year hold; 3x+ is a strong outcome."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{irr_color};">'
-        f'{_fmt_pct(irr)}</div>'
-        f'<div class="cad-kpi-label">IRR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_x(moic)}</div>'
-        f'<div class="cad-kpi-label">MOIC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(entry_ev)}</div>'
-        f'<div class="cad-kpi-label">Entry EV</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(exit_ev)}</div>'
-        f'<div class="cad-kpi-label">Exit EV</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(equity_invested)}</div>'
-        f'<div class="cad-kpi-label">Equity Invested</div></div>'
-        f'</div>'
+        f'<div class="ck-kpi-grid">'
+        + ck_kpi_block("IRR", irr_value, "to equity over hold")
+        + ck_kpi_block("MOIC", moic_value, "exit / entry equity")
+        + ck_kpi_block("Entry EV", _fmt_m(entry_ev), "sources of capital")
+        + ck_kpi_block("Exit EV", _fmt_m(exit_ev), "year-{hold} terminal".replace('{hold}', str(hold_years)))
+        + ck_kpi_block("Equity Invested", _fmt_m(equity_invested), "LP check")
+        + f'</div>'
     )
 
     # Sources & Uses
@@ -475,7 +542,18 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     body = f'{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}'
     return chartis_shell(body, f"LBO — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}")
+                    subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}",
+                    editorial_intro={
+                        "eyebrow": "LBO MODEL",
+                        "headline": "What the leverage returns to equity.",
+                        "italic_word": "returns",
+                        "body": (
+                            "Sources and uses, debt amortization, and "
+                            "the equity waterfall through a 5-year hold. "
+                            "Tune leverage and exit multiple to see "
+                            "where the deal stops working."
+                        ),
+                    })
 
 
 def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) -> str:
@@ -534,17 +612,22 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
         model.get("cash_flow", model.get("cf", [])),
     )
 
-    # Summary KPIs
+    # Summary KPIs — cycle 39 ports to ck_kpi_block.
     summary = model.get("summary", {})
     kpis = ""
     if summary:
-        kpis = '<div class="cad-kpi-grid">'
+        kpi_blocks = []
         for k, v in list(summary.items())[:6]:
-            kpis += (
-                f'<div class="cad-kpi"><div class="cad-kpi-value">'
-                f'{_fmt_m(v) if isinstance(v, (int, float)) and abs(float(v)) > 1000 else _fmt_pct(v) if isinstance(v, float) and abs(v) < 1 else html.escape(str(v))}'
-                f'</div><div class="cad-kpi-label">{html.escape(k.replace("_", " ").title())}</div></div>'
+            value_str = (
+                _fmt_m(v) if isinstance(v, (int, float)) and abs(float(v)) > 1000
+                else _fmt_pct(v) if isinstance(v, float) and abs(v) < 1
+                else html.escape(str(v))
             )
+            kpi_blocks.append(ck_kpi_block(
+                k.replace("_", " ").title(),
+                value_str,
+            ))
+        kpis = f'<div class="ck-kpi-grid">{"".join(kpi_blocks)}</div>'
         kpis += '</div>'
 
     actions = (
@@ -581,4 +664,15 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
     body = f'{nav}{kpis}{is_section}{bs_section}{interp}{cf_section}{actions}'
     return chartis_shell(body, f"Financials — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle="3-statement model reconstructed from HCRIS + deal profile")
+                    subtitle="3-statement model reconstructed from HCRIS + deal profile",
+                    editorial_intro={
+                        "eyebrow": "FINANCIAL MODEL",
+                        "headline": "What the three statements tell each other.",
+                        "italic_word": "tell",
+                        "body": (
+                            "Income statement, balance sheet, and cash "
+                            "flow reconstructed from HCRIS plus deal "
+                            "profile. The places these don't tie tell "
+                            "you what the seller is hiding."
+                        ),
+                    })

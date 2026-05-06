@@ -332,6 +332,9 @@ def deal_context_bar(
         cursor = (
             'default' if is_active else 'pointer'
         )
+        # Pre-build outside the f-string so the nested escaped quote
+        # doesn't trip Python 3.11's parser.
+        onclick_attr = 'onclick="return false;"' if is_active else ''
         link = (
             f'<a href="{html.escape(url)}" '
             f'style="color:{color};text-decoration:none;'
@@ -341,7 +344,7 @@ def deal_context_bar(
             f'border-radius:3px;background:'
             f'{"rgba(59,130,246,0.15)" if is_active else "transparent"};'
             f'transition:all 120ms;cursor:{cursor};" '
-            f'{"onclick=\"return false;\"" if is_active else ""}>'
+            f'{onclick_attr}>'
             f'{html.escape(label)}</a>'
         )
         links.append(link)

@@ -459,24 +459,44 @@ def _r2_badge(r2: Optional[float]) -> str:
 # ---------------------------------------------------------------------------
 
 def _kpi_bar(stats: Dict[str, Any]) -> str:
-    from rcm_mc.ui._chartis_kit import ck_kpi_block
+    from rcm_mc.ui._chartis_kit import (
+        ck_fmt_moic, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+    )
 
     moic_p50 = stats["moic_p50"]
     moic_color = _moic_color(moic_p50)
-
+    r2_value = ck_provenance_tooltip(
+        "Model R-squared",
+        _r2_badge(stats["r2"]) if stats["r2"] is not None else "—",
+        explainer=(
+            f"Coefficient of determination on the predicted-vs-"
+            f"realized MOIC pairs ({stats['pairs_n']} calibrated). "
+            f">0.7 is a usable signal; <0.5 means the model isn't "
+            f"earning its place over a sector-median baseline."
+        ),
+    )
+    moic_value = ck_provenance_tooltip(
+        "Corpus P50 MOIC",
+        f'<span class="mn" style="color:{moic_color}">{ck_fmt_moic(moic_p50)}</span>',
+        explainer=(
+            "Median realized MOIC across the calibration corpus. "
+            "Color encodes regime: green >2.5x (strong), amber "
+            "1.5-2.5x (typical), red <1.5x (weak). The IQR cell "
+            "above shows P25/P75 spread."
+        ),
+        inject_css=False,
+    )
     return (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Realized Deals", f'<span class="mn">{stats["realized_n"]}</span>', f"of {stats['total']} corpus")
-        + ck_kpi_block("Corpus P50 MOIC",
-                       f'<span class="mn" style="color:{moic_color}">{moic_p50:.2f}x</span>', "realized")
+        + ck_kpi_block("Realized Deals", str(stats["realized_n"]), f"of {stats['total']} corpus")
+        + ck_kpi_block("Corpus P50 MOIC", moic_value, "realized")
         + ck_kpi_block("P25 / P75 MOIC",
-                       f'<span class="mn">{stats["moic_p25"]:.2f}x / {stats["moic_p75"]:.2f}x</span>', "IQR")
+                       f'{ck_fmt_moic(stats["moic_p25"])} / {ck_fmt_moic(stats["moic_p75"])}', "IQR")
         + ck_kpi_block("Loss Rate",
-                       f'<span class="mn" style="color:#ef4444">{stats["loss_rate"]*100:.1f}%</span>', "MOIC < 1.0×")
-        + ck_kpi_block("3× Homerun Rate",
-                       f'<span class="mn" style="color:#22c55e">{stats["homerun_rate"]*100:.1f}%</span>', "MOIC ≥ 3.0×")
-        + ck_kpi_block("Model R²",
-                       _r2_badge(stats["r2"]), f"n={stats['pairs_n']} calibrated pairs")
+                       ck_fmt_pct(stats["loss_rate"]), "MOIC < 1.0x")
+        + ck_kpi_block("3x Homerun Rate",
+                       ck_fmt_pct(stats["homerun_rate"]), "MOIC >= 3.0x")
+        + ck_kpi_block("Model R²", r2_value, f"n={stats['pairs_n']} pairs")
         + '</div>'
     )
 
@@ -668,4 +688,15 @@ def render_backtest() -> str:
             f"Model R² {stats['r2']:.3f} · "
             f"MAE {stats['mae']:.3f}x"
         ) if stats["r2"] is not None else f"{stats['realized_n']} realized deals",
+        editorial_intro={
+            "eyebrow": "BACKTEST",
+            "headline": "How well the model retrodicts the corpus.",
+            "italic_word": "retrodicts",
+            "body": (
+                "Predicted vs. realized MOIC across the calibration "
+                "corpus, sliced by sector. R-squared and MAE tell "
+                "you whether the model is earning its place; the "
+                "residual cloud tells you where it isn't."
+            ),
+        },
     )

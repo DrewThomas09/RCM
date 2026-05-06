@@ -196,7 +196,41 @@ def render_sensitivity_page(
 
     qd = html.escape(deal_id, quote=True)
 
-    body = f"""
+    # Cycle 49 — KPI strip with provenance.
+    from ._chartis_kit import (
+        ck_eyebrow, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+    )
+    n_cells = len(result.grid) * len(result.grid[0]) if result.grid else 0
+    cells_value = ck_provenance_tooltip(
+        "Grid cells computed",
+        ck_fmt_num(n_cells),
+        explainer=(
+            "Each cell is one (hold-year, exit-multiple) "
+            "combination scored through the deal's MOIC formula. "
+            "Color encodes outcome regime: green >2.5x, amber "
+            "1.5-2.5x, red below."
+        ),
+    )
+    eb_value = ck_provenance_tooltip(
+        "Entry EBITDA",
+        f"${params.entry_ebitda/1e6:.1f}M",
+        explainer=(
+            f"Anchor EBITDA the grid is computed off. Lower values "
+            f"compress the grid into the negative regime; higher "
+            f"values widen the green band. Planned uplift: "
+            f"${params.planned_uplift/1e6:.1f}M over the hold."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Grid Cells", cells_value, "(hold x mult)")
+        + ck_kpi_block("Entry EBITDA", eb_value, "anchor")
+        + ck_kpi_block("Planned Uplift", f"${params.planned_uplift/1e6:.1f}M", "over hold")
+        + '</div>'
+    )
+
+    body = ck_eyebrow("Sensitivity Analysis") + kpi_strip + f"""
 <div style="padding:20px; max-width:1200px; margin:0 auto;">
   <h2 style="color:#0F1C2E; margin-bottom:4px;">
     Sensitivity Analysis{' &mdash; ' + html.escape(deal_id) if deal_id else ''}
@@ -306,6 +340,17 @@ def render_sensitivity_page(
             ("Deals", "/deals"),
             ("Sensitivity", None),
         ],
+        editorial_intro={
+            "eyebrow": "SENSITIVITY ANALYSIS",
+            "headline": "Where the deal's assumptions get tested.",
+            "italic_word": "tested",
+            "body": (
+                "Single-input perturbations across a curated grid. "
+                "Use this to find which assumption the deal "
+                "actually depends on - the inputs that move "
+                "MOIC by 0.5x+ are the bear-case targets."
+            ),
+        },
     )
 
 

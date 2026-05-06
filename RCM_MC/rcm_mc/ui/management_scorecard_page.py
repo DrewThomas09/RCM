@@ -17,7 +17,7 @@ from ..diligence.management_scorecard import (
     ForecastHistory, ManagementReport, PriorRole, RedFlag, Role,
     analyze_team,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -546,6 +546,11 @@ def render_management_scorecard_page(
     )
     body = (
         _scoped_styles()
+        + ck_page_title(
+            "Management Scorecard",
+            eyebrow="RCM DILIGENCE",
+            meta=f"Target: {target_name} · 4-dimension exec read",
+        )
         + '<div class="ms-wrap">'
         + hero_and_haircut
         + howto
@@ -558,5 +563,6 @@ def render_management_scorecard_page(
     return chartis_shell(
         body,
         f"Management Scorecard — {target_name}",
+        active_nav="/diligence/management",
         subtitle="Forecast reliability × comp × tenure × prior role",
     )

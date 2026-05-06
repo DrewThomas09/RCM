@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SeekingChartis — Reset password</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2EDE3; --paper-pure: #FFFFFF; --border: #D6CFC0; --rule: #BFB6A2;
+    --ink: #0F1C2E; --muted: #5C6878; --faint: #8A92A0;
+    --teal: #1F7A75; --teal-soft: #D4E4E2; --teal-deep: #155752;
+    --green: #3F7D4D;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif; font-size: 16px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+  .topbar { background: var(--paper-pure); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; height: 72px; }
+  .brand { display:flex; align-items:center; gap:.7rem; text-decoration: none; color: inherit; }
+  .brand-mark { width: 38px; height: 38px; border: 1.5px solid var(--ink); border-radius: 999px; display: flex; align-items: center; justify-content: center; font-family: "Source Serif 4", serif; font-size: 1rem; font-weight: 600; }
+  .brand-name { font-family: "Source Serif 4", serif; font-size: 1.4rem; font-weight: 600; }
+  .brand-name em { font-style: italic; font-weight: 500; }
+  .topbar-right { margin-left: auto; }
+  .topbar-right a { font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+  .topbar-right a:hover { color: var(--ink); }
+
+  .crumbs { background: var(--bg); padding: .9rem 2rem; border-bottom: 1px solid var(--border); font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .crumbs .sep { margin: 0 .55rem; color: var(--faint); }
+  .crumbs .here { color: var(--ink); font-weight: 600; }
+  .crumbs a { color: var(--muted); text-decoration: none; }
+  .crumbs a:hover { color: var(--ink); }
+
+  .stage { max-width: 520px; margin: 0 auto; padding: 5rem 2rem; }
+  .eyebrow { font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 1.25rem; display: flex; gap: .5rem; align-items: center; }
+  .eyebrow .slug { font-family: "JetBrains Mono", monospace; color: var(--teal-deep); }
+  h1 { font-family: "Source Serif 4", serif; font-weight: 400; font-size: 2.6rem; line-height: 1.05; letter-spacing: -0.018em; color: var(--ink); margin: 0 0 1rem; }
+  h1 em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
+  .lede { font-family: "Source Serif 4", serif; font-size: 1.05rem; color: var(--muted); margin: 0 0 2rem; }
+
+  .card { background: var(--paper-pure); border: 1px solid var(--rule); padding: 2rem; }
+  .field { margin-bottom: 1.25rem; }
+  .field label { display: block; font-family: "Inter", sans-serif; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: .5rem; }
+  .field input { width: 100%; padding: .9rem 1rem; border: 1px solid var(--border); background: var(--bg); font-family: "Inter", sans-serif; font-size: .95rem; color: var(--ink); border-radius: 0; outline: none; }
+  .field input:focus { border-color: var(--teal); background: var(--paper-pure); }
+  .submit { width: 100%; background: var(--ink); color: var(--bg); font-family: "Inter", sans-serif; font-size: .76rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; padding: 1rem; border: none; cursor: pointer; }
+  .submit:hover { background: var(--teal-deep); }
+  .help { font-family: "Source Serif 4", serif; font-style: italic; font-size: .92rem; color: var(--muted); text-align: center; margin-top: 1.5rem; }
+  .help a { color: var(--teal-deep); text-decoration: underline; }
+
+  .ok { display: none; margin-top: 1rem; padding: 1rem 1.25rem; background: var(--teal-soft); border-left: 3px solid var(--teal); font-family: "Source Serif 4", serif; font-style: italic; color: var(--teal-deep); }
+  .ok.show { display: block; }
+
+  footer { padding: 1rem 2rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; font-family: "Inter", sans-serif; font-size: .78rem; color: var(--muted); }
+  footer em { font-style: italic; color: var(--teal-deep); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="SeekingChartis.html" class="brand">
+    <div class="brand-mark">SC</div>
+    <div class="brand-name">Seeking<em>Chartis</em></div>
+  </a>
+  <div class="topbar-right"><a href="login.html">← Back to sign in</a></div>
+</header>
+
+<div class="crumbs">
+  <a href="SeekingChartis.html">Home</a>
+  <span class="sep">›</span>
+  <a href="login.html">Sign in</a>
+  <span class="sep">›</span>
+  <span class="here">Reset password</span>
+</div>
+
+<div class="stage">
+  <div class="eyebrow"><span>ACCOUNT RECOVERY</span><span style="color:var(--faint)">·</span><span class="slug">/reset</span></div>
+  <h1>Reset your<br/><em>password</em>.</h1>
+  <p class="lede">Enter the email associated with your partner instance. We'll send a one-time recovery link.</p>
+
+  <div class="card">
+    <form onsubmit="event.preventDefault(); document.getElementById('ok').classList.add('show');">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" placeholder="partner@firm.com" required/>
+      </div>
+      <button type="submit" class="submit">Send recovery link →</button>
+    </form>
+    <div id="ok" class="ok">Recovery link sent. Check your inbox — link expires in 30 minutes.</div>
+  </div>
+
+  <p class="help">Don't have an account? <a href="login.html">Request access</a></p>
+</div>
+
+<footer>
+  <span>Seeking<em>Chartis</em> v1.0.0</span>
+  <span style="font-family:'JetBrains Mono', monospace; font-size:.72rem">HCRIS · APCD · CMS-MA</span>
+</footer>
+</body>
+</html>

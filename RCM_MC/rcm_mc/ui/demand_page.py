@@ -7,7 +7,9 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -30,21 +32,36 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
     elas_label = "Inelastic" if abs(elasticity) < 0.2 else ("Moderate" if abs(elasticity) < 0.4 else "Elastic")
 
     # KPIs
+    # Cycle 55 — port to ck_kpi_block + provenance.
+    density_value = ck_provenance_tooltip(
+        "Disease density index",
+        f'<span style="color:{density_color};">{density:.0f}/100</span>',
+        explainer=(
+            "Composite of disease prevalence, age structure, and "
+            "comorbidity load in the catchment area. Above 70 = "
+            "structural demand pull (the catchment will keep "
+            "needing this hospital regardless of competition); "
+            "below 40 = demand could shift."
+        ),
+    )
+    elasticity_value = ck_provenance_tooltip(
+        f"Price elasticity ({elas_label})",
+        f'<span style="color:{elas_color};">{elasticity:.2f}</span>',
+        explainer=(
+            "Patient-volume response to a 1% price change. "
+            "Inelastic (|e|<0.2) = pricing power; elastic (|e|"
+            ">0.4) = volume risk on rate increases. Hospital "
+            "operations economics flip on this number."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{density_color};">'
-        f'{density:.0f}/100</div>'
-        f'<div class="cad-kpi-label">Disease Density Index</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{stick_color};">'
-        f'{stickiness:.0f}/100</div>'
-        f'<div class="cad-kpi-label">Demand Stickiness</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{elas_color};">'
-        f'{elasticity:.2f}</div>'
-        f'<div class="cad-kpi-label">Price Elasticity ({elas_label})</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{tw_color};">'
-        f'{tailwind:+.0f}</div>'
-        f'<div class="cad-kpi-label">Tailwind Score</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("Disease Density Index", density_value, "structural demand")
+        + ck_kpi_block("Demand Stickiness", f'<span style="color:{stick_color};">{stickiness:.0f}/100</span>', "switching cost")
+        + ck_kpi_block(f"Price Elasticity", elasticity_value, elas_label)
+        + ck_kpi_block("Tailwind Score", f'<span style="color:{tw_color};">{tailwind:+.0f}</span>', "secular trend")
+        + '</div>'
     )
 
     # County disease prevalence table
@@ -196,4 +213,16 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
         body, f"Demand Analysis — {name}",
         active_nav="/market-data/map",
         subtitle=f"{county}, {state} | Density: {density:.0f} | Stickiness: {stickiness:.0f} | Elasticity: {elasticity:.2f}",
+        editorial_intro={
+            "eyebrow": "DEMAND ANALYSIS",
+            "headline": "Where the catchment's demand actually sits.",
+            "italic_word": "actually",
+            "body": (
+                "Per-hospital catchment demand: disease density "
+                "in the population, switching cost (stickiness), "
+                "and price elasticity. Structural demand is the "
+                "moat - hospitals with high stickiness and "
+                "inelastic pricing carry their own margin floor."
+            ),
+        },
     )

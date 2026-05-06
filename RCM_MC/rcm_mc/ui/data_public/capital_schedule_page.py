@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _jcurve_svg(quarters) -> str:
@@ -157,20 +157,20 @@ def _quarters_table(quarters) -> str:
         last = qs[-1]
         cf_color = pos if net_cf >= 0 else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">Year {yr}</td>',
+            f'{ck_data_cell(f"""Year {yr}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${total_call:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${total_dist:,.1f}M</td>',
+            f'{ck_data_cell(f"""${total_dist:,.1f}M""", align="right", mono=True, tone="pos")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cf_color};font-weight:600">${net_cf:+,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${last.cumulative_called_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${last.cumulative_distributed_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${last.nav_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">{last.dpi:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{last.tvpi:.2f}x</td>',
+            f'{ck_data_cell(f"""${last.cumulative_called_mm:,.1f}M""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${last.cumulative_distributed_mm:,.1f}M""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${last.nav_mm:,.1f}M""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{last.dpi:.2f}x""", align="right", mono=True, tone="pos", weight=600)}',
+            f'{ck_data_cell(f"""{last.tvpi:.2f}x""", align="right", mono=True, weight=600)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -187,16 +187,16 @@ def _lp_table(lps) -> str:
     for i, lp in enumerate(lps):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(lp.name)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${lp.commitment_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{lp.pct_of_fund * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{lp.hurdle_rate * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{lp.mgmt_fee * 100:.2f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(lp.name)}""", mono=True)}',
+            f'{ck_data_cell(f"""${lp.commitment_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{lp.pct_of_fund * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{lp.hurdle_rate * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{lp.mgmt_fee * 100:.2f}%""", align="right", mono=True, tone="dim")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -213,17 +213,17 @@ def _waterfall_table(tiers) -> str:
     for i, t in enumerate(tiers):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(t.tier)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.tier)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(t.threshold)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{t.lp_share * 100:.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">{t.gp_share * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">Y{t.est_timing_year:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${t.est_amount_mm:,.1f}M</td>',
+            f'{ck_data_cell(f"""Y{t.est_timing_year:.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${t.est_amount_mm:,.1f}M""", align="right", mono=True, weight=600)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -285,18 +285,18 @@ def render_capital_schedule(params: dict = None) -> str:
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
-    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
+<div class="ck-page-wrap">
 
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Capital Call &amp; Distribution Schedule</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Capital Call &amp; Distribution Schedule</h1>
+    <p class="ck-page-sub">
       Fund lifecycle cash flows — J-curve, DPI/TVPI trajectory, LP waterfall — ${r.fund_size_mm:,.0f}M fund / {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
@@ -345,4 +345,9 @@ def render_capital_schedule(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Capital Schedule", active_nav="/capital-schedule")
+    return chartis_shell(body, "Capital Schedule", active_nav="/capital-schedule",
+        editorial_intro={
+            "eyebrow": "CAPITAL SCHEDULE",
+            "headline": "What the capital schedule page reveals on this deal.",
+            "italic_word": "reveals",
+        })

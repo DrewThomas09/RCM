@@ -25,7 +25,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, SafeHtml, chartis_shell, ck_fmt_num, ck_fmt_pct,
+    ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+)
 
 
 def _percentile(vals: List[float], p: float) -> Optional[float]:
@@ -37,8 +40,14 @@ def _percentile(vals: List[float], p: float) -> Optional[float]:
     return s[lo] + (s[hi] - s[lo]) * (idx - lo)
 
 
-def _irr_histogram(irrs: List[float], w: int = 360, h: int = 100) -> str:
-    """Histogram of IRR values in 5pp buckets."""
+def _irr_histogram(irrs: List[float], w: int = 720, h: int = 260) -> str:
+    """Histogram of IRR values in 5pp buckets.
+
+    Uses viewBox + width 100% so the chart scales with container.
+    The 20% hurdle line gets its own labelled gutter at the top of
+    the chart instead of overlapping bars; bar bucket labels and
+    counts have more breathing room at the larger size.
+    """
     if not irrs:
         return ""
     irr_pct = [v * 100 for v in irrs]
@@ -51,7 +60,10 @@ def _irr_histogram(irrs: List[float], w: int = 360, h: int = 100) -> str:
                 break
 
     max_count = max(counts) if counts else 1
-    pad_l, pad_r, pad_t, pad_b = 8, 8, 8, 22
+    # Top padding now accommodates a hurdle-label gutter so the
+    # dashed line label sits above the chart instead of overlapping
+    # the tallest bars.
+    pad_l, pad_r, pad_t, pad_b = 14, 14, 30, 36
     bar_w = (w - pad_l - pad_r) / len(counts)
 
     parts: List[str] = []
@@ -60,22 +72,65 @@ def _irr_histogram(irrs: List[float], w: int = 360, h: int = 100) -> str:
         x = pad_l + i * bar_w
         y = h - pad_b - bh
         col = P["positive"] if lo >= 20 else (P["warning"] if lo >= 10 else (P["negative"] if lo >= 0 else "#dc2626"))
-        parts.append(f'<rect x="{x+1:.1f}" y="{y}" width="{bar_w-2:.1f}" height="{bh}" fill="{col}" fill-opacity="0.8"/>')
+        parts.append(
+            f'<rect x="{x+2:.1f}" y="{y}" width="{bar_w-4:.1f}" '
+            f'height="{bh}" fill="{col}" fill-opacity="0.85" rx="1"/>'
+        )
         if cnt > 0:
-            parts.append(f'<text x="{x+bar_w/2:.1f}" y="{y-2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="7" font-family="{_MONO}">{cnt}</text>')
+            parts.append(
+                f'<text x="{x+bar_w/2:.1f}" y="{y-4}" text-anchor="middle" '
+                f'fill="{P["text_dim"]}" font-size="11" '
+                f'font-family="{_MONO}">{cnt}</text>'
+            )
+        # Show every other bucket label at the larger width
         if i % 2 == 0:
-            parts.append(f'<text x="{x+bar_w/2:.1f}" y="{h-5}" text-anchor="middle" fill="{P["text_faint"]}" font-size="7" font-family="{_MONO}">{lo}%</text>')
+            parts.append(
+                f'<text x="{x+bar_w/2:.1f}" y="{h-12}" text-anchor="middle" '
+                f'fill="{P["text_faint"]}" font-size="11" '
+                f'font-family="{_MONO}">{lo}%</text>'
+            )
 
-    # 20% hurdle line
+    # 20% hurdle line with a clean labelled gutter above the bars.
+    # Position by linear interpolation across the bucket range so the
+    # line lands at the boundary between the 15-20 and 20-25 bars.
     hurdle_x = pad_l + (20 - buckets[0]) / (buckets[-1] - buckets[0]) * (w - pad_l - pad_r)
-    parts.append(f'<line x1="{hurdle_x:.1f}" y1="{pad_t}" x2="{hurdle_x:.1f}" y2="{h-pad_b}" stroke="{P["warning"]}" stroke-width="1.5" stroke-dasharray="3,2"/>')
-    parts.append(f'<text x="{hurdle_x+3:.1f}" y="{pad_t+10}" fill="{P["warning"]}" font-size="8" font-family="{_SANS}">20% hurdle</text>')
+    # Tick mark (small horizontal flag) + label sit in the top gutter
+    parts.append(
+        f'<line x1="{hurdle_x:.1f}" y1="{pad_t-4}" '
+        f'x2="{hurdle_x:.1f}" y2="{h-pad_b}" '
+        f'stroke="{P["warning"]}" stroke-width="1.25" '
+        f'stroke-dasharray="4,3"/>'
+    )
+    # Label pill — bone background with warning border, sits at the
+    # top of the line so it never overlaps a bar.
+    label_text = "20% HURDLE"
+    label_w = 72
+    label_x = max(pad_l, min(hurdle_x - label_w / 2, w - pad_r - label_w))
+    parts.append(
+        f'<rect x="{label_x:.1f}" y="6" width="{label_w}" height="18" '
+        f'rx="2" fill="#ece6db" stroke="{P["warning"]}" stroke-width="1"/>'
+    )
+    parts.append(
+        f'<text x="{label_x + label_w/2:.1f}" y="19" text-anchor="middle" '
+        f'fill="{P["warning"]}" font-size="10" '
+        f'font-family="{_MONO}" font-weight="700" '
+        f'letter-spacing="0.06em">{label_text}</text>'
+    )
 
-    return f'<svg width="{w}" height="{h}">{"".join(parts)}</svg>'
+    return (
+        f'<svg viewBox="0 0 {w} {h}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;height:auto;display:block;" '
+        f'role="img" aria-label="IRR distribution histogram">'
+        f'{"".join(parts)}</svg>'
+    )
 
 
-def _irr_moic_scatter(deals: List[Dict[str, Any]], w: int = 320, h: int = 240) -> str:
-    """IRR (x) vs MOIC (y) scatter with consistency bands."""
+def _irr_moic_scatter(deals: List[Dict[str, Any]], w: int = 720, h: int = 460) -> str:
+    """IRR (x) vs MOIC (y) scatter with consistency bands.
+
+    Uses viewBox + width 100% so the chart scales with container.
+    """
     points = [
         (d["realized_irr"], d["realized_moic"], d.get("hold_years"), d.get("deal_name",""))
         for d in deals
@@ -85,7 +140,7 @@ def _irr_moic_scatter(deals: List[Dict[str, Any]], w: int = 320, h: int = 240) -
     if not points:
         return ""
 
-    pad_l, pad_r, pad_t, pad_b = 36, 12, 12, 24
+    pad_l, pad_r, pad_t, pad_b = 60, 20, 22, 44
     cw, ch = w - pad_l - pad_r, h - pad_t - pad_b
 
     irr_min, irr_max = -0.05, 0.65
@@ -101,32 +156,71 @@ def _irr_moic_scatter(deals: List[Dict[str, Any]], w: int = 320, h: int = 240) -
     # grid
     for pct in [0, 10, 20, 30, 40, 50, 60]:
         px = xp(pct / 100)
-        parts.append(f'<line x1="{px:.1f}" y1="{pad_t}" x2="{px:.1f}" y2="{h-pad_b}" stroke="{P["border_dim"]}" stroke-width="1"/>')
-        parts.append(f'<text x="{px:.1f}" y="{h-pad_b+10}" text-anchor="middle" fill="{P["text_faint"]}" font-size="7" font-family="{_MONO}">{pct}%</text>')
+        parts.append(
+            f'<line x1="{px:.1f}" y1="{pad_t}" x2="{px:.1f}" y2="{h-pad_b}" '
+            f'stroke="{P["border_dim"]}" stroke-width="1"/>'
+        )
+        parts.append(
+            f'<text x="{px:.1f}" y="{h-pad_b+18}" text-anchor="middle" '
+            f'fill="{P["text_faint"]}" font-size="11" '
+            f'font-family="{_MONO}">{pct}%</text>'
+        )
     for mv in [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
         if mv <= moic_max:
             py = yp(mv)
-            parts.append(f'<line x1="{pad_l}" y1="{py:.1f}" x2="{w-pad_r}" y2="{py:.1f}" stroke="{P["border_dim"]}" stroke-width="1"/>')
-            parts.append(f'<text x="{pad_l-3}" y="{py+3:.1f}" text-anchor="end" fill="{P["text_faint"]}" font-size="7" font-family="{_MONO}">{mv:.1f}×</text>')
+            parts.append(
+                f'<line x1="{pad_l}" y1="{py:.1f}" x2="{w-pad_r}" y2="{py:.1f}" '
+                f'stroke="{P["border_dim"]}" stroke-width="1"/>'
+            )
+            parts.append(
+                f'<text x="{pad_l-6}" y="{py+4:.1f}" text-anchor="end" '
+                f'fill="{P["text_faint"]}" font-size="11" '
+                f'font-family="{_MONO}">{mv:.1f}×</text>'
+            )
 
     # 20% hurdle vertical
     px20 = xp(0.20)
-    parts.append(f'<line x1="{px20:.1f}" y1="{pad_t}" x2="{px20:.1f}" y2="{h-pad_b}" stroke="{P["warning"]}" stroke-width="1" stroke-dasharray="3,2"/>')
+    parts.append(
+        f'<line x1="{px20:.1f}" y1="{pad_t}" x2="{px20:.1f}" y2="{h-pad_b}" '
+        f'stroke="{P["warning"]}" stroke-width="1.25" stroke-dasharray="4,3"/>'
+    )
     # 2.0x horizontal
     if moic_min <= 2.0 <= moic_max:
         py2 = yp(2.0)
-        parts.append(f'<line x1="{pad_l}" y1="{py2:.1f}" x2="{w-pad_r}" y2="{py2:.1f}" stroke="{P["warning"]}" stroke-width="1" stroke-dasharray="3,2"/>')
+        parts.append(
+            f'<line x1="{pad_l}" y1="{py2:.1f}" x2="{w-pad_r}" y2="{py2:.1f}" '
+            f'stroke="{P["warning"]}" stroke-width="1.25" stroke-dasharray="4,3"/>'
+        )
 
     for irr, moic, hold, name in points:
         cx = xp(irr)
         cy = yp(moic)
         col = P["positive"] if irr >= 0.20 and moic >= 2.0 else (P["negative"] if irr < 0.15 or moic < 1.5 else P["warning"])
-        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.5" fill="{col}" fill-opacity="0.65" stroke="{col}" stroke-width="0.5"><title>{html.escape(name[:40])}: IRR {irr*100:.1f}%, MOIC {moic:.2f}×</title></circle>')
+        parts.append(
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5" fill="{col}" '
+            f'fill-opacity="0.65" stroke="{col}" stroke-width="0.75">'
+            f'<title>{html.escape(name[:40])}: IRR {irr*100:.1f}%, '
+            f'MOIC {moic:.2f}×</title></circle>'
+        )
 
-    parts.append(f'<text x="{pad_l+cw//2}" y="{h-2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="8" font-family="{_SANS}">Realized IRR</text>')
-    parts.append(f'<text x="10" y="{pad_t+ch//2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="8" font-family="{_SANS}" transform="rotate(-90,10,{pad_t+ch//2})">MOIC</text>')
+    parts.append(
+        f'<text x="{pad_l+cw//2}" y="{h-6}" text-anchor="middle" '
+        f'fill="{P["text_dim"]}" font-size="12" '
+        f'font-family="{_SANS}">Realized IRR</text>'
+    )
+    parts.append(
+        f'<text x="16" y="{pad_t+ch//2}" text-anchor="middle" '
+        f'fill="{P["text_dim"]}" font-size="12" font-family="{_SANS}" '
+        f'transform="rotate(-90,16,{pad_t+ch//2})">MOIC</text>'
+    )
 
-    return f'<svg width="{w}" height="{h}">{"".join(parts)}</svg>'
+    return (
+        f'<svg viewBox="0 0 {w} {h}" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;height:auto;display:block;" '
+        f'role="img" aria-label="IRR vs MOIC scatter">'
+        f'{"".join(parts)}</svg>'
+    )
 
 
 def _sector_irr_table(corpus: List[Dict[str, Any]]) -> str:
@@ -149,7 +243,7 @@ def _sector_irr_table(corpus: List[Dict[str, Any]]) -> str:
         above_hurdle = sum(1 for v in irrs if v >= 0.20) / len(irrs) * 100
         col = P["positive"] if (p50 or 0) >= 0.20 else (P["warning"] if (p50 or 0) >= 0.12 else P["negative"])
         rows += (
-            f'<tr style="background:{bg}">'
+            f'<tr>'
             f'<td style="padding:4px 8px;font-size:11px">{html.escape(sec[:30])}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{len(irrs)}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p25*100:.1f}%" if p25 else "—"}</td>'
@@ -185,53 +279,99 @@ def render_irr_dispersion() -> str:
     irr_p75 = _percentile(irrs, 75)
     above_hurdle = sum(1 for v in irrs if v >= 0.20) / len(irrs) * 100 if irrs else 0
 
-    kpis = "".join(
-        f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 14px">'
-        f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:3px">{lbl}</div>'
-        f'<div style="font-size:16px;font-family:{_MONO};font-variant-numeric:tabular-nums;color:{col}">{val}</div>'
-        f'</div>'
-        for lbl, val, col in [
-            ("WITH IRR DATA",    str(len(has_irr)),                              P["text"]),
-            ("IRR P25",          f"{irr_p25*100:.1f}%" if irr_p25 else "—",     P["text"]),
-            ("IRR P50",          f"{irr_p50*100:.1f}%" if irr_p50 else "—",     P["positive"] if (irr_p50 or 0) >= 0.20 else P["warning"]),
-            ("IRR P75",          f"{irr_p75*100:.1f}%" if irr_p75 else "—",     P["text"]),
-            ("≥20% HURDLE RATE", f"{above_hurdle:.0f}%",                         P["positive"] if above_hurdle >= 50 else P["warning"]),
-        ]
+    # Cycle 42 — port bespoke KPI cards to ck_kpi_block + provenance.
+    p50_color = P["positive"] if (irr_p50 or 0) >= 0.20 else P["warning"]
+    hurdle_color = P["positive"] if above_hurdle >= 50 else P["warning"]
+    p50_value = ck_provenance_tooltip(
+        "Realized IRR P50",
+        SafeHtml(f'<span style="color:{p50_color}">{ck_fmt_pct(irr_p50)}</span>')
+        if irr_p50 else "—",
+        explainer=(
+            "Median realized internal rate of return at exit "
+            "across the corpus deals with disclosed IRR. 20% is "
+            "the canonical hurdle - below that the deal didn't "
+            "earn carry; well above is the long-tail driving fund "
+            "performance."
+        ),
     )
-    kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'
+    hurdle_value = ck_provenance_tooltip(
+        "Above 20% hurdle rate",
+        SafeHtml(f'<span style="color:{hurdle_color}">{above_hurdle:.0f}%</span>'),
+        explainer=(
+            "Share of corpus deals that exited above 20% IRR. "
+            "Closer to 50% is healthy across a healthcare PE "
+            "vintage; below 30% means the fund is leaning "
+            "heavily on a small number of breakouts."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px;">'
+        + ck_kpi_block("With IRR Data", ck_fmt_num(len(has_irr)), "of corpus")
+        + ck_kpi_block("IRR P25", ck_fmt_pct(irr_p25) if irr_p25 else "—", "lower quartile")
+        + ck_kpi_block("IRR P50", p50_value, "median")
+        + ck_kpi_block("IRR P75", ck_fmt_pct(irr_p75) if irr_p75 else "—", "upper quartile")
+        + ck_kpi_block(">=20% Hurdle", hurdle_value, "share above hurdle")
+        + '</div>'
+    )
 
     histogram = _irr_histogram(irrs)
     scatter = _irr_moic_scatter(has_both)
     sector_table = _sector_irr_table(corpus)
 
+    chart_card_style = (
+        f"background:{P['panel_alt']};border:1px solid {P['border']};"
+        "padding:18px 20px 20px;border-radius:2px;"
+    )
+    chart_eyebrow_style = (
+        f"font-size:11px;color:{P['text_dim']};font-family:{_MONO};"
+        "letter-spacing:0.1em;text-transform:uppercase;font-weight:700;"
+        "margin-bottom:8px;"
+    )
+    chart_caption_style = (
+        f"font-size:12px;color:{P['text_faint']};font-family:{_SANS};"
+        "line-height:1.5;margin-bottom:14px;"
+    )
     body = f"""
-<div style="padding:16px 20px;max-width:1200px">
+<div>
   {ck_section_header("IRR DISPERSION ANALYSIS", f"Realized IRR distribution — {len(corpus)} corpus transactions", None)}
   {kpi_strip}
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-    <div style="background:{P['panel_alt']};border:1px solid {P['border']};padding:10px">
-      <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:8px">IRR DISTRIBUTION — 5pp BUCKETS</div>
-      <div style="font-size:9px;color:{P['text_faint']};font-family:{_SANS};margin-bottom:6px">Dashed line = 20% hurdle rate. Green = above hurdle, amber = 10–20%, red = below 10%.</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:20px;margin-bottom:24px">
+    <div style="{chart_card_style}">
+      <div style="{chart_eyebrow_style}">IRR DISTRIBUTION — 5PP BUCKETS</div>
+      <div style="{chart_caption_style}">Dashed line marks the 20% hurdle. Green bars sit above hurdle, amber 10-20%, red below 10%.</div>
       {histogram}
     </div>
-    <div style="background:{P['panel_alt']};border:1px solid {P['border']};padding:10px">
-      <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.08em;margin-bottom:8px">IRR vs MOIC SCATTER — CONSISTENCY CHECK</div>
-      <div style="font-size:9px;color:{P['text_faint']};font-family:{_SANS};margin-bottom:6px">Dashed lines = 20% IRR hurdle + 2.0× MOIC threshold.</div>
+    <div style="{chart_card_style}">
+      <div style="{chart_eyebrow_style}">IRR vs MOIC SCATTER — CONSISTENCY CHECK</div>
+      <div style="{chart_caption_style}">Dashed lines mark the 20% IRR hurdle and 2.0× MOIC threshold.</div>
       {scatter}
     </div>
   </div>
 
   <div>
-    <div style="font-size:9px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.1em;margin-bottom:6px;border-bottom:1px solid {P['border']};padding-bottom:4px">
+    <div style="font-size:11px;color:{P['text_dim']};font-family:{_MONO};letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:8px;border-bottom:1px solid {P['border']};padding-bottom:6px">
       IRR BY SECTOR — P25 / P50 / P75 (min 3 deals with disclosed IRR)
     </div>
     {sector_table}
   </div>
-  <div style="margin-top:8px;font-size:10px;color:{P['text_faint']};font-family:{_SANS}">
-    IRR = realized internal rate of return at exit as disclosed. Above hurdle = IRR ≥ 20%. Corpus: 720 transactions.
+  <div style="margin-top:14px;font-size:11px;color:{P['text_faint']};font-family:{_SANS};line-height:1.5">
+    IRR = realized internal rate of return at exit as disclosed. Above hurdle = IRR ≥ 20%. Corpus: {len(corpus)} transactions.
   </div>
 </div>"""
 
     return chartis_shell(body, "IRR Dispersion", active_nav="/irr-dispersion",
-                         subtitle=f"{len(has_irr)} deals with IRR data")
+                         subtitle=f"{len(has_irr)} deals with IRR data",
+        editorial_intro={
+            "eyebrow": "IRR DISPERSION",
+            "headline": "Where the realized returns split apart.",
+            "italic_word": "split",
+            "body": (
+                f"IRR distribution across {len(has_irr)} realized "
+                f"corpus deals — quartile cuts and the long tail "
+                f"that drives fund performance. Use this to set "
+                f"realistic IRR expectations for the current deal "
+                f"based on its archetype neighbors."
+            ),
+        })

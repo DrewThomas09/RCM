@@ -8,7 +8,9 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+)
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -29,19 +31,37 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     irr_color = PALETTE["positive"] if gross_irr > 0.20 else (
         PALETTE["warning"] if gross_irr > 0.15 else PALETTE["negative"])
 
+    # Cycle 50 — port to ck_kpi_block + provenance.
+    irr_value = ck_provenance_tooltip(
+        "Gross levered IRR",
+        f'<span style="color:{irr_color};">{ck_fmt_pct(gross_irr)}</span>',
+        explainer=(
+            "Gross deal IRR before management fees + GP carry. "
+            "Above 20% green, 15-20% amber, below 15% negative. "
+            "The waterfall below splits this into LP and GP "
+            "tiers - LP net IRR is what actually matters for "
+            "fund-level returns."
+        ),
+    )
+    moic_value = ck_provenance_tooltip(
+        "Gross deal MOIC",
+        f"{gross_moic:.2f}x",
+        explainer=(
+            "Gross multiple of invested capital before fees / "
+            "carry. The LP/GP split visualization above shows "
+            "how this number redistributes; the tier table "
+            "shows the hurdle / catch-up / carry mechanics."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{irr_color};">'
-        f'{gross_irr:.1%}</div><div class="cad-kpi-label">Gross IRR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{gross_moic:.2f}x</div>'
-        f'<div class="cad-kpi-label">Gross MOIC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${invested/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Invested</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${exit_proceeds/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Exit Proceeds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{hold_years:.1f}yr</div>'
-        f'<div class="cad-kpi-label">Hold Period</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("Gross IRR", irr_value, "before fees")
+        + ck_kpi_block("Gross MOIC", moic_value, "before fees")
+        + ck_kpi_block("Invested", f"${invested/1e6:.0f}M", "equity check")
+        + ck_kpi_block("Exit Proceeds", f"${exit_proceeds/1e6:.0f}M", "total return")
+        + ck_kpi_block("Hold Period", f"{hold_years:.1f}yr", "exit year - entry")
+        + '</div>'
     )
 
     # LP/GP split visualization
@@ -121,4 +141,16 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
 
     return chartis_shell(body, f"Returns Waterfall — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Gross IRR: {gross_irr:.1%} | MOIC: {gross_moic:.2f}x | Hold: {hold_years:.1f}yr")
+                    subtitle=f"Gross IRR: {gross_irr:.1%} | MOIC: {gross_moic:.2f}x | Hold: {hold_years:.1f}yr",
+        editorial_intro={
+            "eyebrow": "RETURNS WATERFALL",
+            "headline": "Where the equity actually splits.",
+            "italic_word": "splits",
+            "body": (
+                "Tier-by-tier waterfall from gross deal returns "
+                "to LP / GP economics. Compare gross MOIC to LP "
+                "net MOIC to read the fee + carry drag. The split "
+                "between hurdle, catch-up, and carry tiers shows "
+                "where each tier's payout sits."
+            ),
+        })

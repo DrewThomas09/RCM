@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_section_header, ck_kpi_block, ck_fmt_moic,
+    ck_provenance_tooltip,
 )
 
 CYCLE_COLORS = {
@@ -262,11 +263,22 @@ def render_acq_timing(params: Dict[str, str]) -> str:
     result = compute_acq_timing()
 
     timing_prem = result.timing_premium_moic
-    prem_html = (
+    raw_prem_html = (
         f'<span class="mn pos">+{timing_prem:.2f}×</span>'
         if timing_prem and timing_prem > 0
         else f'<span class="mn neg">{timing_prem:.2f}×</span>'
         if timing_prem else "—"
+    )
+    # Cycle 36 — wrap timing premium with vintage-discipline explainer.
+    prem_html = ck_provenance_tooltip(
+        "Q1 vs Q5 timing premium",
+        raw_prem_html if timing_prem is None else f"{timing_prem:+.2f}x",
+        explainer=(
+            "Q1 P50 MOIC minus Q5 P50 MOIC across the corpus. "
+            "Q1 = lowest EV/EBITDA paid (best timing), Q5 = highest "
+            "(worst timing). Positive premium means lower entry "
+            "multiples produced materially better returns."
+        ),
     )
 
     kpi_grid = (
@@ -318,8 +330,13 @@ def render_acq_timing(params: Dict[str, str]) -> str:
 """
 
     return chartis_shell(
-        body=body,
+        body,
         title="Acquisition Timing Analyzer",
         active_nav="/acq-timing",
         subtitle="Entry EV/EBITDA vs. realized MOIC by vintage year — cycle timing impact",
+        editorial_intro={
+            "eyebrow": "ACQUISITION TIMING",
+            "headline": "When the cycle pays you for vintage discipline.",
+            "italic_word": "pays",
+        },
     )

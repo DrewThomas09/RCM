@@ -316,4 +316,9 @@ def render_payer_intel() -> str:
             f"comm↔MOIC ρ={comm_corr:+.2f} · "
             f"{len(profile.regime_stats)} regimes"
         ),
+        editorial_intro={
+            "eyebrow": "PAYER INTELLIGENCE",
+            "headline": "What the payer intelligence reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

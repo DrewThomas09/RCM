@@ -267,4 +267,9 @@ def render_portfolio_optimizer(sectors: Optional[List[str]] = None) -> str:
             f"vintage HHI {composition.hhi_vintage:.3f} · "
             f"{len(composition.sector_weights or {})} sectors"
         ),
+        editorial_intro={
+            "eyebrow": "PORTFOLIO CONSTRUCTION",
+            "headline": "What the portfolio construction reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

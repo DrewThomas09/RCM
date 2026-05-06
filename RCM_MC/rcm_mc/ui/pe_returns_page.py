@@ -7,7 +7,9 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_pct, ck_kpi_block, ck_provenance_tooltip,
+)
 from .models_page import _model_nav
 from .brand import PALETTE
 
@@ -26,21 +28,37 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     irr_color = PALETTE["positive"] if irr > 0.20 else (
         PALETTE["warning"] if irr > 0.15 else PALETTE["negative"])
 
+    # Cycle 56 — port to ck_kpi_block + provenance.
+    irr_value = ck_provenance_tooltip(
+        "Levered IRR",
+        f'<span style="color:{irr_color};">{ck_fmt_pct(irr)}</span>',
+        explainer=(
+            "Internal rate of return on the equity check. Above "
+            "20% green (above hurdle), 15-20% amber (in carry "
+            "tier but unlikely to clear catch-up), below 15% "
+            "red (LP returns inadequate to justify illiquidity)."
+        ),
+    )
+    moic_value = ck_provenance_tooltip(
+        "Multiple of invested capital",
+        f"{moic:.2f}x",
+        explainer=(
+            "Exit proceeds + interim distributions, divided by "
+            "entry equity. 2.5x is rough industry median over a "
+            "5-year hold; 3.0x+ is a strong outcome that "
+            "anchors fund-level returns."
+        ),
+        inject_css=False,
+    )
     kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{irr_color};">'
-        f'{irr:.1%}</div><div class="cad-kpi-label">IRR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{moic:.2f}x</div>'
-        f'<div class="cad-kpi-label">MOIC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${entry_eq/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Entry Equity</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${exit_proc/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Exit Proceeds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_dist/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Total Distributions</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{hold:.1f}yr</div>'
-        f'<div class="cad-kpi-label">Hold Period</div></div>'
-        f'</div>'
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("IRR", irr_value, "to equity")
+        + ck_kpi_block("MOIC", moic_value, "exit/entry")
+        + ck_kpi_block("Entry Equity", f"${entry_eq/1e6:.0f}M", "LP check")
+        + ck_kpi_block("Exit Proceeds", f"${exit_proc/1e6:.0f}M", "terminal")
+        + ck_kpi_block("Total Distributions", f"${total_dist/1e6:.0f}M", "interim + exit")
+        + ck_kpi_block("Hold Period", f"{hold:.1f}yr", "exit - entry")
+        + '</div>'
     )
 
     # Interpretation
@@ -119,4 +137,16 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
 
     return chartis_shell(body, f"Returns & Covenant — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"IRR: {irr:.1%} | MOIC: {moic:.2f}x | Covenant cushion: {cushion:.0%}")
+                    subtitle=f"IRR: {irr:.1%} | MOIC: {moic:.2f}x | Covenant cushion: {cushion:.0%}",
+        editorial_intro={
+            "eyebrow": "PE RETURNS & COVENANTS",
+            "headline": "Where the leverage and returns meet.",
+            "italic_word": "meet",
+            "body": (
+                "Levered returns + covenant headroom in one view. "
+                "The IRR / MOIC tiles read the equity outcome; "
+                "the covenant tiles read structural risk. EBITDA "
+                "cushion below 15% usually triggers a working-"
+                "capital review."
+            ),
+        })

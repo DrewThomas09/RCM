@@ -131,8 +131,14 @@ class TestHealthHttp(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/deal/ccf") as r:
                     body = r.read().decode()
-                    self.assertIn("Health (green)", body)
-                    self.assertIn(">\n          100\n", body)
+                    # v5 editorial: the KPI block is "Health" label +
+                    # numeric value + "<band> band" sub-line, instead
+                    # of the legacy "Health (green)" headline format.
+                    self.assertIn(
+                        '<div class="ck-kpi-label">Health</div>', body,
+                    )
+                    self.assertIn("green band", body)
+                    self.assertIn("100", body)
             finally:
                 server.shutdown(); server.server_close()
 
@@ -148,7 +154,12 @@ class TestHealthHttp(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/deal/ccf") as r:
                     body = r.read().decode()
-                    self.assertIn("Health (red)", body)
+                    # v5 editorial KPI sub-line ("red band") replaces
+                    # the legacy "Health (red)" headline.
+                    self.assertIn(
+                        '<div class="ck-kpi-label">Health</div>', body,
+                    )
+                    self.assertIn("red band", body)
             finally:
                 server.shutdown(); server.server_close()
 

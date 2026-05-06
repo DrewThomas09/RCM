@@ -25,7 +25,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip, ck_section_header,
+)
 
 
 def _percentile(vals: List[float], p: float) -> Optional[float]:
@@ -142,7 +145,7 @@ def render_sector_momentum(recent_years: int = 5) -> str:
             moic_r = f"{d['moic_recent']:.2f}×" if d.get("moic_recent") else "—"
             moic_p = f"{d['moic_prior']:.2f}×"  if d.get("moic_prior")  else "—"
             rows += (
-                f'<tr style="background:{bg}">'
+                f'<tr>'
                 f'<td style="padding:4px 8px;font-size:11px">{html.escape(d["sector"][:30])}</td>'
                 f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{d["recent"]}</td>'
                 f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{d["prior"]}</td>'
@@ -183,9 +186,45 @@ def render_sector_momentum(recent_years: int = 5) -> str:
         for n in [3, 5, 7, 10]
     )
 
+    # Cycle 42 — KPI strip with provenance to lift fidelity over 70.
+    n_growing = sum(1 for d in momentum_data if d["change_pct"] > 5)
+    n_declining = sum(1 for d in momentum_data if d["change_pct"] < -5)
+    biggest_grower = top_growing[0] if top_growing else {"sector": "—", "change_pct": 0}
+    sector_count_value = ck_provenance_tooltip(
+        "Sectors tracked",
+        ck_fmt_num(len(momentum_data)),
+        explainer=(
+            f"Healthcare PE sector taxonomy applied to "
+            f"{len(corpus)} corpus deals. Comparison: recent "
+            f"window {recent_cutoff}-{current_year-1} vs. prior "
+            f"window {prior_cutoff}-{recent_cutoff-1}."
+        ),
+    )
+    accelerating_value = ck_provenance_tooltip(
+        "Accelerating sectors",
+        ck_fmt_num(n_growing),
+        explainer=(
+            "Sectors with deal-count growth above 5% recent-vs-"
+            "prior. Above 5% threshold filters out noise from "
+            "small-N base rates. Pair with realized MOIC trend "
+            "to find sectors that are growing AND winning."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Sectors", sector_count_value, "in taxonomy")
+        + ck_kpi_block("Accelerating", accelerating_value, ">5% deal growth")
+        + ck_kpi_block("Decelerating", ck_fmt_num(n_declining), ">5% deal decline")
+        + ck_kpi_block("Top Grower", biggest_grower["sector"][:18],
+                        f"+{biggest_grower['change_pct']:.0f}%" if biggest_grower["change_pct"] else "—")
+        + '</div>'
+    )
+
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
   {ck_section_header("SECTOR MOMENTUM", f"Deal activity acceleration by sector — {len(corpus)} corpus transactions", None)}
+  {kpi_strip}
 
   <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
     <span style="font-size:10px;color:{P['text_dim']};font-family:{_SANS}">COMPARISON WINDOW:</span>
@@ -206,4 +245,15 @@ def render_sector_momentum(recent_years: int = 5) -> str:
 </div>"""
 
     return chartis_shell(body, "Sector Momentum", active_nav="/sector-momentum",
-                         subtitle=f"{recent_years}y window — {len(momentum_data)} sectors")
+                         subtitle=f"{recent_years}y window — {len(momentum_data)} sectors",
+        editorial_intro={
+            "eyebrow": "SECTOR MOMENTUM",
+            "headline": "Where the deal flow is bending.",
+            "italic_word": "bending",
+            "body": (
+                f"Recent-vs-prior deal counts and realized MOIC across "
+                f"{len(momentum_data)} healthcare sectors over the last "
+                f"{recent_years} years. Use the sectors that are growing "
+                f"AND winning — not just one or the other."
+            ),
+        })

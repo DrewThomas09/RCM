@@ -1,7 +1,9 @@
 """Provider Network Intelligence page — /provider-network."""
 from __future__ import annotations
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip,
+)
 
 
 _SECTORS = [
@@ -259,18 +261,41 @@ def render_provider_network(params: dict) -> str:
     from rcm_mc.data_public.provider_network import compute_provider_network
     r = compute_provider_network(sector, payer_mix)
 
-    # KPIs
+    # KPIs — cycle 41 fix: kit signature is (label, value, sub, trend),
+    # not unit=/delta=. Adds provenance on HHI and adjusted MOIC.
     adj_sign = f"+{r.implied_moic_adj:.1f}%" if r.implied_moic_adj >= 0 else f"{r.implied_moic_adj:.1f}%"
+    hhi_value = ck_provenance_tooltip(
+        "Network HHI score",
+        f"{r.network_hhi:.0f}",
+        explainer=(
+            "Herfindahl-Hirschman Index of payer concentration in "
+            "the provider network. 0 = perfectly diversified; "
+            "10,000 = single-payer monopoly. Above 2,500 marks a "
+            "concentrated regime where one payer's rate-cut decision "
+            "moves portfolio EBITDA."
+        ),
+    )
+    adj_moic_value = ck_provenance_tooltip(
+        "Network-adjusted MOIC estimate",
+        ck_fmt_moic(r.adjusted_moic_estimate),
+        explainer=(
+            f"Corpus median MOIC adjusted by payer-mix and network "
+            f"concentration multipliers. Currently {adj_sign} vs. "
+            f"corpus median - reads as the MOIC the typical deal "
+            f"in this archetype actually realized."
+        ),
+        inject_css=False,
+    )
     kpis = ck_kpi_block("Network Regime",
                         f'<span style="color:{r.regime_color}">{r.network_regime.capitalize()}</span>')
-    kpis += ck_kpi_block("HHI Score", f"{r.network_hhi:.0f}",
-                         unit=f"Concentration: {r.concentration_risk}",
-                         delta="0 = diversified, 10k = monopoly")
+    kpis += ck_kpi_block("HHI Score", hhi_value,
+                         sub=f"Concentration: {r.concentration_risk}",
+                         trend="0 = diversified, 10k = monopoly")
     kpis += ck_kpi_block("Conc. Risk",
                          f'<span style="color:{r.concentration_color}">{r.concentration_risk}</span>')
-    kpis += ck_kpi_block("Corpus Median MOIC", f"{r.corpus_median_moic:.2f}x")
-    kpis += ck_kpi_block("Adj. MOIC Estimate", f"{r.adjusted_moic_estimate:.2f}x",
-                         delta=adj_sign)
+    kpis += ck_kpi_block("Corpus Median MOIC", ck_fmt_moic(r.corpus_median_moic))
+    kpis += ck_kpi_block("Adj. MOIC Estimate", adj_moic_value,
+                         trend=adj_sign)
     kpis += ck_kpi_block("Corpus Deals", str(r.corpus_deal_count))
 
     gauge = _hhi_gauge_svg(r.network_hhi, r.regime_color)
@@ -335,7 +360,19 @@ def render_provider_network(params: dict) -> str:
 '''
 
     return chartis_shell(
-        body=content,
+        content,
         title=f"Provider Network Intelligence — {sector}",
         active_nav="/provider-network",
+        editorial_intro={
+            "eyebrow": "PROVIDER NETWORK",
+            "headline": "Where the steerage actually flows.",
+            "italic_word": "flows",
+            "body": (
+                "Network density, payer-mix overlap, and referral-"
+                "graph concentration. The density inside the "
+                "covered region matters more than the headline "
+                "provider count - a thin network in a "
+                "concentrated payer market is the trap."
+            ),
+        },
     )

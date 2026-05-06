@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _cost_stack_svg(cost_lines, ebitda_margin: float) -> str:
@@ -117,16 +117,16 @@ def _cost_table(cost_lines, revenue_mm: float) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         tcolor = P["warning"] if cl.is_variable else P["text_faint"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(cl.category)}</td>',
-            f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tcolor};border:1px solid {tcolor};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{"variable" if cl.is_variable else "fixed"}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${cl.amount_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{cl.pct_of_revenue * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{cl.benchmark_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(cl.category)}""", mono=True)}',
+            f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tcolor};border:1px solid {tcolor};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{"variable" if cl.is_variable else "fixed"}</span>""")}',
+            f'{ck_data_cell(f"""${cl.amount_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{cl.pct_of_revenue * 100:.1f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{cl.benchmark_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -142,16 +142,16 @@ def _labor_table(labor) -> str:
     for i, l in enumerate(labor):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(l.role_type)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{l.headcount:,}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${l.avg_comp_k:,.0f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${l.total_cost_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{l.pct_of_revenue * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(l.role_type)}""", mono=True)}',
+            f'{ck_data_cell(f"""{l.headcount:,}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${l.avg_comp_k:,.0f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${l.total_cost_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{l.pct_of_revenue * 100:.1f}%""", align="right", mono=True, tone="dim")}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -168,17 +168,17 @@ def _scenario_table(scenarios) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         ec = pos if s.expected_ebitda_delta_pct >= 0 else neg
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.revenue_delta_pct * 100:+.1f}%</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True)}',
+            f'{ck_data_cell(f"""{s.revenue_delta_pct * 100:+.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ec};font-weight:600">{s.expected_ebitda_delta_pct * 100:+.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.leverage_ratio:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.implied_ebitda_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${s.implied_ev_mm:,.1f}</td>',
+            f'{ck_data_cell(f"""{s.leverage_ratio:.2f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.implied_ebitda_mm:,.2f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.implied_ev_mm:,.1f}""", align="right", mono=True, weight=600)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -236,18 +236,18 @@ def render_cost_structure(params: dict = None) -> str:
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
-    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
+<div class="ck-page-wrap">
 
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Cost Structure Analyzer</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Cost Structure Analyzer</h1>
+    <p class="ck-page-sub">
       COGS vs SG&amp;A decomposition, labor breakdown, and operating leverage for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
@@ -294,4 +294,9 @@ def render_cost_structure(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Cost Structure Analyzer", active_nav="/cost-structure")
+    return chartis_shell(body, "Cost Structure Analyzer", active_nav="/cost-structure",
+        editorial_intro={
+            "eyebrow": "COST STRUCTURE",
+            "headline": "What the cost structure page reveals on this deal.",
+            "italic_word": "reveals",
+        })

@@ -18,7 +18,12 @@ import numpy as np
 import pandas as pd
 
 from ..portfolio.store import PortfolioStore
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell,
+    ck_eyebrow,
+    ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 from .provenance import source_tag, Source
 
@@ -122,21 +127,50 @@ def render_command_center(
 
     sections = []
 
-    # ── Hero KPIs ──
+    # ── Hero KPIs — editorial-chartis kit ──
+    # Cycle 37 — port Bloomberg-era cad-kpi cards to ck_kpi_block,
+    # with provenance hovers on the two values that carry the most
+    # partner judgment weight (PE Targets sizing rubric + distressed
+    # cutoff). Chrome continuity with /home, /library, /research.
+    pe_target_value = ck_provenance_tooltip(
+        "PE-sized targets",
+        f"{n_pe_targets:,}",
+        explainer=(
+            "Hospitals with 100-500 beds and net patient revenue "
+            ">= $50M. The 100-500 bed band captures community + "
+            "regional systems where RCM uplift mechanics translate "
+            "cleanly; revenue floor screens out single-physician "
+            "filings that distort the corpus."
+        ),
+    )
+    distressed_value = ck_provenance_tooltip(
+        "Distressed hospitals",
+        f"{distressed:,}",
+        explainer=(
+            "Operating margin below -5% on credible HCRIS filings "
+            "(filings with absurd raw margins outside [-100%, +100%] "
+            "are excluded as obvious data-quality artifacts). "
+            "-5% is the threshold below which covenants typically "
+            "trip and operating distress becomes structural."
+        ),
+        inject_css=False,
+    )
+    hero_kpis = (
+        ck_kpi_block(
+            "Hospitals",
+            f"{n_hospitals:,}",
+            f"HCRIS FY2022 {source_tag(Source.HCRIS, 'FY2022')}",
+        )
+        + ck_kpi_block("PE-Sized Targets", pe_target_value, "100-500 beds, $50M+ NPSR")
+        + ck_kpi_block("Total NPSR", _fm(total_revenue), "all hospitals")
+        + ck_kpi_block("Median Margin", f"{median_margin:.1%}", "credible filings")
+        + ck_kpi_block("Distressed", distressed_value, "margin &lt; -5%")
+        + ck_kpi_block("Active Deals", f"{len(deals)}", "in portfolio")
+    )
     sections.append(
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_hospitals:,}</div>'
-        f'<div class="cad-kpi-label">Hospitals {source_tag(Source.HCRIS, "FY2022")}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_pe_targets:,}</div>'
-        f'<div class="cad-kpi-label">PE-Sized Targets</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(total_revenue)}</div>'
-        f'<div class="cad-kpi-label">Total NPSR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{median_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Median Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-neg);">{distressed:,}</div>'
-        f'<div class="cad-kpi-label">Distressed (&lt;-5%)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(deals)}</div>'
-        f'<div class="cad-kpi-label">Active Deals</div></div>'
+        f'{ck_eyebrow("Command Center")}'
+        f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
+        f'{hero_kpis}'
         f'</div>'
     )
 
@@ -223,7 +257,7 @@ def render_command_center(
         deal_rows = ""
         for d in deals[:8]:
             did = _html.escape(d["deal_id"])
-            dname = _html.escape(str(d["name"])[:30])
+            dname = _html.escape(str(d["name"]))
             deal_rows += (
                 f'<tr>'
                 f'<td><a href="/deal/{did}" '
@@ -258,7 +292,7 @@ def render_command_center(
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
             f'<div style="display:flex;align-items:center;gap:10px;">'
             f'<h2 style="margin:0;">Active Deals ({len(deals)})</h2>'
-            f'<span class="cad-section-code">DLS</span></div>'
+            f'</div>'
             f'<a href="/portfolio/monitor" style="font-size:10.5px;font-family:var(--cad-mono);'
             f'letter-spacing:0.06em;text-transform:uppercase;color:var(--cad-link);'
             f'text-decoration:none;">Monitor &rarr;</a></div>'
@@ -413,4 +447,15 @@ def render_command_center(
             f"{len(deals)} active deals"
         ),
         show_ticker=True,
+        editorial_intro={
+            "eyebrow": "COMMAND CENTER",
+            "headline": "What you should do today.",
+            "italic_word": "do",
+            "body": (
+                "The day-one screen — universe stats, pipeline, "
+                "active alerts, and market pulse, in the order a "
+                "partner reads them. Numbers carry hover-card "
+                "provenance so the methodology stays one click away."
+            ),
+        },
     )

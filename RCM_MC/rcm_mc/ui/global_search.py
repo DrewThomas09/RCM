@@ -463,12 +463,51 @@ def render_global_search_page(
     breadcrumbs + PHI banner render around the results list.
     """
     import html as _html
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
+    from collections import Counter
 
     q_safe = _html.escape(query or "")
+
+    # Cycle 47 — KPI strip with provenance.
+    cat_counts = Counter(r.category for r in results)
+    n_cats = len(cat_counts)
+    top_cat = cat_counts.most_common(1)[0] if cat_counts else ("—", 0)
+    results_value = ck_provenance_tooltip(
+        "Total search hits",
+        ck_fmt_num(len(results)),
+        explainer=(
+            f"Hits across deals, packets, metrics, and pages "
+            f"matching '{q_safe or 'your query'}'. The page renders "
+            f"results grouped by category - top category: "
+            f"{top_cat[0]} ({top_cat[1]} hits)."
+        ),
+    )
+    cats_value = ck_provenance_tooltip(
+        "Categories matched",
+        ck_fmt_num(n_cats),
+        explainer=(
+            "Distinct entity types in the result set (deals / "
+            "packets / metrics / pages / owners / ...). Higher "
+            "diversity = the query is broad; narrow queries "
+            "concentrate in one category."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Hits", results_value, "matching query")
+        + ck_kpi_block("Categories", cats_value, "matched")
+        + ck_kpi_block("Top Category", top_cat[0], f"{top_cat[1]} hits")
+        + '</div>'
+    )
+
     if not query or not query.strip():
         body = (
-            '<div class="search-results">'
+            ck_eyebrow("Global Search")
+            + '<div class="search-results">'
             '<h1 class="search-h1">Search</h1>'
             '<p class="search-empty">Enter a query in the topbar — '
             'searches deals, packets, metrics, and pages.</p>'
@@ -476,7 +515,8 @@ def render_global_search_page(
         )
     elif not results:
         body = (
-            '<div class="search-results">'
+            kpi_strip
+            + '<div class="search-results">'
             f'<h1 class="search-h1">No matches for &ldquo;{q_safe}&rdquo;</h1>'
             '<p class="search-empty">No results across deals, packets, '
             'metrics, or pages. Try a shorter query or different keywords.</p>'
@@ -500,7 +540,8 @@ def render_global_search_page(
                 f'</a>'
             )
         body = (
-            '<div class="search-results">'
+            kpi_strip
+            + '<div class="search-results">'
             f'<h1 class="search-h1">Results for &ldquo;{q_safe}&rdquo;</h1>'
             f'<p class="search-meta">{len(results)} match'
             f'{"es" if len(results) != 1 else ""} across deals, '
@@ -545,4 +586,15 @@ def render_global_search_page(
             ("Home", "/app"),
             ("Search", None),
         ],
+        editorial_intro={
+            "eyebrow": "GLOBAL SEARCH",
+            "headline": "Where you find anything fast.",
+            "italic_word": "anything",
+            "body": (
+                "Search across deals, hospitals, owners, notes, "
+                "and saved screens. Use Cmd+K from any page to "
+                "open the palette without losing your spot - "
+                "results group by entity type."
+            ),
+        },
     )

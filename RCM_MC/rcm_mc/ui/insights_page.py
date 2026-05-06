@@ -57,7 +57,7 @@ def render_insights_page(db_path: str) -> str:
         "alert":    ("#fef2f2", "#fee2e2", "#991b1b", "⚠"),
         "warn":     ("#fffbeb", "#fef3c7", "#92400e", "●"),
         "positive": ("#f0fdf4", "#d1fae5", "#065f46", "✓"),
-        "neutral":  ("#f0f6fc", "#d0e3f0", "#1F4E78", "◆"),
+        "neutral":  ("#f0f6fc", "#d0e3f0", "var(--sc-navy)", "◆"),
     }
 
     # Tone summary strip — count of insights per tone, so a partner
@@ -150,5 +150,11 @@ def render_insights_page(db_path: str) -> str:
         _wc.web_styles()
         + _wc.responsive_container(inner)
     )
-    return chartis_shell(body, "All insights",
-                         active_nav="/insights")
+    return chartis_shell(
+        body, "All insights", active_nav="/insights",
+        editorial_intro={
+            "eyebrow": "INSIGHTS",
+            "headline": "What the platform noticed that you didn't ask.",
+            "italic_word": "noticed",
+        },
+    )

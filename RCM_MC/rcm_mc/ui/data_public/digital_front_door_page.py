@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html as _html
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _adoption_table(items) -> str:
@@ -10,25 +10,25 @@ def _adoption_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal","left"),("Sector","left"),("Portal Reg %","right"),("Active 90d %","right"),
             ("Online Sched %","right"),("Mobile App %","right"),("Ambient AI %","right"),("Digital Onboard %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         p_c = pos if a.portal_active_90d_pct >= 0.55 else (acc if a.portal_active_90d_pct >= 0.40 else P["warning"])
         s_c = pos if a.online_scheduling_pct >= 0.65 else (acc if a.online_scheduling_pct >= 0.50 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(a.deal)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(a.deal)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(a.sector)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{a.portal_registration_pct * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{a.portal_registration_pct * 100:.0f}%""", align="right", mono=True, tone="acc", weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{a.portal_active_90d_pct * 100:.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{a.online_scheduling_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{a.mobile_app_adoption_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{a.ambient_ai_visits_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{a.digital_onboarding_pct * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{a.mobile_app_adoption_pct * 100:.0f}%""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{a.ambient_ai_visits_pct * 100:.0f}%""", align="right", mono=True, tone="acc", weight=600)}',
+            f'{ck_data_cell(f"""{a.digital_onboarding_pct * 100:.0f}%""", align="right", mono=True)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _experience_table(items) -> str:
@@ -36,7 +36,7 @@ def _experience_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]; warn = P["warning"]; neg = P["negative"]
     cols = [("Deal","left"),("NPS","right"),("HCAHPS","right"),("Google Rating","right"),
             ("Review Count","right"),("Complaints/1K","right"),("Response (hr)","right"),("Resolution %","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -45,18 +45,18 @@ def _experience_table(items) -> str:
         g_c = pos if e.google_rating >= 4.5 else (acc if e.google_rating >= 4.3 else warn)
         c_c = warn if e.complaints_per_1k >= 4.0 else (acc if e.complaints_per_1k >= 2.5 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(e.deal)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(e.deal)}""", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{n_c};font-weight:700">+{e.nps}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{h_c};font-weight:700">{e.hcahps_composite:.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{g_c};font-weight:700">{e.google_rating:.2f}★</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{e.google_reviews_count:,}</td>',
+            f'{ck_data_cell(f"""{e.google_reviews_count:,}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{e.complaints_per_1k:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{e.response_time_hours:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{e.resolution_rate_pct * 100:.0f}%</td>',
+            f'{ck_data_cell(f"""{e.response_time_hours:.1f}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{e.resolution_rate_pct * 100:.0f}%""", align="right", mono=True, tone="pos", weight=700)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _telehealth_table(items) -> str:
@@ -64,66 +64,66 @@ def _telehealth_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal","left"),("Monthly Visits (K)","right"),("% of Total","right"),("Revenue ($M)","right"),
             ("Completion %","right"),("Avg Duration (min)","right"),("Satisfaction","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         c_c = pos if t.completion_rate_pct >= 0.90 else (acc if t.completion_rate_pct >= 0.85 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(t.deal)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{t.telehealth_visits_monthly_k}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{t.pct_of_total_visits * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${t.telehealth_revenue_m:.1f}M</td>',
+            f'{ck_data_cell(f"""{_html.escape(t.deal)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{t.telehealth_visits_monthly_k}""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""{t.pct_of_total_visits * 100:.0f}%""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${t.telehealth_revenue_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{t.completion_rate_pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.avg_duration_min:.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{t.patient_satisfaction:.1f}</td>',
+            f'{ck_data_cell(f"""{t.avg_duration_min:.1f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{t.patient_satisfaction:.1f}""", align="right", mono=True, tone="pos", weight=700)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _spend_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Category","left"),("Spend ($M)","right"),("YoY Growth","right"),("Vendors","left"),("Typical ROI","left")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         g_c = pos if s.yoy_growth_pct >= 0.30 else (acc if s.yoy_growth_pct >= 0.15 else text_dim)
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(s.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.portfolio_spend_m:.1f}M</td>',
+            f'{ck_data_cell(f"""{_html.escape(s.category)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${s.portfolio_spend_m:.1f}M""", align="right", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{g_c};font-weight:700">+{s.yoy_growth_pct * 100:.0f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:360px">{_html.escape(s.vendors)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:320px">{_html.escape(s.typical_roi)}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _vendors_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Vendor","left"),("Category","left"),("Deals","right"),("Users (K)","right"),("Cost ($M)","right"),("Status","center")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, v in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = pos if v.status == "live production" else P["warning"]
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(v.vendor)}</td>',
+            f'{ck_data_cell(f"""{_html.escape(v.vendor)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(v.category)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{v.portfolio_deals}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{v.users_k}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${v.annual_cost_m:.2f}M</td>',
+            f'{ck_data_cell(f"""{v.portfolio_deals}""", align="right", mono=True, tone="acc")}',
+            f'{ck_data_cell(f"""{v.users_k}""", align="right", mono=True, weight=600)}',
+            f'{ck_data_cell(f"""${v.annual_cost_m:.2f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{s_c}">{_html.escape(v.status)}</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def _funnel_table(items) -> str:
@@ -131,7 +131,7 @@ def _funnel_table(items) -> str:
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
     cols = [("Deal","left"),("Web Visits (K/mo)","right"),("New Patient Inquiries","right"),
             ("Inquiry→Book %","right"),("Book→Visit %","right"),("No-Show %","right"),("Cost per Acquired","right")]
-    ths = "".join(f'<th style="text-align:{a};padding:6px 10px;border-bottom:1px solid {border};font-size:10px;color:{text_dim};letter-spacing:0.05em">{c}</th>' for c, a in cols)
+    ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -139,17 +139,17 @@ def _funnel_table(items) -> str:
         v_c = pos if f.book_to_visit_pct >= 0.85 else (acc if f.book_to_visit_pct >= 0.78 else P["warning"])
         n_c = pos if f.no_show_rate_pct <= 0.075 else (acc if f.no_show_rate_pct <= 0.10 else P["warning"])
         cells = [
-            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">{_html.escape(f.deal)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:700">{f.web_visits_monthly_k}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{f.new_patient_inquiries:,}</td>',
+            f'{ck_data_cell(f"""{_html.escape(f.deal)}""", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""{f.web_visits_monthly_k}""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""{f.new_patient_inquiries:,}""", align="right", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{b_c};font-weight:700">{f.inquiry_to_booking_pct * 100:.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{v_c};font-weight:700">{f.book_to_visit_pct * 100:.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{n_c};font-weight:700">{f.no_show_rate_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${f.cost_per_acquired:.0f}</td>',
+            f'{ck_data_cell(f"""${f.cost_per_acquired:.0f}""", align="right", mono=True)}',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
-    return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
 def render_digital_front_door(params: dict = None) -> str:
@@ -183,10 +183,10 @@ def render_digital_front_door(params: dict = None) -> str:
 
     total_th_rev = sum(t.telehealth_revenue_m for t in r.telehealth)
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Digital Front Door / Patient Experience Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_portcos} portcos · {r.weighted_portal_adoption_pct * 100:.1f}% active portal · avg NPS +{r.avg_nps} · {r.avg_google_rating:.2f}★ Google · {r.total_telehealth_visits_monthly_k:,}K monthly telehealth visits · ${total_th_rev:.1f}M telehealth revenue — {r.corpus_deal_count:,} corpus deals</p>
+<div class="ck-page-wrap">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Digital Front Door / Patient Experience Tracker</h1>
+    <p class="ck-page-sub">{r.total_portcos} portcos · {r.weighted_portal_adoption_pct * 100:.1f}% active portal · avg NPS +{r.avg_nps} · {r.avg_google_rating:.2f}★ Google · {r.total_telehealth_visits_monthly_k:,}K monthly telehealth visits · ${total_th_rev:.1f}M telehealth revenue — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Digital Channel Adoption</div>{a_tbl}</div>
@@ -205,4 +205,9 @@ def render_digital_front_door(params: dict = None) -> str:
   </div>
 </div>"""
 
-    return chartis_shell(body, "Digital Front Door", active_nav="/digital-front-door")
+    return chartis_shell(body, "Digital Front Door", active_nav="/digital-front-door",
+        editorial_intro={
+            "eyebrow": "DIGITAL FRONT DOOR",
+            "headline": "What the digital front door page reveals on this deal.",
+            "italic_word": "reveals",
+        })

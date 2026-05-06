@@ -269,4 +269,9 @@ def render_cms_sources() -> str:
         title="CMS Data Sources",
         active_nav="/cms-sources",
         subtitle=f"{len(_CMS_SOURCES)} datasets registered · {active_count} live API endpoints · stdlib-only client",
+        editorial_intro={
+            "eyebrow": "CMS DATA SOURCES",
+            "headline": "What the cms data sources reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

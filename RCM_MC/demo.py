@@ -7,8 +7,9 @@ data.
 
 Usage:
     .venv/bin/python demo.py
-    # then open http://localhost:8765/login and sign in as:
-    #   username: demo  password: DemoPass!1
+    # then open http://localhost:8765/login and sign in as either:
+    #   username: andrewthomas@chartis.com  password: ChartisDemo1
+    #   username: demo                      password: DemoPass!1   (legacy)
 """
 from __future__ import annotations
 
@@ -41,9 +42,37 @@ from rcm_mc.server import build_server
 from rcm_mc.deals.watchlist import star_deal
 
 
-PORT = 8765
+# Azure App Service injects ``PORT`` (and may set ``WEBSITES_PORT``)
+# at container start; honour both before falling back to the dev
+# default. ``RCM_MC_HOST`` is our explicit override for binding —
+# Azure expects 0.0.0.0 (the container's loopback isn't reachable
+# by the platform's HTTP front-end). Detect Azure via the canonical
+# ``WEBSITE_HOSTNAME`` env var that App Service always sets, and
+# default HOST to 0.0.0.0 in that case so a partner shipping an
+# Azure deploy doesn't have to remember the binding step. Local dev
+# (no Azure env vars) still binds 127.0.0.1 so a casual demo.py run
+# isn't surprise-exposed on the LAN.
+PORT = int(
+    os.environ.get("PORT")
+    or os.environ.get("WEBSITES_PORT")
+    or 8765
+)
+_RUNNING_ON_AZURE = bool(
+    os.environ.get("WEBSITE_HOSTNAME")
+    or os.environ.get("WEBSITES_PORT")
+)
+HOST = (
+    os.environ.get("RCM_MC_HOST")
+    or ("0.0.0.0" if _RUNNING_ON_AZURE else "127.0.0.1")
+)
 USERNAME = "demo"
 PASSWORD = "DemoPass!1"
+# Andrew's primary partner account — added so the rendered login
+# page can show a clean, real-shaped credential pair partners can
+# read off the screen. Both accounts share role=admin so either
+# lands in the same dashboard with the same nav.
+PARTNER_USERNAME = "andrewthomas@chartis.com"
+PARTNER_PASSWORD = "ChartisDemo1"
 
 
 def seed(store: PortfolioStore, run_dir: str) -> None:
@@ -59,6 +88,71 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
         "buh": "Beacon Urban Health",
         "sth": "Sterling Heights Medical",
     }
+    # Per-deal RCM observed metrics so the analysis-workbench
+    # RCM Profile tab populates with real values instead of an
+    # empty header row. Worse-performing deals (ccf, mgh) get
+    # higher denial / AR / AR-over-90 to match their tripped /
+    # tight covenant headroom; healthy deals (buh, sth) get
+    # cleaner numbers. Keys must match RCM_METRIC_REGISTRY.
+    # Percent metrics are stored 0-100 (not 0-1) to match the
+    # registry's benchmark_pXX scale.
+    rcm_metrics_per_deal = {
+        "ccf": {  # tripped — broken RCM
+            "denial_rate":          14.2,
+            "final_denial_rate":     6.1,
+            "days_in_ar":           58.4,
+            "ar_over_90_pct":       22.4,
+            "clean_claim_rate":     84.2,
+            "net_collection_rate":  91.8,
+            "dnfb_days":             7.8,
+            "charge_lag_days":       4.2,
+            "cost_to_collect":       4.1,
+        },
+        "mgh": {  # tight — soft RCM
+            "denial_rate":          11.8,
+            "final_denial_rate":     4.4,
+            "days_in_ar":           52.1,
+            "ar_over_90_pct":       18.3,
+            "clean_claim_rate":     88.1,
+            "net_collection_rate":  93.7,
+            "dnfb_days":             6.4,
+            "charge_lag_days":       3.6,
+            "cost_to_collect":       3.4,
+        },
+        "nyp": {  # concerning cluster
+            "denial_rate":           9.7,
+            "final_denial_rate":     2.9,
+            "days_in_ar":           49.3,
+            "ar_over_90_pct":       15.1,
+            "clean_claim_rate":     90.6,
+            "net_collection_rate":  95.1,
+            "dnfb_days":             5.1,
+            "charge_lag_days":       2.9,
+            "cost_to_collect":       2.9,
+        },
+        "buh": {  # healthy
+            "denial_rate":           7.8,
+            "final_denial_rate":     2.2,
+            "days_in_ar":           42.6,
+            "ar_over_90_pct":       11.8,
+            "clean_claim_rate":     92.8,
+            "net_collection_rate":  96.4,
+            "dnfb_days":             4.2,
+            "charge_lag_days":       2.4,
+            "cost_to_collect":       2.6,
+        },
+        "sth": {  # healthy beat
+            "denial_rate":           6.2,
+            "final_denial_rate":     1.7,
+            "days_in_ar":           38.9,
+            "ar_over_90_pct":        9.4,
+            "clean_claim_rate":     94.3,
+            "net_collection_rate":  97.2,
+            "dnfb_days":             3.4,
+            "charge_lag_days":       2.1,
+            "cost_to_collect":       2.2,
+        },
+    }
     for deal_id, headroom, concerning in [
         ("ccf",  -0.5,  0),   # covenant TRIPPED → red alert
         ("mgh",   0.3,  2),   # covenant TIGHT → amber alert
@@ -66,7 +160,16 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
         ("buh",   2.0,  0),   # healthy
         ("sth",   2.0,  1),   # healthy
     ]:
-        store.upsert_deal(deal_id, name=deal_names[deal_id])
+        # Wrap each metric in the ObservedMetric shape the packet
+        # builder expects (value + quality flags).
+        observed = {
+            k: {"value": v, "quality_flags": []}
+            for k, v in rcm_metrics_per_deal.get(deal_id, {}).items()
+        }
+        store.upsert_deal(
+            deal_id, name=deal_names[deal_id],
+            profile={"observed_metrics": observed},
+        )
         ddir = os.path.join(run_dir, deal_id + "_run")
         os.makedirs(ddir, exist_ok=True)
         with open(os.path.join(ddir, "pe_bridge.json"), "w") as f:
@@ -200,9 +303,23 @@ def port_free(p):
 
 
 def main() -> int:
-    tmp = tempfile.mkdtemp(prefix="rcm_demo_")
-    db_path = os.path.join(tmp, "portfolio.db")
-    run_dir = os.path.join(tmp, "runs")
+    # ``RCM_MC_DB_PATH`` lets Azure App Service point at a path on
+    # the persistent /home volume so the SQLite file survives
+    # container restarts. Local dev (env unset) keeps the
+    # tempfile.mkdtemp fallback so a casual `python demo.py` run
+    # still gets a fresh DB on every invocation. The parent dir
+    # is created if missing — saves the partner one mkdir step.
+    db_env = (os.environ.get("RCM_MC_DB_PATH") or "").strip()
+    if db_env:
+        db_path = db_env
+        os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
+        run_dir = os.path.join(
+            os.path.dirname(db_path) or ".", "runs",
+        )
+    else:
+        tmp = tempfile.mkdtemp(prefix="rcm_demo_")
+        db_path = os.path.join(tmp, "portfolio.db")
+        run_dir = os.path.join(tmp, "runs")
     os.makedirs(run_dir, exist_ok=True)
 
     store = PortfolioStore(db_path)
@@ -211,9 +328,18 @@ def main() -> int:
     seed(store, run_dir)
 
     # Create the demo admin last — this switches the server into
-    # multi-user mode, so all subsequent access goes through /login
-    create_user(store, USERNAME, PASSWORD,
-                display_name="Demo Partner", role="admin")
+    # multi-user mode, so all subsequent access goes through /login.
+    # Both accounts get role=admin so they land in the same
+    # dashboard with the same permissions. On a persistent DB the
+    # users may already exist; idempotent on second run.
+    for _u, _p, _dn in (
+        (USERNAME, PASSWORD, "Demo Partner"),
+        (PARTNER_USERNAME, PARTNER_PASSWORD, "Andrew Thomas"),
+    ):
+        try:
+            create_user(store, _u, _p, display_name=_dn, role="admin")
+        except ValueError:
+            pass  # already exists on a persistent DB — fine
 
     # Pick a port
     port = PORT
@@ -221,7 +347,7 @@ def main() -> int:
         port += 1
 
     server, _ = build_server(
-        port=port, db_path=db_path, outdir=run_dir,
+        port=port, host=HOST, db_path=db_path, outdir=run_dir,
         title="RCM-MC Demo Portfolio",
     )
     t = threading.Thread(target=server.serve_forever, daemon=True)

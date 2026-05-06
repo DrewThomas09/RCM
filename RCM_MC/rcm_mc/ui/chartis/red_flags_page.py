@@ -479,4 +479,15 @@ def render_red_flags(
             ("Red Flags", None),
         ],
         subtitle=subtitle,
+        editorial_intro={
+            "eyebrow": "RED FLAGS",
+            "headline": "What would make you walk away.",
+            "italic_word": "walk",
+            "body": (
+                "The catalog of bear-thesis triggers that fired "
+                "against this deal. Each is a falsifiable claim with "
+                "evidence — the partner's job is to confirm or "
+                "refute, not to explain away."
+            ),
+        },
     )

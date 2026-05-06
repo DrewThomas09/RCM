@@ -345,7 +345,10 @@ def _priority_rank(deal: Dict[str, Any]) -> int:
 
 def render_portfolio_risk_scan(db_path: str) -> str:
     from . import _web_components as _wc
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
 
     deals = _gather_per_deal(db_path)
 
@@ -365,8 +368,8 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         empty = (
             '<p>No active deals in the portfolio store yet. '
             'Add deals via the <a href="/new-deal" '
-            'style="color:#1F4E78;">new deal wizard</a> or import '
-            'via <a href="/import" style="color:#1F4E78;">Quick '
+            'style="color:var(--sc-navy);">new deal wizard</a> or import '
+            'via <a href="/import" style="color:var(--sc-navy);">Quick '
             'import</a>, then this scan will populate.</p>'
         )
         body = (
@@ -448,7 +451,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         deal_id = d["deal_id"]
         name_link = (
             f'<a href="/deal/{_html.escape(deal_id)}" '
-            f'style="color:#1F4E78;font-weight:500;text-decoration:none;">'
+            f'style="color:var(--sc-navy);font-weight:500;text-decoration:none;">'
             f'{_html.escape(d["name"])}</a>'
             f'<div style="font-family:monospace;font-size:10px;'
             f'color:#6b7280;margin-top:2px;text-transform:uppercase;">'
@@ -501,7 +504,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         '<a href="/api/portfolio/risk-scan.csv" '
         'download style="display:inline-block;margin:0 0 12px;'
         'padding:6px 12px;background:#fff;border:1px solid #d0e3f0;'
-        'color:#1F4E78;border-radius:4px;font-size:12px;'
+        'color:var(--sc-navy);border-radius:4px;font-size:12px;'
         'font-weight:500;text-decoration:none;'
         'transition:background 0.1s;" '
         'onmouseover="this.style.background=\'#f0f6fc\';" '
@@ -511,8 +514,44 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         '⬇ Export CSV</a>'
     )
 
+    # Cycle 49 — KPI strip with provenance.
+    n_deals = len(deals)
+    n_red = sum(1 for d in deals if d.get("highest_severity") == "red")
+    n_amber = sum(1 for d in deals if d.get("highest_severity") == "amber")
+    deals_value = ck_provenance_tooltip(
+        "Deals scanned",
+        ck_fmt_num(n_deals),
+        explainer=(
+            "Active (non-archived) deals included in the scan. "
+            "Each row is one deal; the row priority sums health "
+            "score gap, covenant headroom shortfall, days since "
+            "last snapshot, and overdue deadlines."
+        ),
+    )
+    red_value = ck_provenance_tooltip(
+        "Red-severity deals",
+        ck_fmt_num(n_red),
+        explainer=(
+            f"Deals carrying at least one red-severity signal: "
+            f"covenant breach, distress probability above 35%, "
+            f"or stale snapshot beyond 90 days. Currently "
+            f"{n_amber} deals are amber. Reds need partner "
+            f"attention this week."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Deals Scanned", deals_value, "active portfolio")
+        + ck_kpi_block("Red Severity", red_value, "need decision")
+        + ck_kpi_block("Amber Severity", ck_fmt_num(n_amber), "watch list")
+        + '</div>'
+    )
+
     inner = (
-        header
+        ck_eyebrow("Portfolio Risk Scan")
+        + kpi_strip
+        + header
         + summary_strip
         + legend
         + csv_link
@@ -528,4 +567,16 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         + _wc.sortable_table_js()
     )
     return chartis_shell(body, "Portfolio risk scan",
-                         active_nav="/portfolio/risk-scan")
+                         active_nav="/portfolio/risk-scan",
+        editorial_intro={
+            "eyebrow": "PORTFOLIO RISK SCAN",
+            "headline": "Where portfolio risk concentrates.",
+            "italic_word": "concentrates",
+            "body": (
+                "Portfolio-level risk view: covenant headroom, "
+                "concentration exposures, distress probabilities, "
+                "and exit-window timing. The deals that show up "
+                "across multiple risk dimensions are the ones "
+                "that need partner attention this quarter."
+            ),
+        })

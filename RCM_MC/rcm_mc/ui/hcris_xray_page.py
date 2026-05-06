@@ -25,7 +25,7 @@ from ..diligence.hcris_xray import (
     catalog_by_category, dataset_summary, get_target_history,
     search_hospitals, xray,
 )
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
     interpret_callout, provenance, sortable_table,
@@ -1048,6 +1048,14 @@ def render_hcris_xray_page(
 
     body = (
         _scoped_styles()
+        + ck_page_title(
+            "HCRIS X-Ray",
+            eyebrow="RCM DILIGENCE",
+            meta=(
+                f"Target: {target.name} · CCN {target.ccn} · "
+                f"FY{target.fiscal_year}"
+            ),
+        )
         + '<div class="hx-wrap">'
         + deal_context_bar(qs, active_surface="hcris")
         + hero
@@ -1066,6 +1074,7 @@ def render_hcris_xray_page(
     )
     return chartis_shell(
         body, f"HCRIS X-Ray — {target.name}",
+        active_nav="/diligence/hcris-xray",
         subtitle=(
             f"CCN {target.ccn} · {target.beds} beds · "
             f"FY{target.fiscal_year}"

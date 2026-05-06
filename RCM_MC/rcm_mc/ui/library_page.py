@@ -9,7 +9,10 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -289,6 +292,38 @@ def render_library() -> str:
     )
     sections = "".join(_library_section(s) for s in _LIBRARY_SECTIONS)
 
+    # Cycle 48 — KPI strip with provenance.
+    n_sections = len(_LIBRARY_SECTIONS)
+    total_entries = sum(len(s.get("entries", [])) for s in _LIBRARY_SECTIONS)
+    sections_value = ck_provenance_tooltip(
+        "Methodology sections",
+        ck_fmt_num(n_sections),
+        explainer=(
+            "Top-level methodology categories - each one a stable "
+            "anchor for partner reference. New methods extend an "
+            "existing section rather than creating a new one, "
+            "to keep the table-of-contents predictable."
+        ),
+    )
+    entries_value = ck_provenance_tooltip(
+        "Methodology entries",
+        ck_fmt_num(total_entries),
+        explainer=(
+            "Documented metrics, formulas, and rubrics with "
+            "rationale + citations. The set the partner can "
+            "reach for when challenged on 'where does that "
+            "number come from?'"
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Sections", sections_value, "in library")
+        + ck_kpi_block("Entries", entries_value, "documented")
+        + '</div>'
+    )
+    sections = ck_eyebrow("Methodology") + kpi_strip + sections
+
     extra_links = (
         f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">'
         f'<a href="/data" class="cad-card" style="text-decoration:none;color:inherit;">'
@@ -313,4 +348,15 @@ def render_library() -> str:
         body, "Methodology",
         active_nav="/methodology",
         subtitle="Research library, model documentation & methodology references",
+        editorial_intro={
+            "eyebrow": "METHODOLOGY",
+            "headline": "Where the platform shows its work.",
+            "italic_word": "shows",
+            "body": (
+                "Research library, model documentation, and "
+                "methodology references. Every model, calibration, "
+                "and scoring rubric is here, with citations to the "
+                "source documents and assumptions that back it."
+            ),
+        },
     )

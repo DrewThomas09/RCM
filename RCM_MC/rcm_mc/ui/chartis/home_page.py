@@ -20,6 +20,7 @@ from .._chartis_kit import (
     chartis_shell,
     ck_kpi_block,
     ck_section_header,
+    ck_section_intro,
     ck_signal_badge,
 )
 from ._helpers import render_page_explainer
@@ -459,6 +460,7 @@ def _corpus_insights() -> str:
 
 
 def _kpi_strip(store: Any, db_path: str) -> str:
+    from .._chartis_kit import ck_fmt_num, ck_provenance_tooltip
     try:
         deals = store.list_deals()
         rows = deals.to_dict("records") if hasattr(deals, "to_dict") else list(deals or [])
@@ -474,10 +476,44 @@ def _kpi_strip(store: Any, db_path: str) -> str:
     except Exception:
         n_alerts = 0
     n_corpus = len(_load_all_seed_deals())
+
+    # Cycle 51 — provenance on the partner-anchor stats.
+    deals_value = ck_provenance_tooltip(
+        "Active deals",
+        ck_fmt_num(n_deals),
+        explainer=(
+            "Non-archived deals in this fund's working set. "
+            "These are the deals the partner is responsible "
+            "for moving forward; archived deals are visible via "
+            "the portfolio explorer."
+        ),
+    )
+    alerts_value = ck_provenance_tooltip(
+        "Unacked alerts",
+        ck_fmt_num(n_alerts),
+        explainer=(
+            "Open alerts across the portfolio that haven't been "
+            "acknowledged or snoozed. The /alerts page details "
+            "each one - covenant breaches, EBITDA misses, signal "
+            "clusters, stage regress."
+        ),
+        inject_css=False,
+    )
+    corpus_value = ck_provenance_tooltip(
+        "Corpus deals available",
+        ck_fmt_num(n_corpus),
+        explainer=(
+            "Realized PE-healthcare deals indexed in the corpus, "
+            "with disclosed financials. Each one a comparable "
+            "data point - the broader the corpus, the tighter "
+            "the percentile bands the platform reports against."
+        ),
+        inject_css=False,
+    )
     tiles = (
-        ck_kpi_block("Active Deals", f"{n_deals}", "in portfolio")
-        + ck_kpi_block("Unacked Alerts", f"{n_alerts}", "across portfolio")
-        + ck_kpi_block("Corpus Deals", f"{n_corpus}", "benchmarkable comps")
+        ck_kpi_block("Active Deals", deals_value, "in portfolio")
+        + ck_kpi_block("Unacked Alerts", alerts_value, "across portfolio")
+        + ck_kpi_block("Corpus Deals", corpus_value, "benchmarkable comps")
         + ck_kpi_block("PE Intel Modules", "278", "partner reflexes codified")
     )
     return f'<div class="ck-kpi-grid">{tiles}</div>'
@@ -649,6 +685,20 @@ def _new_modules_index() -> str:
 
 def render_home(store: Any, db_path: str, current_user: Optional[str] = None) -> str:
     """Render the seven-panel home landing page."""
+    # Editorial intro — italic-serif headline above the panels so the
+    # partner's first read on /home matches the chartis.com cadence
+    # ("Reasons to *believe* in better"). Sits above the page-explainer
+    # and KPI strip so the editorial signal is the first thing the eye
+    # lands on, before the data-dense panels below.
+    intro = ck_section_intro(
+        eyebrow="PARTNER LANDING",
+        headline="Where the portfolio reveals what to read first.",
+        italic_word="reveals",
+        body=(
+            "Pipeline, alerts, health distribution, and the seven "
+            "partner-reflex verdicts your team relies on, in one read."
+        ),
+    )
     explainer = render_page_explainer(
         what=(
             "Seven-panel partner landing: pipeline funnel, active alerts, "
@@ -684,11 +734,22 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         if current_user else "Partner landing — pipeline, alerts, PE brain verdicts"
     )
     return chartis_shell(
-        explainer + kpi + quickstart + new_modules + panels,
+        intro + explainer + kpi + quickstart + new_modules + panels,
         title="Home",
         active_nav="/home",
         subtitle=subtitle,
         breadcrumbs=[
             ("Home", None),
         ],
+        editorial_intro={
+            "eyebrow": "HOME",
+            "headline": "Where the partner reads the day first.",
+            "italic_word": "reads",
+            "body": (
+                "Pipeline, active alerts, deals on watch, and the "
+                "PE-brain verdicts the platform produced overnight. "
+                "Numbers carry hover-card provenance so the "
+                "methodology stays one click away."
+            ),
+        }
     )

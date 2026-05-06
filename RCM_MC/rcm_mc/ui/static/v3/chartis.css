@@ -908,7 +908,6 @@ footer.editorial em { color: var(--ink); font-style: italic; }
 .app-deals-table .name {
   font-family: "Source Serif 4", serif;
   font-weight: 500;
-  margin-left: .35rem;
 }
 .app-deals-table tbody td a {
   color: inherit;

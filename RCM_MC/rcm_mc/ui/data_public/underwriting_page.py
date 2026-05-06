@@ -309,7 +309,10 @@ def render_underwriting(
     hold_years: Optional[float] = None,
     exit_multiple: Optional[float] = None,
 ) -> str:
-    from rcm_mc.ui._chartis_kit import chartis_shell, ck_section_header, ck_kpi_block
+    from rcm_mc.ui._chartis_kit import (
+        chartis_shell, ck_fmt_moic, ck_fmt_pct, ck_kpi_block,
+        ck_provenance_tooltip, ck_section_header,
+    )
 
     # Default values
     ev = entry_ev or 200.0
@@ -356,19 +359,35 @@ def render_underwriting(
     moics = sorted([float(d["realized_moic"]) for d in realized])
     irrs = sorted([float(d["realized_irr"]) for d in realized if d.get("realized_irr") is not None])
 
+    # Cycle 44 — provenance + ck_fmt_*.
+    corpus_moic_value = ck_provenance_tooltip(
+        "Corpus P50 MOIC",
+        ck_fmt_moic(_percentile(moics, 50)),
+        explainer=(
+            f"Median realized MOIC across {len(realized)} corpus "
+            f"deals. Use as the bar your model MOIC has to clear. "
+            f"Above corpus P75 means the underwriting is leaning "
+            f"on top-quartile execution."
+        ),
+    )
+    model_moic_value = ck_provenance_tooltip(
+        "Model MOIC",
+        f'<span class="mn" style="color:{"#22c55e" if (result.gross_moic or 0) >= 2.5 else "#f59e0b"}">{ck_fmt_moic(result.gross_moic)}</span>' if result else '<span class="faint">—</span>',
+        explainer=(
+            "Projected MOIC from the underwriting model: EBITDA "
+            "growth at the input CAGR + exit at the input "
+            "multiple, leverage held constant. Gross of fees "
+            "and carry."
+        ),
+        inject_css=False,
+    )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Corpus P50 MOIC",
-                       f'<span class="mn">{_percentile(moics, 50):.2f}×</span>', "realized")
-        + ck_kpi_block("Corpus P50 IRR",
-                       f'<span class="mn">{_percentile(irrs, 50)*100:.1f}%</span>', "realized")
-        + ck_kpi_block("Model MOIC",
-                       f'<span class="mn" style="color:{"#22c55e" if (result.gross_moic or 0) >= 2.5 else "#f59e0b"}">'
-                       f'{result.gross_moic:.2f}×</span>' if result else '<span class="faint">—</span>', "projected")
-        + ck_kpi_block("Model IRR",
-                       f'<span class="mn">{result.gross_irr*100:.1f}%</span>' if result else '<span class="faint">—</span>', "projected")
-        + ck_kpi_block("Entry Multiple",
-                       f'<span class="mn">{ev/eb:.1f}×</span>', "EV/EBITDA")
+        + ck_kpi_block("Corpus P50 MOIC", corpus_moic_value, "realized")
+        + ck_kpi_block("Corpus P50 IRR", ck_fmt_pct(_percentile(irrs, 50)), "realized")
+        + ck_kpi_block("Model MOIC", model_moic_value, "projected")
+        + ck_kpi_block("Model IRR", ck_fmt_pct(result.gross_irr) if result else '—', "projected")
+        + ck_kpi_block("Entry Multiple", f"{ev/eb:.1f}x", "EV/EBITDA")
         + '</div>'
     )
 
@@ -386,4 +405,16 @@ def render_underwriting(
             f"EV ${ev:.0f}M · EV/EBITDA {ev/eb:.1f}× · "
             + (f"MOIC {result.gross_moic:.2f}× · IRR {result.gross_irr*100:.1f}%" if result else "enter parameters above")
         ),
+        editorial_intro={
+            "eyebrow": "DEAL UNDERWRITING",
+            "headline": "Where the corpus tests your assumptions.",
+            "italic_word": "tests",
+            "body": (
+                "Enter the deal's headline economics; the page "
+                "projects MOIC and IRR, then benchmarks them "
+                "against the realized corpus. The gap between "
+                "model and corpus P50 is the bear-case starting "
+                "point."
+            ),
+        },
     )

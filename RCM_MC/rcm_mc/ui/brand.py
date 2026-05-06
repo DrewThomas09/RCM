@@ -30,11 +30,11 @@ BRAND = {
 
 LOGO_SVG = (
     '<svg viewBox="0 0 32 32" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">'
-    '<path d="M16 2L16 28" stroke="#1F4E78" stroke-width="2.5" stroke-linecap="round"/>'
-    '<path d="M10 6C10 6 13 8 16 8C19 8 22 6 22 6" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
-    '<path d="M10 12C10 12 13 14 16 14C19 14 22 12 22 12" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
-    '<path d="M10 18C10 18 13 20 16 20C19 20 22 18 22 18" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
-    '<path d="M12 2L20 2" stroke="#1F4E78" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M16 2L16 28" stroke="var(--sc-navy)" stroke-width="2.5" stroke-linecap="round"/>'
+    '<path d="M10 6C10 6 13 8 16 8C19 8 22 6 22 6" stroke="var(--sc-navy)" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M10 12C10 12 13 14 16 14C19 14 22 12 22 12" stroke="var(--sc-navy)" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M10 18C10 18 13 20 16 20C19 20 22 18 22 18" stroke="var(--sc-navy)" stroke-width="2" stroke-linecap="round"/>'
+    '<path d="M12 2L20 2" stroke="var(--sc-navy)" stroke-width="2" stroke-linecap="round"/>'
     '<circle cx="10" cy="3" r="1.5" fill="#3b82f6"/>'
     '<circle cx="22" cy="3" r="1.5" fill="#3b82f6"/>'
     '</svg>'
@@ -149,8 +149,15 @@ _PALETTE_V2: Dict[str, str] = {
 def _active_palette() -> Dict[str, str]:
     """Return the palette matching ``CHARTIS_UI_V2``. Resolved at
     import time by default; callers that need per-request flipping
-    can read this function directly."""
-    flag = os.environ.get("CHARTIS_UI_V2", "0") != "0"
+    can read this function directly.
+
+    Default is ``"1"`` — matches ``_chartis_kit.UI_V2_ENABLED`` so a
+    process started without the env var set picks the editorial
+    palette (parchment background + dark ink text). Defaulting to
+    ``"0"`` here while the shell defaulted to ``"1"`` produced the
+    off-white-text-on-parchment contrast bug.
+    """
+    flag = os.environ.get("CHARTIS_UI_V2", "1") != "0"
     return dict(_PALETTE_V2 if flag else _PALETTE_LEGACY)
 
 

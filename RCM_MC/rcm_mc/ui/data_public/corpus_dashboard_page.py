@@ -341,4 +341,9 @@ def render_corpus_dashboard() -> str:
             f"{n:,} deals · P50 MOIC {moic_p50:.2f}x · P50 IRR {irr_p50*100:.1f}% · "
             f"loss rate {loss_rate*100:.1f}% · avg quality {avg_quality:.0f}/100"
         ),
+        editorial_intro={
+            "eyebrow": "CORPUS DASHBOARD",
+            "headline": "What the corpus dashboard reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

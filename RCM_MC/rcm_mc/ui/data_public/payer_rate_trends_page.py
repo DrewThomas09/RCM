@@ -28,7 +28,10 @@ def _load_corpus() -> List[Dict[str, Any]]:
     return deals
 
 
-from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.ui._chartis_kit import (
+    P, _MONO, _SANS, chartis_shell, ck_fmt_num, ck_fmt_pct,
+    ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+)
 
 
 def _percentile(vals: List[float], p: float) -> Optional[float]:
@@ -243,19 +246,36 @@ def render_payer_rate_trends() -> str:
     comm_p50 = _percentile(comm_vals, 50)
     gov_p50  = _percentile(gov_vals, 50)
 
-    kpis = "".join(
-        f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 14px">'
-        f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:3px">{lbl}</div>'
-        f'<div style="font-size:16px;font-family:{_MONO};font-variant-numeric:tabular-nums;color:{P["text"]}">{val}</div>'
-        f'</div>'
-        for lbl, val in [
-            ("CORPUS N",          str(len(corpus))),
-            ("WITH PAYER DATA",   str(len(with_payer))),
-            ("COMM% P50",         f"{comm_p50*100:.0f}%" if comm_p50 else "—"),
-            ("GOV% P50",          f"{gov_p50*100:.0f}%"  if gov_p50  else "—"),
-        ]
+    # Cycle 42 — port bespoke KPI cards to ck_kpi_block + provenance.
+    comm_value = ck_provenance_tooltip(
+        "Commercial payer share P50",
+        ck_fmt_pct(comm_p50) if comm_p50 else "—",
+        explainer=(
+            "Median commercial-payer share across corpus deals "
+            "with disclosed mix. Above 60% suggests rate-leverage "
+            "thesis; below 40% means the deal lives or dies on "
+            "Medicare/Medicaid policy."
+        ),
     )
-    kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'
+    gov_value = ck_provenance_tooltip(
+        "Government payer share P50",
+        ck_fmt_pct(gov_p50) if gov_p50 else "—",
+        explainer=(
+            "Median Medicare + Medicaid share. Higher gov share "
+            "= regulatory-policy sensitivity but more revenue "
+            "stability. The trend across vintages tells you "
+            "where the corpus has been migrating."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;">'
+        + ck_kpi_block("Corpus N", ck_fmt_num(len(corpus)), "transactions")
+        + ck_kpi_block("With Payer Data", ck_fmt_num(len(with_payer)), "disclosed mix")
+        + ck_kpi_block("Comm% P50", comm_value, "median commercial")
+        + ck_kpi_block("Gov% P50", gov_value, "median government")
+        + '</div>'
+    )
 
     trend_chart = _vintage_payer_trend_svg(corpus)
     scatter     = _comm_moic_scatter(corpus)
@@ -288,4 +308,16 @@ def render_payer_rate_trends() -> str:
 </div>"""
 
     return chartis_shell(body, "Payer Rate Trends", active_nav="/payer-rate-trends",
-                         subtitle=f"{len(with_payer)} deals with payer data")
+                         subtitle=f"{len(with_payer)} deals with payer data",
+        editorial_intro={
+            "eyebrow": "PAYER RATE TRENDS",
+            "headline": "What the payer mix is paying.",
+            "italic_word": "paying",
+            "body": (
+                f"Commercial-vs-government rate trajectories across "
+                f"{len(with_payer)} corpus deals with payer data on "
+                f"file. The relative direction matters more than the "
+                f"absolute level — a flat commercial regime in a "
+                f"falling-rates corpus is a real signal."
+            ),
+        })

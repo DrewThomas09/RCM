@@ -9,7 +9,9 @@ import html
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_fmt_num, ck_kpi_block, ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -438,8 +440,39 @@ def render_news(category: str = "all") -> str:
         f'&#128197; Full Conference Roadmap &rarr;</a></div>'
     )
 
+    # Cycle 58 — KPI strip with provenance.
+    n_categories = len(set(a.get("category", "") for a in _CURATED_ARTICLES))
+    articles_value = ck_provenance_tooltip(
+        "Curated articles in feed",
+        ck_fmt_num(len(_CURATED_ARTICLES)),
+        explainer=(
+            "Healthcare PE coverage curated by sector and deal "
+            "type - bankruptcies, transactions, regulatory moves. "
+            "Each entry tagged for sourcing relevance to the "
+            "current deal pipeline."
+        ),
+    )
+    showing_value = ck_provenance_tooltip(
+        "Articles in current view",
+        ck_fmt_num(len(articles)),
+        explainer=(
+            f"Filtered to {category or 'All'}. Drop the category "
+            f"filter via the tab bar above to widen the feed; the "
+            f"sidebar surfaces conference-roadmap items separately."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Articles", articles_value, "in feed")
+        + ck_kpi_block("Showing", showing_value, "after filter")
+        + ck_kpi_block("Categories", ck_fmt_num(n_categories), "tagged")
+        + '</div>'
+    )
+
     body = (
-        f'{tab_bar}'
+        kpi_strip
+        + f'{tab_bar}'
         f'<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">'
         f'<div>{cards}</div>'
         f'<div>{sidebar}</div>'
@@ -450,4 +483,15 @@ def render_news(category: str = "all") -> str:
         body, "News & Research",
         active_nav="/news",
         subtitle="Healthcare PE market intelligence",
+        editorial_intro={
+            "eyebrow": "NEWS & RESEARCH",
+            "headline": "What the market is saying about the deal universe.",
+            "italic_word": "saying",
+            "body": (
+                "Curated healthcare PE coverage by sector and "
+                "deal type - bankruptcies, transactions, "
+                "regulatory moves. Use this as the partner-day "
+                "context check before opening any deal page."
+            ),
+        },
     )

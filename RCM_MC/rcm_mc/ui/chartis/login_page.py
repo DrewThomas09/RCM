@@ -121,33 +121,6 @@ _LOGIN_EXTRA_CSS = """
 .field-row a { color: var(--teal-deep); }
 .submit { width: 100%; }
 
-.divider {
-  text-align: center; margin: 2rem 0 1rem; font-family: "Inter", sans-serif;
-  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--faint); position: relative;
-}
-.divider::before, .divider::after {
-  content: ""; position: absolute; top: 50%; width: calc(50% - 5rem);
-  height: 1px; background: var(--border);
-}
-.divider::before { left: 0; }
-.divider::after { right: 0; }
-
-.sso { display: grid; gap: .6rem; }
-.sso button {
-  display: flex; align-items: center; gap: .8rem;
-  padding: .8rem 1rem; border: 1px solid var(--border); background: var(--paper-pure);
-  font-family: "Inter", sans-serif; font-size: .9rem; color: var(--ink);
-  cursor: pointer; border-radius: 0; text-align: left;
-}
-.sso button:hover { border-color: var(--teal); background: var(--bg); }
-.sso button .ico {
-  width: 24px; height: 24px; display: inline-flex; align-items: center;
-  justify-content: center; font-family: "Source Serif 4", serif;
-  font-weight: 700; color: var(--teal-deep);
-  border: 1px solid var(--border);
-}
-
 .footnote {
   margin-top: 2rem; font-family: "Source Serif 4", serif;
   font-size: .88rem; color: var(--muted); font-style: italic;
@@ -190,15 +163,22 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
         '<form method="POST" action="/api/login">'
         f'{next_input}'
         '<div class="field">'
-        '<label for="login-email">Email</label>'
-        '<input type="email" id="login-email" name="username" '
-        'placeholder="partner@firm.com" required '
-        'autocomplete="email" autofocus/>'
+        '<label for="login-email">Email or Username</label>'
+        # type="text" not "email" so the seeded demo / partner
+        # accounts (literal usernames like "demo") submit
+        # cleanly. The DB column is `username` and the regex
+        # at auth/auth.py:_USERNAME_RE accepts both bare names
+        # and email-style strings. inputmode="email" keeps the
+        # mobile keyboard helpful for the typical case.
+        '<input type="text" id="login-email" name="username" '
+        'placeholder="partner@firm.com" required value="demo" '
+        'inputmode="email" autocomplete="username" autofocus/>'
         '</div>'
         '<div class="field">'
         '<label for="login-password">Password</label>'
         '<input type="password" id="login-password" name="password" '
-        'placeholder="••••••••••••" required autocomplete="current-password"/>'
+        'placeholder="••••••••••••" required value="DemoPass!1" '
+        'autocomplete="current-password"/>'
         '</div>'
         '<div class="field-row">'
         '<label class="check"><input type="checkbox" name="remember"/>'
@@ -208,15 +188,6 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
         '<button type="submit" class="cta-btn submit">'
         'Open Command Center →</button>'
         '</form>'
-        '<div class="divider">or continue with</div>'
-        '<div class="sso">'
-        '<button type="button" disabled title="SSO not configured in Phase 1">'
-        '<span class="ico">G</span> Google Workspace</button>'
-        '<button type="button" disabled title="SSO not configured in Phase 1">'
-        '<span class="ico">M</span> Microsoft Entra ID</button>'
-        '<button type="button" disabled title="SSO not configured in Phase 1">'
-        '<span class="ico">S</span> SAML SSO</button>'
-        '</div>'
         '</div>'
     )
 
@@ -290,12 +261,11 @@ def render_login_page(
         '<div class="form-wrap">'
         '<div class="micro">PARTNER LOGIN</div>'
         '<h2 class="form-h">Sign in to your<br/><em>instance</em>.</h2>'
-        '<p class="form-sub">Use your partner credentials, or '
-        'continue with single sign-on.</p>'
+        '<p class="form-sub">Use your partner credentials to '
+        'access the platform.</p>'
         f'{tabs_html}'
         f'{request_form if is_request_tab else signin_form}'
         '<p class="footnote">'
-        'Public data only — no PHI permitted on this instance. '
         'Partners with private feeds: see your '
         '<a href="/docs/deployment">deployment runbook</a> to enable '
         'connectors after sign-in.</p>'

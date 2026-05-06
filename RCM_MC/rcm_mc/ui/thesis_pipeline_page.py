@@ -28,7 +28,7 @@ from ..diligence.thesis_pipeline import (
 )
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ..diligence.checklist import compute_status, DealObservations
-from ._chartis_kit import P, chartis_shell
+from ._chartis_kit import P, chartis_shell, ck_page_title
 from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
     provenance, sortable_table,
@@ -619,6 +619,11 @@ def render_thesis_pipeline_page(
 
     body = (
         _scoped_styles()
+        + ck_page_title(
+            "Thesis Pipeline",
+            eyebrow="RCM DILIGENCE",
+            meta=f"Deal: {inp.deal_name} · 13-step orchestrator",
+        )
         + '<div class="tp-wrap">'
         + deal_context_bar(qs, active_surface="pipeline")
         + export_json_panel(
@@ -634,5 +639,6 @@ def render_thesis_pipeline_page(
     return chartis_shell(
         body,
         f"Thesis Pipeline — {inp.deal_name}",
+        active_nav="/diligence/thesis-pipeline",
         subtitle="13-step orchestrator · closes the loop",
     )

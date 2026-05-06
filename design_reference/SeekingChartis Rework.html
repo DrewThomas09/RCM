@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SeekingChartis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+<style>
+  .page { display: none; }
+  .page.active { display: block; }
+  body { margin: 0; background: var(--sc-parchment); }
+</style>
+<script>
+  (function(){
+    try {
+      const v = localStorage.getItem('sc_view') || 'marketing';
+      window.__sc_initial = { view: v };
+    } catch(e) { window.__sc_initial = { view: 'marketing' }; }
+  })();
+</script>
+</head>
+<body>
+
+<template id="__bundler_thumbnail" data-bg-color="#0b2341">
+  <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="60" r="52" fill="#0b2341" stroke="#2fb3ad" stroke-width="2"/>
+    <path d="M 40 78 L 40 42 L 60 62 L 80 42 L 80 78" fill="none" stroke="#f5f1ea" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"/>
+    <line x1="30" y1="90" x2="90" y2="90" stroke="#2fb3ad" stroke-width="2"/>
+  </svg>
+</template>
+
+<div id="page-marketing" class="page" data-screen-label="01 Marketing landing"></div>
+<div id="page-login"     class="page" data-screen-label="02 Login"></div>
+<div id="page-home"      class="page" data-screen-label="03 Signed-in home"></div>
+<div id="page-analysis"  class="page" data-screen-label="04 Deal workbench"></div>
+<div id="page-module"    class="page" data-screen-label="05 Module page"></div>
+<div id="page-directory" class="page" data-screen-label="06 Module directory"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="components/modulesCatalog.js"></script>
+<script type="text/babel" src="components/Shared.jsx"></script>
+<script type="text/babel" src="components/GlobalNav.jsx"></script>
+<script type="text/babel" src="components/MarketingPage.jsx"></script>
+<script type="text/babel" src="components/LoginPage.jsx"></script>
+<script type="text/babel" src="components/HomePage.jsx"></script>
+<script type="text/babel" src="components/AnalysisPage.jsx"></script>
+<script type="text/babel" src="components/QuantLabBody.jsx"></script>
+<script type="text/babel" src="components/ModulePage.jsx"></script>
+<script type="text/babel" src="components/DirectoryPage.jsx"></script>
+
+<script type="text/babel">
+  const initial = window.__sc_initial;
+  const VIEWS = ['marketing', 'login', 'home', 'analysis', 'module', 'directory'];
+
+  const mRoot = ReactDOM.createRoot(document.getElementById('page-marketing'));
+  const lRoot = ReactDOM.createRoot(document.getElementById('page-login'));
+  const hRoot = ReactDOM.createRoot(document.getElementById('page-home'));
+  const aRoot = ReactDOM.createRoot(document.getElementById('page-analysis'));
+  const modRoot = ReactDOM.createRoot(document.getElementById('page-module'));
+  const dirRoot = ReactDOM.createRoot(document.getElementById('page-directory'));
+
+  // Restore last module id
+  let currentModuleId = (function(){ try { return localStorage.getItem('sc_mod') || 'heatmap'; } catch(e) { return 'heatmap'; } })();
+  let currentDirFilter = null;
+
+  function setView(v) {
+    if (!VIEWS.includes(v)) v = 'marketing';
+    initial.view = v;
+    try { localStorage.setItem('sc_view', v); } catch(e) {}
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const el = document.getElementById('page-' + v);
+    if (el) el.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function renderModule() {
+    modRoot.render(
+      <ModulePage
+        moduleId={currentModuleId}
+        onHome={() => setView('home')}
+        onSignOut={() => setView('marketing')}
+        onNavigate={(id) => { openModule(id); }}
+        onOpenAnalysis={() => setView('analysis')}
+        onOpenDirectory={(filter) => openDirectory(filter)}
+      />
+    );
+  }
+
+  function renderDirectory() {
+    dirRoot.render(
+      <DirectoryPage
+        initialFilter={currentDirFilter}
+        onHome={() => setView('home')}
+        onSignOut={() => setView('marketing')}
+        onOpenModule={(id) => openModule(id)}
+        onOpenDirectory={(filter) => openDirectory(filter)}
+      />
+    );
+  }
+
+  function openModule(id) {
+    currentModuleId = id;
+    try { localStorage.setItem('sc_mod', id); } catch(e) {}
+    renderModule();
+    setView('module');
+  }
+
+  function openDirectory(filter) {
+    currentDirFilter = (typeof filter === 'string') ? filter : null;
+    renderDirectory();
+    setView('directory');
+  }
+
+  const go = {
+    marketing: () => setView('marketing'),
+    login:     () => setView('login'),
+    home:      () => setView('home'),
+    analysis:  () => setView('analysis'),
+  };
+
+  mRoot.render(<MarketingPage imagery="photo" onOpenPlatform={go.login} />);
+  lRoot.render(<LoginPage onLogin={go.home} onBack={go.marketing} />);
+  hRoot.render(
+    <HomePage
+      onSignOut={go.marketing}
+      onOpenAnalysis={go.analysis}
+      onOpenModule={openModule}
+      onOpenDirectory={openDirectory}
+    />
+  );
+  aRoot.render(
+    <AnalysisPage
+      onBack={go.home}
+      onSignOut={go.marketing}
+      onOpenModule={openModule}
+      onOpenDirectory={openDirectory}
+    />
+  );
+  renderModule();
+  renderDirectory();
+
+  setView(initial.view);
+</script>
+
+</body>
+</html>

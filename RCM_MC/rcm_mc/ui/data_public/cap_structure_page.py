@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell
 
 
 def _moic_curve_svg(ret_scenarios, lev_scenarios, optimal_lev: float) -> str:
@@ -161,22 +161,22 @@ def _leverage_table(scenarios, optimal_lev) -> str:
         head_c = P["positive"] if s.covenant_headroom_pct >= 0.20 else (P["warning"] if s.covenant_headroom_pct >= 0.10 else P["negative"])
         cells = [
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_opt else "400"}">{s.total_leverage:.1f}x{" ★" if is_opt else ""}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.senior_leverage:.1f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.sub_leverage:.1f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.debt_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.equity_mm:,.1f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.equity_pct * 100:.1f}%</td>',
+            f'{ck_data_cell(f"""{s.senior_leverage:.1f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{s.sub_leverage:.1f}x""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${s.debt_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${s.equity_mm:,.1f}""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""{s.equity_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">{s.blended_cost_of_debt * 100:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{s.wacc * 100:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.year1_interest_mm:,.2f}</td>',
+            f'{ck_data_cell(f"""${s.year1_interest_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dscr_c};font-weight:600">{s.dscr:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{head_c}">{s.covenant_headroom_pct * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.market_availability)}</td>',
         ]
         trs.append(f'<tr style="{row_style}">{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -197,17 +197,17 @@ def _return_table(returns, optimal_lev) -> str:
         moic_c = pos if r.moic >= 2.5 else (P["warning"] if r.moic >= 1.5 else P["negative"])
         cells = [
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_opt else "400"}">{r.leverage:.1f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.exit_ebitda_mm:,.2f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.exit_ev_mm:,.1f}M</td>',
+            f'{ck_data_cell(f"""${r.exit_ebitda_mm:,.2f}M""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${r.exit_ev_mm:,.1f}M""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${r.remaining_debt_mm:,.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos}">${r.exit_equity_mm:,.1f}M</td>',
+            f'{ck_data_cell(f"""${r.exit_equity_mm:,.1f}M""", align="right", mono=True, tone="pos")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c};font-weight:600">{r.moic:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{moic_c}">{r.irr * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="{row_style}">{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -228,16 +228,16 @@ def _breach_table(probs) -> str:
             if v < 0.50: return P["warning"]
             return P["negative"]
         cells = [
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{b.leverage:.1f}x</td>',
+            f'{ck_data_cell(f"""{b.leverage:.1f}x""", align="right", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_5pct)}">{b.ebitda_drop_5pct * 100:.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_10pct)}">{b.ebitda_drop_10pct * 100:.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_15pct)}">{b.ebitda_drop_15pct * 100:.0f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_20pct)}">{b.ebitda_drop_20pct * 100:.0f}%</td>',
         ]
-        trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
+        trs.append(f'<tr>{"".join(cells)}</tr>')
     return (
-        f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
-        f'<thead><tr style="background:{bg}">{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
     )
 
 
@@ -312,18 +312,18 @@ def render_cap_structure(params: dict = None) -> str:
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
-    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run</button>
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run analysis</button>
 </form>"""
 
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     body = f"""
-<div style="padding:20px;max-width:1400px;margin:0 auto">
+<div class="ck-page-wrap">
 
-  <div style="margin-bottom:20px">
-    <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Capital Structure Optimizer</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">
+  <div class="ck-page-head">
+    <h1 class="ck-page-h1">Capital Structure Optimizer</h1>
+    <p class="ck-page-sub">
       Leverage sensitivity analysis — MOIC / WACC / DSCR / covenant headroom / breach probabilities — {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
@@ -371,4 +371,9 @@ def render_cap_structure(params: dict = None) -> str:
 
 </div>"""
 
-    return chartis_shell(body, "Capital Structure", active_nav="/cap-structure")
+    return chartis_shell(body, "Capital Structure", active_nav="/cap-structure",
+        editorial_intro={
+            "eyebrow": "CAP STRUCTURE",
+            "headline": "What the cap structure page reveals on this deal.",
+            "italic_word": "reveals",
+        })

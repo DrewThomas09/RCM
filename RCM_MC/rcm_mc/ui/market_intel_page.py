@@ -647,5 +647,6 @@ def render_market_intel_page(
     )
     return chartis_shell(
         body, "RCM Diligence — Market Intelligence",
+        active_nav="/market-intel",
         subtitle="Public-market + PE transaction overlay",
     )

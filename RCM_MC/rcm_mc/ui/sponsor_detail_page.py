@@ -46,7 +46,7 @@ def _input_form(qs: Dict[str, Any]) -> str:
         'style="padding:6px 8px;border:1px solid #e5e7eb;'
         'border-radius:4px;font-size:13px;width:100%;"></div>'
         '<button type="submit" '
-        'style="padding:8px 16px;background:#1F4E78;color:#fff;'
+        'style="padding:8px 16px;background:var(--sc-navy);color:#fff;'
         'border:0;border-radius:4px;font-size:13px;font-weight:500;'
         'cursor:pointer;">Run track record</button>'
         '</form>'
@@ -71,7 +71,7 @@ def _stat(label: str, big: str, sub: str = "",
         "alert":    ("#fef2f2", "#991b1b"),
         "positive": ("#f0fdf4", "#065f46"),
         "warn":     ("#fffbeb", "#92400e"),
-        "neutral":  ("#fff",    "#1F4E78"),
+        "neutral":  ("#fff",    "var(--sc-navy)"),
     }
     bg, fg = palette.get(tone, palette["neutral"])
     return (
@@ -132,7 +132,7 @@ def _vintage_bars(years_active: List[int],
         c = deal_count_per_year.get(y, 0)
         h = (c / max_count) * bar_h_max if max_count else 0
         x = i * (bar_w + gap)
-        color = "#1F4E78" if c > 0 else "#f3f4f6"
+        color = "var(--sc-navy)" if c > 0 else "#f3f4f6"
         bars.append(
             f'<rect x="{x:.1f}" y="{height - h - 12:.1f}" '
             f'width="{bar_w:.1f}" height="{h:.1f}" '
@@ -179,7 +179,7 @@ def _sector_pie(sectors_with_counts: Dict[str, int]) -> str:
             f'{_html.escape(sector)}</span>'
             f'<div style="background:#f3f4f6;border-radius:3px;'
             f'height:12px;overflow:hidden;">'
-            f'<div style="background:#1F4E78;height:100%;'
+            f'<div style="background:var(--sc-navy);height:100%;'
             f'width:{bar_w}%;"></div></div>'
             f'<span style="color:#6b7280;font-variant-numeric:'
             f'tabular-nums;text-align:right;">{count} · '
@@ -191,7 +191,10 @@ def _sector_pie(sectors_with_counts: Dict[str, int]) -> str:
 def render_sponsor_detail_page(qs: Dict[str, Any],
                                *, db_path: Optional[str] = None) -> str:
     from . import _web_components as _wc
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
     from ..data_public.deals_corpus import DealsCorpus
     from ..data_public.sponsor_track_record import (
         build_sponsor_records,
@@ -263,7 +266,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                     f'<p style="margin:0;font-size:12px;color:#6b7280;">'
                     f'For the full league table across every '
                     f'sponsor, see <a href="/sponsor-track-record" '
-                    f'style="color:#1F4E78;">/sponsor-track-record</a>.'
+                    f'style="color:var(--sc-navy);">/sponsor-track-record</a>.'
                     f'</p>'
                 )
             )
@@ -281,7 +284,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
             f'<a href="/diligence/sponsor-detail?'
             f'sponsor={_urlparse.quote(s)}" '
             f'style="display:inline-block;margin:2px 4px 2px 0;'
-            f'padding:4px 10px;background:#f0f6fc;color:#1F4E78;'
+            f'padding:4px 10px;background:#f0f6fc;color:var(--sc-navy);'
             f'border:1px solid #d0e3f0;border-radius:4px;'
             f'font-size:12px;text-decoration:none;">'
             f'{_html.escape(s)}</a>'
@@ -430,8 +433,39 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         filter_placeholder="Filter by deal name or sector…",
     )
 
+    # Cycle 49 — KPI strip with provenance.
+    sponsors_value = ck_provenance_tooltip(
+        "Sponsors in corpus",
+        ck_fmt_num(len(records)),
+        explainer=(
+            "Distinct GPs with at least one realized deal in "
+            "the corpus. Type a partial name above to find a "
+            "specific sponsor; their realized track record "
+            "appears below."
+        ),
+    )
+    deals_value = ck_provenance_tooltip(
+        "Sponsor's realized deals",
+        ck_fmt_num(len(rows)),
+        explainer=(
+            f"Number of {matched_name}'s deals in the realized "
+            f"corpus. Below ~3 deals the track record is too "
+            f"thin to support a sponsor-quality verdict; above "
+            f"~10 the distribution stabilizes."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Sponsors Tracked", sponsors_value, "in corpus")
+        + ck_kpi_block("Sponsor Deals", deals_value, "realized")
+        + '</div>'
+    )
+
     inner = (
-        header
+        ck_eyebrow("Sponsor Track Record")
+        + kpi_strip
+        + header
         + _input_form(qs)
         + _suggestions_datalist(records)
         + f'<h2 style="font-size:18px;margin:8px 0 12px;'
@@ -451,4 +485,16 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         + _wc.sortable_table_js()
     )
     return chartis_shell(body, "Sponsor track record",
-                         active_nav="/diligence/sponsor-detail")
+                         active_nav="/diligence/sponsor-detail",
+        editorial_intro={
+            "eyebrow": "SPONSOR TRACK RECORD",
+            "headline": "Where the sponsor has actually been.",
+            "italic_word": "actually",
+            "body": (
+                "Sponsor's realized-deal record across the "
+                "corpus - which sectors, what hold periods, "
+                "what MOICs. Use this to read whether the "
+                "sponsor's claimed competence is supported by "
+                "their actual exits."
+            ),
+        })

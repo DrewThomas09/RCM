@@ -224,4 +224,9 @@ def render_size_intel() -> str:
             f"ρ(size,MOIC)={corr:+.2f}"
             + (f" · best {best_bucket.label}" if best_bucket else "")
         ),
+        editorial_intro={
+            "eyebrow": "SIZE INTELLIGENCE",
+            "headline": "What the size intelligence reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

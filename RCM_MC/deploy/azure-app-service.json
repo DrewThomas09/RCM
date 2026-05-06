@@ -1,0 +1,44 @@
+[
+  {
+    "name": "CHARTIS_UI_V2",
+    "value": "1",
+    "slotSetting": false,
+    "comment": "Required: enables the editorial v5 chrome. Without it the app falls back to the legacy dark Bloomberg shell — DO NOT ship without this set."
+  },
+  {
+    "name": "RCM_MC_HOST",
+    "value": "0.0.0.0",
+    "slotSetting": false,
+    "comment": "Bind all interfaces so Azure App Service's HTTP front-end can reach the container. demo.py auto-detects WEBSITE_HOSTNAME and defaults to 0.0.0.0 even without this, but setting it explicitly is the supported path."
+  },
+  {
+    "name": "LOG_LEVEL",
+    "value": "INFO",
+    "slotSetting": false,
+    "comment": "Tune verbosity without a code deploy. Accepts DEBUG/INFO/WARNING/ERROR/CRITICAL (case-insensitive) or numeric (10/20/30/40/50). Defaults to INFO if missing or unrecognized."
+  },
+  {
+    "name": "RCM_MC_CSRF_SECRET",
+    "value": "<32+ random characters — generate with `python3 -c \"import secrets; print(secrets.token_urlsafe(48))\"`>",
+    "slotSetting": true,
+    "comment": "Persistent HMAC secret for CSRF tokens — when set, partners stay logged in across container restarts and deploys. Must be at least 32 chars; shorter values trigger a stderr warning and the ephemeral fallback. SlotSetting=true so the secret stays bound to its slot during slot swaps. ROTATE this if compromise is suspected — every existing CSRF token will invalidate."
+  },
+  {
+    "name": "RCM_MC_DB_PATH",
+    "value": "/home/data/portfolio.db",
+    "slotSetting": false,
+    "comment": "Path to the portfolio SQLite file. /home is mounted as Azure persistent storage so the file survives container restarts. The /home/data subfolder must exist (one-time mkdir during App Service setup). Without this, demo.py falls back to tempfile.mkdtemp which gets wiped on every restart."
+  },
+  {
+    "name": "WEBSITES_PORT",
+    "value": "8765",
+    "slotSetting": false,
+    "comment": "Port the App Service front-end forwards to inside the container. demo.py reads PORT then WEBSITES_PORT then 8765 default — set whichever the platform expects (Azure App Service for Containers prefers WEBSITES_PORT)."
+  },
+  {
+    "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+    "value": "true",
+    "slotSetting": false,
+    "comment": "Mount /home as persistent storage so portfolio.db survives container restarts. Required when RCM_MC_DB_PATH points under /home."
+  }
+]

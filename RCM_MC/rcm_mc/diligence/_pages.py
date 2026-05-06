@@ -30,7 +30,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from ..ui._chartis_kit import chartis_shell
+from ..ui._chartis_kit import chartis_shell, ck_page_title
 from ..ui.brand import PALETTE
 
 
@@ -55,23 +55,25 @@ AVAILABLE_FIXTURES: List[Tuple[str, str]] = [
 
 # ── Shared fragments ────────────────────────────────────────────────
 
-def _hero(title: str, sub: str) -> str:
+def _hero(title: str, sub: str, *, eyebrow: str = "RCM DILIGENCE") -> str:
+    """Editorial hero for diligence pages. Replaces the old hand-
+    rolled inline-styled block with ck_page_title + a serif lede so
+    every diligence surface reads like the rest of v5. Emits the
+    shared diligence CSS the first time it's called per render —
+    multiple calls in one render are harmless duplicates the browser
+    coalesces, but most pages only use one hero.
+    """
     return (
-        f'<div style="padding:24px 0 12px 0;">'
-        f'  <div style="font-size:11px;color:{PALETTE["text_faint"]};'
-        f'letter-spacing:.75px;text-transform:uppercase;margin-bottom:6px;">'
-        f'RCM Diligence Workspace</div>'
-        f'  <div style="font-size:20px;color:{PALETTE["text"]};font-weight:600;'
-        f'margin-bottom:8px;">{html.escape(title)}</div>'
-        f'  <div style="font-size:13px;color:{PALETTE["text_dim"]};'
-        f'max-width:720px;line-height:1.55;">{html.escape(sub)}</div>'
-        f'</div>'
+        _DILIGENCE_CSS
+        + ck_page_title(title, eyebrow=eyebrow)
+        + f'<p class="ck-diligence-lede">{html.escape(sub)}</p>'
     )
 
 
 def _fixture_selector(current_tab_route: str, current_dataset: str = "") -> str:
-    """Render a compact dropdown with every fixture. Submitting the
-    form reloads the same tab with ``?dataset=<picked>``."""
+    """Editorial fixture picker — bone-bordered select + navy → teal
+    hover Load button. Used as the dataset-gate at the top of every
+    diligence tab so the partner can drive the page without leaving."""
     options = "".join(
         f'<option value="{html.escape(name)}"'
         f'{" selected" if name == current_dataset else ""}>'
@@ -80,31 +82,82 @@ def _fixture_selector(current_tab_route: str, current_dataset: str = "") -> str:
     )
     return (
         f'<form method="GET" action="{html.escape(current_tab_route)}" '
-        f'style="display:flex;align-items:center;gap:12px;margin:16px 0;">'
-        f'<label style="font-size:11px;color:{PALETTE["text_faint"]};'
-        f'letter-spacing:.14em;text-transform:uppercase;">Dataset:</label>'
-        f'<select name="dataset" style="padding:6px 10px;'
-        f'border:1px solid {PALETTE["border"]};background:{PALETTE["panel"]};'
-        f'color:{PALETTE["text"]};font-size:12px;font-family:inherit;'
-        f'min-width:320px;">'
+        f'class="ck-diligence-fixture">'
+        f'<label class="ck-diligence-fixture-label">Dataset</label>'
+        f'<select name="dataset" class="ck-diligence-fixture-select">'
         f'<option value="">— pick a fixture —</option>{options}'
         f'</select>'
-        f'<button type="submit" style="padding:6px 14px;'
-        f'background:{PALETTE["brand_primary"]};color:{PALETTE["panel"]};'
-        f'border:0;font-size:11px;font-weight:600;letter-spacing:.08em;'
-        f'text-transform:uppercase;cursor:pointer;">Load</button>'
+        f'<button type="submit" class="ck-diligence-fixture-go">'
+        f'Load &rarr;</button>'
         f'</form>'
     )
+
+
+_DILIGENCE_CSS = """
+<style>
+  .ck-diligence-lede { font-family: var(--sc-serif, Georgia, serif);
+    font-size: 14px; line-height: 1.6; color: var(--sc-text-dim, #465366);
+    margin: 0 0 18px; max-width: 72ch; }
+  .ck-diligence-fixture { display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; margin: 0 0 22px;
+    background: #fff; border: 1px solid var(--sc-rule, #d6cfc3);
+    border-radius: 2px; box-shadow: var(--sc-shadow-1);
+    flex-wrap: wrap; }
+  .ck-diligence-fixture-label { font-family: var(--sc-mono, monospace);
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--sc-text-dim, #465366); }
+  .ck-diligence-fixture-select { padding: 7px 12px; min-width: 320px;
+    border: 1px solid var(--sc-rule, #d6cfc3); background: #fff;
+    color: var(--sc-text, #1a2332);
+    font-family: var(--sc-sans, Inter, sans-serif); font-size: 13px;
+    border-radius: 2px; }
+  .ck-diligence-fixture-select:focus { outline: none;
+    border-color: var(--sc-teal, #155752); }
+  .ck-diligence-fixture-go { padding: 7px 16px;
+    background: var(--sc-navy, #0b2341); color: #fff; border: 0;
+    font-family: var(--sc-sans, Inter, sans-serif); font-size: 11.5px;
+    font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; border-radius: 2px; }
+  .ck-diligence-fixture-go:hover { background: var(--sc-teal, #155752); }
+  .ck-diligence-info { padding: 14px 18px; margin: 0 0 18px;
+    background: #fff; border: 1px solid var(--sc-rule, #d6cfc3);
+    border-left: 3px solid var(--sc-teal, #155752); border-radius: 2px;
+    font-family: var(--sc-serif, Georgia, serif); font-size: 13.5px;
+    line-height: 1.6; color: var(--sc-text-dim, #465366);
+    max-width: 72ch; }
+  .ck-diligence-error { padding: 14px 18px; margin: 0 0 18px;
+    background: #fff; border: 1px solid var(--sc-rule, #d6cfc3);
+    border-left: 3px solid var(--sc-negative, #b5321e); border-radius: 2px; }
+  .ck-diligence-error h3 { font-family: var(--sc-mono, monospace);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--sc-negative, #b5321e);
+    margin: 0 0 6px; }
+  .ck-diligence-error p { font-family: var(--sc-mono, monospace);
+    font-size: 12px; color: var(--sc-text-dim, #465366); margin: 0;
+    word-break: break-word; }
+</style>
+"""
 
 
 def _ccd_summary_card(ccd: Any) -> str:
     """Compact one-card CCD summary: ingest_id, claim count, source
     files, content hash."""
     from .ingest.ccd import CanonicalClaimsDataset  # noqa: F401
+    # JetBrains Mono is used as a monospace fallback. The escaped
+    # quotes inside an f-string expression part trip Python 3.11 —
+    # build the font-family string once outside the f-string.
+    JBMONO = "'JetBrains Mono',monospace"
     source_list = "".join(
-        f'<li style="font-family:\'JetBrains Mono\',monospace;font-size:11px;'
+        f'<li style="font-family:{JBMONO};font-size:11px;'
         f'color:{PALETTE["text_dim"]};">{html.escape(str(f))}</li>'
         for f in (ccd.source_files or [])
+    )
+    # Pre-build the optional <ul> wrapper outside the f-string so the
+    # nested escaped quotes don't trip Python 3.11's parser.
+    source_block = (
+        '<ul style="margin:10px 0 0 20px;padding:0;">'
+        + source_list + '</ul>'
+        if source_list else ''
     )
     return (
         f'<div style="background:{PALETTE["panel"]};'
@@ -137,7 +190,7 @@ def _ccd_summary_card(ccd: Any) -> str:
         f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;'
         f'color:{PALETTE["text"]};">{html.escape(ccd.content_hash()[:12])}…</div></div>'
         f'</div>'
-        f'{("<ul style=\"margin:10px 0 0 20px;padding:0;\">" + source_list + "</ul>") if source_list else ""}'
+        f'{source_block}'
         f'</div>'
     )
 
@@ -156,21 +209,16 @@ def _resolve_dataset(dataset: str) -> Optional[Path]:
 
 def _err_panel(title: str, msg: str) -> str:
     return (
-        f'<div style="background:{PALETTE["panel"]};'
-        f'border-left:3px solid {PALETTE["negative"]};'
-        f'padding:14px 16px;margin:12px 0;">'
-        f'<div style="color:{PALETTE["negative"]};font-weight:600;'
-        f'margin-bottom:4px;">{html.escape(title)}</div>'
-        f'<div style="color:{PALETTE["text_dim"]};font-size:13px;">'
-        f'{html.escape(msg)}</div></div>'
+        '<div class="ck-diligence-error">'
+        f'<h3>{html.escape(title)}</h3>'
+        f'<p>{html.escape(msg)}</p>'
+        '</div>'
     )
 
 
 def _info_strip(text: str) -> str:
     return (
-        f'<div style="padding:10px 16px;background:{PALETTE["panel_alt"]};'
-        f'border-left:3px solid {PALETTE["accent"]};font-size:12px;'
-        f'color:{PALETTE["text_dim"]};margin:8px 0;">{html.escape(text)}</div>'
+        f'<div class="ck-diligence-info">{html.escape(text)}</div>'
     )
 
 
@@ -503,11 +551,18 @@ def _parse_mgmt_revenue(qs: dict) -> Optional[Dict[str, float]]:
 
 def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
     """Small landing rendered when no fixture was picked (or the
-    pipeline errored). Intentionally a full HTML page, not the shell,
-    to match the memo itself."""
+    pipeline errored). Wraps in chartis_shell so the partner gets
+    the editorial topbar + sub-nav + Cmd+K palette during the
+    setup step. The rendered memo itself remains a standalone
+    printable document — only this picker is editorial-chromed.
+    """
     err_block = (
-        f'<p style="color:#b23a2d;"><strong>Could not render memo:</strong> '
-        f'{html.escape(error)}</p>'
+        '<div class="cad-card" style="border-left:3px solid '
+        'var(--sc-negative,#b5321e);margin-bottom:18px;padding:14px 18px;">'
+        '<strong style="color:var(--sc-negative,#b5321e);">'
+        'Could not render memo:</strong> '
+        f'<span style="color:var(--sc-text-dim,#465366);">'
+        f'{html.escape(error)}</span></div>'
         if error else ""
     )
     options = "".join(
@@ -516,28 +571,42 @@ def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
         f'{html.escape(label)}</option>'
         for name, label in AVAILABLE_FIXTURES
     )
-    return (
-        '<!DOCTYPE html><html><head><meta charset="utf-8">'
-        '<title>QoE Memo — pick a dataset</title>'
-        '<style>body{font-family:Georgia,serif;max-width:7.5in;'
-        'margin:0 auto;padding:0.75in 0.5in;color:#1a1a1a;}'
-        'h1{color:#0b2341;}label{display:block;margin:12pt 0 4pt 0;'
-        'font-size:9pt;letter-spacing:1pt;text-transform:uppercase;'
-        'color:#6b5d3c;font-family:Helvetica,Arial,sans-serif;}'
-        'select,input{width:100%;padding:6pt;font-size:11pt;'
-        'border:1px solid #c9b98a;font-family:inherit;}'
-        'button{margin-top:18pt;padding:8pt 18pt;background:#0b2341;'
-        'color:#fff;border:0;font-size:11pt;cursor:pointer;'
-        'font-family:Helvetica,Arial,sans-serif;letter-spacing:1pt;'
-        'text-transform:uppercase;}</style></head><body>'
-        '<h1>Quality of Earnings Memorandum</h1>'
-        '<p>Pick a canonical claims dataset and (optionally) provide '
-        "management-reported revenue for the QoR reconciliation. The "
-        "memo renders as a standalone, printable HTML document. Use "
-        "your browser's <em>Print → Save as PDF</em> to produce the "
-        "partner deliverable.</p>"
+    body = (
+        '<style>'
+        '.qoe-form{max-width:560px;}'
+        '.qoe-form label{display:block;margin:14px 0 6px;'
+        'font-family:var(--sc-mono,JetBrains Mono,monospace);'
+        'font-size:11px;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
+        '.qoe-form select,.qoe-form input{width:100%;padding:9px 12px;'
+        'font-size:13.5px;border:1px solid var(--sc-rule,#d6cfc3);'
+        'background:#fff;color:var(--sc-text,#1a2332);border-radius:2px;'
+        'font-family:var(--sc-sans,Inter,sans-serif);}'
+        '.qoe-form select:focus,.qoe-form input:focus{outline:none;'
+        'border-color:var(--sc-teal,#155752);}'
+        '.qoe-form button{margin-top:24px;padding:10px 22px;'
+        'background:var(--sc-navy,#0b2341);color:#fff;border:0;'
+        'font-size:12px;cursor:pointer;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;border-radius:2px;'
+        'font-family:var(--sc-sans,Inter,sans-serif);}'
+        '.qoe-form button:hover{background:var(--sc-teal,#155752);}'
+        '.qoe-lead{font-family:var(--sc-serif,Georgia,serif);'
+        'font-size:14.5px;line-height:1.6;color:var(--sc-text-dim,#465366);'
+        'max-width:640px;margin:0 0 24px;}'
+        '</style>'
+        '<header class="ck-page-title">'
+        '<div class="ck-eyebrow">QOE MEMO</div>'
+        '<h1>Quality of Earnings <em>Memorandum</em>.</h1>'
+        '<div class="ck-page-title-meta">Phase 3 deliverable · standalone printable HTML</div>'
+        '</header>'
+        '<p class="qoe-lead">Pick a canonical claims dataset and '
+        '(optionally) provide management-reported revenue for the QoR '
+        'reconciliation. The memo renders as a standalone, printable '
+        'HTML document. Use your browser&rsquo;s <em>Print → Save as '
+        'PDF</em> to produce the partner deliverable.</p>'
         f'{err_block}'
-        '<form method="GET" action="/diligence/qoe-memo">'
+        '<div class="cad-card" style="padding:24px 28px;">'
+        '<form class="qoe-form" method="GET" action="/diligence/qoe-memo">'
         '<label>Dataset</label>'
         f'<select name="dataset"><option value="">— pick —</option>{options}</select>'
         '<label>Deal name (shown on cover)</label>'
@@ -552,8 +621,13 @@ def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
         '<input name="mgmt_cohort" placeholder="2024-03">'
         '<label>Management revenue USD (optional)</label>'
         '<input name="mgmt_value" placeholder="6850.0">'
-        '<button type="submit">Render memo</button>'
-        '</form></body></html>'
+        '<button type="submit">Render Memo &rarr;</button>'
+        '</form></div>'
+    )
+    return chartis_shell(
+        body, "QoE Memo",
+        active_nav="/diligence/qoe-memo",
+        subtitle="Pick a dataset to render the partner deliverable",
     )
 
 
@@ -758,6 +832,13 @@ def _repricer_summary(ccd: Any) -> str:
         f'</tr>'
         for pc, lev in sorted(leverage.items(), key=lambda x: -x[1])
     )
+    # Pre-build the empty-state row outside the f-string so the
+    # nested escaped quotes don't trip Python 3.11's parser.
+    empty_row = (
+        '<tr><td colspan=2 style="padding:8px 10px;font-size:11px;'
+        'color:#7a8699;">No matched claims — contract lacks rates '
+        "for this fixture's CPTs.</td></tr>"
+    )
     return (
         f'<div style="margin:16px 0;">'
         f'<div style="font-size:11px;color:{PALETTE["text_dim"]};'
@@ -774,7 +855,7 @@ def _repricer_summary(ccd: Any) -> str:
         f'<th style="padding:6px 10px;text-align:right;font-size:10px;'
         f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
         f'text-transform:uppercase;">Leverage vs Commercial</th>'
-        f'</tr></thead><tbody>{rows or "<tr><td colspan=2 style=\"padding:8px 10px;font-size:11px;color:#7a8699;\">No matched claims — contract lacks rates for this fixture's CPTs.</td></tr>"}</tbody></table>'
+        f'</tr></thead><tbody>{rows or empty_row}</tbody></table>'
         f'{_info_strip("These values drop into BridgeAssumptions.payer_revenue_leverage; the v2 bridge uses them instead of the module-level defaults.")}'
         f'</div>'
     )

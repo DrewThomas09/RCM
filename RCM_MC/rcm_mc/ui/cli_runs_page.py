@@ -33,7 +33,10 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from ..infra.run_history import list_runs
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from ._ui_kit import fmt_iso_date, fmt_num
 
 
@@ -166,8 +169,29 @@ def render_cli_runs_page(
             f'<tbody>{rows}</tbody></table>'
         )
 
+    # Cycle 49 — KPI strip + provenance.
+    runs_value = ck_provenance_tooltip(
+        "Logged CLI runs",
+        ck_fmt_num(len(runs)),
+        explainer=(
+            f"rcm-mc simulations recorded in runs.sqlite. "
+            f"Showing the most recent {min(limit, len(runs))}; "
+            f"older runs persist - bump the limit to see them. "
+            f"Each row carries SHA-256 of inputs so identical "
+            f"configs show identical hashes."
+        ),
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Logged Runs", runs_value, "in runs.sqlite")
+        + ck_kpi_block("Display Limit", ck_fmt_num(limit), "most-recent first")
+        + '</div>'
+    )
+
     body = (
-        '<section style="max-width:80rem;">'
+        ck_eyebrow("CLI Run History")
+        + kpi_strip
+        + '<section style="max-width:80rem;">'
         '<div style="display:flex;justify-content:space-between;'
         'align-items:baseline;margin-bottom:.75rem;">'
         '<h1 style="margin:0;">CLI Run History</h1>'
@@ -191,4 +215,16 @@ def render_cli_runs_page(
         body,
         "CLI Run History",
         subtitle="rcm-mc simulation log",
+        editorial_intro={
+            "eyebrow": "CLI RUN HISTORY",
+            "headline": "Where every CLI simulation lands.",
+            "italic_word": "every",
+            "body": (
+                "Per-run audit log of rcm-mc CLI simulations - "
+                "input hashes, EBITDA-drag percentiles, output "
+                "directory. Re-running with identical configs "
+                "shows the same hash pair, so you can spot "
+                "bit-for-bit reproducibility regressions."
+            ),
+        },
     )

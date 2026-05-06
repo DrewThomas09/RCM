@@ -93,11 +93,17 @@ button{margin-top:14pt;padding:8pt 20pt;background:#0b2341;color:#fff;
 
 
 def render_scan_landing() -> str:
-    return (
-        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-        "<title>Bankruptcy-Survivor Scan</title>"
+    """Landing/form page for the Bankruptcy-Survivor scan.
+
+    Wrapped in chartis_shell so the form lives inside the v5 chrome.
+    The result page (``render_scan_result`` below) is intentionally
+    standalone — see module docstring — to keep the print/PDF flow
+    clean.
+    """
+    from ._chartis_kit import chartis_shell
+
+    body = (
         f"{_style()}"
-        "</head><body>"
         "<div class='eyebrow'>Pre-screening</div>"
         "<h1>Bankruptcy-Survivor Scan</h1>"
         "<p>A 12-pattern screen against the named PE-healthcare "
@@ -145,8 +151,63 @@ def render_scan_landing() -> str:
         "<label class='form-field'>Out-of-network revenue share (0–1)</label>"
         "<input name='oon_revenue_share' type='number' step='0.01' min='0' max='1'>"
         "<button type='submit'>Run scan</button>"
-        "</form></body></html>"
+        "</form>"
     )
+    # Cycle 43 — KPI strip primitives at the top + chartis chrome.
+    from ._chartis_kit import (
+        ck_eyebrow, ck_kpi_block, ck_provenance_tooltip, ck_section_header,
+    )
+    patterns_value = ck_provenance_tooltip(
+        "Patterns in the screen",
+        "12",
+        explainer=(
+            "Twelve falsifiable bear-thesis patterns drawn from "
+            "PE-healthcare bankruptcy precedents (Steward, "
+            "Envision, Mednax). Each is a structural pattern + "
+            "case-study citation, not a verdict."
+        ),
+    )
+    case_studies_value = ck_provenance_tooltip(
+        "Case studies cited",
+        "3",
+        explainer=(
+            "Steward, Envision, Mednax. Each fired pattern cites "
+            "the named historical deal's entry EV + actual outcome "
+            "from the public-deals corpus. Use as a precedent map, "
+            "not a legal opinion."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Patterns", patterns_value, "in screen")
+        + ck_kpi_block("Case Studies", case_studies_value, "named precedents")
+        + ck_kpi_block("Severity Tiers", "3", "critical / high / med")
+        + '</div>'
+    )
+    body = (
+        ck_eyebrow("Pre-screening")
+        + ck_section_header(
+            "Bankruptcy-Survivor Scan",
+            eyebrow="STRUCTURAL PATTERNS",
+        )
+        + kpi_strip
+        + body
+    )
+    return chartis_shell(body, "Bankruptcy-Survivor Scan",
+                         subtitle="12-pattern PE-healthcare playbook screen",
+        editorial_intro={
+            "eyebrow": "BANKRUPTCY SURVIVOR",
+            "headline": "Whether the deal survives the playbook.",
+            "italic_word": "survives",
+            "body": (
+                "12 patterns drawn from PE-healthcare bankruptcies "
+                "(Steward, Envision, Mednax) — a rapid screen "
+                "against the moves that have already broken "
+                "deals. Each fired pattern is a falsifiable "
+                "claim, not a verdict."
+            ),
+        })
 
 
 def render_scan_result(scan: BankruptcySurvivorScan) -> str:
@@ -173,12 +234,12 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         f"<li>{html.escape(q)}</li>" for q in scan.diligence_questions
     ) or "<li>No structural questions generated — target profile is clean.</li>"
 
-    return (
-        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-        f"<title>Bankruptcy-Survivor Scan — {html.escape(scan.target_name)}</title>"
-        f"{_style()}</head><body>"
-        "<div class='eyebrow'>Pre-screening result</div>"
-        f"<h1>Bankruptcy-Survivor Scan</h1>"
+    # Editorial port (2026-04-29): wrap the scan result body in
+    # chartis_shell so it inherits the navy topbar + parchment palette
+    # + italic-serif headings instead of standing alone in the legacy
+    # _style() doctype.
+    from ._chartis_kit import chartis_shell, ck_kpi_block, ck_provenance_tooltip
+    body = (
         f"<p style='font-size:13pt;color:#2a2a2a;'>{html.escape(scan.target_name)}</p>"
         f"<div class='verdict' style='border-color:{color};'>"
         f"<div class='verdict-band' style='color:{color};'>"
@@ -201,5 +262,20 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         "Every case-study comparison cites the named historical deal's "
         "entry EV and outcome from the public-deals corpus.</div>"
         f"<div class='caveat'>Computed {html.escape(scan.computed_at)}.</div>"
-        "</body></html>"
+    )
+    return chartis_shell(
+        body,
+        title=f"Bankruptcy-Survivor Scan — {scan.target_name}",
+        subtitle=f"{scan.patterns_hit}/12 patterns hit · {scan.critical_hits} critical matches",
+        extra_css=_style(),
+        editorial_intro={
+            "eyebrow": "BANKRUPTCY SURVIVOR",
+            "headline": f"Whether {scan.target_name} survives the playbook.",
+            "italic_word": "survives",
+            "body": (
+                f"Verdict: {scan.verdict.value}. {copy} "
+                "Each fired pattern cites a falsifiable historical "
+                "precedent — refute or confirm before proceeding."
+            ),
+        },
     )

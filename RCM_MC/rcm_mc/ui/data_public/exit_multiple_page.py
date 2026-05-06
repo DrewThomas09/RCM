@@ -1,7 +1,9 @@
 """Exit Multiple Analysis page — /exit-multiple."""
 from __future__ import annotations
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_fmt_moic, ck_kpi_block, ck_provenance_tooltip,
+)
 
 
 _SECTORS = [
@@ -277,18 +279,40 @@ def render_exit_multiple(params: dict) -> str:
     timing_str = (f"+{r.timing_premium:.1f}x timing premium" if r.timing_premium >= 0
                   else f"{r.timing_premium:.1f}x timing drag")
 
+    base_moic_value = ck_provenance_tooltip(
+        "Base-case MOIC",
+        ck_fmt_moic(base_sc.moic),
+        explainer=(
+            "Equity multiple at the underwriting base case. "
+            "Sector P25/P50/P75 above show realized comparables - "
+            "if base MOIC is well above sector P75 the deal is "
+            "underwriting top-quartile, which the bear case has "
+            "to refute."
+        ),
+    )
+    sensitivity_value = ck_provenance_tooltip(
+        "MOIC sensitivity per turn",
+        ck_fmt_moic(r.moic_sensitivity_per_turn),
+        explainer=(
+            "Change in equity MOIC per 1x change in exit multiple. "
+            "High sensitivity = leverage-amplified deal, where the "
+            "exit-multiple assumption carries the underwriting. "
+            "Compare against the sector quartile spread above."
+        ),
+        inject_css=False,
+    )
     kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.1f}x",
-                         unit=f"EV: ${r.ev_mm:.0f}M")
+                         sub=f"EV: ${r.ev_mm:.0f}M")
     kpis += ck_kpi_block("Base Exit Multiple", f"{r.base_exit_multiple:.1f}x",
-                          unit=timing_str)
+                          sub=timing_str)
     kpis += ck_kpi_block("Sector P25/P50/P75",
                           f"{r.sector_p25:.1f}x / {r.sector_p50:.1f}x / {r.sector_p75:.1f}x")
-    kpis += ck_kpi_block("Base MOIC", f"{base_sc.moic:.2f}x",
-                          unit=f"IRR: {base_sc.irr*100:.1f}%")
-    kpis += ck_kpi_block("Bull MOIC", f"{bull_sc.moic:.2f}x",
-                          unit=f"IRR: {bull_sc.irr*100:.1f}%")
-    kpis += ck_kpi_block("MOIC/Turn Sensitivity", f"{r.moic_sensitivity_per_turn:.2f}x",
-                          unit="per 1x multiple turn")
+    kpis += ck_kpi_block("Base MOIC", base_moic_value,
+                          sub=f"IRR: {base_sc.irr*100:.1f}%")
+    kpis += ck_kpi_block("Bull MOIC", ck_fmt_moic(bull_sc.moic),
+                          sub=f"IRR: {bull_sc.irr*100:.1f}%")
+    kpis += ck_kpi_block("MOIC/Turn Sensitivity", sensitivity_value,
+                          sub="per 1x multiple turn")
 
     chart = _scenario_chart_svg(r.scenarios, r.entry_multiple)
     decomp_svg = _decomp_svg(r.decomp)
@@ -343,7 +367,19 @@ def render_exit_multiple(params: dict) -> str:
 '''
 
     return chartis_shell(
-        body=content,
+        content,
         title=f"Exit Multiple Analysis — {sector}",
         active_nav="/exit-multiple",
+        editorial_intro={
+            "eyebrow": "EXIT MULTIPLE",
+            "headline": "What the corpus actually got at exit.",
+            "italic_word": "got",
+            "body": (
+                "Realized EV/EBITDA at exit by sector, vintage, "
+                "and quartile. Anchor the deal's underwriting case "
+                "to this distribution - if the underwriting "
+                "exit assumes top-quartile, the bear case has "
+                "to be median."
+            ),
+        },
     )

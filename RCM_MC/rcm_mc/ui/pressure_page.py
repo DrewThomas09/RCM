@@ -6,7 +6,10 @@ from typing import Any, List, Optional
 
 import pandas as pd
 
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .brand import PALETTE
 
 
@@ -43,16 +46,34 @@ def render_pressure_page(
         bridge = packet.ebitda_bridge
         impact = bridge.total_ebitda_impact if bridge else 0
 
+        # Cycle 47 — provenance + ck_kpi_block.
+        risk_value = ck_provenance_tooltip(
+            "Risk flags fired",
+            ck_fmt_num(risk_count),
+            explainer=(
+                "Falsifiable risk flags fired against this deal "
+                "by the diligence engine. Critical flags block "
+                "IC; high flags need a written response in the "
+                "memo. Medium flags are watch-list items."
+            ),
+        )
+        impact_value = ck_provenance_tooltip(
+            "Pressure-test EBITDA impact",
+            f"${impact/1e6:.1f}M",
+            explainer=(
+                "Sum of EBITDA deltas under the standard pressure "
+                "scenarios applied to this deal. Negative numbers "
+                "are downside shocks; the bridge below decomposes "
+                "where the impact is concentrated."
+            ),
+            inject_css=False,
+        )
         results_html = (
-            f'<div class="cad-kpi-grid">'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">'
-            f'{html.escape(packet.deal_name or selected_deal_id)}</div>'
-            f'<div class="cad-kpi-label">Deal</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">{risk_count}</div>'
-            f'<div class="cad-kpi-label">Risk Flags</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">${impact/1e6:.1f}M</div>'
-            f'<div class="cad-kpi-label">EBITDA Impact</div></div>'
-            f'</div>'
+            '<div class="ck-kpi-grid">'
+            + ck_kpi_block("Deal", html.escape(packet.deal_name or selected_deal_id))
+            + ck_kpi_block("Risk Flags", risk_value, "fired against deal")
+            + ck_kpi_block("EBITDA Impact", impact_value, "from scenarios")
+            + '</div>'
         )
 
         if packet.risk_flags:
@@ -89,7 +110,18 @@ def render_pressure_page(
             f'style="text-decoration:none;">Denial Drivers</a></div>'
         )
 
-    body = f'{form}{results_html}'
+    body = ck_eyebrow("Pressure Test") + form + results_html
 
     subtitle = f"Pressure test: {selected_deal_id}" if selected_deal_id else "Stress scenarios with risk flags"
-    return chartis_shell(body, "Pressure Test", subtitle=subtitle)
+    return chartis_shell(body, "Pressure Test", subtitle=subtitle,
+        editorial_intro={
+            "eyebrow": "PRESSURE TEST",
+            "headline": "Where the deal cracks under shocks.",
+            "italic_word": "cracks",
+            "body": (
+                "Apply scenario shocks to the deal's bridge and "
+                "surface the risk flags that fire. The number "
+                "and severity of flags tell you how much "
+                "diligence this deal still needs before IC."
+            ),
+        })

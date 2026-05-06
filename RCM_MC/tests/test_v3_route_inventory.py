@@ -29,6 +29,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = REPO_ROOT / "RCM_MC" / "tools" / "v3_route_inventory.py"
 INVENTORY = REPO_ROOT / "docs" / "V3_ROUTE_INVENTORY.md"
+INVENTORY_V5 = REPO_ROOT / "docs" / "V5_ROUTE_INVENTORY.md"
 
 
 class V3RouteInventoryTests(unittest.TestCase):
@@ -91,6 +92,25 @@ class V3RouteInventoryTests(unittest.TestCase):
             f"header says {header_total} routes but table has "
             f"{len(rows)} rows",
         )
+
+
+class V5RouteInventoryTests(unittest.TestCase):
+    def test_v5_inventory_file_present(self) -> None:
+        self.assertTrue(
+            INVENTORY_V5.is_file(),
+            f"missing {INVENTORY_V5} — run "
+            f"`python3 RCM_MC/tools/v3_route_inventory.py --v5`",
+        )
+
+    def test_v5_inventory_has_expected_anchors(self) -> None:
+        text = INVENTORY_V5.read_text(encoding="utf-8")
+        for anchor in (
+            "# V5 Route Inventory",
+            "## Compliance summary",
+            "## Routes",
+            "| URL pattern | Match | Renderer | v5 status | Packet-driven |",
+        ):
+            self.assertIn(anchor, text, f"V5 inventory missing anchor: {anchor!r}")
 
 
 if __name__ == "__main__":

@@ -25,7 +25,10 @@ import html as _html
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..ml.feature_importance import FeatureImportance
-from ._chartis_kit import chartis_shell
+from ._chartis_kit import (
+    chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    ck_provenance_tooltip,
+)
 from .colors import STATUS
 
 
@@ -185,8 +188,42 @@ def render_feature_importance_page(
     else:
         catalog_body = render_importance_panel(model_importances)
 
+    # Cycle 47 — KPI strip + provenance.
+    n_models = len(model_importances)
+    total_features = sum(len(imps) for imps in model_importances.values())
+    models_value = ck_provenance_tooltip(
+        "Models with importance data",
+        ck_fmt_num(n_models),
+        explainer=(
+            "Trained models that have published per-feature "
+            "coefficient importance. Each model's bar chart "
+            "below ranks features by absolute coefficient "
+            "magnitude, signed by direction (positive driver "
+            "vs. negative)."
+        ),
+    )
+    features_value = ck_provenance_tooltip(
+        "Features ranked",
+        ck_fmt_num(total_features),
+        explainer=(
+            "Total feature-coefficient pairs across all models. "
+            "High counts can indicate the model is overfit on "
+            "rare-feature interactions; sparse models often "
+            "produce more durable predictions."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Models", models_value, "with importance data")
+        + ck_kpi_block("Features Ranked", features_value, "across models")
+        + '</div>'
+    )
+
     body = (
-        '<section style="max-width:80rem;">'
+        ck_eyebrow("Feature Importance")
+        + kpi_strip
+        + '<section style="max-width:80rem;">'
         '<div style="display:flex;justify-content:space-between;'
         'align-items:baseline;margin-bottom:.75rem;">'
         '<h1 style="margin:0;">Feature Importance</h1>'
@@ -208,6 +245,18 @@ def render_feature_importance_page(
         body,
         "Feature Importance",
         subtitle="trained-model coefficients",
+        editorial_intro={
+            "eyebrow": "FEATURE IMPORTANCE",
+            "headline": "What the model thinks matters most.",
+            "italic_word": "matters",
+            "body": (
+                "Trained-model coefficients ranked by absolute "
+                "magnitude, signed by direction. Bars to the right "
+                "are positive drivers; bars to the left are "
+                "negative. Use this as a sanity check before "
+                "trusting a model's predictions."
+            ),
+        },
     )
 
 

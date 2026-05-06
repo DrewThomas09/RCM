@@ -524,4 +524,15 @@ def render_portfolio_analytics(
                  f"median {fmt_multiple(sc.get('moic_p50'))} · "
                  f"HR {fmt_pct(sc.get('home_run_rate'))} · "
                  f"loss {fmt_pct(sc.get('loss_rate'))}",
+        editorial_intro={
+            "eyebrow": "PORTFOLIO ANALYTICS",
+            "headline": "Where the corpus tells you what worked.",
+            "italic_word": "worked",
+            "body": (
+                "MOIC distribution, home-run rate, and loss rate "
+                "across the full deal corpus — sliced by sector, "
+                "vintage, and exit channel so the partner can read "
+                "the pattern, not just the average."
+            ),
+        },
     )

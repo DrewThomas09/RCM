@@ -407,4 +407,9 @@ def render_deal_screening(
             ("Deals", "/deals"),
             ("Screening", None),
         ],
+        editorial_intro={
+            "eyebrow": "DEAL SCREENING",
+            "headline": "What the deal screening reveals on this deal.",
+            "italic_word": "reveals",
+        }
     )

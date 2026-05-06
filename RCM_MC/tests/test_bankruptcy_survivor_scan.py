@@ -250,7 +250,9 @@ class RenderTests(unittest.TestCase):
 
     def test_landing_renders_form(self):
         html = render_scan_landing()
-        self.assertTrue(html.startswith("<!DOCTYPE html>"))
+        # chartis_shell emits lowercase `<!doctype html>`; accept
+        # either case so the assertion survives the v5 migration.
+        self.assertTrue(html.lower().startswith("<!doctype html>"))
         self.assertIn("Bankruptcy-Survivor Scan", html)
         self.assertIn("<form", html)
         self.assertIn("target_name", html)

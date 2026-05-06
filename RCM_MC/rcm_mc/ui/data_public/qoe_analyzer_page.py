@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from typing import Dict
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_provenance_tooltip,
+)
 from rcm_mc.ui.chartis._helpers import render_page_explainer
 
 
@@ -283,21 +285,45 @@ def render_qoe_analyzer(params: dict) -> str:
     from rcm_mc.data_public.qoe_analyzer import compute_qoe_analyzer
     r = compute_qoe_analyzer(sector, ebitda_mm, ev_mm)
 
-    # KPI bar
+    # KPI bar — cycle 45 adds provenance on the QoE-debate values.
     ev_ebitda_adj = round(ev_mm / r.adjusted_ebitda_mm, 1) if r.adjusted_ebitda_mm else 0.0
+    addback_value = ck_provenance_tooltip(
+        "Total add-backs",
+        f"${r.total_addback_mm:.1f}M",
+        explainer=(
+            f"Sum of management's claimed EBITDA adjustments. "
+            f"Currently {r.addback_pct_of_reported*100:.1f}% of "
+            f"reported - corpus median is "
+            f"{r.benchmark.median_total_addback_pct*100:.1f}%. "
+            f"Above corpus P75 means the seller is leaning "
+            f"hard on adjustments."
+        ),
+    )
+    quality_value = ck_provenance_tooltip(
+        "Quality of earnings tier",
+        f'<span style="color:{r.quality_color}">{r.quality_tier}</span>',
+        explainer=(
+            "Qualitative tier (HIGH / MEDIUM / LOW) based on the "
+            "add-back composition: one-time items vs. run-rate "
+            "adjustments vs. aspirational synergies. Aspirational "
+            "components in the addback stack are the QoE red flag."
+        ),
+        inject_css=False,
+    )
     kpis = ck_kpi_block("Reported EBITDA", f"${r.reported_ebitda_mm:.1f}M")
-    kpis += ck_kpi_block("Total Add-Backs", f"${r.total_addback_mm:.1f}M",
-                         unit=f"{r.addback_pct_of_reported * 100:.1f}% of reported")
+    kpis += ck_kpi_block("Total Add-Backs", addback_value,
+                         sub=f"{r.addback_pct_of_reported * 100:.1f}% of reported")
     kpis += ck_kpi_block("Adjusted EBITDA", f"${r.adjusted_ebitda_mm:.1f}M")
     kpis += ck_kpi_block("Adj. EV/EBITDA", f"{ev_ebitda_adj:.1f}x",
-                         unit=f"Reported: {ev_mm/ebitda_mm:.1f}x")
+                         sub=f"Reported: {ev_mm/ebitda_mm:.1f}x")
     kpis += ck_kpi_block("Quality Tier",
-                         f'<span style="color:{r.quality_color}">{r.quality_tier}</span>',
-                         unit=f"{r.corpus_deal_count} corpus deals")
+                         quality_value,
+                         sub=f"{r.corpus_deal_count} corpus deals")
     kpis += ck_kpi_block("Peer Add-Back P50",
                          f"{r.benchmark.median_total_addback_pct * 100:.1f}%",
-                         unit=(f"P25: {r.benchmark.p25_total_addback_pct * 100:.1f}% / "
+                         sub=(f"P25: {r.benchmark.p25_total_addback_pct * 100:.1f}% / "
                                f"P75: {r.benchmark.p75_total_addback_pct * 100:.1f}%"))
+    # closes ck_kpi_block above
 
     waterfall = _waterfall_svg(r.breakdowns, r.reported_ebitda_mm, r.adjusted_ebitda_mm)
     moic_chart = _moic_quality_svg(r.moic_by_quality)
@@ -415,7 +441,19 @@ def render_qoe_analyzer(params: dict) -> str:
         page_key="qoe-analyzer",
     )
     return chartis_shell(
-        body=explainer + content,
+        explainer + content,
         title=f"Quality of Earnings — {sector}",
         active_nav="/qoe-analyzer",
+        editorial_intro={
+            "eyebrow": "QUALITY OF EARNINGS",
+            "headline": "What the add-backs are really hiding.",
+            "italic_word": "really",
+            "body": (
+                "Decompose management's reported EBITDA into "
+                "run-rate, one-time, and aspirational components. "
+                "The corpus benchmark tells you whether this "
+                "deal's add-back density is normal for the sector "
+                "or a red flag worth pulling on."
+            ),
+        },
     )

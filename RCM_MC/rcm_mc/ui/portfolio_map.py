@@ -44,7 +44,10 @@ def render_portfolio_map(
     con_states: Optional[Dict[str, bool]] = None,
 ) -> str:
     """Full-page HTML with an inline SVG US map + deal markers."""
-    from ._chartis_kit import chartis_shell
+    from ._chartis_kit import (
+        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+        ck_provenance_tooltip,
+    )
 
     # State background rectangles (simplified — just shade CON vs non-CON).
     state_bg = ""
@@ -122,8 +125,42 @@ def render_portfolio_map(
     css = """
     .map-wrap { max-width:960px; margin:0 auto; }
     """
+    # Cycle 46 — KPI strip + provenance + editorial chrome.
+    n_states = len({d.get("state") for d in deals if d.get("state")})
+    n_con = sum(1 for s, v in (con_states or {}).items() if v)
+    deals_value = ck_provenance_tooltip(
+        "Deals plotted",
+        ck_fmt_num(len(deals)),
+        explainer=(
+            f"Each circle is one deal positioned at the state "
+            f"centroid. Circle size encodes EBITDA opportunity; "
+            f"color encodes deal stage (pipeline / diligence / "
+            f"IC / hold / exit)."
+        ),
+    )
+    states_value = ck_provenance_tooltip(
+        "States represented",
+        ck_fmt_num(n_states),
+        explainer=(
+            f"Unique states with at least one deal in the "
+            f"portfolio. {n_con} states are flagged as "
+            f"Certificate-of-Need (CON) jurisdictions, where "
+            f"market entry is regulated."
+        ),
+        inject_css=False,
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block("Deals Mapped", deals_value, "with state data")
+        + ck_kpi_block("States", states_value, "with portfolio presence")
+        + ck_kpi_block("CON States", ck_fmt_num(n_con), "regulated entry")
+        + '</div>'
+    )
+
     body = f"""
+    {ck_eyebrow("Portfolio Map")}
     <h2>Portfolio Map</h2>
+    {kpi_strip}
     <div class="muted" style="margin-bottom:12px;">
       {len(deals)} deal(s) plotted. Circle size = EBITDA opportunity.
       Color = deal stage.
@@ -133,4 +170,16 @@ def render_portfolio_map(
     return chartis_shell(body, "Portfolio Map",
                     active_nav="/portfolio",
                     subtitle=f"{len(deals)} deals mapped",
-                    extra_css=css)
+                    extra_css=css,
+                    editorial_intro={
+                        "eyebrow": "PORTFOLIO MAP",
+                        "headline": "Where the portfolio actually is.",
+                        "italic_word": "where",
+                        "body": (
+                            "Geographic distribution of active deals. "
+                            "Use the map to read regulatory exposure "
+                            "(CON jurisdictions) and to spot "
+                            "concentration risk in single-payer "
+                            "regimes."
+                        ),
+                    })
