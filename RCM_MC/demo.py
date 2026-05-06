@@ -44,6 +44,17 @@ from rcm_mc.deals.watchlist import star_deal
 PORT = 8765
 USERNAME = "demo"
 PASSWORD = "DemoPass!1"
+# Tell the editorial /login renderer to pre-fill the form with the
+# demo creds. This is opt-in via env so production deploys (where
+# the seeded demo user may or may not exist with these credentials)
+# don't lie to partners by pre-filling values that 401.
+os.environ.setdefault("RCM_MC_DEMO_PREFILL", "1")
+# Andrew's primary partner account — added so the rendered login
+# page can show a clean, real-shaped credential pair partners can
+# read off the screen. Both accounts share role=admin so either
+# lands in the same dashboard with the same nav.
+PARTNER_USERNAME = "andrewthomas@chartis.com"
+PARTNER_PASSWORD = "ChartisDemo1"
 
 
 def seed(store: PortfolioStore, run_dir: str) -> None:

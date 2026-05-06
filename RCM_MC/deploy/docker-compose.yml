@@ -40,7 +40,25 @@ services:
       - RCM_MC_AUTH=${RCM_MC_AUTH:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - RCM_MC_PHI_MODE=${RCM_MC_PHI_MODE:-disallowed}
-      - RCM_MC_HOMEPAGE=${RCM_MC_HOMEPAGE:-dashboard}
+      # v5 editorial UI: "/" routes authenticated users to /app
+      # (the editorial Command Center). "dashboard" was the legacy
+      # default — /dashboard is the legacy chrome and is being
+      # sunsetted as the editorial pages roll out.
+      - RCM_MC_HOMEPAGE=${RCM_MC_HOMEPAGE:-app}
+      # Pin editorial UI on. Both _chartis_kit.UI_V2_ENABLED and
+      # brand._active_palette default to "1" since the v5 rollout,
+      # but setting it explicitly here makes the deploy spec
+      # self-documenting.
+      - CHARTIS_UI_V2=${CHARTIS_UI_V2:-1}
+      # pedesk.app is a partner-showcase deploy of the demo seed.
+      # Pre-fill the /login form with the demo creds (demo /
+      # DemoPass!1) so a partner can click straight through to the
+      # Command Center. The same env also gates a startup bootstrap
+      # in server.py that idempotently creates these demo users on
+      # every boot — so the pre-filled creds always work even on a
+      # fresh container. Set to "" or "0" on a real customer deploy
+      # to disable.
+      - RCM_MC_DEMO_PREFILL=${RCM_MC_DEMO_PREFILL:-1}
       - RCM_MC_SESSION_IDLE_MINUTES=${RCM_MC_SESSION_IDLE_MINUTES:-30}
     restart: unless-stopped
     logging:

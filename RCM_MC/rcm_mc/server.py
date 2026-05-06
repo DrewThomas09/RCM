@@ -16391,6 +16391,40 @@ def run_server(
                 ).fetchone() is not None
         except Exception:  # noqa: BLE001 — warning is best-effort
             _has_users = False
+        # Demo-credential bootstrap. The pedesk.app deploy persists
+        # its DB to /data/rcm and was previously bootstrapped with
+        # custom admin credentials that may have drifted. To make
+        # the partner-facing demo always log-in-able with the same
+        # creds shown on /login pre-fill, idempotently ensure the
+        # `demo` and `andrewthomas@chartis.com` users exist on every
+        # boot. Idempotent: create_user raises ValueError if the
+        # username is taken; we swallow that quietly. Existing users
+        # (custom passwords, real partner accounts, etc.) are
+        # untouched.
+        try:
+            from .auth.auth import create_user as _create_user
+            _store_b = PortfolioStore(RCMHandler.config.db_path)
+            for _u, _p, _dn in (
+                ("demo", "DemoPass!1", "Demo Partner"),
+                ("andrewthomas@chartis.com", "ChartisDemo1",
+                 "Andrew Thomas"),
+            ):
+                try:
+                    _create_user(
+                        _store_b, _u, _p,
+                        display_name=_dn, role="admin",
+                    )
+                    sys.stdout.write(
+                        f"  bootstrap:    seeded user '{_u}' (admin)\n"
+                    )
+                except ValueError:
+                    pass  # already exists — fine
+                except Exception as _bex:  # noqa: BLE001
+                    sys.stderr.write(
+                        f"  bootstrap:    skipped '{_u}' — {_bex}\n"
+                    )
+        except Exception:  # noqa: BLE001
+            pass
         _is_loopback = host in ("127.0.0.1", "localhost", "::1")
         if not _has_users and not _is_loopback:
             sys.stderr.write(
