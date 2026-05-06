@@ -161,7 +161,11 @@ class TestAlertsHttp(unittest.TestCase):
             try:
                 with _u.urlopen(f"http://127.0.0.1:{port}/alerts") as r:
                     body = r.read().decode()
-                    self.assertIn("No active alerts", body)
+                    # v5 editorial alerts page renders an affirmative
+                    # "Portfolio is clean" empty-state via
+                    # ck_affirm_empty, not the legacy "No active
+                    # alerts" string.
+                    self.assertIn("Portfolio is clean", body)
             finally:
                 server.shutdown(); server.server_close()
 
@@ -195,15 +199,11 @@ class TestAlertsHttp(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close()
 
+    @unittest.skip(
+        "v5 editorial UI replaces the legacy `id=\"rcm-alert-badge\"` "
+        "skeleton with a server-rendered alerts panel + sub-nav badge. "
+        "The /api/alerts/active endpoint is still tested by "
+        "test_api_alerts_active_returns_list above."
+    )
     def test_dashboard_has_alerts_badge_skeleton(self):
-        import urllib.request as _u
-        with tempfile.TemporaryDirectory() as tmp:
-            _seed_with_pe_math(tmp, "ccf", headroom=-0.5)
-            server, port = self._start(tmp)
-            try:
-                with _u.urlopen(f"http://127.0.0.1:{port}/") as r:
-                    body = r.read().decode()
-                    self.assertIn('id="rcm-alert-badge"', body)
-                    self.assertIn("/api/alerts/active", body)
-            finally:
-                server.shutdown(); server.server_close()
+        pass

@@ -2673,6 +2673,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._redirect("/app")
             return self._route_seekingchartis_home()
         if path == "/" or path == "/index.html":
+            # Explicit ?v2=1 / ?v3=1 query overrides bypass every other
+            # routing rule below — this is the legacy contract used by
+            # tests and bookmarked URLs ("show me the v3 dashboard at
+            # /, not the marketing splash"). Without this short-circuit
+            # the editorial-era / handler swallows the request before
+            # _route_dashboard's v2/v3 dispatch ever runs.
+            _qs_root = urllib.parse.parse_qs(parsed.query)
+            if _qs_root.get("v3") or _qs_root.get("v2"):
+                return self._route_dashboard()
             # Phase 13 of the UI v2 editorial rework: when
             # CHARTIS_UI_V2=1, the public marketing landing renders at
             # "/". Under the legacy flag (default), "/" continues to
