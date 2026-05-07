@@ -58,6 +58,18 @@ class PublicComp:
     net_debt_usd_bn: float = 0.0
     debt_to_ebitda: Optional[float] = None
     operating_margin: Optional[float] = None
+    # Reporting-basis flag — distinguishes LTM/TTM-derived figures
+    # from as-reported quarterly snapshots so the page can label
+    # each multiple correctly. Most rows in the YAML are TTM
+    # ("revenue_ttm_usd_bn", "ebitda_ttm_usd_bn") but we surface
+    # the basis explicitly to avoid the partner reading a stale
+    # quarterly figure as if it were trailing-twelve-months.
+    reporting_basis: str = "TTM"
+    # Raw multiple before any sanity-cap is applied. The ``ev_ebitda_multiple``
+    # field is the partner-displayed figure (capped for distressed REITs);
+    # this preserves the YAML value for the audit trail.
+    ev_ebitda_multiple_raw: Optional[float] = None
+    ev_ebitda_capped: bool = False
     hospitals: Optional[int] = None
     employed_physicians: Optional[int] = None
     payer_mix_commercial: Optional[float] = None
@@ -104,6 +116,10 @@ def _load() -> Dict[str, Any]:
 
 
 def list_companies() -> List[PublicComp]:
+    # Local import — keeps the public_comps module independent of the
+    # EDGAR adapter for tests that only need the dataclass schema.
+    from ..data_public.edgar_rss import cap_distressed_reit_multiple
+
     data = _load()
     out: List[PublicComp] = []
     for row in data.get("companies") or ():
@@ -132,6 +148,17 @@ def list_companies() -> List[PublicComp]:
                     if el_raw.get("reported_on") else None
                 ),
             )
+        raw_mult = float(row.get("ev_ebitda_multiple", 0))
+        capped_mult = cap_distressed_reit_multiple(
+            raw_mult,
+            row.get("debt_to_ebitda"),
+            row.get("category"),
+        )
+        was_capped = (
+            capped_mult is not None
+            and raw_mult is not None
+            and abs(float(capped_mult) - float(raw_mult)) > 1e-6
+        )
         out.append(PublicComp(
             ticker=row["ticker"], name=row["name"],
             category=row["category"],
@@ -139,11 +166,14 @@ def list_companies() -> List[PublicComp]:
             enterprise_value_usd_bn=float(row.get("enterprise_value_usd_bn", 0)),
             revenue_ttm_usd_bn=float(row.get("revenue_ttm_usd_bn", 0)),
             ebitda_ttm_usd_bn=float(row.get("ebitda_ttm_usd_bn", 0)),
-            ev_ebitda_multiple=float(row.get("ev_ebitda_multiple", 0)),
+            ev_ebitda_multiple=float(capped_mult if capped_mult is not None else raw_mult),
+            ev_ebitda_multiple_raw=raw_mult,
+            ev_ebitda_capped=was_capped,
             ev_revenue_multiple=float(row.get("ev_revenue_multiple", 0)),
             net_debt_usd_bn=float(row.get("net_debt_usd_bn", 0) or 0),
             debt_to_ebitda=row.get("debt_to_ebitda"),
             operating_margin=row.get("operating_margin"),
+            reporting_basis=str(row.get("reporting_basis", "TTM")).upper(),
             hospitals=row.get("hospitals"),
             employed_physicians=row.get("employed_physicians"),
             payer_mix_commercial=row.get("payer_mix_commercial"),

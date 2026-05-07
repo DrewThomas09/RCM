@@ -490,10 +490,23 @@ def _news_section(
 
 def _earnings_calendar_section() -> str:
     """Upcoming earnings snapshot derived from the most recent
-    earnings_latest disclosures. Each ticker's next expected
-    reporting date is heuristically estimated as last_reported +
-    90 days (standard quarterly cadence)."""
+    earnings_latest disclosures.
+
+    Each ticker's "X days ago" timestamp is computed against the
+    actual filed-on date (``earnings_latest.reported_on``), refreshed
+    against the SEC EDGAR Atom feed when available. The previous
+    implementation displayed days-from-``next_expected`` as if it were
+    days-since-reported — a Q4 2025 row dated 2026-01-29 surfaced as
+    "7d ago" on 2026-05-06 when the truthful answer was "97d ago",
+    masking the staleness of the bundled YAML.
+    """
     from datetime import date, datetime, timedelta
+
+    from ..data_public.edgar_rss import (
+        days_since_reported,
+        latest_earnings_filing,
+    )
+
     comps = list_companies()
     rows: List[Dict[str, Any]] = []
     today = date.today()
@@ -507,18 +520,37 @@ def _earnings_calendar_section() -> str:
             ).date()
         except (ValueError, TypeError):
             continue
-        # Next-quarterly estimate: 90d after last report. Real feed
-        # would replace this with consensus reporting calendar.
-        next_expected = reported + timedelta(days=90)
-        days_to = (next_expected - today).days
+
+        # If EDGAR has a fresher 10-K/10-Q, use it for the reported-on
+        # date and the staleness calculation. Falls back to the YAML
+        # when the feed is unreachable (cached on disk for 24h).
+        edgar_filing = latest_earnings_filing(c.ticker)
+        edgar_reported_on = (
+            edgar_filing.filed_on if edgar_filing and edgar_filing.filed_on else None
+        )
+        canonical_reported = edgar_reported_on or el.reported_on
+        try:
+            canonical_dt = datetime.strptime(
+                str(canonical_reported)[:10], "%Y-%m-%d",
+            ).date()
+        except (ValueError, TypeError):
+            canonical_dt = reported
+        # Days-since-actually-reported — the load-bearing fix.
+        days_ago = days_since_reported(str(canonical_dt))
+        # Next-quarterly estimate: 90d after the canonical filing.
+        next_expected = canonical_dt + timedelta(days=90)
+        days_to_next = (next_expected - today).days
         rows.append({
             "ticker": c.ticker, "name": c.name,
             "last_period": el.period,
             "last_eps_reported": el.eps_reported,
             "last_surprise_pct": el.surprise_pct,
-            "last_reported_on": el.reported_on,
+            "last_reported_on": str(canonical_dt),
+            "days_since_reported": days_ago if days_ago is not None else 0,
+            "edgar_refreshed": edgar_filing is not None,
             "next_expected": next_expected.isoformat(),
-            "days_to_next": days_to,
+            "days_to_next": days_to_next,
+            "reporting_basis": getattr(c, "reporting_basis", "TTM"),
             "analyst_consensus": (
                 c.analyst_coverage.consensus
                 if c.analyst_coverage else "—"
@@ -552,12 +584,18 @@ def _earnings_calendar_section() -> str:
                 f'<span style="color:{color};font-family:\'JetBrains Mono\',monospace;">'
                 f'{arrow} {surprise_pct*100:+.1f}%</span>'
             )
-        # Color the "days to next" by proximity — red for imminent,
-        # amber for < 14d, grey for further out, muted for past-due.
+        # Days-since-reported takes precedence over days-to-next when
+        # the most recent filing is in the past — that's the partner-
+        # relevant signal ("how stale is this print?"). The legacy
+        # branch labelled negative days_to_next as "Xd ago (reported)"
+        # using next-expected math, which under-reported staleness by
+        # 90 days for any quarter that wasn't yet refreshed.
+        days_ago = r.get("days_since_reported", 0)
         days = r["days_to_next"]
+        edgar_tag = " · EDGAR" if r.get("edgar_refreshed") else ""
         if days < 0:
             days_color = P["text_faint"]
-            days_label = f"{abs(days)}d ago (reported)"
+            days_label = f"{days_ago}d ago (reported{edgar_tag})"
         elif days <= 7:
             days_color = P["negative"]
             days_label = f"{days}d"

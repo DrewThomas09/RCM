@@ -34,17 +34,32 @@ def _load() -> Dict[str, Any]:
 
 
 def _all_items() -> List[NewsItem]:
+    # Local import keeps the module dependency-light for callers that
+    # don't load news (e.g. import-time tests of public_comps).
+    from ..data_public.edgar_rss import correct_sentiment
+
     out: List[NewsItem] = []
     for row in _load().get("items") or ():
+        title = str(row.get("title", ""))
+        summary = str(row.get("summary", ""))
+        # Sentiment correction at load time: a "positive" tag on a
+        # headline mentioning credit tightening, covenant breach,
+        # restructuring, etc. gets downgraded to "mixed". This keeps
+        # the YAML editable by curators without forcing them to
+        # re-classify every macro-affected story by hand.
+        sentiment = correct_sentiment(
+            str(row.get("sentiment", "neutral")),
+            title=title, summary=summary,
+        )
         out.append(NewsItem(
             date=str(row.get("date", "")),
-            title=str(row.get("title", "")),
+            title=title,
             source=str(row.get("source", "")),
             url=str(row.get("url", "")),
-            summary=str(row.get("summary", "")),
+            summary=summary,
             tickers=list(row.get("tickers") or ()),
             specialty=row.get("specialty"),
-            sentiment=str(row.get("sentiment", "neutral")),
+            sentiment=sentiment,
             tags=list(row.get("tags") or ()),
         ))
     # Sort newest-first.
