@@ -98,6 +98,24 @@ P = {
     "warning":  "#b8732a",
     "negative": "#b5321e",
     "critical": "#8a1e0e",
+
+    # Legacy-compatibility aliases — every page renderer in
+    # rcm_mc/ui/data_public/* and rcm_mc/ui/chartis/home_page.py
+    # references these keys directly. The v2 rework re-named them
+    # (rule, rule_2, text_faint) but left the legacy lookups unfixed,
+    # which manifested as KeyError crashes inside table renderers
+    # and the home page's Pipeline Funnel panel. Aliasing here keeps
+    # the dispatcher contract intact without rewriting every caller.
+    "border":      "#d6cfc3",   # alias of "rule"
+    "border_dim":  "#c5bdae",   # alias of "rule_2"
+    "row_stripe":  "#ece6db",   # alias of "panel_alt"
+    "accent":      "#1F4E78",   # Chartis blue from CLAUDE.md spec
+    "text_muted":  "#7a8699",   # alias of "text_faint"
+    "text_link":   "#1F4E78",   # alias of "accent"
+    "text_secondary": "#465366",  # alias of "text_dim"
+    "bg_tertiary": "#ece6db",   # alias of "panel_alt"
+    "brand_accent":"#1F4E78",   # alias of "accent"
+    "brand_primary":"#0b2341",  # alias of "navy"
 }
 
 # ---------------------------------------------------------------------------
