@@ -9,7 +9,7 @@ import html
 import importlib
 import math
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 def _load_corpus() -> List[Dict[str, Any]]:
@@ -26,6 +26,11 @@ def _load_corpus() -> List[Dict[str, Any]]:
 
 
 from rcm_mc.ui._chartis_kit import P, _MONO, _SANS, chartis_shell, ck_section_header
+from rcm_mc.data_public.sector_smoothing import (
+    bayesian_smooth,
+    realization_rate,
+    shrinkage_weight,
+)
 
 
 def _percentile(vals: List[float], p: float) -> Optional[float]:
@@ -130,48 +135,104 @@ def _irr_moic_scatter(deals: List[Dict[str, Any]], w: int = 320, h: int = 240) -
 
 
 def _sector_irr_table(corpus: List[Dict[str, Any]]) -> str:
-    sectors: Dict[str, List[float]] = defaultdict(list)
+    # Group all corpus deals by sector (not just disclosed-IRR ones)
+    # so the survivor-bias / realization-rate diagnostic can be
+    # computed honestly. The published IRR distribution still uses
+    # only the disclosed-IRR subset, but every row carries a
+    # "realized X / N (Y%)" cell so the partner sees what fraction
+    # of the sector actually surfaced returns vs how much is silent.
+    sector_deals: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     for d in corpus:
-        if d.get("sector") and d.get("realized_irr") is not None:
-            sectors[d["sector"]].append(d["realized_irr"])
+        if d.get("sector"):
+            sector_deals[d["sector"]].append(d)
 
-    rows_data = [
-        (sec, irrs) for sec, irrs in sectors.items() if len(irrs) >= 3
+    # Corpus-wide IRR prior — used for Bayesian smoothing of small-N
+    # sector quantiles. Computed on disclosed-IRR deals only since
+    # that's the population the per-sector P50 is drawn from.
+    all_disclosed_irrs = [
+        d["realized_irr"] for d in corpus if d.get("realized_irr") is not None
     ]
-    rows_data.sort(key=lambda x: -(_percentile(x[1], 50) or 0))
+    corpus_irr_p50_prior = _percentile(all_disclosed_irrs, 50)
+
+    # Tighten the publishable threshold from N≥3 to N≥5 disclosed-IRR
+    # deals — three is too few to defend a quantile in IC, and the
+    # 24% median that surfaced with N=3 thresholds was driven by
+    # noise on thin sectors. The footer notes how many sectors got
+    # suppressed under the new threshold.
+    rows_data: List[Tuple[str, List[float], List[Dict[str, Any]]]] = []
+    suppressed_low_n = 0
+    for sec, all_deals in sector_deals.items():
+        irrs = [d["realized_irr"] for d in all_deals if d.get("realized_irr") is not None]
+        if len(irrs) < 5:
+            if len(irrs) >= 1:
+                suppressed_low_n += 1
+            continue
+        rows_data.append((sec, irrs, all_deals))
+    # Sort by smoothed P50 so high-noise small-N sectors don't top
+    # the list with raw outliers.
+    rows_data.sort(
+        key=lambda x: -(
+            bayesian_smooth(_percentile(x[1], 50), len(x[1]), corpus_irr_p50_prior) or 0
+        ),
+    )
 
     rows = ""
-    for i, (sec, irrs) in enumerate(rows_data[:20]):
-        bg = P["row_stripe"] if i % 2 else P["panel"]
-        p50 = _percentile(irrs, 50)
+    for i, (sec, irrs, all_deals) in enumerate(rows_data[:20]):
+        bg = P.get("row_stripe", P.get("panel_alt", "#ece6db")) if i % 2 else P["panel"]
+        n = len(irrs)
+        raw_p50 = _percentile(irrs, 50)
         p25 = _percentile(irrs, 25)
         p75 = _percentile(irrs, 75)
+        # Smoothed P50 — pulled toward corpus prior on small N.
+        p50 = bayesian_smooth(raw_p50, n, corpus_irr_p50_prior)
+        shrink = shrinkage_weight(n) * 100
+        shrink_badge = (
+            f' <span style="font-size:8px;color:{P["text_faint"]};font-family:{_MONO};">'
+            f'(shrunk {shrink:.0f}%)</span>'
+            if shrink >= 30 else ""
+        )
         above_hurdle = sum(1 for v in irrs if v >= 0.20) / len(irrs) * 100
         col = P["positive"] if (p50 or 0) >= 0.20 else (P["warning"] if (p50 or 0) >= 0.12 else P["negative"])
+        # Survivor-bias diagnostic: realized / total in this sector.
+        realized, total, real_pct = realization_rate(all_deals)
+        real_color = (
+            P["positive"] if real_pct >= 60
+            else P["warning"] if real_pct >= 30
+            else P.get("negative", "#b5321e")
+        )
         rows += (
             f'<tr style="background:{bg}">'
             f'<td style="padding:4px 8px;font-size:11px">{html.escape(sec[:30])}</td>'
-            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{len(irrs)}</td>'
+            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{n}</td>'
+            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{real_color};font-variant-numeric:tabular-nums">{realized}/{total} ({real_pct:.0f}%)</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p25*100:.1f}%" if p25 else "—"}</td>'
-            f'<td style="padding:4px 8px;font-size:12px;font-family:{_MONO};text-align:right;font-weight:700;color:{col};font-variant-numeric:tabular-nums">{f"{p50*100:.1f}%" if p50 else "—"}</td>'
+            f'<td style="padding:4px 8px;font-size:12px;font-family:{_MONO};text-align:right;font-weight:700;color:{col};font-variant-numeric:tabular-nums">{(f"{p50*100:.1f}%" + shrink_badge) if p50 else "—"}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p75*100:.1f}%" if p75 else "—"}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{above_hurdle:.0f}%</td>'
             f'</tr>'
         )
 
-    th = f"padding:4px 8px;font-size:9px;letter-spacing:.08em;color:{P['text_dim']};font-family:{_SANS};border-bottom:1px solid {P['border']}"
-    return f"""<div style="border:1px solid {P['border']};overflow-x:auto">
+    th = f"padding:4px 8px;font-size:9px;letter-spacing:.08em;color:{P['text_dim']};font-family:{_SANS};border-bottom:1px solid {P.get('border', P.get('rule', '#d6cfc3'))}"
+    suppressed_note = (
+        f'<div style="font-size:10px;color:{P.get("warning", "#b8732a")};'
+        f'font-family:{_SANS};margin-top:6px;">'
+        f'{suppressed_low_n} sector(s) with 1–4 disclosed IRRs suppressed — '
+        f'too thin to defend a published quantile.</div>'
+        if suppressed_low_n else ""
+    )
+    return f"""<div style="border:1px solid {P.get('border', P.get('rule', '#d6cfc3'))};overflow-x:auto">
 <table style="width:100%;border-collapse:collapse">
 <thead><tr style="background:{P['panel_alt']}">
   <th style="{th}">SECTOR</th>
-  <th style="{th};text-align:right">N</th>
+  <th style="{th};text-align:right">N (IRR)</th>
+  <th style="{th};text-align:right">REALIZED</th>
   <th style="{th};text-align:right">IRR P25</th>
-  <th style="{th};text-align:right">IRR P50</th>
+  <th style="{th};text-align:right">IRR P50 (smoothed)</th>
   <th style="{th};text-align:right">IRR P75</th>
   <th style="{th};text-align:right">&gt;20% HURDLE</th>
 </tr></thead>
 <tbody>{rows}</tbody>
-</table></div>"""
+</table></div>{suppressed_note}"""
 
 
 def render_irr_dispersion() -> str:
@@ -185,20 +246,54 @@ def render_irr_dispersion() -> str:
     irr_p75 = _percentile(irrs, 75)
     above_hurdle = sum(1 for v in irrs if v >= 0.20) / len(irrs) * 100 if irrs else 0
 
+    # Survivor-bias diagnostic at the corpus level. The previous
+    # KPI strip showed only "WITH IRR DATA" — the more useful
+    # framing is "X of Y deals have a disclosed IRR (Z%)" so the
+    # partner sees up front that the displayed P50 IRR is computed
+    # against a self-selected sample. The 24% median that prompted
+    # the audit was driven by exactly this filter (winners are
+    # disclosed; failures and ongoing positions are silent).
+    realized_irr_pct = (len(has_irr) / len(corpus) * 100) if corpus else 0
+    survivor_color = (
+        P["positive"] if realized_irr_pct >= 60
+        else P["warning"] if realized_irr_pct >= 30
+        else P.get("negative", "#b5321e")
+    )
+
     kpis = "".join(
-        f'<div style="background:{P["panel_alt"]};border:1px solid {P["border"]};padding:8px 14px">'
+        f'<div style="background:{P["panel_alt"]};border:1px solid {P.get("border", P.get("rule", "#d6cfc3"))};padding:8px 14px">'
         f'<div style="font-size:9px;color:{P["text_dim"]};font-family:{_SANS};letter-spacing:.08em;margin-bottom:3px">{lbl}</div>'
         f'<div style="font-size:16px;font-family:{_MONO};font-variant-numeric:tabular-nums;color:{col}">{val}</div>'
         f'</div>'
         for lbl, val, col in [
-            ("WITH IRR DATA",    str(len(has_irr)),                              P["text"]),
-            ("IRR P25",          f"{irr_p25*100:.1f}%" if irr_p25 else "—",     P["text"]),
-            ("IRR P50",          f"{irr_p50*100:.1f}%" if irr_p50 else "—",     P["positive"] if (irr_p50 or 0) >= 0.20 else P["warning"]),
-            ("IRR P75",          f"{irr_p75*100:.1f}%" if irr_p75 else "—",     P["text"]),
-            ("≥20% HURDLE RATE", f"{above_hurdle:.0f}%",                         P["positive"] if above_hurdle >= 50 else P["warning"]),
+            ("CORPUS N",         str(len(corpus)),                                  P["text"]),
+            ("DISCLOSED IRR",    f"{len(has_irr)} ({realized_irr_pct:.0f}%)",       survivor_color),
+            ("IRR P25",          f"{irr_p25*100:.1f}%" if irr_p25 else "—",          P["text"]),
+            ("IRR P50",          f"{irr_p50*100:.1f}%" if irr_p50 else "—",          P["positive"] if (irr_p50 or 0) >= 0.20 else P["warning"]),
+            ("IRR P75",          f"{irr_p75*100:.1f}%" if irr_p75 else "—",          P["text"]),
+            ("≥20% HURDLE RATE", f"{above_hurdle:.0f}%",                              P["positive"] if above_hurdle >= 50 else P["warning"]),
         ]
     )
-    kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px">{kpis}</div>'
+    kpi_strip = f'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px">{kpis}</div>'
+
+    # Survivor-bias caveat — surfaces the structural reason behind
+    # the 24% median IRR figure flagged in the partner audit.
+    survivor_note = (
+        f'<div style="background:{P["panel_alt"]};'
+        f'border:1px solid {P.get("border", P.get("rule", "#d6cfc3"))};'
+        f'border-left:3px solid {survivor_color};'
+        f'padding:8px 14px;margin-bottom:16px;font-size:11px;'
+        f'color:{P["text_dim"]};font-family:{_SANS};line-height:1.5">'
+        f'<span style="color:{P["text"]};font-weight:600;">Survivor bias caveat:</span> '
+        f'IRR is disclosed for <b>{realized_irr_pct:.0f}%</b> of the corpus '
+        f'({len(has_irr)} of {len(corpus)} deals). The remaining {len(corpus) - len(has_irr)} deals '
+        f'are typically ongoing holds, undisclosed exits, or quietly written-down positions — '
+        f'systematically tilted toward negative outcomes. The P50 IRR shown above is computed against '
+        f'the disclosed-IRR subset only, so it over-states the true corpus-wide median by the share of '
+        f'failures excluded. Per-sector quantiles below pair every benchmark with its sector-level '
+        f'realization rate so the survivor effect is auditable.'
+        f'</div>'
+    )
 
     histogram = _irr_histogram(irrs)
     scatter = _irr_moic_scatter(has_both)
@@ -208,6 +303,7 @@ def render_irr_dispersion() -> str:
 <div style="padding:16px 20px;max-width:1200px">
   {ck_section_header("IRR DISPERSION ANALYSIS", f"Realized IRR distribution — {len(corpus)} corpus transactions", None)}
   {kpi_strip}
+  {survivor_note}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
     <div style="background:{P['panel_alt']};border:1px solid {P['border']};padding:10px">
