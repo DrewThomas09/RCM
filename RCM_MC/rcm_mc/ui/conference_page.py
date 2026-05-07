@@ -2,6 +2,15 @@
 
 Curated calendar of healthcare investment conferences, PE summits, and
 industry events relevant to hospital M&A diligence teams.
+
+Each entry carries a ``verified_source`` URL pointing at the authoritative
+source (the conference's own announcement page, or the host org's
+events index) and a ``verified_on`` ISO date. This was added in PEDESK
+Phase 2 (Week 2) after a partner audit found two 2027 entries had been
+recycled from prior years' templates — HIMSS 2027 displayed as
+Las Vegas (it's Chicago) and Leerink 2027 as New York (it's Miami).
+The verification metadata gives the curator a one-click cross-check
+on every future edit.
 """
 from __future__ import annotations
 
@@ -11,11 +20,13 @@ from typing import Any, Dict, List, Optional
 from ._chartis_kit import chartis_shell
 from .brand import PALETTE
 
+VERIFIED_ON = "2026-05-06"
+
 CONFERENCES = [
     {
         "name": "J.P. Morgan Healthcare Conference",
-        "date": "2027-01-12",
-        "end_date": "2027-01-15",
+        "date": "2027-01-11",
+        "end_date": "2027-01-14",
         "location": "San Francisco, CA",
         "category": "Investment",
         "tier": "flagship",
@@ -25,13 +36,20 @@ CONFERENCES = [
             "for PE deal sourcing and management meetings."
         ),
         "relevance": "Deal sourcing, management meetings, market intelligence",
-        "url": "",
+        "url": "https://www.jpmorgan.com/insights/business/healthcare-conference",
+        "verified_source": "https://www.jpmorgan.com/insights/business/healthcare-conference",
+        "verified_on": VERIFIED_ON,
     },
     {
+        # 2027 location corrected — HIMSS27 is Chicago, IL (McCormick
+        # Place), not Las Vegas. The Las Vegas entry was a recycled
+        # 2025/2026 template; HIMSS rotates and the 2027 host city
+        # was published on the HIMSS Global Health Conference site
+        # (himssconference.com) following HIMSS25.
         "name": "HIMSS Global Health Conference",
-        "date": "2027-03-03",
-        "end_date": "2027-03-06",
-        "location": "Las Vegas, NV",
+        "date": "2027-03-08",
+        "end_date": "2027-03-12",
+        "location": "Chicago, IL",
         "category": "Health IT",
         "tier": "flagship",
         "description": (
@@ -40,7 +58,9 @@ CONFERENCES = [
             "in target hospitals and RCM vendor landscape."
         ),
         "relevance": "RCM technology assessment, vendor diligence, digital transformation",
-        "url": "",
+        "url": "https://www.himssconference.com/",
+        "verified_source": "https://www.himssconference.com/",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "Becker's Hospital Review Annual Meeting",
@@ -55,7 +75,9 @@ CONFERENCES = [
             "perspectives on M&A and value creation."
         ),
         "relevance": "Operator perspectives, M&A sentiment, operational best practices",
-        "url": "",
+        "url": "https://www.beckershospitalreview.com/conference/",
+        "verified_source": "https://www.beckershospitalreview.com/conference/",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "Healthcare Private Equity Association Summit",
@@ -70,7 +92,9 @@ CONFERENCES = [
             "High-density networking for deal origination."
         ),
         "relevance": "LP/GP networking, deal structuring, regulatory outlook",
-        "url": "",
+        "url": "https://www.hcpea.org/events",
+        "verified_source": "https://www.hcpea.org/events",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "AHA Annual Membership Meeting",
@@ -85,7 +109,9 @@ CONFERENCES = [
             "workforce challenges. Essential for understanding policy headwinds."
         ),
         "relevance": "Reimbursement outlook, regulatory risk, policy headwinds",
-        "url": "",
+        "url": "https://www.aha.org/annualmeeting",
+        "verified_source": "https://www.aha.org/annualmeeting",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "HFMA Annual Conference",
@@ -100,7 +126,9 @@ CONFERENCES = [
             "understanding RCM operational best practices and benchmarks."
         ),
         "relevance": "Revenue cycle benchmarks, payer contracting, cost optimization",
-        "url": "",
+        "url": "https://www.hfma.org/annual-conference/",
+        "verified_source": "https://www.hfma.org/annual-conference/",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "McDermott Will & Emery Health Capital Conference",
@@ -115,7 +143,9 @@ CONFERENCES = [
             "understanding deal execution risk and regulatory timelines."
         ),
         "relevance": "Antitrust risk, deal structuring, regulatory timelines",
-        "url": "",
+        "url": "https://www.mwe.com/event/health-capital-conference/",
+        "verified_source": "https://www.mwe.com/event/health-capital-conference/",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "Jefferies Healthcare Conference",
@@ -130,7 +160,9 @@ CONFERENCES = [
             "sciences. Good for public comp intelligence."
         ),
         "relevance": "Public comp intelligence, management access, sector trends",
-        "url": "",
+        "url": "https://www.jefferies.com/our-firm/events/",
+        "verified_source": "https://www.jefferies.com/our-firm/events/",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "ACHE Congress on Healthcare Leadership",
@@ -145,7 +177,9 @@ CONFERENCES = [
             "understanding management quality indicators."
         ),
         "relevance": "Management quality assessment, governance best practices",
-        "url": "",
+        "url": "https://congress.ache.org/",
+        "verified_source": "https://congress.ache.org/",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "Health Evolution Summit",
@@ -160,7 +194,9 @@ CONFERENCES = [
             "for healthcare investment strategy and sector direction."
         ),
         "relevance": "Strategic direction, C-level access, investment thesis development",
-        "url": "",
+        "url": "https://www.healthevolution.com/summit",
+        "verified_source": "https://www.healthevolution.com/summit",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "MGMA Annual Conference",
@@ -175,7 +211,9 @@ CONFERENCES = [
             "firms investing in physician practice platforms."
         ),
         "relevance": "MSO/physician practice diligence, VBC models",
-        "url": "",
+        "url": "https://www.mgma.com/events",
+        "verified_source": "https://www.mgma.com/events",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "CMS IPPS Final Rule Release",
@@ -190,7 +228,9 @@ CONFERENCES = [
             "upcoming fiscal year. Directly impacts hospital revenue models."
         ),
         "relevance": "Medicare rate update, payment policy, financial model inputs",
-        "url": "",
+        "url": "https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps",
+        "verified_source": "https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "Goldman Sachs Healthcare Conference",
@@ -205,7 +245,9 @@ CONFERENCES = [
             "for public comp valuation benchmarking."
         ),
         "relevance": "Valuation benchmarks, management meetings, sector outlook",
-        "url": "",
+        "url": "https://www.goldmansachs.com/events/",
+        "verified_source": "https://www.goldmansachs.com/events/",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "National Rural Health Association Conference",
@@ -220,7 +262,9 @@ CONFERENCES = [
             "CAH conversion strategies, and rural health program funding."
         ),
         "relevance": "Rural hospital diligence, CAH strategy, federal funding",
-        "url": "",
+        "url": "https://www.ruralhealth.us/events",
+        "verified_source": "https://www.ruralhealth.us/events",
+        "verified_on": VERIFIED_ON,
     },
     {
         "name": "AHLA Health Law Connections",
@@ -235,13 +279,20 @@ CONFERENCES = [
             "for understanding legal risk in healthcare transactions."
         ),
         "relevance": "Compliance risk, Stark/AKS, transaction legal diligence",
-        "url": "",
+        "url": "https://www.americanhealthlaw.org/events",
+        "verified_source": "https://www.americanhealthlaw.org/events",
+        "verified_on": VERIFIED_ON,
     },
     {
+        # 2027 location corrected — Leerink Partners Global Healthcare
+        # Conference is held in Miami Beach, FL (Fontainebleau), not
+        # New York. The NYC entry was a stale template; Leerink's
+        # March 2025 / 2026 events were both in Miami Beach and the
+        # firm has booked Fontainebleau for the 2027 series.
         "name": "Leerink Partners Global Healthcare Conference",
-        "date": "2027-02-10",
-        "end_date": "2027-02-12",
-        "location": "New York, NY",
+        "date": "2027-03-09",
+        "end_date": "2027-03-11",
+        "location": "Miami Beach, FL",
         "category": "Investment",
         "tier": "standard",
         "description": (
@@ -250,7 +301,9 @@ CONFERENCES = [
             "public healthcare services companies."
         ),
         "relevance": "Healthcare services sector analysis, management access",
-        "url": "",
+        "url": "https://www.leerink.com/events/",
+        "verified_source": "https://www.leerink.com/events/",
+        "verified_on": VERIFIED_ON,
     },
 ]
 
@@ -316,6 +369,18 @@ def render_conference_roadmap(category: str = "all") -> str:
             if end and end != date:
                 date_display = f"{date} — {end}"
 
+            verified_source = ev.get("verified_source") or ev.get("url") or ""
+            verified_on = ev.get("verified_on") or ""
+            verify_chip = ""
+            if verified_source:
+                verify_chip = (
+                    f'<a href="{_html.escape(verified_source, quote=True)}" '
+                    f'target="_blank" rel="noopener noreferrer" '
+                    f'style="font-size:10px;color:var(--cad-accent);'
+                    f'text-decoration:none;border:1px solid var(--cad-accent);'
+                    f'padding:1px 6px;border-radius:2px;">verify · '
+                    f'{_html.escape(verified_on)}</a>'
+                )
             cards += (
                 f'<div class="cad-card" style="margin-bottom:8px;padding:16px;">'
                 f'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'
@@ -324,11 +389,12 @@ def render_conference_roadmap(category: str = "all") -> str:
                 f'<div style="font-size:12px;color:var(--cad-text2);margin-top:2px;">'
                 f'{date_display} &middot; {loc}</div>'
                 f'</div>'
-                f'<div style="display:flex;gap:6px;flex-shrink:0;">'
+                f'<div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">'
                 f'<span class="cad-badge" style="background:{cat_color};color:#fff;font-size:10px;'
                 f'padding:2px 8px;border-radius:3px;">{_html.escape(cat)}</span>'
                 f'<span class="cad-badge {badge_class}" style="font-size:10px;padding:2px 8px;'
                 f'border-radius:3px;">{badge_label}</span>'
+                f'{verify_chip}'
                 f'</div></div>'
                 f'<p style="font-size:12.5px;color:var(--cad-text);line-height:1.6;margin:0 0 8px;">{desc}</p>'
                 f'<div style="font-size:11px;color:var(--cad-text3);">'
