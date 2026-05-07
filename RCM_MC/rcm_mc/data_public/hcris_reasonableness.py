@@ -111,6 +111,22 @@ def _to_num(s: pd.Series) -> pd.Series:
     return pd.to_numeric(s, errors="coerce")
 
 
+def _col(df: pd.DataFrame, name: str) -> pd.Series:
+    """Return ``df[name]`` as a numeric Series aligned to ``df.index``.
+
+    When the column is absent we return an all-NaN Series sharing the
+    dataframe's index, so vectorised comparisons against other columns
+    (``medicaid_days > days * 1.01``) don't raise
+    ``ValueError: Can only compare identically-labeled Series objects``
+    on inputs that don't carry every HCRIS column. Real HCRIS data has
+    all columns populated; this defensive helper exists for partial
+    fixtures (tests, slim extracts, sparse joins).
+    """
+    if name in df.columns:
+        return _to_num(df[name])
+    return pd.Series([float("nan")] * len(df), index=df.index, dtype=float)
+
+
 def hcris_quality_flags(df: pd.DataFrame) -> pd.DataFrame:
     """Return ``df`` with ``dq_flags`` / ``dq_severity`` / ``dq_dropped`` columns.
 
@@ -123,14 +139,14 @@ def hcris_quality_flags(df: pd.DataFrame) -> pd.DataFrame:
 
     out = df.copy()
 
-    npr = _to_num(out.get("net_patient_revenue", pd.Series(dtype=float)))
-    opex = _to_num(out.get("operating_expenses", pd.Series(dtype=float)))
-    beds = _to_num(out.get("beds", pd.Series(dtype=float)))
-    days = _to_num(out.get("total_patient_days", pd.Series(dtype=float)))
-    bed_days = _to_num(out.get("bed_days_available", pd.Series(dtype=float)))
-    gpr = _to_num(out.get("gross_patient_revenue", pd.Series(dtype=float)))
-    medicare_days = _to_num(out.get("medicare_days", pd.Series(dtype=float)))
-    medicaid_days = _to_num(out.get("medicaid_days", pd.Series(dtype=float)))
+    npr = _col(out, "net_patient_revenue")
+    opex = _col(out, "operating_expenses")
+    beds = _col(out, "beds")
+    days = _col(out, "total_patient_days")
+    bed_days = _col(out, "bed_days_available")
+    gpr = _col(out, "gross_patient_revenue")
+    medicare_days = _col(out, "medicare_days")
+    medicaid_days = _col(out, "medicaid_days")
 
     # Build per-check boolean masks. ``True`` means the check fired
     # (row is suspect). NaN-safe via ``fillna(False)``.
