@@ -16,6 +16,14 @@ import pandas as pd
 
 from ._chartis_kit import chartis_shell
 from .brand import PALETTE
+from ..data_public.hcris_sot import (
+    amc_denial_rate,
+    cap_uplift_at_denied_revenue,
+    is_amc,
+    is_amc_series,
+    sot_tooltip,
+    worksheet_origin,
+)
 
 
 _REGIONS = {
@@ -41,10 +49,16 @@ def _add_features(df: pd.DataFrame) -> pd.DataFrame:
 
     if "operating_margin" not in df.columns:
         safe_rev = rev.where(rev > 1e5)
-        # Compute raw margin first, then clamp. Rows where raw margin
-        # exceeded the clamp boundary are marked data_quality_ok=False.
+        # Compute the raw margin from HCRIS Form 2552-10 Worksheet G-3
+        # Lines 3, 4, 5 directly. Rows whose raw margin falls outside
+        # the plausible band get NaN (not a -50% placeholder), so the
+        # UI renders "—" rather than a fabricated floor that misleads
+        # AMC-heavy screens. The legacy ``.clip(-0.5, 1.0)`` produced
+        # the systemic -50.0% AMC margin placeholder shipped to
+        # pedesk.app — replaced here with NaN sentinels.
         raw_margin = (safe_rev - opex) / safe_rev
-        df["operating_margin"] = raw_margin.clip(-0.5, 1.0)
+        plausible = raw_margin.between(-0.5, 1.0)
+        df["operating_margin"] = raw_margin.where(plausible)
         df["_raw_margin"] = raw_margin
 
     # Data-quality flag: conservative. False when any of:
@@ -63,6 +77,15 @@ def _add_features(df: pd.DataFrame) -> pd.DataFrame:
         dq = dq & (raw.between(-1.0, 1.0) | raw.isna())
         df = df.drop(columns=["_raw_margin"])
     df["data_quality_ok"] = dq.fillna(False)
+
+    # AMC flag — used by ``_predict_rcm_fast`` to swap in the AMC
+    # denial calibration (12% anchor) instead of the generic regression
+    # that saturates at the 25% ceiling for Medicare-heavy hospitals.
+    if "is_amc" not in df.columns:
+        df["is_amc"] = is_amc_series(
+            df.get("name", pd.Series(["" for _ in range(len(df))], index=df.index)),
+            beds,
+        )
 
     if "revenue_per_bed" not in df.columns and "beds" in df.columns:
         df["revenue_per_bed"] = rev / df["beds"].replace(0, np.nan)
@@ -107,21 +130,42 @@ def _predict_rcm_fast(row: pd.Series) -> Dict[str, float]:
 
     mc = float(row.get("medicare_day_pct") or 0.4)
     md = float(row.get("medicaid_day_pct") or 0.15)
-    margin = float(row.get("operating_margin") or 0)
+    margin_raw = row.get("operating_margin")
+    # NaN-aware margin handling — _add_features now returns NaN for
+    # rows whose raw margin clipped the -50% floor, so we can't fall
+    # back to ``or 0`` (NaN is truthy under ``or``).
+    if margin_raw is None or (isinstance(margin_raw, float) and margin_raw != margin_raw):
+        margin = 0.0
+    else:
+        margin = float(margin_raw)
     n2g = float(row.get("net_to_gross_ratio") or 0.3)
 
-    denial = 0.095 + mc * 0.15 + md * 0.20 - np.log(max(1, beds)) * 0.012 - n2g * 0.25 - margin * 0.18
-    denial = max(0.02, min(0.25, denial))
+    if bool(row.get("is_amc")):
+        # AMC-specific denial calibration anchored at 12% (CAQH/AHA
+        # benchmark for academic medical centers). The generic formula
+        # saturates at 25% for Medicare-heavy AMCs, which is wrong by
+        # roughly 2x — AMCs run dedicated denial-prevention teams and
+        # have negotiated case-rate contracts that move many claims
+        # out of the per-claim denial mechanism.
+        denial = amc_denial_rate(medicare_pct=mc, medicaid_pct=md, margin=margin)
+    else:
+        denial = 0.095 + mc * 0.15 + md * 0.20 - np.log(max(1, beds)) * 0.012 - n2g * 0.25 - margin * 0.18
+        denial = max(0.02, min(0.25, denial))
 
     ar_days = 45 + mc * 5 + md * 8 - np.log(max(1, beds)) * 3 - n2g * 10 - margin * 8
     ar_days = max(25, min(75, ar_days))
 
     denial_gap = max(0, denial - 0.05)
     margin_gap = max(0, 0.08 - margin)
-    uplift = rev * (denial_gap * 0.5 + margin_gap * 0.3) * 0.6
-    # Cap uplift at 15% of revenue — beyond that is not credible for any
-    # single-lever RCM intervention.
-    uplift = max(0, min(uplift, rev * 0.15))
+    uplift_raw = rev * (denial_gap * 0.5 + margin_gap * 0.3) * 0.6
+    # Bound the recoverable uplift by total denied revenue. Total
+    # denied revenue is ``rev * denial``; realistic recovery
+    # benchmarks (industry RCM denial-management) recover 60–75% of
+    # initial denials. cap_uplift_at_denied_revenue defaults to a 70%
+    # recovery ceiling on top of that ratio. The legacy ``rev * 0.15``
+    # cap let uplift run 3-4x above the maximum theoretically
+    # recoverable on hospitals with low denial rates.
+    uplift = cap_uplift_at_denied_revenue(uplift_raw, rev, denial)
 
     return {
         "est_denial": round(denial, 4),
@@ -270,6 +314,11 @@ def render_predictive_screener(
     )
 
     # ── Results table ──
+    rev_sot = _html.escape(sot_tooltip("net_patient_revenue"), quote=True)
+    margin_sot = _html.escape(sot_tooltip("operating_margin"), quote=True)
+    rev_origin = worksheet_origin("net_patient_revenue") or ""
+    margin_origin = worksheet_origin("operating_margin") or ""
+
     result_rows = ""
     for _, row in display.iterrows():
         ccn = str(row.get("ccn", ""))
@@ -284,13 +333,22 @@ def render_predictive_screener(
             rev = 0 if rev != rev else rev
         except (ValueError, TypeError):
             rev = 0
+        # Margin: NaN-aware. _add_features now emits NaN (not -50%) for
+        # implausible HCRIS rows, so the UI must render "—" rather than
+        # a fabricated zero or floor.
+        raw_margin = row.get("operating_margin")
+        margin_missing = False
         try:
-            margin = float(row.get("operating_margin", 0) or 0)
-            margin = 0 if margin != margin else margin
+            margin = float(raw_margin) if raw_margin is not None else float("nan")
         except (ValueError, TypeError):
-            margin = 0
-        # 5-tier heatmap for margin
-        if margin > 0.05:
+            margin = float("nan")
+        if margin != margin:  # NaN
+            margin_missing = True
+            margin = 0.0
+        # 5-tier heatmap for margin (only when present)
+        if margin_missing:
+            margin_heat = "cad-heat-na"
+        elif margin > 0.05:
             margin_heat = "cad-heat-1"
         elif margin > 0.02:
             margin_heat = "cad-heat-2"
@@ -300,6 +358,12 @@ def render_predictive_screener(
             margin_heat = "cad-heat-4"
         else:
             margin_heat = "cad-heat-5"
+        amc_flag = bool(row.get("is_amc"))
+        amc_badge = (
+            ' <span class="cad-badge cad-badge-amc" '
+            'title="Academic Medical Center — denial rate calibrated to 11–13% benchmark.">AMC</span>'
+            if amc_flag else ""
+        )
 
         try:
             denial = float(row.get("est_denial", 0) or 0)
@@ -319,17 +383,20 @@ def render_predictive_screener(
         uplift_color = "var(--cad-pos)" if uplift > 3e6 else ("var(--cad-warn)" if uplift > 1e6 else "var(--cad-text2)")
 
         raw_name = str(row.get("name", ""))[:40]
+        margin_cell = (
+            "—" if margin_missing else f"{margin:.1%}"
+        )
         result_rows += (
             f'<tr>'
             f'<td><a href="/hospital/{_html.escape(ccn)}" class="cad-ticker-id" '
             f'style="text-decoration:none;">{_html.escape(ccn)}</a></td>'
             f'<td><a href="/hospital/{_html.escape(ccn)}" '
             f'style="color:var(--cad-text);text-decoration:none;font-weight:600;">'
-            f'{name}</a></td>'
+            f'{name}</a>{amc_badge}</td>'
             f'<td>{state}</td>'
             f'<td class="num">{beds}</td>'
-            f'<td class="num">{_fm(rev)}</td>'
-            f'<td class="num {margin_heat}" style="font-weight:600;">{margin:.1%}</td>'
+            f'<td class="num" title="{rev_sot}">{_fm(rev)}</td>'
+            f'<td class="num {margin_heat}" style="font-weight:600;" title="{margin_sot}">{margin_cell}</td>'
             f'<td class="num">{denial:.1%}</td>'
             f'<td class="num" style="color:{uplift_color};font-weight:600;">'
             f'<a href="/ebitda-bridge/{_html.escape(ccn)}" '
@@ -357,8 +424,15 @@ def render_predictive_screener(
         f'Showing top {min(50, total_matches)} of {total_matches:,}</span>'
         f'</div>'
         f'<table class="cad-table crosshair"><thead><tr>'
-        f'<th>CCN</th><th>Hospital</th><th>State</th><th>Beds</th><th>Revenue</th>'
-        f'<th>Margin</th><th>Est. Denial</th><th>Est. Uplift</th><th>&nbsp;</th>'
+        f'<th>CCN</th><th>Hospital</th><th>State</th>'
+        f'<th title="{_html.escape(sot_tooltip("beds"), quote=True)}">'
+        f'Beds<br><span class="cad-sot-origin">'
+        f'{_html.escape(worksheet_origin("beds") or "")}</span></th>'
+        f'<th title="{rev_sot}">Revenue<br>'
+        f'<span class="cad-sot-origin">{_html.escape(rev_origin)}</span></th>'
+        f'<th title="{margin_sot}">Margin<br>'
+        f'<span class="cad-sot-origin">{_html.escape(margin_origin)}</span></th>'
+        f'<th>Est. Denial</th><th>Est. Uplift</th><th>&nbsp;</th>'
         f'</tr></thead><tbody>{result_rows}</tbody></table></div>'
     )
 
@@ -405,6 +479,20 @@ def render_predictive_screener(
 
     body = f'{form}{kpis}{table}{save_form}{quick}'
 
+    # Localized CSS for the Source-of-Truth overlay + AMC badge + the
+    # data-missing margin cell. Kept inline (small, scoped to this
+    # page) rather than added to the global kit so it ships only where
+    # the screener-specific patterns are used.
+    sot_css = (
+        ".cad-sot-origin{display:block;margin-top:2px;font-family:var(--cad-mono,monospace);"
+        "font-size:9px;letter-spacing:0.06em;color:var(--cad-text3,#94a3b8);"
+        "font-weight:400;text-transform:none;}"
+        ".cad-badge-amc{margin-left:6px;padding:1px 6px;font-family:var(--cad-mono,monospace);"
+        "font-size:9px;letter-spacing:0.1em;border:1px solid #1F4E78;color:#1F4E78;"
+        "border-radius:2px;text-transform:uppercase;cursor:help;}"
+        ".cad-heat-na{color:var(--cad-text3,#94a3b8);font-style:italic;}"
+    )
+
     return chartis_shell(
         body, "Predictive Deal Screener",
         active_nav="/predictive-screener",
@@ -412,4 +500,5 @@ def render_predictive_screener(
             f"{total_matches:,} matches from {len(hcris_df):,} hospitals | "
             f"ML-powered screening on public CMS data"
         ),
+        extra_css=sot_css,
     )
