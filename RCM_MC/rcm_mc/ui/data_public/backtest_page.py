@@ -829,14 +829,23 @@ def render_backtest() -> str:
         + sector_panel
     )
 
+    # Subtitle composes pieces that may be None under the Phase 3H
+    # suppression gate (model invalidated, sub-floor sample). Each
+    # field is formatted only when present so a None doesn't crash
+    # the page when the OLS pipeline correctly refuses to emit
+    # MAE/RMSE/R² for an invalidated model.
+    subtitle_parts = [f"{stats['realized_n']} realized deals"]
+    if stats.get("moic_p50") is not None:
+        subtitle_parts.append(f"P50 MOIC {stats['moic_p50']:.2f}x")
+    if stats.get("r2") is not None and stats.get("model_validated"):
+        subtitle_parts.append(f"Model R² {stats['r2']:.3f}")
+    if stats.get("mae") is not None:
+        subtitle_parts.append(f"MAE {stats['mae']:.3f}x")
+    if not stats.get("model_validated", False):
+        subtitle_parts.append("model unvalidated · predictions suppressed")
     return chartis_shell(
         body,
         title="Model Calibration / Backtest",
         active_nav="/backtest",
-        subtitle=(
-            f"{stats['realized_n']} realized deals · "
-            f"P50 MOIC {stats['moic_p50']:.2f}x · "
-            f"Model R² {stats['r2']:.3f} · "
-            f"MAE {stats['mae']:.3f}x"
-        ) if stats["r2"] is not None else f"{stats['realized_n']} realized deals",
+        subtitle=" · ".join(subtitle_parts),
     )
