@@ -244,8 +244,149 @@ def _error_histogram_svg(
 # corpus-calibrated regression buckets. No sklearn needed.
 # ---------------------------------------------------------------------------
 
+_OLS_CACHE: Optional[Dict[str, Any]] = None
+
+
+def _fit_corpus_ols(corpus: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Phase 3H — fit OLS coefficients from corpus realized deals.
+
+    The previous implementation used hand-picked coefficients
+    (``MOIC ≈ 3.2 - 0.10 × multiple + 0.12 × hold``) labelled "from
+    corpus OLS" but never actually fit to the data. Evaluating that
+    formula against realized deals produced an R² of -1.090 — the
+    "approximate" formula was worse than predicting the corpus mean.
+
+    This function does what the comment claimed: fit real OLS
+    coefficients on (entry_multiple, hold_years, commercial_pct,
+    medicare_pct, medicaid_pct) → realized_moic. Returns the
+    coefficient vector + intercept + the held-out validation R²
+    so the page footer can report it honestly. Below the
+    MIN_N_FOR_REGRESSION floor, returns a degenerate model that
+    just predicts the mean (R² = 0 by construction, never
+    negative).
+    """
+    from rcm_mc.data_public.base_rates import MIN_N_FOR_REGRESSION
+    import numpy as _np
+
+    pairs: List[Tuple[List[float], float]] = []
+    for d in corpus:
+        ev = d.get("ev_mm") or d.get("entry_ev_mm")
+        ebitda = d.get("ebitda_at_entry_mm") or d.get("ebitda_mm")
+        hold = d.get("hold_years")
+        moic = d.get("realized_moic")
+        if (ev is None or ebitda is None or hold is None
+                or moic is None or float(ebitda) <= 0):
+            continue
+        try:
+            mult = float(ev) / float(ebitda)
+            hold_y = float(hold)
+            target = float(moic)
+        except (TypeError, ValueError, ZeroDivisionError):
+            continue
+        pm = d.get("payer_mix")
+        if isinstance(pm, str):
+            try:
+                import json as _json
+                pm = _json.loads(pm)
+            except Exception:
+                pm = {}
+        if not isinstance(pm, dict):
+            pm = {}
+        comm = float(pm.get("commercial", 0) or 0)
+        med = float(pm.get("medicare", 0) or 0)
+        mcd = float(pm.get("medicaid", 0) or 0)
+        pairs.append(([mult, hold_y, comm, med, mcd], target))
+
+    n = len(pairs)
+    if n < MIN_N_FOR_REGRESSION:
+        # Degenerate model — predicts the corpus mean. R²=0 not negative.
+        mean_moic = (
+            sum(p[1] for p in pairs) / n if n > 0
+            else 1.5
+        )
+        return {
+            "coef": [0.0, 0.0, 0.0, 0.0, 0.0],
+            "intercept": mean_moic,
+            "r2_holdout": None,           # explicitly "not validated"
+            "n_train": n,
+            "n_validate": 0,
+            "validated": False,
+            "reason": (
+                f"only {n} corpus deals carry the (multiple, hold, payer-mix, MOIC) "
+                f"tuple — minimum {MIN_N_FOR_REGRESSION} required for OLS fit. "
+                f"Falling back to mean prediction; R² is not reported."
+            ),
+        }
+
+    # Deterministic 80/20 train/validate split on a hash of the index
+    X = _np.array([p[0] for p in pairs], dtype=float)
+    y = _np.array([p[1] for p in pairs], dtype=float)
+    rng = _np.random.default_rng(seed=42)
+    perm = rng.permutation(len(pairs))
+    split = int(len(pairs) * 0.8)
+    train_idx, val_idx = perm[:split], perm[split:]
+
+    X_train = _np.column_stack([_np.ones(len(train_idx)), X[train_idx]])
+    y_train = y[train_idx]
+    try:
+        beta, *_ = _np.linalg.lstsq(X_train, y_train, rcond=None)
+    except _np.linalg.LinAlgError:
+        # Singular matrix — multi-collinearity. Fall back to mean.
+        return {
+            "coef": [0.0] * 5,
+            "intercept": float(_np.mean(y)),
+            "r2_holdout": None,
+            "n_train": len(train_idx),
+            "n_validate": len(val_idx),
+            "validated": False,
+            "reason": "singular feature matrix — multi-collinearity in corpus",
+        }
+
+    intercept = float(beta[0])
+    coef = [float(c) for c in beta[1:]]
+
+    # Held-out R² — the honest predictive metric.
+    if len(val_idx):
+        X_val = X[val_idx]
+        y_val = y[val_idx]
+        y_pred = intercept + X_val @ _np.array(coef)
+        ss_res = float(_np.sum((y_val - y_pred) ** 2))
+        ss_tot = float(_np.sum((y_val - _np.mean(y_val)) ** 2))
+        r2 = (1 - ss_res / ss_tot) if ss_tot > 1e-9 else 0.0
+    else:
+        r2 = None
+
+    return {
+        "coef": coef,
+        "intercept": intercept,
+        "r2_holdout": r2,
+        "n_train": len(train_idx),
+        "n_validate": len(val_idx),
+        "validated": r2 is not None and r2 > 0.0,
+        "reason": "OLS fit to corpus realized deals" if r2 is not None and r2 > 0 else (
+            f"OLS fit produced held-out R²={r2:.3f} ≤ 0 — model performs worse "
+            f"than predicting the mean. Predictions suppressed downstream until "
+            f"feature engineering is improved."
+        ) if r2 is not None else "OLS fit but no validation fold available",
+    }
+
+
+def _get_corpus_ols(corpus: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Cached corpus OLS so the fit doesn't re-run on every page render."""
+    global _OLS_CACHE
+    if _OLS_CACHE is None:
+        _OLS_CACHE = _fit_corpus_ols(corpus)
+    return _OLS_CACHE
+
+
 def _corpus_predicted_moic(deal: Dict[str, Any]) -> Optional[float]:
-    """Rough corpus-calibrated MOIC prediction from entry characteristics."""
+    """Phase 3H — corpus-OLS-fitted MOIC prediction (was hand-coded coeffs).
+
+    Loads the OLS model lazily from ``_corpus_ols_cache`` (set by
+    callers via ``_get_corpus_ols``). When the model isn't validated
+    (R² ≤ 0 on held-out fold, or N too small), returns ``None`` so
+    no downstream consumer sees a fabricated point estimate.
+    """
     ev = deal.get("ev_mm") or deal.get("entry_ev_mm")
     ebitda = deal.get("ebitda_at_entry_mm") or deal.get("ebitda_mm")
     hold = deal.get("hold_years")
@@ -258,22 +399,23 @@ def _corpus_predicted_moic(deal: Dict[str, Any]) -> Optional[float]:
     except (TypeError, ZeroDivisionError):
         return None
 
-    # Corpus-calibrated: lower entry multiple → better realized MOIC historically
-    # Intercept and slope from corpus OLS on realized deals
-    # Approximate: MOIC ≈ 3.2 - 0.10 * multiple + 0.12 * hold_yr
-    base = 3.2 - 0.10 * multiple + 0.12 * hold_yr
+    if _OLS_CACHE is None or not _OLS_CACHE.get("validated"):
+        # Phase 3H — refuse to emit predictions when the model isn't
+        # validated. The previous implementation guessed coefficients
+        # and shipped the prediction anyway, generating R²=-1.090.
+        return None
 
-    # Payer mix adjustment: high commercial → +0.15, high gov → -0.10
     pm = deal.get("payer_mix")
-    if isinstance(pm, dict):
-        comm = pm.get("commercial", 0)
-        gov = (pm.get("medicare", 0) or 0) + (pm.get("medicaid", 0) or 0)
-        if comm >= 0.65:
-            base += 0.15
-        elif gov >= 0.65:
-            base -= 0.10
+    if not isinstance(pm, dict):
+        pm = {}
+    comm = float(pm.get("commercial", 0) or 0)
+    med = float(pm.get("medicare", 0) or 0)
+    mcd = float(pm.get("medicaid", 0) or 0)
 
-    return max(0.05, round(base, 2))
+    coef = _OLS_CACHE["coef"]
+    intercept = _OLS_CACHE["intercept"]
+    pred = intercept + coef[0] * multiple + coef[1] * hold_yr + coef[2] * comm + coef[3] * med + coef[4] * mcd
+    return max(0.05, round(pred, 2))
 
 
 # ---------------------------------------------------------------------------
@@ -290,12 +432,32 @@ def _percentile(vals: List[float], p: float) -> float:
 
 
 def _calibration_stats(deals: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Compute corpus-wide calibration statistics."""
+    """Compute corpus-wide calibration statistics.
+
+    Phase 3H — quartiles + rate metrics now respect the published-
+    sample floors (15 for quartiles + rates, 5 for the median); the
+    OLS regression is fit on a held-out 80/20 split with the
+    honest validation R² reported back. When the model isn't
+    validated (R² ≤ 0), prediction-error metrics are suppressed
+    and the partner sees an explicit "model not validated" note
+    instead of MAE/RMSE that would imply false confidence.
+    """
+    from rcm_mc.data_public.base_rates import (
+        MIN_N_FOR_QUARTILES,
+        MIN_N_FOR_MEDIAN,
+        MIN_N_FOR_RATES,
+    )
+
     realized_list = _realized(deals)
     moics = sorted([d["realized_moic"] for d in realized_list])
     irrs = sorted([d["realized_irr"] for d in realized_list if d.get("realized_irr") is not None])
+    n_moic = len(moics)
+    n_irr = len(irrs)
 
-    # Predicted vs realized pairs
+    # Fit (or load) the corpus OLS on this dataset. Only emit
+    # predictions when the model passes the held-out R² > 0 gate.
+    ols = _get_corpus_ols(deals)
+
     pairs = []
     for d in realized_list:
         pred = _corpus_predicted_moic(d)
@@ -306,28 +468,43 @@ def _calibration_stats(deals: List[Dict[str, Any]]) -> Dict[str, Any]:
     mae = sum(abs(e) for e in errors) / len(errors) if errors else None
     rmse = math.sqrt(sum(e * e for e in errors) / len(errors)) if errors else None
 
-    # R² of corpus prediction
-    if pairs:
-        r_mean = sum(r for _, r in pairs) / len(pairs)
-        ss_tot = sum((r - r_mean) ** 2 for _, r in pairs)
-        ss_res = sum((p - r) ** 2 for p, r in pairs)
-        r2 = 1 - ss_res / ss_tot if ss_tot > 1e-9 else 0.0
-    else:
-        r2 = None
+    # Use the honest held-out R² from the OLS fit, not a recomputed
+    # in-sample R² (which is what produced the misleading -1.090).
+    r2 = ols.get("r2_holdout")
+
+    # Phase 3H — quartile / median / rate gates
+    moic_p25 = _percentile(moics, 25) if n_moic >= MIN_N_FOR_QUARTILES else None
+    moic_p75 = _percentile(moics, 75) if n_moic >= MIN_N_FOR_QUARTILES else None
+    moic_p50 = _percentile(moics, 50) if n_moic >= MIN_N_FOR_MEDIAN else None
+    irr_p50 = (_percentile(irrs, 50) if n_irr >= MIN_N_FOR_MEDIAN else None) if irrs else None
+    loss_rate = (
+        sum(1 for m in moics if m < 1.0) / n_moic
+        if n_moic >= MIN_N_FOR_RATES else None
+    )
+    homerun_rate = (
+        sum(1 for m in moics if m >= 3.0) / n_moic
+        if n_moic >= MIN_N_FOR_RATES else None
+    )
 
     return {
         "total": len(deals),
-        "realized_n": len(realized_list),
-        "moic_p25": _percentile(moics, 25),
-        "moic_p50": _percentile(moics, 50),
-        "moic_p75": _percentile(moics, 75),
-        "irr_p50": _percentile(irrs, 50) if irrs else None,
-        "loss_rate": sum(1 for m in moics if m < 1.0) / len(moics) if moics else 0.0,
-        "homerun_rate": sum(1 for m in moics if m >= 3.0) / len(moics) if moics else 0.0,
+        "realized_n": n_moic,
+        "moic_p25": moic_p25,
+        "moic_p50": moic_p50,
+        "moic_p75": moic_p75,
+        "irr_p50": irr_p50,
+        "loss_rate": loss_rate,
+        "homerun_rate": homerun_rate,
+        "insufficient_quartile_sample": n_moic < MIN_N_FOR_QUARTILES,
+        "insufficient_rate_sample": n_moic < MIN_N_FOR_RATES,
         "pairs_n": len(pairs),
         "mae": round(mae, 3) if mae else None,
         "rmse": round(rmse, 3) if rmse else None,
         "r2": round(r2, 3) if r2 is not None else None,
+        "model_validated": ols.get("validated", False),
+        "model_reason": ols.get("reason", ""),
+        "model_n_train": ols.get("n_train", 0),
+        "model_n_validate": ols.get("n_validate", 0),
         "mean_error": round(sum(errors) / len(errors), 3) if errors else None,
         "pairs": pairs,
         "errors": errors,

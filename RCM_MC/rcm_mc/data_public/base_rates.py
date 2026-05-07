@@ -9,6 +9,16 @@ Why percentiles rather than means?
     (Acadia, HCA re-IPO) skew the mean upward significantly; the median
     is a more honest calibration anchor for a new deal underwriting.
 
+PEDESK Phase 3H — minimum-N gate:
+    Quartiles (P25/P75) and rate metrics (loss_rate, homerun_rate) are
+    only published when the underlying sample has at least
+    ``MIN_N_FOR_QUARTILES`` realized deals (15). Below that, the
+    percentile fields return None and the rate fields surface as
+    None — no more "67% loss probability from a sample of 3" pumped
+    downstream into Monte Carlo. The median (P50) is published from
+    N≥5 with a wider min-sample-flag because P50 is more robust to
+    sample size than the tails.
+
 Size buckets (by enterprise value — beds data rarely disclosed publicly):
     small   EV < $500M
     medium  EV $500M – $3B
@@ -39,10 +49,37 @@ from typing import Any, Dict, List, Optional, Tuple
 _SMALL_MAX  = 500.0
 _MEDIUM_MAX = 3_000.0
 
+# ---------------------------------------------------------------------------
+# Minimum-N gates for publishable statistics (Phase 3H)
+# ---------------------------------------------------------------------------
+#
+# Hard floor below which we never compute a quartile or a rate. The
+# previous code happily returned P25 / P75 / loss_rate on samples of
+# 3 deals, fuelling false-confidence headlines downstream in the
+# Monte Carlo (e.g. "this segment has a 67% loss probability based
+# on 2 of 3 deals losing money"). Below the floor, the percentile
+# fields surface as None and the rate fields surface as None — the
+# UI must display "—" or "insufficient sample" rather than print a
+# fabricated quantile.
+
+MIN_N_FOR_QUARTILES = 15      # P25 / P75 require ≥15 realized deals
+MIN_N_FOR_MEDIAN = 5          # P50 requires ≥5 realized deals
+MIN_N_FOR_RATES = 15          # loss_rate / homerun_rate require ≥15 realized
+MIN_N_FOR_REGRESSION = 30     # OLS coefficient fitting requires ≥30 paired
+
 
 @dataclass
 class Benchmarks:
-    """P25/P50/P75 statistics for a filtered deal set."""
+    """P25/P50/P75 statistics for a filtered deal set.
+
+    Phase 3H — quartile and rate fields are only populated when the
+    underlying realized-deal sample clears the published-sample
+    floors (15 for quartiles + rates, 5 for the median). Below those
+    floors the field is ``None`` and the ``insufficient_sample``
+    flag exposes WHY: ``loss_rate=None`` because ``n_with_moic=4`` is
+    fundamentally different from ``loss_rate=0.0`` because no deal
+    in the segment lost money.
+    """
 
     n_deals: int = 0
     n_with_moic: int = 0
@@ -60,6 +97,16 @@ class Benchmarks:
 
     ev_p50: Optional[float] = None
     hold_p50: Optional[float] = None
+
+    # Phase 3H rate metrics — gated by MIN_N_FOR_RATES.
+    loss_rate: Optional[float] = None         # share of MOIC < 1.0
+    homerun_rate: Optional[float] = None      # share of MOIC ≥ 3.0
+    above_hurdle_rate: Optional[float] = None # share of IRR ≥ 0.20
+
+    # Sample-floor diagnostics so the UI can render "—" + tooltip.
+    insufficient_sample_for_quartiles: bool = False
+    insufficient_sample_for_rates: bool = False
+    insufficient_sample_for_median: bool = False
 
     filters: Dict[str, Any] = field(default_factory=dict)
 
@@ -82,6 +129,14 @@ class Benchmarks:
             },
             "ev_p50": self.ev_p50,
             "hold_p50": self.hold_p50,
+            "rates": {
+                "loss_rate": self.loss_rate,
+                "homerun_rate": self.homerun_rate,
+                "above_hurdle_rate": self.above_hurdle_rate,
+            },
+            "insufficient_sample_for_quartiles": self.insufficient_sample_for_quartiles,
+            "insufficient_sample_for_rates": self.insufficient_sample_for_rates,
+            "insufficient_sample_for_median": self.insufficient_sample_for_median,
             "filters": self.filters,
         }
 
@@ -141,25 +196,68 @@ def _size_bucket(ev_mm: Optional[float]) -> str:
 
 
 def _compute_benchmarks(rows: List[sqlite3.Row], filters: Dict[str, Any]) -> Benchmarks:
+    """Phase 3H — quartiles, median, and rates are gated by sample floors.
+
+    A segment with N=3 realized deals can produce P25/P75 numerically
+    via linear interpolation, but the quartile is dominated by sample
+    noise and the resulting headline (e.g. "67% loss probability")
+    misrepresents the data. We surface ``None`` instead and let the
+    UI render an explicit "insufficient sample" indicator.
+    """
     moic_vals = [r["realized_moic"] for r in rows if r["realized_moic"] is not None]
     irr_vals  = [r["realized_irr"]  for r in rows if r["realized_irr"]  is not None]
     ev_vals   = [r["ev_mm"]         for r in rows if r["ev_mm"]          is not None]
     hold_vals = [r["hold_years"]    for r in rows if r["hold_years"]     is not None]
 
+    n_moic = len(moic_vals)
+    n_irr = len(irr_vals)
+    insufficient_quart = n_moic < MIN_N_FOR_QUARTILES
+    insufficient_median = n_moic < MIN_N_FOR_MEDIAN
+    insufficient_rates = n_moic < MIN_N_FOR_RATES
+
+    moic_p25 = _percentile(moic_vals, 25) if not insufficient_quart else None
+    moic_p75 = _percentile(moic_vals, 75) if not insufficient_quart else None
+    moic_p50 = _percentile(moic_vals, 50) if not insufficient_median else None
+    irr_p25 = _percentile(irr_vals, 25) if n_irr >= MIN_N_FOR_QUARTILES else None
+    irr_p75 = _percentile(irr_vals, 75) if n_irr >= MIN_N_FOR_QUARTILES else None
+    irr_p50 = _percentile(irr_vals, 50) if n_irr >= MIN_N_FOR_MEDIAN else None
+
+    loss_rate = (
+        sum(1 for m in moic_vals if m < 1.0) / n_moic
+        if n_moic >= MIN_N_FOR_RATES else None
+    )
+    homerun_rate = (
+        sum(1 for m in moic_vals if m >= 3.0) / n_moic
+        if n_moic >= MIN_N_FOR_RATES else None
+    )
+    above_hurdle_rate = (
+        sum(1 for v in irr_vals if v >= 0.20) / n_irr
+        if n_irr >= MIN_N_FOR_RATES else None
+    )
+
     return Benchmarks(
         n_deals     = len(rows),
-        n_with_moic = len(moic_vals),
-        n_with_irr  = len(irr_vals),
-        moic_p25    = _percentile(moic_vals, 25),
-        moic_p50    = _percentile(moic_vals, 50),
-        moic_p75    = _percentile(moic_vals, 75),
+        n_with_moic = n_moic,
+        n_with_irr  = n_irr,
+        moic_p25    = moic_p25,
+        moic_p50    = moic_p50,
+        moic_p75    = moic_p75,
+        # Mean is reported regardless of N — the partner sees ``n=3,
+        # mean=…`` and can interpret the noise themselves; the false-
+        # confidence problem is specifically with quartiles + rates.
         moic_mean   = _safe_mean(moic_vals),
-        irr_p25     = _percentile(irr_vals, 25),
-        irr_p50     = _percentile(irr_vals, 50),
-        irr_p75     = _percentile(irr_vals, 75),
+        irr_p25     = irr_p25,
+        irr_p50     = irr_p50,
+        irr_p75     = irr_p75,
         irr_mean    = _safe_mean(irr_vals),
-        ev_p50      = _percentile(ev_vals, 50),
-        hold_p50    = _percentile(hold_vals, 50),
+        ev_p50      = _percentile(ev_vals, 50) if len(ev_vals) >= MIN_N_FOR_MEDIAN else None,
+        hold_p50    = _percentile(hold_vals, 50) if len(hold_vals) >= MIN_N_FOR_MEDIAN else None,
+        loss_rate   = loss_rate,
+        homerun_rate = homerun_rate,
+        above_hurdle_rate = above_hurdle_rate,
+        insufficient_sample_for_quartiles = insufficient_quart,
+        insufficient_sample_for_median = insufficient_median,
+        insufficient_sample_for_rates = insufficient_rates,
         filters     = filters,
     )
 
