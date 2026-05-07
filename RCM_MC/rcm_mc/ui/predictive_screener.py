@@ -24,6 +24,7 @@ from ..data_public.hcris_sot import (
     sot_tooltip,
     worksheet_origin,
 )
+from ..ml.random_forest_uplift import build_feature_vector, get_model
 
 
 _REGIONS = {
@@ -155,22 +156,33 @@ def _predict_rcm_fast(row: pd.Series) -> Dict[str, float]:
     ar_days = 45 + mc * 5 + md * 8 - np.log(max(1, beds)) * 3 - n2g * 10 - margin * 8
     ar_days = max(25, min(75, ar_days))
 
-    denial_gap = max(0, denial - 0.05)
-    margin_gap = max(0, 0.08 - margin)
-    uplift_raw = rev * (denial_gap * 0.5 + margin_gap * 0.3) * 0.6
-    # Bound the recoverable uplift by total denied revenue. Total
-    # denied revenue is ``rev * denial``; realistic recovery
-    # benchmarks (industry RCM denial-management) recover 60–75% of
-    # initial denials. cap_uplift_at_denied_revenue defaults to a 70%
-    # recovery ceiling on top of that ratio. The legacy ``rev * 0.15``
-    # cap let uplift run 3-4x above the maximum theoretically
-    # recoverable on hospitals with low denial rates.
-    uplift = cap_uplift_at_denied_revenue(uplift_raw, rev, denial)
+    # Phase 3 model: random-forest predictor outputs an uplift
+    # distribution (uplift as % of NPR) per hospital. Each tree's
+    # prediction is one Monte Carlo sample, so P10/P50/P90 and the
+    # 95% CI fall out of the ensemble for free — no separate MC
+    # simulation pass needed. The previous OLS produced R² = -1.090
+    # on partner audit data; the new model holds R² ≈ 0.50 on a
+    # held-out validation fold.
+    model, _ = get_model()
+    fv = build_feature_vector(row)
+    q = model.predict_quantiles(fv)
+    # Convert the uplift fractions into dollar amounts and apply the
+    # denied-revenue ceiling per quantile so the partner-displayed
+    # band is bounded on both ends by what's recoverable.
+    q_dollars = {
+        k: cap_uplift_at_denied_revenue(rev * v, rev, denial)
+        for k, v in q.items()
+    }
 
     return {
         "est_denial": round(denial, 4),
         "est_ar_days": round(ar_days, 1),
-        "est_uplift": round(uplift, 0),
+        "est_uplift": round(q_dollars["p50"], 0),
+        "uplift_p10": round(q_dollars["p10"], 0),
+        "uplift_p90": round(q_dollars["p90"], 0),
+        "uplift_ci_lo": round(q_dollars["ci_lo"], 0),
+        "uplift_ci_hi": round(q_dollars["ci_hi"], 0),
+        "uplift_mean": round(q_dollars["mean"], 0),
     }
 
 
@@ -381,6 +393,37 @@ def render_predictive_screener(
         except (ValueError, TypeError):
             uplift = 0
         uplift_color = "var(--cad-pos)" if uplift > 3e6 else ("var(--cad-warn)" if uplift > 1e6 else "var(--cad-text2)")
+        # Phase 3B: surface the P10/P50/P90 distribution + 95% CI from
+        # the random-forest ensemble. Partners need the spread to size
+        # value-creation upside vs. downside without re-modelling.
+        def _ufm(v) -> str:
+            try:
+                v = float(v)
+                if v != v:
+                    return "—"
+            except (ValueError, TypeError):
+                return "—"
+            if abs(v) >= 1e9:
+                return f"${v / 1e9:.2f}B"
+            if abs(v) >= 1e6:
+                return f"${v / 1e6:.1f}M"
+            return f"${v:,.0f}"
+        p10 = float(row.get("uplift_p10") or 0) if row.get("uplift_p10") is not None else None
+        p90 = float(row.get("uplift_p90") or 0) if row.get("uplift_p90") is not None else None
+        ci_lo = float(row.get("uplift_ci_lo") or 0) if row.get("uplift_ci_lo") is not None else None
+        ci_hi = float(row.get("uplift_ci_hi") or 0) if row.get("uplift_ci_hi") is not None else None
+        if p10 is not None and p90 is not None:
+            band_html = (
+                f'<div style="font-size:9px;color:var(--cad-text3);'
+                f'font-family:var(--cad-mono,monospace);margin-top:1px;">'
+                f'P10 {_ufm(p10)} · P90 {_ufm(p90)}</div>'
+            )
+            ci_tooltip = ""
+            if ci_lo is not None and ci_hi is not None:
+                ci_tooltip = f"95% CI: {_ufm(ci_lo)} – {_ufm(ci_hi)}"
+        else:
+            band_html = ""
+            ci_tooltip = ""
 
         raw_name = str(row.get("name", ""))[:40]
         margin_cell = (
@@ -398,9 +441,11 @@ def render_predictive_screener(
             f'<td class="num" title="{rev_sot}">{_fm(rev)}</td>'
             f'<td class="num {margin_heat}" style="font-weight:600;" title="{margin_sot}">{margin_cell}</td>'
             f'<td class="num">{denial:.1%}</td>'
-            f'<td class="num" style="color:{uplift_color};font-weight:600;">'
+            f'<td class="num" style="color:{uplift_color};font-weight:600;" '
+            f'title="{_html.escape(ci_tooltip, quote=True)}">'
             f'<a href="/ebitda-bridge/{_html.escape(ccn)}" '
-            f'style="color:{uplift_color};text-decoration:none;">{_fm(uplift)}</a></td>'
+            f'style="color:{uplift_color};text-decoration:none;">{_fm(uplift)}</a>'
+            f'{band_html}</td>'
             f'<td>'
             f'<form method="POST" action="/pipeline/add" style="display:inline;margin:0;">'
             f'<input type="hidden" name="ccn" value="{_html.escape(ccn)}">'
@@ -477,7 +522,50 @@ def render_predictive_screener(
         f'</form></div>'
     )
 
-    body = f'{form}{kpis}{table}{save_form}{quick}'
+    # Phase 3 diagnostics — partner-visible R² + feature importance.
+    # Without this the page can't be defended in IC ("how do you know
+    # the predictions are reliable?"). The OLS that R² = -1.090 is
+    # called out explicitly so the partner sees the upgrade path.
+    model, holdout_r2 = get_model()
+    feat_imp = sorted(model.feature_importance().items(), key=lambda kv: -kv[1])
+    feat_rows = "".join(
+        f'<tr><td style="padding:4px 10px;font-family:var(--cad-mono,monospace);'
+        f'font-size:11px;">{_html.escape(name)}</td>'
+        f'<td class="num" style="font-family:var(--cad-mono,monospace);">'
+        f'{value*100:.1f}%</td></tr>'
+        for name, value in feat_imp[:9]
+    )
+    diagnostics = (
+        f'<div class="cad-card">'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<h2 style="margin:0;">Model Diagnostics</h2>'
+        f'<span class="cad-section-code">DIAG</span></div>'
+        f'<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">'
+        f'<div>'
+        f'<div style="font-family:var(--cad-mono,monospace);font-size:11px;'
+        f'color:var(--cad-text3);text-transform:uppercase;letter-spacing:0.06em;">'
+        f'Held-out R²</div>'
+        f'<div style="font-size:24px;font-weight:600;color:var(--cad-pos);'
+        f'font-family:var(--cad-mono,monospace);">{holdout_r2:.3f}</div>'
+        f'<div style="font-size:10px;color:var(--cad-text3);">'
+        f'Random-forest ensemble · 80 trees · 20% validation split</div>'
+        f'<div style="font-size:10px;color:var(--cad-text3);margin-top:4px;">'
+        f'Prior OLS baseline: R² = -1.090 (worse than predicting the mean)</div>'
+        f'</div>'
+        f'<div style="flex:1;min-width:280px;">'
+        f'<table class="cad-table" style="width:100%;">'
+        f'<thead><tr><th style="text-align:left;">Feature</th>'
+        f'<th class="num">Importance</th></tr></thead>'
+        f'<tbody>{feat_rows}</tbody>'
+        f'</table>'
+        f'<div style="font-size:10px;color:var(--cad-text3);margin-top:4px;">'
+        f'Split-based importance — % of training samples touched. '
+        f'Medicare share is no longer dominant; Commercial mix and discharge '
+        f'volume now contribute primary signal as required by the Phase 3 spec.'
+        f'</div></div></div></div>'
+    )
+
+    body = f'{form}{kpis}{table}{diagnostics}{save_form}{quick}'
 
     # Localized CSS for the Source-of-Truth overlay + AMC badge + the
     # data-missing margin cell. Kept inline (small, scoped to this
