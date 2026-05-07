@@ -3161,6 +3161,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_data_intelligence()
         if path == "/predictive-screener":
             return self._route_predictive_screener()
+        if path == "/distress":
+            return self._route_distress()
         if path.startswith("/data-room/") and not path.endswith("/add"):
             dr_ccn = path.replace("/data-room/", "").strip("/")
             return self._route_data_room(dr_ccn)
@@ -5133,6 +5135,23 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_predictive_screener(hcris, qs))
         except Exception as exc:
             return self._error_page("Screener Error", str(exc)[:200])
+
+    def _route_distress(self) -> None:
+        """GET /distress — facility-level Bankruptcy + Distress dashboard.
+
+        Deploys MERC, Altman Z' (private-firm), Days Cash on Hand,
+        and Net Days in AR against the HCRIS hospital extract and
+        produces actionable per-facility distress signals with
+        triggered alerts.
+        """
+        try:
+            from .data.hcris import _get_latest_per_ccn
+            from .ui.data_public.distress_page import render_distress
+            hcris = _get_latest_per_ccn()
+            qs = urllib.parse.urlparse(self.path).query
+            return self._send_html(render_distress(hcris, qs))
+        except Exception as exc:
+            return self._error_page("Distress Page Error", str(exc)[:200])
 
     def _route_data_room(self, ccn: str) -> None:
         """GET /data-room/{ccn} — seller data room with Bayesian calibration."""
