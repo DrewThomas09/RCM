@@ -57,7 +57,10 @@ def _add_features(df: pd.DataFrame) -> pd.DataFrame:
         # AMC-heavy screens. The legacy ``.clip(-0.5, 1.0)`` produced
         # the systemic -50.0% AMC margin placeholder shipped to
         # pedesk.app — replaced here with NaN sentinels.
-        raw_margin = (safe_rev - opex) / safe_rev
+        net_income = pd.to_numeric(df.get("net_income"), errors="coerce")
+        # Prefer direct HCRIS G-3 line math: operating margin = Ln 5 / Ln 3.
+        # Fall back to (revenue - opex) / revenue only when net_income is absent.
+        raw_margin = (net_income / safe_rev).where(net_income.notna(), (safe_rev - opex) / safe_rev)
         plausible = raw_margin.between(-0.5, 1.0)
         df["operating_margin"] = raw_margin.where(plausible)
         df["_raw_margin"] = raw_margin
@@ -429,6 +432,17 @@ def render_predictive_screener(
         margin_cell = (
             "—" if margin_missing else f"{margin:.1%}"
         )
+        rev_html = _fm(rev)
+        if rev > 0 and rev_origin:
+            rev_html += (
+                f'<div class="cad-sot-origin-inline">{_html.escape(rev_origin)}</div>'
+            )
+        margin_html = margin_cell
+        if not margin_missing and margin_origin:
+            margin_html += (
+                f'<div class="cad-sot-origin-inline">{_html.escape(margin_origin)}</div>'
+            )
+
         result_rows += (
             f'<tr>'
             f'<td><a href="/hospital/{_html.escape(ccn)}" class="cad-ticker-id" '
@@ -438,8 +452,8 @@ def render_predictive_screener(
             f'{name}</a>{amc_badge}</td>'
             f'<td>{state}</td>'
             f'<td class="num">{beds}</td>'
-            f'<td class="num" title="{rev_sot}">{_fm(rev)}</td>'
-            f'<td class="num {margin_heat}" style="font-weight:600;" title="{margin_sot}">{margin_cell}</td>'
+            f'<td class="num" title="{rev_sot}">{rev_html}</td>'
+            f'<td class="num {margin_heat}" style="font-weight:600;" title="{margin_sot}">{margin_html}</td>'
             f'<td class="num">{denial:.1%}</td>'
             f'<td class="num" style="color:{uplift_color};font-weight:600;" '
             f'title="{_html.escape(ci_tooltip, quote=True)}">'
@@ -579,6 +593,8 @@ def render_predictive_screener(
         "font-size:9px;letter-spacing:0.1em;border:1px solid #1F4E78;color:#1F4E78;"
         "border-radius:2px;text-transform:uppercase;cursor:help;}"
         ".cad-heat-na{color:var(--cad-text3,#94a3b8);font-style:italic;}"
+        ".cad-sot-origin-inline{display:block;margin-top:1px;font-family:var(--cad-mono,monospace);"
+        "font-size:8px;letter-spacing:0.05em;color:var(--cad-text3,#94a3b8);font-weight:400;}"
     )
 
     return chartis_shell(

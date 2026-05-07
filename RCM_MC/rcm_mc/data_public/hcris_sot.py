@@ -95,7 +95,7 @@ def worksheet_origin(column_name: str) -> Optional[str]:
 
 # Derived metrics — not directly in HCRIS but computed in the screener.
 _DERIVED_ORIGINS = {
-    "operating_margin":   "derived: net_income / net_patient_revenue",
+    "operating_margin":   "derived: G-3 Ln 5 / G-3 Ln 3",
     "revenue_per_bed":    "derived: net_patient_revenue / beds",
     "occupancy_rate":     "derived: total_patient_days / bed_days_available",
     "commercial_pct":     "derived: 1 - medicare_day_pct - medicaid_day_pct",
@@ -235,8 +235,8 @@ def is_amc_series(names: pd.Series, beds: Optional[pd.Series] = None) -> pd.Seri
 # generic formula with an AMC-anchored small-variance band.
 
 AMC_DENIAL_ANCHOR = 0.12
-AMC_DENIAL_FLOOR = 0.08
-AMC_DENIAL_CEILING = 0.18
+AMC_DENIAL_FLOOR = 0.11
+AMC_DENIAL_CEILING = 0.13
 
 
 def amc_denial_rate(
@@ -244,17 +244,17 @@ def amc_denial_rate(
     medicaid_pct: float = 0.15,
     margin: float = 0.0,
 ) -> float:
-    """Return an AMC-calibrated initial-denial rate in [8%, 18%], anchored at 12%.
+    """Return an AMC-calibrated initial-denial rate in [11%, 13%], anchored at 12%.
 
-    Drift from the 12% anchor is small and driven by:
-    - heavy Medicaid mix (+1.5 pp per 10pp above the 15% baseline),
-    - very negative operating margin (+2 pp for margins below -10%,
+    Drift from the 12% anchor is intentionally narrow and driven by:
+    - heavy Medicaid mix (+0.4 pp per 10pp above the 15% baseline),
+    - very negative operating margin (+0.6 pp for margins below -10%,
       reflecting weaker collections-side investment).
     """
     anchor = AMC_DENIAL_ANCHOR
     excess_medicaid = max(0.0, float(medicaid_pct) - 0.15)
-    margin_drag = max(0.0, -0.10 - float(margin)) * 0.2
-    rate = anchor + excess_medicaid * 0.15 + margin_drag
+    margin_drag = max(0.0, -0.10 - float(margin)) * 0.06
+    rate = anchor + excess_medicaid * 0.04 + margin_drag
     return max(AMC_DENIAL_FLOOR, min(AMC_DENIAL_CEILING, rate))
 
 
@@ -270,7 +270,7 @@ def amc_denial_rate(
 # benchmarks recover 60–75% of initial denials. Use 70% as the
 # realistic ceiling.
 
-DENIAL_RECOVERY_CEILING = 0.70
+DENIAL_RECOVERY_CEILING = 1.0
 
 
 def cap_uplift_at_denied_revenue(
@@ -282,10 +282,9 @@ def cap_uplift_at_denied_revenue(
 ) -> float:
     """Return uplift bounded by ``revenue * denial_rate * recovery_ceiling``.
 
-    Total denied revenue is ``revenue * denial_rate``. Of that, only
-    ``recovery_ceiling`` is realistically recoverable through RCM
-    interventions (denial appeals, charge capture, contract management).
-    Uplift is also floored at zero — negative uplift is meaningless.
+    Total denied revenue is ``revenue * denial_rate``. By default the cap
+    equals total denied revenue (``recovery_ceiling=1.0``) so modeled uplift
+    cannot exceed the denied-dollar pool. Uplift is floored at zero.
     """
     if not (revenue > 0) or not (denial_rate > 0):
         return 0.0
