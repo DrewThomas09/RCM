@@ -13,6 +13,10 @@ import pandas as pd
 
 from ._chartis_kit import chartis_shell
 from .brand import PALETTE
+from ..data_public.state_market_adjustments import (
+    merge_state_adjustments,
+    state_market_adjustments,
+)
 
 
 _STATE_ABBREVS = [
@@ -95,17 +99,28 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
     if not stats:
         return f'<p style="color:{PALETTE["text_muted"]};">No HCRIS data available.</p>'
 
+    # Note: ``invert=True`` means "higher value is worse"; the heatmap
+    # colours red→green accordingly. Medicare % was previously
+    # ``invert=True``, encoding the false assumption that high Medicare
+    # share predicts negative margin. After CMI/DSH adjustments that
+    # correlation flattens, so Medicare % is now ``invert=False``
+    # (informational, not directional). The new ``adjusted_margin``
+    # metric is the CMI + DSH-corrected operating margin and
+    # supersedes ``avg_margin`` for cross-state comparison.
     metric_labels = {
-        "avg_margin": ("Avg Margin", False),
+        "adjusted_margin": ("Adj. Margin (CMI+DSH)", False),
+        "avg_margin": ("Avg Margin (raw)", False),
         "hhi": ("HHI (Concentration)", True),
         "hospitals": ("Hospital Count", False),
         "avg_beds": ("Avg Beds", False),
-        "medicare_pct": ("Medicare %", True),
+        "cmi_proxy": ("CMI Proxy (NPR/day)", False),
+        "dsh_uplift_pct": ("DSH Uplift % NPR", False),
+        "medicare_pct": ("Medicare % (info only)", False),
         "total_revenue": ("Total Revenue", False),
     }
     label, invert = metric_labels.get(metric, ("Metric", False))
 
-    vals = [s[metric] for s in stats if metric in s]
+    vals = [s[metric] for s in stats if metric in s and s.get(metric) is not None]
     lo, hi = (min(vals), max(vals)) if vals else (0, 1)
 
     # Metric selector
@@ -120,19 +135,24 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
 
     rows = ""
     for s in stats[:30]:
-        val = s.get(metric, 0)
-        bg = _heatmap_color(val, lo, hi, invert)
-
-        if metric == "avg_margin":
-            fmt_val = f"{val:.1%}"
-        elif metric == "total_revenue":
-            fmt_val = f"${val / 1e9:.1f}B"
-        elif metric in ("medicare_pct", "medicaid_pct", "commercial_pct"):
-            fmt_val = f"{val:.0%}"
-        elif metric == "hhi":
-            fmt_val = f"{val:,.0f}"
+        val = s.get(metric)
+        if val is None:
+            fmt_val = "—"
+            bg = PALETTE.get("text_muted", "#94a3b8")
         else:
-            fmt_val = f"{val:,.0f}"
+            bg = _heatmap_color(val, lo, hi, invert)
+            if metric in ("avg_margin", "adjusted_margin"):
+                fmt_val = f"{val:.1%}"
+            elif metric == "total_revenue":
+                fmt_val = f"${val / 1e9:.1f}B"
+            elif metric in ("medicare_pct", "medicaid_pct", "commercial_pct", "dsh_uplift_pct"):
+                fmt_val = f"{val:.0%}" if metric != "dsh_uplift_pct" else f"{val:.1%}"
+            elif metric == "cmi_proxy":
+                fmt_val = f"{val:.2f}"
+            elif metric == "hhi":
+                fmt_val = f"{val:,.0f}"
+            else:
+                fmt_val = f"{val:,.0f}"
 
         conc_label = "Concentrated" if s["hhi"] > 2500 else ("Moderate" if s["hhi"] > 1500 else "Competitive")
         conc_cls = "cad-badge-red" if s["hhi"] > 2500 else ("cad-badge-amber" if s["hhi"] > 1500 else "cad-badge-green")
@@ -284,6 +304,12 @@ def render_market_data(
             hcris_df = pd.DataFrame()
 
     all_stats = _compute_state_stats(hcris_df) if not hcris_df.empty else []
+    # Merge in CMI / DSH / teaching-vs-community adjustments so
+    # heatmap renderers can colour the corrected margin instead of
+    # the raw operating margin (which conflates Medicare share with
+    # margin and obscures cross-payer subsidisation).
+    adjustments = state_market_adjustments(hcris_df) if not hcris_df.empty else {}
+    all_stats = merge_state_adjustments(all_stats, adjustments)
     # Filter to 50 states + DC for the main view (exclude territories like GU, VI, AS, MP, PR)
     us_states = set(_STATE_ABBREVS) | {"DC"}
     stats = [s for s in all_stats if s["state"] in us_states]
@@ -365,26 +391,57 @@ def render_market_data(
         f'in states with high uncompensated care.</p></div>'
     ) if stats else ""
 
-    # Medicare concentration
-    high_med = sorted(stats, key=lambda s: -s["medicare_pct"])[:5]
-    med_rows = ""
-    for s in high_med:
-        med_rows += (
-            f'<tr><td><a href="/market-data/state/{s["state"]}">{s["state"]}</a></td>'
-            f'<td class="num">{s["medicare_pct"]:.0%}</td>'
-            f'<td class="num">{s["medicaid_pct"]:.0%}</td>'
-            f'<td class="num">{s["commercial_pct"]:.0%}</td>'
-            f'<td class="num">{s["avg_margin"]:.1%}</td></tr>'
+    # Teaching-vs-community margin split — replaces the misleading
+    # "Highest Medicare Dependency" panel that implied Medicare share
+    # predicts margin. After CMI + DSH adjustments, the relationship
+    # is mostly mediated by case-mix acuity and supplemental
+    # payments, not raw Medicare share.
+    def _fmt_pct(v: Optional[float]) -> str:
+        return "—" if v is None else f"{v:.1%}"
+
+    split_candidates = [
+        s for s in stats
+        if s.get("teaching_count") and s.get("community_count")
+        and s.get("teaching_avg_margin") is not None
+        and s.get("community_avg_margin") is not None
+    ]
+    split_candidates.sort(key=lambda s: -(s.get("teaching_count") or 0))
+    split_rows = ""
+    for s in split_candidates[:10]:
+        delta = (s["teaching_avg_margin"] or 0) - (s["community_avg_margin"] or 0)
+        delta_color = (
+            PALETTE["positive"] if delta > 0
+            else PALETTE["negative"] if delta < 0
+            else PALETTE.get("text_secondary", "#94a3b8")
+        )
+        split_rows += (
+            f'<tr>'
+            f'<td><a href="/market-data/state/{s["state"]}">{s["state"]}</a></td>'
+            f'<td class="num">{s["teaching_count"]}</td>'
+            f'<td class="num">{_fmt_pct(s["teaching_avg_margin"])}</td>'
+            f'<td class="num">{s["community_count"]}</td>'
+            f'<td class="num">{_fmt_pct(s["community_avg_margin"])}</td>'
+            f'<td class="num" style="color:{delta_color};">{delta:+.1%}</td>'
+            f'<td class="num">{s.get("cmi_proxy") or 1.0:.2f}</td>'
+            f'<td class="num">{_fmt_pct(s.get("dsh_uplift_pct") or 0)}</td>'
+            f'</tr>'
         )
     payer_section = (
         f'<div class="cad-card">'
-        f'<h2>Highest Medicare Dependency</h2>'
+        f'<h2>Teaching vs Community: Margin Decomposition</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:8px;">'
-        f'Most exposed to CMS rate changes.</p>'
+        f'Medicare share is informational, not a margin driver after CMI / DSH adjustments. '
+        f'CMI proxy = NPR-per-day normalised against the national $4,500 median '
+        f'(higher = higher acuity). DSH uplift estimates supplemental payments above the '
+        f'20% Medicaid-mix qualifying threshold.</p>'
         f'<table class="cad-table"><thead><tr>'
-        f'<th>State</th><th>Medicare</th><th>Medicaid</th><th>Commercial</th><th>Margin</th>'
-        f'</tr></thead><tbody>{med_rows}</tbody></table></div>'
-    ) if med_rows else ""
+        f'<th>State</th>'
+        f'<th>Teaching N</th><th>Teaching Margin</th>'
+        f'<th>Community N</th><th>Community Margin</th>'
+        f'<th>Δ (T − C)</th>'
+        f'<th>CMI</th><th>DSH</th>'
+        f'</tr></thead><tbody>{split_rows}</tbody></table></div>'
+    ) if split_rows else ""
 
     body = (
         f'{kpi_section}'
