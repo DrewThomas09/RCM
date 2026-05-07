@@ -23,7 +23,38 @@ from __future__ import annotations
 
 import html as _html
 import os
+import re as _re
 from typing import Iterable, Mapping, Optional, Sequence
+
+# ---------------------------------------------------------------------------
+# Backend HTML-tag sanitizer (PEDESK Phase 1, Week 1).
+# ---------------------------------------------------------------------------
+#
+# Page renderers historically pre-wrapped numeric values in styled markup
+# (e.g. f'<span class="mn neg">{loss_pct}</span>') and passed the wrapped
+# string into ck_kpi_block. The v2 contract html-escapes that argument,
+# so the angle brackets surfaced as literal text in the Library / Research
+# / Portfolio / Backtest tabs of pedesk.app.
+#
+# The fix is a single chokepoint: every value that flows into a ck_*
+# primitive gets stripped of every HTML tag here, so the helper only
+# ever sees raw text/numbers. Visual formatting belongs to the parent
+# container's CSS class (.ck-kpi-value.sc-num, .ck-table .sc-num, etc.),
+# never to injected HTML strings on the data path.
+_HTML_TAG_RE = _re.compile(r"<[^>]*>")
+
+
+def ck_sanitize_value(value: object) -> str:
+    """Strip every HTML tag from a data value before it reaches the DOM.
+
+    Use this at any backend → response boundary where the payload may
+    have been built by a renderer that mixed raw markup into numeric
+    fields. The output is plain text (no angle brackets, no entities
+    introduced) and is safe to feed into html.escape().
+    """
+    if value is None:
+        return ""
+    return _HTML_TAG_RE.sub("", str(value))
 
 # ---------------------------------------------------------------------------
 # Feature flag — set CHARTIS_UI_V2=0 to fall back to the legacy dark shell.
@@ -139,24 +170,43 @@ def _esc(x) -> str:
 
 
 def ck_panel(body_html: str, *, title: Optional[str] = None, code: Optional[str] = None) -> str:
-    """White panel with navy header strip and optional [CODE] tag."""
+    """White panel with navy header strip and optional [CODE] tag.
+
+    ``body_html`` is treated as authored markup and passed through
+    untouched — it is the panel's content area and is built by the
+    surrounding renderer. ``title`` and ``code`` are data labels: they
+    are sanitized + escaped because they regularly come from upstream
+    formatters that may have wrapped a value in <span> markup.
+    """
     head = ""
     if title or code:
-        head = (
-            '<div class="ck-panel-head">'
-            f'<div class="ck-panel-title">{_esc(title) if title else ""}</div>'
-            f'{"<div class=\"ck-panel-code\">[" + _esc(code) + "]</div>" if code else ""}'
-            "</div>"
-        )
+        title_html = f'<div class="ck-panel-title">{_esc(ck_sanitize_value(title))}</div>' if title else '<div class="ck-panel-title"></div>'
+        code_html = f'<div class="ck-panel-code">[{_esc(ck_sanitize_value(code))}]</div>' if code else ""
+        head = f'<div class="ck-panel-head">{title_html}{code_html}</div>'
     return f'<section class="ck-panel">{head}<div class="ck-panel-body">{body_html}</div></section>'
 
 
-def ck_section_header(title: str, *, eyebrow: Optional[str] = None, code: Optional[str] = None) -> str:
-    eb = f'<div class="sc-eyebrow">{_esc(eyebrow)}</div>' if eyebrow else ""
-    cd = f'<div class="ck-section-code">[{_esc(code)}]</div>' if code else ""
+def ck_section_header(
+    title: str,
+    eyebrow: Optional[str] = None,
+    count: Optional[int] = None,
+    *,
+    code: Optional[str] = None,
+) -> str:
+    """Render a section header.
+
+    Positional contract preserves the legacy ``(title, subtitle, count)``
+    shape; v2 had renamed ``subtitle`` to ``eyebrow`` and made it
+    keyword-only, which broke every existing call site under
+    CHARTIS_UI_V2=1. ``count`` is rendered as a small badge after the
+    title.
+    """
+    eb = f'<div class="sc-eyebrow">{_esc(ck_sanitize_value(eyebrow))}</div>' if eyebrow else ""
+    cd = f'<div class="ck-section-code">[{_esc(ck_sanitize_value(code))}]</div>' if code else ""
+    cnt = f'<span class="ck-section-count">{int(count)}</span>' if count is not None else ""
     return (
         '<header class="ck-section-header">'
-        f'{eb}<h2 class="sc-h2">{_esc(title)}</h2>{cd}'
+        f'{eb}<h2 class="sc-h2">{_esc(ck_sanitize_value(title))}{cnt}</h2>{cd}'
         "</header>"
     )
 
@@ -166,14 +216,23 @@ def ck_table(
     columns: Sequence[Mapping[str, str]],
     *,
     dense: bool = False,
+    caption: str = "",
+    sortable: bool = False,
+    id: str = "ck-tbl",
 ) -> str:
     """Emit a Bloomberg-density table with tabular-nums numerics.
 
     ``columns`` is a list of ``{"key": "ebitda", "label": "EBITDA",
     "align": "right", "kind": "currency"}`` dicts. ``kind`` is optional
     and hints at cell formatting.
+
+    The legacy kit accepted ``caption``, ``sortable``, and ``id`` kwargs;
+    they are kept here for call-site compatibility — caption renders as
+    a <caption> element, sortable adds a hint class, and id sets the
+    table's HTML id.
     """
-    cls = "ck-table" + (" ck-dense" if dense else "")
+    cls = "ck-table" + (" ck-dense" if dense else "") + (" ck-sortable" if sortable else "")
+    cap = f"<caption>{_esc(ck_sanitize_value(caption))}</caption>" if caption else ""
     header_cells = "".join(
         f'<th class="align-{_esc(c.get("align", "left"))}">{_esc(c.get("label", ""))}</th>'
         for c in columns
@@ -192,14 +251,15 @@ def ck_table(
             elif kind == "number":
                 val = ck_fmt_number(raw)
             else:
-                val = _esc(raw if raw is not None else "—")
+                val = _esc(ck_sanitize_value(raw) if raw is not None else "—")
             num_cls = " sc-num" if kind in ("currency", "percent", "number") else ""
             cells.append(
                 f'<td class="align-{_esc(c.get("align", "left"))}{num_cls}">{val}</td>'
             )
         body_rows.append("<tr>" + "".join(cells) + "</tr>")
     return (
-        f'<table class="{cls}">'
+        f'<table class="{cls}" id="{_esc(id)}">'
+        f"{cap}"
         f"<thead><tr>{header_cells}</tr></thead>"
         f"<tbody>{''.join(body_rows)}</tbody>"
         "</table>"
@@ -208,23 +268,39 @@ def ck_table(
 
 def ck_kpi_block(
     label: str,
-    value: str,
-    *,
-    trend: Optional[str] = None,
+    value: object,
     sub: Optional[str] = None,
+    trend: Optional[str] = None,
+    *,
     code: Optional[str] = None,
 ) -> str:
+    """Render a KPI tile.
+
+    Positional contract preserves the legacy ``(label, value, unit, delta)``
+    shape: the third positional was historically a short subtitle string
+    (e.g. "in corpus", "MOIC < 1.0x"), and the fourth a delta indicator.
+    The v2 rework renamed them to ``sub`` and ``trend`` and made them
+    keyword-only — but every page renderer in ``rcm_mc/ui/data_public/``
+    still calls with three positional args, which raised TypeError under
+    CHARTIS_UI_V2=1. Restoring positional acceptance keeps existing
+    call sites working unchanged.
+    """
     trend_html = ""
     if trend:
-        tone = "positive" if trend.startswith("+") else "negative" if trend.startswith("-") else "neutral"
-        trend_html = f'<span class="ck-kpi-trend tone-{tone}">{_esc(trend)}</span>'
-    sub_html = f'<div class="ck-kpi-sub">{_esc(sub)}</div>' if sub else ""
-    code_html = f'<div class="ck-kpi-code">[{_esc(code)}]</div>' if code else ""
+        clean_trend = ck_sanitize_value(trend)
+        tone = (
+            "positive" if clean_trend.startswith("+")
+            else "negative" if clean_trend.startswith("-")
+            else "neutral"
+        )
+        trend_html = f'<span class="ck-kpi-trend tone-{tone}">{_esc(clean_trend)}</span>'
+    sub_html = f'<div class="ck-kpi-sub">{_esc(ck_sanitize_value(sub))}</div>' if sub else ""
+    code_html = f'<div class="ck-kpi-code">[{_esc(ck_sanitize_value(code))}]</div>' if code else ""
     return (
         '<div class="ck-kpi">'
         f'{code_html}'
-        f'<div class="ck-kpi-label">{_esc(label)}</div>'
-        f'<div class="ck-kpi-value sc-num">{_esc(value)}{trend_html}</div>'
+        f'<div class="ck-kpi-label">{_esc(ck_sanitize_value(label))}</div>'
+        f'<div class="ck-kpi-value sc-num">{_esc(ck_sanitize_value(value))}{trend_html}</div>'
         f'{sub_html}'
         "</div>"
     )
@@ -232,7 +308,7 @@ def ck_kpi_block(
 
 def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     tone = tone if tone in ("positive", "warning", "negative", "critical", "neutral") else "neutral"
-    return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
+    return f'<span class="ck-badge tone-{tone}">{_esc(ck_sanitize_value(text))}</span>'
 
 
 # ---------------------------------------------------------------------------
@@ -457,6 +533,10 @@ _CSS_INLINE_FALLBACK = """
 
   /* Generic .mn wrapper used by ck_fmt_num / ck_fmt_pct */
   .mn { font-family: var(--sc-mono); font-variant-numeric: tabular-nums; }
+  .mn.pos, .ck-kpi-value.tone-pos { color: var(--sc-positive); }
+  .mn.neg, .ck-kpi-value.tone-neg { color: var(--sc-negative); }
+  .mn.warn, .ck-kpi-value.tone-warn { color: var(--sc-warning); }
+  .faint, .ck-kpi-value.tone-faint { color: var(--sc-text-faint); }
 </style>
 """
 
@@ -597,4 +677,5 @@ __all__ = [
     "ck_fmt_currency",
     "ck_fmt_percent",
     "ck_fmt_number",
+    "ck_sanitize_value",
 ]

@@ -184,19 +184,14 @@ def _build_sample_portfolio(corpus: List[Dict[str, Any]], sectors: List[str]) ->
 def _kpi_bar(composition: Any) -> str:
     from rcm_mc.ui._chartis_kit import ck_kpi_block
 
-    hhi_color, hhi_level = _hhi_signal(composition.hhi_sector)
+    _, hhi_level = _hhi_signal(composition.hhi_sector)
     return (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Portfolio Deals", f'<span class="mn">{composition.n_deals}</span>', "in analysis")
-        + ck_kpi_block("Sector HHI",
-                       f'<span class="mn" style="color:{hhi_color}">{composition.hhi_sector:.3f}</span>',
-                       f"{hhi_level} concentration")
-        + ck_kpi_block("Avg Commercial %",
-                       f'<span class="mn">{composition.avg_commercial_pct*100:.1f}%</span>', "weighted payer mix")
-        + ck_kpi_block("Vintage Risk",
-                       f'<span class="mn">{composition.weighted_vintage_risk:.2f}</span>', "weighted score")
-        + ck_kpi_block("Unique Sectors",
-                       f'<span class="mn">{len(composition.sector_weights or {})}</span>', "in portfolio")
+        + ck_kpi_block("Portfolio Deals", composition.n_deals, "in analysis")
+        + ck_kpi_block("Sector HHI", f"{composition.hhi_sector:.3f}", f"{hhi_level} concentration")
+        + ck_kpi_block("Avg Commercial %", f"{composition.avg_commercial_pct*100:.1f}%", "weighted payer mix")
+        + ck_kpi_block("Vintage Risk", f"{composition.weighted_vintage_risk:.2f}", "weighted score")
+        + ck_kpi_block("Unique Sectors", len(composition.sector_weights or {}), "in portfolio")
         + '</div>'
     )
 

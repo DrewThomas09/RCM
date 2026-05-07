@@ -125,16 +125,16 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     loss_count = sum(1 for m in moics if m < 1.0)
     sectors = len({d.get("sector") for d in deals if d.get("sector")})
 
-    p50_html = ck_fmt_num(p50, 2, "x") if p50 else '<span class="faint">—</span>'
+    p50_value = ck_fmt_num(p50, 2, "x") if p50 else "—"
     loss_pct = f"{loss_count/len(moics)*100:.1f}%" if moics else "—"
 
     return (
         f'<div class="ck-kpi-grid">'
-        + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', "in corpus")
-        + ck_kpi_block("Realized", f'<span class="mn">{len(realized)}</span>', f"{len(realized)/total*100:.0f}% of corpus")
-        + ck_kpi_block("Corpus P50 MOIC", p50_html, "realized deals")
-        + ck_kpi_block("Loss Rate", f'<span class="mn neg">{loss_pct}</span>', "MOIC < 1.0×")
-        + ck_kpi_block("Sectors", f'<span class="mn">{sectors}</span>', "covered")
+        + ck_kpi_block("Total Deals", total, "in corpus")
+        + ck_kpi_block("Realized", len(realized), f"{len(realized)/total*100:.0f}% of corpus")
+        + ck_kpi_block("Corpus P50 MOIC", p50_value, "realized deals")
+        + ck_kpi_block("Loss Rate", loss_pct, "MOIC < 1.0×")
+        + ck_kpi_block("Sectors", sectors, "covered")
         + '</div>'
     )
 

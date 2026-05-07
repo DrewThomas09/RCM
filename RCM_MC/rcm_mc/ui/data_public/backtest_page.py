@@ -462,21 +462,15 @@ def _kpi_bar(stats: Dict[str, Any]) -> str:
     from rcm_mc.ui._chartis_kit import ck_kpi_block
 
     moic_p50 = stats["moic_p50"]
-    moic_color = _moic_color(moic_p50)
 
     return (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Realized Deals", f'<span class="mn">{stats["realized_n"]}</span>', f"of {stats['total']} corpus")
-        + ck_kpi_block("Corpus P50 MOIC",
-                       f'<span class="mn" style="color:{moic_color}">{moic_p50:.2f}x</span>', "realized")
-        + ck_kpi_block("P25 / P75 MOIC",
-                       f'<span class="mn">{stats["moic_p25"]:.2f}x / {stats["moic_p75"]:.2f}x</span>', "IQR")
-        + ck_kpi_block("Loss Rate",
-                       f'<span class="mn" style="color:#ef4444">{stats["loss_rate"]*100:.1f}%</span>', "MOIC < 1.0×")
-        + ck_kpi_block("3× Homerun Rate",
-                       f'<span class="mn" style="color:#22c55e">{stats["homerun_rate"]*100:.1f}%</span>', "MOIC ≥ 3.0×")
-        + ck_kpi_block("Model R²",
-                       _r2_badge(stats["r2"]), f"n={stats['pairs_n']} calibrated pairs")
+        + ck_kpi_block("Realized Deals", stats["realized_n"], f"of {stats['total']} corpus")
+        + ck_kpi_block("Corpus P50 MOIC", f"{moic_p50:.2f}x", "realized")
+        + ck_kpi_block("P25 / P75 MOIC", f"{stats['moic_p25']:.2f}x / {stats['moic_p75']:.2f}x", "IQR")
+        + ck_kpi_block("Loss Rate", f"{stats['loss_rate']*100:.1f}%", "MOIC < 1.0×")
+        + ck_kpi_block("3× Homerun Rate", f"{stats['homerun_rate']*100:.1f}%", "MOIC ≥ 3.0×")
+        + ck_kpi_block("Model R²", _r2_badge(stats["r2"]), f"n={stats['pairs_n']} calibrated pairs")
         + '</div>'
     )
 

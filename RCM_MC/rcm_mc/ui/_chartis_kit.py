@@ -97,6 +97,7 @@ if UI_V2_ENABLED:
         ck_fmt_percent,
         ck_kpi_block,
         ck_panel,
+        ck_sanitize_value,
         ck_section_header,
         ck_signal_badge as _v2_signal_badge,
         ck_table,
@@ -231,6 +232,11 @@ else:
             _phi_banner_html() + body, title, **kwargs,
         )
 
+    # Re-export the v2 sanitizer so callers can rely on a single
+    # ``from ._chartis_kit import ck_sanitize_value`` import path
+    # regardless of the feature flag's setting.
+    from ._chartis_kit_v2 import ck_sanitize_value  # noqa: F401
+
     # v2-named helpers that callers may start using in Phase 2+
     # renderers. In legacy mode they delegate to the legacy helpers
     # so a mixed-phase page still renders.
@@ -327,6 +333,7 @@ __all__ = [
     "ck_panel",
     "ck_regime_badge",
     "ck_related_views",
+    "ck_sanitize_value",
     "ck_section_header",
     "ck_signal_badge",
     "ck_table",

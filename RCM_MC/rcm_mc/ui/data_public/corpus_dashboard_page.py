@@ -147,12 +147,12 @@ def render_corpus_dashboard() -> str:
     # Top-line KPIs
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Corpus Deals", f'<span class="mn">{n:,}</span>', "in analysis")
-        + ck_kpi_block("P50 MOIC", f'<span class="mn" style="color:{_moic_color(moic_p50)}">{moic_p50:.2f}x</span>', f"P25: {_pct(moics,25):.2f}x · P75: {_pct(moics,75):.2f}x")
-        + ck_kpi_block("P50 IRR", f'<span class="mn">{irr_p50*100:.1f}%</span>', "realized median")
-        + ck_kpi_block("Loss Rate", f'<span class="mn" style="color:{"#ef4444" if loss_rate>0.15 else "#f59e0b"}">{loss_rate*100:.1f}%</span>', "MOIC < 1.0×")
-        + ck_kpi_block("Avg Hold", f'<span class="mn">{hold_avg:.1f}y</span>', "years to exit")
-        + ck_kpi_block("Avg Quality", f'<span class="mn">{avg_quality:.1f}/100</span>', f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C+D:{tier_counts.get('C',0)+tier_counts.get('D',0)}")
+        + ck_kpi_block("Corpus Deals", f"{n:,}", "in analysis")
+        + ck_kpi_block("P50 MOIC", f"{moic_p50:.2f}x", f"P25: {_pct(moics,25):.2f}x · P75: {_pct(moics,75):.2f}x")
+        + ck_kpi_block("P50 IRR", f"{irr_p50*100:.1f}%", "realized median")
+        + ck_kpi_block("Loss Rate", f"{loss_rate*100:.1f}%", "MOIC < 1.0×")
+        + ck_kpi_block("Avg Hold", f"{hold_avg:.1f}y", "years to exit")
+        + ck_kpi_block("Avg Quality", f"{avg_quality:.1f}/100", f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C+D:{tier_counts.get('C',0)+tier_counts.get('D',0)}")
         + '</div>'
     )
 
