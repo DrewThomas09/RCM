@@ -400,8 +400,24 @@ def _get_latest_per_ccn() -> pd.DataFrame:
 
     Used by name search, state browse, and peer matching so multi-year data
     doesn't surface the same hospital multiple times.
+
+    PEDESK Phase 3F: applies the HCRIS reasonableness scrub at the
+    chokepoint so every downstream screen (Predictive Screener,
+    /distress, /hold-analysis, /sector-momentum, /irr-dispersion,
+    /market-data) operates on rows that have passed structural
+    plausibility checks. Set ``RCM_MC_HCRIS_RAW=1`` in the env to
+    bypass the scrub for internal data-quality work — production
+    deployments leave it off so the engine never emits headlines
+    based on database errors (opex 100× revenue, beds 14000, etc.).
     """
-    return _latest_row_per_ccn(_get_hcris_cached())
+    df = _latest_row_per_ccn(_get_hcris_cached())
+    if os.environ.get("RCM_MC_HCRIS_RAW", "").strip() == "1":
+        return df
+    try:
+        from ..data_public.hcris_reasonableness import scrub_hcris
+        return scrub_hcris(df)
+    except Exception:  # noqa: BLE001 — scrub failure must not block ingestion
+        return df
 
 
 def _clear_cache() -> None:
