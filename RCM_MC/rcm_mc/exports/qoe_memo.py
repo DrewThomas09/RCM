@@ -102,6 +102,38 @@ def render_qoe_memo_html(
         _appendix(bundle, cash_waterfall, meta),
     ]
 
+    # P67: embed reproducibility block — bundle metadata + counts
+    # of derivative sections. The bundle's KPIResult values are
+    # JSON-tricky (dataclass + datetime), so the inputs digest is
+    # over the deterministic-summary fields a partner would ask
+    # an LP analyst to verify.
+    from ..exports.reproducibility import reproducibility_block
+
+    repro_inputs = {
+        "deal_name": meta.deal_name or "",
+        "target_entity": meta.target_entity or "",
+        "engagement_id": meta.engagement_id or "",
+        "partner_name": meta.partner_name or "",
+        "as_of_date": bundle.as_of_date.isoformat(),
+        "n_kpi_results": len(getattr(bundle, "results", []) or []),
+        "qor_total_usd": (
+            float(cash_waterfall.qor_total_usd)
+            if cash_waterfall and getattr(cash_waterfall, "qor_total_usd", None)
+            is not None else None
+        ),
+        "n_risk_flags": len(list(risk_flags or [])),
+        "n_diligence_questions": len(list(diligence_questions or [])),
+    }
+    repro_run_id = (
+        f"qoe-memo-{(meta.engagement_id or 'unkn').replace(' ', '-')}-"
+        f"{bundle.as_of_date.isoformat()}"
+    )
+    repro_block = reproducibility_block(
+        repro_inputs,
+        run_id=repro_run_id,
+        artifact_kind="qoe_memo",
+    )
+
     body = "\n".join(s for s in sections if s)
     return (
         "<!DOCTYPE html>\n"
@@ -110,7 +142,7 @@ def render_qoe_memo_html(
         '  <meta charset="utf-8">\n'
         f'  <title>QoE Memo — {html.escape(title)}</title>\n'
         "</head>\n"
-        f'<body>\n{body}\n</body>\n</html>\n'
+        f'<body>\n{body}\n{repro_block}\n</body>\n</html>\n'
     )
 
 
