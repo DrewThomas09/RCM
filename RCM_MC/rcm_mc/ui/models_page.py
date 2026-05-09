@@ -269,7 +269,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
         f'<a href="/models/financials/{html.escape(deal_id)}" class="cad-btn" '
         f'style="text-decoration:none;">3-Statement</a>'
         f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Full Analysis</a></div>'
+        f'style="text-decoration:none;">View full analysis</a></div>'
     )
 
     # Interpretation — what this means
@@ -441,7 +441,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
         f'<a href="/models/financials/{html.escape(deal_id)}" class="cad-btn" '
         f'style="text-decoration:none;">3-Statement</a>'
         f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Full Analysis</a></div>'
+        f'style="text-decoration:none;">View full analysis</a></div>'
     )
 
     # Interpretation
@@ -561,7 +561,7 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
         f'<a href="/models/lbo/{html.escape(deal_id)}" class="cad-btn" '
         f'style="text-decoration:none;">LBO Model</a>'
         f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Full Analysis</a></div>'
+        f'style="text-decoration:none;">View full analysis</a></div>'
     )
 
     # Interpretation

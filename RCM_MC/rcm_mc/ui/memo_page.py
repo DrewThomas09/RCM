@@ -69,7 +69,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
         f'<a href="/models/questions/{html.escape(deal_id)}" class="cad-btn" '
         f'style="text-decoration:none;">Diligence Questions</a>'
         f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Dashboard</a></div>'
+        f'style="text-decoration:none;">View deal dashboard</a></div>'
     )
 
     nav = _model_nav(deal_id, "")

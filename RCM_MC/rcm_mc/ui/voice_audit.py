@@ -52,6 +52,13 @@ _VERB_NOUN_PREFIXES = [
     "run", "render", "assemble", "generate", "find",
     "audit", "compute", "compare", "open", "save",
     "browse", "screen", "review", "share",
+    # Common action verbs the original list missed — surfaced by the
+    # rendered-route audit (P26 follow-up). All are partner-voice;
+    # widening the allowlist beats forcing copy contortions.
+    "select", "export", "import", "download", "upload",
+    "view", "create", "edit", "delete", "archive",
+    "build", "show", "hide", "filter", "sort",
+    "send", "request", "schedule", "publish",
     # Compound verbs are fine too.
     "add a", "add an", "go to", "read",
 ]

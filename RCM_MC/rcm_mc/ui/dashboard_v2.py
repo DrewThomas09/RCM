@@ -175,7 +175,7 @@ def render_dashboard_v2(store: Any) -> str:
     # Quick actions.
     actions = """
     <div class="dash-actions">
-      <a href="/new-deal">+ New Deal</a>
+      <a href="/new-deal">+ Add a deal</a>
       <a href="/portfolio/heatmap">Heatmap</a>
       <a href="/portfolio/monte-carlo">Portfolio MC</a>
       <a href="/screen">Screen Deals</a>

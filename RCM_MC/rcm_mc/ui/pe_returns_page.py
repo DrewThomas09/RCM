@@ -134,7 +134,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         f'<a href="/models/debt/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">Debt Schedule</a>'
         f'<a href="/models/challenge/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">Challenge Solver</a>'
         f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Dashboard</a></div>'
+        f'style="text-decoration:none;">View deal dashboard</a></div>'
     )
 
     nav = _model_nav(deal_id, "")

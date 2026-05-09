@@ -304,7 +304,7 @@ def render_portfolio_overview(
         f'<span class="cad-section-code">DLS</span></div>'
         f'<div style="display:flex;gap:6px;">'
         f'<a href="/api/export/portfolio.csv" class="cad-btn" style="text-decoration:none;">Export CSV</a>'
-        f'<a href="/import" class="cad-btn cad-btn-primary" style="text-decoration:none;">+ New Deal</a>'
+        f'<a href="/import" class="cad-btn cad-btn-primary" style="text-decoration:none;">+ Add a deal</a>'
         f'</div></div>'
         f'<table class="cad-table crosshair"><thead><tr>'
         f'<th>ID</th><th>Name</th><th>Stage</th><th>Denial</th><th>AR</th>'

@@ -66,7 +66,7 @@ def render_analysis_landing(
                 f'{quick_est}'
                 f'</div>'
                 f'<a href="/analysis/{did}" class="cad-btn cad-btn-primary" '
-                f'style="text-decoration:none;font-size:12px;">Full Analysis</a>'
+                f'style="text-decoration:none;font-size:12px;">View full analysis</a>'
                 f'</div>'
                 f'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
                 f'<a href="/models/dcf/{did}" class="cad-badge cad-badge-blue" '

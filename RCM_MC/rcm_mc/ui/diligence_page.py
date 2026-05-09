@@ -84,7 +84,7 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
         f'<a href="/models/playbook/{html.escape(deal_id)}" class="cad-btn" '
         f'style="text-decoration:none;">Value Creation Playbook</a>'
         f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn" '
-        f'style="text-decoration:none;">Full Analysis</a></div>'
+        f'style="text-decoration:none;">View full analysis</a></div>'
     )
 
     return chartis_shell(body, f"Diligence Questions — {html.escape(deal_name)}",
@@ -156,7 +156,7 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
         f'<a href="/models/questions/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">'
         f'Diligence Questions</a>'
         f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Dashboard</a></div>'
+        f'style="text-decoration:none;">View deal dashboard</a></div>'
     )
 
     return chartis_shell(body, f"Playbook — {html.escape(deal_name)}",

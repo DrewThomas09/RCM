@@ -56,15 +56,19 @@ class ComplianceScoreOnEmptyHTML(unittest.TestCase):
 
     def test_empty_html_fails_kit_presence_rules(self) -> None:
         report = compliance_check("<html><body><p>nope</p></body></html>")
-        # Every kit-presence rule fails on bare HTML; only the
-        # number-format-clean rule passes (vacuously).
+        # Every kit-presence rule fails on bare HTML. The audit-style
+        # rules (number-format-clean, voice-clean, primary-buttons-
+        # verb-noun) all pass *vacuously* — bare HTML has no numbers,
+        # no SaaS-speak, no primary buttons to flag.
         passed_keys = {r["key"] for r in report["results"] if r["passed"]}
         self.assertEqual(
-            passed_keys, {"number-format-clean"},
+            passed_keys,
+            {"number-format-clean", "voice-clean", "primary-buttons-verb-noun"},
             f"unexpected passes on bare HTML: {passed_keys}",
         )
-        # Score is 1/total — the floor case for the kit-presence rules.
-        self.assertLess(report["score"], 0.1)
+        # Score is N/total where N is the count of vacuous-pass rules.
+        # The floor: well below 0.5 — the kit-presence rules dominate.
+        self.assertLess(report["score"], 0.3)
 
 
 if __name__ == "__main__":

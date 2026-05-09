@@ -141,7 +141,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         f'<a href="/models/dcf/{html.escape(deal_id)}" class="cad-btn" '
         f'style="text-decoration:none;">DCF Model</a>'
         f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Full Analysis</a></div>'
+        f'style="text-decoration:none;">View full analysis</a></div>'
     )
 
     # Interpretation

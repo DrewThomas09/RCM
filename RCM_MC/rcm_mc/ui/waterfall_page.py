@@ -105,7 +105,7 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
         f'<a href="/models/dcf/{html.escape(deal_id)}" class="cad-btn" '
         f'style="text-decoration:none;">DCF Model</a>'
         f'<a href="/analysis/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Full Analysis</a></div>'
+        f'style="text-decoration:none;">View full analysis</a></div>'
     )
 
     # Interpretation

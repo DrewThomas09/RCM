@@ -88,6 +88,16 @@ RULES: list[ComplianceRule] = [
         "Rendered output has zero number-format violations (P94).",
         lambda h: _number_format_clean(h),
     ),
+    (
+        "voice-clean",
+        "Rendered text has zero SaaS-speak phrases (P92 voice audit).",
+        lambda h: _voice_clean(h),
+    ),
+    (
+        "primary-buttons-verb-noun",
+        "Primary CTA buttons follow the verb-noun pattern (P93).",
+        lambda h: _primary_buttons_verb_noun(h),
+    ),
 ]
 
 
@@ -99,6 +109,46 @@ def _number_format_clean(html: str) -> bool:
     """
     from .voice_audit import audit_number_format
     return not audit_number_format(html)
+
+
+def _voice_clean(html: str) -> bool:
+    """Predicate: True iff the rendered HTML's partner-visible text
+    contains zero SaaS-speak phrases ("Loading…", "Click here",
+    etc). Strips tags/styles/scripts and decodes entities so the
+    audit sees only what a partner reads.
+    """
+    import re
+    import html as _html_mod
+    from .voice_audit import audit_string
+
+    s = re.sub(r"<(style|script)[^>]*>.*?</\1>", " ", html,
+               flags=re.DOTALL | re.IGNORECASE)
+    text = _html_mod.unescape(re.sub(r"<[^>]+>", " ", s))
+    return not audit_string(text)
+
+
+def _primary_buttons_verb_noun(html: str) -> bool:
+    """Predicate: True iff every ``cad-btn-primary`` button label
+    follows the verb-noun pattern. Secondary ``cad-btn`` links are
+    excluded — they're commonly used as navigation tiles where a
+    noun label ("Market Heatmap") reads better than a forced
+    verb-noun ("Open Market Heatmap"). Only the primary action CTAs
+    are held to the verb-noun bar.
+    """
+    import re
+    import html as _html_mod
+    from .voice_audit import audit_button_label
+
+    pattern = re.compile(
+        r'<(?:a|button)[^>]*class="[^"]*cad-btn-primary[^"]*"[^>]*>'
+        r'([^<]+)</(?:a|button)>',
+        re.IGNORECASE,
+    )
+    for m in pattern.finditer(html):
+        label = _html_mod.unescape(m.group(1).strip())
+        if audit_button_label(label):
+            return False
+    return True
 
 
 def compliance_check(html: str) -> dict:

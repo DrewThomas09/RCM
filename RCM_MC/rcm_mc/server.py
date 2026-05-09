@@ -8142,7 +8142,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 </div>
                 <div style="margin-top:16px;">
                   <a href="/analysis/{html.escape(deal_id)}" class="badge badge-blue"
-                     style="text-decoration:none;padding:8px 16px;">Full Analysis →</a>
+                     style="text-decoration:none;padding:8px 16px;">View full analysis →</a>
                   <a href="/api/deals/{html.escape(deal_id)}/package" class="badge badge-muted"
                      style="text-decoration:none;padding:8px 16px;margin-left:8px;">Download Package →</a>
                 </div>

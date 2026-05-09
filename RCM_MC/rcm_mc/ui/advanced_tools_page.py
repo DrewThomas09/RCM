@@ -67,7 +67,7 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
         f'<a href="/models/lbo/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">LBO</a>'
         f'<a href="/models/waterfall/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">Waterfall</a>'
         f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Dashboard</a></div>'
+        f'style="text-decoration:none;">View deal dashboard</a></div>'
     )
 
     # Interpretation
@@ -276,7 +276,7 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
         f'<a href="/models/anomalies/{html.escape(deal_id)}" class="cad-btn" style="text-decoration:none;">'
         f'Anomaly Detection</a>'
         f'<a href="/deal/{html.escape(deal_id)}" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Deal Dashboard</a></div>'
+        f'style="text-decoration:none;">View deal dashboard</a></div>'
     )
 
     return chartis_shell(body, f"Trend Forecast — {html.escape(deal_name)}",

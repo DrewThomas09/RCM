@@ -80,7 +80,7 @@ def render_pressure_page(
         results_html += (
             f'<div class="cad-card" style="display:flex;gap:8px;">'
             f'<a href="/analysis/{html.escape(selected_deal_id)}" class="cad-btn cad-btn-primary" '
-            f'style="text-decoration:none;">Full Analysis</a>'
+            f'style="text-decoration:none;">View full analysis</a>'
             f'<a href="/api/deals/{html.escape(selected_deal_id)}/market" class="cad-btn" '
             f'style="text-decoration:none;">Market Analysis</a>'
             f'<a href="/api/deals/{html.escape(selected_deal_id)}/denial-drivers" class="cad-btn" '
