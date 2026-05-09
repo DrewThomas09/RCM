@@ -19,20 +19,19 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
     target = bridge.get("target_ebitda", bridge.get("total_ebitda", 0))
     total_impact = bridge.get("total_ebitda_impact", bridge.get("total_impact", 0))
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${current/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Current EBITDA</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["positive"]};">'
-        f'${(current+total_impact)/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Target EBITDA</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["brand_accent"]};">'
-        f'+${total_impact/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Total Uplift</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(levers)}</div>'
-        f'<div class="cad-kpi-label">Value Levers</div></div>'
-        f'</div>'
-    )
+    # P26 follow-up: bridge-summary KPIs migrated to kpi_strip.
+    # The legacy ``brand_accent`` styling on Total Uplift conveyed
+    # "headline metric" rather than tone — kpi_strip's neutral
+    # default reads the same with cleaner markup.
+    from ._ui_kit import kpi_strip
+    kpis = kpi_strip([
+        {"label": "Current EBITDA", "value": f"${current/1e6:.1f}M"},
+        {"label": "Target EBITDA",
+         "value": f"${(current+total_impact)/1e6:.1f}M",
+         "tone": "positive"},
+        {"label": "Total Uplift", "value": f"+${total_impact/1e6:.1f}M"},
+        {"label": "Value Levers", "value": str(len(levers))},
+    ])
 
     # Waterfall bars
     # Get ramp curves for timeline info
@@ -196,14 +195,16 @@ def render_anomaly_report(deal_id: str, deal_name: str,
 
     n_high = sum(1 for a in anomalies if abs(float(a.get("z_score", a.get("deviation", 0)))) > 3)
 
+    # P26 follow-up: 2-tile anomaly summary migrated to kpi_strip.
+    from ._ui_kit import kpi_strip
+    anom_kpis = kpi_strip([
+        {"label": "Anomalies Detected", "value": str(len(anomalies))},
+        {"label": "High Severity", "value": str(n_high),
+         "tone": "negative" if n_high else "neutral"},
+    ])
+
     body = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(anomalies)}</div>'
-        f'<div class="cad-kpi-label">Anomalies Detected</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["negative"]};">'
-        f'{n_high}</div>'
-        f'<div class="cad-kpi-label">High Severity</div></div>'
-        f'</div>'
+        f'{anom_kpis}'
 
         f'<div class="cad-card">'
         f'<h2>Data Anomalies</h2>'
@@ -248,13 +249,14 @@ def render_service_lines(deal_id: str, deal_name: str,
             f'</tr>'
         )
 
+    # P26 follow-up: service-lines summary migrated to kpi_strip.
+    from ._ui_kit import kpi_strip
+    sl_kpis = kpi_strip([
+        {"label": "Service Lines", "value": str(len(lines))},
+        {"label": "Total Revenue", "value": f"${total_rev/1e6:.0f}M"},
+    ])
     body = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(lines)}</div>'
-        f'<div class="cad-kpi-label">Service Lines</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_rev/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Total Revenue</div></div>'
-        f'</div>'
+        f'{sl_kpis}'
 
         f'<div class="cad-card">'
         f'<h2>Service Line Profitability</h2>'

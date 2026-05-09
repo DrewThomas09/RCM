@@ -83,22 +83,19 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
     total_rev = rev_stats.get("total", 0)
     total_beds = int(hcris_df["beds"].fillna(0).sum()) if "beds" in hcris_df.columns else 0
 
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_hospitals:,}</div>'
-        f'<div class="cad-kpi-label">Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_states}</div>'
-        f'<div class="cad-kpi-label">States + Territories</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_years}</div>'
-        f'<div class="cad-kpi-label">Fiscal Years</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_beds:,}</div>'
-        f'<div class="cad-kpi-label">Total Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_money(total_rev)}</div>'
-        f'<div class="cad-kpi-label">Total NPSR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(key_cols)}</div>'
-        f'<div class="cad-kpi-label">Core Metrics</div></div>'
-        f'</div>'
-    )
+    # P26 follow-up: 6-tile KPI strip migrated to kpi_strip. The
+    # legacy block hard-coded ``grid-template-columns:repeat(6,1fr)``
+    # which the kit now derives from len(items); dense=True kicks in
+    # automatically so the strip still fits on a 1280px viewport.
+    from ._ui_kit import kpi_strip
+    kpis = kpi_strip([
+        {"label": "Hospitals", "value": f"{n_hospitals:,}"},
+        {"label": "States + Territories", "value": str(n_states)},
+        {"label": "Fiscal Years", "value": str(n_years)},
+        {"label": "Total Beds", "value": f"{total_beds:,}"},
+        {"label": "Total NPSR", "value": _fmt_money(total_rev)},
+        {"label": "Core Metrics", "value": str(len(key_cols))},
+    ])
 
     # ── Completeness table ──
     comp_rows = ""

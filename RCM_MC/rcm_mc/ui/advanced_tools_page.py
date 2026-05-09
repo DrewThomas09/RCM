@@ -20,17 +20,18 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     exit_leverage = summary.get("exit_leverage", debt.get("exit_leverage", 0))
     total_debt = summary.get("total_debt", debt.get("total_debt", 0))
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{entry_leverage:.1f}x</div>'
-        f'<div class="cad-kpi-label">Entry Leverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["positive"]};">'
-        f'{exit_leverage:.1f}x</div>'
-        f'<div class="cad-kpi-label">Exit Leverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_debt/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Total Debt at Entry</div></div>'
-        f'</div>'
+    # P26 follow-up: debt-summary KPIs migrated to kpi_strip.
+    from ._ui_kit import kpi_strip
+    exit_tone = (
+        "positive" if exit_leverage < 4
+        else "warning" if exit_leverage < 6
+        else "negative"
     )
+    kpis = kpi_strip([
+        {"label": "Entry Leverage", "value": f"{entry_leverage:.1f}x"},
+        {"label": "Exit Leverage", "value": f"{exit_leverage:.1f}x", "tone": exit_tone},
+        {"label": "Total Debt at Entry", "value": f"${total_debt/1e6:.0f}M"},
+    ])
 
     rows = ""
     for yr in schedule:
@@ -96,14 +97,12 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
     target = result.get("target_ebitda_drag", result.get("target", 0))
     solutions = result.get("solutions", result.get("assumptions", []))
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${abs(float(target))/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Target EBITDA Drag</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(solutions)}</div>'
-        f'<div class="cad-kpi-label">Assumption Sets Found</div></div>'
-        f'</div>'
-    )
+    # P26 follow-up: challenge-solver summary migrated to kpi_strip.
+    from ._ui_kit import kpi_strip
+    kpis = kpi_strip([
+        {"label": "Target EBITDA Drag", "value": f"${abs(float(target))/1e6:.1f}M"},
+        {"label": "Assumption Sets Found", "value": str(len(solutions))},
+    ])
 
     rows = ""
     for s in solutions[:10]:
@@ -165,23 +164,26 @@ def render_irs990_crosscheck(deal_id: str, deal_name: str, data: Dict[str, Any])
     status = "Non-Profit (990 Filed)" if is_nonprofit else "For-Profit or No 990 Found"
     status_cls = "cad-badge-green" if is_nonprofit else "cad-badge-muted"
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'<span class="cad-badge {status_cls}" style="font-size:13px;padding:4px 12px;">'
-        f'{status}</span></div>'
-        f'<div class="cad-kpi-label">Tax Status</div></div>'
-    )
+    # P26 follow-up: 990-cross-check summary migrated to kpi_strip.
+    # The legacy block conditionally appended Revenue + Assets tiles
+    # when the match had data; the migration uses list-append to keep
+    # that conditional behaviour intact.
+    from ._ui_kit import kpi_strip
+    irs_items: list[dict] = [
+        {"label": "Tax Status",
+         "value": (
+             f'<span class="cad-badge {status_cls}" '
+             f'style="font-size:13px;padding:4px 12px;">{status}</span>'
+         )},
+    ]
     if match:
         rev_990 = match.get("total_revenue", 0)
         assets = match.get("total_assets", 0)
-        kpis += (
-            f'<div class="cad-kpi"><div class="cad-kpi-value">${float(rev_990)/1e6:.0f}M</div>'
-            f'<div class="cad-kpi-label">990 Total Revenue</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value">${float(assets)/1e6:.0f}M</div>'
-            f'<div class="cad-kpi-label">990 Total Assets</div></div>'
-        )
-    kpis += '</div>'
+        irs_items.append({"label": "990 Total Revenue",
+                          "value": f"${float(rev_990)/1e6:.0f}M"})
+        irs_items.append({"label": "990 Total Assets",
+                          "value": f"${float(assets)/1e6:.0f}M"})
+    kpis = kpi_strip(irs_items)
 
     comp_rows = ""
     for c in comparisons:
@@ -246,16 +248,20 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
     declining = sum(1 for t in trends if float(t.get("slope", 0)) < 0)
 
     nav = _model_nav(deal_id, "trends")
+    # P26 follow-up: trend-summary KPIs migrated to kpi_strip. The
+    # tone field carries improving/declining color signal that the
+    # legacy inline-color attribute carried.
+    from ._ui_kit import kpi_strip
+    trend_kpis = kpi_strip([
+        {"label": "Metrics Tracked", "value": str(len(trends))},
+        {"label": "Improving", "value": str(improving),
+         "tone": "positive" if improving else "neutral"},
+        {"label": "Declining", "value": str(declining),
+         "tone": "negative" if declining else "neutral"},
+    ])
     body = (
         f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(trends)}</div>'
-        f'<div class="cad-kpi-label">Metrics Tracked</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["positive"]};">'
-        f'{improving}</div><div class="cad-kpi-label">Improving</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["negative"]};">'
-        f'{declining}</div><div class="cad-kpi-label">Declining</div></div>'
-        f'</div>'
+        f'{trend_kpis}'
 
         f'<div class="cad-card">'
         f'<h2>Trend Detection &amp; Forecast</h2>'

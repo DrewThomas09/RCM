@@ -73,24 +73,24 @@ def render_value_tracker(
     realization = summary.realization_pct if summary else 0
     quarters = summary.quarters_tracked if summary else 0
     real_color = "var(--cad-pos)" if realization >= 0.85 else ("var(--cad-warn)" if realization >= 0.6 else "var(--cad-neg)")
-
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(total_planned)}</div>'
-        f'<div class="cad-kpi-label">Planned Uplift</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{real_color};">'
-        f'{_fm(total_realized)}</div>'
-        f'<div class="cad-kpi-label">Realized</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{real_color};">'
-        f'{realization:.0%}</div>'
-        f'<div class="cad-kpi-label">Realization</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{quarters}</div>'
-        f'<div class="cad-kpi-label">Quarters Tracked</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{summary.on_track_count if summary else 0}</div>'
-        f'<div class="cad-kpi-label">Levers On Track</div></div>'
-        f'</div>'
+    # P26 follow-up: 5-tile KPI strip migrated to kpi_strip. The
+    # legacy color thresholding (>=85% pos, >=60% warn, else neg)
+    # maps onto the kit's tone vocabulary so realized + realization
+    # share the same status read.
+    real_tone = (
+        "positive" if realization >= 0.85
+        else "warning" if realization >= 0.6
+        else "negative"
     )
+    from ._ui_kit import kpi_strip
+    kpis = kpi_strip([
+        {"label": "Planned Uplift", "value": _fm(total_planned)},
+        {"label": "Realized", "value": _fm(total_realized), "tone": real_tone},
+        {"label": "Realization", "value": f"{realization:.0%}", "tone": real_tone},
+        {"label": "Quarters Tracked", "value": str(quarters)},
+        {"label": "Levers On Track",
+         "value": str(summary.on_track_count if summary else 0)},
+    ])
 
     # ── Ramp assessment ──
     ramp_banner = ""

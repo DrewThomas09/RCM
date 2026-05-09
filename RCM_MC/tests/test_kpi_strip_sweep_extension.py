@@ -383,5 +383,47 @@ class SixPageBatchFourMigrated(unittest.TestCase):
         self.assertNotIn("def _kpi_card(", src)
 
 
+class SixPageBatchFiveMigrated(unittest.TestCase):
+    """Batch 5: data_dashboard, portfolio_monitor, value_tracking,
+    scenario_modeler, pe_tools, advanced_tools."""
+
+    def _src(self, module_name: str) -> str:
+        import importlib
+        import inspect
+        return inspect.getsource(importlib.import_module(module_name))
+
+    def test_data_dashboard_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.data_dashboard")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_portfolio_monitor_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.portfolio_monitor_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_value_tracking_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.value_tracking_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_scenario_modeler_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.scenario_modeler_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_pe_tools_migrated_three_blocks(self) -> None:
+        src = self._src("rcm_mc.ui.pe_tools_page")
+        # Three KPI blocks across value bridge, anomalies, service lines.
+        self.assertGreaterEqual(src.count("kpi_strip("), 3)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_advanced_tools_migrated_four_blocks(self) -> None:
+        src = self._src("rcm_mc.ui.advanced_tools_page")
+        # Four KPI blocks across debt, challenge solver, 990, trends.
+        self.assertGreaterEqual(src.count("kpi_strip("), 4)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+
 if __name__ == "__main__":
     unittest.main()

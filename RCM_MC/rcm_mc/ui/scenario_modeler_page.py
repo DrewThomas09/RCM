@@ -265,20 +265,15 @@ def render_scenario_modeler(
     )
 
     # ── Baseline KPIs ──
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(rev)}</div>'
-        f'<div class="cad-kpi-label">Net Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(ebitda)}</div>'
-        f'<div class="cad-kpi-label">Current EBITDA</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{current_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Current Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{beds:.0f}</div>'
-        f'<div class="cad-kpi-label">Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{mc_pct:.0%}</div>'
-        f'<div class="cad-kpi-label">Medicare %</div></div>'
-        f'</div>'
-    )
+    # P26 follow-up: 5-tile baseline strip migrated to kpi_strip.
+    from ._ui_kit import kpi_strip
+    kpis = kpi_strip([
+        {"label": "Net Revenue", "value": _fm(rev)},
+        {"label": "Current EBITDA", "value": _fm(ebitda)},
+        {"label": "Current Margin", "value": f"{current_margin:.1%}"},
+        {"label": "Beds", "value": f"{beds:.0f}"},
+        {"label": "Medicare %", "value": f"{mc_pct:.0%}"},
+    ])
 
     # ── Side-by-side comparison table ──
     n = len(results)

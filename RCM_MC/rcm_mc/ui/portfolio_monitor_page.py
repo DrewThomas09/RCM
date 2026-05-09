@@ -151,22 +151,21 @@ def render_portfolio_monitor(store: Any) -> str:
     no_health = n_deals - green - amber - red
 
     # ── KPIs ──
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_deals}</div>'
-        f'<div class="cad-kpi-label">Active Deals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_with_actuals}</div>'
-        f'<div class="cad-kpi-label">With Actuals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">{green}</div>'
-        f'<div class="cad-kpi-label">Green</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-warn);">{amber}</div>'
-        f'<div class="cad-kpi-label">Amber</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-neg);">{red}</div>'
-        f'<div class="cad-kpi-label">Red</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-neg);">{n_alerts}</div>'
-        f'<div class="cad-kpi-label">Open Alerts</div></div>'
-        f'</div>'
-    )
+    # P26 follow-up: legacy 6-tile cad-kpi-grid migrated to kpi_strip.
+    # Inline color attrs for green/amber/red/alert tiles map onto the
+    # kit's positive/warning/negative tones; the alert tile gets a
+    # negative tone only when alerts are open so the strip stays
+    # quiet on a clean portfolio.
+    from ._ui_kit import kpi_strip
+    kpis = kpi_strip([
+        {"label": "Active Deals", "value": str(n_deals)},
+        {"label": "With Actuals", "value": str(n_with_actuals)},
+        {"label": "Green", "value": str(green), "tone": "positive"},
+        {"label": "Amber", "value": str(amber), "tone": "warning"},
+        {"label": "Red", "value": str(red), "tone": "negative"},
+        {"label": "Open Alerts", "value": str(n_alerts),
+         "tone": "negative" if n_alerts else "neutral"},
+    ])
 
     # ── Active alerts ──
     alert_html = ""
