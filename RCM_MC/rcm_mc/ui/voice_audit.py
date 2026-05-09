@@ -72,18 +72,25 @@ _NUMBER_VIOLATIONS: list[tuple[str, str]] = [
     # M/B/k/no suffix or whitespace, NOT followed by another digit.
     (r"\$\d+(?:\.\d)?(?=[MBk\s,]|$)",
      'money values should render with 2 decimal places (e.g. $450.25M)'),
-    # Percent without a decimal. Both lookbehinds together prevent a
-    # match starting on the decimal portion of a well-formed value:
-    # ``10.0%`` should NOT trigger because the ``0%`` substring is
-    # preceded by ``.`` (the lookbehind ``(?<!\.)`` blocks it) and
-    # by another digit (the lookbehind ``(?<!\d)`` blocks two-or-more
-    # digit decimals like ``1.50%``).
-    (r"(?<!\.)(?<!\d)\b\d+%(?:[^.\d])",
+    # Percent without a decimal. The lookbehinds prevent matching
+    # the decimal portion of a well-formed value (``10.0%`` →
+    # ``0%``) AND prevent matching values inside common prose
+    # contexts the audit was over-flagging:
+    #
+    #   ``(35%)``, ``+20%``, ``<8%``, ``>55%``, ``-3%``, ``~58%``
+    #   — scenario labels, range bounds, signed deltas, and prose
+    #   approximations. Metric values never appear in those
+    #   positions.
+    #
+    # The trailing ``(?=[^.\d-])`` rejects ``-`` to skip range
+    # continuations like ``11-14x`` and ``8-12%``.
+    (r"(?<!\.)(?<!\d)(?<![(+\-<>=~])\b\d+%(?=[^.\d\-])",
      'percent values should render with 1 decimal place (e.g. 15.3%)'),
     # Multiples like "2.5x" / "2x" — should be 2dp. The negative
     # lookbehinds prevent matching inside a longer number ("2.80x"
-    # contains "80x" starting at a word-boundary).
-    (r"(?<!\d)(?<!\.)\d+(?:\.\d)?x\b",
+    # contains "80x" starting at a word-boundary). Also skip prose
+    # range bounds ("11-14x") and signed prose values ("+2x", "<5x").
+    (r"(?<!\d)(?<!\.)(?<![+\-<>=~])\d+(?:\.\d)?x\b",
      'multiples should render with 2 decimal places (e.g. 2.80x)'),
 ]
 
@@ -93,13 +100,18 @@ def _strip_html_for_audit(html: str) -> str:
     number-format audit sees partner-visible text only.
 
     Called by ``audit_number_format`` to neutralise CSS percentages
-    (``width:100%;``), inline ``style="…"`` attributes, and JS in
-    ``<script>`` blocks — none of which carry partner-facing numbers
-    but all of which match the format-violation regexes.
+    (``width:100%;``), inline ``style="…"`` attributes, JS in
+    ``<script>`` blocks, AND HTML entities (``&lt;`` → ``<``,
+    ``&gt;`` → ``>``) — without entity decoding the regex sees
+    ``&lt;8%`` as ``lt;8%`` and false-positive-matches the ``8%``
+    when the partner-visible text is actually ``<8%`` (a range
+    bound, which the prose lookbehinds correctly skip on real ``<``).
     """
+    import html as _html_mod
     s = re.sub(r"<(style|script)[^>]*>.*?</\1>", " ", html,
                flags=re.DOTALL | re.IGNORECASE)
-    return re.sub(r"<[^>]+>", " ", s)
+    s = re.sub(r"<[^>]+>", " ", s)
+    return _html_mod.unescape(s)
 
 
 def audit_number_format(s: str, *, strip_html: bool = True) -> list[dict]:
