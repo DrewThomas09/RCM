@@ -622,11 +622,11 @@ def _render_header(packet: DealAnalysisPacket) -> str:
           <form method="POST" action="/api/deals/{_esc(packet.deal_id)}/archive" style="display:inline;">
             <button class="wb-btn" type="submit"
                     onclick="return confirm('Archive this deal? It will be hidden from the dashboard.');"
-                    style="color:#f59e0b;" aria-label="Archive this deal">Archive</button>
+                    style="color:{PALETTE['warning']};" aria-label="Archive this deal">Archive</button>
           </form>
           <button class="wb-btn" type="button"
                   onclick="if(confirm('Permanently delete this deal and ALL associated data? This cannot be undone.')){{fetch('/api/deals/{_esc(packet.deal_id)}',{{method:'DELETE'}}).then(r=>r.json()).then(d=>{{if(d.deleted){{if(window.rcmToast)rcmToast('Deal deleted','success');setTimeout(function(){{window.location='/';}},500);}}}}).catch(function(){{if(window.rcmToast)rcmToast('Delete failed','error');}});}}"
-                  style="color:#ef4444;" aria-label="Permanently delete this deal">Delete</button>
+                  style="color:{PALETTE['negative']};" aria-label="Permanently delete this deal">Delete</button>
           <span class="dim" style="font-size:0.7rem;margin-left:8px;" title="Press ? for keyboard shortcuts">⌨ ?=help</span>
         </div>
       </div>
@@ -850,7 +850,7 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
 
     if not actions:
         actions.append(
-            '<div style="color:#10b981;">✓ <strong>Looking good</strong> '
+            f'<div style="color:{PALETTE["positive"]};">✓ <strong>Looking good</strong> '
             '— completeness, risks, and simulation are all in order.</div>'
         )
 

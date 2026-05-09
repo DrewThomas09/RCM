@@ -36,11 +36,14 @@ def render_hospital_profile(
 
     grade = score.grade if hasattr(score, "grade") else "—"
     score_val = score.score if hasattr(score, "score") else 0
+    # Resolve grade color through PALETTE so the editorial light
+    # variant picks up the warmer paper-friendly hexes
+    # (#b5321e/#0a8a5f/#b8732a) instead of the dark-mode hardcodes.
     grade_color = {
-        "A+": "#10b981", "A": "#10b981", "A-": "#10b981",
-        "B+": "#3b82f6", "B": "#3b82f6", "B-": "#3b82f6",
-        "C+": "#f59e0b", "C": "#f59e0b", "C-": "#f59e0b",
-    }.get(grade, "#ef4444")
+        "A+": PALETTE["positive"], "A": PALETTE["positive"], "A-": PALETTE["positive"],
+        "B+": PALETTE["brand_accent"], "B": PALETTE["brand_accent"], "B-": PALETTE["brand_accent"],
+        "C+": PALETTE["warning"], "C": PALETTE["warning"], "C-": PALETTE["warning"],
+    }.get(grade, PALETTE["negative"])
 
     # Identity strip (Bloomberg security header)
     ident = (
