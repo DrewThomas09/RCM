@@ -83,11 +83,18 @@ def _lead(text: str, *, on_navy: bool = False) -> str:
     )
 
 
-def _cta_primary(href: str, label: str) -> str:
+def _cta_primary(href: str, label: str, *, on_navy: bool = False) -> str:
+    # On a navy surface the default navy-on-navy primary CTA loses its
+    # button silhouette — the bg merges with the parent and the partner
+    # only sees a floating word. P4: when ``on_navy`` is set, swap the
+    # fill to bone and the label to navy so the button reads as a
+    # discrete affordance.
+    bg = "var(--sc-bone)" if on_navy else "var(--sc-navy)"
+    fg = "var(--sc-navy)" if on_navy else "var(--sc-on-navy)"
     return (
         f'<a href="{_esc(href)}" style="'
         'display:inline-flex;align-items:center;gap:12px;'
-        'padding:16px 28px;background:var(--sc-navy);color:var(--sc-on-navy);'
+        f'padding:16px 28px;background:{bg};color:{fg};'
         'font-family:var(--sc-sans);font-size:14px;font-weight:600;'
         'letter-spacing:0.04em;text-decoration:none;border-radius:2px;'
         'transition:background 0.15s;">'
@@ -133,7 +140,7 @@ def _hero() -> str:
             "6,024 HCRIS hospitals and thousands of regression tests.")
         + '<div style="height:36px;"></div>'
         + '<div style="display:flex;gap:16px;align-items:center;">'
-        + _cta_primary("/home", "Open Platform")
+        + _cta_primary("/login?next=/home", "Open Platform")
         + _cta_ghost("/methodology", "Methodology")
         + '</div>'
         + '</div>'
@@ -360,7 +367,7 @@ def _cta_strip() -> str:
         + '</div>'
         '<div style="display:flex;flex-direction:column;gap:14px;'
         'align-items:flex-start;">'
-        + _cta_primary("/home", "Open Platform")
+        + _cta_primary("/login?next=/home", "Open Platform", on_navy=True)
         + _cta_ghost("/library", "Browse Library", on_navy=True)
         + '</div>'
         '</div></div></section>'
@@ -413,7 +420,7 @@ def _marketing_topnav() -> str:
         '<a href="/methodology" style="font-family:var(--sc-sans);'
         'font-size:13px;font-weight:500;color:var(--sc-text-dim);'
         'text-decoration:none;">Methodology</a>'
-        '<a href="/home" style="font-family:var(--sc-sans);font-size:13px;'
+        '<a href="/login?next=/home" style="font-family:var(--sc-sans);font-size:13px;'
         'font-weight:600;color:var(--sc-on-navy);background:var(--sc-navy);'
         'padding:10px 18px;border-radius:2px;text-decoration:none;">'
         'Open Platform</a>'
@@ -470,8 +477,37 @@ def render_marketing_page() -> str:
         + _hero()
         + _capabilities()
         + _modules()
+        + _engine_bento()
         + _stats()
         + _cta_strip()
         + _footer()
         + '</body></html>'
+    )
+
+
+def _engine_bento() -> str:
+    """P99: 2×2 bento grid showcasing the four flagship engines.
+
+    Each card uses the kit's ``engine_flagship_card`` helper so the
+    marketing surface and the in-app workbench point at the same
+    canonical descriptions. Cards link to /methodology when no deal
+    is in context (the marketing visitor is logged out).
+    """
+    from rcm_mc.ui._ui_kit import engine_flagship_card
+
+    cards = "".join(
+        engine_flagship_card(key)
+        for key in ("monte_carlo", "pe_math", "health", "memos")
+    )
+    return (
+        '<section style="background:var(--sc-bone);padding:96px 0;">'
+        '<div style="max-width:1280px;margin:0 auto;padding:0 32px;">'
+        + _eyebrow("The four engines")
+        + '<div style="height:18px;"></div>'
+        + _h_section("How the math actually works.")
+        + '<div style="height:36px;"></div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;'
+        + 'gap:24px;">'
+        + cards
+        + '</div></div></section>'
     )

@@ -144,17 +144,22 @@ def render_portfolio_overview(
     n = len(deals)
 
     if n == 0:
-        empty = (
-            f'<div class="cad-card" style="text-align:center;padding:40px;">'
-            f'<h2 style="font-size:18px;margin-bottom:12px;">No Deals in Portfolio</h2>'
-            f'<p style="color:{PALETTE["text_secondary"]};margin-bottom:16px;">'
-            f'Create deals to see portfolio analytics, health scores, and regression insights.</p>'
-            f'<div style="display:flex;gap:12px;justify-content:center;">'
-            f'<a href="/import" class="cad-btn cad-btn-primary" style="text-decoration:none;">'
-            f'+ New Deal</a>'
-            f'<a href="/screen" class="cad-btn" style="text-decoration:none;">Screen Hospitals</a>'
-            f'<a href="/market-data/map" class="cad-btn" style="text-decoration:none;">'
-            f'Market Data</a></div></div>'
+        # P27: replace the bespoke "No Deals in Portfolio" card with
+        # the kit's empty_state primitive. Single primary CTA points
+        # at /import; the previous secondary screen/market-data links
+        # belong on the dedicated discovery surface, not on this
+        # empty-portfolio prompt.
+        from ._ui_kit import empty_state
+
+        empty = empty_state(
+            icon="◳",
+            title="No deals in portfolio yet",
+            body=(
+                "Create or import deals to see portfolio analytics, "
+                "health scores, and regression insights."
+            ),
+            cta_label="+ Add a deal",
+            cta_href="/import",
         )
         return chartis_shell(empty, "Portfolio", active_nav="/portfolio",
                         subtitle="No deals yet")
@@ -165,24 +170,36 @@ def render_portfolio_overview(
     total_rev = deals["net_revenue"].dropna().sum() if "net_revenue" in deals.columns else None
     avg_ncr = deals["net_collection_rate"].dropna().mean() if "net_collection_rate" in deals.columns else None
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n}</div>'
-        f'<div class="cad-kpi-label">Active Deals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{_fmt_money(total_rev) if total_rev else "—"}</div>'
-        f'<div class="cad-kpi-label">Total Net Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{_fmt_pct(avg_denial) if avg_denial else "—"}</div>'
-        f'<div class="cad-kpi-label">Avg Denial Rate</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{avg_ar:.0f}' if avg_ar else '—'
-        f'</div><div class="cad-kpi-label">Avg Days in AR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'{_fmt_pct(avg_ncr) if avg_ncr else "—"}</div>'
-        f'<div class="cad-kpi-label">Avg Net Collection</div></div>'
-        f'</div>'
-    )
+    # P9 + P26 + P32: route values through format_value() (missing-aware),
+    # render via kpi_strip() (unified responsive layout) AND tag every
+    # number with a provenance_marker so a partner can see at a glance
+    # that these are derived aggregates (▴), not observed (●) or
+    # benchmark (○) figures. Counts come from the deal-set itself
+    # (USER_INPUT for the row count); the aggregates are CALCULATED.
+    from ._ui_kit import format_value, kpi_strip, provenance_marker
+
+    def _metric(value, *, kind, source, detail):
+        return format_value(value, kind=kind) + provenance_marker(
+            source, detail=detail,
+        )
+
+    kpis = kpi_strip([
+        {"label": "ACTIVE DEALS",
+         "value": _metric(n, kind="count", source="USER_INPUT",
+                          detail="Count of deals in the portfolio store.")},
+        {"label": "TOTAL NET REVENUE",
+         "value": _metric(total_rev, kind="money", source="CALCULATED",
+                          detail="Sum of net_revenue across all deals.")},
+        {"label": "AVG DENIAL RATE",
+         "value": _metric(avg_denial, kind="percent", source="CALCULATED",
+                          detail="Mean of denial_rate, NaNs dropped.")},
+        {"label": "AVG DAYS IN AR",
+         "value": _metric(avg_ar, kind="count", source="CALCULATED",
+                          detail="Mean of days_in_ar, NaNs dropped.")},
+        {"label": "AVG NET COLLECTION",
+         "value": _metric(avg_ncr, kind="percent", source="CALCULATED",
+                          detail="Mean of net_collection_rate, NaNs dropped.")},
+    ])
 
     # Health distribution
     health_counts = {"green": 0, "amber": 0, "red": 0}

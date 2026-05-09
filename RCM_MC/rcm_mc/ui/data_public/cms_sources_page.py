@@ -162,6 +162,34 @@ def _source_table(sources: List[Dict[str, Any]]) -> str:
 </div>"""
 
 
+def _key_functions_table() -> str:
+    """P28 canary: render the static API-function reference via the
+    kit's data_table() primitive instead of hand-built <tr><td> rows.
+    Pure scalar text → ideal data_table fit."""
+    from rcm_mc.ui._ui_kit import data_table
+
+    columns = [
+        {"key": "fn", "label": "Function", "kind": "text", "sortable": False},
+        {"key": "desc", "label": "Description", "kind": "text",
+         "sortable": False},
+    ]
+    rows = [
+        {"fn": "fetch_pages(endpoint, ...)",
+         "desc": "Raw paginated fetch with retry. Returns List[Dict]."},
+        {"fn": "fetch_provider_utilization(state, specialty, year, ...)",
+         "desc": "Physician utilization, filtered and normalized."},
+        {"fn": "fetch_geographic_variation(state, ...)",
+         "desc": "Geographic variation dataset for regional benchmarking."},
+        {"fn": "normalize_row(row)",
+         "desc": "Map CMS column names → internal canonical names."},
+        {"fn": "winsorize_column(values, upper_quantile)",
+         "desc": "Clip heavy tails for comparability analysis."},
+        {"fn": "safe_float(value, default)",
+         "desc": "Null-safe numeric coercion from CMS string fields."},
+    ]
+    return data_table(columns=columns, rows=rows, sortable=False)
+
+
 def _api_client_docs() -> str:
     return """
 <div class="ck-panel">
@@ -198,17 +226,7 @@ clean = winsorize_column([col for col in payments], upper_quantile=0.95)
     </pre>
     <div style="margin-top:12px;">
       <div class="ck-section-label" style="margin-bottom:6px;">Key Functions</div>
-      <table class="ck-table" style="width:auto;min-width:600px;">
-        <thead><tr><th style="width:220px">Function</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td class="mono">fetch_pages(endpoint, ...)</td><td class="dim">Raw paginated fetch with retry. Returns List[Dict].</td></tr>
-          <tr style="background:#0f172a"><td class="mono">fetch_provider_utilization(state, specialty, year, ...)</td><td class="dim">Physician utilization, filtered and normalized.</td></tr>
-          <tr><td class="mono">fetch_geographic_variation(state, ...)</td><td class="dim">Geographic variation dataset for regional benchmarking.</td></tr>
-          <tr style="background:#0f172a"><td class="mono">normalize_row(row)</td><td class="dim">Map CMS column names → internal canonical names.</td></tr>
-          <tr><td class="mono">winsorize_column(values, upper_quantile)</td><td class="dim">Clip heavy tails for comparability analysis.</td></tr>
-          <tr style="background:#0f172a"><td class="mono">safe_float(value, default)</td><td class="dim">Null-safe numeric coercion from CMS string fields.</td></tr>
-        </tbody>
-      </table>
+      """ + _key_functions_table() + """
     </div>
   </div>
 </div>"""

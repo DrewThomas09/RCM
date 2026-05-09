@@ -76,11 +76,17 @@ def _pipeline_funnel(store: Any) -> str:
     if not rows:
         return _empty("No deals in portfolio yet. Import from /new-deal.")
     total = sum(counts.values()) + other
+    # P8: scale each bar against the busiest stage, not the total —
+    # otherwise with seven stages no bar ever exceeds ~30% width and
+    # the funnel reads as seven empty rectangles. The right-hand %
+    # label still reports share-of-total so the absolute mix stays
+    # visible.
+    peak = max(counts.values()) if counts else 0
     cells = []
     for s in _STAGES:
         n = counts[s]
         pct = (n / total * 100.0) if total else 0.0
-        bar_w = max(2, int(pct))
+        bar_w = max(2, int((n / peak) * 100)) if peak else 2
         col = P["accent"] if n else P["border"]
         cells.append(
             f'<div style="display:flex;align-items:center;gap:10px;'

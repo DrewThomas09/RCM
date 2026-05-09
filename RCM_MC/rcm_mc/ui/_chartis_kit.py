@@ -178,10 +178,11 @@ if UI_V2_ENABLED:
         keeps the dozens of existing callers working without a
         simultaneous rewrite of every page.
         """
-        # Route subtitle to the v2 eyebrow by threading through the
-        # body. Future cleanup (Phase 15) can drop this shim.
-        if subtitle and not breadcrumbs:
-            breadcrumbs = [{"label": str(subtitle)}]
+        # P41: pass subtitle through to v2 as a first-class kwarg so
+        # the v2 shell renders a styled .page-subtitle div under the
+        # H1. The legacy breadcrumb fallback kicks in only when v2
+        # is OFF (handled inside the v2 shell), so this passthrough
+        # is purely additive.
         wrapped_body = _phi_banner_html() + body
         if extra_css:
             wrapped_body = f'<style>{extra_css}</style>{wrapped_body}'
@@ -194,6 +195,7 @@ if UI_V2_ENABLED:
         return _v2_chartis_shell(
             wrapped_body, title,
             active_nav=active_nav, breadcrumbs=breadcrumbs, code=code,
+            subtitle=subtitle or None,
             **kwargs,
         )
 
@@ -228,8 +230,15 @@ else:
     # both opening on keystroke. The legacy palette's entries are
     # extended via _PALETTE_ENTRIES in the legacy module instead.
     def chartis_shell(body: str, title: str, **kwargs) -> str:  # type: ignore[misc]
+        # Legacy chartis_shell only accepts active_nav / subtitle /
+        # extra_css / extra_js. Filter v2-only kwargs (breadcrumbs,
+        # code, user_initials, palette_modules, etc.) so a page that
+        # uses the v2 vocabulary still renders under the legacy flag
+        # rather than crashing with TypeError.
+        legacy_keys = {"active_nav", "subtitle", "extra_css", "extra_js"}
+        clean = {k: v for k, v in kwargs.items() if k in legacy_keys}
         return _legacy_chartis_shell(
-            _phi_banner_html() + body, title, **kwargs,
+            _phi_banner_html() + body, title, **clean,
         )
 
     # Re-export the v2 sanitizer so callers can rely on a single

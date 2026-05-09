@@ -71,6 +71,20 @@ class _IdempotencyCache:
 
 _IDEMPOTENCY_CACHE = _IdempotencyCache()
 
+
+# P37: page-rename redirect registry — old_path → canonical_path.
+# Add entries here when a page name changes; the dispatcher in
+# ``_do_get_inner`` walks this map first so bookmarks and inbound
+# links survive route renames. Empty by default until the broader
+# Phase-3 rename sweep lands; the machinery is in place so each
+# rename ships as a one-line addition rather than a fresh handler
+# branch in the dispatcher.
+_PAGE_RENAME_REDIRECTS: dict[str, str] = {
+    # ``/deals-library`` is the canonical legacy precedent kept
+    # inline near its old handler — it stays there for parity with
+    # adjacent ?library handling. New renames go here.
+}
+
 from .reports import exit_memo as _exit_memo
 from .portfolio import portfolio_dashboard as _dashboard
 from .ui._ui_kit import shell
@@ -1928,6 +1942,23 @@ class RCMHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
+        # P37: page-rename redirect registry. As routes are renamed
+        # to disambiguate by intent (e.g. "Comparable Deal Finder" vs
+        # "Comparable Realized Outcomes" vs "Corpus Transactions"),
+        # add the old-path → new-path mapping here so bookmarks and
+        # link backs continue to resolve. The dispatcher checks the
+        # registry first so an explicit handler later in the chain
+        # never fires for a renamed path.
+        new_target = _PAGE_RENAME_REDIRECTS.get(path)
+        if new_target:
+            if parsed.query:
+                new_target = f"{new_target}?{parsed.query}"
+            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+            self.send_header("Location", new_target)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+
         if path == "/dashboard":
             # Private-app landing page (Heroku / small-team deployments).
             # Composes: curated analyses · recent runs · system status ·
@@ -1976,6 +2007,38 @@ class RCMHandler(BaseHTTPRequestHandler):
         # RCM Diligence workspace — Phase 1 ingest is live; Phases 2–4
         # render placeholder tabs until their implementations land.
         # Load lazily to avoid import cost on every request.
+        # P54: /now — 30-second view.
+        if path == "/now":
+            from .ui.now_page import render_now
+            return self._send_html(render_now(self.config.db_path))
+
+        # P55: /deal/<id>/story — narrative view of a deal.
+        if path.startswith("/deal/") and path.endswith("/story"):
+            deal_id = path[len("/deal/"):-len("/story")].strip("/")
+            if deal_id:
+                from .ui.deal_story_page import render_story
+                return self._send_html(
+                    render_story(self.config.db_path, deal_id)
+                )
+
+        # P40: /diligence promotes Checklist to the deal-context landing.
+        # With ?deal_id=<x> the partner lands on the deal's checklist
+        # (the spine of the diligence workflow). Without a deal in
+        # context the user lands on the same checklist surface, which
+        # gracefully renders the cross-deal/empty view. The dedicated
+        # "modules reference" page is a future buildout.
+        if path == "/diligence":
+            qs = urllib.parse.parse_qs(parsed.query)
+            deal_id = (qs.get("deal_id") or [""])[0].strip()
+            target = "/diligence/checklist"
+            if deal_id:
+                target += f"?deal_id={urllib.parse.quote(deal_id)}"
+            self.send_response(HTTPStatus.FOUND)  # 302
+            self.send_header("Location", target)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+
         if path == "/diligence/ingest":
             # Phase 14: ?dataset=<fixture_name> drives the live CCD
             # ingest + transformation-log preview.
@@ -2108,6 +2171,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Unified deal profile — one source of truth per deal.
         if path == "/diligence/deal" or path.startswith("/diligence/deal/"):
             return self._route_deal_profile_page(path)
+        # P63: methodology source-code viewer for analytical modules.
+        # The whitelist is enforced inside the viewer module — we
+        # don't pass arbitrary path fragments through.
+        if path.startswith("/methodology/"):
+            module_key = path[len("/methodology/"):].strip("/")
+            from .ui.methodology_source_viewer import (
+                render_methodology_module,
+            )
+            html_out = render_methodology_module(module_key)
+            if html_out is None:
+                self.send_response(HTTPStatus.NOT_FOUND)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            return self._send_html(html_out)
+
         if path == "/methodology":
             # Methodology hub — renders the reference-catalogue (formerly /library).
             # The detailed calculation explainer moved to /methodology/calculations.
@@ -13945,6 +14024,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         nxt = (qs.get("next") or ["/"])[0]
         err = (qs.get("err") or [""])[0]
+
+        # P3: a partner who is already authenticated has nothing to do
+        # on the login form; bounce them to ``next`` (default "/").
+        # Validate the redirect is same-origin to avoid an open-redirect.
+        if user and nxt.startswith("/"):
+            return self._redirect(nxt)
 
         demo_mode = False
         try:

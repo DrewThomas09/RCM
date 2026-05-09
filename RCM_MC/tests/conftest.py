@@ -61,3 +61,34 @@ def _reset_handler_class_state():
         yield
     finally:
         RCMHandler._login_fail_log = {}
+
+
+_CHARTIS_UI_V2_SNAPSHOT = os.environ.get("CHARTIS_UI_V2")
+
+
+@pytest.fixture(autouse=True)
+def _isolate_chartis_ui_v2_flag():
+    """Restore the ``CHARTIS_UI_V2`` environment variable to its
+    session-start state around every test.
+
+    Phase-2 component tests need to flip the flag on (so the v2 shell
+    path is exercised) and reload ``rcm_mc.ui._chartis_kit*`` modules
+    to re-read the flag. Without this fixture, the env var would
+    leak into later test files — e.g. ``test_power_ui`` and
+    ``test_universal_palette`` assume the legacy shell, which only
+    activates with the flag unset. Snapshot is captured at module
+    import (session start), not at fixture entry, so that
+    ``setUpClass`` mutations in test files don't poison the snapshot.
+    """
+    try:
+        yield
+    finally:
+        if _CHARTIS_UI_V2_SNAPSHOT is None:
+            os.environ.pop("CHARTIS_UI_V2", None)
+        else:
+            os.environ["CHARTIS_UI_V2"] = _CHARTIS_UI_V2_SNAPSHOT
+        # Drop cached kit modules so the next test reads the flag fresh.
+        import sys
+        for name in list(sys.modules):
+            if name.startswith("rcm_mc.ui._chartis_kit"):
+                sys.modules.pop(name, None)

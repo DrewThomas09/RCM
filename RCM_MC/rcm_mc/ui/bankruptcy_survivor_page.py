@@ -56,6 +56,9 @@ body{font-family:Georgia,'Times New Roman',serif;font-size:11pt;
 h1{font-size:22pt;margin:0 0 6pt 0;color:#0b2341;font-weight:700;}
 h2{font-size:14pt;margin:18pt 0 4pt 0;color:#0b2341;
    border-bottom:1px solid #c9b98a;padding-bottom:2pt;}
+.page-header{display:flex;flex-direction:column;align-items:flex-start;
+   margin:0 0 14pt 0;}
+.page-header h1{margin:2pt 0 0 0;}
 .eyebrow{font-size:9pt;letter-spacing:1.5pt;text-transform:uppercase;
    color:#6b5d3c;font-family:'Helvetica Neue',Arial,sans-serif;}
 .verdict{border:2pt solid;padding:10pt 14pt;margin:10pt 0 14pt 0;
@@ -98,8 +101,10 @@ def render_scan_landing() -> str:
         "<title>Bankruptcy-Survivor Scan</title>"
         f"{_style()}"
         "</head><body>"
+        "<div class='page-header'>"
         "<div class='eyebrow'>Pre-screening</div>"
         "<h1>Bankruptcy-Survivor Scan</h1>"
+        "</div>"
         "<p>A 12-pattern screen against the named PE-healthcare "
         "bankruptcy playbook (Steward, Envision, APP, Cano, "
         "Prospect, Wellpath) plus six forward-looking regulatory "

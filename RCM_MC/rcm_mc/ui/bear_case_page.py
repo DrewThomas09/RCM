@@ -34,6 +34,69 @@ from .power_ui import (
 # Scoped CSS (bc- prefix)
 # ────────────────────────────────────────────────────────────────────
 
+# P34: modeling caveats for the bear-case analytical page. List the
+# known weaknesses surfaced in the docs so a partner using these
+# numbers in IC has the limits in front of them.
+_BEAR_CASE_CAVEATS = [
+    "Per-theme rankings use static severity weights; cross-theme "
+    "correlation is not modeled.",
+    "Regulatory-calendar timing assumes Q3 effectiveness; "
+    "rule-slippage shifts the window.",
+    "Standalone-source mode skips CCD-driven payer-stress shock; "
+    "supply a dataset fixture for full coverage.",
+    "Implementation-ramp factors are single scalars across "
+    "lever families; cross-lever sequencing not modeled.",
+]
+
+
+def _recommendation_for_report(report: "BearCaseReport") -> str:
+    """P35: derive a partner-facing recommendation_block from a
+    BearCaseReport. Verdict tracks ``critical_count``; dollars anchor
+    to combined EBITDA-at-risk so the conclusion is dollar-anchored
+    rather than abstract."""
+    from ._ui_kit import recommendation_block
+
+    crit = report.critical_count
+    n_evidence = len(report.evidence) if report.evidence else 0
+    if crit >= 3:
+        verdict = "Pause for partner review"
+        action = (
+            "Do not commit partner hours until the critical themes "
+            "are addressed in writing."
+        )
+        confidence = "low"
+    elif crit >= 1:
+        verdict = "Negotiate at reduced price"
+        action = (
+            "Re-anchor IC pricing against the surfaced "
+            "EBITDA-at-risk before progressing."
+        )
+        confidence = "medium"
+    else:
+        verdict = "Proceed with focused follow-up"
+        action = (
+            "Bear-case themes are manageable — track the open "
+            "questions through diligence and revisit pre-IC."
+        )
+        confidence = "high"
+    at_risk = report.combined_ebitda_at_risk_usd or 0.0
+    dollars_str = (
+        f"${at_risk/1e6:,.1f}M EBITDA at risk"
+        if at_risk else None
+    )
+    reasoning = [
+        f"{crit} critical theme(s) across {n_evidence} ranked evidence rows.",
+        f"Combined EBITDA-at-risk: ${at_risk/1e6:,.1f}M.",
+    ]
+    return recommendation_block(
+        verdict=verdict,
+        action=action,
+        confidence=confidence,
+        reasoning=reasoning,
+        dollars=dollars_str,
+    )
+
+
 def _scoped_styles() -> str:
     css = """
 .bc-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
@@ -99,7 +162,7 @@ letter-spacing:1.2px;text-transform:uppercase;font-weight:600;margin-bottom:4px;
 .bc-form-field input{{width:100%;
 background:{pa};color:{tx};border:1px solid {bd};padding:8px 10px;
 border-radius:3px;font-family:"JetBrains Mono",monospace;font-size:13px;}}
-.bc-form-submit{{margin-top:18px;padding:10px 20px;background:{ne};
+.bc-form-submit{{margin-top:18px;padding:10px 20px;background:{ac};
 color:#fff;border:0;border-radius:3px;font-size:12px;letter-spacing:1.3px;
 text-transform:uppercase;font-weight:700;cursor:pointer;}}
 .bc-form-submit:hover{{filter:brightness(1.15);}}
@@ -319,44 +382,121 @@ def _ic_memo_preview(report: BearCaseReport) -> str:
 # ────────────────────────────────────────────────────────────────────
 
 def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
-    form = """
+    # P31: render the form-submit through the kit's action_button so
+    # the weight (primary), expected duration (~2s for a bear-case
+    # synthesis pass), and busy-state behaviour all come from a
+    # single source. bc-form-submit's bespoke styling is no longer
+    # the canonical rendering path on this page.
+    from ._ui_kit import action_button
+
+    submit_btn = action_button(
+        label="Generate bear case",
+        weight="primary",
+        expected_seconds=2,
+        type="submit",
+    )
+    # P43: group the 13 fields into four semantic sections so the
+    # partner can scan by purpose (Identity / Capital / Real estate
+    # / Run params) instead of reading one wall of inputs.
+    from ._ui_kit import form_section
+
+    identity_html = (
+        '<div class="bc-form-grid">'
+        '<div class="bc-form-field"><label>Claims dataset</label>'
+        '<input name="dataset" value="hospital_04_mixed_payer"/></div>'
+        '<div class="bc-form-field"><label>Deal name</label>'
+        '<input name="deal_name" value="Meadowbrook Regional"/></div>'
+        '<div class="bc-form-field"><label>Specialty</label>'
+        '<input name="specialty" value="HOSPITAL"/></div>'
+        '<div class="bc-form-field"><label>HCRIS CCN (opt)</label>'
+        '<input name="hcris_ccn" placeholder="e.g., 010001"/></div>'
+        '</div>'
+    )
+    capital_html = (
+        '<div class="bc-form-grid">'
+        '<div class="bc-form-field"><label>Revenue Y0 (USD)</label>'
+        '<input name="revenue_year0_usd" value="450000000"/></div>'
+        '<div class="bc-form-field"><label>EBITDA Y0 (USD)</label>'
+        '<input name="ebitda_year0_usd" value="67500000"/></div>'
+        '<div class="bc-form-field"><label>Enterprise value (USD)</label>'
+        '<input name="enterprise_value_usd" value="600000000"/></div>'
+        '<div class="bc-form-field"><label>Equity check (USD)</label>'
+        '<input name="equity_check_usd" value="250000000"/></div>'
+        '<div class="bc-form-field"><label>Debt (USD)</label>'
+        '<input name="debt_usd" value="350000000"/></div>'
+        '<div class="bc-form-field"><label>Medicare share (0-1)</label>'
+        '<input name="medicare_share" value="0.45"/></div>'
+        '</div>'
+    )
+    real_estate_html = (
+        '<div class="bc-form-grid">'
+        '<div class="bc-form-field"><label>Landlord (opt)</label>'
+        '<input name="landlord" value="MPT"/></div>'
+        '<div class="bc-form-field"><label>HOPD rev (USD)</label>'
+        '<input name="hopd_revenue_annual_usd" value="45000000"/></div>'
+        '</div>'
+    )
+    run_params_html = (
+        '<div class="bc-form-grid">'
+        '<div class="bc-form-field"><label>Number of simulations</label>'
+        '<input name="n_runs" value="250"/></div>'
+        '</div>'
+    )
+    form = f"""
 <form method="get" action="/diligence/bear-case" class="bc-wrap">
   <div class="bc-panel">
     <div class="bc-section-label" style="margin-top:0;">
       Auto-generate bear case from pipeline</div>
-    <div class="bc-form-grid">
-      <div class="bc-form-field"><label>Dataset fixture</label>
-        <input name="dataset" value="hospital_04_mixed_payer"/></div>
-      <div class="bc-form-field"><label>Deal name</label>
-        <input name="deal_name" value="Meadowbrook Regional"/></div>
-      <div class="bc-form-field"><label>Specialty</label>
-        <input name="specialty" value="HOSPITAL"/></div>
-      <div class="bc-form-field"><label>Revenue Y0 (USD)</label>
-        <input name="revenue_year0_usd" value="450000000"/></div>
-      <div class="bc-form-field"><label>EBITDA Y0 (USD)</label>
-        <input name="ebitda_year0_usd" value="67500000"/></div>
-      <div class="bc-form-field"><label>Enterprise value (USD)</label>
-        <input name="enterprise_value_usd" value="600000000"/></div>
-      <div class="bc-form-field"><label>Equity check (USD)</label>
-        <input name="equity_check_usd" value="250000000"/></div>
-      <div class="bc-form-field"><label>Debt (USD)</label>
-        <input name="debt_usd" value="350000000"/></div>
-      <div class="bc-form-field"><label>Medicare share (0-1)</label>
-        <input name="medicare_share" value="0.45"/></div>
-      <div class="bc-form-field"><label>Landlord (opt)</label>
-        <input name="landlord" value="MPT"/></div>
-      <div class="bc-form-field"><label>HOPD rev (USD)</label>
-        <input name="hopd_revenue_annual_usd" value="45000000"/></div>
-      <div class="bc-form-field"><label>HCRIS CCN (opt)</label>
-        <input name="hcris_ccn" placeholder="e.g. 010001"/></div>
-      <div class="bc-form-field"><label>N simulation paths</label>
-        <input name="n_runs" value="250"/></div>
-    </div>
-    <button class="bc-form-submit" type="submit">
-      Generate bear case</button>
+    {form_section("Identity", identity_html)}
+    {form_section("Capital", capital_html)}
+    {form_section("Real estate", real_estate_html)}
+    {form_section("Run parameters", run_params_html)}
+    {submit_btn}
   </div>
 </form>
 """
+    # P29 + P30: right-rail preview + recent-runs continuity rail.
+    # Bear Case runs aren't yet routed through a per-module history
+    # table, so the rail renders the empty-state copy. When a runs
+    # table is added (or analysis_runs gets a "module" filter) the
+    # caller can pass real rows here without a UI change.
+    from ._ui_kit import preview_panel, recent_runs
+
+    sketch = (
+        '<div style="font-family:Georgia,serif;color:var(--sc-navy);">'
+        '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">'
+        'Bear Case · Project Aurora</div>'
+        '<div style="border-left:3px solid var(--sc-negative);'
+        'padding-left:10px;margin-bottom:10px;">'
+        '<div style="font-size:11px;color:var(--sc-text-faint);'
+        'letter-spacing:0.1em;text-transform:uppercase;">'
+        'REGULATORY · CRITICAL</div>'
+        '<div style="font-size:13px;">CMS-11 supply-chain review '
+        'expected Q3; $4.2M EBITDA at risk under 65bps stress.</div>'
+        '</div>'
+        '<div style="border-left:3px solid var(--sc-warning);'
+        'padding-left:10px;margin-bottom:10px;">'
+        '<div style="font-size:11px;color:var(--sc-text-faint);'
+        'letter-spacing:0.1em;text-transform:uppercase;">'
+        'CREDIT · HIGH</div>'
+        '<div style="font-size:13px;">Covenant headroom drops to 8% '
+        'under 10% denial-rate shock; trip prob 18%.</div>'
+        '</div>'
+        '<div style="font-size:11px;color:var(--sc-text-faint);'
+        'border-top:1px solid var(--sc-rule);padding-top:6px;">'
+        '+ 4 more themes · IC-memo drop-in block · citations</div>'
+        '</div>'
+    )
+    preview = preview_panel(
+        title="Sample output",
+        sketch_html=sketch,
+        caption=(
+            "Ranked evidence from six source modules with per-theme "
+            "narratives and a print-ready IC-memo paragraph. Real "
+            "results render in under a second after submit."
+        ),
+    )
+
     body = (
         _scoped_styles()
         + '<div class="bc-wrap">'
@@ -373,7 +513,11 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + 'What partners spend 3-5 hours writing by hand, '
         + 'auto-generated in under a second.</div>'
         + '</div>'
-        + form
+        + '<div style="display:grid;grid-template-columns:3fr 2fr;'
+        + 'gap:32px;align-items:start;">'
+        + f'<div>{form}</div>'
+        + f'<div>{preview}{recent_runs([], module="bear cases")}</div>'
+        + '</div>'
         + '</div>'
     )
     return chartis_shell(
@@ -446,7 +590,7 @@ def _render_bear_case_no_ccd(
     hero = (
         f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
         f'{P["border"]};margin-bottom:22px;">'
-        f'<div class="bc-eyebrow">Bear Case · no CCD fixture</div>'
+        f'<div class="bc-eyebrow">Bear Case · public data only</div>'
         f'<div class="bc-h1">{html.escape(deal_name)}</div>'
         f'<div style="font-size:11px;color:{P["text_faint"]};'
         f'margin-top:4px;">'
@@ -461,13 +605,21 @@ def _render_bear_case_no_ccd(
         + interpret_callout(
             "How to use this:",
             "Fast-path bear case: runs only the modules that don't "
-            "need a CCD claims fixture (Regulatory Calendar + HCRIS "
+            "need a claims dataset (Regulatory Calendar + HCRIS "
             "X-Ray). For the full 7-source bear case including "
             "denial prediction, physician attrition, and Deal MC, "
-            "supply a dataset fixture.", tone="warn",
+            "supply a claims dataset above.", tone="warn",
         )
         + f'</div>'
     )
+
+    # P34 + P35: append modeling-caveats disclosure and a partner-grade
+    # recommendation block to the analytical result. The verdict logic
+    # lives in ``_recommendation_for_report`` so the branch can be
+    # tested directly with a synthetic BearCaseReport.
+    from ._ui_kit import caveats_disclosure
+    bear_caveats = caveats_disclosure(_BEAR_CASE_CAVEATS)
+    bear_recommendation = _recommendation_for_report(report)
 
     body = (
         _scoped_styles()
@@ -481,16 +633,18 @@ def _render_bear_case_no_ccd(
             f'<div class="bc-callout" '
             f'style="border-left-color:{P["positive"]};">'
             f'No bear-case evidence surfaced from the standalone '
-            f'sources. Supply a dataset fixture to run the full '
+            f'sources. Supply a claims dataset to run the full '
             f'pipeline.</div>'
         )
         + _ic_memo_preview(report)
+        + bear_recommendation
         + export_json_panel(
             '<div class="bc-section-label" style="margin-top:22px;">'
             'JSON export</div>',
             payload=report.to_dict(),
             name=f"bear_case_nocc_{deal_name.replace(' ', '_')}",
         )
+        + bear_caveats
         + bookmark_hint()
         + '</div>'
     )
