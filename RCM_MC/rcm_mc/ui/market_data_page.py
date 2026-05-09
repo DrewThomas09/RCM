@@ -236,20 +236,20 @@ def _regression_section(stats: List[Dict[str, Any]]) -> str:
                 f'</tr>'
             )
 
+        # P26 follow-up: regression-summary KPIs migrated to kpi_strip
+        # — three bare cad-kpi tiles inside a flex container, missed
+        # by the original cad-kpi-grid sweep because the wrapper used
+        # display:flex rather than the kpi-grid class.
+        from ._ui_kit import kpi_strip
+        regr_kpis = kpi_strip([
+            {"label": "R-Squared", "value": f"{r2:.2%}"},
+            {"label": "States Analyzed", "value": str(len(stats))},
+            {"label": "Features", "value": str(len(available))},
+        ])
         return (
             f'<div class="cad-card">'
             f'<h2>Regression: What Predicts Hospital Margins?</h2>'
-            f'<div style="display:flex;gap:16px;margin-bottom:12px;">'
-            f'<div class="cad-kpi" style="flex:1;">'
-            f'<div class="cad-kpi-value">{r2:.2%}</div>'
-            f'<div class="cad-kpi-label">R-Squared</div></div>'
-            f'<div class="cad-kpi" style="flex:1;">'
-            f'<div class="cad-kpi-value">{len(stats)}</div>'
-            f'<div class="cad-kpi-label">States Analyzed</div></div>'
-            f'<div class="cad-kpi" style="flex:1;">'
-            f'<div class="cad-kpi-value">{len(available)}</div>'
-            f'<div class="cad-kpi-label">Features</div></div>'
-            f'</div>'
+            f'{regr_kpis}'
             f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:12px;">'
             f'OLS regression of state-level average hospital operating margin on market '
             f'structure variables. Standardized coefficients shown.</p>'

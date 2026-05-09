@@ -112,19 +112,18 @@ def _compute_regression(deals: pd.DataFrame) -> str:
                 f'</tr>'
             )
 
+        # P26 follow-up: regression-summary KPIs migrated to kpi_strip.
+        from ._ui_kit import kpi_strip
+        denial_kpis = kpi_strip([
+            {"label": "R-Squared", "value": f"{r2:.0%}"},
+            {"label": "Deals Analyzed", "value": str(len(df))},
+        ])
         return (
             f'<div class="cad-card">'
             f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
             f'<h2 style="margin:0;">Denial Rate Drivers</h2>'
             f'<span class="cad-section-code">REG</span></div>'
-            f'<div style="display:flex;gap:12px;margin-bottom:12px;">'
-            f'<div class="cad-kpi" style="flex:1;">'
-            f'<div class="cad-kpi-value">{r2:.0%}</div>'
-            f'<div class="cad-kpi-label">R-Squared</div></div>'
-            f'<div class="cad-kpi" style="flex:1;">'
-            f'<div class="cad-kpi-value">{len(df)}</div>'
-            f'<div class="cad-kpi-label">Deals Analyzed</div></div>'
-            f'</div>'
+            f'{denial_kpis}'
             f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
             f'Standardized OLS coefficients. Positive = increases denial rate (bad).</p>'
             f'<table class="cad-table"><thead><tr>'
@@ -325,6 +324,10 @@ def render_portfolio_overview(
 
     opportunity = ""
     if recoverable > 0:
+        # P26 follow-up: standalone "headline + explanation" callout —
+        # the kit doesn't ship a single-tile primitive for this shape,
+        # so the cad-kpi-* class deps are inlined with explicit
+        # typography (tabular-nums for numeric alignment).
         opportunity = (
             f'<div class="cad-card" style="border-left:3px solid {PALETTE["positive"]};">'
             f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
@@ -332,9 +335,12 @@ def render_portfolio_overview(
             f'<span class="cad-section-code" style="color:{PALETTE["positive"]};">OPP</span></div>'
             f'<div style="display:flex;gap:24px;align-items:center;">'
             f'<div style="min-width:170px;">'
-            f'<div class="cad-kpi-value" style="color:{PALETTE["positive"]};font-size:24px;">'
+            f'<div style="color:{PALETTE["positive"]};font-size:24px;'
+            f'font-weight:700;font-variant-numeric:tabular-nums;">'
             f'${recoverable/1e6:.1f}M</div>'
-            f'<div class="cad-kpi-label">Recoverable Revenue</div></div>'
+            f'<div style="font-size:10px;text-transform:uppercase;'
+            f'letter-spacing:0.06em;color:{PALETTE["text_muted"]};">'
+            f'Recoverable Revenue</div></div>'
             f'<div style="flex:1;font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
             f'Reducing portfolio avg denial rate from <strong>{avg_dr:.1f}%</strong> to the '
             f'<strong>8%</strong> industry target. Assumes 30% of excess denials recoverable through '
@@ -348,6 +354,8 @@ def render_portfolio_overview(
         rcm_cost_base = total_rev * 0.06
         synergy_pct = min(0.25, 0.08 + 0.03 * (n - 2))
         synergy_ebitda = rcm_cost_base * synergy_pct
+        # P26 follow-up: same headline-callout pattern as Recoverable
+        # Revenue above; cad-kpi-* classes inlined for self-containment.
         synergy_section = (
             f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
             f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
@@ -355,9 +363,12 @@ def render_portfolio_overview(
             f'<span class="cad-section-code" style="color:{PALETTE["brand_accent"]};">SYN</span></div>'
             f'<div style="display:flex;gap:24px;align-items:center;">'
             f'<div style="min-width:170px;">'
-            f'<div class="cad-kpi-value" style="color:{PALETTE["brand_accent"]};font-size:24px;">'
+            f'<div style="color:{PALETTE["brand_accent"]};font-size:24px;'
+            f'font-weight:700;font-variant-numeric:tabular-nums;">'
             f'${synergy_ebitda/1e6:.1f}M</div>'
-            f'<div class="cad-kpi-label">Annual Synergy EBITDA</div></div>'
+            f'<div style="font-size:10px;text-transform:uppercase;'
+            f'letter-spacing:0.06em;color:{PALETTE["text_muted"]};">'
+            f'Annual Synergy EBITDA</div></div>'
             f'<div style="flex:1;font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
             f'Shared-services model: <strong>{n}</strong> platforms × '
             f'<strong>${rcm_cost_base/1e6:.0f}M</strong> RCM cost base × '

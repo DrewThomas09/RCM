@@ -9,6 +9,7 @@ import html
 from typing import Any
 
 from ._chartis_kit import chartis_shell
+from ._ui_kit import kpi_strip
 from .brand import PALETTE
 
 
@@ -97,21 +98,16 @@ def render_methodology() -> str:
         f'<strong>Every number on this platform traces back to a specific data source and '
         f'calculation.</strong> This page explains each one — you should be able to audit any '
         f'output end-to-end.</p>'
-        f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:14px;'
-        f'border:1px solid {PALETTE["border"]};">'
-        f'<div style="padding:10px 14px;border-right:1px solid {PALETTE["border"]};">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">6,123</div>'
-        f'<div class="cad-kpi-label">Hospitals Tracked</div></div>'
-        f'<div style="padding:10px 14px;border-right:1px solid {PALETTE["border"]};">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">17</div>'
-        f'<div class="cad-kpi-label">Analytical Models</div></div>'
-        f'<div style="padding:10px 14px;border-right:1px solid {PALETTE["border"]};">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">3,157</div>'
-        f'<div class="cad-kpi-label">Passing Tests</div></div>'
-        f'<div style="padding:10px 14px;">'
-        f'<div class="cad-kpi-value" style="font-size:16px;">52</div>'
-        f'<div class="cad-kpi-label">API Endpoints</div></div>'
-        f'</div>'
+        # P26 follow-up: methodology TOC stat-strip migrated to
+        # kpi_strip. The legacy block hand-rolled a 4-column grid
+        # with internal cad-kpi typography classes; the kit primitive
+        # subsumes both.
+        + kpi_strip([
+            {"label": "Hospitals Tracked", "value": "6,123"},
+            {"label": "Analytical Models", "value": "17"},
+            {"label": "Passing Tests", "value": "3,157"},
+            {"label": "API Endpoints", "value": "52"},
+        ])
     ), anchor="toc-intro")
 
     # ── Data sources ──

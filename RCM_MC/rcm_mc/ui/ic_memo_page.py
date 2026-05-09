@@ -249,16 +249,20 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
     comp_margins = data["comp_df"]["operating_margin"].dropna() if "operating_margin" in data["comp_df"].columns else pd.Series(dtype=float)
     comp_med_margin = float(comp_margins.median()) if len(comp_margins) > 3 else 0
 
+    # P26 follow-up: bare cad-kpi tiles inside a hand-rolled 1-1-1
+    # grid migrated to kpi_strip. The kit derives column count from
+    # len(items), so the inline grid-template-columns is no longer
+    # needed.
+    from ._ui_kit import kpi_strip
+    market_kpis = kpi_strip([
+        {"label": f'{_html.escape(data["state"])} Hospitals', "value": str(n_st)},
+        {"label": "State Median Margin", "value": _pct(st_med_margin)},
+        {"label": "Comparable Hospitals", "value": str(data["n_comps"])},
+    ])
     sections.append(
         f'<div class="cad-card">'
         f'<h2>2. Market Context & Competitive Position</h2>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:10px;">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_st}</div>'
-        f'<div class="cad-kpi-label">{_html.escape(data["state"])} Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_pct(st_med_margin)}</div>'
-        f'<div class="cad-kpi-label">State Median Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{data["n_comps"]}</div>'
-        f'<div class="cad-kpi-label">Comparable Hospitals</div></div></div>'
+        f'{market_kpis}'
         f'<p style="font-size:12.5px;color:var(--cad-text2);line-height:1.7;">'
         f'{_html.escape(data["state"])} has {n_st} Medicare-certified hospitals with a '
         f'median operating margin of {_pct(st_med_margin)}. The target\'s margin of '

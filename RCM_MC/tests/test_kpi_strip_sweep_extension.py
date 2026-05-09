@@ -485,5 +485,41 @@ class CadKpiGridFullyEliminated(unittest.TestCase):
         )
 
 
+class CadKpiTilesFullyEliminated(unittest.TestCase):
+    """Stronger guard: also catches bare ``class=\"cad-kpi\"`` /
+    ``cad-kpi-value`` / ``cad-kpi-label`` tile usages that the
+    original sweep grep missed (they appeared inside hand-rolled
+    flex/grid wrappers without the ``cad-kpi-grid`` class). Server
+    routes are included in scope since some pages emit HTML
+    directly from ``server.py``."""
+
+    LEGACY_CLASS_ATTRS = (
+        'class="cad-kpi"',
+        'class="cad-kpi-value"',
+        'class="cad-kpi-label"',
+    )
+
+    def test_no_module_emits_legacy_tile_markup(self) -> None:
+        import pathlib
+        repo_root = pathlib.Path(__file__).resolve().parent.parent
+        scan_roots = [repo_root / "rcm_mc" / "ui", repo_root / "rcm_mc" / "server.py"]
+        offenders: list[str] = []
+        for root in scan_roots:
+            paths = root.rglob("*.py") if root.is_dir() else [root]
+            for py in paths:
+                try:
+                    src = py.read_text(encoding="utf-8")
+                except OSError:
+                    continue
+                for attr in self.LEGACY_CLASS_ATTRS:
+                    if attr in src:
+                        offenders.append(f"{py.relative_to(repo_root)} :: {attr}")
+                        break
+        self.assertEqual(
+            offenders, [],
+            f"Legacy cad-kpi tile markup found in: {offenders}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -192,19 +192,21 @@ def render_model_validation(
         over_covered = sum(1 for p in all_perfs if p.coverage_rate > 0.95)
         under_covered = sum(1 for p in all_perfs if p.coverage_rate < 0.85)
 
+        # P26 follow-up: calibration KPIs migrated to kpi_strip. The
+        # well-calibrated tile lights up positive only when there are
+        # any calibrated models so an empty registry stays quiet.
+        cov_kpis = kpi_strip([
+            {"label": "Well-Calibrated (85-95%)", "value": str(well_calibrated),
+             "tone": "positive" if well_calibrated else "neutral"},
+            {"label": "Over-Covered (>95%)", "value": str(over_covered),
+             "tone": "warning" if over_covered else "neutral"},
+            {"label": "Under-Covered (<85%)", "value": str(under_covered),
+             "tone": "negative" if under_covered else "neutral"},
+        ])
         cov_analysis = (
             f'<div class="cad-card" style="border-left:3px solid var(--cad-accent);">'
             f'<h2>Confidence Interval Calibration</h2>'
-            f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:10px;">'
-            f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-            f'{well_calibrated}</div>'
-            f'<div class="cad-kpi-label">Well-Calibrated (85-95%)</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-warn);">'
-            f'{over_covered}</div>'
-            f'<div class="cad-kpi-label">Over-Covered (&gt;95%)</div></div>'
-            f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-neg);">'
-            f'{under_covered}</div>'
-            f'<div class="cad-kpi-label">Under-Covered (&lt;85%)</div></div></div>'
+            f'{cov_kpis}'
             f'<p style="font-size:12px;color:var(--cad-text2);">'
             f'Target: 90% of actuals should fall within the 90% CI. '
             f'Over-covered intervals are too wide (conservative but wastes bandwidth). '

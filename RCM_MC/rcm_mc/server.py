@@ -3716,7 +3716,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "Click to connect via ANTHROPIC_API_KEY."
             )
             body = (
-                '<div class="cad-kpi-grid">'
+                # Settings nav grid: a responsive 2-3-up card grid,
+                # not a KPI strip. Reusing the kpi-grid class for
+                # navigation tiles was a layout shortcut; the class
+                # is being retired so we inline the grid here.
+                '<div style="display:grid;grid-template-columns:'
+                'repeat(auto-fit,minmax(260px,1fr));gap:12px;">'
                 '<a href="/settings/ai" class="cad-card" '
                 'style="text-decoration:none;color:inherit;">'
                 f'<h3>AI Assistant (Claude){_ai_badge}</h3>'
