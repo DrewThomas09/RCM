@@ -86,30 +86,46 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     cushion_color = PALETTE["positive"] if cushion > 0.25 else (
         PALETTE["warning"] if cushion > 0.10 else PALETTE["negative"])
 
+    headroom_tone = (
+        "positive" if headroom > 1.5
+        else "warning" if headroom > 0.5
+        else "negative"
+    )
+    cushion_tone = (
+        "positive" if cushion > 0.25
+        else "warning" if cushion > 0.10
+        else "negative"
+    )
+    cov_items = [
+        {"label": "Actual Leverage", "value": f"{actual_lev:.1f}x"},
+        {"label": "Covenant Max",    "value": f"{max_lev:.1f}x"},
+        {"label": "Headroom (turns)",
+         "value": f"{headroom:.1f}x", "tone": headroom_tone},
+        {"label": "EBITDA Cushion",
+         "value": f"{cushion:.0%}", "tone": cushion_tone},
+    ]
+    if trips_at > 0:
+        cov_items.append({
+            "label": "Covenant Trips at",
+            "value": f"${trips_at/1e6:.0f}M",
+        })
+    if coverage > 0:
+        cov_items.append({
+            "label": "Interest Coverage",
+            "value": f"{coverage:.1f}x",
+        })
+
     cov_section = (
         f'<div class="cad-card">'
         f'<h2>Covenant Headroom</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:12px;">'
         f'How much EBITDA can compress before the leverage covenant trips?</p>'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{actual_lev:.1f}x</div>'
-        f'<div class="cad-kpi-label">Actual Leverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{max_lev:.1f}x</div>'
-        f'<div class="cad-kpi-label">Covenant Max</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{headroom_color};">'
-        f'{headroom:.1f}x</div><div class="cad-kpi-label">Headroom (turns)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{cushion_color};">'
-        f'{cushion:.0%}</div><div class="cad-kpi-label">EBITDA Cushion</div></div>'
-        + (f'<div class="cad-kpi"><div class="cad-kpi-value">${trips_at/1e6:.0f}M</div>'
-           f'<div class="cad-kpi-label">Covenant Trips at</div></div>' if trips_at > 0 else "")
-        + (f'<div class="cad-kpi"><div class="cad-kpi-value">{coverage:.1f}x</div>'
-           f'<div class="cad-kpi-label">Interest Coverage</div></div>' if coverage > 0 else "")
-        + f'</div>'
-        f'<div style="margin-top:12px;font-size:12.5px;color:{PALETTE["text_secondary"]};">'
-        f'<strong>Plain English:</strong> EBITDA can decline {cushion:.0%} '
-        f'(from ${cov_ebitda/1e6:.0f}M to ${trips_at/1e6:.0f}M) before the {max_lev:.1f}x leverage covenant trips. '
-        f'{"This is comfortable headroom." if cushion > 0.25 else "This is tight — stress test carefully." if cushion > 0.10 else "Very thin — covenant breach risk is high."}'
-        f'</div></div>'
+        + kpi_strip(cov_items)
+        + f'<div style="margin-top:12px;font-size:12.5px;color:{PALETTE["text_secondary"]};">'
+        + f'<strong>Plain English:</strong> EBITDA can decline {cushion:.0%} '
+        + f'(from ${cov_ebitda/1e6:.0f}M to ${trips_at/1e6:.0f}M) before the {max_lev:.1f}x leverage covenant trips. '
+        + f'{"This is comfortable headroom." if cushion > 0.25 else "This is tight — stress test carefully." if cushion > 0.10 else "Very thin — covenant breach risk is high."}'
+        + f'</div></div>'
     ) if cov_ebitda > 0 else ""
 
     actions = (

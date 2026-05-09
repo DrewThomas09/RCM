@@ -60,22 +60,21 @@ def render_pipeline(db_path: str) -> str:
     total = len(hospitals)
     active = sum(1 for h in hospitals if h.stage not in ("closed", "passed"))
 
-    # ── KPIs ──
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total}</div>'
-        f'<div class="cad-kpi-label">In Pipeline</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{active}</div>'
-        f'<div class="cad-kpi-label">Active</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{summary.get("diligence", 0)}</div>'
-        f'<div class="cad-kpi-label">In Diligence</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-        f'{summary.get("closed", 0)}</div>'
-        f'<div class="cad-kpi-label">Closed</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(searches)}</div>'
-        f'<div class="cad-kpi-label">Saved Searches</div></div>'
-        f'</div>'
-    )
+    # ── KPIs ── (P26 follow-up: kpi_strip migration.)
+    from ._ui_kit import format_value, kpi_strip
+    kpis = kpi_strip([
+        {"label": "In Pipeline",
+         "value": format_value(total, kind="count")},
+        {"label": "Active",
+         "value": format_value(active, kind="count")},
+        {"label": "In Diligence",
+         "value": format_value(summary.get("diligence", 0), kind="count")},
+        {"label": "Closed",
+         "value": format_value(summary.get("closed", 0), kind="count"),
+         "tone": "positive"},
+        {"label": "Saved Searches",
+         "value": format_value(len(searches), kind="count")},
+    ])
 
     # ── Funnel visualization ──
     funnel_bars = ""

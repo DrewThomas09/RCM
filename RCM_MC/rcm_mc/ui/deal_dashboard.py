@@ -174,7 +174,11 @@ def render_deal_dashboard(
         ("Net Revenue", profile.get("net_revenue"), "$M"),
     ]
 
-    kpi_cards = ""
+    # P26 follow-up: kpi_strip migration. Items added conditionally
+    # so the strip degrades when a metric is missing — same as the
+    # legacy markup did via the ``if val is None: continue`` skip.
+    from ._ui_kit import kpi_strip
+    kpi_items = []
     for label, val, suffix in metrics:
         if val is None:
             continue
@@ -188,13 +192,10 @@ def render_deal_dashboard(
                 display = f"{v:,.0f}"
         except (TypeError, ValueError):
             display = str(val)
-        kpi_cards += (
-            f'<div class="cad-kpi">'
-            f'<div class="cad-kpi-value">{html.escape(display)}</div>'
-            f'<div class="cad-kpi-label">{html.escape(label)}</div></div>'
-        )
-
-    profile_section = f'<div class="cad-kpi-grid">{kpi_cards}</div>' if kpi_cards else ""
+        kpi_items.append({
+            "label": label, "value": html.escape(display),
+        })
+    profile_section = kpi_strip(kpi_items) if kpi_items else ""
 
     # Derived inline estimates
     rev_val = float(profile.get("net_revenue", 0) or 0)

@@ -131,26 +131,21 @@ def render_portfolio_bridge(
     total_new_ebitda = total_current_ebitda + total_uplift
     avg_margin_improvement = np.mean([d["margin_bps"] for d in deal_results]) if deal_results else 0
 
-    # ── KPIs ──
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_deals}</div>'
-        f'<div class="cad-kpi-label">Pipeline Deals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(total_revenue)}</div>'
-        f'<div class="cad-kpi-label">Total Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(total_current_ebitda)}</div>'
-        f'<div class="cad-kpi-label">Current EBITDA</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-        f'+{_fm(total_uplift)}</div>'
-        f'<div class="cad-kpi-label">Total RCM Uplift</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-        f'{_fm(total_new_ebitda)}</div>'
-        f'<div class="cad-kpi-label">Pro Forma EBITDA</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'+{avg_margin_improvement:.0f}bps</div>'
-        f'<div class="cad-kpi-label">Avg Margin Lift</div></div>'
-        f'</div>'
-    )
+    # ── KPIs ── (P26 follow-up: kpi_strip migration; auto-densifies
+    # via the >5-tile rule.)
+    from ._ui_kit import format_value, kpi_strip
+    kpis = kpi_strip([
+        {"label": "Pipeline Deals",
+         "value": format_value(n_deals, kind="count")},
+        {"label": "Total Revenue",   "value": _fm(total_revenue)},
+        {"label": "Current EBITDA",  "value": _fm(total_current_ebitda)},
+        {"label": "Total RCM Uplift",
+         "value": f"+{_fm(total_uplift)}", "tone": "positive"},
+        {"label": "Pro Forma EBITDA",
+         "value": _fm(total_new_ebitda), "tone": "positive"},
+        {"label": "Avg Margin Lift",
+         "value": f"+{avg_margin_improvement:.0f}bps"},
+    ], dense=True)
 
     # ── Per-deal breakdown ──
     deal_rows = ""

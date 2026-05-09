@@ -255,5 +255,47 @@ class FivePageBatchMigrated(unittest.TestCase):
         self.assertNotIn('class="cad-kpi-grid"', src)
 
 
+class SixPageBatchTwoMigrated(unittest.TestCase):
+    """Batch 2: pe_returns covenant block, pipeline_page,
+    portfolio_bridge, conference, ebitda_bridge (×2 blocks),
+    deal_dashboard. Source-only checks because some pages need
+    heavy fixture setup to render end-to-end."""
+
+    def _src(self, module_name: str) -> str:
+        import importlib
+        import inspect
+        return inspect.getsource(importlib.import_module(module_name))
+
+    def test_pe_returns_fully_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.pe_returns_page")
+        self.assertGreaterEqual(src.count("kpi_strip("), 2)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_pipeline_page_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.pipeline_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_portfolio_bridge_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.portfolio_bridge_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_conference_page_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.conference_page")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_ebitda_bridge_migrated_two_blocks(self) -> None:
+        src = self._src("rcm_mc.ui.ebitda_bridge_page")
+        self.assertGreaterEqual(src.count("kpi_strip("), 2)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_deal_dashboard_migrated(self) -> None:
+        src = self._src("rcm_mc.ui.deal_dashboard")
+        self.assertIn("kpi_strip(", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -504,27 +504,31 @@ def render_ebitda_bridge(
     rev_src = Source.HCRIS
     lever_src = Source.SELLER if has_seller_data else Source.ML_PREDICTION
 
-    # ── KPI Cards ──
-    ebitda_color = _color_for_value(bridge["total_ebitda_impact"])
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(rev)}</div>'
-        f'<div class="cad-kpi-label">Net Revenue {source_tag(Source.HCRIS, "FY2022")}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(bridge["current_ebitda"])}</div>'
-        f'<div class="cad-kpi-label">Current EBITDA {source_tag(Source.COMPUTED)}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{ebitda_color};">'
-        f'+{_fm(bridge["total_ebitda_impact"])}</div>'
-        f'<div class="cad-kpi-label">RCM EBITDA Uplift</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-pos);">'
-        f'{_fm(bridge["new_ebitda"])}</div>'
-        f'<div class="cad-kpi-label">Pro Forma EBITDA</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'+{bridge["margin_improvement_bps"]:.0f}bps</div>'
-        f'<div class="cad-kpi-label">Margin Improvement</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(bridge["total_wc_released"])}</div>'
-        f'<div class="cad-kpi-label">WC Released (1x)</div></div>'
-        f'</div>'
+    # ── KPI Cards ── (P26 follow-up: kpi_strip migration; auto-
+    # densifies for 6 tiles.)
+    from ._ui_kit import kpi_strip
+    uplift_tone = (
+        "positive" if bridge["total_ebitda_impact"] > 0
+        else "negative" if bridge["total_ebitda_impact"] < 0
+        else "neutral"
     )
+    kpis = kpi_strip([
+        {"label": (
+            f"Net Revenue {source_tag(Source.HCRIS, 'FY2022')}"
+         ), "value": _fm(rev)},
+        {"label": (
+            f"Current EBITDA {source_tag(Source.COMPUTED)}"
+         ), "value": _fm(bridge["current_ebitda"])},
+        {"label": "RCM EBITDA Uplift",
+         "value": f"+{_fm(bridge['total_ebitda_impact'])}",
+         "tone": uplift_tone},
+        {"label": "Pro Forma EBITDA",
+         "value": _fm(bridge["new_ebitda"]), "tone": "positive"},
+        {"label": "Margin Improvement",
+         "value": f"+{bridge['margin_improvement_bps']:.0f}bps"},
+        {"label": "WC Released (1x)",
+         "value": _fm(bridge["total_wc_released"])},
+    ], dense=True)
 
     # ── Waterfall (CSS bars) ──
     max_bar = max(abs(l["ebitda_impact"]) for l in bridge["levers"]) if bridge["levers"] else 1
@@ -700,25 +704,28 @@ def render_ebitda_bridge(
     cushion = (bridge["new_ebitda"] - entry_debt / 6.5) / bridge["new_ebitda"] if bridge["new_ebitda"] > 0 else 0
 
     cov_color = "var(--cad-pos)" if headroom > 1.0 else ("var(--cad-warn)" if headroom > 0.5 else "var(--cad-neg)")
+    cov_tone = (
+        "positive" if headroom > 1.0
+        else "warning" if headroom > 0.5
+        else "negative"
+    )
     covenant_section = (
         f'<div class="cad-card">'
         f'<h2>Covenant Headroom (at 10x Entry, 6.5x Max Leverage)</h2>'
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(4,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{actual_lev:.1f}x</div>'
-        f'<div class="cad-kpi-label">Entry Leverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{cov_color};">'
-        f'{pro_forma_lev:.1f}x</div>'
-        f'<div class="cad-kpi-label">Pro Forma Leverage</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{cov_color};">'
-        f'{headroom:.1f}x</div>'
-        f'<div class="cad-kpi-label">Headroom (turns)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{cushion:.0%}</div>'
-        f'<div class="cad-kpi-label">EBITDA Cushion</div></div>'
-        f'</div>'
-        f'<p style="font-size:12px;color:var(--cad-text2);margin-top:8px;">'
-        f'Pro forma EBITDA can decline {cushion:.0%} before the 6.5x covenant trips. '
-        f'RCM uplift reduces leverage from {actual_lev:.1f}x to {pro_forma_lev:.1f}x, '
-        f'adding {headroom - (6.5 - actual_lev):.1f} turns of cushion.</p></div>'
+        + kpi_strip([
+            {"label": "Entry Leverage",
+             "value": f"{actual_lev:.1f}x"},
+            {"label": "Pro Forma Leverage",
+             "value": f"{pro_forma_lev:.1f}x", "tone": cov_tone},
+            {"label": "Headroom (turns)",
+             "value": f"{headroom:.1f}x", "tone": cov_tone},
+            {"label": "EBITDA Cushion",
+             "value": f"{cushion:.0%}"},
+        ])
+        + f'<p style="font-size:12px;color:var(--cad-text2);margin-top:8px;">'
+        + f'Pro forma EBITDA can decline {cushion:.0%} before the 6.5x covenant trips. '
+        + f'RCM uplift reduces leverage from {actual_lev:.1f}x to {pro_forma_lev:.1f}x, '
+        + f'adding {headroom - (6.5 - actual_lev):.1f} turns of cushion.</p></div>'
     )
 
     # ── Methodology ──

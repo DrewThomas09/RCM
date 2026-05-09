@@ -426,17 +426,18 @@ def render_conference_roadmap(category: str = "all") -> str:
             f'<span class="cad-mono">{count}</span></div>'
         )
 
+    from ._ui_kit import format_value, kpi_strip
     summary = (
         f'<div class="cad-card" style="margin-bottom:12px;">'
         f'<h2 style="font-size:13px;margin-bottom:8px;">Event Summary</h2>'
-        f'<div class="cad-kpi-grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="font-size:20px;">{total}</div>'
-        f'<div class="cad-kpi-label">Total Events</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="font-size:20px;color:var(--cad-pos);">'
-        f'{flagship_count}</div>'
-        f'<div class="cad-kpi-label">Flagship</div></div>'
-        f'</div>'
-        f'{cat_breakdown}</div>'
+        + kpi_strip([
+            {"label": "Total Events",
+             "value": format_value(total, kind="count")},
+            {"label": "Flagship",
+             "value": format_value(flagship_count, kind="count"),
+             "tone": "positive"},
+        ])
+        + f'{cat_breakdown}</div>'
     )
 
     planning_tips = (
