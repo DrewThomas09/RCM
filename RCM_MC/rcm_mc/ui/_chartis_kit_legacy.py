@@ -1068,44 +1068,13 @@ _CAD_COMPAT_CSS = f"""
   margin-bottom: 10px;
 }}
 
-/* KPI grid */
-.cad-kpi-grid {{
-  display: flex;
-  gap: 1px;
-  background: var(--ck-border);
-  border: 1px solid var(--ck-border);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 14px;
-}}
-.cad-kpi {{
-  background: var(--ck-panel);
-  padding: 10px 14px;
-  flex: 1;
-  min-width: 110px;
-}}
-.cad-kpi-value {{
-  font-family: var(--ck-mono);
-  font-size: 20px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--ck-text);
-  line-height: 1;
-}}
-.cad-kpi-label {{
-  font-family: var(--ck-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--ck-text-faint);
-  margin-top: 4px;
-}}
-.cad-kpi-delta {{
-  font-family: var(--ck-mono);
-  font-size: 9.5px;
-  font-variant-numeric: tabular-nums;
-  margin-top: 3px;
-}}
+/* P26 follow-up: legacy .cad-kpi-grid/.cad-kpi/.cad-kpi-value/
+   .cad-kpi-label/.cad-kpi-delta rules removed — every consumer
+   migrated to the kpi_strip primitive (.kpi-strip / .kpi-item /
+   .kpi-label / .kpi-value). The legacy shell ships these only as a
+   fallback when CHARTIS_UI_V2 is off; with no consumers either way,
+   they're dead bytes. The cross-cutting CadKpiTilesFullyEliminated
+   guard test prevents reintroduction. */
 
 /* Buttons */
 .cad-btn {{

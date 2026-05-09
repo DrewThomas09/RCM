@@ -923,29 +923,10 @@ _CSS_INLINE_FALLBACK = """
   .cad-border     { border-color: var(--sc-rule); }
   .cad-border-lt  { border-color: var(--sc-rule-2); }
 
-  .cad-kpi-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0; background: var(--sc-panel); border:1px solid var(--sc-rule);
-    border-radius:2px; margin-top: var(--sc-s-3);
-  }
-  .cad-kpi {
-    padding: var(--sc-s-4) var(--sc-s-5);
-    border-right: 1px solid var(--sc-rule); border-top: 3px solid var(--sc-teal);
-  }
-  .cad-kpi:last-child { border-right: 0; }
-  .cad-kpi-label {
-    font-family: var(--sc-mono); font-size: 10px;
-    letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--sc-text-faint); margin-bottom: 8px;
-  }
-  .cad-kpi-value {
-    font-family: var(--sc-serif); font-size: 28px; font-weight: 500;
-    color: var(--sc-navy); letter-spacing: -0.01em; line-height: 1;
-  }
-  .cad-kpi-delta {
-    font-family: var(--sc-mono); font-size: 11px; margin-top: 6px;
-    letter-spacing: 0.04em;
-  }
+  /* P26 follow-up: legacy .cad-kpi/.cad-kpi-* rules removed.
+     The kpi_strip primitive (.kpi-strip / .kpi-item / .kpi-label /
+     .kpi-value / .kpi-sublabel) replaced every consumer; the dead
+     selectors were shipping ~700 bytes of CSS on every page. */
 
   .cad-badge {
     display: inline-flex; align-items: center; padding: 2px 8px;
