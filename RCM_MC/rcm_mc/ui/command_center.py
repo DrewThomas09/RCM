@@ -120,23 +120,24 @@ def render_command_center(
 
     sections = []
 
-    # ── Hero KPIs ──
-    sections.append(
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_hospitals:,}</div>'
-        f'<div class="cad-kpi-label">Hospitals {source_tag(Source.HCRIS, "FY2022")}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_pe_targets:,}</div>'
-        f'<div class="cad-kpi-label">PE-Sized Targets</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fm(total_revenue)}</div>'
-        f'<div class="cad-kpi-label">Total NPSR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{median_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Median Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:var(--cad-neg);">{distressed:,}</div>'
-        f'<div class="cad-kpi-label">Distressed (&lt;-5%)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(deals)}</div>'
-        f'<div class="cad-kpi-label">Active Deals</div></div>'
-        f'</div>'
-    )
+    # ── Hero KPIs ── (P26 follow-up: kpi_strip migration.)
+    from ._ui_kit import format_value, kpi_strip
+    sections.append(kpi_strip([
+        {"label": (
+            f"HOSPITALS {source_tag(Source.HCRIS, 'FY2022')}"
+         ),
+         "value": format_value(n_hospitals, kind="count")},
+        {"label": "PE-SIZED TARGETS",
+         "value": format_value(n_pe_targets, kind="count")},
+        {"label": "TOTAL NPSR", "value": _fm(total_revenue)},
+        {"label": "MEDIAN MARGIN",
+         "value": format_value(median_margin, kind="percent")},
+        {"label": "DISTRESSED (&lt;-5%)",
+         "value": format_value(distressed, kind="count"),
+         "tone": "negative"},
+        {"label": "ACTIVE DEALS",
+         "value": format_value(len(deals), kind="count")},
+    ], dense=True))
 
     # ── Quick Actions bar — terminal-style command strip ──
     sections.append(

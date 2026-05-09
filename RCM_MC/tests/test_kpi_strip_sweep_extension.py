@@ -209,5 +209,51 @@ class ModelsLBOPageMigrated(unittest.TestCase):
         self.assertNotIn('class="cad-kpi-grid"', html)
 
 
+class FivePageBatchMigrated(unittest.TestCase):
+    """One-line check that the five-page batch now uses kpi_strip
+    rather than the bespoke cad-kpi-grid markup. Each renderer
+    produces a self-contained KPI block; the test exercises the
+    cleanest reachable path per page."""
+
+    def test_command_center_kpi_strip(self) -> None:
+        # command_center is hard to call directly without a portfolio
+        # store + corpus fixture; check the source instead.
+        import inspect
+        from rcm_mc.ui import command_center
+        src = inspect.getsource(command_center)
+        self.assertIn("kpi_strip([", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_market_analysis_kpi_strip(self) -> None:
+        import inspect
+        from rcm_mc.ui import market_analysis_page
+        src = inspect.getsource(market_analysis_page)
+        self.assertIn("kpi_strip([", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_demand_kpi_strip(self) -> None:
+        import inspect
+        from rcm_mc.ui import demand_page
+        src = inspect.getsource(demand_page)
+        self.assertIn("kpi_strip([", src)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_market_data_kpi_strip(self) -> None:
+        import inspect
+        from rcm_mc.ui import market_data_page
+        src = inspect.getsource(market_data_page)
+        # Two KPI blocks migrated; both use kpi_strip.
+        self.assertGreaterEqual(src.count("kpi_strip("), 2)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+    def test_analytics_pages_kpi_strip(self) -> None:
+        import inspect
+        from rcm_mc.ui import analytics_pages
+        src = inspect.getsource(analytics_pages)
+        # Four KPI blocks migrated; all use kpi_strip.
+        self.assertGreaterEqual(src.count("kpi_strip("), 4)
+        self.assertNotIn('class="cad-kpi-grid"', src)
+
+
 if __name__ == "__main__":
     unittest.main()

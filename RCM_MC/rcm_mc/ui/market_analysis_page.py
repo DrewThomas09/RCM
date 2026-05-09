@@ -28,25 +28,39 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     moat_rating = moat.get("moat_rating", "none")
     moat_cls = "cad-badge-green" if moat_rating == "wide" else ("cad-badge-amber" if moat_rating == "narrow" else "cad-badge-muted")
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{market_size.get("hospitals", 0)}</div>'
-        f'<div class="cad-kpi-label">Hospitals in Market</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{market_size.get("total_beds", 0):,}</div>'
-        f'<div class="cad-kpi-label">Total Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${market_size.get("total_revenue", 0)/1e9:.1f}B</div>'
-        f'<div class="cad-kpi-label">Market Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'<span class="cad-badge {hhi_cls}" style="font-size:14px;padding:4px 12px;">{hhi_label}</span></div>'
-        f'<div class="cad-kpi-label">HHI: {hhi:,.0f}</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">'
-        f'<span class="cad-badge {moat_cls}" style="font-size:14px;padding:4px 12px;">'
-        f'{moat_rating.title()}</span></div>'
-        f'<div class="cad-kpi-label">Moat Rating ({moat.get("moat_score", 0)}/10)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">#{moat.get("market_share_rank", 0)}</div>'
-        f'<div class="cad-kpi-label">Market Share Rank</div></div>'
-        f'</div>'
+    # P26 follow-up: kpi_strip migration. HHI and Moat Rating tiles
+    # carry pre-rendered badge HTML in their value field — kpi_strip
+    # passes the value through without escaping (caller is
+    # responsible) so the badge survives the migration.
+    from ._ui_kit import format_value, kpi_strip
+    hhi_badge = (
+        f'<span class="cad-badge {hhi_cls}" '
+        'style="font-size:14px;padding:4px 12px;">'
+        f'{hhi_label}</span>'
     )
+    moat_badge = (
+        f'<span class="cad-badge {moat_cls}" '
+        'style="font-size:14px;padding:4px 12px;">'
+        f'{moat_rating.title()}</span>'
+    )
+    kpis = kpi_strip([
+        {"label": "HOSPITALS IN MARKET",
+         "value": format_value(market_size.get("hospitals", 0),
+                               kind="count")},
+        {"label": "TOTAL BEDS",
+         "value": format_value(market_size.get("total_beds", 0),
+                               kind="count")},
+        {"label": "MARKET REVENUE",
+         "value": (
+             f"${market_size.get('total_revenue', 0)/1e9:.1f}B"
+         )},
+        {"label": f"HHI: {hhi:,.0f}",         "value": hhi_badge},
+        {"label": (
+            f"MOAT RATING ({moat.get('moat_score', 0)}/10)"
+         ), "value": moat_badge},
+        {"label": "MARKET SHARE RANK",
+         "value": f"#{moat.get('market_share_rank', 0)}"},
+    ], dense=True)
 
     # Moat breakdown
     moat_items = ""

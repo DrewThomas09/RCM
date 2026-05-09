@@ -29,23 +29,56 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
 
     elas_label = "Inelastic" if abs(elasticity) < 0.2 else ("Moderate" if abs(elasticity) < 0.4 else "Elastic")
 
-    # KPIs
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{density_color};">'
-        f'{density:.0f}/100</div>'
-        f'<div class="cad-kpi-label">Disease Density Index</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{stick_color};">'
-        f'{stickiness:.0f}/100</div>'
-        f'<div class="cad-kpi-label">Demand Stickiness</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{elas_color};">'
-        f'{elasticity:.2f}</div>'
-        f'<div class="cad-kpi-label">Price Elasticity ({elas_label})</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{tw_color};">'
-        f'{tailwind:+.0f}</div>'
-        f'<div class="cad-kpi-label">Tailwind Score</div></div>'
-        f'</div>'
+    # P26 follow-up: kpi_strip migration. Tone derived from the
+    # same band logic that previously drove the inline color
+    # attribute, mapped onto the kit's positive/warning/negative
+    # tones.
+    from ._ui_kit import kpi_strip
+
+    def _band_tone(value: float, *, hi_threshold: float,
+                    lo_threshold: float, higher_is_better: bool = True) -> str:
+        if higher_is_better:
+            if value > hi_threshold:
+                return "positive"
+            if value > lo_threshold:
+                return "warning"
+            return "neutral"
+        # higher-is-worse — tailwind is signed.
+        if value > hi_threshold:
+            return "positive"
+        if value < lo_threshold:
+            return "negative"
+        return "neutral"
+
+    density_tone = _band_tone(density, hi_threshold=60, lo_threshold=40)
+    stick_tone = (
+        "positive" if stickiness > 60
+        else "warning" if stickiness > 40
+        else "negative"
     )
+    abs_e = abs(elasticity)
+    elas_tone = (
+        "positive" if abs_e < 0.2
+        else "warning" if abs_e < 0.4
+        else "negative"
+    )
+    tw_tone = _band_tone(
+        tailwind, hi_threshold=10, lo_threshold=-10,
+        higher_is_better=True,
+    )
+    # Labels stay mixed-case; the kit's .kpi-label CSS applies
+    # text-transform:uppercase for the visible style. Existing tests
+    # that grep for the original copy remain green.
+    kpis = kpi_strip([
+        {"label": "Disease Density Index",
+         "value": f"{density:.0f}/100", "tone": density_tone},
+        {"label": "Demand Stickiness",
+         "value": f"{stickiness:.0f}/100", "tone": stick_tone},
+        {"label": f"Price Elasticity ({elas_label})",
+         "value": f"{elasticity:.2f}", "tone": elas_tone},
+        {"label": "Tailwind Score",
+         "value": f"{tailwind:+.0f}", "tone": tw_tone},
+    ])
 
     # County disease prevalence table
     conditions = profile.get("top_conditions", [])

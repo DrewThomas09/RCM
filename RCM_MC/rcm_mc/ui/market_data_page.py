@@ -273,22 +273,20 @@ def _kpi_summary(stats: List[Dict[str, Any]]) -> str:
     avg_hhi = float(np.mean([s["hhi"] for s in stats])) if stats else 0
     avg_medicare = float(np.mean([s["medicare_pct"] for s in stats])) if stats else 0
 
-    return (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_hospitals:,}</div>'
-        f'<div class="cad-kpi-label">Total Hospitals (HCRIS)</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_beds:,}</div>'
-        f'<div class="cad-kpi-label">Total Licensed Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_rev/1e12:.1f}T</div>'
-        f'<div class="cad-kpi-label">Total Net Patient Revenue</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_margin:.1%}</div>'
-        f'<div class="cad-kpi-label">Avg Operating Margin</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_hhi:,.0f}</div>'
-        f'<div class="cad-kpi-label">Avg State HHI</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{avg_medicare:.0%}</div>'
-        f'<div class="cad-kpi-label">Avg Medicare Mix</div></div>'
-        f'</div>'
-    )
+    from ._ui_kit import format_value, kpi_strip
+    return kpi_strip([
+        {"label": "TOTAL HOSPITALS (HCRIS)",
+         "value": format_value(total_hospitals, kind="count")},
+        {"label": "TOTAL LICENSED BEDS",
+         "value": format_value(total_beds, kind="count")},
+        {"label": "TOTAL NET PATIENT REVENUE",
+         "value": f"${total_rev/1e12:.1f}T"},
+        {"label": "AVG OPERATING MARGIN",
+         "value": format_value(avg_margin, kind="percent")},
+        {"label": "AVG STATE HHI", "value": f"{avg_hhi:,.0f}"},
+        {"label": "AVG MEDICARE MIX",
+         "value": f"{avg_medicare:.0%}"},
+    ], dense=True)
 
 
 def render_market_data(
@@ -508,16 +506,15 @@ def render_state_detail(
     total_beds = int(sdf["beds"].fillna(0).sum())
     total_rev = float(sdf[rev_col].fillna(0).sum()) if rev_col in sdf.columns else 0
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n}</div>'
-        f'<div class="cad-kpi-label">Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{total_beds:,}</div>'
-        f'<div class="cad-kpi-label">Total Beds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_rev/1e9:.1f}B</div>'
-        f'<div class="cad-kpi-label">Total NPR</div></div>'
-        f'</div>'
-    )
+    from ._ui_kit import format_value, kpi_strip
+    kpis = kpi_strip([
+        {"label": "HOSPITALS",
+         "value": format_value(n, kind="count")},
+        {"label": "TOTAL BEDS",
+         "value": format_value(total_beds, kind="count")},
+        {"label": "TOTAL NPR",
+         "value": f"${total_rev/1e9:.1f}B"},
+    ])
 
     body = (
         f'{kpis}'

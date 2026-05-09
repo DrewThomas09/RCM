@@ -48,15 +48,17 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
         f'</div></div>'
     )
 
+    from ._ui_kit import format_value, kpi_strip
     nav = _model_nav(deal_id, "")
+    causal_kpis = kpi_strip([
+        {"label": "CAUSAL ESTIMATES",
+         "value": format_value(len(estimates), kind="count")},
+        {"label": "SIGNIFICANT (p&lt;0.05)",
+         "value": format_value(sig_count, kind="count")},
+    ])
     body = (
         f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(estimates)}</div>'
-        f'<div class="cad-kpi-label">Causal Estimates</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{sig_count}</div>'
-        f'<div class="cad-kpi-label">Significant (p&lt;0.05)</div></div>'
-        f'</div>'
+        f'{causal_kpis}'
         f'<div class="cad-card">'
         f'<h2>Initiative Impact Estimates</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
@@ -108,16 +110,18 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
         f'</div></div>'
     )
 
+    from ._ui_kit import format_value, kpi_strip
     nav = _model_nav(deal_id, "")
+    cum_tone = "positive" if cumulative > 0 else "negative"
+    cumul_kpis = kpi_strip([
+        {"label": "CUMULATIVE INITIATIVE IMPACT",
+         "value": f"${cumulative/1e6:.1f}M", "tone": cum_tone},
+        {"label": "PERIODS ANALYZED",
+         "value": format_value(len(actual), kind="count")},
+    ])
     body = (
         f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{cum_color};">'
-        f'${cumulative/1e6:.1f}M</div>'
-        f'<div class="cad-kpi-label">Cumulative Initiative Impact</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(actual)}</div>'
-        f'<div class="cad-kpi-label">Periods Analyzed</div></div>'
-        f'</div>'
+        f'{cumul_kpis}'
         f'<div class="cad-card">'
         f'<h2>Actual vs Counterfactual</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
@@ -135,6 +139,7 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
 
 def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
     """Render benchmark evolution — how industry benchmarks are changing."""
+    from ._ui_kit import format_value, kpi_strip
     rows = ""
     improving = 0
     declining = 0
@@ -163,15 +168,18 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
             f'</tr>'
         )
 
+    drift_kpis = kpi_strip([
+        {"label": "BENCHMARKS TRACKED",
+         "value": format_value(len(drifts), kind="count")},
+        {"label": "INDUSTRY IMPROVING",
+         "value": format_value(improving, kind="count"),
+         "tone": "positive"},
+        {"label": "INDUSTRY DECLINING",
+         "value": format_value(declining, kind="count"),
+         "tone": "negative"},
+    ])
     body = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(drifts)}</div>'
-        f'<div class="cad-kpi-label">Benchmarks Tracked</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["positive"]};">'
-        f'{improving}</div><div class="cad-kpi-label">Industry Improving</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{PALETTE["negative"]};">'
-        f'{declining}</div><div class="cad-kpi-label">Industry Declining</div></div>'
-        f'</div>'
+        f'{drift_kpis}'
 
         f'<div class="cad-card">'
         f'<h2>Benchmark Evolution</h2>'
@@ -199,6 +207,7 @@ def render_predicted_vs_actual(deal_id: str, deal_name: str,
                                 comparisons: List[Dict[str, Any]],
                                 report: Dict[str, Any]) -> str:
     """Render predicted-at-diligence vs actual-at-hold comparison."""
+    from ._ui_kit import format_value, kpi_strip
     pct_ci = report.get("pct_within_ci", 0)
     mae = report.get("mean_absolute_error", 0)
     n_metrics = report.get("n_metrics", 0)
@@ -239,17 +248,22 @@ def render_predicted_vs_actual(deal_id: str, deal_name: str,
     )
 
     nav = _model_nav(deal_id, "")
+    accuracy_tone = (
+        "positive" if pct_ci > 0.7
+        else "warning" if pct_ci > 0.5
+        else "negative"
+    )
+    pred_kpis = kpi_strip([
+        {"label": "WITHIN CONFIDENCE INTERVAL",
+         "value": f"{pct_ci:.0%}", "tone": accuracy_tone},
+        {"label": "MEAN ABSOLUTE ERROR",
+         "value": f"{mae:.2f}"},
+        {"label": "METRICS COMPARED",
+         "value": format_value(n_metrics, kind="count")},
+    ])
     body = (
         f'{nav}'
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{accuracy_color};">'
-        f'{pct_ci:.0%}</div>'
-        f'<div class="cad-kpi-label">Within Confidence Interval</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{mae:.2f}</div>'
-        f'<div class="cad-kpi-label">Mean Absolute Error</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{n_metrics}</div>'
-        f'<div class="cad-kpi-label">Metrics Compared</div></div>'
-        f'</div>'
+        f'{pred_kpis}'
 
         f'<div class="cad-card">'
         f'<h2>Predicted at Diligence vs Actual</h2>'
