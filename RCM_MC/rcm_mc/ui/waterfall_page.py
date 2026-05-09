@@ -26,23 +26,30 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     exit_proceeds = result.get("exit_proceeds", 0)
     hold_years = result.get("hold_years", 0)
 
-    irr_color = PALETTE["positive"] if gross_irr > 0.20 else (
-        PALETTE["warning"] if gross_irr > 0.15 else PALETTE["negative"])
+    # P26 follow-up: migrate this page's vertical-stack KPI block to
+    # the kit's kpi_strip primitive. Tone is derived from gross_irr
+    # bands so the leading metric still reads at a glance. Money
+    # values flow through format_value (2dp + auto M/B suffix).
+    from ._ui_kit import format_value, kpi_strip
 
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{irr_color};">'
-        f'{gross_irr:.1%}</div><div class="cad-kpi-label">Gross IRR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{gross_moic:.2f}x</div>'
-        f'<div class="cad-kpi-label">Gross MOIC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${invested/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Invested</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${exit_proceeds/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Exit Proceeds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{hold_years:.1f}yr</div>'
-        f'<div class="cad-kpi-label">Hold Period</div></div>'
-        f'</div>'
+    irr_tone = (
+        "positive" if gross_irr > 0.20
+        else "warning" if gross_irr > 0.15
+        else "negative"
     )
+    kpis = kpi_strip([
+        {"label": "GROSS IRR",
+         "value": format_value(gross_irr, kind="percent"),
+         "tone": irr_tone},
+        {"label": "GROSS MOIC",
+         "value": format_value(gross_moic, kind="multiple")},
+        {"label": "INVESTED",
+         "value": format_value(invested, kind="money")},
+        {"label": "EXIT PROCEEDS",
+         "value": format_value(exit_proceeds, kind="money")},
+        {"label": "HOLD PERIOD",
+         "value": f"{hold_years:.1f}yr"},
+    ])
 
     # LP/GP split visualization
     total = lp_total + gp_total

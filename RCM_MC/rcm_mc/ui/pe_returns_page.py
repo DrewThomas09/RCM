@@ -23,25 +23,32 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     hold = returns.get("hold_years", 5)
     total_dist = returns.get("total_distributions", 0)
 
+    # P26 follow-up: kpi_strip migration. The IRR-band logic that
+    # previously coloured the IRR cell now flows through the strip's
+    # ``tone`` field instead of an inline style attribute. The
+    # legacy ``irr_color`` variable is preserved because the
+    # downstream Returns Assessment card reads it for its border.
+    from ._ui_kit import format_value, kpi_strip
+
     irr_color = PALETTE["positive"] if irr > 0.20 else (
         PALETTE["warning"] if irr > 0.15 else PALETTE["negative"])
-
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{irr_color};">'
-        f'{irr:.1%}</div><div class="cad-kpi-label">IRR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{moic:.2f}x</div>'
-        f'<div class="cad-kpi-label">MOIC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${entry_eq/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Entry Equity</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${exit_proc/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Exit Proceeds</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">${total_dist/1e6:.0f}M</div>'
-        f'<div class="cad-kpi-label">Total Distributions</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{hold:.1f}yr</div>'
-        f'<div class="cad-kpi-label">Hold Period</div></div>'
-        f'</div>'
+    irr_tone = (
+        "positive" if irr > 0.20
+        else "warning" if irr > 0.15
+        else "negative"
     )
+    kpis = kpi_strip([
+        {"label": "IRR", "value": format_value(irr, kind="percent"),
+         "tone": irr_tone},
+        {"label": "MOIC", "value": format_value(moic, kind="multiple")},
+        {"label": "ENTRY EQUITY",
+         "value": format_value(entry_eq, kind="money")},
+        {"label": "EXIT PROCEEDS",
+         "value": format_value(exit_proc, kind="money")},
+        {"label": "TOTAL DISTRIBUTIONS",
+         "value": format_value(total_dist, kind="money")},
+        {"label": "HOLD PERIOD", "value": f"{hold:.1f}yr"},
+    ])
 
     # Interpretation
     irr_assessment = (
