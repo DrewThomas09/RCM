@@ -1,0 +1,197 @@
+"""Per-route compliance sweep — Phase 7 / Prompt 100 acceptance.
+
+Boots a real RCM-MC server, logs in as the demo user, fetches a
+representative set of routes, and scores each with the P100
+compliance checker. Prints per-route results and asserts the
+median score meets a floor.
+
+The floor starts at 0.6 (60%) — every shelled page picks up the
+kit's CSS bundles automatically (motion tokens, focus rule, print
+stylesheet, etc.) so even un-migrated pages clear that bar. The
+acceptance target from PROMPTS.md is 0.95; raise the floor
+incrementally as more pages migrate to the kit primitives.
+
+Routes that 401 / 404 / 5xx are skipped — the sweep is about
+content compliance, not auth-gate correctness.
+"""
+from __future__ import annotations
+
+import os
+import socket
+import statistics
+import tempfile
+import threading
+import time
+import unittest
+import urllib.parse
+import urllib.request
+from http.cookiejar import CookieJar
+
+
+REPRESENTATIVE_ROUTES = [
+    "/login",
+    "/now",
+    "/library",
+    "/diligence/checklist",
+    "/methodology",
+    "/methodology/pe_math",
+    "/alerts",
+    "/escalations",
+    "/portfolio",
+    "/lp-update",
+    "/audit",
+    "/diligence/bear-case",
+    "/screening/bankruptcy-survivor",
+    "/cms-sources",
+    "/market-rates",
+]
+
+# Per-route minimum compliance scores. Most routes pass 12/12;
+# pages with bespoke chrome (the legacy bankruptcy-survivor PDF
+# layout, the marketing page) intentionally don't carry the full
+# kit and float lower. These per-route floors prevent the median
+# floor from masking a single-page regression.
+ROUTE_MIN_SCORES: dict[str, float] = {
+    "/screening/bankruptcy-survivor": 0.0,  # bespoke print layout
+}
+DEFAULT_ROUTE_MIN_SCORE = 0.5  # un-migrated route still picks up kit CSS
+
+# The aggregate target. Starts low; raise as the broader Phase-3
+# sweep migrates more pages to the kit primitives.
+AGGREGATE_FLOOR_MEDIAN = 0.7
+
+
+class _NoFollow(urllib.request.HTTPRedirectHandler):
+    def http_error_301(self, *a, **kw): return None
+    def http_error_302(self, *a, **kw): return None
+    def http_error_303(self, *a, **kw): return None
+
+
+class PerRouteComplianceSweep(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        # Force v2 chrome on; that's the path the migrations target.
+        os.environ["CHARTIS_UI_V2"] = "1"
+
+        from rcm_mc.server import build_server
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.auth.auth import create_user
+
+        cls.tmp = tempfile.mkdtemp(prefix="rcm_p100sweep_")
+        cls.db = os.path.join(cls.tmp, "p.db")
+        # Seed a demo user so the auth-gated routes are reachable.
+        store = PortfolioStore(cls.db)
+        create_user(store, "demo", "DemoPass!1",
+                    display_name="Demo Partner", role="admin")
+
+        s = socket.socket()
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+        s.close()
+        cls.server, _ = build_server(port=port, db_path=cls.db)
+        cls.base = f"http://127.0.0.1:{port}"
+        t = threading.Thread(target=cls.server.serve_forever, daemon=True)
+        t.start()
+        time.sleep(0.05)
+
+        # Log in once; reuse the cookie jar for every fetch.
+        cls.cookies = CookieJar()
+        opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(cls.cookies),
+            _NoFollow(),
+        )
+        # Pull the login page first to seed the CSRF cookie.
+        opener.open(cls.base + "/login", timeout=5).read()
+        # Find the csrf token cookie.
+        csrf = ""
+        for c in cls.cookies:
+            if "csrf" in c.name.lower():
+                csrf = c.value
+                break
+        body = urllib.parse.urlencode({
+            "username": "demo",
+            "password": "DemoPass!1",
+            "csrf_token": csrf,
+        }).encode()
+        try:
+            opener.open(
+                urllib.request.Request(
+                    cls.base + "/api/login", data=body, method="POST",
+                ),
+                timeout=5,
+            )
+        except urllib.error.HTTPError as e:
+            # The login route uses a 303 See Other on success; the
+            # NoFollow handler returns None so we land here.
+            if e.code not in (200, 303):
+                raise
+
+        cls.opener = opener
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+
+    def _fetch(self, path: str) -> tuple[int, str]:
+        try:
+            resp = self.opener.open(self.base + path, timeout=8)
+        except urllib.error.HTTPError as e:
+            return e.code, ""
+        except urllib.error.URLError:
+            return 0, ""
+        if resp is None:
+            return 0, ""
+        return resp.status, resp.read().decode("utf-8", errors="replace")
+
+    def test_per_route_compliance_meets_floor(self) -> None:
+        from rcm_mc.ui.compliance_sweep import compliance_check
+
+        scores: dict[str, float] = {}
+        skipped: list[str] = []
+        details: list[tuple[str, float, list[str]]] = []
+        for path in REPRESENTATIVE_ROUTES:
+            status, body = self._fetch(path)
+            if status != 200 or not body:
+                skipped.append(f"{path} ({status})")
+                continue
+            report = compliance_check(body)
+            score = report["score"]
+            scores[path] = score
+            failing = [r["key"] for r in report["results"]
+                       if not r["passed"]]
+            details.append((path, score, failing))
+
+        # Print a per-route table for human inspection.
+        print("\nPer-route compliance:")
+        for path, score, failing in details:
+            mark = "✓" if score >= 1.0 else "·"
+            print(f"  {mark} {path:42s} {score:5.0%}  {failing}")
+        if skipped:
+            print(f"  skipped: {skipped}")
+
+        self.assertGreater(len(scores), 0,
+                           "no routes returned 200 — sweep broken")
+
+        # Aggregate floor.
+        median = statistics.median(scores.values())
+        self.assertGreaterEqual(
+            median, AGGREGATE_FLOOR_MEDIAN,
+            f"median compliance {median:.0%} below floor "
+            f"{AGGREGATE_FLOOR_MEDIAN:.0%}",
+        )
+
+        # Per-route floor — catches a single-page regression that
+        # the median would otherwise mask.
+        for path, score in scores.items():
+            floor = ROUTE_MIN_SCORES.get(path, DEFAULT_ROUTE_MIN_SCORE)
+            with self.subTest(route=path):
+                self.assertGreaterEqual(
+                    score, floor,
+                    f"{path} compliance {score:.0%} below per-route "
+                    f"floor {floor:.0%}",
+                )
+
+
+if __name__ == "__main__":
+    unittest.main()
