@@ -139,23 +139,23 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     pv_term = dcf.get("pv_terminal", 0)
     tv = dcf.get("terminal_value", 0)
 
-    # KPIs
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(ev)}</div>'
-        f'<div class="cad-kpi-label">Enterprise Value</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(pv_cf)}</div>'
-        f'<div class="cad-kpi-label">PV of Cash Flows</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(pv_term)}</div>'
-        f'<div class="cad-kpi-label">PV of Terminal Value</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(tv)}</div>'
-        f'<div class="cad-kpi-label">Terminal Value</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_pct(assumptions.get("wacc"))}</div>'
-        f'<div class="cad-kpi-label">WACC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_pct(assumptions.get("terminal_growth"))}</div>'
-        f'<div class="cad-kpi-label">Terminal Growth</div></div>'
-        f'</div>'
-    )
+    # P26 follow-up: kpi_strip migration. Six tiles → strip
+    # auto-densifies. Page-local _fmt_m / _fmt_pct helpers stay in
+    # use here because they handle the dict-edge None values the
+    # legacy render path passes; format_value's missing-aware path
+    # is a deliberate follow-up.
+    from ._ui_kit import kpi_strip
+
+    kpis = kpi_strip([
+        {"label": "ENTERPRISE VALUE",       "value": _fmt_m(ev)},
+        {"label": "PV OF CASH FLOWS",       "value": _fmt_m(pv_cf)},
+        {"label": "PV OF TERMINAL VALUE",   "value": _fmt_m(pv_term)},
+        {"label": "TERMINAL VALUE",         "value": _fmt_m(tv)},
+        {"label": "WACC",
+         "value": _fmt_pct(assumptions.get("wacc"))},
+        {"label": "TERMINAL GROWTH",
+         "value": _fmt_pct(assumptions.get("terminal_growth"))},
+    ], dense=True)
 
     # Projections table
     proj_rows = ""
@@ -317,22 +317,20 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
 
     irr_color = PALETTE["positive"] if irr and irr > 0.20 else (
         PALETTE["warning"] if irr and irr > 0.15 else PALETTE["negative"])
-
-    kpis = (
-        f'<div class="cad-kpi-grid">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value" style="color:{irr_color};">'
-        f'{_fmt_pct(irr)}</div>'
-        f'<div class="cad-kpi-label">IRR</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_x(moic)}</div>'
-        f'<div class="cad-kpi-label">MOIC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(entry_ev)}</div>'
-        f'<div class="cad-kpi-label">Entry EV</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(exit_ev)}</div>'
-        f'<div class="cad-kpi-label">Exit EV</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{_fmt_m(equity_invested)}</div>'
-        f'<div class="cad-kpi-label">Equity Invested</div></div>'
-        f'</div>'
+    irr_tone = (
+        "positive" if irr and irr > 0.20
+        else "warning" if irr and irr > 0.15
+        else "negative"
     )
+    from ._ui_kit import kpi_strip
+    kpis = kpi_strip([
+        {"label": "IRR",   "value": _fmt_pct(irr), "tone": irr_tone},
+        {"label": "MOIC",  "value": _fmt_x(moic)},
+        {"label": "ENTRY EV", "value": _fmt_m(entry_ev)},
+        {"label": "EXIT EV",  "value": _fmt_m(exit_ev)},
+        {"label": "EQUITY INVESTED",
+         "value": _fmt_m(equity_invested)},
+    ])
 
     # Sources & Uses
     su_html = ""
@@ -534,18 +532,25 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
         model.get("cash_flow", model.get("cf", [])),
     )
 
-    # Summary KPIs
+    # Summary KPIs — dynamic items from the model dict, capped at 6.
+    from ._ui_kit import kpi_strip
+
     summary = model.get("summary", {})
     kpis = ""
     if summary:
-        kpis = '<div class="cad-kpi-grid">'
+        items = []
         for k, v in list(summary.items())[:6]:
-            kpis += (
-                f'<div class="cad-kpi"><div class="cad-kpi-value">'
-                f'{_fmt_m(v) if isinstance(v, (int, float)) and abs(float(v)) > 1000 else _fmt_pct(v) if isinstance(v, float) and abs(v) < 1 else html.escape(str(v))}'
-                f'</div><div class="cad-kpi-label">{html.escape(k.replace("_", " ").title())}</div></div>'
-            )
-        kpis += '</div>'
+            if isinstance(v, (int, float)) and abs(float(v)) > 1000:
+                value_html = _fmt_m(v)
+            elif isinstance(v, float) and abs(v) < 1:
+                value_html = _fmt_pct(v)
+            else:
+                value_html = html.escape(str(v))
+            items.append({
+                "label": k.replace("_", " ").upper(),
+                "value": value_html,
+            })
+        kpis = kpi_strip(items)
 
     actions = (
         f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'

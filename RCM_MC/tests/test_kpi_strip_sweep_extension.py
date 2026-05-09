@@ -160,5 +160,54 @@ class HospitalProfileMigrated(unittest.TestCase):
         self.assertNotIn("PATIENT EXPERIENCE", html)
 
 
+class ModelsDCFPageMigrated(unittest.TestCase):
+
+    def test_dcf_kpis_use_kpi_strip(self) -> None:
+        from rcm_mc.ui.models_page import render_dcf_page
+
+        dcf = {
+            "enterprise_value": 600_000_000,
+            "pv_cash_flows": 220_000_000,
+            "pv_terminal_value": 380_000_000,
+            "terminal_value": 800_000_000,
+            "assumptions": {"wacc": 0.10, "terminal_growth": 0.03},
+            "projections": [],
+        }
+        html = render_dcf_page("aurora", "Project Aurora", dcf)
+        self.assertIn("kpi-strip", html)
+        self.assertIn("kpi-strip-dense", html)
+        for label in (
+            "ENTERPRISE VALUE", "PV OF CASH FLOWS",
+            "PV OF TERMINAL VALUE", "TERMINAL VALUE",
+            "WACC", "TERMINAL GROWTH",
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, html)
+        self.assertNotIn('class="cad-kpi-grid"', html)
+
+
+class ModelsLBOPageMigrated(unittest.TestCase):
+
+    def test_lbo_kpis_use_kpi_strip_with_irr_tone(self) -> None:
+        from rcm_mc.ui.models_page import render_lbo_page
+
+        lbo = {
+            "returns": {
+                "irr": 0.25, "moic": 3.0,
+                "equity_invested": 250_000_000,
+            },
+            "summary": {
+                "entry_ev": 600_000_000, "exit_ev": 900_000_000,
+            },
+            "sources": {"equity": 250_000_000, "debt": 350_000_000},
+            "uses": {"purchase_price": 600_000_000},
+            "tornado": [],
+        }
+        html = render_lbo_page("aurora", "Project Aurora", lbo)
+        self.assertIn("kpi-strip", html)
+        self.assertIn("tone-positive", html)
+        self.assertNotIn('class="cad-kpi-grid"', html)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -196,23 +196,21 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
     # ── Model AUC + Stats ──
     _, _, _, auc, n_train, feats = cached["distress"]
 
-    # ── KPIs ──
-    kpis = (
-        f'<div class="cad-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(hcris_df):,}</div>'
-        f'<div class="cad-kpi-label">Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{len(markets)}</div>'
-        f'<div class="cad-kpi-label">Markets</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{frontier_count}</div>'
-        f'<div class="cad-kpi-label">Frontier Hospitals</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">{auc:.3f}</div>'
-        f'<div class="cad-kpi-label">Distress AUC</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">12</div>'
-        f'<div class="cad-kpi-label">Quant Models</div></div>'
-        f'<div class="cad-kpi"><div class="cad-kpi-value">0</div>'
-        f'<div class="cad-kpi-label">External Deps</div></div>'
-        f'</div>'
-    )
+    # ── KPIs ── (P26 follow-up: kpi_strip migration; six tiles
+    # auto-densify via the helper's >5-tile rule.)
+    from ._ui_kit import format_value, kpi_strip
+
+    kpis = kpi_strip([
+        {"label": "HOSPITALS",
+         "value": format_value(len(hcris_df), kind="count")},
+        {"label": "MARKETS",
+         "value": format_value(len(markets), kind="count")},
+        {"label": "FRONTIER HOSPITALS",
+         "value": format_value(frontier_count, kind="count")},
+        {"label": "DISTRESS AUC", "value": f"{auc:.3f}"},
+        {"label": "QUANT MODELS", "value": "12"},
+        {"label": "EXTERNAL DEPS", "value": "0"},
+    ], dense=True)
 
     # ── Quant Stack Summary ──
     stack = (
