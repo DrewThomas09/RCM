@@ -46,7 +46,7 @@ def _scenario_chart_svg(scenarios, entry_multiple: float) -> str:
     lines.append(f'<line x1="{entry_x:.1f}" y1="{pad_t}" x2="{entry_x:.1f}" '
                  f'y2="{pad_t + chart_h}" stroke="{P["text_faint"]}" stroke-width="1" stroke-dasharray="3 3"/>')
     lines.append(f'<text x="{entry_x:.1f}" y="{pad_t - 4}" text-anchor="middle" '
-                 f'fill="{P["text_faint"]}" font-size="9">Entry {entry_multiple:.1f}x</text>')
+                 f'fill="{P["text_faint"]}" font-size="9">Entry {entry_multiple:.2f}x</text>')
 
     for i, s in enumerate(scenarios):
         y = pad_t + i * row_h + 4
@@ -57,7 +57,7 @@ def _scenario_chart_svg(scenarios, entry_multiple: float) -> str:
         lines.append(f'<text x="{pad_l - 4}" y="{y + bar_h - 4}" text-anchor="end" '
                      f'fill="{P["text_dim"]}">{s.label}</text>')
         lines.append(f'<text x="{pad_l + bw + 4:.1f}" y="{y + bar_h - 4}" '
-                     f'fill="{c}">{s.exit_multiple:.1f}x · {s.moic:.2f}x MOIC</text>')
+                     f'fill="{c}">{s.exit_multiple:.2f}x · {s.moic:.2f}x MOIC</text>')
 
     lines.append('</svg>')
     return "\n".join(lines)
@@ -106,12 +106,12 @@ def _scenario_table(scenarios) -> str:
     for i, s in enumerate(scenarios):
         rbg = bg2 if i % 2 else bg
         c = _SCENARIO_COLORS.get(s.label, P["accent"])
-        exp_str = f"+{s.multiple_expansion:.1f}x" if s.multiple_expansion >= 0 else f"{s.multiple_expansion:.1f}x"
+        exp_str = f"+{s.multiple_expansion:.2f}x" if s.multiple_expansion >= 0 else f"{s.multiple_expansion:.2f}x"
         exp_c = P["positive"] if s.multiple_expansion >= 0 else P["negative"]
         rows.append(
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;color:{c};font-weight:600">{s.label}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.exit_multiple:.1f}x</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.exit_multiple:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{exp_c}">{exp_str}</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.ev_at_exit_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.moic:.2f}x</td>'
@@ -150,14 +150,14 @@ def _comps_table(comparables) -> str:
     for i, c in enumerate(comparables):
         rbg = bg2 if i % 2 else bg
         exp_c = P["positive"] if c.multiple_expansion >= 0 else P["negative"]
-        exp_str = f"+{c.multiple_expansion:.1f}x" if c.multiple_expansion >= 0 else f"{c.multiple_expansion:.1f}x"
+        exp_str = f"+{c.multiple_expansion:.2f}x" if c.multiple_expansion >= 0 else f"{c.multiple_expansion:.2f}x"
         rows.append(
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;color:{tprim}">{c.company}</td>'
             f'<td style="padding:5px 8px;color:{tdim}">{c.sector[:18]}</td>'
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">{c.year}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{c.entry_multiple:.1f}x</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{c.exit_multiple_implied:.1f}x</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{c.entry_multiple:.2f}x</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{c.exit_multiple_implied:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{exp_c}">{exp_str}</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{c.moic:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{c.hold_years:.1f}yr</td>'
@@ -274,15 +274,15 @@ def render_exit_multiple(params: dict) -> str:
     base_sc = next((s for s in r.scenarios if s.label == "Base"), r.scenarios[1])
     bull_sc = next((s for s in r.scenarios if s.label == "Bull"), r.scenarios[2])
 
-    timing_str = (f"+{r.timing_premium:.1f}x timing premium" if r.timing_premium >= 0
-                  else f"{r.timing_premium:.1f}x timing drag")
+    timing_str = (f"+{r.timing_premium:.2f}x timing premium" if r.timing_premium >= 0
+                  else f"{r.timing_premium:.2f}x timing drag")
 
-    kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.1f}x",
+    kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.2f}x",
                          unit=f"EV: ${r.ev_mm:.2f}M")
-    kpis += ck_kpi_block("Base Exit Multiple", f"{r.base_exit_multiple:.1f}x",
+    kpis += ck_kpi_block("Base Exit Multiple", f"{r.base_exit_multiple:.2f}x",
                           unit=timing_str)
     kpis += ck_kpi_block("Sector P25/P50/P75",
-                          f"{r.sector_p25:.1f}x / {r.sector_p50:.1f}x / {r.sector_p75:.1f}x")
+                          f"{r.sector_p25:.2f}x / {r.sector_p50:.2f}x / {r.sector_p75:.2f}x")
     kpis += ck_kpi_block("Base MOIC", f"{base_sc.moic:.2f}x",
                           unit=f"IRR: {base_sc.irr*100:.1f}%")
     kpis += ck_kpi_block("Bull MOIC", f"{bull_sc.moic:.2f}x",

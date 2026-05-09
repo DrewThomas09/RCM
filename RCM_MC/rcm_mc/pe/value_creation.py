@@ -237,8 +237,8 @@ def _build_deal_pack(
         ("Residual drag after plan (Target - Benchmark)", resid_q),
         ("Gross EBITDA uplift (Baseline - Residual)", uplift_q),
         ("Net EBITDA uplift (steady-state, after run-rate cost)", net_uplift_q),
-        (f"EV at risk from drag (@{ev_multiple:.1f}x)", ev_drag_q),
-        (f"EV uplift from net run-rate (@{ev_multiple:.1f}x)", ev_net_uplift_q),
+        (f"EV at risk from drag (@{ev_multiple:.2f}x)", ev_drag_q),
+        (f"EV uplift from net run-rate (@{ev_multiple:.2f}x)", ev_net_uplift_q),
         ("Working capital tied up (A/R dollars, implied)", wc_drag_q),
     ]:
         rows.append(

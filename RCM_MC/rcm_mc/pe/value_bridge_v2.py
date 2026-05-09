@@ -1203,7 +1203,7 @@ def compute_value_bridge(
         f"(revenue {total_rev:,.0f} + cost {total_cost:,.0f} + "
         f"financing {total_financing:,.0f}). "
         f"One-time WC release {total_wc:,.0f} — excluded from EV. "
-        f"EV delta @ {assumptions.exit_multiple:.1f}x: {ev_delta:,.0f}."
+        f"EV delta @ {assumptions.exit_multiple:.2f}x: {ev_delta:,.0f}."
     )
     if ramp_applied_any:
         rationale += (

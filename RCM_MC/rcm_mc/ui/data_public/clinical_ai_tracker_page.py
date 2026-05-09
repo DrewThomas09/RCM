@@ -221,7 +221,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Vendor Evaluation Pipeline</div>{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">AI Governance & Compliance</div>{g_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">AI Portfolio Summary:</strong> {r.total_systems} AI systems generate ${total_revenue:.2f}M revenue / workflow impact against ${r.total_annual_spend_m:.2f}M license cost — {total_revenue / r.total_annual_spend_m if r.total_annual_spend_m else 0:.1f}x net ROI.
+    <strong style="color:{text}">AI Portfolio Summary:</strong> {r.total_systems} AI systems generate ${total_revenue:.2f}M revenue / workflow impact against ${r.total_annual_spend_m:.2f}M license cost — {total_revenue / r.total_annual_spend_m if r.total_annual_spend_m else 0:.2f}x net ROI.
     Highest-value deployments: Notable Autopilot ($38.5M, Oak), Nuance DAX ($32.0M, Cypress), Enter ML ($28.5M, Oak), Abridge Scribe ($25.5M, Oak) — all ambient scribes + operational ML.
     Radiology AI stack 3 systems (Aidoc ICH + PE, Viz.ai ANEURYSM) covering stroke + PE triage + aneurysm detection — high accuracy (91-95%) and strong time savings (12-18 min/case).
     Adoption distribution: GI Network 94%, RCM SaaS 92%, Radiology 92% top tier; Behavioral Health 52% bottom with 18.5% override rate and 5 complaints — requires UX redesign.

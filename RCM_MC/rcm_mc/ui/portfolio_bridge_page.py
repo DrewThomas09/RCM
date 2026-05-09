@@ -274,7 +274,7 @@ def render_portfolio_bridge(
             irr_color = "var(--cad-pos)" if irr_r >= 0.20 else ("var(--cad-warn)" if irr_r >= 0.15 else "var(--cad-neg)")
             ret_rows += (
                 f'<tr>'
-                f'<td class="num">{exit_m:.0f}x</td>'
+                f'<td class="num">{exit_m:.2f}x</td>'
                 f'<td class="num">{_fm(exit_ev_r)}</td>'
                 f'<td class="num">{_fm(exit_eq)}</td>'
                 f'<td class="num" style="font-weight:600;">{moic_r:.2f}x</td>'

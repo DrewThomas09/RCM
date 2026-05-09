@@ -324,7 +324,7 @@ def region_table(corpus_db_path: str) -> str:
         moic50 = f"{rs.moic_p50:.2f}x" if rs.moic_p50 else "   —   "
         moic75 = f"{rs.moic_p75:.2f}x" if rs.moic_p75 else "   —   "
         irr50  = f"{rs.irr_p50:.1%}"   if rs.irr_p50  else "    —  "
-        eveb50 = f"{rs.ev_ebitda_p50:.1f}x" if rs.ev_ebitda_p50 else "   —  "
+        eveb50 = f"{rs.ev_ebitda_p50:.2f}x" if rs.ev_ebitda_p50 else "   —  "
         lines.append(
             f"{rs.label:<12} {rs.n_deals:>3} {rs.n_with_moic:>9} "
             f"{moic50:>8} {moic75:>8} {irr50:>8} {eveb50:>13}"

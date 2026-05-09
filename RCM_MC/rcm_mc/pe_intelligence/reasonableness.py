@@ -737,7 +737,7 @@ def check_multiple_ceiling(
     regime = classify_payer_mix(payer_mix)
     band = _MULTIPLE_CEILINGS.get(regime, _MULTIPLE_CEILINGS[PAYER_BALANCED])
     verdict = band.classify(multiple)
-    hi = f"{band.high:.1f}x" if band.high is not None else "n/a"
+    hi = f"{band.high:.2f}x" if band.high is not None else "n/a"
     if verdict == VERDICT_IN_BAND:
         rationale = f"{multiple:.2f}x exit is within the {band.regime} ceiling (~{hi})."
         note = "Reasonable exit assumption."

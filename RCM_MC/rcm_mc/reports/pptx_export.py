@@ -66,7 +66,7 @@ def generate_pptx(
         body.text = (
             f"Annual EBITDA Opportunity: {_fmt_money(ebitda)}\n"
             f"Range: {_fmt_money(p10)} (P10) to {_fmt_money(p90)} (P90)\n"
-            f"Enterprise Value @ {ev_multiple:.0f}x: {_fmt_money(ev)}"
+            f"Enterprise Value @ {ev_multiple:.2f}x: {_fmt_money(ev)}"
         )
 
     # Slide 3: Value Drivers (from sensitivity.csv if available)

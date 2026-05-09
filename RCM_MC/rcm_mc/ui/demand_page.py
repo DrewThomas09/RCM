@@ -96,7 +96,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
             f'<td class="num">{pct:.1f}%</td>'
             f'<td class="num">{nat:.1f}%</td>'
             f'<td class="num" style="color:{delta_color};font-weight:600;">{delta:+.1f}pp</td>'
-            f'<td class="num">{weight:.1f}x</td>'
+            f'<td class="num">{weight:.2f}x</td>'
             f'</tr>'
         )
 

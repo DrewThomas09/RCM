@@ -193,7 +193,7 @@ def reverse_engineer_seller_math(
                 f"{premium*100:.1f}% above buyer's implied price "
                 f"${buyer_implied_price:,.2f}M. To justify, seller "
                 f"must assume ONE of: "
-                f"{implied_exit_mult:.1f}x exit multiple, "
+                f"{implied_exit_mult:.2f}x exit multiple, "
                 f"{implied_growth*100:.1f}%/yr EBITDA growth, or "
                 f"{implied_margin_bps:,.0f} bps margin expansion. "
                 "Partner: pick the weakest assumption and force "

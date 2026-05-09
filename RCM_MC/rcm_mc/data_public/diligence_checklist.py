@@ -382,15 +382,15 @@ def _eval_capital(deal: Dict[str, Any],
     else:
         if em > 14:
             s, det = "CRITICAL", (
-                f"{em:.1f}x — well above sponsor-friendly bar")
+                f"{em:.2f}x — well above sponsor-friendly bar")
         elif em > 12:
             s, det = "WARNING", (
-                f"{em:.1f}x — premium territory, IRR sensitive to exit")
+                f"{em:.2f}x — premium territory, IRR sensitive to exit")
         elif em > 6:
-            s, det = "PASS", f"{em:.1f}x — within typical band"
+            s, det = "PASS", f"{em:.2f}x — within typical band"
         else:
             s, det = "WARNING", (
-                f"{em:.1f}x — abnormally low, validate EBITDA quality")
+                f"{em:.2f}x — abnormally low, validate EBITDA quality")
         out.append(ChecklistItem(
             id="cap_001", section=_SEC_CAPITAL,
             title="Entry multiple",
@@ -419,12 +419,12 @@ def _eval_capital(deal: Dict[str, Any],
     else:
         if leverage > 8:
             s, det = "CRITICAL", (
-                f"{leverage:.1f}x — extreme leverage, covenant risk acute")
+                f"{leverage:.2f}x — extreme leverage, covenant risk acute")
         elif leverage > 6:
             s, det = "WARNING", (
-                f"{leverage:.1f}x — above corpus P75")
+                f"{leverage:.2f}x — above corpus P75")
         else:
-            s, det = "PASS", f"{leverage:.1f}x — within range"
+            s, det = "PASS", f"{leverage:.2f}x — within range"
         out.append(ChecklistItem(
             id="cap_002", section=_SEC_CAPITAL,
             title="Entry leverage (debt/EBITDA)",

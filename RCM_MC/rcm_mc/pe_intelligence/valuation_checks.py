@@ -244,24 +244,24 @@ def check_interest_coverage(coverage: Optional[float]) -> BandCheck:
     if coverage >= 3.0:
         return BandCheck(
             metric="interest_coverage", observed=coverage, verdict=VERDICT_IN_BAND,
-            rationale=f"EBITDA/interest at {coverage:.1f}x — comfortable.",
+            rationale=f"EBITDA/interest at {coverage:.2f}x — comfortable.",
             partner_note="Coverage is fine.",
         )
     if coverage >= 2.0:
         return BandCheck(
             metric="interest_coverage", observed=coverage, verdict=VERDICT_STRETCH,
-            rationale=f"EBITDA/interest at {coverage:.1f}x — tight but serviceable.",
+            rationale=f"EBITDA/interest at {coverage:.2f}x — tight but serviceable.",
             partner_note="Watch the quarterly variance — one miss and we're in waiver territory.",
         )
     if coverage >= 1.5:
         return BandCheck(
             metric="interest_coverage", observed=coverage, verdict=VERDICT_OUT_OF_BAND,
-            rationale=f"EBITDA/interest at {coverage:.1f}x — very tight.",
+            rationale=f"EBITDA/interest at {coverage:.2f}x — very tight.",
             partner_note="At this coverage a single bad quarter triggers a conversation with the lender.",
         )
     return BandCheck(
         metric="interest_coverage", observed=coverage, verdict=VERDICT_IMPLAUSIBLE,
-        rationale=f"EBITDA/interest at {coverage:.1f}x — below covenant floor.",
+        rationale=f"EBITDA/interest at {coverage:.2f}x — below covenant floor.",
         partner_note="Deal cannot service its debt at modeled EBITDA. Re-cap or pass.",
     )
 

@@ -273,7 +273,7 @@ def render_pe_hold_grid(rows: List[Dict[str, Any]]) -> str:
     by_key = {(int(r["hold_years"]), float(r["exit_multiple"])): r for r in rows}
 
     header_cells = "".join(
-        f'<th scope="col" class="num">{m:.1f}x</th>' for m in multiples
+        f'<th scope="col" class="num">{m:.2f}x</th>' for m in multiples
     )
     body_rows = []
     for y in years:

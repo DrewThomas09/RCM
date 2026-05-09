@@ -179,11 +179,11 @@ def screen_deal(
     ev_ebitda = _safe_float(deal.get("ev_ebitda"))
     if ev_ebitda is not None:
         if ev_ebitda > config.max_ev_ebitda:
-            fail_reasons.append(f"Entry multiple {ev_ebitda:.1f}x exceeds max {config.max_ev_ebitda:.0f}x")
+            fail_reasons.append(f"Entry multiple {ev_ebitda:.2f}x exceeds max {config.max_ev_ebitda:.2f}x")
         elif ev_ebitda > config.watch_ev_ebitda:
-            watch_reasons.append(f"Entry multiple {ev_ebitda:.1f}x above watch threshold {config.watch_ev_ebitda:.0f}x")
+            watch_reasons.append(f"Entry multiple {ev_ebitda:.2f}x above watch threshold {config.watch_ev_ebitda:.2f}x")
         else:
-            pass_signals.append(f"Entry multiple {ev_ebitda:.1f}x within target range")
+            pass_signals.append(f"Entry multiple {ev_ebitda:.2f}x within target range")
 
     # --- EBITDA positivity ---
     ebitda = _safe_float(deal.get("ebitda_mm") or deal.get("ebitda_at_entry_mm"))

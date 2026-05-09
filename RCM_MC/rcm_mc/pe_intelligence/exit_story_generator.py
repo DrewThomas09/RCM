@@ -203,7 +203,7 @@ def generate_exit_story(inputs: ExitStoryInputs) -> ExitStory:
         f"{inputs.exit_revenue_m:,.2f}M NPR / "
         f"${inputs.exit_ebitda_m:,.2f}M EBITDA after "
         f"{cagr*100:.1f}% annual growth over {inputs.hold_years} years; "
-        f"{scale_mult:.1f}x scaled from entry."
+        f"{scale_mult:.2f}x scaled from entry."
     )
 
     if len(bullets) < 2 or cagr < 0.03:
@@ -213,11 +213,11 @@ def generate_exit_story(inputs: ExitStoryInputs) -> ExitStory:
                 "to shift to a continuation vehicle.")
     elif inputs.is_category_leader or inputs.has_coe_designation:
         note = (f"Exit story is strong. Banker range "
-                f"{mult_range[0]:.1f}-{mult_range[1]:.1f}x is "
+                f"{mult_range[0]:.1f}-{mult_range[1]:.2f}x is "
                 "defensible on the differentiation bullets.")
     else:
         note = (f"Exit story is workable. Banker range "
-                f"{mult_range[0]:.1f}-{mult_range[1]:.1f}x. "
+                f"{mult_range[0]:.1f}-{mult_range[1]:.2f}x. "
                 "Main risk: {risk.split('.')[0]}.")
 
     return ExitStory(
@@ -253,7 +253,7 @@ def render_exit_story_markdown(s: ExitStory) -> str:
         f"## Exit risk: {s.exit_risk}",
         "",
         f"## Banker multiple range: "
-        f"{s.banker_multiple_range[0]:.1f}x – "
-        f"{s.banker_multiple_range[1]:.1f}x",
+        f"{s.banker_multiple_range[0]:.2f}x – "
+        f"{s.banker_multiple_range[1]:.2f}x",
     ])
     return "\n".join(lines)

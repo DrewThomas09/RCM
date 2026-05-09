@@ -85,7 +85,7 @@ def generate_markdown_report(
         ev = ebitda * ev_multiple
         lines.append("## Enterprise Value Impact")
         lines.append("")
-        lines.append(f"At a **{ev_multiple:.0f}x EBITDA multiple**, the annual EBITDA opportunity of {_fmt_money(ebitda)} "
+        lines.append(f"At a **{ev_multiple:.2f}x EBITDA multiple**, the annual EBITDA opportunity of {_fmt_money(ebitda)} "
                       f"translates to **{_fmt_money(ev)} in enterprise value**.")
         lines.append("")
 

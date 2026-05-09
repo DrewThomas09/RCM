@@ -88,7 +88,7 @@ def _scatter_svg(stats: List[Any], width: int = 480, height: int = 320) -> str:
     for m in (1.0, 2.0, 3.0, 4.0, 5.0):
         gx = sx(m)
         elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#1e293b" stroke-width="0.8"/>')
-        elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
+        elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.2f}x</text>')
     for r in (0.0, 0.1, 0.2, 0.3, 0.5):
         gy = sy(r)
         elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#1e293b" stroke-width="0.8"/>')

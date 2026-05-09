@@ -1110,9 +1110,9 @@ def _market_context_section(
         tb = transaction_band
         parts.append(
             f'<p>Private-market median EV/EBITDA: <strong>'
-            f'{getattr(tb, "p50_ev_ebitda", 0):.1f}x</strong> '
-            f'(p25–p75: {getattr(tb, "p25_ev_ebitda", 0):.1f}x – '
-            f'{getattr(tb, "p75_ev_ebitda", 0):.1f}x, '
+            f'{getattr(tb, "p50_ev_ebitda", 0):.2f}x</strong> '
+            f'(p25–p75: {getattr(tb, "p25_ev_ebitda", 0):.2f}x – '
+            f'{getattr(tb, "p75_ev_ebitda", 0):.2f}x, '
             f'{getattr(tb, "sample_size", 0)} deals TTM).</p>'
         )
         note = getattr(tb, "note", None)

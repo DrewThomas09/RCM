@@ -139,13 +139,13 @@ def deal_status(
         message = "Insufficient data to compute implied MOIC"
     elif implied >= config.target_gross_moic:
         alert_type = "on_track"
-        message = f"Implied MOIC {implied:.2f}x tracking at/above target {config.target_gross_moic:.1f}x"
+        message = f"Implied MOIC {implied:.2f}x tracking at/above target {config.target_gross_moic:.2f}x"
     elif implied >= config.at_risk_moic_threshold:
         alert_type = "watch"
-        message = f"Implied MOIC {implied:.2f}x below target {config.target_gross_moic:.1f}x — monitoring"
+        message = f"Implied MOIC {implied:.2f}x below target {config.target_gross_moic:.2f}x — monitoring"
     elif implied >= config.critical_moic_threshold:
         alert_type = "at_risk"
-        message = f"Implied MOIC {implied:.2f}x below {config.at_risk_moic_threshold:.1f}x — at risk"
+        message = f"Implied MOIC {implied:.2f}x below {config.at_risk_moic_threshold:.2f}x — at risk"
     else:
         alert_type = "critical"
         message = f"Implied MOIC {implied:.2f}x below 1.0x — potential loss"

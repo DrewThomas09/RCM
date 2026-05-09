@@ -272,7 +272,7 @@ def model_exit(
         sbo_multiple = a.exit_multiple + _EXIT_MULTIPLE_HAIRCUTS[ExitRoute.SBO]
         exit_ev = exit_ebitda * sbo_multiple
         gross_equity = exit_ev - exit_debt
-        notes.append(f"SBO: exit multiple discounted to {sbo_multiple:.1f}x (vs {a.exit_multiple:.1f}x strategic)")
+        notes.append(f"SBO: exit multiple discounted to {sbo_multiple:.2f}x (vs {a.exit_multiple:.2f}x strategic)")
 
     elif exit_route == ExitRoute.IPO:
         ipo_multiple = a.exit_multiple + _EXIT_MULTIPLE_HAIRCUTS[ExitRoute.IPO]
@@ -283,7 +283,7 @@ def model_exit(
         residual = (exit_ev - exit_debt) * (1 - a.ipo_float_pct)
         gross_equity = float_proceeds + residual
         notes.append(
-            f"IPO: {a.ipo_float_pct:.0%} floated at {ipo_multiple:.1f}x; "
+            f"IPO: {a.ipo_float_pct:.0%} floated at {ipo_multiple:.2f}x; "
             f"residual {1-a.ipo_float_pct:.0%} stake held"
         )
 
@@ -295,7 +295,7 @@ def model_exit(
         exit_ev = exit_ebitda * a.exit_multiple
         gross_equity = exit_ev - exit_debt_w_recap
         notes.append(
-            f"Div recap: +{recap_debt_add:.2f}M drawn mid-hold ({a.recap_leverage_add:.1f}x EBITDA); "
+            f"Div recap: +{recap_debt_add:.2f}M drawn mid-hold ({a.recap_leverage_add:.2f}x EBITDA); "
             f"exit debt {exit_debt_w_recap:.2f}M"
         )
         exit_debt = exit_debt_w_recap
@@ -431,7 +431,7 @@ def irr_sensitivity(
     ]
 
     for mult in exit_multiples:
-        row = f"{mult:.1f}x EV/EBITDA  "
+        row = f"{mult:.2f}x EV/EBITDA  "
         for hold in hold_years_list:
             a = ExitAssumptions(exit_multiple=mult, hold_years=hold)
             try:

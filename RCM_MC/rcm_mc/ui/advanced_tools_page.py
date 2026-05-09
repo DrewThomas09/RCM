@@ -28,8 +28,8 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
         else "negative"
     )
     kpis = kpi_strip([
-        {"label": "Entry Leverage", "value": f"{entry_leverage:.1f}x"},
-        {"label": "Exit Leverage", "value": f"{exit_leverage:.1f}x", "tone": exit_tone},
+        {"label": "Entry Leverage", "value": f"{entry_leverage:.2f}x"},
+        {"label": "Exit Leverage", "value": f"{exit_leverage:.2f}x", "tone": exit_tone},
         {"label": "Total Debt at Entry", "value": f"${total_debt/1e6:.2f}M"},
     ])
 
@@ -48,7 +48,7 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
             f'<td class="num">${float(balance)/1e6:.2f}M</td>'
             f'<td class="num">${float(payment)/1e6:.2f}M</td>'
             f'<td class="num">${float(interest)/1e6:.2f}M</td>'
-            f'<td class="num" style="color:{lev_color};">{float(leverage):.1f}x</td>'
+            f'<td class="num" style="color:{lev_color};">{float(leverage):.2f}x</td>'
             f'</tr>'
         )
 
@@ -76,8 +76,8 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
         f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>Entry leverage of {entry_leverage:.1f}x deleverages to {exit_leverage:.1f}x '
-        f'over the hold period — a {deleverage:.1f}x reduction. '
+        f'<p>Entry leverage of {entry_leverage:.2f}x deleverages to {exit_leverage:.2f}x '
+        f'over the hold period — a {deleverage:.2f}x reduction. '
         f'{"Strong deleveraging — equity returns benefit from debt paydown." if deleverage > 2 else "Moderate deleveraging." if deleverage > 1 else "Limited deleveraging — returns must come from EBITDA growth."}</p>'
         f'<p style="margin-top:6px;">Check the '
         f'<a href="/models/returns/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">returns & covenant</a> '
@@ -89,7 +89,7 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     body = f'{nav}{kpis}{table}{interp}{actions}'
     return chartis_shell(body, f"Debt Model — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Leverage: {entry_leverage:.1f}x entry → {exit_leverage:.1f}x exit")
+                    subtitle=f"Leverage: {entry_leverage:.2f}x entry → {exit_leverage:.2f}x exit")
 
 
 def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]) -> str:

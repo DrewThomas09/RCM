@@ -158,7 +158,7 @@ def _risk_return_scatter(
         for xv in range(0, 101, 20)
     )
     y_ticks = "".join(
-        f'<text x="{pad_l-4}" y="{ty(yv)+3:.1f}" font-size="7.5" fill="#64748b" text-anchor="end">{yv:.0f}x</text>'
+        f'<text x="{pad_l-4}" y="{ty(yv)+3:.1f}" font-size="7.5" fill="#64748b" text-anchor="end">{yv:.2f}x</text>'
         for yv in range(0, 7)
     )
     labels = (

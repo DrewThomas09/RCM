@@ -157,10 +157,10 @@ def run_scorecard(inputs: ScorecardInputs) -> ScorecardReport:
     checks.append(ScorecardCheck(
         dimension="balance_sheet",
         passed=bs_ok,
-        actual=(f"leverage {inputs.leverage:.1f}x, stress coverage "
-                f"{inputs.stress_coverage:.1f}x"),
+        actual=(f"leverage {inputs.leverage:.2f}x, stress coverage "
+                f"{inputs.stress_coverage:.2f}x"),
         floor=(f"leverage ≤ 7.0x AND stress coverage ≥ "
-                f"{inputs.coverage_floor:.1f}x"),
+                f"{inputs.coverage_floor:.2f}x"),
         rationale=("Capital structure must survive a 10-15% EBITDA "
                    "miss without covenant trip."),
     ))

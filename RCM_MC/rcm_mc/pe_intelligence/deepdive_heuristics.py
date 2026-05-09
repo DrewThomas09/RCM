@@ -256,7 +256,7 @@ def _h_gp_valuation_aggressive(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         id="gp_valuation_too_aggressive",
         title="GP mark above peer multiple benchmark",
         severity=SEV_MEDIUM, category="VALUATION",
-        finding=(f"GP mark is {delta:.1f}x above peer average. "
+        finding=(f"GP mark is {delta:.2f}x above peer average. "
                  "Mark-to-market is aggressive relative to public comps."),
         partner_voice=("GP marks drift. LP mark-up + later realization "
                        "shortfall is the pattern to avoid."),

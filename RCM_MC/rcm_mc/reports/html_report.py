@@ -226,7 +226,7 @@ def generate_html_report(
     tombstone_html = f"""
     <div class="tombstone">
       <span><strong>Simulation:</strong> {n_sims:,} Monte Carlo iterations | P10/P90 range shown | Payer-weighted</span>
-      <span class="ev-sens"><strong>Valuation Range:</strong> {ev_multiple:.1f}x to {ev_ceil:.1f}x EBITDA</span>
+      <span class="ev-sens"><strong>Valuation Range:</strong> {ev_multiple:.2f}x to {ev_ceil:.2f}x EBITDA</span>
     </div>"""
     html_parts.append(tombstone_html)
 
@@ -662,10 +662,10 @@ def generate_html_report(
       <table><tr><th>Metric</th><th>Value</th></tr>
       <tr><td>Total Debt</td><td class="num">{pretty_money(debt)}</td></tr>
       <tr><td>Current EBITDA (NPSR x Margin)</td><td class="num">{pretty_money(ebitda_proxy)}</td></tr>
-      <tr><td>Debt / EBITDA (Current)</td><td class="num">{ratio_before:.1f}x</td></tr>
+      <tr><td>Debt / EBITDA (Current)</td><td class="num">{ratio_before:.2f}x</td></tr>
       <tr><td>Pro Forma EBITDA (With RCM Uplift)</td><td class="num">{pretty_money(ebitda_proxy + uplift)}</td></tr>
-      <tr><td>Debt / EBITDA (Pro Forma)</td><td class="num">{ratio_after:.1f}x</td></tr>
-      <tr><td><strong>Covenant Headroom Improvement</strong></td><td class="num"><strong>{improvement:.1f}x</strong></td></tr>
+      <tr><td>Debt / EBITDA (Pro Forma)</td><td class="num">{ratio_after:.2f}x</td></tr>
+      <tr><td><strong>Covenant Headroom Improvement</strong></td><td class="num"><strong>{improvement:.2f}x</strong></td></tr>
       </table>
       <p class='section-desc' style="margin-top: 0.5rem;"><em>To customize: set the debt amount and EBITDA margin in the economics and hospital sections of the configuration.</em></p>
     </div>""")
@@ -818,7 +818,7 @@ def generate_html_report(
         e_p90 = float(df_summary.loc["ebitda_drag", "p90"])
         mult = ev_multiple
         html_parts.append(f"""
-    <table><tr><th>Scenario</th><th>EBITDA Opportunity</th><th>Enterprise Value @ {mult:.1f}x</th></tr>
+    <table><tr><th>Scenario</th><th>EBITDA Opportunity</th><th>Enterprise Value @ {mult:.2f}x</th></tr>
     <tr><td>Conservative (P10)</td><td class="num">{pretty_money(e_p10)}</td><td class="num">{pretty_money(e_p10 * mult)}</td></tr>
     <tr><td>Expected (Mean)</td><td class="num">{pretty_money(e_mean)}</td><td class="num">{pretty_money(e_mean * mult)}</td></tr>
     <tr><td>Stress Case (P90)</td><td class="num">{pretty_money(e_p90)}</td><td class="num">{pretty_money(e_p90 * mult)}</td></tr>

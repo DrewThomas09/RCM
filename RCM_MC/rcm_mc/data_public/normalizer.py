@@ -189,9 +189,9 @@ def validate(deal: Dict[str, Any]) -> List[str]:
     if ev and ebitda and ebitda > 0:
         multiple = ev / ebitda
         if multiple < 3.0:
-            warnings.append(f"implied EV/EBITDA {multiple:.1f}x unusually low (< 3x)")
+            warnings.append(f"implied EV/EBITDA {multiple:.2f}x unusually low (< 3x)")
         if multiple > 30.0:
-            warnings.append(f"implied EV/EBITDA {multiple:.1f}x unusually high (> 30x)")
+            warnings.append(f"implied EV/EBITDA {multiple:.2f}x unusually high (> 30x)")
 
     moic = deal.get("realized_moic")
     irr = deal.get("realized_irr")

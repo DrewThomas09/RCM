@@ -202,7 +202,7 @@ def compare_exit_alternatives(
         time_to_exit_yrs=round(recap_time, 2),
         partner_commentary=(
             f"Lever to "
-            f"{inputs.dividend_recap_leverage_multiple:.1f}x; "
+            f"{inputs.dividend_recap_leverage_multiple:.2f}x; "
             f"dividend ${recap_dividend:,.2f}M + hold to "
             "planned exit."
         ),

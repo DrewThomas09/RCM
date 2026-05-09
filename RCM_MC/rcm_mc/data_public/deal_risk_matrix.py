@@ -169,15 +169,15 @@ def score_leverage_risk(deal: Dict[str, Any]) -> RiskDimension:
     if ev_ebitda is not None:
         if ev_ebitda > 20:
             score += 40
-            drivers.append(f"EV/EBITDA {ev_ebitda:.1f}x — extreme premium (>20x)")
+            drivers.append(f"EV/EBITDA {ev_ebitda:.2f}x — extreme premium (>20x)")
         elif ev_ebitda > 15:
             score += 25
-            drivers.append(f"EV/EBITDA {ev_ebitda:.1f}x — high multiple (>15x)")
+            drivers.append(f"EV/EBITDA {ev_ebitda:.2f}x — high multiple (>15x)")
         elif ev_ebitda > 12:
             score += 12
-            drivers.append(f"EV/EBITDA {ev_ebitda:.1f}x — above sector median")
+            drivers.append(f"EV/EBITDA {ev_ebitda:.2f}x — above sector median")
         else:
-            mitigants.append(f"Entry multiple {ev_ebitda:.1f}x within historical range")
+            mitigants.append(f"Entry multiple {ev_ebitda:.2f}x within historical range")
 
     if ebitda is not None and ebitda < 0:
         score += 30

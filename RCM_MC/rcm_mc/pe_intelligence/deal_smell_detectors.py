@@ -178,7 +178,7 @@ def _covenant_close_to_trip(
             pattern=("Smells like a deal walking into covenant "
                       "trouble on day 1."),
             trigger_signals=[
-                f"leverage={ctx.leverage:.1f}x",
+                f"leverage={ctx.leverage:.2f}x",
                 f"headroom={ctx.covenant_headroom_pct*100:.0f}%",
             ],
             partner_commentary=(

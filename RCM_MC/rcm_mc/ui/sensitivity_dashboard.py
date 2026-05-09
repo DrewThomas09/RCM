@@ -215,7 +215,7 @@ def render_sensitivity_page(
 
       <label style="color:#94a3b8;">
         Exit Multiple Range: <span id="em-val">
-          {params.exit_multiple_range[0]:.0f}x &ndash; {params.exit_multiple_range[1]:.0f}x
+          {params.exit_multiple_range[0]:.2f}x &ndash; {params.exit_multiple_range[1]:.2f}x
         </span><br>
         <input type="range" name="exit_multiple_min" min="4" max="20" step="1"
                value="{params.exit_multiple_range[0]:.0f}"
@@ -317,7 +317,7 @@ def _build_grid_table(result: SensitivityResult) -> str:
     # Header row
     hdr = "<tr><th style='padding:6px 10px; color:#94a3b8;'>Hold \\ Exit</th>"
     for em in result.exit_multiples:
-        hdr += f"<th style='padding:6px 10px; color:#94a3b8;'>{em:.1f}x</th>"
+        hdr += f"<th style='padding:6px 10px; color:#94a3b8;'>{em:.2f}x</th>"
     hdr += "</tr>"
     rows.append(hdr)
 

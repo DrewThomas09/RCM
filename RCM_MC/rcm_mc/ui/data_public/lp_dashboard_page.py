@@ -40,7 +40,7 @@ def _vintage_moic_svg(rows) -> str:
         color = P["positive"] if r.median_moic >= 2.0 else (P["warning"] if r.median_moic >= 1.0 else P["negative"])
         bars.append(
             f'<rect x="{x}" y="{y}" width="{bar_w}" height="{bh}" fill="{color}" opacity="0.85"/>'
-            f'<text x="{x + bar_w//2}" y="{y - 4}" fill="{P["text_dim"]}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{r.median_moic:.1f}x</text>'
+            f'<text x="{x + bar_w//2}" y="{y - 4}" fill="{P["text_dim"]}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{r.median_moic:.2f}x</text>'
             f'<text x="{x + bar_w//2}" y="{h - pad_b + 14}" fill="{P["text_faint"]}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{r.year}</text>'
         )
 
@@ -51,7 +51,7 @@ def _vintage_moic_svg(rows) -> str:
             yp = int((h - pad_b) - v / max_moic * inner_h)
             ticks.append(
                 f'<line x1="{pad_l - 4}" y1="{yp}" x2="{w - 20}" y2="{yp}" stroke="{P["border"]}" stroke-width="1"/>'
-                f'<text x="{pad_l - 8}" y="{yp + 4}" fill="{P["text_faint"]}" font-size="9" text-anchor="end" font-family="JetBrains Mono,monospace">{v:.1f}x</text>'
+                f'<text x="{pad_l - 8}" y="{yp + 4}" fill="{P["text_faint"]}" font-size="9" text-anchor="end" font-family="JetBrains Mono,monospace">{v:.2f}x</text>'
             )
 
     bg = P["panel"]

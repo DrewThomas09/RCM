@@ -346,8 +346,8 @@ def check_reasonableness(
     if ev_ebitda_in_band is False:
         multiple = ev / ebitda if ev and ebitda else 0
         warnings.append(
-            f"EV/EBITDA {multiple:.1f}x outside band {ev_ebitda_band[0]:.1f}x–"
-            f"{ev_ebitda_band[1]:.1f}x for {deal_type.value}"
+            f"EV/EBITDA {multiple:.2f}x outside band {ev_ebitda_band[0]:.2f}x–"
+            f"{ev_ebitda_band[1]:.2f}x for {deal_type.value}"
         )
 
     return ReasonablenessResult(
@@ -431,12 +431,12 @@ def detect_red_flags(
         leverage = debt_mm / ebitda
         if leverage > 8.0:
             flags.append(
-                f"RED FLAG: Entry leverage {leverage:.1f}x EBITDA exceeds 8x — "
+                f"RED FLAG: Entry leverage {leverage:.2f}x EBITDA exceeds 8x — "
                 "Quorum Health filed Ch. 11 at ~9x; lender syndication risk is high"
             )
         elif leverage > 6.5:
             flags.append(
-                f"CAUTION: Entry leverage {leverage:.1f}x EBITDA is above 6.5x — "
+                f"CAUTION: Entry leverage {leverage:.2f}x EBITDA is above 6.5x — "
                 "requires near-perfect operational execution; refinancing risk in rate cycle"
             )
 
@@ -543,7 +543,7 @@ def detect_red_flags(
         multiple = ev / ebitda
         if multiple > 12 and deal_type == DealType.PE_HOSPITAL_COMMUNITY:
             flags.append(
-                f"CAUTION: Entry multiple {multiple:.1f}x EBITDA for community hospital — "
+                f"CAUTION: Entry multiple {multiple:.2f}x EBITDA for community hospital — "
                 "historical realized exits cluster at 6-10x; "
                 "you need material EBITDA growth just to achieve 1.5x MOIC at 10x exit"
             )

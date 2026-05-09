@@ -172,8 +172,8 @@ def _deal_killers_open(i: PartnerVoiceInputs) -> List[str]:
 def _bull_case(i: PartnerVoiceInputs) -> str:
     return (
         f"Thesis plays out: organic growth ~{i.target_irr*100-3:.1f}%, "
-        f"exit multiple flat at {i.entry_multiple:.1f}x → MOIC "
-        f"{i.target_moic + 0.4:.1f}x, IRR "
+        f"exit multiple flat at {i.entry_multiple:.2f}x → MOIC "
+        f"{i.target_moic + 0.4:.2f}x, IRR "
         f"{i.target_irr*100 + 3:.1f}%."
     )
 
@@ -181,7 +181,7 @@ def _bull_case(i: PartnerVoiceInputs) -> str:
 def _base_case(i: PartnerVoiceInputs) -> str:
     return (
         f"Plan-case growth, multiple compression of ~1x, synergies at "
-        f"80% realization → MOIC {i.target_moic:.1f}x, IRR "
+        f"80% realization → MOIC {i.target_moic:.2f}x, IRR "
         f"{i.target_irr*100:.1f}%."
     )
 
@@ -191,7 +191,7 @@ def _bear_case(i: PartnerVoiceInputs) -> str:
     return (
         f"Recession + {shock*100:.1f}% EBITDA shock, multiple "
         f"compression of 2x → MOIC "
-        f"{max(0.0, i.target_moic - 1.0):.1f}x, IRR below cost of "
+        f"{max(0.0, i.target_moic - 1.0):.2f}x, IRR below cost of "
         "capital."
     )
 
@@ -200,14 +200,14 @@ def _summary(i: PartnerVoiceInputs, rec: str, score: int) -> str:
     if rec == REC_INVEST:
         return (
             f"{i.deal_name} is a ${i.ebitda_m:,.2f}M EBITDA "
-            f"{i.subsector} asset at {i.entry_multiple:.1f}x. Score "
+            f"{i.subsector} asset at {i.entry_multiple:.2f}x. Score "
             f"{score}/100. Thesis defensible, exit path clear. "
             "Move to final IC with standard closing conditions."
         )
     if rec == REC_PASS:
         return (
             f"{i.deal_name} ({i.subsector}, ${i.ebitda_m:,.2f}M "
-            f"EBITDA, {i.entry_multiple:.1f}x) scores {score}/100. "
+            f"EBITDA, {i.entry_multiple:.2f}x) scores {score}/100. "
             "Red flags / pattern-matches / valuation stretch make this "
             "a pass at current price. Re-evaluate on structural "
             "improvement or 10%+ price adjustment."

@@ -32,7 +32,7 @@ def simulate_strategic_exit(target: ExitTarget) -> ArchetypeResult:
     base = target.private_comp_multiple
     synergy_premium = 0.0
     drivers: List[str] = [
-        f"Private-comp anchor: {base:.1f}x EBITDA"]
+        f"Private-comp anchor: {base:.2f}x EBITDA"]
     # Cross-sell heuristic: more diversified payer mix → strategics pay up
     if target.payer_concentration < 0.5:
         synergy_premium += 1.0
@@ -81,7 +81,7 @@ def simulate_secondary_pe(target: ExitTarget) -> ArchetypeResult:
         valuation_method="lbo_model_solved_for_entry",
         drivers=[
             f"5y forward EBITDA: ${forward_ebitda:.2f}M",
-            f"Exit at {target.private_comp_multiple:.1f}x",
+            f"Exit at {target.private_comp_multiple:.2f}x",
             f"50% LTV close, target 2.5x MOIC",
         ],
         confidence=0.75,
@@ -128,7 +128,7 @@ def simulate_take_private(target: ExitTarget) -> ArchetypeResult:
         implied_multiple=round(multiple, 2),
         valuation_method="public_comp_plus_control_premium",
         drivers=[
-            f"Public comp {target.public_comp_multiple:.1f}x",
+            f"Public comp {target.public_comp_multiple:.2f}x",
             "+25% control premium",
         ],
         confidence=0.55,
@@ -181,7 +181,7 @@ def simulate_ipo(target: ExitTarget) -> ArchetypeResult:
         implied_multiple=round(multiple, 2),
         valuation_method="public_comp_minus_float_discount",
         drivers=[
-            f"Public comp {target.public_comp_multiple:.1f}x",
+            f"Public comp {target.public_comp_multiple:.2f}x",
             "−15% float discount on first-day pricing",
         ],
         confidence=0.50,
@@ -201,7 +201,7 @@ def simulate_dividend_recap(target: ExitTarget) -> ArchetypeResult:
         implied_multiple=target_lev,
         valuation_method="leverage_capacity_to_5_5x",
         drivers=[
-            f"Target total lev: {target_lev:.1f}x EBITDA",
+            f"Target total lev: {target_lev:.2f}x EBITDA",
             f"New debt capacity: ${new_debt:.2f}M",
             f"Existing net debt: ${target.net_debt_mm:.2f}M",
             f"Distribution: ${distribution:.2f}M",

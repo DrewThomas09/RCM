@@ -304,7 +304,7 @@ def ic_packet_report(packet: IcPacket) -> str:
     name = d.get("deal_name", "Unknown Deal")
     ev = d.get("ev_mm", "n/a")
     ebitda = d.get("ebitda_at_entry_mm") or d.get("ebitda_mm", "n/a")
-    mult = f"{float(ev)/float(ebitda):.1f}x" if ev and ebitda else "n/a"
+    mult = f"{float(ev)/float(ebitda):.2f}x" if ev and ebitda else "n/a"
     sector = d.get("sector", "n/a")
     buyer = d.get("buyer", "n/a")
 
@@ -321,7 +321,7 @@ def ic_packet_report(packet: IcPacket) -> str:
 
     if packet.max_entry_multiple:
         lines += [
-            f"   Max affordable entry (2.5x MOIC target):  {packet.max_entry_multiple:.1f}x",
+            f"   Max affordable entry (2.5x MOIC target):  {packet.max_entry_multiple:.2f}x",
             f"   LBO feasible:   {'Yes' if packet.lbo_feasible else 'No'}",
             f"   Entry vs corpus: {packet.entry_corpus_signal}",
         ]

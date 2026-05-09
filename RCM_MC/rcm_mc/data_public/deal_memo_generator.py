@@ -336,7 +336,7 @@ def _ev_ebitda(deal: Dict) -> str:
         try:
             eb = float(ebitda)
             if eb > 0:
-                return f"{float(ev)/eb:.1f}x"
+                return f"{float(ev)/eb:.2f}x"
         except (TypeError, ValueError):
             pass
     return "N/A"

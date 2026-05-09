@@ -244,7 +244,7 @@ def moic_histogram_chart(
             f'<text x="{x(i) + bar_w/2:.1f}" y="{padding_top + inner_h + 14:.1f}" '
             f'fill="{_PAL["text_faint"]}" text-anchor="middle" '
             f'font-size="9" font-family="JetBrains Mono, monospace">'
-            f'{b.lower:.1f}–{b.upper:.1f}x</text>'
+            f'{b.lower:.1f}–{b.upper:.2f}x</text>'
         )
 
     # P50 marker line.

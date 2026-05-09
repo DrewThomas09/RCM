@@ -126,7 +126,7 @@ def _scatter_svg(corpus: List[Dict[str, Any]], width: int = 440, height: int = 2
         if m > max_moic: break
         gy = sy(m)
         elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#1e293b" stroke-width="0.8"/>')
-        elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
+        elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.2f}x</text>')
 
     for d in deals_with_data:
         comm = float(d["payer_mix"].get("commercial", 0) or 0)

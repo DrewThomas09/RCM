@@ -181,7 +181,7 @@ def _render_headline(summary_df: pd.DataFrame, ev_multiple: float) -> str:
         <div class="value">{pretty_money(ebitda_mean)}</div>
       </div>
       <div class="kpi-card accent">
-        <div class="label">Enterprise Value ({ev_multiple:.0f}x)</div>
+        <div class="label">Enterprise Value ({ev_multiple:.2f}x)</div>
         <div class="value">{pretty_money(ev_mean)}</div>
       </div>
       <div class="kpi-card">
@@ -498,7 +498,7 @@ def _render_bottom_line(
     <div class="bottom-line">
       <strong>Bottom line.</strong> Closing the gap between target RCM performance and
       best-practice benchmarks represents a <strong>{pretty_money(ev_mean)}</strong>
-      enterprise-value opportunity at {ev_multiple:.0f}x
+      enterprise-value opportunity at {ev_multiple:.2f}x
       (range {pretty_money(ev_p10)} to {pretty_money(ev_p90)}).{grade_clause}
     </div>"""
 

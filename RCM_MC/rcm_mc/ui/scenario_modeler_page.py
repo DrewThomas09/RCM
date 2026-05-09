@@ -310,9 +310,9 @@ def render_scenario_modeler(
                       fmt_fn=pct, good_fn=lambda v: v > current_margin)
         + '<tr><td colspan="99" style="border-top:2px solid var(--cad-border);"></td></tr>'
         + _row("Entry Multiple", [r["scenario"]["entry_multiple"] for r in results],
-               fmt_fn=lambda v: f"{v:.1f}x")
+               fmt_fn=lambda v: f"{v:.2f}x")
         + _row("Exit Multiple", [r["scenario"]["exit_multiple"] for r in results],
-               fmt_fn=lambda v: f"{v:.1f}x")
+               fmt_fn=lambda v: f"{v:.2f}x")
         + _row("Entry EV", [r["entry_ev"] for r in results])
         + _row("Entry Equity", [r["entry_equity"] for r in results])
         + _row("Exit EV", [r["exit_ev"] for r in results])
@@ -420,6 +420,6 @@ def render_scenario_modeler(
         f"Scenario Modeler — {_html.escape(name)}",
         subtitle=(
             f"CCN {_html.escape(ccn)} | {len(results)} scenarios | "
-            f"Best: {best['scenario']['name']} ({best['irr']:.0%} IRR, {best['moic']:.1f}x MOIC)"
+            f"Best: {best['scenario']['name']} ({best['irr']:.0%} IRR, {best['moic']:.2f}x MOIC)"
         ),
     )

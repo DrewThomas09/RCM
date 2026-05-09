@@ -185,7 +185,7 @@ def _hold_moic_scatter(
         for xv in [1, 3, 5, 7, 9, 11]
     )
     y_ticks = "".join(
-        f'<text x="{pad_l-4}" y="{ty(yv)+3:.1f}" font-size="7.5" fill="#64748b" text-anchor="end">{yv:.0f}x</text>'
+        f'<text x="{pad_l-4}" y="{ty(yv)+3:.1f}" font-size="7.5" fill="#64748b" text-anchor="end">{yv:.2f}x</text>'
         for yv in [0, 1, 2, 3, 4, 5, 6]
     )
     labels = (

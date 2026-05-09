@@ -124,7 +124,7 @@ def _round1(inputs: ICDialogInputs) -> List[DialogTurn]:
         (f"The historical match is {inputs.historical_failure_match_top}. "
          if inputs.historical_failure_match_top
          else "") +
-        f"Target {inputs.target_moic:.1f}x at "
+        f"Target {inputs.target_moic:.2f}x at "
         f"{inputs.entry_multiple:.1f}× entry — what's "
         "the specific edge?"
     )
@@ -177,7 +177,7 @@ def _round1(inputs: ICDialogInputs) -> List[DialogTurn]:
         f"LP read: {inputs.subsector} platform at "
         f"{inputs.entry_multiple:.1f}× — comparable to "
         "vintage peer deals. If this exits in 5 years "
-        f"at {inputs.target_moic:.1f}x, the LP letter "
+        f"at {inputs.target_moic:.2f}x, the LP letter "
         "writes itself. If it doesn't — and "
         f"{inputs.leverage_turns:.1f}× leverage means "
         "any miss bites cash flow — the letter is "
@@ -204,7 +204,7 @@ def _round2(
     sk_msg = (
         "Optimist says growth and multiple expansion. "
         "Below me a clean QofE doesn't get you to "
-        f"{inputs.target_moic:.1f}x. Where's the "
+        f"{inputs.target_moic:.2f}x. Where's the "
         "specific evidence growth holds AND multiple "
         "expands? Two assumptions, both have to land."
     )
@@ -310,7 +310,7 @@ def _round3_chair(
     # Unresolved heuristics
     if inputs.target_moic >= 3.0:
         unresolved.append(
-            f"{inputs.target_moic:.1f}x target is "
+            f"{inputs.target_moic:.2f}x target is "
             "top-quartile execution — burden of proof "
             "is on us; the team did NOT close that gap.")
     if not inputs.operator_owns_named:

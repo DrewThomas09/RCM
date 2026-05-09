@@ -113,7 +113,7 @@ def _tvpi_dpi_svg(quarters) -> str:
             ticks.append(
                 f'<line x1="{pad_l - 4}" y1="{yp:.1f}" x2="{w - pad_r}" y2="{yp:.1f}" stroke="{border}" stroke-width="0.5" opacity="0.4"/>'
                 f'<text x="{pad_l - 4}" y="{yp + 3:.1f}" fill="{text_faint}" font-size="9" text-anchor="end" '
-                f'font-family="JetBrains Mono,monospace">{v:.1f}x</text>'
+                f'font-family="JetBrains Mono,monospace">{v:.2f}x</text>'
             )
 
     legend = (

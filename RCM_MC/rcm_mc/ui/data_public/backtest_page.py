@@ -125,7 +125,7 @@ def _scatter_svg(
         yv_px = ty(yv)
         y_ticks.append(
             f'<text x="{pad_l-4}" y="{yv_px+3:.1f}" font-size="7.5" '
-            f'fill="#64748b" text-anchor="end">{yv:.1f}x</text>'
+            f'fill="#64748b" text-anchor="end">{yv:.2f}x</text>'
         )
 
     # Axis labels
@@ -212,7 +212,7 @@ def _histogram_svg(
         if x_lo <= xv <= x_hi:
             x_ticks.append(
                 f'<text x="{tx(xv):.1f}" y="{pad_t+ph+13}" font-size="7.5" '
-                f'fill="#64748b" text-anchor="middle">{xv:.0f}x</text>'
+                f'fill="#64748b" text-anchor="middle">{xv:.2f}x</text>'
             )
 
     n_lbl = f'<text x="{pad_l+4}" y="{pad_t+9}" font-size="7.5" fill="#475569">n={len(values)}</text>'

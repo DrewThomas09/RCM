@@ -605,7 +605,7 @@ def run_main(argv: Optional[list[str]] = None, prog: str = "rcm-mc") -> None:
         print(f"  │  {label:<32} {vals:<30} │")
     print("  └──────────────────────────────────────────────────────────────────┘")
 
-    print(f"\n  EV Translation at {mult:.1f}x EBITDA multiple")
+    print(f"\n  EV Translation at {mult:.2f}x EBITDA multiple")
     print("  " + "─" * 50)
     print(f"  Mean EV impact:  {ev_mean:,.0f}")
     print(f"  P90 EV impact:   {ev_p90:,.0f}")

@@ -134,8 +134,8 @@ def _score_financial(ctx: AddOnContext) -> FitDimension:
     elif arbitrage <= 0:
         score -= 15
         concerns.append(
-            f"Paying {ctx.target_multiple_paid:.1f}x vs platform "
-            f"marked at {ctx.platform_multiple_last_marked:.1f}x "
+            f"Paying {ctx.target_multiple_paid:.2f}x vs platform "
+            f"marked at {ctx.platform_multiple_last_marked:.2f}x "
             "— no multiple arbitrage. Pure EBITDA addition at par.")
     if ctx.expected_synergies_pct_target_ebitda >= 0.15:
         score += 15

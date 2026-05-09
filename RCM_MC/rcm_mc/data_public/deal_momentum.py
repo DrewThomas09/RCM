@@ -317,7 +317,7 @@ def momentum_report(deals: List[Dict[str, Any]]) -> str:
     lines += ["", "Multiple Compression Trend (median EV/EBITDA):"]
     for yr, med in sorted(multi.items()):
         if med is not None:
-            lines.append(f"  {yr}: {med:.1f}x")
+            lines.append(f"  {yr}: {med:.2f}x")
 
     lines += ["", "Return Compression Trend (median realized MOIC):"]
     for yr, med in sorted(ret.items()):

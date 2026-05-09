@@ -221,7 +221,7 @@ def render_lbo_stress_markdown(report: LBOStressReport) -> str:
         mtd = str(r.months_to_default) if r.months_to_default is not None else "—"
         lines.append(
             f"| {r.scenario} | ${r.stressed_ebitda_m:,.2f}M | "
-            f"{r.stressed_leverage:.1f}x | {r.stressed_coverage:.1f}x | "
+            f"{r.stressed_leverage:.2f}x | {r.stressed_coverage:.2f}x | "
             f"{breach} | {mtd} |"
         )
     return "\n".join(lines)

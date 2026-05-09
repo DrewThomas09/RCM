@@ -92,7 +92,7 @@ def compute_market_pulse(store: Any = None) -> MarketPulse:
     )
 
     indicators = [
-        MarketIndicator("Hospital EV/EBITDA", f"{median_multiple:.1f}x", "+0.2x QoQ", "up",
+        MarketIndicator("Hospital EV/EBITDA", f"{median_multiple:.2f}x", "+0.2x QoQ", "up",
                         "Median transaction multiple for acute care hospitals (Capital IQ)", now),
         MarketIndicator("10Y Treasury", f"{treasury:.2f}%", "", "flat",
                         "Federal Reserve Economic Data (FRED DGS10)", now),

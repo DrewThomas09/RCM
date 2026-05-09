@@ -144,11 +144,11 @@ def score_entry_risk(
         mult_score = min(20.0, pct * 20.0)
         mult_signal = "low" if pct < 0.40 else ("medium" if pct < 0.70 else "high")
         mult_rationale = (
-            f"{entry_multiple:.1f}x entry vs. corpus median {corpus_med:.1f}x "
+            f"{entry_multiple:.2f}x entry vs. corpus median {corpus_med:.2f}x "
             f"(P{pct*100:.0f})"
         )
         if pct > 0.80:
-            notes.append(f"Entry multiple {entry_multiple:.1f}x is top-quintile aggressive vs. corpus")
+            notes.append(f"Entry multiple {entry_multiple:.2f}x is top-quintile aggressive vs. corpus")
     else:
         mult_signal = "medium"
 
@@ -192,8 +192,8 @@ def score_entry_risk(
         dscr = ebitda / annual_interest
         if dscr < 1.5:
             lev_score = min(15.0, lev_score + 5.0)
-            lev_rationale += f"; DSCR {dscr:.1f}x below 1.5x — tight coverage"
-            notes.append(f"Tight DSCR {dscr:.1f}x — minimal covenant headroom at entry")
+            lev_rationale += f"; DSCR {dscr:.2f}x below 1.5x — tight coverage"
+            notes.append(f"Tight DSCR {dscr:.2f}x — minimal covenant headroom at entry")
 
     dimensions.append(RiskDimension(
         name="leverage",

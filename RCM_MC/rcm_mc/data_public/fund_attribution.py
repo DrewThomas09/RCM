@@ -193,7 +193,7 @@ def _build_components(deals: List[dict]) -> List[AttributionComponent]:
          "Multiple arbitrage + synergies from roll-ups"),
         ("Multiple Expansion",
          mult_contrib,
-         f"Exit multiple ~{avg_mult_exp + 11:.1f}x vs entry"),
+         f"Exit multiple ~{avg_mult_exp + 11:.2f}x vs entry"),
         ("Leverage Effect (Debt Paydown)",
          lev_contrib,
          "Amortization + EBITDA growth reduces net debt"),

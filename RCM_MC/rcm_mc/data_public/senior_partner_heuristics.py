@@ -206,18 +206,18 @@ def multiple_flag(deal: Dict[str, Any]) -> List[str]:
     flags = []
     if multiple < band.low:
         flags.append(
-            f"Entry multiple {multiple:.1f}x below expected floor {band.low:.1f}x "
+            f"Entry multiple {multiple:.2f}x below expected floor {band.low:.2f}x "
             f"({band.sector}/{band.deal_type}) — verify data or check asset quality risk"
         )
     elif multiple > band.high:
         flags.append(
-            f"Entry multiple {multiple:.1f}x above ceiling {band.high:.1f}x "
+            f"Entry multiple {multiple:.2f}x above ceiling {band.high:.2f}x "
             f"({band.sector}/{band.deal_type}) — stress-test IRR at 15%+ exit multiple compression"
         )
     elif multiple > band.fair_high:
         flags.append(
-            f"Entry multiple {multiple:.1f}x in upper-fair range "
-            f"({band.fair_high:.1f}–{band.high:.1f}x) — premium requires specific upside catalyst"
+            f"Entry multiple {multiple:.2f}x in upper-fair range "
+            f"({band.fair_high:.1f}–{band.high:.2f}x) — premium requires specific upside catalyst"
         )
     return flags
 
@@ -507,9 +507,9 @@ def heuristic_report(assessment: Dict[str, Any]) -> str:
 
     band = assessment.get("entry_band", {})
     lines.append(
-        f"  Entry band : {band.get('low', '?'):.1f}x — "
-        f"{band.get('fair_low', '?'):.1f}x / {band.get('fair_high', '?'):.1f}x — "
-        f"{band.get('high', '?'):.1f}x"
+        f"  Entry band : {band.get('low', '?'):.2f}x — "
+        f"{band.get('fair_low', '?'):.2f}x / {band.get('fair_high', '?'):.2f}x — "
+        f"{band.get('high', '?'):.2f}x"
     )
     if band.get("notes"):
         lines.append(f"               {band['notes']}")

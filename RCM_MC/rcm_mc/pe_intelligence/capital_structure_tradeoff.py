@@ -157,9 +157,9 @@ def sweep_cap_structure(inputs: CapStructureInputs,
 
     if rec is not None:
         note = (
-            f"Recommended leverage: {rec.leverage_multiple:.1f}x "
+            f"Recommended leverage: {rec.leverage_multiple:.2f}x "
             f"(MOIC {rec.equity_moic:.2f}x, coverage "
-            f"{rec.interest_coverage:.1f}x, status {rec.status}). "
+            f"{rec.interest_coverage:.2f}x, status {rec.status}). "
             "Going higher boosts MOIC but erodes coverage."
         )
         return CapStructureResult(
@@ -183,9 +183,9 @@ def render_cap_structure_markdown(result: CapStructureResult) -> str:
     for p in result.points:
         irr_s = f"{p.equity_irr*100:.1f}%" if p.equity_irr is not None else "—"
         lines.append(
-            f"| {p.leverage_multiple:.1f}x | ${p.debt_m:,.2f}M | "
+            f"| {p.leverage_multiple:.2f}x | ${p.debt_m:,.2f}M | "
             f"${p.equity_m:,.2f}M | ${p.interest_expense_m:,.2f}M | "
-            f"{p.interest_coverage:.1f}x | {p.equity_moic:.2f}x | "
+            f"{p.interest_coverage:.2f}x | {p.equity_moic:.2f}x | "
             f"{irr_s} | {p.default_risk_score} | {p.status} |"
         )
     return "\n".join(lines)

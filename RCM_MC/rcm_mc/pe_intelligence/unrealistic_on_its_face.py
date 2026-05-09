@@ -133,10 +133,10 @@ def _leverage_coverage_math(
         if inputs.claimed_interest_coverage > implied_max * 1.1:
             return ImplausibilityFinding(
                 name="leverage_coverage_impossible", severity="high",
-                claim=(f"{inputs.leverage:.1f}x leverage AND "
-                       f"{inputs.claimed_interest_coverage:.1f}x "
+                claim=(f"{inputs.leverage:.2f}x leverage AND "
+                       f"{inputs.claimed_interest_coverage:.2f}x "
                        f"interest coverage."),
-                reality=(f"At {inputs.leverage:.1f}x and "
+                reality=(f"At {inputs.leverage:.2f}x and "
                          f"{inputs.interest_rate*100:.1f}% rate, "
                          f"max implied coverage is "
                          f"{implied_max:.2f}x. The claim is "

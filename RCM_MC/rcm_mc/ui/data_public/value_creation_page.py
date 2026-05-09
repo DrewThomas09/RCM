@@ -171,7 +171,7 @@ def _peers_table(peers) -> str:
             f'<td style="padding:5px 8px;color:{tprim}">{p.company}</td>'
             f'<td style="padding:5px 8px;color:{tdim}">{p.sector[:18]}</td>'
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">{p.year}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{p.entry_multiple:.1f}x</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{p.entry_multiple:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{p.moic:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{p.irr*100:.1f}%</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tdim}">{p.hold_years:.1f}yr</td>'
@@ -282,9 +282,9 @@ def render_value_creation(params: dict) -> str:
     ev_created_pct = r.total_ev_created_mm / r.entry_ev_mm * 100 if r.entry_ev_mm else 0
 
     kpis = ck_kpi_block("Entry EV", f"${r.entry_ev_mm:.2f}M",
-                         unit=f"{r.entry_multiple:.1f}x EV/EBITDA")
+                         unit=f"{r.entry_multiple:.2f}x EV/EBITDA")
     kpis += ck_kpi_block("Exit EV", f"${r.exit_ev_mm:.2f}M",
-                          unit=f"{r.exit_multiple:.1f}x EV/EBITDA")
+                          unit=f"{r.exit_multiple:.2f}x EV/EBITDA")
     kpis += ck_kpi_block("EV Created", f"${r.total_ev_created_mm:.2f}M",
                           unit=f"+{ev_created_pct:.1f}% vs entry")
     kpis += ck_kpi_block("MOIC", f"{r.moic:.2f}x",

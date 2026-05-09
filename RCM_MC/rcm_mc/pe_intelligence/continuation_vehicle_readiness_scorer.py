@@ -227,7 +227,7 @@ def score_cv_readiness(
         verdict = "pursue_cv"
         note = (
             f"Composite {composite}/24; existing MOIC "
-            f"{inputs.existing_moic:.1f}x. CV fit is "
+            f"{inputs.existing_moic:.2f}x. CV fit is "
             "strong — pursue with named lead and LP AC "
             "pre-alignment."
         )

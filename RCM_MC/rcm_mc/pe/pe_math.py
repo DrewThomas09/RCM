@@ -248,8 +248,8 @@ def format_bridge(b: BridgeResult) -> str:
         "─" * 60,
         f"  Entry EBITDA:         {_fmt_money(b.entry_ebitda)}",
         f"  Exit EBITDA:          {_fmt_money(b.exit_ebitda)}",
-        f"  Entry multiple:       {b.entry_multiple:.1f}x",
-        f"  Exit multiple:        {b.exit_multiple:.1f}x",
+        f"  Entry multiple:       {b.entry_multiple:.2f}x",
+        f"  Exit multiple:        {b.exit_multiple:.2f}x",
         "",
         f"  Entry EV:             {_fmt_money(b.entry_ev)}",
         "   ─ Components ─",
@@ -257,7 +257,7 @@ def format_bridge(b: BridgeResult) -> str:
         f"({_fmt_pct(b.organic_growth_pct)}/yr × {b.hold_years:g}y)  "
         f"{_share(b.organic_ebitda_contribution)}",
         f"    + RCM uplift:       {_fmt_money(b.rcm_uplift_contribution):>12s}  "
-        f"(× {b.entry_multiple:.1f}x entry)                  "
+        f"(× {b.entry_multiple:.2f}x entry)                  "
         f"{_share(b.rcm_uplift_contribution)}",
         f"    + Multiple exp:     {_fmt_money(b.multiple_expansion_contribution):>12s}  "
         f"(Δ{b.exit_multiple - b.entry_multiple:+.1f}x × exit EBITDA)      "
@@ -839,7 +839,7 @@ def format_covenant(c: CovenantCheck) -> str:
         f"(trips at {_fmt_money(c.covenant_trips_at_ebitda)})",
     ]
     if c.interest_coverage > 0:
-        lines.append(f"  Interest coverage:    {c.interest_coverage:.1f}x")
+        lines.append(f"  Interest coverage:    {c.interest_coverage:.2f}x")
     return "\n".join(lines)
 
 
@@ -911,10 +911,10 @@ def bridge_to_records(b: BridgeResult) -> List[Dict[str, Any]]:
     """
     total = b.total_value_created
     rows: List[Dict[str, Any]] = [
-        {"step": "Entry EV",            "value": b.entry_ev,              "share_of_creation": None,  "note": f"{b.entry_multiple:.1f}x × entry EBITDA"},
+        {"step": "Entry EV",            "value": b.entry_ev,              "share_of_creation": None,  "note": f"{b.entry_multiple:.2f}x × entry EBITDA"},
         {"step": "Organic EBITDA",      "value": b.organic_ebitda_contribution,   "share_of_creation": (b.organic_ebitda_contribution / total) if total else None, "note": f"{b.organic_growth_pct*100:+.1f}%/yr × {b.hold_years:g}y"},
-        {"step": "RCM uplift",          "value": b.rcm_uplift_contribution,       "share_of_creation": (b.rcm_uplift_contribution / total) if total else None,     "note": f"× {b.entry_multiple:.1f}x entry multiple"},
+        {"step": "RCM uplift",          "value": b.rcm_uplift_contribution,       "share_of_creation": (b.rcm_uplift_contribution / total) if total else None,     "note": f"× {b.entry_multiple:.2f}x entry multiple"},
         {"step": "Multiple expansion",  "value": b.multiple_expansion_contribution, "share_of_creation": (b.multiple_expansion_contribution / total) if total else None, "note": f"Δ{b.exit_multiple - b.entry_multiple:+.1f}x × exit EBITDA"},
-        {"step": "Exit EV",             "value": b.exit_ev,              "share_of_creation": None,  "note": f"{b.exit_multiple:.1f}x × exit EBITDA"},
+        {"step": "Exit EV",             "value": b.exit_ev,              "share_of_creation": None,  "note": f"{b.exit_multiple:.2f}x × exit EBITDA"},
     ]
     return rows

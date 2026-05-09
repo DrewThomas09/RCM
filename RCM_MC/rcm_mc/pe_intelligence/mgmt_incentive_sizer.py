@@ -127,8 +127,8 @@ def size_mip(inputs: MIPInputs) -> MIPPlan:
     ltip = inputs.ceo_cash_comp_k * 0.20
 
     vesting = "4-year cliff with quarterly vest post-cliff"
-    accel = (f"100% MOIC accelerator at {inputs.target_moic:.1f}x; "
-             f"50% at {inputs.target_moic - 0.5:.1f}x.")
+    accel = (f"100% MOIC accelerator at {inputs.target_moic:.2f}x; "
+             f"50% at {inputs.target_moic - 0.5:.2f}x.")
 
     if pool_pct >= 0.15:
         note = (f"MIP pool {pool_pct*100:.1f}% of post-close equity "

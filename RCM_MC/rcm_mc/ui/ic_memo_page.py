@@ -388,8 +388,8 @@ def render_ic_memo(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = No
         return (
             f'<tr style="{style}">'
             f'<td style="font-weight:600;">{label}</td>'
-            f'<td class="num">{g["entry_multiple"]:.1f}x</td>'
-            f'<td class="num">{g["exit_multiple"]:.1f}x</td>'
+            f'<td class="num">{g["entry_multiple"]:.2f}x</td>'
+            f'<td class="num">{g["exit_multiple"]:.2f}x</td>'
             f'<td class="num">{_fm(g["entry_equity"])}</td>'
             f'<td class="num">{_fm(g["exit_equity"])}</td>'
             f'<td class="num" style="font-weight:600;">{g["moic"]:.2f}x</td>'

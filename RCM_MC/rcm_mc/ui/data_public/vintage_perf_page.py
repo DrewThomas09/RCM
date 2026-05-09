@@ -55,7 +55,7 @@ def _moic_bar_chart(stats: List[Any], width: int = 600, height: int = 160) -> st
         if m > max_moic: break
         gx = px(m)
         elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+row_h*len(stats)}" stroke="#1e293b" stroke-width="0.8"/>')
-        elements.append(f'<text x="{gx}" y="{margin["t"]+row_h*len(stats)+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.0f}x</text>')
+        elements.append(f'<text x="{gx}" y="{margin["t"]+row_h*len(stats)+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{m:.2f}x</text>')
     # 1x reference
     ref_x = px(1.0)
     elements.append(f'<line x1="{ref_x}" y1="{margin["t"]}" x2="{ref_x}" y2="{margin["t"]+row_h*len(stats)}" stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3,3"/>')
@@ -129,7 +129,7 @@ def _heatmap_svg(stats: List[Any], width: int = 600) -> str:
         )
         elements.append(
             f'<text x="{cx+cell_w//2-1}" y="23" text-anchor="middle" '
-            f'font-family="JetBrains Mono,monospace" font-size="8" fill="#0a0e17">{s.moic_p50:.1f}x</text>'
+            f'font-family="JetBrains Mono,monospace" font-size="8" fill="#0a0e17">{s.moic_p50:.2f}x</text>'
         )
     W = 20 + len(stats) * cell_w
     return (

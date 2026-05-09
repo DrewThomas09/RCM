@@ -75,7 +75,7 @@ def deal_brief(
                  f"EBITDA: {'${:,.2f}M'.format(ebitda) if ebitda else '—'}  |  "
                  f"Year: {year or '—'}  |  Buyer: {buyer}")
     if ev and ebitda and ebitda > 0:
-        lines.append(f"  Entry EV/EBITDA: {ev/ebitda:.1f}x")
+        lines.append(f"  Entry EV/EBITDA: {ev/ebitda:.2f}x")
 
     pm = deal.get("payer_mix")
     if isinstance(pm, str):

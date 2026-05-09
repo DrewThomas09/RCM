@@ -88,7 +88,7 @@ def _render_deal_facts(snapshot: pd.Series) -> str:
         ("Current stage",    html.escape(str(snapshot.get("stage") or "?")).title()),
         ("Entry EBITDA",     _fmt_money(snapshot.get("entry_ebitda"))),
         ("Entry EV",         _fmt_money(snapshot.get("entry_ev"))),
-        ("Entry multiple",   f"{float(snapshot['entry_multiple']):.1f}x"
+        ("Entry multiple",   f"{float(snapshot['entry_multiple']):.2f}x"
                              if pd.notna(snapshot.get("entry_multiple")) else "—"),
         ("Hold (years)",     f"{float(snapshot['hold_years']):g}"
                              if pd.notna(snapshot.get("hold_years")) else "—"),

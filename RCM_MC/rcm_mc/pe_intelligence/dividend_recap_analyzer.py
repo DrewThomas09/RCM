@@ -84,8 +84,8 @@ def analyze_recap(inputs: RecapInputs) -> RecapAssessment:
 
     if current_leverage >= inputs.max_leverage_tolerance:
         blockers.append(
-            f"Current leverage {current_leverage:.1f}x already at/above "
-            f"tolerance {inputs.max_leverage_tolerance:.1f}x."
+            f"Current leverage {current_leverage:.2f}x already at/above "
+            f"tolerance {inputs.max_leverage_tolerance:.2f}x."
         )
     if dividend <= 0:
         blockers.append(
@@ -93,8 +93,8 @@ def analyze_recap(inputs: RecapInputs) -> RecapAssessment:
         )
     if post_coverage < inputs.target_interest_coverage:
         blockers.append(
-            f"Post-recap coverage {post_coverage:.1f}x below target "
-            f"{inputs.target_interest_coverage:.1f}x."
+            f"Post-recap coverage {post_coverage:.2f}x below target "
+            f"{inputs.target_interest_coverage:.2f}x."
         )
 
     feasible = not blockers
@@ -106,7 +106,7 @@ def analyze_recap(inputs: RecapInputs) -> RecapAssessment:
         note = (
             f"Recap feasible: size up to ${dividend:,.2f}M dividend "
             f"(DPI uplift {dpi_uplift:.2f}x). Post-recap leverage "
-            f"{post_leverage:.1f}x, coverage {post_coverage:.1f}x."
+            f"{post_leverage:.2f}x, coverage {post_coverage:.2f}x."
         )
     else:
         note = "Recap NOT feasible under current gates. " + " | ".join(blockers)

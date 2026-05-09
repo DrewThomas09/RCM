@@ -166,7 +166,7 @@ def _returns_table(scenarios) -> str:
         rows.append(
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;text-align:center;color:{tdim}">Year {s.hold_years}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.exit_multiple:.1f}x</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{s.exit_multiple:.2f}x</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.exit_ev_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">${s.exit_equity_mm:.2f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{moic_c}">{s.moic:.2f}x</td>'
@@ -213,7 +213,7 @@ def _sensitivity_table(sensitivity_table, entry_multiple: float) -> str:
     for i, row in enumerate(sensitivity_table):
         rbg = bg2 if i % 2 else bg
         em = row["exit_multiple"]
-        em_label = f'{em:.1f}x'
+        em_label = f'{em:.2f}x'
         cells = [f'<td style="padding:5px 8px;color:{tdim};font-variant-numeric:tabular-nums">{em_label}</td>']
         for col in hold_cols:
             val = row.get(col)
@@ -328,7 +328,7 @@ def render_underwriting_model(params: dict) -> str:
     base_moic = f"{base_sc.moic:.2f}x" if base_sc else "—"
     base_irr = f"{base_sc.irr*100:.1f}%" if base_sc else "—"
 
-    kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.1f}x",
+    kpis = ck_kpi_block("Entry EV/EBITDA", f"{r.entry_multiple:.2f}x",
                          unit=f"EV: ${r.ev_mm:.2f}M / Size: {r.size_bucket}")
     kpis += ck_kpi_block("Total Leverage", f"{r.sources.leverage_ratio:.2f}x",
                           unit=f"Equity: {r.sources.equity_pct*100:.0f}% / ${r.sources.equity_mm:.2f}M")

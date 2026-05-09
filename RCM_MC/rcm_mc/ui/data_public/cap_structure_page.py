@@ -67,14 +67,14 @@ def _moic_curve_svg(ret_scenarios, lev_scenarios, optimal_lev: float) -> str:
             x = _x(lev)
             axes.append(
                 f'<text x="{x:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="10" '
-                f'text-anchor="middle" font-family="JetBrains Mono,monospace">{lev:.1f}x</text>'
+                f'text-anchor="middle" font-family="JetBrains Mono,monospace">{lev:.2f}x</text>'
             )
     for m in [1.0, 2.0, 3.0, 4.0]:
         if m <= max_moic:
             y = _y(m)
             axes.append(
                 f'<line x1="{pad_l}" y1="{y:.1f}" x2="{w - pad_r}" y2="{y:.1f}" stroke="{border}" stroke-width="0.5" opacity="0.4"/>'
-                f'<text x="{pad_l - 4}" y="{y + 3:.1f}" fill="{text_faint}" font-size="9" text-anchor="end" font-family="JetBrains Mono,monospace">{m:.1f}x</text>'
+                f'<text x="{pad_l - 4}" y="{y + 3:.1f}" fill="{text_faint}" font-size="9" text-anchor="end" font-family="JetBrains Mono,monospace">{m:.2f}x</text>'
             )
 
     return (
@@ -129,7 +129,7 @@ def _wacc_curve_svg(scenarios) -> str:
             x = pad_l + (lev - min_lev) / lev_range * inner_w
             axes.append(
                 f'<text x="{x:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="10" '
-                f'text-anchor="middle" font-family="JetBrains Mono,monospace">{lev:.1f}x</text>'
+                f'text-anchor="middle" font-family="JetBrains Mono,monospace">{lev:.2f}x</text>'
             )
 
     return (
@@ -160,9 +160,9 @@ def _leverage_table(scenarios, optimal_lev) -> str:
         dscr_c = P["positive"] if s.dscr >= 1.5 else (P["warning"] if s.dscr >= 1.2 else P["negative"])
         head_c = P["positive"] if s.covenant_headroom_pct >= 0.20 else (P["warning"] if s.covenant_headroom_pct >= 0.10 else P["negative"])
         cells = [
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_opt else "400"}">{s.total_leverage:.1f}x{" ★" if is_opt else ""}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.senior_leverage:.1f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.sub_leverage:.1f}x</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_opt else "400"}">{s.total_leverage:.2f}x{" ★" if is_opt else ""}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.senior_leverage:.2f}x</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.sub_leverage:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.debt_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.equity_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.equity_pct * 100:.1f}%</td>',
@@ -196,7 +196,7 @@ def _return_table(returns, optimal_lev) -> str:
         row_style = f"background:{rb}" + (f";outline:2px solid {pos};outline-offset:-2px" if is_opt else "")
         moic_c = pos if r.moic >= 2.5 else (P["warning"] if r.moic >= 1.5 else P["negative"])
         cells = [
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_opt else "400"}">{r.leverage:.1f}x</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_opt else "400"}">{r.leverage:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.exit_ebitda_mm:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${r.exit_ev_mm:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${r.remaining_debt_mm:,.2f}M</td>',
@@ -228,7 +228,7 @@ def _breach_table(probs) -> str:
             if v < 0.50: return P["warning"]
             return P["negative"]
         cells = [
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{b.leverage:.1f}x</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{b.leverage:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_5pct)}">{b.ebitda_drop_5pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_10pct)}">{b.ebitda_drop_10pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_15pct)}">{b.ebitda_drop_15pct * 100:.1f}%</td>',
@@ -270,10 +270,10 @@ def render_cap_structure(params: dict = None) -> str:
         ck_kpi_block("EV", f"${r.ev_mm:,.2f}M", "", "") +
         ck_kpi_block("EBITDA", f"${r.ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Current Entry Mult", f"{r.ev_mm / r.ebitda_mm:.2f}x", "", "") +
-        ck_kpi_block("Optimal Leverage", f"{r.optimal_leverage:.1f}x", "", "") +
+        ck_kpi_block("Optimal Leverage", f"{r.optimal_leverage:.2f}x", "", "") +
         ck_kpi_block("Optimal MOIC", f"{r.optimal_moic:.2f}x", "", "") +
         ck_kpi_block("Hold Years", f"{hold}", "", "") +
-        ck_kpi_block("Exit Multiple", f"{exit_mult:.1f}x", "", "") +
+        ck_kpi_block("Exit Multiple", f"{exit_mult:.2f}x", "", "") +
         ck_kpi_block("Scenarios", str(len(r.leverage_scenarios)), "", "")
     )
 
@@ -364,8 +364,8 @@ def render_cap_structure(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Recommendation:</strong>
     {_html.escape(r.recommendation)}.
-    Increasing leverage from {r.optimal_leverage - 0.5:.1f}x to {r.optimal_leverage:.1f}x lifts expected MOIC
-    meaningfully while maintaining DSCR ≥ 1.3x and covenant headroom &gt; 12%. Beyond {r.optimal_leverage + 0.5:.1f}x,
+    Increasing leverage from {r.optimal_leverage - 0.5:.2f}x to {r.optimal_leverage:.2f}x lifts expected MOIC
+    meaningfully while maintaining DSCR ≥ 1.3x and covenant headroom &gt; 12%. Beyond {r.optimal_leverage + 0.5:.2f}x,
     cost-of-debt step-ups and breach probabilities materially reduce risk-adjusted returns.
   </div>
 

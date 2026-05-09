@@ -61,7 +61,7 @@ def _leverage_timeline_svg(projections, thresholds_lev: float, thresholds_icr: f
     lines.append(f'<line x1="{pad_l}" y1="{thresh_y:.1f}" x2="{pad_l + chart_w}" '
                  f'y2="{thresh_y:.1f}" stroke="{neg}" stroke-width="1" stroke-dasharray="4 3"/>')
     lines.append(f'<text x="{pad_l + chart_w + 4}" y="{thresh_y + 4:.1f}" '
-                 f'fill="{neg}" font-size="9">Max {thresholds_lev:.1f}x</text>')
+                 f'fill="{neg}" font-size="9">Max {thresholds_lev:.2f}x</text>')
 
     # Leverage line
     for i in range(len(projections)):
@@ -78,7 +78,7 @@ def _leverage_timeline_svg(projections, thresholds_lev: float, thresholds_icr: f
             lines.append(f'<line x1="{xp:.1f}" y1="{yp:.1f}" x2="{x:.1f}" y2="{y:.1f}" '
                          f'stroke="{accent}" stroke-width="1.5"/>')
         lines.append(f'<text x="{x:.1f}" y="{y - 6:.1f}" text-anchor="middle" '
-                     f'fill="{c}">{p.debt_ebitda:.1f}x</text>')
+                     f'fill="{c}">{p.debt_ebitda:.2f}x</text>')
         lines.append(f'<text x="{x:.1f}" y="{pad_t + chart_h + 16}" text-anchor="middle" '
                      f'fill="{text_dim}">Yr {p.year}</text>')
 
@@ -327,10 +327,10 @@ def render_covenant_monitor(params: dict) -> str:
     kpis += ck_kpi_block("Entry Leverage", f"{r.entry_leverage:.2f}x",
                          unit=f"Sz bucket: {r.size_bucket}")
     kpis += ck_kpi_block("Current Leverage", f"{r.current_leverage:.2f}x",
-                         unit=f"Threshold: {lev_cov.threshold:.1f}x",
+                         unit=f"Threshold: {lev_cov.threshold:.2f}x",
                          delta=f"{lev_cov.headroom_pct * 100:.1f}% headroom")
     kpis += ck_kpi_block("Int. Coverage", f"{r.interest_coverage:.2f}x",
-                         unit=f"Min: {icr_cov.threshold:.1f}x",
+                         unit=f"Min: {icr_cov.threshold:.2f}x",
                          delta=f"{icr_cov.headroom_pct * 100:.1f}% headroom")
     kpis += ck_kpi_block("Sector Med. Leverage", f"{r.sector_median_leverage:.2f}x",
                          unit=f"P75: {r.sector_p75_leverage:.2f}x")

@@ -146,16 +146,16 @@ def _score_credibility(deal: Dict[str, Any]) -> tuple[float, List[str]]:
         mult = ev / ebitda
         if mult < 2.0:
             score -= 15
-            issues.append(f"EV/EBITDA {mult:.1f}x implausibly low (< 2x)")
+            issues.append(f"EV/EBITDA {mult:.2f}x implausibly low (< 2x)")
         elif mult < 4.0:
             score -= 5
-            issues.append(f"EV/EBITDA {mult:.1f}x low (< 4x)")
+            issues.append(f"EV/EBITDA {mult:.2f}x low (< 4x)")
         elif mult > 30:
             score -= 10
-            issues.append(f"EV/EBITDA {mult:.1f}x implausibly high (> 30x)")
+            issues.append(f"EV/EBITDA {mult:.2f}x implausibly high (> 30x)")
         elif mult > 20:
             score -= 5
-            issues.append(f"EV/EBITDA {mult:.1f}x high (> 20x)")
+            issues.append(f"EV/EBITDA {mult:.2f}x high (> 20x)")
     elif ev and not ebitda:
         score -= 3  # minor: EV without EBITDA reduces calibration value
 

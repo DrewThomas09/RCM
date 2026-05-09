@@ -133,23 +133,23 @@ def size_debt_capacity(inputs: DebtSizingInputs) -> DebtSizingReport:
                           if debt_m > 0 else 99.0)
 
     if leverage < 3.0:
-        note = (f"Thin recommended leverage {leverage:.1f}x — deal's "
+        note = (f"Thin recommended leverage {leverage:.2f}x — deal's "
                 "cash flow or coverage can't support more. Either the "
                 "seller's model is over-levered, or the deal is less "
                 "attractive than it looks.")
     elif binding == "cycle":
-        note = (f"Cycle discipline binds at {leverage:.1f}x "
-                f"(neutral {neutral:.1f}x + phase adj "
+        note = (f"Cycle discipline binds at {leverage:.2f}x "
+                f"(neutral {neutral:.2f}x + phase adj "
                 f"{adj:+.1f}x). Coverage and cash flow support more; "
                 "partner sticks to cycle discipline anyway.")
     elif binding == "fcf":
-        note = (f"FCF coverage binds at {leverage:.1f}x. Tight "
+        note = (f"FCF coverage binds at {leverage:.2f}x. Tight "
                 "cash flow after capex + tax; consider lower "
                 "leverage or covenant-lite structure.")
     else:
-        note = (f"Coverage binds at {leverage:.1f}x (stressed "
+        note = (f"Coverage binds at {leverage:.2f}x (stressed "
                 f"EBITDA ${stressed:,.2f}M / "
-                f"{inputs.coverage_hurdle:.1f}x hurdle). Partner-"
+                f"{inputs.coverage_hurdle:.2f}x hurdle). Partner-"
                 "prudent cap.")
 
     return DebtSizingReport(

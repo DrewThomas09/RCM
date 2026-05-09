@@ -154,10 +154,10 @@ def underwrite_deal(assumptions: UnderwritingAssumptions) -> UnderwritingResult:
     if result.gross_irr > 0.60:
         warnings.append(f"Gross IRR {result.gross_irr:.1%} > 60% — verify exit multiple or CAGR assumptions")
     if result.gross_moic > 10.0:
-        warnings.append(f"Gross MOIC {result.gross_moic:.1f}x > 10x — very rare; stress-test")
+        warnings.append(f"Gross MOIC {result.gross_moic:.2f}x > 10x — very rare; stress-test")
     if a.exit_multiple > a.entry_ev_mm / a.entry_ebitda_mm + 3:
         warnings.append(
-            f"Exit multiple {a.exit_multiple:.1f}x > entry {result.entry_ev_ebitda:.1f}x + 3 "
+            f"Exit multiple {a.exit_multiple:.2f}x > entry {result.entry_ev_ebitda:.2f}x + 3 "
             f"— multiple expansion assumption is aggressive"
         )
 
@@ -298,14 +298,14 @@ def underwriting_report(
         f"    Equity       : ${_p(result.entry_equity_mm, ',.0f')}M "
         f"({a.equity_contribution_pct:.0%})",
         f"    Debt         : ${_p(result.entry_debt_mm, ',.0f')}M "
-        f"({a.entry_leverage_x:.1f}x EBITDA)",
+        f"({a.entry_leverage_x:.2f}x EBITDA)",
         "",
         "  EXIT PROJECTIONS",
         f"    Hold years   : {a.hold_years:.1f}y",
         f"    EBITDA CAGR  : {a.ebitda_cagr:.1%}",
         f"    Exit EBITDA  : ${_p(result.exit_ebitda_mm, ',.0f')}M",
         f"    Exit EV      : ${_p(result.exit_ev_mm, ',.0f')}M  "
-        f"({a.exit_multiple:.1f}x EBITDA)",
+        f"({a.exit_multiple:.2f}x EBITDA)",
         f"    Exit equity  : ${_p(result.exit_equity_mm, ',.0f')}M",
         "",
         "  RETURNS",

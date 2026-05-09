@@ -106,7 +106,7 @@ def _waterfall_svg(components, fund_moic: float) -> str:
             ticks.append(
                 f'<line x1="{pad_l - 4}" y1="{yp}" x2="{w - pad_r}" y2="{yp}" stroke="{border}" stroke-width="0.5" stroke-dasharray="2,3"/>'
                 f'<text x="{pad_l - 6}" y="{yp + 3}" fill="{text_faint}" font-size="9" '
-                f'text-anchor="end" font-family="JetBrains Mono,monospace">{v:.1f}x</text>'
+                f'text-anchor="end" font-family="JetBrains Mono,monospace">{v:.2f}x</text>'
             )
 
     return (

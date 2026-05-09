@@ -71,7 +71,7 @@ def _top_risk_or(default: str, risks: List[str]) -> str:
 def _skeptic(ctx: VoiceContext) -> VoiceParagraph:
     para = (
         f"The numbers. {ctx.deal_name} is priced at "
-        f"{ctx.entry_multiple:.1f}x on ${ctx.recurring_ebitda_m:,.2f}M "
+        f"{ctx.entry_multiple:.2f}x on ${ctx.recurring_ebitda_m:,.2f}M "
         "recurring EBITDA — fine if recurring is real and the exit "
         f"multiple holds. My concern: "
         f"{_top_risk_or('thesis depends on continued multiple expansion', ctx.top_risks)}. "
@@ -93,9 +93,9 @@ def _optimist(ctx: VoiceContext) -> VoiceParagraph:
     para = (
         f"Fundamentals. {ctx.deal_name} has ${ctx.recurring_ebitda_m:,.2f}M "
         f"recurring EBITDA and management capable of executing "
-        f"{pillar}. Target {ctx.target_moic:.1f}x at "
+        f"{pillar}. Target {ctx.target_moic:.2f}x at "
         f"{ctx.target_irr*100:.1f}% is defensible; upside case is "
-        f"{ctx.target_moic + 0.7:.1f}x if roll-up engine and pricing "
+        f"{ctx.target_moic + 0.7:.2f}x if roll-up engine and pricing "
         "power compound. Bull case: strategic exit at premium. "
         "This is the best deal in the pipeline."
     )
@@ -139,7 +139,7 @@ def _operating_partner(ctx: VoiceContext) -> VoiceParagraph:
 def _lp_facing(ctx: VoiceContext) -> VoiceParagraph:
     para = (
         f"Q+Y LP update framing. \"{ctx.deal_name} was acquired at "
-        f"{ctx.entry_multiple:.1f}x ${ctx.recurring_ebitda_m:,.2f}M "
+        f"{ctx.entry_multiple:.2f}x ${ctx.recurring_ebitda_m:,.2f}M "
         f"recurring EBITDA. Thesis: "
     )
     if ctx.key_thesis_pillars:
@@ -147,7 +147,7 @@ def _lp_facing(ctx: VoiceContext) -> VoiceParagraph:
     else:
         para += "platform growth + operational lift. "
     para += (
-        f"Base case MOIC {ctx.target_moic:.1f}x / IRR "
+        f"Base case MOIC {ctx.target_moic:.2f}x / IRR "
         f"{ctx.target_irr*100:.1f}% over 5-year hold. Current "
         "holding posture: constructive; progress tracked against "
         "the 100-day plan and covenant headroom. Principal risks: "

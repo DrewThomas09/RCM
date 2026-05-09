@@ -217,7 +217,7 @@ def build_ebitda_quality_bridge(
             f"seller stated ${inputs.stated_ebitda_m:,.2f}M "
             f"({haircut_pct*100:.1f}% haircut, "
             f"${ev_delta:,.2f}M of EV impact at entry "
-            f"multiple {inputs.entry_multiple:.1f}x). "
+            f"multiple {inputs.entry_multiple:.2f}x). "
             "Partner: do not underwrite off stated EBITDA."
         )
     elif haircut_pct >= 0.10:

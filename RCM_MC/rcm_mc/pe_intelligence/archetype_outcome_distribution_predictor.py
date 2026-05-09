@@ -292,7 +292,7 @@ def predict_archetype_outcome(
     if band == "top_decile":
         verdict = (
             f"Deal team projects "
-            f"{inputs.deal_team_projected_moic:.1f}x — "
+            f"{inputs.deal_team_projected_moic:.2f}x — "
             f"top decile for {inputs.archetype}. "
             "Burden of proof is on us — what's the "
             "specific edge that puts this in the top "
@@ -300,29 +300,29 @@ def predict_archetype_outcome(
         )
     elif band == "top_quartile":
         verdict = (
-            f"{inputs.deal_team_projected_moic:.1f}x is "
+            f"{inputs.deal_team_projected_moic:.2f}x is "
             f"top quartile for {inputs.archetype}. "
             "Plausible if execution edges align — "
             "name them."
         )
     elif band == "above_median":
         verdict = (
-            f"{inputs.deal_team_projected_moic:.1f}x is "
+            f"{inputs.deal_team_projected_moic:.2f}x is "
             f"above {inputs.archetype} median "
-            f"({dist['median_moic']:.1f}x). "
+            f"({dist['median_moic']:.2f}x). "
             "Standard sponsor underwrite. Discuss "
             "execution differentiation."
         )
     elif band == "below_median":
         verdict = (
-            f"{inputs.deal_team_projected_moic:.1f}x is "
+            f"{inputs.deal_team_projected_moic:.2f}x is "
             f"BELOW median for {inputs.archetype} — "
             "deal team's own underwrite is sub-par "
             "for the shape; either re-price or pass."
         )
     else:
         verdict = (
-            f"{inputs.deal_team_projected_moic:.1f}x is "
+            f"{inputs.deal_team_projected_moic:.2f}x is "
             f"in the worst quartile/decile for "
             f"{inputs.archetype}. The archetype itself "
             "doesn't justify the equity check. Pass."
@@ -381,11 +381,11 @@ def render_archetype_outcome_markdown(
         "",
         "| Percentile | MOIC |",
         "|---|---|",
-        f"| Top decile | {d['top_decile_moic']:.1f}x |",
-        f"| Top quartile | {d['top_quartile_moic']:.1f}x |",
-        f"| Median | {d['median_moic']:.1f}x |",
-        f"| Bottom quartile | {d['bottom_quartile_moic']:.1f}x |",
-        f"| Bottom decile | {d['bottom_decile_moic']:.1f}x |",
+        f"| Top decile | {d['top_decile_moic']:.2f}x |",
+        f"| Top quartile | {d['top_quartile_moic']:.2f}x |",
+        f"| Median | {d['median_moic']:.2f}x |",
+        f"| Bottom quartile | {d['bottom_quartile_moic']:.2f}x |",
+        f"| Bottom decile | {d['bottom_decile_moic']:.2f}x |",
         "",
         f"- Median hold: {d['median_hold_years']:.1f} yr",
         f"- Failure rate (< 1.0×): "

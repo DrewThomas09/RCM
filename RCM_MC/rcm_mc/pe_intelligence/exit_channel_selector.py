@@ -163,7 +163,7 @@ def rank_exit_channels(inputs: ExitChannelInputs) -> ExitChannelRecommendation:
 
     note = (f"Best channel: **{best.channel}** "
             f"(score {best.score_0_100}/100, expected "
-            f"{best.expected_multiple:.1f}x, timing {best.timing_months}mo). "
+            f"{best.expected_multiple:.2f}x, timing {best.timing_months}mo). "
             f"Runner up: {ranks[1].channel} "
             f"({ranks[1].score_0_100}/100).")
 
@@ -186,7 +186,7 @@ def render_exit_channel_markdown(r: ExitChannelRecommendation) -> str:
     for c in r.ranks:
         lines.append(
             f"| {c.channel} | {c.score_0_100} | "
-            f"{c.expected_multiple:.1f}x | {c.timing_months} |"
+            f"{c.expected_multiple:.2f}x | {c.timing_months} |"
         )
     lines.extend(["", "## Rationale", ""])
     for c in r.ranks:

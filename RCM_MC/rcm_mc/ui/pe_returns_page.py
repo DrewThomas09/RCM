@@ -97,10 +97,10 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         else "negative"
     )
     cov_items = [
-        {"label": "Actual Leverage", "value": f"{actual_lev:.1f}x"},
-        {"label": "Covenant Max",    "value": f"{max_lev:.1f}x"},
+        {"label": "Actual Leverage", "value": f"{actual_lev:.2f}x"},
+        {"label": "Covenant Max",    "value": f"{max_lev:.2f}x"},
         {"label": "Headroom (turns)",
-         "value": f"{headroom:.1f}x", "tone": headroom_tone},
+         "value": f"{headroom:.2f}x", "tone": headroom_tone},
         {"label": "EBITDA Cushion",
          "value": f"{cushion:.0%}", "tone": cushion_tone},
     ]
@@ -112,7 +112,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     if coverage > 0:
         cov_items.append({
             "label": "Interest Coverage",
-            "value": f"{coverage:.1f}x",
+            "value": f"{coverage:.2f}x",
         })
 
     cov_section = (
@@ -123,7 +123,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         + kpi_strip(cov_items)
         + f'<div style="margin-top:12px;font-size:12.5px;color:{PALETTE["text_secondary"]};">'
         + f'<strong>Plain English:</strong> EBITDA can decline {cushion:.0%} '
-        + f'(from ${cov_ebitda/1e6:.2f}M to ${trips_at/1e6:.2f}M) before the {max_lev:.1f}x leverage covenant trips. '
+        + f'(from ${cov_ebitda/1e6:.2f}M to ${trips_at/1e6:.2f}M) before the {max_lev:.2f}x leverage covenant trips. '
         + f'{"This is comfortable headroom." if cushion > 0.25 else "This is tight — stress test carefully." if cushion > 0.10 else "Very thin — covenant breach risk is high."}'
         + f'</div></div>'
     ) if cov_ebitda > 0 else ""

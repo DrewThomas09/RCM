@@ -213,7 +213,7 @@ def value_bridge_text(bridge: ValueCreationBridge) -> str:
         "=" * 60,
         f"  Entry EV     : ${bridge.entry_ev_mm:,.2f}M" if bridge.entry_ev_mm else "  Entry EV     : —",
         f"  Entry EBITDA : ${bridge.entry_ebitda_mm:,.2f}M" if bridge.entry_ebitda_mm else "  Entry EBITDA : —",
-        f"  Entry Multiple: {bridge.entry_multiple:.1f}x" if bridge.entry_multiple else "  Entry Multiple: —",
+        f"  Entry Multiple: {bridge.entry_multiple:.2f}x" if bridge.entry_multiple else "  Entry Multiple: —",
         f"  Hold Period  : {bridge.hold_years:.1f} years" if bridge.hold_years else "  Hold Period  : —",
         f"  Realized MOIC: {bridge.realized_moic:.2f}x" if bridge.realized_moic else "  Realized MOIC: —",
         "-" * 60,

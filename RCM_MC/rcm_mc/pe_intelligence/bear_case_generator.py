@@ -275,7 +275,7 @@ def _compose_story(i: BearCaseInputs,
         f"Net effect: exit EBITDA compresses to bear "
         f"${(1 - _combine_haircuts(drivers))*i.base_ebitda_m:,.2f}M; "
         f"combined with multiple compression to "
-        f"{max(i.base_exit_multiple - 1.5, 5.0):.1f}x, MOIC lands at "
+        f"{max(i.base_exit_multiple - 1.5, 5.0):.2f}x, MOIC lands at "
         f"{bear_moic:.2f}x. "
     )
     if bear_moic < 1.0:
@@ -345,7 +345,7 @@ def render_bear_case_markdown(r: BearCaseReport) -> str:
         f"- Cumulative EBITDA shock: "
         f"{r.cumulative_ebitda_shock_pct*100:.0f}%",
         f"- Bear EBITDA: ${r.bear_ebitda_m:,.2f}M",
-        f"- Bear exit multiple: {r.bear_exit_multiple:.1f}x",
+        f"- Bear exit multiple: {r.bear_exit_multiple:.2f}x",
         f"- Bear MOIC: {r.bear_moic:.2f}x",
     ]
     if r.bear_irr is not None:

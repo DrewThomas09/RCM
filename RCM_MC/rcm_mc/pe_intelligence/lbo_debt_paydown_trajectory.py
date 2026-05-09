@@ -247,6 +247,6 @@ def render_lbo_debt_paydown_markdown(
             f"${y.mandatory_amort_m:.1f} | "
             f"${y.discretionary_paydown_m:.1f} | "
             f"${y.ending_debt_m:.1f} | "
-            f"{y.leverage_ratio:.1f}x |"
+            f"{y.leverage_ratio:.2f}x |"
         )
     return "\n".join(lines)

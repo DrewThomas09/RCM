@@ -133,7 +133,7 @@ def _credibility_check(deal: Dict[str, Any]) -> tuple[int, List[CredibilityFlag]
                 if diff > 0.25:
                     flags.append(CredibilityFlag(
                         "moic_irr_mismatch", "warn",
-                        f"MOIC {m:.1f}x / hold {h:.1f}y implies IRR {implied_irr*100:.1f}% "
+                        f"MOIC {m:.2f}x / hold {h:.1f}y implies IRR {implied_irr*100:.1f}% "
                         f"vs reported {i*100:.1f}% (Δ={diff*100:.1f}pp)"
                     ))
                     deductions += 10
@@ -159,7 +159,7 @@ def _credibility_check(deal: Dict[str, Any]) -> tuple[int, List[CredibilityFlag]
             if e_ev < 2 or e_ev > 40:
                 flags.append(CredibilityFlag(
                     "ev_ebitda_range", "warn",
-                    f"EV/EBITDA={e_ev:.1f}x outside 2–40× typical healthcare PE"
+                    f"EV/EBITDA={e_ev:.2f}x outside 2–40× typical healthcare PE"
                 ))
                 deductions += 8
     except (TypeError, ValueError, ZeroDivisionError):

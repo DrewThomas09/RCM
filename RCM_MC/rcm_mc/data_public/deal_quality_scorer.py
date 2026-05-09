@@ -190,7 +190,7 @@ def _run_credibility_checks(deal: Dict[str, Any]) -> Tuple[List[CredibilityCheck
             name="entry_multiple_range",
             passed=passed,
             value=round(multiple, 1),
-            note=f"EV/EBITDA = {multiple:.1f}x {'✓' if passed else '✗ outside 1-40x'}",
+            note=f"EV/EBITDA = {multiple:.2f}x {'✓' if passed else '✗ outside 1-40x'}",
         ))
     else:
         checks.append(CredibilityCheck(

@@ -231,9 +231,9 @@ def _comparables_section(comps: Any) -> str:
     if edist.get("p50") is not None:
         out.append(
             f"- Entry multiple distribution: "
-            f"p25 {edist.get('p25', 0):.1f}x, "
-            f"p50 {edist['p50']:.1f}x, "
-            f"p75 {edist.get('p75', 0):.1f}x")
+            f"p25 {edist.get('p25', 0):.2f}x, "
+            f"p50 {edist['p50']:.2f}x, "
+            f"p75 {edist.get('p75', 0):.2f}x")
     me = comps.margin_expansion_distribution
     if me.get("p50") is not None:
         out.append(

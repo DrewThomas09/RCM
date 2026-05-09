@@ -210,7 +210,7 @@ def _initiatives_table(initiatives) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${init.one_time_cost_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${init.annual_cost_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{init.timeline_months}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rc};font-weight:600">{init.roi:.1f}x</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rc};font-weight:600">{init.roi:.2f}x</td>',
             f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{init.priority}</span></td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -340,7 +340,7 @@ def render_revenue_leakage(params: dict = None) -> str:
     <strong style="color:{text}">Revenue Leakage Thesis:</strong>
     ${r.total_leakage_mm:,.2f}M annual leakage ({r.total_leakage_pct * 100:.1f}% of net revenue). ${r.recoverable_mm:,.2f}M
     realistically recoverable via RCM initiatives. Year 1 net impact ${r.net_recovery_yr1_mm:,.2f}M; steady-state
-    annual EBITDA uplift ${r.annualized_ebitda_uplift_mm:,.2f}M worth ${r.ev_impact_mm:,.2f}M of EV at {mult:.1f}x exit.
+    annual EBITDA uplift ${r.annualized_ebitda_uplift_mm:,.2f}M worth ${r.ev_impact_mm:,.2f}M of EV at {mult:.2f}x exit.
   </div>
 
 </div>"""

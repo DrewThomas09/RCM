@@ -393,8 +393,8 @@ def teardown_report(
     lines = [
         f"Deal Teardown: {result.deal_name}",
         "=" * 55,
-        f"  Entry:   ${result.entry_ev_mm:,.2f}M EV / {result.entry_multiple:.1f}x EBITDA",
-        f"  Exit:    ${result.exit_ev_mm:,.2f}M EV / {result.exit_multiple:.1f}x EBITDA",
+        f"  Entry:   ${result.entry_ev_mm:,.2f}M EV / {result.entry_multiple:.2f}x EBITDA",
+        f"  Exit:    ${result.exit_ev_mm:,.2f}M EV / {result.exit_multiple:.2f}x EBITDA",
         f"  Hold:    {result.hold_years:.1f} years",
         f"  MOIC:    {result.gross_moic:.2f}x gross  |  IRR: {result.gross_irr:.1%}",
         f"  EBITDA CAGR: {result.ebitda_cagr:.1%}",

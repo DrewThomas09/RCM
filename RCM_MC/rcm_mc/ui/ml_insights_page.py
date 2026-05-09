@@ -311,7 +311,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'<div style="font-size:12px;margin-bottom:6px;"><strong>Entry Multiple:</strong> '
             f'{_html.escape(invest_result.entry_multiple_range)}</div>'
             f'<div style="font-size:12px;margin-bottom:6px;"><strong>Est. MOIC:</strong> '
-            f'{invest_result.estimated_moic:.1f}x</div>'
+            f'{invest_result.estimated_moic:.2f}x</div>'
             f'<div style="font-size:11px;margin-top:8px;"><strong>Risk Factors:</strong></div>'
             f'<ul style="font-size:11px;padding-left:16px;margin:4px 0;">{risk_html}</ul>'
             f'</div>'

@@ -38,7 +38,7 @@ def generate_narrative(
         paragraphs.append(
             f"Our Monte Carlo analysis of {hospital_name} identifies a {_fmt_money(mean_drag)} annual "
             f"EBITDA recovery opportunity, translating to {_fmt_money(ev_impact)} in enterprise value "
-            f"at a {ev_multiple:.0f}x multiple. The range spans {_fmt_money(p10)} (conservative, P10) "
+            f"at a {ev_multiple:.2f}x multiple. The range spans {_fmt_money(p10)} (conservative, P10) "
             f"to {_fmt_money(p90)} (stress, P90), reflecting the uncertainty in denial rates, "
             f"write-off behavior, and A/R management efficiency."
         )

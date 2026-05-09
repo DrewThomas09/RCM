@@ -99,7 +99,7 @@ def _target_scatter_chart(
             f'<text x="{pad_l - 6:.0f}" y="{px_y(y_t) + 3:.0f}" '
             f'fill="{P["text_faint"]}" text-anchor="end" '
             f'font-size="9" font-family="JetBrains Mono, monospace">'
-            f'{y_t:.1f}x</text>'
+            f'{y_t:.2f}x</text>'
         )
 
     # Peer dots
@@ -113,7 +113,7 @@ def _target_scatter_chart(
         cy = px_y(y)
         title = (
             f"{c.get('ticker', '')} · {c.get('name', '')} · "
-            f"${x:,.2f}B revenue · {y:.1f}x EV/EBITDA"
+            f"${x:,.2f}B revenue · {y:.2f}x EV/EBITDA"
         )
         dots.append(
             f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5" '
@@ -134,7 +134,7 @@ def _target_scatter_chart(
             f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="9" '
             f'fill="none" stroke="{P["warning"]}" stroke-width="2">'
             f'<title>Target · ${target_rev_bn:,.2f}B revenue · '
-            f'{target_mult:.1f}x implied EV/EBITDA (12% margin '
+            f'{target_mult:.2f}x implied EV/EBITDA (12% margin '
             f'assumption)</title></circle>'
             f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="3" '
             f'fill="{P["warning"]}"><title>Target</title></circle>'
@@ -341,8 +341,8 @@ def _public_comps_section(
             f'letter-spacing:1.5px;text-transform:uppercase;'
             f'font-weight:600;margin-bottom:4px;">Category band</div>'
             f'<div style="font-size:14px;color:{P["text"]};">'
-            f'Median EV/EBITDA: <strong>{band["median_ev_ebitda"]:.1f}x</strong> · '
-            f'p25–p75: {band["p25_ev_ebitda"]:.1f}x – {band["p75_ev_ebitda"]:.1f}x · '
+            f'Median EV/EBITDA: <strong>{band["median_ev_ebitda"]:.2f}x</strong> · '
+            f'p25–p75: {band["p25_ev_ebitda"]:.2f}x – {band["p75_ev_ebitda"]:.2f}x · '
             f'Constituents: {", ".join(band["constituents"])}</div>'
             + (f'<div style="font-size:11px;color:{P["text_dim"]};'
                f'margin-top:6px;line-height:1.5;">{html.escape(band["note"])}'
@@ -410,16 +410,16 @@ def _transaction_multiples_section(
         f'<div style="font-size:20px;color:{P["text"]};font-weight:700;'
         f'font-family:\'JetBrains Mono\',monospace;">'
         + provenance(
-            f'{band.p50_ev_ebitda:.1f}x',
+            f'{band.p50_ev_ebitda:.2f}x',
             source=f'Mertz Taggart / PitchBook healthcare aggregate '
                    f'({band.sample_size} deals trailing 12 months)',
             formula='median EV/EBITDA of clears in size-band',
-            detail=(f'p25: {band.p25_ev_ebitda:.1f}x · '
-                    f'p75: {band.p75_ev_ebitda:.1f}x'),
+            detail=(f'p25: {band.p25_ev_ebitda:.2f}x · '
+                    f'p75: {band.p75_ev_ebitda:.2f}x'),
         )
         + f' <span style="font-size:11px;color:{P["text_faint"]};'
           f'font-family:inherit;font-weight:400;letter-spacing:.5px;">'
-          f'(p25 {band.p25_ev_ebitda:.1f}x · p75 {band.p75_ev_ebitda:.1f}x)'
+          f'(p25 {band.p25_ev_ebitda:.2f}x · p75 {band.p75_ev_ebitda:.2f}x)'
           f'</span></div>'
           + (f'<div style="font-size:11px;color:{P["text_dim"]};'
              f'margin-top:8px;line-height:1.5;">{html.escape(band.note)}'

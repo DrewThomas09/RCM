@@ -198,12 +198,12 @@ def build_hold_shock_schedule(
         note = (f"Covenant trip projected in {covenant_trip}: "
                 f"leverage reaches "
                 f"{next(y for y in years if y.year == covenant_trip).leverage_at_year_m:.2f}x "
-                f"vs. {inputs.covenant_max_leverage:.1f}x max. "
+                f"vs. {inputs.covenant_max_leverage:.2f}x max. "
                 "Partner: widen cov package or re-price equity.")
     elif worst_leverage > inputs.covenant_max_leverage * 0.9:
         note = (f"Worst-year leverage {worst_leverage:.2f}x "
                 f"approaches covenant ceiling "
-                f"{inputs.covenant_max_leverage:.1f}x. Partner: "
+                f"{inputs.covenant_max_leverage:.2f}x. Partner: "
                 "stress the schedule with higher shock "
                 "probabilities.")
     elif cumulative / max(0.01, base_ebitda) > 0.15:

@@ -347,7 +347,7 @@ def leverage_table(profile: LeverageProfile) -> str:
     lines = [
         f"Leverage Profile: {profile.deal_name}",
         f"  Entry EV: ${profile.entry_ev_mm:,.2f}M  |  Entry Debt: ${profile.entry_debt_mm:,.2f}M  "
-        f"|  Equity: ${profile.equity_mm:,.2f}M  |  Entry Lev: {profile.entry_leverage:.1f}x",
+        f"|  Equity: ${profile.equity_mm:,.2f}M  |  Entry Lev: {profile.entry_leverage:.2f}x",
         "-" * 90,
         f"{'Yr':>2}  {'EBITDA':>8} {'Debt':>8} {'Int Cov':>7} {'FCC':>6} "
         f"{'Net Lev':>7} {'Headroom':>8}",

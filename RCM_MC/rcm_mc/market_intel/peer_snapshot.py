@@ -113,22 +113,22 @@ def _summary(
     direction = "above" if turns > 0 else "below" if turns < 0 else "at"
     if assessment == "PREMIUM":
         return (
-            f"Target implied EV/EBITDA {target_mult:.1f}x "
+            f"Target implied EV/EBITDA {target_mult:.2f}x "
             f"is {abs(turns):.1f} turns {direction} the peer median "
-            f"({median:.1f}x) for {category.replace('_', ' ').title()} — "
+            f"({median:.2f}x) for {category.replace('_', ' ').title()} — "
             f"entering at a premium that the thesis must justify "
             f"through operational uplift or sector rotation."
         )
     if assessment == "DISCOUNT":
         return (
-            f"Target implied EV/EBITDA {target_mult:.1f}x is "
+            f"Target implied EV/EBITDA {target_mult:.2f}x is "
             f"{abs(turns):.1f} turns {direction} the peer median "
-            f"({median:.1f}x) — discount could reflect genuine alpha "
+            f"({median:.2f}x) — discount could reflect genuine alpha "
             f"or hidden distress. Cross-reference with Deal Autopsy."
         )
     return (
-        f"Target implied EV/EBITDA {target_mult:.1f}x is within peer "
-        f"range (median {median:.1f}x). Valuation is defensible "
+        f"Target implied EV/EBITDA {target_mult:.2f}x is within peer "
+        f"range (median {median:.2f}x). Valuation is defensible "
         f"without additional story."
     )
 

@@ -97,8 +97,8 @@ def _default_thesis_bullet(i: PreICInputs) -> str:
         return i.thesis_sentence
     return (
         f"{i.deal_name}: ${i.recurring_ebitda_m:,.2f}M "
-        f"recurring EBITDA at {i.entry_multiple:.1f}x, "
-        f"target {i.target_moic:.1f}x MOIC / "
+        f"recurring EBITDA at {i.entry_multiple:.2f}x, "
+        f"target {i.target_moic:.2f}x MOIC / "
         f"{i.target_irr*100:.1f}% IRR over "
         f"{i.hold_years:.1f}-yr hold."
     )

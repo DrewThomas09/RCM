@@ -197,12 +197,12 @@ def stress_exit_multiple_compression(
     # Partner note.
     if base_moic < inputs.moic_comfort_threshold:
         note = (f"Base MOIC {base_moic:.2f}x already below "
-                f"{inputs.moic_comfort_threshold:.1f}x "
+                f"{inputs.moic_comfort_threshold:.2f}x "
                 "comfort line. Walk or cut entry 1-1.5x to "
                 "restore.")
     elif break_turns is None:
         note = (f"Thesis robust: MOIC holds ≥ "
-                f"{inputs.moic_comfort_threshold:.1f}x through "
+                f"{inputs.moic_comfort_threshold:.2f}x through "
                 f"{-min(s.turns_compression for s in scenarios):.0f} "
                 "turns of compression. Strong margin of safety.")
     elif break_turns == 0.0:
@@ -221,7 +221,7 @@ def stress_exit_multiple_compression(
                 "survives two turns — strong margin of safety.")
     else:
         note = (f"Compression turn {break_turns:+.1f} breaks "
-                f"{inputs.moic_comfort_threshold:.1f}x MOIC line.")
+                f"{inputs.moic_comfort_threshold:.2f}x MOIC line.")
 
     return CompressionReport(
         scenarios=scenarios,

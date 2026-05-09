@@ -260,7 +260,7 @@ def _find_optimal(
 
     # Pick max MOIC
     best = max(candidates, key=lambda c: c[1])
-    rec = f"{best[0]:.1f}x total leverage — {best[1]:.2f}x MOIC while meeting DSCR ≥ {min_dscr:.1f}x"
+    rec = f"{best[0]:.2f}x total leverage — {best[1]:.2f}x MOIC while meeting DSCR ≥ {min_dscr:.2f}x"
     return best[0], best[1], rec
 
 

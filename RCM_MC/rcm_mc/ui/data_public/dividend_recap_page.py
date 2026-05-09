@@ -37,7 +37,7 @@ def _scenarios_svg(scenarios) -> str:
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{P["text_dim"]}" font-size="11" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${s.net_dividend_mm:,.2f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{s.target_leverage:.1f}x</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{s.target_leverage:.2f}x</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{color}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{s.execution_risk}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 38}" fill="{text_faint}" font-size="9" '
@@ -88,7 +88,7 @@ def _timing_svg(timing) -> str:
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="10" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">Y{t.year}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="9" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">DSCR {t.dscr:.1f}x</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">DSCR {t.dscr:.2f}x</text>'
         )
 
     return (
@@ -121,7 +121,7 @@ def _scenarios_table(scenarios, recommended) -> str:
         head_c = P["positive"] if s.covenant_headroom_pct >= 0.15 else (P["warning"] if s.covenant_headroom_pct >= 0.05 else P["negative"])
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:{"700" if is_rec else "400"}">{_html.escape(s.scenario)}{" ★" if is_rec else ""}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.target_leverage:.1f}x</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.target_leverage:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${s.new_debt_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">${s.net_dividend_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dscr_c}">{s.post_recap_dscr:.2f}x</td>',
@@ -160,7 +160,7 @@ def _timing_table(timing) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${t.available_capacity_mm:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">${t.potential_dividend_mm:,.2f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.dscr:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.post_recap_leverage:.1f}x</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{t.post_recap_leverage:.2f}x</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{rec_color}">{_html.escape(t.recommendation)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -257,8 +257,8 @@ def render_dividend_recap(params: dict = None) -> str:
         ck_kpi_block("EV at Close", f"${r.ev_mm:,.2f}M", "", "") +
         ck_kpi_block("Entry EBITDA", f"${r.entry_ebitda_mm:,.2f}M", "", "") +
         ck_kpi_block("Current EBITDA", f"${r.current_ebitda_mm:,.2f}M", "Y" + str(current_yr), "") +
-        ck_kpi_block("Entry Leverage", f"{r.entry_leverage:.1f}x", "", "") +
-        ck_kpi_block("Current Leverage", f"{r.current_leverage:.1f}x", "", "") +
+        ck_kpi_block("Entry Leverage", f"{r.entry_leverage:.2f}x", "", "") +
+        ck_kpi_block("Current Leverage", f"{r.current_leverage:.2f}x", "", "") +
         ck_kpi_block("Invested Equity", f"${r.total_invested_equity_mm:,.2f}M", "", "") +
         ck_kpi_block("Recap Dividend", f"${r.max_recap_dividend_mm:,.2f}M", "", "") +
         ck_kpi_block("Cash Return", f"{r.cash_multiple_from_recap * 100:.0f}%", "of equity", "")
@@ -357,7 +357,7 @@ def render_dividend_recap(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Recap Thesis:</strong>
     At year {current_yr} with EBITDA up to ${r.current_ebitda_mm:,.2f}M (from ${r.entry_ebitda_mm:,.2f}M) and
-    leverage down to {r.current_leverage:.1f}x (from {r.entry_leverage:.1f}x), recommended structure is
+    leverage down to {r.current_leverage:.2f}x (from {r.entry_leverage:.2f}x), recommended structure is
     <strong style="color:{text}">{_html.escape(r.recommended_scenario)}</strong>.
     Potential net dividend: ${r.max_recap_dividend_mm:,.2f}M ({r.cash_multiple_from_recap * 100:.1f}% of invested equity).
     Action lifts LP IRR ~400 bps without materially impacting total MOIC.

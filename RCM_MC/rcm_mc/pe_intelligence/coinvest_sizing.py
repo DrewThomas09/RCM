@@ -65,7 +65,7 @@ def size_coinvest(inputs: CoInvestInputs) -> CoInvestSizing:
         note = ("Fund covers the whole check — no co-invest needed.")
     elif demand_coverage is not None and demand_coverage >= 1.5:
         note = (f"Co-invest ${coinvest:,.2f}M — LP demand ~"
-                f"{demand_coverage:.1f}x covered. Allocation "
+                f"{demand_coverage:.2f}x covered. Allocation "
                 "decisions required.")
     elif demand_coverage is not None and demand_coverage < 1.0:
         note = (f"Co-invest ${coinvest:,.2f}M — LP demand under-covers. "

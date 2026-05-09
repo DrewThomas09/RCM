@@ -143,12 +143,12 @@ def export_bridge_xlsx(
         ws2.cell(row=4, column=1, value="Entry \\ Exit").font = header_font
         ws2.cell(row=4, column=1).fill = header_fill
         for j, xm in enumerate(exit_ms, 2):
-            ws2.cell(row=4, column=j, value=f"{xm:.1f}x").font = header_font
+            ws2.cell(row=4, column=j, value=f"{xm:.2f}x").font = header_font
             ws2.cell(row=4, column=j).fill = header_fill
             ws2.column_dimensions[chr(64 + j)].width = 14
 
         for i, em in enumerate(entry_ms, 5):
-            ws2.cell(row=i, column=1, value=f"{em:.1f}x").font = bold_font
+            ws2.cell(row=i, column=1, value=f"{em:.2f}x").font = bold_font
             for j, xm in enumerate(exit_ms, 2):
                 cell_data = next((g for g in returns_grid
                                    if g["entry_multiple"] == em and g["exit_multiple"] == xm), None)

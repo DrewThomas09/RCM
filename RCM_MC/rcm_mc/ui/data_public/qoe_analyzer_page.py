@@ -289,8 +289,8 @@ def render_qoe_analyzer(params: dict) -> str:
     kpis += ck_kpi_block("Total Add-Backs", f"${r.total_addback_mm:.2f}M",
                          unit=f"{r.addback_pct_of_reported * 100:.1f}% of reported")
     kpis += ck_kpi_block("Adjusted EBITDA", f"${r.adjusted_ebitda_mm:.2f}M")
-    kpis += ck_kpi_block("Adj. EV/EBITDA", f"{ev_ebitda_adj:.1f}x",
-                         unit=f"Reported: {ev_mm/ebitda_mm:.1f}x")
+    kpis += ck_kpi_block("Adj. EV/EBITDA", f"{ev_ebitda_adj:.2f}x",
+                         unit=f"Reported: {ev_mm/ebitda_mm:.2f}x")
     kpis += ck_kpi_block("Quality Tier",
                          f'<span style="color:{r.quality_color}">{r.quality_tier}</span>',
                          unit=f"{r.corpus_deal_count} corpus deals")

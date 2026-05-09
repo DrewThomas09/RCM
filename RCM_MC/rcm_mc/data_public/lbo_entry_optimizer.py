@@ -160,13 +160,13 @@ def solve_entry_multiple(
     feasible = dscr >= 1.2
 
     if not feasible:
-        warnings.append(f"Entry DSCR {dscr:.1f}x below 1.2x minimum — debt may be unsustainable")
+        warnings.append(f"Entry DSCR {dscr:.2f}x below 1.2x minimum — debt may be unsustainable")
     if leverage_entry > 7.0:
-        warnings.append(f"Entry leverage {leverage_entry:.1f}x exceeds 7.0x LBO market norm")
+        warnings.append(f"Entry leverage {leverage_entry:.2f}x exceeds 7.0x LBO market norm")
     if best_multiple > 18.0:
-        warnings.append(f"Entry multiple {best_multiple:.1f}x is above historical healthcare PE norms")
+        warnings.append(f"Entry multiple {best_multiple:.2f}x is above historical healthcare PE norms")
     if gross_moic < target_moic - tolerance:
-        warnings.append(f"Could not achieve {target_moic:.1f}x MOIC — max feasible was {gross_moic:.2f}x")
+        warnings.append(f"Could not achieve {target_moic:.2f}x MOIC — max feasible was {gross_moic:.2f}x")
 
     return LBOResult(
         entry_multiple=round(best_multiple, 2),
@@ -342,16 +342,16 @@ def entry_optimizer_report(result: LBOResult, corpus_check: Optional[Dict[str, A
     lines = [
         "LBO Entry Optimization Report",
         "=" * 50,
-        f"  Max entry multiple:   {result.entry_multiple:.1f}x EV/EBITDA",
+        f"  Max entry multiple:   {result.entry_multiple:.2f}x EV/EBITDA",
         f"  Entry EV:             ${result.entry_ev_mm:,.2f}M",
-        f"  Entry equity:         ${result.entry_equity_mm:,.2f}M  ({result.leverage_turn_entry:.1f}x levered)",
+        f"  Entry equity:         ${result.entry_equity_mm:,.2f}M  ({result.leverage_turn_entry:.2f}x levered)",
         f"  Exit EBITDA:          ${result.exit_ebitda_mm:,.2f}M",
         f"  Exit EV:              ${result.exit_ev_mm:,.2f}M",
         f"  Gross MOIC:           {result.gross_moic:.2f}x",
         f"  Gross IRR:            {result.gross_irr:.1%}",
         f"  Net MOIC:             {result.net_moic:.2f}x (after carry/fees)",
-        f"  Leverage at entry:    {result.leverage_turn_entry:.1f}x",
-        f"  Leverage at exit:     {result.leverage_turn_exit:.1f}x",
+        f"  Leverage at entry:    {result.leverage_turn_entry:.2f}x",
+        f"  Leverage at exit:     {result.leverage_turn_exit:.2f}x",
         f"  Debt paydown:         ${result.debt_paydown_mm:,.2f}M",
         f"  Feasible (DSCR≥1.2): {'Yes' if result.feasible else 'No'}",
     ]

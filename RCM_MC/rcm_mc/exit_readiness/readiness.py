@@ -57,7 +57,7 @@ def identify_readiness_gaps(target: ExitTarget) -> List[ReadinessGap]:
             archetype=ExitArchetype.TAKE_PRIVATE,
             title="Public comp multiple weak",
             description=(
-                f"Sector public comps at {target.public_comp_multiple:.1f}x "
+                f"Sector public comps at {target.public_comp_multiple:.2f}x "
                 f"— take-private bid would underwhelm. Wait for cycle "
                 f"recovery or pursue strategic exit."),
             months_to_remediate=24,

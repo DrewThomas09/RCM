@@ -129,7 +129,7 @@ def split_ebitda(
     elif ratio >= 0.60:
         note = (f"**Material one-time component** "
                 f"({100-ratio*100:.1f}% is one-time). Seller's quoted "
-                f"${total:,.2f}M × {exit_multiple:.1f}x exit is "
+                f"${total:,.2f}M × {exit_multiple:.2f}x exit is "
                 f"${overstatement:,.2f}M too high. Correct exit EV: "
                 f"${ev_correct:,.2f}M.")
     else:
@@ -161,7 +161,7 @@ def render_recurring_split_markdown(s: RecurringSplit) -> str:
         f"- Recurring EBITDA: ${s.recurring_ebitda_m:,.2f}M "
         f"({s.recurring_ratio*100:.1f}%)",
         f"- One-time EBITDA: ${s.one_time_ebitda_m:,.2f}M",
-        f"- Exit multiple: {s.exit_multiple:.1f}x",
+        f"- Exit multiple: {s.exit_multiple:.2f}x",
         f"- Correct exit EV: ${s.exit_ev_correct_m:,.2f}M",
         f"- Naive exit EV: ${s.exit_ev_naive_m:,.2f}M",
         f"- Overstatement if naive: ${s.ev_overstatement_m:,.2f}M",

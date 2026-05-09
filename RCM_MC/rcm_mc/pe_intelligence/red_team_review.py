@@ -141,7 +141,7 @@ def _structure_attack(review: PartnerReview) -> Optional[RedTeamAttack]:
         vector="structure",
         thesis_challenged="Capital structure resilience",
         attack_statement=(
-            f"At {leverage:.1f}x leverage you're one bad quarter from "
+            f"At {leverage:.2f}x leverage you're one bad quarter from "
             "a waiver conversation. The lender won't be nice — they "
             "haven't been nice for two years."),
         proof_needed=("Show covenant-headroom under 90% EBITDA scenario "

@@ -654,10 +654,10 @@ def render_ebitda_bridge(
         entry_multiples, exit_multiples,
     )
 
-    grid_header = '<th>Entry \\ Exit</th>' + ''.join(f'<th>{m:.1f}x</th>' for m in exit_multiples)
+    grid_header = '<th>Entry \\ Exit</th>' + ''.join(f'<th>{m:.2f}x</th>' for m in exit_multiples)
     grid_rows = ""
     for em in entry_multiples:
-        grid_rows += f'<tr><td style="font-weight:600;">{em:.1f}x</td>'
+        grid_rows += f'<tr><td style="font-weight:600;">{em:.2f}x</td>'
         for xm in exit_multiples:
             cell = next((g for g in grid if g["entry_multiple"] == em and g["exit_multiple"] == xm), None)
             if cell:
@@ -668,13 +668,13 @@ def render_ebitda_bridge(
                     text = "Loss"
                 elif irr >= 0.20:
                     color = "var(--cad-pos)"
-                    text = f'{irr:.0%} / {moic:.1f}x'
+                    text = f'{irr:.0%} / {moic:.2f}x'
                 elif irr >= 0.15:
                     color = "var(--cad-warn)"
-                    text = f'{irr:.0%} / {moic:.1f}x'
+                    text = f'{irr:.0%} / {moic:.2f}x'
                 else:
                     color = "var(--cad-neg)"
-                    text = f'{irr:.0%} / {moic:.1f}x'
+                    text = f'{irr:.0%} / {moic:.2f}x'
                 grid_rows += (
                     f'<td class="num" style="color:{color};font-size:11px;'
                     f'font-weight:500;">{text}</td>'
@@ -714,17 +714,17 @@ def render_ebitda_bridge(
         f'<h2>Covenant Headroom (at 10x Entry, 6.5x Max Leverage)</h2>'
         + kpi_strip([
             {"label": "Entry Leverage",
-             "value": f"{actual_lev:.1f}x"},
+             "value": f"{actual_lev:.2f}x"},
             {"label": "Pro Forma Leverage",
-             "value": f"{pro_forma_lev:.1f}x", "tone": cov_tone},
+             "value": f"{pro_forma_lev:.2f}x", "tone": cov_tone},
             {"label": "Headroom (turns)",
-             "value": f"{headroom:.1f}x", "tone": cov_tone},
+             "value": f"{headroom:.2f}x", "tone": cov_tone},
             {"label": "EBITDA Cushion",
              "value": f"{cushion:.0%}"},
         ])
         + f'<p style="font-size:12px;color:var(--cad-text2);margin-top:8px;">'
         + f'Pro forma EBITDA can decline {cushion:.0%} before the 6.5x covenant trips. '
-        + f'RCM uplift reduces leverage from {actual_lev:.1f}x to {pro_forma_lev:.1f}x, '
+        + f'RCM uplift reduces leverage from {actual_lev:.2f}x to {pro_forma_lev:.2f}x, '
         + f'adding {headroom - (6.5 - actual_lev):.1f} turns of cushion.</p></div>'
     )
 

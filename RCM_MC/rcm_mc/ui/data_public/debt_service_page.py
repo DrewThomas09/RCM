@@ -66,7 +66,7 @@ def _dscr_trend_svg(schedule) -> str:
             ticks.append(
                 f'<line x1="{pad_l - 4}" y1="{yp}" x2="{w - pad_r}" y2="{yp}" stroke="{border}" stroke-width="0.5"/>'
                 f'<text x="{pad_l - 6}" y="{yp + 3}" fill="{text_faint}" font-size="9" '
-                f'text-anchor="end" font-family="JetBrains Mono,monospace">{v:.1f}x</text>'
+                f'text-anchor="end" font-family="JetBrains Mono,monospace">{v:.2f}x</text>'
             )
 
     legend = (
@@ -113,7 +113,7 @@ def _leverage_svg(schedule) -> str:
         bars.append(f'<rect x="{x_base:.1f}" y="{y_sr:.1f}" width="{bw * 2:.1f}" height="{th_sr:.1f}" fill="{acc}" opacity="0.85"/>')
         bars.append(
             f'<text x="{x_base + bw:.1f}" y="{y_tot - 4:.1f}" fill="{P["text_dim"]}" font-size="9" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{c.total_leverage:.1f}x</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{c.total_leverage:.2f}x</text>'
             f'<text x="{x_base + bw:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">Y{c.year}</text>'
         )
@@ -131,7 +131,7 @@ def _leverage_svg(schedule) -> str:
         ticks.append(
             f'<line x1="{pad_l - 4}" y1="{yp}" x2="{w - pad_r}" y2="{yp}" stroke="{border}" stroke-width="0.5"/>'
             f'<text x="{pad_l - 6}" y="{yp + 3}" fill="{text_faint}" font-size="9" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{v:.1f}x</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{v:.2f}x</text>'
         )
 
     return (
@@ -351,7 +351,7 @@ def render_debt_service(params: dict = None) -> str:
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Debt Service Coverage Tracker</h1>
     <p style="font-size:12px;color:{text_dim};margin-top:4px">
-      DSCR, interest coverage, covenant headroom, and stress testing — ${r.ev_mm:,.2f}M deal at {r.entry_multiple:.1f}x — {r.corpus_deal_count:,} corpus deals
+      DSCR, interest coverage, covenant headroom, and stress testing — ${r.ev_mm:,.2f}M deal at {r.entry_multiple:.2f}x — {r.corpus_deal_count:,} corpus deals
     </p>
   </div>
 

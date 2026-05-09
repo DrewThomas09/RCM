@@ -138,7 +138,7 @@ def _curve_svg(
             f'text-anchor="start" font-size="9" '
             f'fill="{P["text_faint"]}" '
             f'font-family="JetBrains Mono, monospace">'
-            f'{moic_v:.1f}x</text>'
+            f'{moic_v:.2f}x</text>'
         )
 
     # IRR line + points
@@ -506,7 +506,7 @@ def _curve_table_block(curve: List[ExitCurvePoint]) -> str:
             f'${p.ebitda_median_usd/1e6:,.2f}M</td>'
             f'<td style="padding:6px 10px;text-align:right;color:{P["text_dim"]};'
             f'font-family:\'JetBrains Mono\',monospace;">'
-            f'{p.exit_multiple_assumed:.1f}x</td>'
+            f'{p.exit_multiple_assumed:.2f}x</td>'
             f'<td style="padding:6px 10px;text-align:right;color:{P["text"]};'
             f'font-family:\'JetBrains Mono\',monospace;font-weight:600;">'
             f'{p.moic:.2f}x</td>'

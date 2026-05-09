@@ -106,7 +106,7 @@ def _covenant_review(ctx: PlanContext) -> Optional[PlanAction]:
                     "cash with covenant stress scenarios."),
             owner="CFO + FP&A",
             expected_impact_m=None,
-            trigger=(f"leverage={ctx.leverage:.1f}x, "
+            trigger=(f"leverage={ctx.leverage:.2f}x, "
                      "covenant_lite=False"),
         )
     return None
