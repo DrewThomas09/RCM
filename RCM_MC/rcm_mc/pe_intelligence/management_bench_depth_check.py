@@ -133,7 +133,7 @@ def check_bench_depth(inputs: BenchDepthInputs) -> BenchDepthReport:
             seat="ceo",
             description=(
                 f"CEO rollover is "
-                f"{inputs.ceo_rollover_pct*100:.0f}%, "
+                f"{inputs.ceo_rollover_pct*100:.1f}%, "
                 "below the 15% alignment threshold."
             ),
             partner_counter=(

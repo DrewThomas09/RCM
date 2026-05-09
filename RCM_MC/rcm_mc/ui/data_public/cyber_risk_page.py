@@ -118,7 +118,7 @@ def _compliance_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(c.framework)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(c.scope)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{s_c}">{_html.escape(c.status)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cov_c};font-weight:700">{c.coverage_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cov_c};font-weight:700">{c.coverage_pct * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{_html.escape(c.last_assessment)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if c.remediation_cost_mm > 0 else text_dim}">${c.remediation_cost_mm:,.2f}</td>',
         ]

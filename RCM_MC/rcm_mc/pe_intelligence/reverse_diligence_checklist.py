@@ -187,7 +187,7 @@ def build_reverse_diligence(
         items.append(DisclosureItem(
             category="housekeeping",
             name="mip_vesting_cleanup",
-            description=(f"{ctx.mip_not_yet_vested_pct*100:.0f}% of "
+            description=(f"{ctx.mip_not_yet_vested_pct*100:.1f}% of "
                          "MIP unvested — align vesting with exit "
                          "timeline 6 months pre-sale."),
             fix_by_months=6, fix_difficulty="easy",

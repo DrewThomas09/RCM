@@ -111,7 +111,7 @@ def _expirations_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{e.expiring_leases}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${e.expiring_rent_m:.1f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{e.weighted_avg_cap_rate:.2f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{e.renewal_rate_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{e.renewal_rate_pct * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -200,7 +200,7 @@ def render_medical_realestate(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Medical Real Estate / MOB Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_properties} properties · {r.total_sqft_mm:.2f}MM sqft · ${r.total_annual_rent_m:.1f}M annual rent · ${r.total_value_b:.2f}B value · weighted {r.weighted_cap_rate_pct:.2f}% cap rate / {r.weighted_lease_years:.1f}y lease · {r.nnn_pct * 100:.0f}% NNN — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_properties} properties · {r.total_sqft_mm:.2f}MM sqft · ${r.total_annual_rent_m:.1f}M annual rent · ${r.total_value_b:.2f}B value · weighted {r.weighted_cap_rate_pct:.2f}% cap rate / {r.weighted_lease_years:.1f}y lease · {r.nnn_pct * 100:.1f}% NNN — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Property-Type Rollup</div>{s_tbl}</div>
@@ -211,8 +211,8 @@ def render_medical_realestate(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">PropCo / OpCo Separation Strategies</div>{pc_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Medical Real Estate Summary:</strong> {r.total_properties} properties totaling {r.total_sqft_mm:.2f}MM sqft generate ${r.total_annual_rent_m:.1f}M annual rent on ${r.total_value_b:.2f}B portfolio value.
-    Weighted {r.weighted_cap_rate_pct:.2f}% cap rate at {r.weighted_lease_years:.1f}y average remaining lease — tracks NAREIT Healthcare Sub-Index ±25bps; {r.nnn_pct * 100:.0f}% NNN share limits OpEx volatility.
-    Investment-grade rent base ~${ig_rent:.1f}M ({ig_rent / r.total_annual_rent_m * 100:.0f}% of portfolio) anchored by Piedmont (A1), Quest (BBB+), Accredo/Cigna (A), HCA CareNow (A3).
+    Weighted {r.weighted_cap_rate_pct:.2f}% cap rate at {r.weighted_lease_years:.1f}y average remaining lease — tracks NAREIT Healthcare Sub-Index ±25bps; {r.nnn_pct * 100:.1f}% NNN share limits OpEx volatility.
+    Investment-grade rent base ~${ig_rent:.1f}M ({ig_rent / r.total_annual_rent_m * 100:.1f}% of portfolio) anchored by Piedmont (A1), Quest (BBB+), Accredo/Cigna (A), HCA CareNow (A3).
     2027-2031 lease expirations manageable at 9 leases / $13.6M total — embedded mark-to-market upside of 3-5% on renewal at prevailing MOB rents.
     Cap rate trend: widening 15-50bps across property types YTD reflecting broader CRE dynamics; behavioral health and SNF widest at 40-50bps; IG MOB and specialty pharma tightest at 15bps.
     PropCo/OpCo separation strategy in flight on 5 platforms ($1,150M property value, ~$1,072M target proceeds) — provides deleveraging + recap optionality at 2.5x OpCo rent coverage.

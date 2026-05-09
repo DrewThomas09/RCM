@@ -98,12 +98,12 @@ def _compose_bullets(i: ExitStoryInputs) -> List[str]:
             "to the full book.")
     elif i.recurring_ebitda_pct >= 0.85:
         bullets.append(
-            f"{i.recurring_ebitda_pct*100:.0f}% recurring EBITDA; "
+            f"{i.recurring_ebitda_pct*100:.1f}% recurring EBITDA; "
             "high visibility into run-rate earnings.")
     # Payer / differentiation bullet.
     if i.commercial_payer_pct >= 0.60:
         bullets.append(
-            f"{i.commercial_payer_pct*100:.0f}% commercial payer mix "
+            f"{i.commercial_payer_pct*100:.1f}% commercial payer mix "
             "— premium rate capture and limited regulatory exposure.")
     elif i.has_coe_designation:
         bullets.append(
@@ -202,7 +202,7 @@ def generate_exit_story(inputs: ExitStoryInputs) -> ExitStory:
         f"{lead} — {inputs.subsector or 'healthcare services'} "
         f"{inputs.exit_revenue_m:,.0f}M NPR / "
         f"${inputs.exit_ebitda_m:,.0f}M EBITDA after "
-        f"{cagr*100:.0f}% annual growth over {inputs.hold_years} years; "
+        f"{cagr*100:.1f}% annual growth over {inputs.hold_years} years; "
         f"{scale_mult:.1f}x scaled from entry."
     )
 

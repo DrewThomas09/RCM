@@ -375,7 +375,7 @@ def render_underwriting(
     body = (
         kpis
         + _input_form(params)
-        + (ck_section_header("UNDERWRITING RESULTS", f"EV ${ev:.0f}M · EBITDA ${eb:.0f}M · {eq*100:.0f}% equity · {cagr*100:.0f}% CAGR · {hold:.1f}yr hold · {exit_mult:.1f}× exit") + results_html + benchmark_html)
+        + (ck_section_header("UNDERWRITING RESULTS", f"EV ${ev:.0f}M · EBITDA ${eb:.0f}M · {eq*100:.1f}% equity · {cagr*100:.1f}% CAGR · {hold:.1f}yr hold · {exit_mult:.1f}× exit") + results_html + benchmark_html)
     )
 
     return chartis_shell(

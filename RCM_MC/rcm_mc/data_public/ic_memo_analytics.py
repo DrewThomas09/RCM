@@ -215,7 +215,7 @@ def compute_ic_benchmarks(
     if hold_years is not None and hold_years > 7:
         flags.append(f"Planned hold of {hold_years:.1f} years exceeds typical fund cycle")
     if payer_comm_pct is not None and payer_comm_pct < 0.25:
-        flags.append(f"Commercial payer mix {payer_comm_pct*100:.0f}% is low — revenue exposed to rate risk")
+        flags.append(f"Commercial payer mix {payer_comm_pct*100:.1f}% is low — revenue exposed to rate risk")
     if moic_pct is not None and moic_pct < 25:
         flags.append(f"Target MOIC ranks {moic_pct:.0f}th percentile vs corpus — below-median return profile")
 

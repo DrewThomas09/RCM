@@ -39,7 +39,7 @@ def _milestone_waterfall_svg(milestones) -> str:
             f'<rect x="{pad_l}" y="{y}" width="{full_w:.1f}" height="{bh}" fill="{warn}" opacity="0.35"/>'
             f'<rect x="{pad_l}" y="{y}" width="{exp_w:.1f}" height="{bh}" fill="{pos}" opacity="0.85"/>'
             f'<text x="{pad_l + full_w + 4:.1f}" y="{y + bh - 2}" fill="{P["text_dim"]}" font-size="9" '
-            f'font-family="JetBrains Mono,monospace">${m.max_payout_mm:.1f}M / {m.probability_of_achievement * 100:.0f}%</text>'
+            f'font-family="JetBrains Mono,monospace">${m.max_payout_mm:.1f}M / {m.probability_of_achievement * 100:.1f}%</text>'
         )
 
     legend = (
@@ -88,7 +88,7 @@ def _scenario_dist_svg(scenarios) -> str:
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario[:12])}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{pos}" font-size="9" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{s.probability * 100:.0f}% prob</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{s.probability * 100:.1f}% prob</text>'
         )
 
     return (
@@ -121,7 +121,7 @@ def _milestones_table(milestones) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(m.target)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.measurement_period)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${m.max_payout_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{prob_c}">{m.probability_of_achievement * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{prob_c}">{m.probability_of_achievement * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]};font-weight:600">${m.expected_payout_mm:,.2f}</td>',
             f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{m.risk_allocation}</span></td>',
         ]
@@ -146,7 +146,7 @@ def _scenarios_table(scenarios) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{s.probability * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{s.probability * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.base_purchase_price_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${s.earnout_payout_mm:,.1f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">${s.total_consideration_mm:,.1f}</td>',
@@ -227,8 +227,8 @@ def _risk_table(risk) -> str:
         bc = P["negative"] if r.buyer_burden >= 0.60 else (P["warning"] if r.buyer_burden >= 0.45 else P["text_dim"])
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(r.factor)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sc};font-weight:600">{r.seller_burden * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{bc};font-weight:600">{r.buyer_burden * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sc};font-weight:600">{r.seller_burden * 100:.1f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{bc};font-weight:600">{r.buyer_burden * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(r.guidance)}</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')

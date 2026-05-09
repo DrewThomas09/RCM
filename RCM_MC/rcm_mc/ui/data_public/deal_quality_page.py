@@ -162,8 +162,8 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
         '<div class="ck-kpi-grid">'
         + ck_kpi_block("Total Deals", f'<span class="mn">{total}</span>', "in corpus")
         + ck_kpi_block("Avg Quality", f'<span class="mn">{avg_q:.1f}</span>', "out of 100")
-        + ck_kpi_block("Tier A", f'<span class="mn" style="color:#22c55e">{tier_counts.get("A",0)}</span>', f'{100*tier_counts.get("A",0)/total:.0f}% of corpus')
-        + ck_kpi_block("Tier B", f'<span class="mn" style="color:#3b82f6">{tier_counts.get("B",0)}</span>', f'{100*tier_counts.get("B",0)/total:.0f}% of corpus')
+        + ck_kpi_block("Tier A", f'<span class="mn" style="color:#22c55e">{tier_counts.get("A",0)}</span>', f'{100*tier_counts.get("A",0)/total:.1f}% of corpus')
+        + ck_kpi_block("Tier B", f'<span class="mn" style="color:#3b82f6">{tier_counts.get("B",0)}</span>', f'{100*tier_counts.get("B",0)/total:.1f}% of corpus')
         + ck_kpi_block("Flagged", f'<span class="mn" style="color:#f59e0b">{n_flagged}</span>', f"{n_errors} errors total")
         + '</div>'
     )
@@ -270,11 +270,11 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
   </td>
   <td style="padding:5px 8px;">
     {_mini_bar(s.completeness_pct, '#3b82f6')}
-    <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.completeness_pct*100:.0f}%</span>
+    <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.completeness_pct*100:.1f}%</span>
   </td>
   <td style="padding:5px 8px;">
     {_mini_bar(s.credibility_pct, '#22c55e' if s.credibility_pct>=0.9 else '#f59e0b' if s.credibility_pct>=0.7 else '#ef4444')}
-    <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.credibility_pct*100:.0f}%</span>
+    <span style="font-family:var(--ck-mono);font-size:9px;color:#94a3b8;margin-left:4px;">{s.credibility_pct*100:.1f}%</span>
   </td>
   <td style="padding:5px 8px;font-size:9px;">{flag_html or '<span style="color:#475569;">—</span>'}</td>
   <td style="padding:5px 8px;">{missing_html or '<span style="font-size:9px;color:#475569;">—</span>'}</td>

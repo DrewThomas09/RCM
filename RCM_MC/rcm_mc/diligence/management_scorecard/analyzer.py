@@ -137,13 +137,13 @@ def _compute_haircut(
     confidence = _aggregate_confidence(confidences)
     if haircut >= 0.15:
         narrative = (
-            f"Apply {haircut*100:.0f}% haircut to FY1 EBITDA guidance. "
+            f"Apply {haircut*100:.1f}% haircut to FY1 EBITDA guidance. "
             f"CEO/CFO historical miss rate supports a material "
             f"downward adjustment; do NOT accept management's base case."
         )
     elif haircut >= 0.05:
         narrative = (
-            f"Apply {haircut*100:.0f}% haircut to FY1 guidance — "
+            f"Apply {haircut*100:.1f}% haircut to FY1 guidance — "
             f"modest management-reliability discount. Use the haircut "
             f"version as the bridge base case."
         )
@@ -196,7 +196,7 @@ def _summary_for(
         )
     if haircut and haircut.recommended_haircut_pct >= 0.10:
         base += (
-            f" Apply {haircut.recommended_haircut_pct*100:.0f}% haircut "
+            f" Apply {haircut.recommended_haircut_pct*100:.1f}% haircut "
             f"to FY1 EBITDA guidance per CEO/CFO historical miss rate."
         )
     return base

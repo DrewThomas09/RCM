@@ -84,15 +84,15 @@ def _commentary(dim: str, value: float) -> str:
     s = _severity(value)
     if s == "high":
         return (f"{dim.title()} concentration "
-                f"{value*100:.0f}% is an underwriting constraint — "
+                f"{value*100:.1f}% is an underwriting constraint — "
                 "re-underwrite assuming 20% of that revenue walks.")
     if s == "medium":
         return (f"{dim.title()} concentration "
-                f"{value*100:.0f}% is a diligence flag — get specifics "
+                f"{value*100:.1f}% is a diligence flag — get specifics "
                 "on contract term, escalator, and renewal date.")
     if s == "low":
         return (f"{dim.title()} concentration "
-                f"{value*100:.0f}% is noted but manageable.")
+                f"{value*100:.1f}% is noted but manageable.")
     return ""
 
 
@@ -136,13 +136,13 @@ def scan_concentration(
                 "concentrated dimension stressed.")
     elif high == 1:
         note = (f"Single-dim concentration on {worst.dimension} at "
-                f"{worst.value*100:.0f}%. Specific mitigation plan "
+                f"{worst.value*100:.1f}%. Specific mitigation plan "
                 "required before IC.")
     elif any(f.severity == "medium" for f in findings):
         med_count = sum(1 for f in findings if f.severity == "medium")
         note = (f"{med_count} medium concentration(s) — "
                 f"worst is {worst.dimension} at "
-                f"{worst.value*100:.0f}%. Standard diligence "
+                f"{worst.value*100:.1f}%. Standard diligence "
                 "questions apply.")
     else:
         note = ("Concentration profile is reasonably diversified "

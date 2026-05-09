@@ -49,13 +49,22 @@ class ComplianceScoreOnShell(unittest.TestCase):
 
 
 class ComplianceScoreOnEmptyHTML(unittest.TestCase):
-    """Bare HTML without the kit fails every rule. Pin that the
-    scorer catches the floor case."""
+    """Bare HTML without the kit fails every kit-presence rule. Pin
+    that the scorer catches the floor case. Number-format-clean is
+    the one exception — bare HTML has no numbers to mis-format, so
+    the rule legitimately passes (1/N), not fails."""
 
-    def test_empty_html_scores_zero(self) -> None:
+    def test_empty_html_fails_kit_presence_rules(self) -> None:
         report = compliance_check("<html><body><p>nope</p></body></html>")
-        self.assertEqual(report["pass"], 0)
-        self.assertEqual(report["score"], 0.0)
+        # Every kit-presence rule fails on bare HTML; only the
+        # number-format-clean rule passes (vacuously).
+        passed_keys = {r["key"] for r in report["results"] if r["passed"]}
+        self.assertEqual(
+            passed_keys, {"number-format-clean"},
+            f"unexpected passes on bare HTML: {passed_keys}",
+        )
+        # Score is 1/total — the floor case for the kit-presence rules.
+        self.assertLess(report["score"], 0.1)
 
 
 if __name__ == "__main__":

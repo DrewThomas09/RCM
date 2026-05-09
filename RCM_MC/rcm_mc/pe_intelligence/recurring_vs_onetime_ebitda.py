@@ -119,22 +119,22 @@ def split_ebitda(
     ]
 
     if ratio >= 0.95:
-        note = (f"Clean recurring profile ({ratio*100:.0f}% recurring). "
+        note = (f"Clean recurring profile ({ratio*100:.1f}% recurring). "
                 f"Exit math applies multiple to almost the full book — "
                 f"EV ${ev_correct:,.0f}M.")
     elif ratio >= 0.80:
-        note = (f"Recurring profile OK ({ratio*100:.0f}% recurring). "
+        note = (f"Recurring profile OK ({ratio*100:.1f}% recurring). "
                 f"Apply multiple to recurring ${recurring:,.0f}M only; "
                 f"one-time ${one_time:,.0f}M at 1x.")
     elif ratio >= 0.60:
         note = (f"**Material one-time component** "
-                f"({100-ratio*100:.0f}% is one-time). Seller's quoted "
+                f"({100-ratio*100:.1f}% is one-time). Seller's quoted "
                 f"${total:,.0f}M × {exit_multiple:.1f}x exit is "
                 f"${overstatement:,.0f}M too high. Correct exit EV: "
                 f"${ev_correct:,.0f}M.")
     else:
         note = (f"**Majority one-time** — recurring only "
-                f"{ratio*100:.0f}%. The exit thesis is fragile. "
+                f"{ratio*100:.1f}%. The exit thesis is fragile. "
                 f"Underwrite to ${recurring:,.0f}M recurring at full "
                 f"multiple; rest at 1x if at all. Overstatement in "
                 f"the simple math: ${overstatement:,.0f}M.")
@@ -159,7 +159,7 @@ def render_recurring_split_markdown(s: RecurringSplit) -> str:
         f"_{s.partner_note}_",
         "",
         f"- Recurring EBITDA: ${s.recurring_ebitda_m:,.1f}M "
-        f"({s.recurring_ratio*100:.0f}%)",
+        f"({s.recurring_ratio*100:.1f}%)",
         f"- One-time EBITDA: ${s.one_time_ebitda_m:,.1f}M",
         f"- Exit multiple: {s.exit_multiple:.1f}x",
         f"- Correct exit EV: ${s.exit_ev_correct_m:,.1f}M",

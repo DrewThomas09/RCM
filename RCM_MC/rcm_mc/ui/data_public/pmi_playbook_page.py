@@ -24,7 +24,7 @@ def _workstreams_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(w.owner)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{w.total_milestones}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{w.completed_milestones}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ot_c};font-weight:700">{w.on_track_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{ot_c};font-weight:700">{w.on_track_pct * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(w.status)}</span></td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${w.budget_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sp_c}">${w.spent_mm:,.2f}</td>',
@@ -54,7 +54,7 @@ def _synergy_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{_html.escape(s.synergy_category)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${s.annualized_target_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.run_rate_achieved_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{s.pct_of_target * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{s.pct_of_target * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.timing_status)}</span></td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.risk_level)}</span></td>',
         ]
@@ -175,8 +175,8 @@ def render_pmi_playbook(params: dict = None) -> str:
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {prog_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Integration Status — {_html.escape(r.target_acquisition)}</div>
-    <div style="color:{prog_c};font-weight:700;font-size:14px">Day {r.days_since_close} · {r.overall_progress_pct * 100:.1f}% complete · ${r.run_rate_synergies_mm:,.1f}M run-rate synergies ({synergy_pct * 100:.0f}% of target)</div>
-    <div style="color:{text_dim};font-size:11px;margin-top:4px">Integration spend ${r.integration_spend_mm:,.1f}M / ${r.integration_budget_mm:,.1f}M budget ({budget_util * 100:.0f}% util)</div>
+    <div style="color:{prog_c};font-weight:700;font-size:14px">Day {r.days_since_close} · {r.overall_progress_pct * 100:.1f}% complete · ${r.run_rate_synergies_mm:,.1f}M run-rate synergies ({synergy_pct * 100:.1f}% of target)</div>
+    <div style="color:{text_dim};font-size:11px;margin-top:4px">Integration spend ${r.integration_spend_mm:,.1f}M / ${r.integration_budget_mm:,.1f}M budget ({budget_util * 100:.1f}% util)</div>
   </div>
   <div style="{cell}"><div style="{h3}">Workstream Progress &amp; Budget</div>{w_tbl}</div>
   <div style="{cell}"><div style="{h3}">Synergy Capture vs Plan</div>{s_tbl}</div>
@@ -184,11 +184,11 @@ def render_pmi_playbook(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Integration Risk Register</div>{rsk_tbl}</div>
   <div style="{cell}"><div style="{h3}">TMS — Cost Savings by Function</div>{t_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">PMI Thesis:</strong> Integration {r.overall_progress_pct * 100:.0f}% complete at day {r.days_since_close}.
-    Synergy run-rate ${r.run_rate_synergies_mm:,.1f}M vs ${r.total_synergies_target_mm:,.1f}M target ({synergy_pct * 100:.0f}%). Back-office consolidation and supply-chain synergies ahead of plan;
+    <strong style="color:{text}">PMI Thesis:</strong> Integration {r.overall_progress_pct * 100:.1f}% complete at day {r.days_since_close}.
+    Synergy run-rate ${r.run_rate_synergies_mm:,.1f}M vs ${r.total_synergies_target_mm:,.1f}M target ({synergy_pct * 100:.1f}%). Back-office consolidation and supply-chain synergies ahead of plan;
     payer rate improvement and cross-sell revenue synergies behind — high-risk items requiring escalation.
     IT/EHR unification and data-warehouse consolidation are the critical-path blockers for Year-1 milestones.
-    Integration spend tracking at {budget_util * 100:.0f}% of budget — on target.
+    Integration spend tracking at {budget_util * 100:.1f}% of budget — on target.
     Historical PE-healthcare integrations capture 65-75% of targeted synergies by month 12; we're tracking toward top of range ex-payer-rate items.
   </div>
 </div>"""

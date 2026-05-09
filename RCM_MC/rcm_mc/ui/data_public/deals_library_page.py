@@ -131,7 +131,7 @@ def _kpi_bar(deals: List[Dict[str, Any]], rows: List[Dict[str, Any]]) -> str:
     return (
         f'<div class="ck-kpi-grid">'
         + ck_kpi_block("Total Deals", total, "in corpus")
-        + ck_kpi_block("Realized", len(realized), f"{len(realized)/total*100:.0f}% of corpus")
+        + ck_kpi_block("Realized", len(realized), f"{len(realized)/total*100:.1f}% of corpus")
         + ck_kpi_block("Corpus P50 MOIC", p50_value, "realized deals")
         + ck_kpi_block("Loss Rate", loss_pct, "MOIC < 1.0×")
         + ck_kpi_block("Sectors", sectors, "covered")

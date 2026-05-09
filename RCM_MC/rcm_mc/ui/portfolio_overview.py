@@ -50,7 +50,7 @@ def _fmt_money(val: Any, scale: float = 1e6) -> str:
         return "—"
     try:
         v = float(val) / scale
-        return f"${v:,.0f}M"
+        return f"${v:,.2f}M"
     except (TypeError, ValueError):
         return "—"
 
@@ -240,9 +240,9 @@ def render_portfolio_overview(
             f'</div>'
             f'<div style="display:flex;gap:20px;font-family:var(--cad-mono);font-size:10.5px;'
             f'letter-spacing:0.06em;text-transform:uppercase;">'
-            f'<span style="color:{PALETTE["positive"]};">&#9632; GREEN · {health_counts["green"]} ({gp:.0f}%)</span>'
-            f'<span style="color:{PALETTE["warning"]};">&#9632; AMBER · {health_counts["amber"]} ({ap:.0f}%)</span>'
-            f'<span style="color:{PALETTE["negative"]};">&#9632; RED · {health_counts["red"]} ({rp:.0f}%)</span>'
+            f'<span style="color:{PALETTE["positive"]};">&#9632; GREEN · {health_counts["green"]} ({gp:.1f}%)</span>'
+            f'<span style="color:{PALETTE["warning"]};">&#9632; AMBER · {health_counts["amber"]} ({ap:.1f}%)</span>'
+            f'<span style="color:{PALETTE["negative"]};">&#9632; RED · {health_counts["red"]} ({rp:.1f}%)</span>'
             f'</div></div>'
         )
 
@@ -337,7 +337,7 @@ def render_portfolio_overview(
             f'<div style="min-width:170px;">'
             f'<div style="color:{PALETTE["positive"]};font-size:24px;'
             f'font-weight:700;font-variant-numeric:tabular-nums;">'
-            f'${recoverable/1e6:.1f}M</div>'
+            f'${recoverable/1e6:.2f}M</div>'
             f'<div style="font-size:10px;text-transform:uppercase;'
             f'letter-spacing:0.06em;color:{PALETTE["text_muted"]};">'
             f'Recoverable Revenue</div></div>'
@@ -365,16 +365,16 @@ def render_portfolio_overview(
             f'<div style="min-width:170px;">'
             f'<div style="color:{PALETTE["brand_accent"]};font-size:24px;'
             f'font-weight:700;font-variant-numeric:tabular-nums;">'
-            f'${synergy_ebitda/1e6:.1f}M</div>'
+            f'${synergy_ebitda/1e6:.2f}M</div>'
             f'<div style="font-size:10px;text-transform:uppercase;'
             f'letter-spacing:0.06em;color:{PALETTE["text_muted"]};">'
             f'Annual Synergy EBITDA</div></div>'
             f'<div style="flex:1;font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
             f'Shared-services model: <strong>{n}</strong> platforms × '
-            f'<strong>${rcm_cost_base/1e6:.0f}M</strong> RCM cost base × '
+            f'<strong>${rcm_cost_base/1e6:.2f}M</strong> RCM cost base × '
             f'<strong>{synergy_pct:.0%}</strong> savings from coding centralization, '
             f'shared denial management, payer contract leverage. '
-            f'At 11x = <strong>${synergy_ebitda * 11/1e6:.0f}M</strong> equity value.</div>'
+            f'At 11x = <strong>${synergy_ebitda * 11/1e6:.2f}M</strong> equity value.</div>'
             f'</div></div>'
         )
 

@@ -207,7 +207,7 @@ def render_sector_momentum(recent_years: int = 5) -> str:
             shrink_pct = d.get("shrinkage", 0) * 100
             shrink_badge = (
                 f' <span style="font-size:8px;color:{P["text_faint"]};font-family:{_MONO};">'
-                f'(shrunk {shrink_pct:.0f}%)</span>'
+                f'(shrunk {shrink_pct:.1f}%)</span>'
                 if shrink_pct >= 30 else ""
             )
             moic_r = (

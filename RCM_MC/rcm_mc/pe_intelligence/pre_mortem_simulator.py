@@ -239,7 +239,7 @@ def _y3_event(inputs: PreMortemInputs) -> Optional[PreMortemYear]:
                 f"{inputs.worst_shock_cumulative_m:,.1f}M hit "
                 f"in {inputs.worst_shock_year}. EBITDA vs. "
                 "entry plan down "
-                f"{inputs.worst_shock_cumulative_m / max(0.01, inputs.base_ebitda_m or 1.0) * 100:.0f}%."
+                f"{inputs.worst_shock_cumulative_m / max(0.01, inputs.base_ebitda_m or 1.0) * 100:.1f}%."
             ),
             root_cause_signal=(
                 "Shock schedule baseline projected "

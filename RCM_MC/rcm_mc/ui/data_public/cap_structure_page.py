@@ -229,10 +229,10 @@ def _breach_table(probs) -> str:
             return P["negative"]
         cells = [
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:600">{b.leverage:.1f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_5pct)}">{b.ebitda_drop_5pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_10pct)}">{b.ebitda_drop_10pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_15pct)}">{b.ebitda_drop_15pct * 100:.0f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_20pct)}">{b.ebitda_drop_20pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_5pct)}">{b.ebitda_drop_5pct * 100:.1f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_10pct)}">{b.ebitda_drop_10pct * 100:.1f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_15pct)}">{b.ebitda_drop_15pct * 100:.1f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{_pc(b.ebitda_drop_20pct)}">{b.ebitda_drop_20pct * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (

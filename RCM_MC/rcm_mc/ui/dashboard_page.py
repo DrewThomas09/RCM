@@ -930,7 +930,7 @@ def _portfolio_pulse_inputs(
         syn = (
             f"{out['n_hrrp_exposed']} portfolio hospitals carry CMS "
             f"readmission penalties — combined ~"
-            f"${out['hrrp_exposure_mm']:.1f}M EBITDA at risk this fiscal "
+            f"${out['hrrp_exposure_mm']:.2f}M EBITDA at risk this fiscal "
             f"year. Discount the bid book accordingly."
         )
     else:
@@ -993,7 +993,7 @@ def _format_money_compact(mm: float) -> str:
     if v >= 1000:
         return f"${v/1000:.2f}B"
     if v >= 1:
-        return f"${v:.0f}M"
+        return f"${v:.2f}M"
     return f"${v*1000:.0f}K"
 
 
@@ -1697,7 +1697,7 @@ def _render_exposure_section(
                 f'width:{bar_w}%;transition:width 0.2s;"></div></div>'
                 f'<span style="color:#6b7280;font-variant-numeric:'
                 f'tabular-nums;text-align:right;">'
-                f'{count} · {pct:.0f}%</span></div>'
+                f'{count} · {pct:.1f}%</span></div>'
             )
         return "".join(rows)
 

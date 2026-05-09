@@ -305,7 +305,7 @@ def _feature_chips(
             f'{html.escape(d.label)}'
             f'<span class="da-chip__num">'
             f'{d.target_value:.2f} / {d.historical_value:.2f}'
-            f' · {share_pct:.0f}%</span></span>'
+            f' · {share_pct:.1f}%</span></span>'
         )
     return "".join(chips)
 
@@ -508,14 +508,14 @@ def _summary_hero(
     elif top.deal.autopsy.is_negative and top.similarity >= 0.80:
         banner = (
             f'⚠ You are underwriting a deal with an '
-            f'{top.similarity*100:.0f}% signature match to '
+            f'{top.similarity*100:.1f}% signature match to '
             f'{top.deal.name} ({top.deal.autopsy.outcome_year} — '
             f'{_OUTCOME_PRESENTATION[top.deal.autopsy.outcome][0]}).'
         )
         banner_class = "alert"
     elif top.deal.autopsy.is_negative and top.similarity >= 0.72:
         banner = (
-            f'Signature is {top.similarity*100:.0f}% aligned with '
+            f'Signature is {top.similarity*100:.1f}% aligned with '
             f'{top.deal.name} — a meaningful resemblance to a deal '
             f'that ended in '
             f'{_OUTCOME_PRESENTATION[top.deal.autopsy.outcome][0].lower()}.'
@@ -524,14 +524,14 @@ def _summary_hero(
     elif not top.deal.autopsy.is_negative and top.similarity >= 0.72:
         banner = (
             f'Closest signature match is {top.deal.name} '
-            f'({top.similarity*100:.0f}%) — a successful exit '
+            f'({top.similarity*100:.1f}%) — a successful exit '
             f'pattern. Survivor-type signature.'
         )
         banner_class = "good"
     else:
         banner = (
             f'No strong match in the library '
-            f'(top: {top.deal.name} at {top.similarity*100:.0f}%). '
+            f'(top: {top.deal.name} at {top.similarity*100:.1f}%). '
             f'This target does not cleanly rhyme with either the '
             f'failure or survivor cohort.'
         )

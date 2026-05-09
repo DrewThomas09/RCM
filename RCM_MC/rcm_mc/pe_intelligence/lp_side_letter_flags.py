@@ -116,7 +116,7 @@ def _check_deal_concentration(
             rule_id="deal_concentration",
             passed=False, severity="breach",
             detail=(f"Equity check {pct*100:.1f}% of fund exceeds LP cap "
-                    f"of {sls.max_single_deal_pct_of_fund*100:.0f}%."),
+                    f"of {sls.max_single_deal_pct_of_fund*100:.1f}%."),
             remediation="Co-invest syndication or reduce equity check.",
         )
     return ConformanceFinding(
@@ -141,8 +141,8 @@ def _check_govt_payer_cap(
         return ConformanceFinding(
             rule_id="govt_payer_cap",
             passed=False, severity="warning",
-            detail=(f"Government payer mix {govt*100:.0f}% exceeds LP "
-                    f"comfort threshold of {sls.max_govt_payer_pct*100:.0f}%."),
+            detail=(f"Government payer mix {govt*100:.1f}% exceeds LP "
+                    f"comfort threshold of {sls.max_govt_payer_pct*100:.1f}%."),
             remediation="Document why this deal warrants an exception.",
         )
     return None

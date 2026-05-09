@@ -408,7 +408,7 @@ def render_portfolio_analytics(
         ck_kpi_block("Total Deals", str(sc.get("total_deals", 0)), "corpus size")
         + ck_kpi_block("Realized",
                         str(sc.get("realized_deals", 0)),
-                        f"{sc.get('realized_deals',0)/max(sc.get('total_deals',1),1)*100:.0f}% of corpus")
+                        f"{sc.get('realized_deals',0)/max(sc.get('total_deals',1),1)*100:.1f}% of corpus")
         + ck_kpi_block("Median MOIC",
                         render_number(sc.get("moic_p50"), "moic"), "realized deals")
         + ck_kpi_block("Home-Run Rate",

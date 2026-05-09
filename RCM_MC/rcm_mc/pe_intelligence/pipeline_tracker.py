@@ -116,7 +116,7 @@ def funnel_stats(deals: List[PipelineDeal]) -> FunnelStats:
         stats.yields[f"{src}->{dst}"] = y
         if y < target * 0.6:
             stats.warnings.append(
-                f"Yield {src}→{dst}: {y*100:.0f}% (target {target*100:.0f}%) — "
+                f"Yield {src}→{dst}: {y*100:.0f}% (target {target*100:.1f}%) — "
                 "funnel is leaking at this stage."
             )
     if stats.warnings:

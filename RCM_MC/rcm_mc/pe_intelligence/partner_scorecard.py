@@ -127,10 +127,10 @@ def run_scorecard(inputs: ScorecardInputs) -> ScorecardReport:
     checks.append(ScorecardCheck(
         dimension="market",
         passed=market_ok,
-        actual=(f"{inputs.local_market_share_pct*100:.0f}% share"
+        actual=(f"{inputs.local_market_share_pct*100:.1f}% share"
                 + (" + CoE/exclusive" if inputs.has_coe_or_exclusive
                    else "")),
-        floor=(f"{inputs.market_floor_share*100:.0f}% or "
+        floor=(f"{inputs.market_floor_share*100:.1f}% or "
                "differentiation"),
         rationale=("Commodity positioning in healthcare is a race to "
                    "fee-schedule cost."),
@@ -188,9 +188,9 @@ def run_scorecard(inputs: ScorecardInputs) -> ScorecardReport:
     checks.append(ScorecardCheck(
         dimension="thesis_integrity",
         passed=thesis_ok,
-        actual=(f"recurring {inputs.recurring_ebitda_pct*100:.0f}%, "
+        actual=(f"recurring {inputs.recurring_ebitda_pct*100:.1f}%, "
                 f"coherence {inputs.thesis_coherence_0_100}/100"),
-        floor=(f"recurring ≥ {inputs.recurring_floor*100:.0f}% AND "
+        floor=(f"recurring ≥ {inputs.recurring_floor*100:.1f}% AND "
                 f"coherence ≥ {inputs.coherence_floor}/100"),
         rationale=("Exit multiple only applies to recurring; pillars "
                    "that contradict each other destroy exit multiple."),

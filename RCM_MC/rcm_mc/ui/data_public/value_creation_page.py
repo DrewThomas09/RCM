@@ -134,7 +134,7 @@ def _levers_table(levers) -> str:
         rows.append(
             f'<tr style="background:{rbg}">'
             f'<td style="padding:5px 8px;color:{c}">{lev.label}</td>'
-            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{lev.contribution_pct*100:.0f}%</td>'
+            f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">{lev.contribution_pct*100:.1f}%</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">+${lev.ebitda_contribution_mm:.1f}M</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{tprim}">+${lev.ev_contribution_mm:.0f}M</td>'
             f'</tr>'
@@ -286,7 +286,7 @@ def render_value_creation(params: dict) -> str:
     kpis += ck_kpi_block("Exit EV", f"${r.exit_ev_mm:.0f}M",
                           unit=f"{r.exit_multiple:.1f}x EV/EBITDA")
     kpis += ck_kpi_block("EV Created", f"${r.total_ev_created_mm:.0f}M",
-                          unit=f"+{ev_created_pct:.0f}% vs entry")
+                          unit=f"+{ev_created_pct:.1f}% vs entry")
     kpis += ck_kpi_block("MOIC", f"{r.moic:.2f}x",
                           unit=f"IRR: {r.irr*100:.1f}%")
     kpis += ck_kpi_block("Sector Median MOIC", f"{r.sector_median_moic:.2f}x")

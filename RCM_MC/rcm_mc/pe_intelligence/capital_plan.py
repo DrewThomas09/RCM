@@ -151,13 +151,13 @@ def validate_capital_plan(plan: CapitalPlan) -> List[CapitalPlanFinding]:
         if maint_pct < 0.30:
             findings.append(CapitalPlanFinding(
                 check="maintenance_mix", passed=False, severity="warning",
-                detail=(f"Only {maint_pct*100:.0f}% of capex is maintenance — "
+                detail=(f"Only {maint_pct*100:.1f}% of capex is maintenance — "
                         "growth-heavy plans defer asset reinvestment risk."),
             ))
         else:
             findings.append(CapitalPlanFinding(
                 check="maintenance_mix", passed=True,
-                detail=f"Maintenance is {maint_pct*100:.0f}% of capex.",
+                detail=f"Maintenance is {maint_pct*100:.1f}% of capex.",
             ))
 
     return findings

@@ -85,7 +85,7 @@ def detect_deferred_it_capex(
         )
     if staffing_gap_pct > 0.05:
         parts.append(
-            f"IT staffing gap {staffing_gap_pct*100:.0f}% vs benchmark"
+            f"IT staffing gap {staffing_gap_pct*100:.1f}% vs benchmark"
         )
     if replacement_cost > 0:
         parts.append(

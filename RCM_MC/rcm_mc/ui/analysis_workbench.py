@@ -1556,7 +1556,7 @@ def _render_pairwise_matrix(
                 "pw-low" if prob <= 0.40 else ""
             )
             cells.append(
-                f'<td class="{cls}">{prob * 100:.0f}%</td>'
+                f'<td class="{cls}">{prob * 100:.1f}%</td>'
             )
         rows.append("<tr>" + "".join(cells) + "</tr>")
     return (

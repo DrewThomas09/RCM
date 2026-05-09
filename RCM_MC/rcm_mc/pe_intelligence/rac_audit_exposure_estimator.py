@@ -91,13 +91,13 @@ def estimate_rac_exposure(inputs: RACInputs) -> RACExposureReport:
 
     if loss_pct_ebitda >= 0.30:
         note = (f"RAC exposure ~${expected_mid:,.1f}M mid-case is "
-                f"{loss_pct_ebitda*100:.0f}% of base EBITDA. This is "
+                f"{loss_pct_ebitda*100:.1f}% of base EBITDA. This is "
                 "an IC-blocking number — forensic billing diligence "
                 "is non-negotiable; partner should not approve "
                 "without an adjustment to purchase price.")
     elif loss_pct_ebitda >= 0.10:
         note = (f"RAC exposure ~${expected_mid:,.1f}M "
-                f"({loss_pct_ebitda*100:.0f}% of EBITDA) is "
+                f"({loss_pct_ebitda*100:.1f}% of EBITDA) is "
                 "material. Structure purchase-price earn-out or "
                 "indemnity for the audit window.")
     elif loss_pct_ebitda >= 0.03:

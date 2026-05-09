@@ -63,7 +63,7 @@ def _band_chip(band: str, count: int, total: int) -> str:
         f'<span style="font-size:18px;font-weight:600;color:{color};'
         f'font-family:monospace;">{count}'
         f'<span style="font-size:10px;color:#888;font-weight:400;margin-left:6px;">'
-        f'({pct:.0f}%)</span></span></div>'
+        f'({pct:.1f}%)</span></span></div>'
     )
 
 

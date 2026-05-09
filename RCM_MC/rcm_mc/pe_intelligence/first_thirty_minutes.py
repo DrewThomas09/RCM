@@ -117,7 +117,7 @@ def _recurring_ebitda_question(
         return PartnerQuestion(
             tier="opening",
             text=(f"Your reported EBITDA is "
-                  f"{ctx.one_time_pct_of_ebitda*100:.0f}% one-time. "
+                  f"{ctx.one_time_pct_of_ebitda*100:.1f}% one-time. "
                   "The exit multiple only applies to recurring. What "
                   "is your recurring EBITDA at this exact moment, and "
                   "what is the trajectory over the next 6 quarters?"),
@@ -131,7 +131,7 @@ def _oon_question(ctx: FirstThirtyContext) -> Optional[PartnerQuestion]:
     if ctx.oon_revenue_share >= 0.20:
         return PartnerQuestion(
             tier="landmine",
-            text=(f"OON revenue is {ctx.oon_revenue_share*100:.0f}% of "
+            text=(f"OON revenue is {ctx.oon_revenue_share*100:.1f}% of "
                   "the book. Under the No Surprises Act framework, how "
                   "much of this revenue is at risk in 2026-2027, and "
                   "what is the in-network conversion pipeline?"),
@@ -210,7 +210,7 @@ def _top_payer_concentration_question(
     if ctx.top_payer_share >= 0.35:
         return PartnerQuestion(
             tier="landmine",
-            text=(f"Top payer is {ctx.top_payer_share*100:.0f}% of "
+            text=(f"Top payer is {ctx.top_payer_share*100:.1f}% of "
                   "revenue. When does that contract renew, what are "
                   "the rate escalators, and what is your contingency "
                   "if they walk or cut rates 5%?"),

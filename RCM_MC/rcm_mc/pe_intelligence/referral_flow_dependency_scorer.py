@@ -226,7 +226,7 @@ def score_referral_flow_dependency(
             f"{triggered} referral flags firing. "
             f"Expected EBITDA loss on top-1 departure "
             f"${expected_ebitda_loss:,.1f}M at "
-            f"{base_prob*100:.0f}% probability. Haircut "
+            f"{base_prob*100:.1f}% probability. Haircut "
             "underwrite by this amount."
         )
     elif triggered >= 1:

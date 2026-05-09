@@ -389,7 +389,7 @@ def render_physician_friction_markdown(
         fp = m.friction
         lines.append(
             f"| {fp.name} | {fp.probability} | "
-            f"{fp.ebitda_impact_pct*100:.0f}% EBITDA | "
+            f"{fp.ebitda_impact_pct*100:.1f}% EBITDA | "
             f"{fp.partner_counter} |"
         )
     return "\n".join(lines)

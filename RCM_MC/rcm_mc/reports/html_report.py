@@ -84,7 +84,7 @@ def _build_source_confidence_card(
     return f"""
     <div class="card" id="source-confidence" style="border-left: 6px solid {color};">
       <h3 style="margin-top:0;">Input Evidence: Grade {grade}</h3>
-      <p class='section-desc' style="margin-bottom: 0.5rem;"><strong>{observed} of {total}</strong> model inputs observed from target data ({pct:.0f}%) — {prior} industry priors, {assumed} analyst assumptions.</p>
+      <p class='section-desc' style="margin-bottom: 0.5rem;"><strong>{observed} of {total}</strong> model inputs observed from target data ({pct:.1f}%) — {prior} industry priors, {assumed} analyst assumptions.</p>
       <p class='section-desc' style="margin-bottom: 0;"><em>{blurb}</em> Full per-input source map is available in <code>provenance.json</code>.</p>
     </div>"""
 
@@ -552,7 +552,7 @@ def generate_html_report(
         <div class="payer-card" style="border-top: 3px solid {color};">
           <div class="payer-card-header">
             <h4>{payer}</h4>
-            <span class="payer-share">{rev_share*100:.0f}% of Revenue</span>
+            <span class="payer-share">{rev_share*100:.1f}% of Revenue</span>
           </div>"""
 
             # IDR progress bar
@@ -658,7 +658,7 @@ def generate_html_report(
         html_parts.append(f"""
     <div class="card" id="covenant-bridge">
       <h3>Debt Covenant Sensitivity</h3>
-      <p class='section-desc'><strong>Why this matters:</strong> For leveraged healthcare platforms, even modest EBITDA improvements can meaningfully improve covenant headroom and reduce refinancing risk. This shows how the {pretty_money(uplift)} EBITDA uplift moves the Debt-to-EBITDA ratio, assuming {ebitda_margin*100:.0f}% EBITDA margin on Net Patient Service Revenue.</p>
+      <p class='section-desc'><strong>Why this matters:</strong> For leveraged healthcare platforms, even modest EBITDA improvements can meaningfully improve covenant headroom and reduce refinancing risk. This shows how the {pretty_money(uplift)} EBITDA uplift moves the Debt-to-EBITDA ratio, assuming {ebitda_margin*100:.1f}% EBITDA margin on Net Patient Service Revenue.</p>
       <table><tr><th>Metric</th><th>Value</th></tr>
       <tr><td>Total Debt</td><td class="num">{pretty_money(debt)}</td></tr>
       <tr><td>Current EBITDA (NPSR x Margin)</td><td class="num">{pretty_money(ebitda_proxy)}</td></tr>
@@ -722,7 +722,7 @@ def generate_html_report(
             lbl_html = label.replace("\n", "<br>")
             tl_bars += f"""
           <div class="tl-bar-wrap">
-            <div class="tl-pct">{pct*100:.0f}%</div>
+            <div class="tl-pct">{pct*100:.1f}%</div>
             <div class="tl-amt">{pretty_money(amt)}</div>
             <div class="tl-bar {cls}" style="height: {h}px;"></div>
             <div class="tl-label">{lbl_html}</div>
@@ -803,7 +803,7 @@ def generate_html_report(
         <tr><td>Year 1 EBITDA Capture (55%)</td><td class="num">{pretty_money(yr1_capture)}</td></tr>
         <tr><td>Year 2 EBITDA Capture (95%)</td><td class="num">{pretty_money(yr2_capture)}</td></tr>
         <tr><td>Payback Period</td><td class="num">{payback_months:.0f} months</td></tr>
-        <tr><td>Year 1 ROI</td><td class="num">{roi_yr1:.0f}%</td></tr>
+        <tr><td>Year 1 ROI</td><td class="num">{roi_yr1:.1f}%</td></tr>
       </table>
       <p class='section-desc' style="margin-top: 0.5rem;"><em>Cost ratios: Technology ~6% of opportunity, Staffing ~12%, Advisory ~4%. Adjust based on vendor bids and current team capacity.</em></p>
     </div>""")

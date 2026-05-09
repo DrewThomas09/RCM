@@ -191,7 +191,7 @@ def _mix_donut_svg(
                 f'text-anchor="{anchor}" font-size="9.5" '
                 f'fill="{P["text_faint"]}" '
                 f'font-family="JetBrains Mono,monospace">'
-                f'{frac*100:.0f}%</text>'
+                f'{frac*100:.1f}%</text>'
             )
         start_angle = end_angle
 
@@ -209,7 +209,7 @@ def _mix_donut_svg(
         f'<text x="{cx}" y="{cy + 18}" text-anchor="middle" '
         f'font-size="26" font-family="JetBrains Mono,monospace" '
         f'font-weight="700" fill="{top1_color}">'
-        f'{top1*100:.0f}%</text>'
+        f'{top1*100:.1f}%</text>'
     )
 
     return (
@@ -235,7 +235,7 @@ def _legend(rows: List[PayerStressRow]) -> str:
             f'{html.escape(r.payer_name)}</span>'
             f'<span style="font-family:\'JetBrains Mono\',monospace;'
             f'font-weight:700;color:{P["text"]};">'
-            f'{r.share_of_npr*100:.0f}%</span>'
+            f'{r.share_of_npr*100:.1f}%</span>'
             f'</div>'
         )
     return "".join(items)
@@ -398,7 +398,7 @@ def _payer_card(row: PayerStressRow) -> str:
         f'<div class="ps-payer-name">'
         f'{html.escape(row.payer_name)}</div>'
         f'<div class="ps-payer-share">'
-        f'{row.share_of_npr*100:.0f}%</div>'
+        f'{row.share_of_npr*100:.1f}%</div>'
         f'</div>'
         f'<div class="ps-payer-meta">'
         f'{html.escape(cat_label or "Unclassified")} · '
@@ -673,12 +673,12 @@ def _verdict_card(report: PayerStressReport) -> str:
         f'  <div><div class="ps-kpi__label">Top-1 Share</div>'
         f'       <div class="ps-kpi__val '
         f'{"neg" if report.top_1_share > 0.30 else ""}">'
-        f'{report.top_1_share*100:.0f}%</div>'
+        f'{report.top_1_share*100:.1f}%</div>'
         f'       <div style="font-size:10px;color:{P["text_faint"]};'
         f'margin-top:3px;">flag at &gt;30%</div></div>'
         f'  <div><div class="ps-kpi__label">Top-3 Share</div>'
         f'       <div class="ps-kpi__val">'
-        f'{report.top_3_share*100:.0f}%</div>'
+        f'{report.top_3_share*100:.1f}%</div>'
         f'       <div style="font-size:10px;color:{P["text_faint"]};'
         f'margin-top:3px;">flag at &gt;70%</div></div>'
         f'  <div><div class="ps-kpi__label">HHI</div>'
@@ -830,7 +830,7 @@ def render_payer_stress_page(
             f"<strong style=\"color:{P['negative']};\">"
             f"{worst_tail.p10_rate_move*100:+.1f}% on "
             f"{html.escape(worst_tail.payer_name)}</strong> "
-            f"(share {worst_tail.share_of_npr*100:.0f}%), which alone "
+            f"(share {worst_tail.share_of_npr*100:.1f}%), which alone "
             f"removes "
             f"<strong>${abs(worst_tail.p10_npr_delta_usd)/1e6:,.1f}M</strong> "
             f"of NPR in the downside case. Factor this into the "
@@ -854,7 +854,7 @@ def render_payer_stress_page(
         f'{len(mix)} payers · {report.n_paths} simulated paths · '
         f'{horizon}-year horizon · '
         f'${total_npr/1e6:,.0f}M total NPR'
-        + (f' · {report.unclassified_share*100:.0f}% unclassified'
+        + (f' · {report.unclassified_share*100:.1f}% unclassified'
            if report.unclassified_share > 0.05 else '')
         + f'</div>'
         f'{_verdict_card(report)}'

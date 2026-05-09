@@ -30,7 +30,7 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     kpis = kpi_strip([
         {"label": "Entry Leverage", "value": f"{entry_leverage:.1f}x"},
         {"label": "Exit Leverage", "value": f"{exit_leverage:.1f}x", "tone": exit_tone},
-        {"label": "Total Debt at Entry", "value": f"${total_debt/1e6:.0f}M"},
+        {"label": "Total Debt at Entry", "value": f"${total_debt/1e6:.2f}M"},
     ])
 
     rows = ""
@@ -45,9 +45,9 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
         rows += (
             f'<tr>'
             f'<td class="num" style="font-weight:600;">Year {year}</td>'
-            f'<td class="num">${float(balance)/1e6:.1f}M</td>'
-            f'<td class="num">${float(payment)/1e6:.1f}M</td>'
-            f'<td class="num">${float(interest)/1e6:.1f}M</td>'
+            f'<td class="num">${float(balance)/1e6:.2f}M</td>'
+            f'<td class="num">${float(payment)/1e6:.2f}M</td>'
+            f'<td class="num">${float(interest)/1e6:.2f}M</td>'
             f'<td class="num" style="color:{lev_color};">{float(leverage):.1f}x</td>'
             f'</tr>'
         )
@@ -100,7 +100,7 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
     # P26 follow-up: challenge-solver summary migrated to kpi_strip.
     from ._ui_kit import kpi_strip
     kpis = kpi_strip([
-        {"label": "Target EBITDA Drag", "value": f"${abs(float(target))/1e6:.1f}M"},
+        {"label": "Target EBITDA Drag", "value": f"${abs(float(target))/1e6:.2f}M"},
         {"label": "Assumption Sets Found", "value": str(len(solutions))},
     ])
 
@@ -180,9 +180,9 @@ def render_irs990_crosscheck(deal_id: str, deal_name: str, data: Dict[str, Any])
         rev_990 = match.get("total_revenue", 0)
         assets = match.get("total_assets", 0)
         irs_items.append({"label": "990 Total Revenue",
-                          "value": f"${float(rev_990)/1e6:.0f}M"})
+                          "value": f"${float(rev_990)/1e6:.2f}M"})
         irs_items.append({"label": "990 Total Assets",
-                          "value": f"${float(assets)/1e6:.0f}M"})
+                          "value": f"${float(assets)/1e6:.2f}M"})
     kpis = kpi_strip(irs_items)
 
     comp_rows = ""
@@ -195,8 +195,8 @@ def render_irs990_crosscheck(deal_id: str, deal_name: str, data: Dict[str, Any])
             PALETTE["warning"] if abs(float(diff)) < 25 else PALETTE["negative"])
         comp_rows += (
             f'<tr><td>{field}</td>'
-            f'<td class="num">${float(hcris_val)/1e6:.1f}M</td>'
-            f'<td class="num">${float(irs_val)/1e6:.1f}M</td>'
+            f'<td class="num">${float(hcris_val)/1e6:.2f}M</td>'
+            f'<td class="num">${float(irs_val)/1e6:.2f}M</td>'
             f'<td class="num" style="color:{color};">{float(diff):+.1f}%</td></tr>'
         )
 

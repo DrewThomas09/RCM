@@ -25,11 +25,11 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
     # default reads the same with cleaner markup.
     from ._ui_kit import kpi_strip
     kpis = kpi_strip([
-        {"label": "Current EBITDA", "value": f"${current/1e6:.1f}M"},
+        {"label": "Current EBITDA", "value": f"${current/1e6:.2f}M"},
         {"label": "Target EBITDA",
-         "value": f"${(current+total_impact)/1e6:.1f}M",
+         "value": f"${(current+total_impact)/1e6:.2f}M",
          "tone": "positive"},
-        {"label": "Total Uplift", "value": f"+${total_impact/1e6:.1f}M"},
+        {"label": "Total Uplift", "value": f"+${total_impact/1e6:.2f}M"},
         {"label": "Value Levers", "value": str(len(levers))},
     ])
 
@@ -75,11 +75,11 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
             f'<div style="width:{bar_w:.0f}%;background:{color};border-radius:4px;height:20px;'
             f'display:flex;align-items:center;justify-content:flex-end;padding-right:6px;'
             f'font-size:10px;color:white;font-weight:600;">'
-            f'${impact/1e6:.1f}M</div></div>'
+            f'${impact/1e6:.2f}M</div></div>'
             f'<span class="cad-mono" style="font-size:11px;color:{PALETTE["text_muted"]};width:50px;">'
             f'{prob:.0%} prob</span>'
             f'<span class="cad-mono" style="font-size:11px;color:{color};width:70px;text-align:right;">'
-            f'${weighted/1e6:.1f}M wtd</span>'
+            f'${weighted/1e6:.2f}M wtd</span>'
             f'</div></div>'
         )
 
@@ -109,14 +109,14 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
         f'<div class="cad-card" style="border-left:3px solid {PALETTE["positive"]};">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>The 7-lever model projects a <strong>{uplift_pct:.0f}% EBITDA uplift</strong> '
-        f'from ${current/1e6:.0f}M to ${(current+total_impact)/1e6:.0f}M. '
+        f'<p>The 7-lever model projects a <strong>{uplift_pct:.1f}% EBITDA uplift</strong> '
+        f'from ${current/1e6:.2f}M to ${(current+total_impact)/1e6:.2f}M. '
         f'The highest-impact lever is <strong>{html.escape(top_name)}</strong> '
-        f'at ${top_wtd/1e6:.1f}M probability-weighted.</p>'
+        f'at ${top_wtd/1e6:.2f}M probability-weighted.</p>'
         f'<p style="margin-top:6px;"><strong>IC talking point:</strong> '
-        f'"We see ${total_impact/1e6:.0f}M in annual EBITDA improvement, '
+        f'"We see ${total_impact/1e6:.2f}M in annual EBITDA improvement, '
         f'primarily from {html.escape(top_name.lower())}. At an 11x multiple, '
-        f'this represents ${total_impact * 11 / 1e6:.0f}M in equity value creation."</p>'
+        f'this represents ${total_impact * 11 / 1e6:.2f}M in equity value creation."</p>'
         f'</div></div>'
     )
 
@@ -124,7 +124,7 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
     body = f'{nav}{kpis}{bridge_section}{interp}{actions}'
     return chartis_shell(body, f"Value Bridge — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Current ${current/1e6:.0f}M → Target ${(current+total_impact)/1e6:.0f}M (+${total_impact/1e6:.1f}M)")
+                    subtitle=f"Current ${current/1e6:.2f}M → Target ${(current+total_impact)/1e6:.2f}M (+${total_impact/1e6:.2f}M)")
 
 
 def render_comparable_hospitals(deal_id: str, deal_name: str,
@@ -145,8 +145,8 @@ def render_comparable_hospitals(deal_id: str, deal_name: str,
             f'<td><a href="/hospital/{ccn}">{name}</a></td>'
             f'<td>{state}</td>'
             f'<td class="num">{int(beds):,}</td>'
-            f'<td class="num">${float(rev)/1e6:,.0f}M</td>'
-            f'<td class="num">{dist_pct:.0f}%</td>'
+            f'<td class="num">${float(rev)/1e6:,.2f}M</td>'
+            f'<td class="num">{dist_pct:.1f}%</td>'
             f'</tr>'
         )
 
@@ -242,7 +242,7 @@ def render_service_lines(deal_id: str, deal_name: str,
         rows += (
             f'<tr>'
             f'<td style="font-weight:500;">{name}</td>'
-            f'<td class="num">${rev/1e6:.1f}M</td>'
+            f'<td class="num">${rev/1e6:.2f}M</td>'
             f'<td class="num">{pct:.1f}%</td>'
             f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
             f'<td class="num">{int(vol):,}</td>'
@@ -253,7 +253,7 @@ def render_service_lines(deal_id: str, deal_name: str,
     from ._ui_kit import kpi_strip
     sl_kpis = kpi_strip([
         {"label": "Service Lines", "value": str(len(lines))},
-        {"label": "Total Revenue", "value": f"${total_rev/1e6:.0f}M"},
+        {"label": "Total Revenue", "value": f"${total_rev/1e6:.2f}M"},
     ])
     body = (
         f'{sl_kpis}'
@@ -276,4 +276,4 @@ def render_service_lines(deal_id: str, deal_name: str,
 
     return chartis_shell(body, f"Service Lines — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"{len(lines)} service lines | ${total_rev/1e6:.0f}M total revenue")
+                    subtitle=f"{len(lines)} service lines | ${total_rev/1e6:.2f}M total revenue")

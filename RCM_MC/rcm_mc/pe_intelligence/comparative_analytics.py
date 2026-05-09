@@ -115,15 +115,15 @@ def concentration_warnings(conc: Dict[str, Any]) -> List[str]:
     top_sector = conc.get("top_sector") or {}
     if top_sector.get("share", 0) > 0.40:
         out.append(f"Sector concentration: {top_sector['name']} is "
-                   f"{top_sector['share']*100:.0f}% of portfolio EBITDA.")
+                   f"{top_sector['share']*100:.1f}% of portfolio EBITDA.")
     top_state = conc.get("top_state") or {}
     if top_state.get("share", 0) > 0.35:
         out.append(f"Geographic concentration: {top_state['name']} is "
-                   f"{top_state['share']*100:.0f}% of portfolio EBITDA.")
+                   f"{top_state['share']*100:.1f}% of portfolio EBITDA.")
     top_payer = conc.get("top_payer") or {}
     if top_payer.get("share", 0) > 0.50:
         out.append(f"Payer concentration: {top_payer['name']} is "
-                   f"{top_payer['share']*100:.0f}% of portfolio EBITDA.")
+                   f"{top_payer['share']*100:.1f}% of portfolio EBITDA.")
     return out
 
 

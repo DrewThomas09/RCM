@@ -102,19 +102,19 @@ def _check_ceo_share(inputs: CompPlanInputs) -> Optional[CompFinding]:
         return CompFinding(
             area="ceo_mip_share",
             status="light",
-            detail=f"CEO {v*100:.0f}% of MIP is below the 30-50% peer range.",
+            detail=f"CEO {v*100:.1f}% of MIP is below the 30-50% peer range.",
             remediation="Reallocate to give CEO meaningful wealth-creation event.",
         )
     if v > 0.60:
         return CompFinding(
             area="ceo_mip_share",
             status="aggressive",
-            detail=f"CEO {v*100:.0f}% of MIP is above the 30-50% peer range.",
+            detail=f"CEO {v*100:.1f}% of MIP is above the 30-50% peer range.",
             remediation="Broaden share to retain L2 leaders.",
         )
     return CompFinding(
         area="ceo_mip_share", status="standard",
-        detail=f"CEO {v*100:.0f}% of MIP — within peer range.",
+        detail=f"CEO {v*100:.1f}% of MIP — within peer range.",
     )
 
 
@@ -201,14 +201,14 @@ def _check_rollover(inputs: CompPlanInputs) -> Optional[CompFinding]:
         return CompFinding(
             area="ceo_rollover",
             status="light",
-            detail=f"CEO rollover {v*100:.0f}% is below the 5-15% alignment range.",
+            detail=f"CEO rollover {v*100:.1f}% is below the 5-15% alignment range.",
             remediation="Require minimum 5% rollover — alignment signal.",
         )
     if v > 0.30:
         return CompFinding(
             area="ceo_rollover",
             status="aggressive",
-            detail=f"CEO rollover {v*100:.0f}% is above the 5-15% range.",
+            detail=f"CEO rollover {v*100:.1f}% is above the 5-15% range.",
             remediation="Consider step-down mechanic to limit single-executive risk.",
         )
     return CompFinding(
@@ -227,19 +227,19 @@ def _check_ltip(inputs: CompPlanInputs) -> Optional[CompFinding]:
         return CompFinding(
             area="ltip",
             status="light",
-            detail=f"LTIP {v*100:.0f}% of base — below 25-75% peer range.",
+            detail=f"LTIP {v*100:.1f}% of base — below 25-75% peer range.",
             remediation="Raise annual performance-bonus opportunity.",
         )
     if v > 1.0:
         return CompFinding(
             area="ltip",
             status="aggressive",
-            detail=f"LTIP {v*100:.0f}% of base — above typical peer range.",
+            detail=f"LTIP {v*100:.1f}% of base — above typical peer range.",
             remediation="Validate achievability of targets.",
         )
     return CompFinding(
         area="ltip", status="standard",
-        detail=f"LTIP {v*100:.0f}% of base — within peer range.",
+        detail=f"LTIP {v*100:.1f}% of base — within peer range.",
     )
 
 

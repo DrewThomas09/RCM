@@ -144,7 +144,7 @@ def _remediations_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{r.timeline_months}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg}">${r.financial_cost_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{v_c};font-weight:700">{r.deal_value_impact_pct * 100:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{r.probability_of_approval * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{r.probability_of_approval * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -217,7 +217,7 @@ def render_antitrust_screener(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">State-Level Review Exposure</div>{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Remediation Options Matrix</div>{rem_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Anti-Trust Thesis:</strong> ${r.deal_size_mm:,.0f}M deal triggers HSR filing; Second Request probability {r.second_request_probability * 100:.0f}% given {sum(1 for o in r.overlaps if 'severe' in o.overlap_severity)} severe market overlaps in Texas MSAs.
+    <strong style="color:{text}">Anti-Trust Thesis:</strong> ${r.deal_size_mm:,.0f}M deal triggers HSR filing; Second Request probability {r.second_request_probability * 100:.1f}% given {sum(1 for o in r.overlaps if 'severe' in o.overlap_severity)} severe market overlaps in Texas MSAs.
     Post-USAP / Welsh Carson (2023) enforcement era, FTC is scrutinizing serial-acquisition theories against PE platform sponsors — relevance score 95.
     Recommended path: "Restructure deal (exclude 2 overlap markets)" — 92% approval probability, 6-month timeline, 25.8% deal value reduction.
     Alternative divestiture path preserves more value but extends timeline to 12-18 months and introduces execution risk.

@@ -134,7 +134,7 @@ def _team_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">{t.deals_closed_ltm}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{pos};font-weight:700">${t.total_closed_value_m:,.1f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{text}">{t.avg_markup_pct:.1f}%</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{p_c};font-weight:700">{t.proprietary_deal_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:13px;color:{p_c};font-weight:700">{t.proprietary_deal_pct * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:13px">'
@@ -200,7 +200,7 @@ def render_deal_sourcing(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Deal Sourcing / Proprietary Flow Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_annualized_pipeline:,} annualized leads · {r.total_proprietary_opportunities} active proprietary opps · {r.total_closed_ltm} closed LTM ({prop_closed} proprietary = {prop_pct * 100:.0f}%) · ${r.total_closed_value_m:,.1f}M closed value — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_annualized_pipeline:,} annualized leads · {r.total_proprietary_opportunities} active proprietary opps · {r.total_closed_ltm} closed LTM ({prop_closed} proprietary = {prop_pct * 100:.1f}%) · ${r.total_closed_value_m:,.1f}M closed value — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Sourcing Funnel — LTM Activity</div>{f_tbl}</div>
@@ -211,7 +211,7 @@ def render_deal_sourcing(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Closed Deals Bridge — Source Attribution</div>{cb_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Deal Sourcing Summary:</strong> 485 annualized-leads pipeline converts at {r.weighted_close_rate_pct * 100:.2f}% to closed deals — {r.total_closed_ltm} transactions / ${r.total_closed_value_m:,.1f}M aggregate value LTM.
-    Proprietary deals represent {prop_pct * 100:.0f}% of closed count (${prop_value:,.1f}M value) — operating partner rolodex, portfolio introductions, and sponsor direct sourcing drive higher-conviction proprietary wins.
+    Proprietary deals represent {prop_pct * 100:.1f}% of closed count (${prop_value:,.1f}M value) — operating partner rolodex, portfolio introductions, and sponsor direct sourcing drive higher-conviction proprietary wins.
     Intermediary performance: Edgemont (healthcare specialist) and Jefferies (middle market) top the league table — 3 and 2 closes respectively; 13+ shown by each with strong relationship tenure.
     Funnel conversion: Initial screen → Preliminary DD 48%, Preliminary → IOI 44%, IOI → MP 37%, MP → Confirmatory 51%, Confirmatory → Close 75% — reasonable conversion profile; top-of-funnel quality remains key.
     Active proprietary pipeline ${sum(p.estimated_size_m for p in r.proprietary):,.1f}M total; probability-weighted ${sum(p.estimated_size_m * (p.probability_pct / 100.0) for p in r.proprietary):,.1f}M — Aspen-adjacent Southeast Ophthalmology (72% × $185M) is highest-conviction next close.

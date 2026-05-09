@@ -61,7 +61,7 @@ def check_stark_redline(
                 detail=(
                     f"Provider's total comp is above 90th percentile "
                     f"for {p.specialty} ({ownership_type}); "
-                    f"{directed_share*100:.0f}% is directed comp "
+                    f"{directed_share*100:.1f}% is directed comp "
                     f"(stipend + call + admin + productivity)."
                 ),
                 remediation=(
@@ -105,7 +105,7 @@ def check_stark_redline(
                 statutory_cite="42 CFR § 411.354(d)(5) (Stark volume/value)",
                 detail=(
                     "Comp scales directly with collections "
-                    f"({(p.total_comp_usd/p.collections_annual_usd)*100:.0f}%) "
+                    f"({(p.total_comp_usd/p.collections_annual_usd)*100:.1f}%) "
                     "and is overwhelmingly base-rate — volume/value "
                     "correlation concern. Tuomey/Sutter precedents "
                     "apply."

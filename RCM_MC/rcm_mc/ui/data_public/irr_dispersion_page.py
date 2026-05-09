@@ -188,7 +188,7 @@ def _sector_irr_table(corpus: List[Dict[str, Any]]) -> str:
         shrink = shrinkage_weight(n) * 100
         shrink_badge = (
             f' <span style="font-size:8px;color:{P["text_faint"]};font-family:{_MONO};">'
-            f'(shrunk {shrink:.0f}%)</span>'
+            f'(shrunk {shrink:.1f}%)</span>'
             if shrink >= 30 else ""
         )
         above_hurdle = sum(1 for v in irrs if v >= 0.20) / len(irrs) * 100
@@ -204,11 +204,11 @@ def _sector_irr_table(corpus: List[Dict[str, Any]]) -> str:
             f'<tr style="background:{bg}">'
             f'<td style="padding:4px 8px;font-size:11px">{html.escape(sec[:30])}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{n}</td>'
-            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{real_color};font-variant-numeric:tabular-nums">{realized}/{total} ({real_pct:.0f}%)</td>'
+            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{real_color};font-variant-numeric:tabular-nums">{realized}/{total} ({real_pct:.1f}%)</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p25*100:.1f}%" if p25 else "—"}</td>'
             f'<td style="padding:4px 8px;font-size:12px;font-family:{_MONO};text-align:right;font-weight:700;color:{col};font-variant-numeric:tabular-nums">{(f"{p50*100:.1f}%" + shrink_badge) if p50 else "—"}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{p75*100:.1f}%" if p75 else "—"}</td>'
-            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{above_hurdle:.0f}%</td>'
+            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{above_hurdle:.1f}%</td>'
             f'</tr>'
         )
 
@@ -267,7 +267,7 @@ def render_irr_dispersion() -> str:
         f'</div>'
         for lbl, val, col in [
             ("CORPUS N",         str(len(corpus)),                                  P["text"]),
-            ("DISCLOSED IRR",    f"{len(has_irr)} ({realized_irr_pct:.0f}%)",       survivor_color),
+            ("DISCLOSED IRR",    f"{len(has_irr)} ({realized_irr_pct:.1f}%)",       survivor_color),
             ("IRR P25",          f"{irr_p25*100:.1f}%" if irr_p25 else "—",          P["text"]),
             ("IRR P50",          f"{irr_p50*100:.1f}%" if irr_p50 else "—",          P["positive"] if (irr_p50 or 0) >= 0.20 else P["warning"]),
             ("IRR P75",          f"{irr_p75*100:.1f}%" if irr_p75 else "—",          P["text"]),
@@ -285,7 +285,7 @@ def render_irr_dispersion() -> str:
         f'padding:8px 14px;margin-bottom:16px;font-size:11px;'
         f'color:{P["text_dim"]};font-family:{_SANS};line-height:1.5">'
         f'<span style="color:{P["text"]};font-weight:600;">Survivor bias caveat:</span> '
-        f'IRR is disclosed for <b>{realized_irr_pct:.0f}%</b> of the corpus '
+        f'IRR is disclosed for <b>{realized_irr_pct:.1f}%</b> of the corpus '
         f'({len(has_irr)} of {len(corpus)} deals). The remaining {len(corpus) - len(has_irr)} deals '
         f'are typically ongoing holds, undisclosed exits, or quietly written-down positions — '
         f'systematically tilted toward negative outcomes. The P50 IRR shown above is computed against '

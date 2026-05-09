@@ -478,7 +478,7 @@ def _driver_table(report: RegulatoryExposureReport) -> str:
             )
         if tl.cumulative_impairment_pct:
             sub_bits.append(
-                f'{tl.cumulative_impairment_pct*100:.0f}% cumulative '
+                f'{tl.cumulative_impairment_pct*100:.1f}% cumulative '
                 f'impairment'
             )
         rows.append(

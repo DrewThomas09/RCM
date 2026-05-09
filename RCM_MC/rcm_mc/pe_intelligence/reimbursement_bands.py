@@ -150,7 +150,7 @@ def check_gross_to_net(
         metric=f"gross_to_net:{payer}",
         observed=ratio, verdict=verdict, band=band,
         rationale=f"{pct} gross-to-net vs {band.regime} peer band "
-                  f"{band.low*100:.0f}%-{band.high*100:.0f}%.",
+                  f"{band.low*100:.0f}%-{band.high*100:.1f}%.",
         partner_note=note_map.get(verdict, ""),
     )
 

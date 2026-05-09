@@ -39,19 +39,19 @@ def detect_synthetic_fte(
         sev = "CRITICAL"
         narrative = (
             f"Billing NPIs ({billing_npi_count}) exceed scheduled "
-            f"FTE ({scheduled_fte:.0f}) by {gap_pct*100:.0f}%. "
+            f"FTE ({scheduled_fte:.0f}) by {gap_pct*100:.1f}%. "
             f"Substantial ghost-biller / locum-inflation risk."
         )
     elif gap_pct >= 0.25:
         sev = "HIGH"
         narrative = (
             f"Billing NPIs outnumber scheduled FTE by "
-            f"{gap_pct*100:.0f}%. Investigate locum composition + "
+            f"{gap_pct*100:.1f}%. Investigate locum composition + "
             f"billing-privilege authorisations."
         )
     elif gap_pct >= 0.10:
         sev = "MEDIUM"
-        narrative = f"Modest NPI/FTE gap {gap_pct*100:.0f}%."
+        narrative = f"Modest NPI/FTE gap {gap_pct*100:.1f}%."
     else:
         sev = "LOW"
         narrative = "NPI and scheduled FTE aligned."

@@ -91,7 +91,7 @@ def payer_mix_shift_review(ctx: ArchetypeContext) -> ArchetypeReport:
     if ctx.medicaid_pct >= 0.30 and ctx.commercial_pct < 0.40:
         warnings.append(ArchetypeWarning(
             "payer_mix_shift", "high",
-            (f"Medicaid {ctx.medicaid_pct*100:.0f}% vs commercial "
+            (f"Medicaid {ctx.medicaid_pct*100:.1f}% vs commercial "
              f"{ctx.commercial_pct*100:.0f}% — shifting requires "
              "commercial payer leverage the asset may not have.")
         ))
@@ -130,7 +130,7 @@ def roll_up_review(ctx: ArchetypeContext) -> ArchetypeReport:
     if ctx.integrated_pct < 0.80:
         warnings.append(ArchetypeWarning(
             "roll_up", "medium",
-            (f"Only {ctx.integrated_pct*100:.0f}% integrated — "
+            (f"Only {ctx.integrated_pct*100:.1f}% integrated — "
              "pro-forma EBITDA is fiction until integration closes.")
         ))
     if ctx.volume_growth_pct < 0.03:
@@ -225,7 +225,7 @@ def cost_basis_compression_review(ctx: ArchetypeContext) -> ArchetypeReport:
     if ctx.labor_cost_pct_revenue < 0.40:
         warnings.append(ArchetypeWarning(
             "cost_basis_compression", "medium",
-            (f"Labor cost {ctx.labor_cost_pct_revenue*100:.0f}% of "
+            (f"Labor cost {ctx.labor_cost_pct_revenue*100:.1f}% of "
              "revenue — already lean; further cuts compromise quality.")
         ))
     note = ("Cost-basis compression works once; beware assuming "

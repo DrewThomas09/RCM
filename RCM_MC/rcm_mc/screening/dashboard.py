@@ -187,7 +187,7 @@ def render_screening_dashboard(
         ("Median uplift", _format_money(median_uplift),
          "EBITDA $ per deal"),
         ("High confidence", str(high_count),
-         f"of {n} ({(high_count/n*100 if n else 0):.0f}%)"),
+         f"of {n} ({(high_count/n*100 if n else 0):.1f}%)"),
         ("Top sector", _html.escape(top_sector),
          "by total uplift"),
     ):

@@ -121,7 +121,7 @@ def _scatter_svg(corpus: List[Dict[str, Any]], width: int = 440, height: int = 2
     for pct in (0.2, 0.4, 0.6, 0.8):
         gx = sx(pct)
         elements.append(f'<line x1="{gx}" y1="{margin["t"]}" x2="{gx}" y2="{margin["t"]+H}" stroke="#1e293b" stroke-width="0.8"/>')
-        elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{pct*100:.0f}%</text>')
+        elements.append(f'<text x="{gx}" y="{margin["t"]+H+12}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{pct*100:.1f}%</text>')
     for m in (1.0, 2.0, 3.0, 4.0):
         if m > max_moic: break
         gy = sy(m)
@@ -135,7 +135,7 @@ def _scatter_svg(corpus: List[Dict[str, Any]], width: int = 440, height: int = 2
         color = _moic_color(moic)
         elements.append(
             f'<circle cx="{cx}" cy="{cy}" r="3" fill="{color}" opacity="0.6">'
-            f'<title>{_html.escape(d.get("deal_name","")[:40])} · {comm*100:.0f}% comm · {moic:.2f}x</title>'
+            f'<title>{_html.escape(d.get("deal_name","")[:40])} · {comm*100:.1f}% comm · {moic:.2f}x</title>'
             f'</circle>'
         )
 
@@ -229,7 +229,7 @@ def render_payer_intel() -> str:
         mc = _moic_color(r.moic_p50)
         regime_rows.append(f"""<tr{stripe}>
   <td style="padding:5px 8px;font-size:10.5px;">{_html.escape(r.regime)}</td>
-  <td style="padding:5px 8px;font-family:var(--ck-mono);font-size:9.5px;color:#64748b;">{r.commercial_range[0]*100:.0f}–{min(100,r.commercial_range[1]*100):.0f}%</td>
+  <td style="padding:5px 8px;font-family:var(--ck-mono);font-size:9.5px;color:#64748b;">{r.commercial_range[0]*100:.0f}–{min(100,r.commercial_range[1]*100):.1f}%</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{r.n_deals}</td>
   <td style="padding:5px 8px;text-align:center;">{_regime_moic_bar(r.moic_p25, r.moic_p50, r.moic_p75)}</td>
   <td style="padding:5px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#64748b;">{r.moic_p25:.2f}x</td>

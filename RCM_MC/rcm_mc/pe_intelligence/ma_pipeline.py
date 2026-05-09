@@ -151,7 +151,7 @@ def analyze_pipeline(
         note = (f"Pipeline yields <1 close/year expected. Thesis assumes "
                 "more velocity — widen top of funnel.")
     elif capacity_ratio is not None and capacity_ratio > 0.40:
-        note = (f"Weighted-close EBITDA is {capacity_ratio*100:.0f}% of "
+        note = (f"Weighted-close EBITDA is {capacity_ratio*100:.1f}% of "
                 "platform — integration capacity check required.")
     else:
         note = (f"Pipeline healthy: {expected_closes_per_year:.1f} expected "

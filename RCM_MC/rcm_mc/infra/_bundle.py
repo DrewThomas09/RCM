@@ -144,7 +144,7 @@ def build_data_requests(
     lines.append("")
     lines.append(
         f"**Current evidence grade: {grade}** — {observed} of {total} model inputs observed from target data "
-        f"({(observed / total * 100.0) if total else 0:.0f}%). "
+        f"({(observed / total * 100.0) if total else 0:.1f}%). "
         f"Closing the gaps below improves defensibility and tightens the EBITDA range."
     )
     lines.append("")

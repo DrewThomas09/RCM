@@ -128,11 +128,11 @@ def _payer_phrase(payer_mix: Optional[Dict[str, float]]) -> str:
     medicaid = norm.get("medicaid", 0.0)
     commercial = norm.get("commercial", 0.0)
     if medicare >= 0.55:
-        return f"Medicare-heavy ({medicare*100:.0f}%)"
+        return f"Medicare-heavy ({medicare*100:.1f}%)"
     if medicaid >= 0.30:
-        return f"Medicaid-heavy ({medicaid*100:.0f}%)"
+        return f"Medicaid-heavy ({medicaid*100:.1f}%)"
     if commercial >= 0.45:
-        return f"commercial-heavy ({commercial*100:.0f}%)"
+        return f"commercial-heavy ({commercial*100:.1f}%)"
     return "balanced payer mix"
 
 

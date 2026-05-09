@@ -93,7 +93,7 @@ def _driver_medicare_heavy(
         haircut = 0.03 + (i.medicare_ffs_pct - 0.30) * 0.10
         return BearDriver(
             "medicare_rate_shock",
-            (f"Medicare FFS {i.medicare_ffs_pct*100:.0f}% of book. "
+            (f"Medicare FFS {i.medicare_ffs_pct*100:.1f}% of book. "
              "OBBBA / sequestration-style cut of 3-5% realizes "
              "mid-hold; no commercial leg to cross-subsidize."),
             haircut,
@@ -106,7 +106,7 @@ def _driver_oon(i: BearCaseInputs) -> Optional[BearDriver]:
         haircut = i.oon_revenue_share * 0.40
         return BearDriver(
             "nsa_oon_compression",
-            (f"OON {i.oon_revenue_share*100:.0f}% of revenue. "
+            (f"OON {i.oon_revenue_share*100:.1f}% of revenue. "
              "No Surprises Act framework drives 40% realized "
              "compression on OON billing."),
             haircut,
@@ -119,7 +119,7 @@ def _driver_top_payer(i: BearCaseInputs) -> Optional[BearDriver]:
         haircut = i.top_payer_share * 0.25
         return BearDriver(
             "top_payer_walk",
-            (f"Top payer is {i.top_payer_share*100:.0f}% of revenue. "
+            (f"Top payer is {i.top_payer_share*100:.1f}% of revenue. "
              "Bear case assumes contract terms deteriorate 25% of "
              "that book at next renewal."),
             haircut,
@@ -200,7 +200,7 @@ def _driver_pro_forma(i: BearCaseInputs) -> Optional[BearDriver]:
     if i.pro_forma_addbacks_pct > 0.15:
         return BearDriver(
             "pro_forma_fiction",
-            (f"Pro-forma add-backs {i.pro_forma_addbacks_pct*100:.0f}%. "
+            (f"Pro-forma add-backs {i.pro_forma_addbacks_pct*100:.1f}%. "
              "Bear assumes 50% of the pro-forma never materializes; "
              "exit buyer underwrites GAAP."),
             i.pro_forma_addbacks_pct * 0.5,
@@ -214,7 +214,7 @@ def _driver_labor_shock(
     if i.labor_cost_pct_revenue >= 0.50:
         return BearDriver(
             "labor_inflation",
-            (f"Labor is {i.labor_cost_pct_revenue*100:.0f}% of revenue. "
+            (f"Labor is {i.labor_cost_pct_revenue*100:.1f}% of revenue. "
              "Bear assumes 4-5% wage inflation + travel-nurse premium "
              "for 18 months."),
             0.06,
@@ -307,7 +307,7 @@ def generate_bear_case(inputs: BearCaseInputs) -> BearCaseReport:
 
     if bear_moic < 1.0:
         note = (f"Bear case loses money. Probability-weighted MOIC "
-                f"{pw_moic:.2f}x at {p_base*100:.0f}% base probability. "
+                f"{pw_moic:.2f}x at {p_base*100:.1f}% base probability. "
                 "If you're not confident the base case clears 70%+ "
                 "probability, pass.")
     elif bear_moic < 1.5:
@@ -359,7 +359,7 @@ def render_bear_case_markdown(r: BearCaseReport) -> str:
     ])
     for d in r.drivers:
         lines.append(f"- **{d.name}** "
-                     f"({d.ebitda_haircut_pct*100:.0f}% haircut): "
+                     f"({d.ebitda_haircut_pct*100:.1f}% haircut): "
                      f"{d.description}")
     lines.extend(["", "## Story", "", r.bear_story])
     return "\n".join(lines)

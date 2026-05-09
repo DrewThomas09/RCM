@@ -190,7 +190,7 @@ def reverse_engineer_seller_math(
 
     if premium > 0.15:
         note = (f"Seller ask ${inputs.seller_ask_price_m:,.0f}M is "
-                f"{premium*100:.0f}% above buyer's implied price "
+                f"{premium*100:.1f}% above buyer's implied price "
                 f"${buyer_implied_price:,.0f}M. To justify, seller "
                 f"must assume ONE of: "
                 f"{implied_exit_mult:.1f}x exit multiple, "
@@ -199,15 +199,15 @@ def reverse_engineer_seller_math(
                 "Partner: pick the weakest assumption and force "
                 "seller to defend it.")
     elif premium > 0.05:
-        note = (f"Seller ask {premium*100:.0f}% above buyer base. "
+        note = (f"Seller ask {premium*100:.1f}% above buyer base. "
                 "Standard negotiation range; pick one variable to "
                 "close.")
     elif premium >= 0:
-        note = (f"Seller ask {premium*100:.0f}% above buyer base. "
+        note = (f"Seller ask {premium*100:.1f}% above buyer base. "
                 "Within noise; proceed.")
     else:
         note = (f"Seller ask is BELOW buyer's implied price by "
-                f"{-premium*100:.0f}%. Either seller is motivated "
+                f"{-premium*100:.1f}%. Either seller is motivated "
                 "by non-price factors or we're missing downside the "
                 "seller sees. Diligence the gap.")
 

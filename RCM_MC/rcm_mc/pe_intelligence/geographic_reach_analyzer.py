@@ -130,20 +130,20 @@ def analyze_geography(footprints: List[StateFootprint]) -> GeoReachReport:
     if top_share >= 0.60:
         findings.append(GeoFinding(
             level="high",
-            message=(f"Top state ({top_state}) = {top_share*100:.0f}% of "
+            message=(f"Top state ({top_state}) = {top_share*100:.1f}% of "
                      "revenue — single-state risk is material."),
         ))
     elif top_share >= 0.40:
         findings.append(GeoFinding(
             level="medium",
-            message=(f"Top state ({top_state}) = {top_share*100:.0f}% of "
+            message=(f"Top state ({top_state}) = {top_share*100:.1f}% of "
                      "revenue — watch regulatory risk."),
         ))
 
     if cpom_pct >= 0.50:
         findings.append(GeoFinding(
             level="high",
-            message=(f"{cpom_pct*100:.0f}% of revenue is in CPOM-restrictive "
+            message=(f"{cpom_pct*100:.1f}% of revenue is in CPOM-restrictive "
                      "states — structural complexity for ownership model."),
         ))
 

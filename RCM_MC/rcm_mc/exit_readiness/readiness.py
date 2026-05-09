@@ -70,7 +70,7 @@ def identify_readiness_gaps(target: ExitTarget) -> List[ReadinessGap]:
             title="Reduce physician concentration",
             description=(
                 f"Top-3 physicians = "
-                f"{target.physician_concentration*100:.0f}% revenue. "
+                f"{target.physician_concentration*100:.1f}% revenue. "
                 f"Recruit 2-3 partners to dilute below 40% in 18 months."),
             months_to_remediate=18, severity="high"))
 

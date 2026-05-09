@@ -144,13 +144,13 @@ def score_forecast_reliability(
         reason = (
             f"Over {n} periods, management missed by an average "
             f"{avg_miss*100:.1f}% (worst miss {max_miss*100:.1f}%). "
-            f"Apply {haircut*100:.0f}% haircut to FY1 guidance."
+            f"Apply {haircut*100:.1f}% haircut to FY1 guidance."
         )
     elif score >= 40:
         reason = (
             f"Forecast reliability is weak — average miss "
             f"{avg_miss*100:.1f}% across {n} periods. Haircut "
-            f"{haircut*100:.0f}% of FY1 guidance and rebuild the "
+            f"{haircut*100:.1f}% of FY1 guidance and rebuild the "
             f"bottom-up model."
         )
     else:

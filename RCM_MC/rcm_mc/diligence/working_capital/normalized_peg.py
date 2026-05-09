@@ -69,7 +69,7 @@ def compute_normalized_peg(
     notes: List[str] = []
     if dispersion > 0.20:
         notes.append(
-            f"High dispersion ({dispersion*100:.0f}%) — peg should "
+            f"High dispersion ({dispersion*100:.1f}%) — peg should "
             "use widened bands in the SPA."
         )
     return PegResult(

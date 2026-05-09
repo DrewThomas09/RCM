@@ -112,7 +112,7 @@ def _grade_banner(grade: str, pass_rate: float, n_breaches: int, partner_summary
         f'color:{col};letter-spacing:0.04em;">{_html.escape(grade.upper())}</span>'
         f'<span style="font-family:var(--ck-mono);font-size:10px;'
         f'color:{P["text_faint"]};margin-left:auto;">'
-        f'{pass_rate*100:.0f}% downside pass-rate · '
+        f'{pass_rate*100:.1f}% downside pass-rate · '
         f'{n_breaches} covenant breach{"es" if n_breaches != 1 else ""}</span>'
         f'</div>'
         + (
@@ -247,7 +247,7 @@ def render_stress(
         body,
         title=f"Stress Grid · {label}",
         active_nav="/pe-intelligence",
-        subtitle=f"{label} · grade {grade} · {pass_rate*100:.0f}% downside pass · "
+        subtitle=f"{label} · grade {grade} · {pass_rate*100:.1f}% downside pass · "
                  f"{n_breaches} breach{'es' if n_breaches != 1 else ''}",
     )
 

@@ -332,7 +332,7 @@ def extract_bridge_audit_evidence(
             out.append(Evidence(
                 title=(
                     f"${total_gap/1e6:.1f}M aggregate bridge gap "
-                    f"({gap_pct*100:.0f}% of banker claim)"
+                    f"({gap_pct*100:.1f}% of banker claim)"
                 ),
                 source=EvidenceSource.BRIDGE_AUDIT,
                 theme=EvidenceTheme.OPERATIONAL,
@@ -456,7 +456,7 @@ def extract_autopsy_evidence(
             title=(
                 f"Signature matches {deal_name} "
                 f"({outcome_val.replace('_', ' ').lower()}) at "
-                f"{similarity*100:.0f}% similarity"
+                f"{similarity*100:.1f}% similarity"
             ),
             source=EvidenceSource.DEAL_AUTOPSY,
             theme=EvidenceTheme.PATTERN,
@@ -517,7 +517,7 @@ def extract_payer_stress_evidence(
             out.append(Evidence(
                 title=(
                     f"Top-1 payer {top_name} holds "
-                    f"{top1*100:.0f}% of NPR"
+                    f"{top1*100:.1f}% of NPR"
                 ),
                 source=EvidenceSource.PAYER_STRESS,
                 theme=EvidenceTheme.OPERATIONAL,
@@ -673,7 +673,7 @@ def extract_hcris_xray_evidence(
         if getattr(target, "is_medicare_heavy", False):
             out.append(Evidence(
                 title=(
-                    f"{target.medicare_day_pct*100:.0f}% Medicare "
+                    f"{target.medicare_day_pct*100:.1f}% Medicare "
                     f"day share per HCRIS"
                 ),
                 source=EvidenceSource.HCRIS_XRAY,
@@ -681,7 +681,7 @@ def extract_hcris_xray_evidence(
                 severity=EvidenceSeverity.MEDIUM,
                 narrative=(
                     f"HCRIS-filed payer-day mix shows "
-                    f"{target.medicare_day_pct*100:.0f}% Medicare "
+                    f"{target.medicare_day_pct*100:.1f}% Medicare "
                     f"concentration, exposing the target to every "
                     f"CMS rate-update cycle. Factor into "
                     f"Regulatory Calendar + Deal MC base case."

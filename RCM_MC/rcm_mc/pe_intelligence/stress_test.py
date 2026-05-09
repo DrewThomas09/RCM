@@ -163,13 +163,13 @@ def _partner_summary(grade: str, pass_rate: float, n_breaches: int) -> str:
         return ("Deal is robust across the downside grid — structurally sound "
                 "for most rate and volume shocks.")
     if grade == "B":
-        return (f"{pass_rate*100:.0f}% of downsides clear; "
+        return (f"{pass_rate*100:.1f}% of downsides clear; "
                 f"{n_breaches} covenant breach(es). Serviceable with tight monitoring.")
     if grade == "C":
         return (f"Downside pass rate {pass_rate*100:.0f}% — the deal is fragile "
                 "to shocks. Re-size debt or move to caveats.")
     if grade == "D":
-        return (f"Majority of downsides fail ({pass_rate*100:.0f}% pass). "
+        return (f"Majority of downsides fail ({pass_rate*100:.1f}% pass). "
                 "Re-underwrite the thesis before IC.")
     return ("Deal fails under most downside scenarios — do not bring to IC "
             "as modeled.")

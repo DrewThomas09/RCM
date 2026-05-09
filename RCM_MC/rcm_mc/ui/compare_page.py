@@ -299,7 +299,7 @@ def _render_comparison(
             bigger = left["name"] if l_paid > r_paid else right["name"]
             bits.append(
                 f"{html.escape(bigger)} collects "
-                f"{abs(paid_delta_pct):.0f}% more revenue"
+                f"{abs(paid_delta_pct):.1f}% more revenue"
             )
         if abs(oon_delta_pp) >= 2:
             more_oon = left["name"] if l_oon > r_oon else right["name"]

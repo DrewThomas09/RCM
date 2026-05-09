@@ -160,7 +160,7 @@ def _h_medicare_heavy_multiple_ceiling(ctx: HeuristicContext) -> Optional[Heuris
         severity=severity,
         category="VALUATION",
         finding=(
-            f"Medicare is {medicare * 100:.0f}% of payer mix and the model "
+            f"Medicare is {medicare * 100:.1f}% of payer mix and the model "
             f"exits at {ctx.exit_multiple:.2f}x. Medicare-heavy hospitals "
             f"have rarely traded above ~9.5x in recent comps."
         ),
@@ -261,7 +261,7 @@ def _h_multiple_expansion_carrying_return(ctx: HeuristicContext) -> Optional[Heu
         category="VALUATION",
         finding=(
             f"Entering at {ctx.entry_multiple:.2f}x, exiting at "
-            f"{ctx.exit_multiple:.2f}x — that's {expansion:.2f}x ({ratio*100:.0f}%) "
+            f"{ctx.exit_multiple:.2f}x — that's {expansion:.2f}x ({ratio*100:.1f}%) "
             "of expansion in the model."
         ),
         partner_voice=(
@@ -326,7 +326,7 @@ def _h_leverage_too_high_for_medicare(ctx: HeuristicContext) -> Optional[Heurist
         category="STRUCTURE",
         finding=(
             f"Net debt / EBITDA = {ctx.leverage_multiple:.2f}x at close with "
-            f"{govt*100:.0f}% government payers. A single rate cycle or "
+            f"{govt*100:.1f}% government payers. A single rate cycle or "
             "sequestration extension can wipe out covenant headroom."
         ),
         partner_voice=(
@@ -384,7 +384,7 @@ def _h_data_coverage_too_low(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         severity=severity,
         category="DATA",
         finding=(
-            f"Only {ctx.data_coverage_pct*100:.0f}% of the metric set is "
+            f"Only {ctx.data_coverage_pct*100:.1f}% of the metric set is "
             "populated from observed/extracted sources. The rest is "
             "predicted or benchmark — which is fine for triage, not for IC."
         ),
@@ -702,7 +702,7 @@ def _h_single_state_concentration(ctx: HeuristicContext) -> Optional[HeuristicHi
         severity=SEV_MEDIUM,
         category="PAYER",
         finding=(
-            f"{medicaid*100:.0f}% Medicaid mix in {ctx.state}. This state "
+            f"{medicaid*100:.1f}% Medicaid mix in {ctx.state}. This state "
             "has had multiple rate freezes or pending changes in recent "
             "years — base-case Medicaid rate growth should be 0% not +2-3%."
         ),

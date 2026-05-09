@@ -50,7 +50,7 @@ def render_pressure_page(
              "value": html.escape(packet.deal_name or selected_deal_id)},
             {"label": "Risk Flags", "value": str(risk_count),
              "tone": "negative" if risk_count else "neutral"},
-            {"label": "EBITDA Impact", "value": f"${impact/1e6:.1f}M"},
+            {"label": "EBITDA Impact", "value": f"${impact/1e6:.2f}M"},
         ])
 
         if packet.risk_flags:

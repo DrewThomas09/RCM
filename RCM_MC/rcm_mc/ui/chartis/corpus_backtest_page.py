@@ -306,7 +306,7 @@ def render_corpus_backtest(
         kpis = (
             ck_kpi_block("Corpus Deals", str(len(match_attempt)), "in backtest universe")
             + ck_kpi_block("Matched", str(len(matched)),
-                            f"{len(matched)/len(match_attempt)*100:.0f}% match rate" if match_attempt else "—")
+                            f"{len(matched)/len(match_attempt)*100:.1f}% match rate" if match_attempt else "—")
             + ck_kpi_block("Realized", str(self_summary["n_realized"]),
                             "with known MOIC")
             + ck_kpi_block("Vintages", str(self_summary["n_vintages"]),

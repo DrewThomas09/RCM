@@ -488,13 +488,13 @@ def audit_bridge(
         headline = (
             f"Banker's bridge is ${claimed/1e6:.1f}M; realistic "
             f"capture is ${realistic_med/1e6:.1f}M — "
-            f"${gap/1e6:.1f}M gap ({gap_pct*100:.0f}% of claim)."
+            f"${gap/1e6:.1f}M gap ({gap_pct*100:.1f}% of claim)."
         )
     elif gap > 0:
         headline = (
             f"Banker's bridge is ${claimed/1e6:.1f}M; realistic "
             f"capture is ${realistic_med/1e6:.1f}M — "
-            f"small ${gap/1e6:.1f}M gap ({gap_pct*100:.0f}% of claim) "
+            f"small ${gap/1e6:.1f}M gap ({gap_pct*100:.1f}% of claim) "
             f"inside acceptable tolerance."
         )
     elif gap < 0:

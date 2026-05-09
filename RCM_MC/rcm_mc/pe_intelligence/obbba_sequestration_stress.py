@@ -189,17 +189,17 @@ def stress_regulatory(
 
     if pct >= 0.30:
         note = (f"Combined regulatory stress is catastrophic "
-                f"(${combined:,.1f}M, {pct*100:.0f}% of base EBITDA). "
+                f"(${combined:,.1f}M, {pct*100:.1f}% of base EBITDA). "
                 "Thesis cannot tolerate even partial realization of "
                 "these; reduce leverage or pass.")
     elif pct >= 0.15:
         note = (f"Combined regulatory stress is material "
-                f"(${combined:,.1f}M, {pct*100:.0f}%). Partial "
+                f"(${combined:,.1f}M, {pct*100:.1f}%). Partial "
                 "realization is a real risk; model at 50% probability "
                 "and check covenant headroom.")
     elif pct >= 0.05:
         note = (f"Combined regulatory stress is manageable "
-                f"(${combined:,.1f}M, {pct*100:.0f}%). Monitor; build "
+                f"(${combined:,.1f}M, {pct*100:.1f}%). Monitor; build "
                 "into downside case.")
     else:
         note = ("Combined regulatory stress is immaterial. Deal is "

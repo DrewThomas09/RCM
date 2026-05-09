@@ -229,7 +229,7 @@ def render_hospital_profile(
             f'<tr><td style="font-weight:600;">{html.escape(comp.replace("_", " ").title())}</td>'
             f'<td class="num {heat}" style="font-weight:600;">{val:.0f}</td>'
             f'<td class="num">{max_val}</td>'
-            f'<td class="num">{pct:.0f}%</td>'
+            f'<td class="num">{pct:.1f}%</td>'
             f'<td style="width:100%;"><div class="cad-bar" style="width:100%;">'
             f'<div class="cad-bar-fill" style="width:{pct:.0f}%;background:{bar_fill};"></div>'
             f'</div></td></tr>'

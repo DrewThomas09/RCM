@@ -25,7 +25,7 @@ def _fm(val: float) -> str:
     if abs(val) >= 1e9:
         return f"${val/1e9:.2f}B"
     if abs(val) >= 1e6:
-        return f"${val/1e6:.1f}M"
+        return f"${val/1e6:.2f}M"
     if abs(val) >= 1e3:
         return f"${val/1e3:.0f}K"
     return f"${val:,.0f}"

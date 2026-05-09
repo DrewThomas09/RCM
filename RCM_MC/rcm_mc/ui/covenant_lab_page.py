@@ -584,7 +584,7 @@ def _equity_cure_panel(res: CovenantStressResult) -> str:
             f'color:{P["warning"]};">'
             f'${ec.p75_cure_usd/1e6:.2f}M</td>'
             f'<td style="padding:6px 10px;">'
-            f'{ec.breach_path_fraction*100:.0f}% of paths</td>'
+            f'{ec.breach_path_fraction*100:.1f}% of paths</td>'
             f'</tr>'
         )
     if not rows:

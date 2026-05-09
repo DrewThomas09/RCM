@@ -158,15 +158,15 @@ def analyze_customers(records: List[CustomerRecord],
         total_cross += cross
 
     if t1 >= high_concentration_threshold:
-        note = (f"Top customer is {t1*100:.0f}% of revenue — concentration "
+        note = (f"Top customer is {t1*100:.1f}% of revenue — concentration "
                 f"risk is material. HHI {hhi}. ${total_rar:,.1f}M "
                 "expected revenue at risk next 12mo.")
     elif t5 >= 0.50:
-        note = (f"Top-5 = {t5*100:.0f}% of revenue — moderately "
+        note = (f"Top-5 = {t5*100:.1f}% of revenue — moderately "
                 f"concentrated. Manage renewals carefully.")
     else:
         note = (f"Customer base reasonably diversified: top-1 "
-                f"{t1*100:.0f}%, top-10 {t10*100:.0f}%. HHI {hhi}.")
+                f"{t1*100:.1f}%, top-10 {t10*100:.1f}%. HHI {hhi}.")
 
     return ConcentrationAnalysis(
         top_1_pct=round(t1 * 100, 2),

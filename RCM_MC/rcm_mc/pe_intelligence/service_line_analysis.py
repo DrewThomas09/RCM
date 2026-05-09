@@ -83,7 +83,7 @@ def _score_line(line: ServiceLine) -> ServiceLineRisk:
     flags: List[str] = []
     if line.revenue_share >= 0.30:
         score += 0.40
-        flags.append(f"Single-line revenue share {line.revenue_share*100:.0f}%.")
+        flags.append(f"Single-line revenue share {line.revenue_share*100:.1f}%.")
     elif line.revenue_share >= 0.20:
         score += 0.20
         flags.append("Meaningful revenue contributor.")

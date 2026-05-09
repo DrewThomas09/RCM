@@ -314,7 +314,7 @@ def build_concession_ladder(
         )
     elif gap / max(0.01, inputs.buyer_base_offer_m) > 0.10:
         note = (
-            f"Ask ${gap:,.0f}M above base offer ({gap/inputs.buyer_base_offer_m*100:.0f}%). "
+            f"Ask ${gap:,.0f}M above base offer ({gap/inputs.buyer_base_offer_m*100:.1f}%). "
             "Standard ladder; use structure moves before price."
         )
     elif gap > 0:

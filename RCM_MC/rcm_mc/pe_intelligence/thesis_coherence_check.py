@@ -92,8 +92,8 @@ def check_coherence(pillars: List[ThesisPillar]) -> CoherenceReport:
             pair=("volume_growth", "margin_expansion"),
             severity="high",
             contradiction=(
-                f"{volume.claim_pct*100:.0f}% volume growth with "
-                f"{margin.claim_pct*100:.0f}% margin expansion and no "
+                f"{volume.claim_pct*100:.1f}% volume growth with "
+                f"{margin.claim_pct*100:.1f}% margin expansion and no "
                 "labor investment is internally inconsistent. Growth "
                 "needs capacity; capacity needs labor."),
             partner_rebuttal=(
@@ -108,7 +108,7 @@ def check_coherence(pillars: List[ThesisPillar]) -> CoherenceReport:
             pair=("price_growth", "contract_reality"),
             severity="medium",
             contradiction=(
-                f"{price.claim_pct*100:.0f}% price growth exceeds "
+                f"{price.claim_pct*100:.1f}% price growth exceeds "
                 "typical healthcare rate-card increases. Usually this "
                 "number hides mix-shift rather than true rate growth."),
             partner_rebuttal=(
@@ -123,7 +123,7 @@ def check_coherence(pillars: List[ThesisPillar]) -> CoherenceReport:
             pair=("volume_growth", "quality_improvement"),
             severity="medium",
             contradiction=(
-                f"Rapid volume growth ({volume.claim_pct*100:.0f}%) "
+                f"Rapid volume growth ({volume.claim_pct*100:.1f}%) "
                 "typically depresses quality metrics 18-24 months "
                 "during ramp. Both improving simultaneously is rare."),
             partner_rebuttal=(
@@ -173,7 +173,7 @@ def check_coherence(pillars: List[ThesisPillar]) -> CoherenceReport:
             pair=("labor_cost_reduction", "enabling_investment"),
             severity="high",
             contradiction=(
-                f"{abs(labor.claim_pct)*100:.0f}% labor cost reduction "
+                f"{abs(labor.claim_pct)*100:.1f}% labor cost reduction "
                 "without technology or process investment is "
                 "headcount cuts. In healthcare, that compresses "
                 "quality metrics and triggers clinician flight."),

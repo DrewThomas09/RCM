@@ -108,7 +108,7 @@ def trace_labor_cascade(
         description=(f"Agency share "
                      f"{inputs.agency_current_share*100:.1f}% → "
                      f"{inputs.agency_peak_share*100:.1f}% at "
-                     f"{inputs.agency_premium_pct*100:.0f}% premium"),
+                     f"{inputs.agency_premium_pct*100:.1f}% premium"),
         value=round(agency_incremental_m, 2), unit="$M",
         partner_note=(
             f"${agency_incremental_m:,.1f}M incremental agency cost. "

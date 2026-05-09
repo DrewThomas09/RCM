@@ -940,7 +940,7 @@ def _lever_cmi(
         confidence=_overall_confidence(profile, assumptions),
         explanation=(
             f"CMI {current:.2f}→{target:.2f}: uplift on DRG-exposed "
-            f"share ({effective_share*100:.0f}% of mix). Revenue "
+            f"share ({effective_share*100:.1f}% of mix). Revenue "
             f"recovery {rev:,.0f}/yr."
         ),
         provenance={"revenue_base": base_tag,
@@ -982,8 +982,8 @@ def _lever_bad_debt(
         explanation=(
             f"Bad debt {current}→{target}%: "
             f"amplifier {amplifier:.2f}× from self-pay "
-            f"({self_pay_share*100:.0f}%) and Medicaid "
-            f"({medicaid_share*100:.0f}%) exposure. "
+            f"({self_pay_share*100:.1f}%) and Medicaid "
+            f"({medicaid_share*100:.1f}%) exposure. "
             f"Recurring cost savings {cost_save:,.0f}/yr."
         ),
         provenance={"revenue_base": base_tag,
@@ -1033,7 +1033,7 @@ def _lever_narrative(
         profile.method_weights.items(), key=lambda t: t[1], reverse=True,
     )[:2]
     methods = ", ".join(
-        f"{m.value.replace('_', ' ')} ({w*100:.0f}%)"
+        f"{m.value.replace('_', ' ')} ({w*100:.1f}%)"
         for m, w in top_methods
     ) or "no reimbursement profile"
     return (
@@ -1413,13 +1413,13 @@ def explain_lever_value(
                 ReimbursementMethod.DRG_PROSPECTIVE, 0.0,
             )
             if drg_share >= 0.4:
-                tilt = f" Heavy DRG exposure ({drg_share*100:.0f}%) makes coding / acuity leverage material."
+                tilt = f" Heavy DRG exposure ({drg_share*100:.1f}%) makes coding / acuity leverage material."
         elif metric_key == "bad_debt":
             sp = 0.0
             if PayerClass.SELF_PAY in profile.payer_classes:
                 sp = profile.payer_classes[PayerClass.SELF_PAY].revenue_share
             if sp >= 0.2:
-                tilt = f" High self-pay exposure ({sp*100:.0f}%) amplifies bad-debt sensitivity."
+                tilt = f" High self-pay exposure ({sp*100:.1f}%) amplifies bad-debt sensitivity."
 
     weak = []
     if any(v == ProvenanceTag.INFERRED_FROM_PROFILE.value or

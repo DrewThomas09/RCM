@@ -69,7 +69,7 @@ def _rural_cah_high_irr(inputs: FaceInputs) -> Optional[ImplausibilityFinding]:
             and inputs.claimed_irr >= 0.22:
         return ImplausibilityFinding(
             name="rural_cah_irr_implausible", severity="high",
-            claim=(f"{inputs.claimed_irr*100:.0f}% IRR on "
+            claim=(f"{inputs.claimed_irr*100:.1f}% IRR on "
                    f"rural/CAH asset at ${inputs.revenue_m:,.0f}M NPR."),
             reality=("Rural critical-access hospitals are cost-based "
                      "reimbursed with essentially no commercial "
@@ -93,7 +93,7 @@ def _hospital_margin_out_of_range(
         if margin >= 0.20:
             return ImplausibilityFinding(
                 name="hospital_margin_impossible", severity="high",
-                claim=(f"{margin*100:.0f}% EBITDA margin on a hospital."),
+                claim=(f"{margin*100:.1f}% EBITDA margin on a hospital."),
                 reality=("Hospital EBITDA margins run 8-14% typical; "
                          "top-decile ~ 16%. 20%+ is either non-GAAP "
                          "aggression or a non-hospital asset mis-"
@@ -113,7 +113,7 @@ def _practice_margin_out_of_range(
         if margin >= 0.35:
             return ImplausibilityFinding(
                 name="practice_margin_impossible", severity="medium",
-                claim=(f"{margin*100:.0f}% margin on specialty practice."),
+                claim=(f"{margin*100:.1f}% margin on specialty practice."),
                 reality=("Specialty-practice margins 18-28% typical; "
                          "35%+ either includes non-operating income or "
                          "is a cash-pay concierge model."),
@@ -155,7 +155,7 @@ def _growth_out_of_range(
             and inputs.claimed_annual_growth >= 0.12:
         return ImplausibilityFinding(
             name="hospital_growth_implausible", severity="high",
-            claim=(f"{inputs.claimed_annual_growth*100:.0f}% annual "
+            claim=(f"{inputs.claimed_annual_growth*100:.1f}% annual "
                    "growth on a hospital book."),
             reality=("Hospital volume + price growth is 2-5% in "
                      "mature markets. 10%+ assumes M&A; strip it "
@@ -168,7 +168,7 @@ def _growth_out_of_range(
             and inputs.claimed_annual_growth >= 0.25:
         return ImplausibilityFinding(
             name="practice_growth_implausible", severity="medium",
-            claim=(f"{inputs.claimed_annual_growth*100:.0f}% annual "
+            claim=(f"{inputs.claimed_annual_growth*100:.1f}% annual "
                    "growth on specialty practice."),
             reality=("Specialty-practice organic growth rarely "
                      "exceeds 10-15% without M&A."),
@@ -188,7 +188,7 @@ def _medicare_heavy_with_high_margin(
             return ImplausibilityFinding(
                 name="government_heavy_high_margin_implausible",
                 severity="medium",
-                claim=(f"{margin*100:.0f}% margin with "
+                claim=(f"{margin*100:.1f}% margin with "
                        f"{(inputs.medicare_pct+inputs.medicaid_pct)*100:.0f}% "
                        "government payer mix."),
                 reality=("Government payers price at or below cost on "
@@ -211,7 +211,7 @@ def _ultra_small_deal_high_irr(
         return ImplausibilityFinding(
             name="small_deal_extraordinary_irr",
             severity="medium",
-            claim=(f"{inputs.claimed_irr*100:.0f}% IRR on "
+            claim=(f"{inputs.claimed_irr*100:.1f}% IRR on "
                    f"${inputs.ebitda_m:.1f}M EBITDA deal."),
             reality=("Sub-$20M EBITDA deals rarely generate 30%+ "
                      "IRR in institutional PE. Verify it isn't "

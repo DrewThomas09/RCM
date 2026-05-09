@@ -179,17 +179,17 @@ def map_medicaid_exposure(
         note = ("No Medicaid exposure logged — not a Medicaid-"
                 "sensitive asset.")
     elif high_risk_share >= 0.50:
-        note = (f"{high_risk_share*100:.0f}% of Medicaid exposure in "
+        note = (f"{high_risk_share*100:.1f}% of Medicaid exposure in "
                 "high-cut-risk or waiver-risk states. Underwrite "
                 f"with {total_impact:,.1f}M of state-risk bear drag.")
     elif high_risk_share >= 0.25:
         note = (f"Moderate concentration in risky states "
-                f"({high_risk_share*100:.0f}%); "
+                f"({high_risk_share*100:.1f}%); "
                 f"${total_impact:,.1f}M bear drag. Monitor state "
                 "budget cycles.")
     elif high_risk_share > 0:
         note = (f"Modest state risk "
-                f"({high_risk_share*100:.0f}%); "
+                f"({high_risk_share*100:.1f}%); "
                 f"${total_impact:,.1f}M bear drag. Manageable.")
     else:
         note = ("Medicaid exposure is concentrated in low-risk "

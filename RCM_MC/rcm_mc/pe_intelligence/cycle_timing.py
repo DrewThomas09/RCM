@@ -175,7 +175,7 @@ def classify_cycle(inputs: CycleInputs) -> CycleResult:
     }[phase]
 
     note = (
-        f"Current cycle: {phase} (confidence {confidence*100:.0f}%). "
+        f"Current cycle: {phase} (confidence {confidence*100:.1f}%). "
         f"Entry view: {'favorable' if phase in (PHASE_EARLY_EXPANSION, PHASE_CONTRACTION) else 'careful'}. "
         f"Exit view: {'attractive' if phase in (PHASE_MID_EXPANSION, PHASE_PEAK) else 'avoid'}.")
 

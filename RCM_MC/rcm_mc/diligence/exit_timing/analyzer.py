@@ -222,7 +222,7 @@ def _recommend(
         f"{top['adj_moic']:.2f}x, IRR {top['adj_irr']*100:.1f}%, "
         f"probability-weighted proceeds "
         f"${top['prob_weighted_proceeds']:,.0f} "
-        f"(close certainty {buyer.close_certainty*100:.0f}%, "
+        f"(close certainty {buyer.close_certainty*100:.1f}%, "
         f"time-to-close {buyer.time_to_close_months:.0f} months)."
     )
     if below_hurdle_flag:

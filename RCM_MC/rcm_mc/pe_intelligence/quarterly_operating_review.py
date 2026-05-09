@@ -188,7 +188,7 @@ def build_qor_agenda(ctx: QoRContext) -> QoRAgenda:
 
     if ctx.ebitda_vs_plan_pct < -0.10:
         note = (f"Q{ctx.hold_quarter}: EBITDA "
-                f"{ctx.ebitda_vs_plan_pct*100:.0f}% below plan. This "
+                f"{ctx.ebitda_vs_plan_pct*100:.1f}% below plan. This "
                 "QoR is an intervention, not a review. Extend "
                 "numbers block if needed.")
     elif ctx.lever_behind_count >= 2 or ctx.has_open_ceo_hire:

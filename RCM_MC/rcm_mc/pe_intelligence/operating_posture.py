@@ -144,12 +144,12 @@ def classify_posture(inputs: PostureInputs) -> PostureResult:
 
     # Resilient core: high downside, low upside.
     if dp >= 0.85 and uc is not None and uc < 0.50:
-        signals.append(f"Downside pass {dp*100:.0f}%, upside {uc*100:.0f}%")
+        signals.append(f"Downside pass {dp*100:.1f}%, upside {uc*100:.0f}%")
         return _flag(POSTURE_RESILIENT_CORE, 0.80, signals)
 
     # Growth optional: low downside, high upside.
     if dp < 0.60 and uc is not None and uc >= 0.70:
-        signals.append(f"Downside pass {dp*100:.0f}%, upside {uc*100:.0f}%")
+        signals.append(f"Downside pass {dp*100:.1f}%, upside {uc*100:.0f}%")
         return _flag(POSTURE_GROWTH_OPTIONAL, 0.75, signals)
 
     # Default: balanced

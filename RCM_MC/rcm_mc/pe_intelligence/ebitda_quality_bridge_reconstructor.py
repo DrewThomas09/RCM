@@ -215,7 +215,7 @@ def build_ebitda_quality_bridge(
         note = (
             f"Partner run-rate ${partner_run_rate:,.1f}M vs. "
             f"seller stated ${inputs.stated_ebitda_m:,.1f}M "
-            f"({haircut_pct*100:.0f}% haircut, "
+            f"({haircut_pct*100:.1f}% haircut, "
             f"${ev_delta:,.1f}M of EV impact at entry "
             f"multiple {inputs.entry_multiple:.1f}x). "
             "Partner: do not underwrite off stated EBITDA."
@@ -225,7 +225,7 @@ def build_ebitda_quality_bridge(
             f"Material haircut: stated "
             f"${inputs.stated_ebitda_m:,.1f}M → run-rate "
             f"${partner_run_rate:,.1f}M "
-            f"({haircut_pct*100:.0f}%). Biggest line: "
+            f"({haircut_pct*100:.1f}%). Biggest line: "
             f"{biggest}. Price at run-rate × exit mult."
         )
     elif haircut_pct > 0:

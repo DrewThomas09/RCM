@@ -38,7 +38,7 @@ def _r_physician_turnover(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         title="Physician retention below peer floor",
         severity=sev,
         category="OPERATIONS",
-        finding=(f"Physician retention at {pct*100:.0f}%. Below 85% signals "
+        finding=(f"Physician retention at {pct*100:.1f}%. Below 85% signals "
                  "burnout or cultural drift; below 75% is a pipeline crisis."),
         partner_voice=("Physicians run the economics. If retention is "
                        "below 85%, the operating thesis has no chassis."),
@@ -67,7 +67,7 @@ def _r_rn_shortage(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         title="RN vacancy rate above peer",
         severity=sev,
         category="OPERATIONS",
-        finding=(f"{pct*100:.0f}% of RN positions unfilled. Above 15% "
+        finding=(f"{pct*100:.1f}% of RN positions unfilled. Above 15% "
                  "means contract-labor dependency and volume-capacity risk."),
         partner_voice=("Nursing shortages aren't a hiring problem — they're "
                        "a volume and quality problem. Price the contract-"
@@ -177,7 +177,7 @@ def _r_lease_cluster(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         title="Lease-expiration cluster inside hold",
         severity=sev,
         category="STRUCTURE",
-        finding=(f"{pct*100:.0f}% of leased sites expire during the hold. "
+        finding=(f"{pct*100:.1f}% of leased sites expire during the hold. "
                  "Simultaneous renewals compress negotiation leverage."),
         partner_voice=("Renewing 30% of leases at once lets landlords set "
                        "the price. Stagger renewals or tie down terms now."),

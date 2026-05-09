@@ -46,7 +46,7 @@ def _default_thesis(
     if growth_rate >= 0.10:
         out.append(
             f"Above-market organic growth — "
-            f"{growth_rate*100:.0f}% vs sector typical 5-7%.")
+            f"{growth_rate*100:.1f}% vs sector typical 5-7%.")
     if ebitda_mm >= 25:
         out.append(
             f"Platform-scale EBITDA (${ebitda_mm:.0f}M) opens "

@@ -60,14 +60,14 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
         f'<h2>LP / GP Split</h2>'
         f'<div style="display:flex;gap:4px;height:32px;border-radius:6px;overflow:hidden;margin-bottom:8px;">'
         f'<div style="width:{lp_pct:.0f}%;background:{PALETTE["brand_accent"]};" '
-        f'title="LP: ${lp_total/1e6:.1f}M"></div>'
+        f'title="LP: ${lp_total/1e6:.2f}M"></div>'
         f'<div style="width:{gp_pct:.0f}%;background:{PALETTE["positive"]};" '
-        f'title="GP: ${gp_total/1e6:.1f}M"></div></div>'
+        f'title="GP: ${gp_total/1e6:.2f}M"></div></div>'
         f'<div style="display:flex;gap:24px;font-size:13px;">'
         f'<div><span style="color:{PALETTE["brand_accent"]};">&#9632;</span> '
-        f'<strong>LP:</strong> ${lp_total/1e6:.1f}M ({lp_moic:.2f}x MOIC, {lp_irr:.1%} IRR)</div>'
+        f'<strong>LP:</strong> ${lp_total/1e6:.2f}M ({lp_moic:.2f}x MOIC, {lp_irr:.1%} IRR)</div>'
         f'<div><span style="color:{PALETTE["positive"]};">&#9632;</span> '
-        f'<strong>GP:</strong> ${gp_total/1e6:.1f}M ({gp_moic:.2f}x MOIC)</div>'
+        f'<strong>GP:</strong> ${gp_total/1e6:.2f}M ({gp_moic:.2f}x MOIC)</div>'
         f'</div></div>'
     )
 
@@ -85,8 +85,8 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
             f'<td style="font-weight:500;">{tier_name}</td>'
             f'<td class="num">{hurdle:.1%}</td>'
             f'<td class="num">{carry:.0%}</td>'
-            f'<td class="num">${float(lp_amt)/1e6:.1f}M</td>'
-            f'<td class="num">${float(gp_amt)/1e6:.1f}M</td>'
+            f'<td class="num">${float(lp_amt)/1e6:.2f}M</td>'
+            f'<td class="num">${float(gp_amt)/1e6:.2f}M</td>'
             f'</tr>'
         )
 
@@ -114,7 +114,7 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
         f'<div class="cad-card" style="border-left:3px solid {PALETTE["brand_accent"]};">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>LPs receive {lp_share:.0f}% of total distributions (${lp_total/1e6:.1f}M) '
+        f'<p>LPs receive {lp_share:.1f}% of total distributions (${lp_total/1e6:.2f}M) '
         f'at a {lp_moic:.2f}x return on invested capital. '
         f'{"The GP carry is well-earned — strong returns." if gross_irr > 0.20 else "Consider negotiating carry terms given the return profile."}</p>'
         f'<p style="margin-top:6px;"><strong>Context:</strong> See the '

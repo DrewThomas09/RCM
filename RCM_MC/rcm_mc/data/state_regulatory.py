@@ -387,9 +387,9 @@ def _narrative_for(a: RegulatoryAssessment) -> str:
             "did not expand Medicaid"
         )
         parts.append(
-            f"The state {expansion} (FMAP {payer.medicaid_fmap_pct:.0f}%, "
+            f"The state {expansion} (FMAP {payer.medicaid_fmap_pct:.1f}%, "
             f"Medicaid pays "
-            f"{payer.medicaid_rate_as_pct_of_medicare * 100:.0f}% of "
+            f"{payer.medicaid_rate_as_pct_of_medicare * 100:.1f}% of "
             f"Medicare rates)."
         )
         if payer.commercial_market_hhi == "HIGH":

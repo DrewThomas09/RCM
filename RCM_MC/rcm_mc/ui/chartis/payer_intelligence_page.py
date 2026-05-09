@@ -105,7 +105,7 @@ def _regime_row(rs: Any) -> str:
     if isinstance(commercial_range, (list, tuple)) and len(commercial_range) == 2:
         lo, hi = commercial_range
         try:
-            range_str = f"{float(lo)*100:.0f}-{float(hi)*100:.0f}% commercial"
+            range_str = f"{float(lo)*100:.0f}-{float(hi)*100:.1f}% commercial"
         except (TypeError, ValueError):
             range_str = "—"
     else:

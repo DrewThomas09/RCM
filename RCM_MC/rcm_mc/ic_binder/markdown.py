@@ -84,7 +84,7 @@ def _referral_section(payload: Any) -> str:
         top = risk["referrers"][0]
         out.append(
             f"- Top referrer NPI {top['npi']} drives "
-            f"{top['share_of_inbound']*100:.0f}% of platform inbound")
+            f"{top['share_of_inbound']*100:.1f}% of platform inbound")
     return "\n".join(out)
 
 

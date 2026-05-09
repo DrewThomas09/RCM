@@ -726,7 +726,7 @@ def _render_bridge_lever(lever: CounterfactualLever) -> str:
         f'    <div class="cf-bridge-stat">'
         f'      <div class="cf-stat-label">Realization prob.</div>'
         f'      <div style="font-size:15px;color:{P["text"]};font-weight:500;">'
-        f'{lever.realization_probability*100:.0f}%</div>'
+        f'{lever.realization_probability*100:.1f}%</div>'
         f'    </div>'
         f'    <div class="cf-bridge-stat">'
         f'      <div class="cf-stat-label">Confidence</div>'

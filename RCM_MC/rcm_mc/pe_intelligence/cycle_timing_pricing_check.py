@@ -107,7 +107,7 @@ def check_cycle_pricing(inputs: CyclePricingInputs) -> CyclePricingReport:
             f"**Peak × peak trap**: entry multiple "
             f"{inputs.entry_multiple:.1f}x is {mult_premium*100:.0f}% "
             f"above cycle average; entry EBITDA is "
-            f"{ebitda_premium*100:.0f}% above trailing average. "
+            f"{ebitda_premium*100:.1f}% above trailing average. "
             "Both at peak compound. Haircut entry multiple by "
             f"~{haircut:.2f}x or pass.")
     elif is_peak_multiple:
@@ -118,7 +118,7 @@ def check_cycle_pricing(inputs: CyclePricingInputs) -> CyclePricingReport:
             "multiple assumption.")
     elif is_peak_ebitda:
         note = (
-            f"EBITDA appears peak ({ebitda_premium*100:.0f}% above "
+            f"EBITDA appears peak ({ebitda_premium*100:.1f}% above "
             "trailing avg) but multiple is normal. Verify that the "
             "recent EBITDA lift is durable, not cyclical.")
     else:

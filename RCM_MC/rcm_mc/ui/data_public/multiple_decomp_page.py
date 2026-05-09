@@ -57,7 +57,7 @@ def _waterfall_svg(components: List[Any], total: float, width: int = 640, height
             f'<text x="{bx + bar_w + 6}" y="{y + bar_h//2 + 5}" '
             f'font-size="11" fill="{color}" '
             f'font-family="JetBrains Mono,monospace" font-variant-numeric="tabular-nums">'
-            f'{vstr} ({abs(c.pct_of_total):.0f}%)</text>'
+            f'{vstr} ({abs(c.pct_of_total):.1f}%)</text>'
         )
         lines.append(
             f'<text x="{bx - 4}" y="{y + bar_h//2 + 5}" '

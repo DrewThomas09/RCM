@@ -164,7 +164,7 @@ def stress_volume_down(inputs: StressInputs, pct: float = 0.07) -> StressResult:
     )
     return StressResult(
         scenario="volume_down",
-        description=f"Volume shock −{pct*100:.0f}% revenue",
+        description=f"Volume shock −{pct*100:.1f}% revenue",
         base_ebitda=inputs.base_ebitda,
         shocked_ebitda=shocked,
         ebitda_delta_pct=_delta_pct(inputs.base_ebitda, shocked),
@@ -229,7 +229,7 @@ def stress_lever_slip(inputs: StressInputs, realization: float = 0.60) -> Stress
     if inputs.base_ebitda is None or inputs.lever_contribution is None:
         return StressResult(
             scenario="lever_slip",
-            description=f"Levers deliver {realization*100:.0f}% of plan",
+            description=f"Levers deliver {realization*100:.1f}% of plan",
             partner_note="Cannot run — base EBITDA or lever contribution missing.",
         )
     lost = inputs.lever_contribution * (1.0 - realization)
@@ -245,7 +245,7 @@ def stress_lever_slip(inputs: StressInputs, realization: float = 0.60) -> Stress
     )
     return StressResult(
         scenario="lever_slip",
-        description=f"Lever realization at {realization*100:.0f}% of plan",
+        description=f"Lever realization at {realization*100:.1f}% of plan",
         base_ebitda=base_target,
         shocked_ebitda=shocked,
         ebitda_delta_pct=_delta_pct(base_target, shocked),

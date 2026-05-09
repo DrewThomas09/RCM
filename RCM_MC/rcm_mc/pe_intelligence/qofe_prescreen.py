@@ -215,12 +215,12 @@ def prescreen_qofe(
     if haircut_pct >= 0.20:
         note = (f"Seller's ${inputs.stated_ebitda_m:,.1f}M EBITDA "
                 f"loses ${total_haircut:,.1f}M at QofE "
-                f"({haircut_pct*100:.0f}% of stated). Partner: "
+                f"({haircut_pct*100:.1f}% of stated). Partner: "
                 "re-price from adjusted EBITDA or pass. Do not "
                 "underwrite off the headline.")
     elif haircut_pct >= 0.10:
         note = (f"Expected QofE haircut ${total_haircut:,.1f}M "
-                f"({haircut_pct*100:.0f}%). Partner: model off "
+                f"({haircut_pct*100:.1f}%). Partner: model off "
                 f"${qofe_adj_ebitda:,.1f}M, not stated. Exit "
                 "multiple × adjusted EBITDA.")
     elif total_haircut > 0:

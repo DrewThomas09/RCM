@@ -1276,8 +1276,8 @@ def calibration_badge(
     return (
         f'<div class="calibration-badge tone-{tone}">'
         f'<span class="cb-label">Conformal coverage:</span> '
-        f'<span class="cb-value">{cov*100:.0f}%</span>'
-        f' <span class="cb-target">(target {tgt*100:.0f}%)</span>'
+        f'<span class="cb-value">{cov*100:.1f}%</span>'
+        f' <span class="cb-target">(target {tgt*100:.1f}%)</span>'
         f'<span class="cb-detail">{_html.escape(n_str)}</span>'
         '</div>'
     )
@@ -1317,7 +1317,7 @@ def variance_tornado(decomposition: dict) -> str:
             '<span class="vt-track">'
             f'<span class="vt-bar" style="width:{bar_w}%;"></span>'
             '</span>'
-            f'<span class="vt-pct">{pct:.0f}%</span>'
+            f'<span class="vt-pct">{pct:.1f}%</span>'
             '</div>'
         )
     return (
@@ -1569,7 +1569,7 @@ def platform_health_footer(metrics: Optional[dict] = None) -> str:
         try:
             v = float(metrics["packet_cache_hit"])
             parts.append(
-                f'<span class="ph-item">packet cache {v*100:.0f}% hit</span>'
+                f'<span class="ph-item">packet cache {v*100:.1f}% hit</span>'
             )
         except (TypeError, ValueError):
             pass
@@ -1578,7 +1578,7 @@ def platform_health_footer(metrics: Optional[dict] = None) -> str:
             v = float(metrics["mc_coverage"])
             parts.append(
                 f'<span class="ph-item">MC calibration coverage '
-                f'{v*100:.0f}%</span>'
+                f'{v*100:.1f}%</span>'
             )
         except (TypeError, ValueError):
             pass

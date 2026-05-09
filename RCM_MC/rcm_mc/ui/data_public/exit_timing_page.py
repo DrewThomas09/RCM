@@ -436,7 +436,7 @@ def _vintage_panel(vintage_data: Dict[int, Dict[str, Any]]) -> str:
         f'<line x1="{pad_l}" y1="{pad_t+ph}" x2="{pad_l+pw}" y2="{pad_t+ph}" stroke="#334155" stroke-width="1"/>'
     )
     y_ticks = "".join(
-        f'<text x="{pad_l-4}" y="{pad_t+ph-pv*ph+3:.1f}" font-size="7.5" fill="#64748b" text-anchor="end">{pv*100:.0f}%</text>'
+        f'<text x="{pad_l-4}" y="{pad_t+ph-pv*ph+3:.1f}" font-size="7.5" fill="#64748b" text-anchor="end">{pv*100:.1f}%</text>'
         for pv in [0.25, 0.50, 0.75, 1.0]
     )
 

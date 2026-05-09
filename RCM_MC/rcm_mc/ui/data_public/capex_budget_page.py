@@ -37,7 +37,7 @@ def _projects_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:300px">{_html.escape(p.description)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${p.budget_m:.1f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${p.spent_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{p.percent_complete * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{p.percent_complete * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(p.planned_finish)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{p.roi_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{p.payback_months}</td>',
@@ -206,7 +206,7 @@ def render_capex_budget(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Capex Planning / Capital Budget Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">${r.total_annual_budget_m:,.1f}M annual budget · ${r.total_ytd_spent_m:,.1f}M deployed ({pct_deployed:.0f}%) · {r.total_projects} projects · weighted {r.weighted_avg_roi_pct * 100:.1f}% ROI · {r.portfolio_capex_ratio_pct * 100:.2f}% avg capex / revenue — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">${r.total_annual_budget_m:,.1f}M annual budget · ${r.total_ytd_spent_m:,.1f}M deployed ({pct_deployed:.1f}%) · {r.total_projects} projects · weighted {r.weighted_avg_roi_pct * 100:.1f}% ROI · {r.portfolio_capex_ratio_pct * 100:.2f}% avg capex / revenue — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Active Capex Projects</div>{p_tbl}</div>
@@ -216,7 +216,7 @@ def render_capex_budget(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Technology Investment by Category</div>{t_tbl}</div>
   <div style="{cell}"><div style="{h3}">De Novo Construction Pipeline</div>{dn_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Capex Portfolio Summary:</strong> ${r.total_annual_budget_m:,.1f}M annual capex budget — ${r.total_ytd_spent_m:,.1f}M deployed YTD ({pct_deployed:.0f}%) across {r.total_projects} projects at weighted {r.weighted_avg_roi_pct * 100:.1f}% ROI.
+    <strong style="color:{text}">Capex Portfolio Summary:</strong> ${r.total_annual_budget_m:,.1f}M annual capex budget — ${r.total_ytd_spent_m:,.1f}M deployed YTD ({pct_deployed:.1f}%) across {r.total_projects} projects at weighted {r.weighted_avg_roi_pct * 100:.1f}% ROI.
     Portfolio capex intensity {r.portfolio_capex_ratio_pct * 100:.2f}% of revenue — tracks healthcare services benchmark (5-6%). Consumer-facing specialties (fertility 9.5%, eye care 8.2%) highest; home health (2.2%) and specialty pharma (2.5%) lowest.
     Highest-ROI categories: Clinical AI deployment (55%, 12-month payback), Route optimization (55%, 15 mo), AI platform expansion, Mohs + Laser upgrade (38%), Platform modernization.
     De novo pipeline: 10 projects, ${denovo_budget:.1f}M budget, projected ${denovo_yr1_rev:.1f}M Year-1 revenue; Atlanta + Nashville GI ASCs (~$60M combined) deliver fastest payback (24 mo).

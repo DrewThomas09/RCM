@@ -99,7 +99,7 @@ def check_sga_intensity(
         metric="sga_pct_of_revenue", observed=sga_pct, verdict=verdict,
         band=band,
         rationale=f"{pct} SG&A intensity vs {band.regime} peer "
-                  f"{band.low*100:.0f}-{band.high*100:.0f}%.",
+                  f"{band.low*100:.0f}-{band.high*100:.1f}%.",
         partner_note=note_map.get(verdict, ""),
     )
 
@@ -136,7 +136,7 @@ def check_interest_to_ebitda(
         metric="interest_to_ebitda", observed=ratio, verdict=verdict,
         band=_INTEREST_BAND,
         rationale=f"{pct} of EBITDA goes to interest vs peer "
-                  f"{_INTEREST_BAND.low*100:.0f}-{_INTEREST_BAND.high*100:.0f}%.",
+                  f"{_INTEREST_BAND.low*100:.0f}-{_INTEREST_BAND.high*100:.1f}%.",
         partner_note=note_map.get(verdict, ""),
     )
 
@@ -262,7 +262,7 @@ def check_outpatient_share(
         metric="outpatient_revenue_share", observed=share, verdict=verdict,
         band=band,
         rationale=f"Outpatient share {pct} vs {band.regime} peer "
-                  f"{band.low*100:.0f}-{band.high*100:.0f}%.",
+                  f"{band.low*100:.0f}-{band.high*100:.1f}%.",
         partner_note=note_map.get(verdict, ""),
     )
 

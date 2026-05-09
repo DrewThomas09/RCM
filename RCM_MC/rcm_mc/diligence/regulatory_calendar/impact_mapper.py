@@ -375,7 +375,7 @@ def map_event_to_drivers(
         narrative = (
             f"{event.title} {('kills' if verdict == ImpactVerdict.KILLED else 'damages')} "
             f"{driver.label.lower()} by "
-            f"{impairment*100:.0f}% of its claimed lift "
+            f"{impairment*100:.1f}% of its claimed lift "
             f"(residual {residual*100:.1f} pp EBITDA margin)."
         )
 

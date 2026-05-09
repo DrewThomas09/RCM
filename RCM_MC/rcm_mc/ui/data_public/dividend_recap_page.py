@@ -41,7 +41,7 @@ def _scenarios_svg(scenarios) -> str:
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{color}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{s.execution_risk}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 38}" fill="{text_faint}" font-size="9" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{s.pct_of_invested_returned * 100:.0f}% ret</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{s.pct_of_invested_returned * 100:.1f}% ret</text>'
         )
 
     return (
@@ -127,7 +127,7 @@ def _scenarios_table(scenarios, recommended) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dscr_c}">{s.post_recap_dscr:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{head_c}">{s.covenant_headroom_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{s.moic_on_original_equity:.2f}x</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{s.pct_of_invested_returned * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{s.pct_of_invested_returned * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{s.execution_risk}</span></td>',
         ]
         trs.append(f'<tr style="{row_style}">{"".join(cells)}</tr>')
@@ -359,7 +359,7 @@ def render_dividend_recap(params: dict = None) -> str:
     At year {current_yr} with EBITDA up to ${r.current_ebitda_mm:,.1f}M (from ${r.entry_ebitda_mm:,.1f}M) and
     leverage down to {r.current_leverage:.1f}x (from {r.entry_leverage:.1f}x), recommended structure is
     <strong style="color:{text}">{_html.escape(r.recommended_scenario)}</strong>.
-    Potential net dividend: ${r.max_recap_dividend_mm:,.1f}M ({r.cash_multiple_from_recap * 100:.0f}% of invested equity).
+    Potential net dividend: ${r.max_recap_dividend_mm:,.1f}M ({r.cash_multiple_from_recap * 100:.1f}% of invested equity).
     Action lifts LP IRR ~400 bps without materially impacting total MOIC.
   </div>
 

@@ -4331,7 +4331,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             wr = outcome.get("win_rate_2_5x")
             if wr is not None:
                 lines.append(
-                    f"- Win rate (≥2.5x): {wr*100:.0f}% of "
+                    f"- Win rate (≥2.5x): {wr*100:.1f}% of "
                     f"comparables cleared the bar"
                 )
             lines.append("")

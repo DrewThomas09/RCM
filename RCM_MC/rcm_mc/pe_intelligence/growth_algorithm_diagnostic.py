@@ -126,7 +126,7 @@ def diagnose_growth(inputs: GrowthInputs) -> GrowthDiagnostic:
                 "masking core-business decline. Material diligence concern.")
     elif acquisition_pct > 0 and acquisition_pct / max(0.001, total_growth) >= 0.60:
         note = (f"{total_growth*100:.1f}% total growth but "
-                f"{acquisition_pct/total_growth*100:.0f}% is acquisition-"
+                f"{acquisition_pct/total_growth*100:.1f}% is acquisition-"
                 "driven. Organic story is weak — underwrite the roll-up "
                 "engine, not the asset.")
     elif organic_pct >= 0.10 and inputs.volume_growth_pct >= 0.05:

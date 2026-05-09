@@ -112,9 +112,9 @@ def _classify_addback(addback: EBITDAAddback) -> AddbackFinding:
         cls, hc = base_class, base_haircut
 
     note_map = {
-        "defensible": f"Take at {(1 - hc)*100:.0f}% of stated.",
-        "aggressive": f"Defensible with evidence; haircut to {(1 - hc)*100:.0f}%.",
-        "phantom": f"Do not credit beyond {(1 - hc)*100:.0f}% without hard evidence.",
+        "defensible": f"Take at {(1 - hc)*100:.1f}% of stated.",
+        "aggressive": f"Defensible with evidence; haircut to {(1 - hc)*100:.1f}%.",
+        "phantom": f"Do not credit beyond {(1 - hc)*100:.1f}% without hard evidence.",
     }
     return AddbackFinding(
         addback=addback,
@@ -152,7 +152,7 @@ def assess_ebitda_quality(
                 "reason.")
     elif ratio < 0.30 and phantom_share < 0.50:
         verdict = "low"
-        note = (f"Low EBITDA quality — add-backs are {ratio*100:.0f}% of "
+        note = (f"Low EBITDA quality — add-backs are {ratio*100:.1f}% of "
                 "reported; haircut before pricing.")
     else:
         verdict = "implausible"

@@ -85,14 +85,14 @@ def _category_commentary(cat: str, miss_rate: float,
                           avg_impact: float) -> str:
     # Severity reads.
     if miss_rate >= 0.30:
-        rate_part = (f"{miss_rate*100:.0f}% miss rate is a systematic "
+        rate_part = (f"{miss_rate*100:.1f}% miss rate is a systematic "
                      f"{cat} gap in the diligence template — fix "
                      "before the next deal in this subsector.")
     elif miss_rate >= 0.15:
-        rate_part = (f"{miss_rate*100:.0f}% miss rate on {cat} is "
+        rate_part = (f"{miss_rate*100:.1f}% miss rate on {cat} is "
                      "above tolerance; review template.")
     else:
-        rate_part = f"{miss_rate*100:.0f}% miss rate is within norms."
+        rate_part = f"{miss_rate*100:.1f}% miss rate is within norms."
 
     if avg_impact < -2.0:
         dollar_part = (f" When missed, {cat} items average "
@@ -142,16 +142,16 @@ def compute_miss_rate(surprises: List[Surprise]) -> MissRateReport:
     if total == 0:
         note = "No surprise log entries yet."
     elif overall_miss >= 0.25:
-        note = (f"Overall miss rate {overall_miss*100:.0f}% across "
+        note = (f"Overall miss rate {overall_miss*100:.1f}% across "
                 f"{total} items — the diligence template is "
                 f"systematically weak in {worst}. ${-overall_impact:,.1f}M "
                 "of bled EBITDA across the missed items.")
     elif overall_miss >= 0.15:
-        note = (f"Miss rate {overall_miss*100:.0f}% is above "
+        note = (f"Miss rate {overall_miss*100:.1f}% is above "
                 f"tolerance; worst category is {worst}. Review "
                 "template after next close.")
     else:
-        note = (f"Miss rate {overall_miss*100:.0f}% is within partner "
+        note = (f"Miss rate {overall_miss*100:.1f}% is within partner "
                 f"tolerance across {total} items.")
 
     return MissRateReport(

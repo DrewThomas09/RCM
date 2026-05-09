@@ -774,7 +774,7 @@ def _exit_strategy_section(
         buyer_rows.append(
             f'<li><strong>{label}</strong> · fit {fit}/100 · '
             f'multiple delta {mult:+.1f}x · close certainty '
-            f'{cert*100:.0f}%</li>'
+            f'{cert*100:.1f}%</li>'
         )
 
     narrative = (
@@ -950,7 +950,7 @@ def _physician_retention_section(
         rows.append(
             f'<li><strong>{pid}</strong> '
             f'({specialty}, {band_val}): '
-            f'{prob*100:.0f}% flight prob · '
+            f'{prob*100:.1f}% flight prob · '
             f'${collections:,.0f} annual collections · '
             f'~${at_risk:,.0f} at risk · '
             f'<em>{bond_clause}</em></li>'
@@ -1037,21 +1037,21 @@ def _historical_analogue_section(
             narrative = (
                 f'<p class="hedge"><strong>Partner alert:</strong> '
                 f'the target\'s risk signature is '
-                f'{top_sim*100:.0f}% aligned with {html.escape(name)} '
+                f'{top_sim*100:.1f}% aligned with {html.escape(name)} '
                 f'({outcome_year}). Lesson: '
                 f'{html.escape(lesson)}</p>'
             )
         elif is_neg and top_sim >= similarity_floor:
             narrative = (
                 f'<p class="hedge">Meaningful resemblance '
-                f'({top_sim*100:.0f}%) to {html.escape(name)} '
+                f'({top_sim*100:.1f}%) to {html.escape(name)} '
                 f'({outcome_year}). Lesson: '
                 f'{html.escape(lesson)}</p>'
             )
         else:
             narrative = (
                 f'<p class="hedge">Closest historical pattern is '
-                f'{html.escape(name)} at {top_sim*100:.0f}%. Lesson: '
+                f'{html.escape(name)} at {top_sim*100:.1f}%. Lesson: '
                 f'{html.escape(lesson)}</p>'
             )
 
@@ -1074,7 +1074,7 @@ def _historical_analogue_section(
         rows.append(
             f'<li><strong>{html.escape(name)}</strong> '
             f'({html.escape(sponsor)} · entry {entry_year}) · '
-            f'<strong>{sim*100:.0f}% match</strong> · '
+            f'<strong>{sim*100:.1f}% match</strong> · '
             f'outcome <strong>{html.escape(str(outcome))}</strong> '
             f'({outcome_year})'
             + (f' · driver: <code>{html.escape(primary_killer)}</code>'
@@ -1168,7 +1168,7 @@ def _checklist_coverage_section(
     else:
         narrative = (
             f"⚠ {open_p0} P0 items still open + {open_p1} P1 — "
-            f"P0 coverage {p0_cov*100:.0f}%. "
+            f"P0 coverage {p0_cov*100:.1f}%. "
             f"IC should not be scheduled until P0 = 100%."
         )
     return (

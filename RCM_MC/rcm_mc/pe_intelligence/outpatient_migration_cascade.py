@@ -91,7 +91,7 @@ def trace_op_migration(inputs: OPMigrationInputs) -> OPMigrationReport:
     )
     steps.append(OPMigrationStep(
         step=1, name="migration_magnitude",
-        description=(f"{inputs.migration_pct_of_ip*100:.0f}% of IP "
+        description=(f"{inputs.migration_pct_of_ip*100:.1f}% of IP "
                      "cases migrate to OP settings"),
         value=round(migrating_rev_at_ip_rates, 2), unit="$M",
         partner_note=(
@@ -110,7 +110,7 @@ def trace_op_migration(inputs: OPMigrationInputs) -> OPMigrationReport:
     steps.append(OPMigrationStep(
         step=2, name="op_rate_differential",
         description=(f"OP rates at "
-                     f"{inputs.op_rate_as_pct_of_ip*100:.0f}% of IP"),
+                     f"{inputs.op_rate_as_pct_of_ip*100:.1f}% of IP"),
         value=round(-rev_loss_from_rate, 2), unit="$M",
         partner_note=(
             f"${rev_loss_from_rate:,.1f}M revenue loss from moving to "

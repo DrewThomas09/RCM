@@ -111,7 +111,7 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
             f'<td style="font-weight:500;">{title}</td>'
             f'<td><span class="cad-badge cad-badge-blue">{category}</span></td>'
             f'<td><span class="cad-badge {pri_cls}">{html.escape(str(priority))}</span></td>'
-            f'<td class="num">${float(impact)/1e6:.1f}M</td>'
+            f'<td class="num">${float(impact)/1e6:.2f}M</td>'
             f'<td>{timeline}</td>'
             f'<td>{owner}</td>'
             f'</tr>'
@@ -122,7 +122,7 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
     from ._ui_kit import kpi_strip
     pb_kpis = kpi_strip([
         {"label": "Initiatives", "value": str(len(entries))},
-        {"label": "Total EBITDA Impact", "value": f"${total_impact/1e6:.1f}M"},
+        {"label": "Total EBITDA Impact", "value": f"${total_impact/1e6:.2f}M"},
     ])
     body = (
         f'{nav}'
@@ -140,8 +140,8 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
         f'<div class="cad-card" style="border-left:3px solid {PALETTE["positive"]};">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>{len(entries)} initiatives totaling <strong>${total_impact/1e6:.1f}M</strong> in annual EBITDA improvement. '
-        f'At an 11x exit multiple, this represents <strong>${total_impact * 11 / 1e6:.0f}M</strong> in equity value creation.</p>'
+        f'<p>{len(entries)} initiatives totaling <strong>${total_impact/1e6:.2f}M</strong> in annual EBITDA improvement. '
+        f'At an 11x exit multiple, this represents <strong>${total_impact * 11 / 1e6:.2f}M</strong> in equity value creation.</p>'
         f'<p style="margin-top:6px;">Present this as the 100-day plan at IC. Track execution against the '
         f'<a href="/models/bridge/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">EBITDA bridge</a> '
         f'and monitor trends via '
@@ -161,4 +161,4 @@ def render_playbook(deal_id: str, deal_name: str, entries: List[Dict[str, Any]])
 
     return chartis_shell(body, f"Playbook — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"{len(entries)} initiatives | ${total_impact/1e6:.1f}M total impact")
+                    subtitle=f"{len(entries)} initiatives | ${total_impact/1e6:.2f}M total impact")

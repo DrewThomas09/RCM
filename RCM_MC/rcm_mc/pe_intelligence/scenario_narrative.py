@@ -129,13 +129,13 @@ def _headline(grid: Dict[str, Any]) -> str:
     pass_rate = grid.get("downside_pass_rate", 0.0) or 0.0
     grade_headlines = {
         "A": "Deal is durable across the scenario grid.",
-        "B": f"Deal is serviceable — {pass_rate*100:.0f}% of downsides clear.",
-        "C": f"Deal is fragile — only {pass_rate*100:.0f}% of downsides pass.",
+        "B": f"Deal is serviceable — {pass_rate*100:.1f}% of downsides clear.",
+        "C": f"Deal is fragile — only {pass_rate*100:.1f}% of downsides pass.",
         "D": f"Deal is weak — majority of downsides break it.",
         "F": "Deal is brittle — do not bring as modeled.",
     }
     return grade_headlines.get(grade,
-                               f"Stress grid: grade {grade}, pass rate {pass_rate*100:.0f}%.")
+                               f"Stress grid: grade {grade}, pass rate {pass_rate*100:.1f}%.")
 
 
 def render_scenario_narrative(grid: Dict[str, Any]) -> ScenarioNarrativeResult:

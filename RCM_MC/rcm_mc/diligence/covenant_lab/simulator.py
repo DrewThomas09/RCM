@@ -523,7 +523,7 @@ def run_covenant_stress(
         worst = max(curves, key=lambda x: x.breach_probability)
         headline = (
             f"Peak covenant stress: \"{worst.covenant_name}\" "
-            f"hits {worst.breach_probability*100:.0f}% breach "
+            f"hits {worst.breach_probability*100:.1f}% breach "
             f"probability in Y{worst.year}Q{worst.quarter_idx % 4 + 1} "
             f"— manageable but monitor for drift."
         )

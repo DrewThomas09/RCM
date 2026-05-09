@@ -252,7 +252,7 @@ def _partner_note_for(regime: str, confidence: float) -> str:
         REGIME_DECLINING_RISK: "declining risk",
     }
     return (f"{strength.title()} signal for {labels.get(regime, regime)} "
-            f"regime ({confidence*100:.0f}% confidence).")
+            f"regime ({confidence*100:.1f}% confidence).")
 
 
 def rank_all_regimes(inputs: RegimeInputs) -> List[RegimeResult]:

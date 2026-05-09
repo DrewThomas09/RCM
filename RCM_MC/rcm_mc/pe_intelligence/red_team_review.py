@@ -124,7 +124,7 @@ def _regulatory_attack(review: PartnerReview) -> Optional[RedTeamAttack]:
         vector="regulatory",
         thesis_challenged="Government-payer rate stability",
         attack_statement=(
-            f"{govt*100:.0f}% government payer mix leaves this deal exposed "
+            f"{govt*100:.1f}% government payer mix leaves this deal exposed "
             "to every CMS rule cycle. A 100 bps IPPS trim inside hold is "
             "a realistic scenario."),
         proof_needed=("Model a 100 bps Medicare cut in year 2 without the "

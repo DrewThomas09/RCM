@@ -87,7 +87,7 @@ def assess_carve_out(inputs: CarveOutInputs) -> CarveOutAssessment:
             estimated_cost_m=2.0 + (1 - inputs.tsa_scope_coverage_pct) * 10.0,
             estimated_months=max(inputs.tsa_duration_months, 6),
             description=(f"TSA only covers "
-                         f"{inputs.tsa_scope_coverage_pct*100:.0f}% of "
+                         f"{inputs.tsa_scope_coverage_pct*100:.1f}% of "
                          "shared services — gaps must be stood up "
                          "independently on Day 1."),
             mitigation=("Expand TSA scope in purchase agreement or "

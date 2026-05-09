@@ -167,7 +167,7 @@ def for_nsa(exposure: NSAExposure) -> Optional[Counterfactual]:
             f"Contract top payers to move {reduction_pp*100:.1f} "
             f"percentage points of volume from OON to in-network. "
             f"Current OON share {current_share*100:.0f}% → "
-            f"target ≤{_NSA_WATCH_SHARE*100:.0f}%."
+            f"target ≤{_NSA_WATCH_SHARE*100:.1f}%."
         ),
         estimated_dollar_impact_usd=savings,
         feasibility="MEDIUM",
@@ -175,7 +175,7 @@ def for_nsa(exposure: NSAExposure) -> Optional[Counterfactual]:
             f"Move an estimated ${savings:,.0f} of OON revenue into "
             f"contracted rates. IDR revert to QPA is no longer a "
             f"cliff because the exposed volume drops below the "
-            f"{_NSA_WATCH_SHARE*100:.0f}% threshold. Contracting with "
+            f"{_NSA_WATCH_SHARE*100:.1f}% threshold. Contracting with "
             f"the top 2-3 payers by volume typically achieves this."
         )
         + (f" Matches {exposure.case_study_match}."

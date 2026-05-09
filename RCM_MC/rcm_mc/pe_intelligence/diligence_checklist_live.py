@@ -228,14 +228,14 @@ def walk_checklist(ctx: Dict[str, Any]) -> ChecklistReport:
     ic_ready_pct = answered / total if total > 0 else 0.0
 
     if ic_ready_pct >= 0.90:
-        note = (f"{answered}/{total} answered ({ic_ready_pct*100:.0f}%). "
+        note = (f"{answered}/{total} answered ({ic_ready_pct*100:.1f}%). "
                 "IC-ready. Remaining items can close in final-IC pass.")
     elif ic_ready_pct >= 0.70:
-        note = (f"{answered}/{total} answered ({ic_ready_pct*100:.0f}%). "
+        note = (f"{answered}/{total} answered ({ic_ready_pct*100:.1f}%). "
                 f"{mi_open} MI + {tp_open} third-party open. Target 2-3 "
                 "weeks to IC-ready.")
     else:
-        note = (f"Only {ic_ready_pct*100:.0f}% answered. {missing} "
+        note = (f"Only {ic_ready_pct*100:.1f}% answered. {missing} "
                 "missing-both items require either MI scheduling or "
                 "third-party engagement.")
 

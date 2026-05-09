@@ -130,7 +130,7 @@ def assess_pricing_power(inputs: PricingPowerInputs) -> PricingPowerReport:
     cs_score = min(100, cs_score)
     cs_r = (f"FFS {inputs.contract_mix_fee_for_service_pct*100:.0f}% / "
             f"Cap {inputs.contract_mix_capitation_pct*100:.0f}% / "
-            f"VBC {inputs.contract_mix_value_based_pct*100:.0f}% mix.")
+            f"VBC {inputs.contract_mix_value_based_pct*100:.1f}% mix.")
     findings.append(PricingFinding("contract_structure", cs_score, cs_r))
 
     # Payer mix.

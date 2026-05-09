@@ -226,7 +226,7 @@ def render_sensitivity_page(
       </label>
 
       <label style="color:#94a3b8;">
-        Achievement: <span id="ach-val">{params.achievement_pct * 100:.0f}%</span><br>
+        Achievement: <span id="ach-val">{params.achievement_pct * 100:.1f}%</span><br>
         <input type="range" name="achievement_pct" min="0" max="100" step="5"
                value="{params.achievement_pct * 100:.0f}"
                style="width:100%;">

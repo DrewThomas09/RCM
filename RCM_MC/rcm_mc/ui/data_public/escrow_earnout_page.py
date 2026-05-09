@@ -48,7 +48,7 @@ def _escrows_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{e.vintage}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(e.escrow_type)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${e.escrow_size_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{h_c};font-weight:700">{e.held_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{h_c};font-weight:700">{e.held_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(e.release_date)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c}">{e.months_to_release}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"] if e.claims_filed > 0 else text_dim}">{e.claims_filed}</td>',
@@ -84,7 +84,7 @@ def _earnouts_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${eo.expected_m:.1f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(eo.measurement_end)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{eo.months_remaining}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{eo.probability * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{eo.probability * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -110,7 +110,7 @@ def _milestones_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${m.payment_m:.1f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(m.target_date)}</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(m.current_status)}</span></td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{m.probability * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{m.probability * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${exp:.1f}M</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -240,7 +240,7 @@ def render_escrow_earnout(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Contingent Liability Summary:</strong> ${total_contingent:.1f}M in total probability-weighted contingent consideration across {r.total_deals} active deals.
     Escrow held balance ${r.total_escrow_held_m:.1f}M — claim-loss rate ${claim_loss:.1f}M (${claim_loss / r.total_escrow_held_m * 100 if r.total_escrow_held_m else 0:.1f}% of escrow held).
-    Earnout expected payout ${r.total_earnout_accrued_m:.1f}M vs ${r.total_earnout_max_m:.1f}M max — probability-weighted realization {r.total_earnout_accrued_m / r.total_earnout_max_m * 100 if r.total_earnout_max_m else 0:.0f}%.
+    Earnout expected payout ${r.total_earnout_accrued_m:.1f}M vs ${r.total_earnout_max_m:.1f}M max — probability-weighted realization {r.total_earnout_accrued_m / r.total_earnout_max_m * 100 if r.total_earnout_max_m else 0:.1f}%.
     12-month expected escrow release ${r.expected_12mo_release_m:.1f}M — driven by {sum(1 for e in r.escrows if e.months_to_release <= 12 and e.months_to_release >= 0)} deals reaching hold-period maturity.
     Active claim count ({r.active_claims}) is manageable; 3 of 4 open items are sub-$2M and within SPA baskets. Cedar breach-of-rep claim ($2.0M) requires monitoring.
     Coverage benchmarks: 8.5% indemnity median of purchase, 4.0% tax median, 2.5% R&W retention — tracks JAMS 2024 PE healthcare survey ±1 percentage point on every line.

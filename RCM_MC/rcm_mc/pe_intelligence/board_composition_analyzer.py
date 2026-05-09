@@ -113,7 +113,7 @@ def analyze_board(inputs: BoardInputs) -> BoardReport:
     if ind_pct < 0.25:
         gaps.append(BoardGap(
             area="independence", severity="high",
-            description=(f"Independent share {ind_pct*100:.0f}% below "
+            description=(f"Independent share {ind_pct*100:.1f}% below "
                          "25% market standard."),
         ))
     if diverse_pct < 0.20:

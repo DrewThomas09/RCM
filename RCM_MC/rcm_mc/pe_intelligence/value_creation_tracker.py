@@ -103,7 +103,7 @@ def _partner_note_for_status(status: str, lever: str, pct: Optional[float]) -> s
     if status == "on_track":
         return f"{lever}: tracking plan. No action."
     if status == "behind":
-        return (f"{lever}: at ~{(pct or 0)*100:.0f}% of plan. Diagnose root cause this month, "
+        return (f"{lever}: at ~{(pct or 0)*100:.1f}% of plan. Diagnose root cause this month, "
                 "don't wait for the quarter.")
     if status == "off_track":
         return (f"{lever}: materially behind. Escalate to operating partner; "

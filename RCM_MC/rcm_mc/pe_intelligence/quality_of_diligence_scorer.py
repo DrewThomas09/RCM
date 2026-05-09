@@ -147,16 +147,16 @@ def score_diligence(completed: DiligenceCompleted) -> QoDReport:
     weakest = min(scores, key=lambda s: s.completion_pct)
 
     if ic_ready:
-        note = (f"Diligence is IC-ready ({overall*100:.0f}% overall). "
+        note = (f"Diligence is IC-ready ({overall*100:.1f}% overall). "
                 f"Weakest dimension is still {weakest.dimension} at "
-                f"{weakest.completion_pct*100:.0f}%.")
+                f"{weakest.completion_pct*100:.1f}%.")
     elif weakest.completion_pct < 0.50:
         note = (f"Diligence is NOT IC-ready. {weakest.dimension} is "
                 f"at {weakest.completion_pct*100:.0f}% — thin enough "
                 "that the partner should decline to recommend "
                 "without more work. Pull IC back 2-3 weeks.")
     else:
-        note = (f"Diligence is near-ready ({overall*100:.0f}%). Close "
+        note = (f"Diligence is near-ready ({overall*100:.1f}%). Close "
                 f"gaps on {weakest.dimension} (missing: "
                 f"{', '.join(weakest.missing_items[:3])}) before IC.")
 

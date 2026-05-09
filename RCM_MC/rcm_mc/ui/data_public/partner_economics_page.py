@@ -246,7 +246,7 @@ def render_partner_economics(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Exit Proceeds at Sale ({hold}-yr hold)</div>{exit_tbl}</div>
   <div style="{cell}"><div style="{h3}">Recruitment Pathway Economics</div>{rec_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Partner Thesis:</strong> {r.total_partners} partners with {r.physician_equity_pool_pct * 100:.0f}% equity pool.
+    <strong style="color:{text}">Partner Thesis:</strong> {r.total_partners} partners with {r.physician_equity_pool_pct * 100:.1f}% equity pool.
     Avg partner comp ${r.avg_partner_comp_k:,.0f}K (salary + distributions). Mid-tier buy-in ${r.tiers[1].buy_in_value_mm if len(r.tiers) > 1 else 0:,.2f}M.
     Annual partner economics total ${r.annual_gp_cost_mm:,.1f}M — critical to structure correctly for recruitment AND retention.
   </div>

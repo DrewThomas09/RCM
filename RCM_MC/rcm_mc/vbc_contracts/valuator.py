@@ -101,7 +101,7 @@ def choose_optimal_track(
     reasoning = (
         f"{top.label}: NPV mean ${top.distribution['mean_npv_mm']/1e6:.2f}M, "
         f"p5 ${top.distribution['p5_mm']/1e6:.2f}M, "
-        f"prob_loss {top.distribution['prob_loss']*100:.0f}%, "
+        f"prob_loss {top.distribution['prob_loss']*100:.1f}%, "
         f"on-ramp {top.on_ramp_difficulty:.2f}. "
         f"Risk-adjusted score ${top.risk_adjusted_score/1e6:.2f}M."
     )

@@ -137,7 +137,7 @@ def analyze_forecasts(
 
     # Partner note.
     if miss_rate >= 0.50:
-        note = (f"Management has missed {miss_rate*100:.0f}% of "
+        note = (f"Management has missed {miss_rate*100:.1f}% of "
                 f"forecasts — avg variance {avg_var*100:+.1f}%. "
                 "Haircut current forecast by "
                 f"{haircut*100:.0f}%; do NOT underwrite to their "
@@ -149,15 +149,15 @@ def analyze_forecasts(
                 "Underwrite at forecast; upside is real but don't "
                 "pay for it.")
     elif hit_rate >= 0.60:
-        note = (f"Reliable forecaster — {hit_rate*100:.0f}% at-"
+        note = (f"Reliable forecaster — {hit_rate*100:.1f}% at-"
                 f"plan delivery. Base case is believable.")
     elif beat_rate >= 0.50 and miss_rate >= 0.25:
-        note = (f"Inconsistent — beats ({beat_rate*100:.0f}%) and "
-                f"misses ({miss_rate*100:.0f}%) mixed. Underwrite "
+        note = (f"Inconsistent — beats ({beat_rate*100:.1f}%) and "
+                f"misses ({miss_rate*100:.1f}%) mixed. Underwrite "
                 "the median; don't chase the best year.")
     else:
         note = (f"Mixed track record. Reliability score {score}/100. "
-                f"Apply {haircut*100:.0f}% haircut to current forecast.")
+                f"Apply {haircut*100:.1f}% haircut to current forecast.")
 
     return ReliabilityReport(
         years=years,

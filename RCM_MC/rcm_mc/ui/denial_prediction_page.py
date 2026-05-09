@@ -315,7 +315,7 @@ def _hero(report: DenialPredictionReport) -> str:
         f'<div style="font-size:10px;color:{base_color};margin-top:2px;">'
         f'{html.escape(base_label)}</div>'
         f'<div style="font-size:9px;color:{P["text_faint"]};margin-top:1px;">'
-        f'vs HFMA peer median {PEER_DENIAL_MEDIAN*100:.0f}%</div></div>'
+        f'vs HFMA peer median {PEER_DENIAL_MEDIAN*100:.1f}%</div></div>'
         f'<div><div style="font-size:9px;color:{P["text_faint"]};'
         f'letter-spacing:1px;text-transform:uppercase;">Model AUC</div>'
         f'<div style="font-size:26px;font-family:\'JetBrains Mono\',monospace;'
@@ -381,7 +381,7 @@ def _bridge_card(report: DenialPredictionReport) -> str:
         f'<span class="mono" style="color:{P["text"]};">'
         f'{html.escape(t["value"])}</span> · '
         f'lift {t["lift"]:.2f}x · '
-        f'{t["denial_rate"]*100:.0f}% denial rate in matching claims'
+        f'{t["denial_rate"]*100:.1f}% denial rate in matching claims'
         f'</li>'
         for t in b.top_intervention_targets
     )

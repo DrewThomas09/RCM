@@ -363,7 +363,7 @@ def render_scenario_mc(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Monte Carlo Thesis:</strong>
     {r.n_simulations:,} Monte Carlo paths — median MOIC {r.median_moic:.2f}x (P5: {r.p5_moic:.2f}x,
-    P95: {r.p95_moic:.2f}x). {r.prob_moic_gt_2x * 100:.0f}% probability of ≥2x, {r.prob_moic_gt_3x * 100:.0f}% of ≥3x.
+    P95: {r.p95_moic:.2f}x). {r.prob_moic_gt_2x * 100:.1f}% probability of ≥2x, {r.prob_moic_gt_3x * 100:.1f}% of ≥3x.
     Downside risk: {r.prob_loss * 100:.1f}% probability of principal loss. Revenue growth is the dominant driver;
     exit multiple is next-most-material.
   </div>

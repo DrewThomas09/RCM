@@ -311,7 +311,7 @@ def render_rcm_red_flags(params: Dict[str, str]) -> str:
             f'<tr style="background:{bg}">'
             f'<td style="padding:4px 8px;font-size:11px">{html.escape(factor["label"])}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{factor["count"]}</td>'
-            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{factor["base_rate"]:.0f}%</td>'
+            f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{factor["base_rate"]:.1f}%</td>'
             f'<td style="padding:4px 8px;font-size:11px;font-family:{_MONO};text-align:right;color:{P["negative"] if (fp50 or 0) < 2.0 else P["warning"]};font-variant-numeric:tabular-nums">{f"{fp50:.2f}×" if fp50 else "—"}</td>'
             f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{f"{cp50:.2f}×" if cp50 else "—"}</td>'
             f'<td style="padding:4px 8px">{impact}</td>'

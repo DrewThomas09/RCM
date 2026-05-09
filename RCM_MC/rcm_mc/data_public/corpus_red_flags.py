@@ -143,7 +143,7 @@ def _flag_entry_multiple(
         severity = "critical"
         detail = (
             f"Entry at {multiple:.1f}× exceeds corpus P90 ({corp_p90:.1f}×). "
-            f"Deals entering >14× show {(high_mult_loss or 0)*100:.0f}% loss rate historically."
+            f"Deals entering >14× show {(high_mult_loss or 0)*100:.1f}% loss rate historically."
         )
         ebitda_risk = float(ebitda_mm) * 0.15 if ebitda_mm else None
         return CorpusRedFlag(
@@ -199,15 +199,15 @@ def _flag_payer_mix(
     if commercial < corp_comm_p25:
         sev = "high" if commercial < 0.30 else "medium"
         detail = (
-            f"Commercial mix of {commercial*100:.0f}% is below corpus P25 ({corp_comm_p25*100:.0f}%). "
-            + (f"Sector P25 is {sec_comm_p25*100:.0f}%. " if sec_comm_p25 else "")
+            f"Commercial mix of {commercial*100:.1f}% is below corpus P25 ({corp_comm_p25*100:.1f}%). "
+            + (f"Sector P25 is {sec_comm_p25*100:.1f}%. " if sec_comm_p25 else "")
             + (f"High-government deals in corpus average {high_gov_p50:.2f}x MOIC. " if high_gov_p50 else "")
             + "Thin commercial mix limits payer-renegotiation leverage post-close."
         )
         est_risk = float(ebitda_mm) * 0.08 if ebitda_mm else None
         flags.append(CorpusRedFlag(
             "PAYER", sev,
-            f"Commercial mix {commercial*100:.0f}% is below corpus P25 — pricing power risk",
+            f"Commercial mix {commercial*100:.1f}% is below corpus P25 — pricing power risk",
             detail, est_risk, corp_comm_p25, commercial, "%"
         ))
 
@@ -215,7 +215,7 @@ def _flag_payer_mix(
         # Check for Medicaid work-requirement exposure
         if medicaid >= 0.25:
             detail = (
-                f"Medicaid exposure at {medicaid*100:.0f}% of revenue. "
+                f"Medicaid exposure at {medicaid*100:.1f}% of revenue. "
                 "OBBBA work requirements + state-level waiver uncertainty creates cliff risk. "
                 "Portfolio companies with >25% Medicaid have shown outsized volatility under policy shifts."
             )
@@ -250,24 +250,24 @@ def _flag_leverage(
 
     if leverage_pct > corp_p90:
         detail = (
-            f"Leverage at {leverage_pct*100:.0f}% is corpus top-decile (P90={corp_p90*100:.0f}%). "
-            + (f"Deals with ≥70% leverage show {(hl_loss or 0)*100:.0f}% corpus loss rate. " if hl_loss else "")
+            f"Leverage at {leverage_pct*100:.1f}% is corpus top-decile (P90={corp_p90*100:.1f}%). "
+            + (f"Deals with ≥70% leverage show {(hl_loss or 0)*100:.1f}% corpus loss rate. " if hl_loss else "")
             + "Rate-cycle sensitivity and covenant headroom are primary risks."
         )
         est_risk = float(ebitda_mm) * 0.20 if ebitda_mm else None
         return CorpusRedFlag(
             "LEVERAGE", "critical",
-            f"Leverage {leverage_pct*100:.0f}% is top-decile — covenant risk in stress",
+            f"Leverage {leverage_pct*100:.1f}% is top-decile — covenant risk in stress",
             detail, est_risk, corp_p90, leverage_pct, "%"
         )
     if leverage_pct > corp_p75:
         detail = (
-            f"Leverage at {leverage_pct*100:.0f}% exceeds corpus P75 ({corp_p75*100:.0f}%). "
+            f"Leverage at {leverage_pct*100:.1f}% exceeds corpus P75 ({corp_p75*100:.1f}%). "
             "Above-average sensitivity to rate increases and operational shortfalls."
         )
         return CorpusRedFlag(
             "LEVERAGE", "medium",
-            f"Leverage {leverage_pct*100:.0f}% above corpus P75",
+            f"Leverage {leverage_pct*100:.1f}% above corpus P75",
             detail, None, corp_p75, leverage_pct, "%"
         )
     return None
@@ -287,18 +287,18 @@ def _flag_sector_loss_rate(
 
     if loss_rate >= 0.30:
         detail = (
-            f"{sector} has {loss_rate*100:.0f}% loss rate in the corpus "
+            f"{sector} has {loss_rate*100:.1f}% loss rate in the corpus "
             f"({sum(1 for m in moics if m < 1.0)} of {len(moics)} realized deals). "
             f"Sector P50 MOIC is {p50:.2f}×. Elevated baseline impairment risk requires deeper operational DD."
         )
         return CorpusRedFlag(
             "SECTOR", "high",
-            f"{sector} sector has {loss_rate*100:.0f}% historical loss rate",
+            f"{sector} sector has {loss_rate*100:.1f}% historical loss rate",
             detail, None, loss_rate, loss_rate, "%"
         )
     if loss_rate >= 0.15:
         detail = (
-            f"{sector} shows {loss_rate*100:.0f}% loss rate across {len(moics)} corpus deals. "
+            f"{sector} shows {loss_rate*100:.1f}% loss rate across {len(moics)} corpus deals. "
             f"P50 MOIC {p50:.2f}×. Monitor sector-specific reimbursement and competition dynamics."
         )
         return CorpusRedFlag(

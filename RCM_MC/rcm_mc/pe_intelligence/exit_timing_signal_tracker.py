@@ -91,12 +91,12 @@ def track_exit_timing(ctx: ExitTimingContext) -> ExitTimingReport:
     if ctx.thesis_lever_completion_pct >= 0.70:
         signals.append(ExitSignal(
             "thesis_executed", "green",
-            f"{ctx.thesis_lever_completion_pct*100:.0f}% of thesis "
+            f"{ctx.thesis_lever_completion_pct*100:.1f}% of thesis "
             "levers executed — story is concrete."))
     elif ctx.thesis_lever_completion_pct >= 0.40:
         signals.append(ExitSignal(
             "thesis_executed", "yellow",
-            f"{ctx.thesis_lever_completion_pct*100:.0f}% of levers "
+            f"{ctx.thesis_lever_completion_pct*100:.1f}% of levers "
             "executed — story still has 'we're working on it.'"))
     else:
         signals.append(ExitSignal(

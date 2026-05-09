@@ -214,7 +214,7 @@ def render_mgmt_fee_tracker(params: dict) -> str:
 
     kpis = ck_kpi_block("Fund Size", f"${fe.fund_size_mm:.0f}M")
     kpis += ck_kpi_block("Deployed Capital", f"${fe.invested_capital_mm:.0f}M",
-                          unit=f"{fe.deployment_pct*100:.0f}% deployed")
+                          unit=f"{fe.deployment_pct*100:.1f}% deployed")
     kpis += ck_kpi_block("Annual Mgmt. Fees", f"${fe.total_annual_fees_mm:.2f}M",
                           unit=f"Net to LP after offset")
     kpis += ck_kpi_block("Total Carry (GP)", f"${fe.total_carry_paid_mm:.0f}M",
@@ -287,7 +287,7 @@ def render_mgmt_fee_tracker(params: dict) -> str:
     <div style="padding:8px;background:{bg_tert};border:1px solid {border}">
       <div style="font-size:10px;color:{tdim};font-family:\'JetBrains Mono\',monospace">Deployment</div>
       <div style="font-size:16px;color:{tprim};font-variant-numeric:tabular-nums;
-        font-family:\'JetBrains Mono\',monospace">{fe.deployment_pct*100:.0f}%</div>
+        font-family:\'JetBrains Mono\',monospace">{fe.deployment_pct*100:.1f}%</div>
     </div>
     <div style="padding:8px;background:{bg_tert};border:1px solid {border}">
       <div style="font-size:10px;color:{tdim};font-family:\'JetBrains Mono\',monospace">Annual Fees</div>

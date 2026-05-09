@@ -191,7 +191,7 @@ def _hero(
         f"Collections ${total_coll:,.0f} minus comp ${total_comp:,.0f} "
         f"minus overhead ${total_ohd:,.0f} (allocated "
         f"{report.overhead_method.replace('_', ' ')} at "
-        f"{report.overhead_pct*100:.0f}% of revenue) = aggregate "
+        f"{report.overhead_pct*100:.1f}% of revenue) = aggregate "
         f"contribution ${total_contrib:,.0f} ({margin*100:.1f}% margin). "
         f"Rankings in the roster table below; drop candidates highlighted "
         f"in the Roster Optimization block."
@@ -278,7 +278,7 @@ def _hero(
         f'<div class="peu-h1">{html.escape(target_name)}</div>'
         f'<div style="font-size:11px;color:{P["text_faint"]};margin-top:4px;">'
         f'Per-provider P&L · {report.overhead_method.replace("_", " ")} '
-        f'overhead allocation · {report.overhead_pct*100:.0f}% of revenue</div>'
+        f'overhead allocation · {report.overhead_pct*100:.1f}% of revenue</div>'
         f'<div class="peu-callout {banner_class}">{html.escape(banner)}</div>'
         f'<div class="peu-callout">'
         f'<strong style="color:{P["text"]};">What this shows: </strong>'

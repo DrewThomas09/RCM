@@ -142,7 +142,7 @@ def track_integration_velocity(
     if on_pace_pct < 0.50 or cp_slips >= 3:
         tier = "off_track"
         note = (
-            f"Off-track: {on_pace_pct*100:.0f}% of due "
+            f"Off-track: {on_pace_pct*100:.1f}% of due "
             f"milestones complete, {cp_slips} critical-"
             "path slip(s). Partner: ops-committee "
             "escalation; CEO / COO meeting this week."
@@ -150,7 +150,7 @@ def track_integration_velocity(
     elif on_pace_pct < 0.70 or cp_slips >= 2:
         tier = "at_risk"
         note = (
-            f"At risk: {on_pace_pct*100:.0f}% of due "
+            f"At risk: {on_pace_pct*100:.1f}% of due "
             f"milestones complete, {cp_slips} critical "
             "slip(s). Partner: week-over-week ops "
             "review until back on pace."
@@ -158,7 +158,7 @@ def track_integration_velocity(
     elif on_pace_pct < 0.90 or cp_slips >= 1:
         tier = "behind"
         note = (
-            f"Behind: {on_pace_pct*100:.0f}% of due "
+            f"Behind: {on_pace_pct*100:.1f}% of due "
             f"complete, {cp_slips} critical slip. "
             "Partner: owner accountability check on "
             "flagged milestones."
@@ -166,7 +166,7 @@ def track_integration_velocity(
     else:
         tier = "on_pace"
         note = (
-            f"On pace: {on_pace_pct*100:.0f}% of due "
+            f"On pace: {on_pace_pct*100:.1f}% of due "
             f"milestones complete, no critical slips. "
             "Partner: proceed; normal cadence."
         )

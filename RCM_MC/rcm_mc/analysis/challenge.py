@@ -233,7 +233,7 @@ def challenge_to_dataframe(result: ChallengeResult) -> pd.DataFrame:
             return "not needed (target ≥ current drag)"
         if p >= 0.999:
             return "≥100% — unreachable with this lever alone"
-        return f"{p * 100:.0f}% of gap to benchmark"
+        return f"{p * 100:.1f}% of gap to benchmark"
 
     rows: List[Dict[str, Any]] = []
     rows.append({
@@ -324,7 +324,7 @@ def main(argv: Optional[List[str]] = None, prog: str = "rcm-mc challenge") -> in
     print(info(f"Target drag:                ${result.target_drag:,.0f}"))
     if result.current_drag > 0:
         gap_pct = (result.current_drag - result.target_drag) / result.current_drag * 100
-        print(info(f"Gap to close:               {gap_pct:.0f}% reduction in modeled drag"))
+        print(info(f"Gap to close:               {gap_pct:.1f}% reduction in modeled drag"))
     print()
     # Pretty-print the dataframe aligned
     for _, row in df.iterrows():

@@ -214,7 +214,7 @@ def _must_close(s: ICSignalBundle) -> List[str]:
     if not s.qod_ic_ready and s.qod_weakest_dimension:
         items.append(
             f"Close {s.qod_weakest_dimension} diligence to ≥ 80% "
-            f"(currently overall {s.qod_overall_pct*100:.0f}%).")
+            f"(currently overall {s.qod_overall_pct*100:.1f}%).")
     if s.historical_pattern_matches:
         items.append(
             f"Document explicit mitigations for "

@@ -123,7 +123,7 @@ def assess_conversion(
                 "ceiling — check for one-time working-capital release.")
     elif conv >= low:
         status = "in_band"
-        note = f"Cash conversion of {conv*100:.1f}% is consistent with peers ({low*100:.0f}–{high*100:.0f}%)."
+        note = f"Cash conversion of {conv*100:.1f}% is consistent with peers ({low*100:.0f}–{high*100:.1f}%)."
     else:
         status = "below"
         note = (f"Cash conversion of {conv*100:.1f}% is below the peer floor — "

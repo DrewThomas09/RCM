@@ -216,7 +216,7 @@ def render_capital_pacing(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Commitment Utilization — Deployment Status</div>{cmt_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {irr_c};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Pacing Thesis:</strong> Vintage {r.vintage_year} fund of ${r.fund_size_mm:,.0f}M is in year {r.fund_age_years} of life.
-    ${r.total_called_mm:,.0f}M called ({r.total_called_mm / r.fund_size_mm * 100:.0f}% of commitments), ${r.total_distributions_mm:,.0f}M distributed ({r.current_dpi:.2f}x DPI).
+    ${r.total_called_mm:,.0f}M called ({r.total_called_mm / r.fund_size_mm * 100:.1f}% of commitments), ${r.total_distributions_mm:,.0f}M distributed ({r.current_dpi:.2f}x DPI).
     Current TVPI {r.current_tvpi:.2f}x vs target 2.0-2.5x; net IRR <span style="color:{irr_c}">{r.current_net_irr * 100:+.1f}%</span>.
     Fund exited J-curve in year 3 and is now in distribution phase. Vintage peers at same age show median TVPI {r.vintage_peers[r.fund_age_years].current_tvpi if len(r.vintage_peers) > r.fund_age_years else r.current_tvpi:.2f}x.
     Pacing appears <strong style="color:{text}">on plan</strong> — dry powder deployment, distribution cadence, and NAV growth all track vintage norms.

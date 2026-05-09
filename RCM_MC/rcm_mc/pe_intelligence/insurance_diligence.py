@@ -207,13 +207,13 @@ def _check_largest_open(inputs: InsuranceInputs) -> Optional[InsuranceGap]:
             area="largest_open_claim",
             severity="medium",
             detail=(f"Largest open claim ${inputs.largest_open_claim_m}M "
-                    f"({ratio*100:.0f}% of EBITDA). Watch the reserve level."),
+                    f"({ratio*100:.1f}% of EBITDA). Watch the reserve level."),
         )
     return InsuranceGap(
         area="largest_open_claim",
         severity="high",
         detail=(f"Largest open claim ${inputs.largest_open_claim_m}M "
-                f"({ratio*100:.0f}% of EBITDA). Escrow or indemnity "
+                f"({ratio*100:.1f}% of EBITDA). Escrow or indemnity "
                 "required."),
         remediation="Hold escrow / indemnity equal to reserves + buffer.",
     )

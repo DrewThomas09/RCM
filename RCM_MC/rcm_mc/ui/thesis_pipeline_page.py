@@ -520,7 +520,7 @@ def _checklist_preview(report: ThesisPipelineReport) -> str:
         f'<strong style="color:{P["text"]};">Checklist impact: </strong>'
         f'This pipeline run auto-covered '
         f'{len(obs_dict)} diligence items. P0 coverage is now '
-        f'<span style="color:{color};font-weight:600;">{p0_cov:.0f}%</span> '
+        f'<span style="color:{color};font-weight:600;">{p0_cov:.1f}%</span> '
         f'({state.open_p0} P0 items + {state.open_p1} P1 items remain '
         f'open — mostly manual / legal / management-reference tasks). '
         f'<a href="/diligence/checklist" style="color:{P["accent"]};">'

@@ -191,7 +191,7 @@ def _integration_sprint(ctx: PlanContext) -> Optional[PlanAction]:
         return PlanAction(
             week_latest=6, workstream="operations",
             action=(f"Integration sprint to close the remaining "
-                    f"{(1 - ctx.integration_pct)*100:.0f}% of bolt-on "
+                    f"{(1 - ctx.integration_pct)*100:.1f}% of bolt-on "
                     "systems, chart-of-accounts, KPI reporting."),
             owner="COO + integration PMO",
             expected_impact_m=None,

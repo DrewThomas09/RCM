@@ -92,7 +92,7 @@ def _scatter_svg(stats: List[Any], width: int = 480, height: int = 320) -> str:
     for r in (0.0, 0.1, 0.2, 0.3, 0.5):
         gy = sy(r)
         elements.append(f'<line x1="{margin["l"]}" y1="{gy}" x2="{margin["l"]+W}" y2="{gy}" stroke="#1e293b" stroke-width="0.8"/>')
-        elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{r*100:.0f}%</text>')
+        elements.append(f'<text x="{margin["l"]-3}" y="{gy+3}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="#475569">{r*100:.1f}%</text>')
 
     # points — color by moic tier
     for s in stats:

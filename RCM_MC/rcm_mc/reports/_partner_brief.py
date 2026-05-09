@@ -160,7 +160,7 @@ def _render_evidence_band(grade: Optional[Dict[str, Any]]) -> str:
         f'<div class="evidence-band grade-{g}">'
         f"<strong>Evidence grade {g}</strong>: "
         f"{grade['observed']} of {grade['total']} inputs observed "
-        f"({grade['observed'] / grade['total'] * 100:.0f}%), "
+        f"({grade['observed'] / grade['total'] * 100:.1f}%), "
         f"{grade['prior']} priors, {grade['assumed']} assumptions."
         "</div>"
     )

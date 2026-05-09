@@ -106,17 +106,17 @@ def design_rollover(
 
     if grade == "strong":
         note = (f"Strong alignment — {ctx.ceo_name} rolling "
-                f"{ctx.proposed_rollover_pct*100:.0f}%, above "
-                f"the {high*100:.0f}% upper target. Clear conviction "
+                f"{ctx.proposed_rollover_pct*100:.1f}%, above "
+                f"the {high*100:.1f}% upper target. Clear conviction "
                 "signal.")
     elif grade == "adequate":
         note = (f"Adequate rollover at "
                 f"{ctx.proposed_rollover_pct*100:.0f}% (target "
-                f"{low*100:.0f}-{high*100:.0f}%). Aligned enough "
+                f"{low*100:.0f}-{high*100:.1f}%). Aligned enough "
                 "for partner comfort.")
     else:
         note = (f"Thin rollover — {ctx.proposed_rollover_pct*100:.1f}% "
-                f"vs target {low*100:.0f}-{high*100:.0f}%. "
+                f"vs target {low*100:.0f}-{high*100:.1f}%. "
                 f"{ctx.ceo_name} is taking proceeds and reducing "
                 "skin-in-game. Negotiate up or lean on MIP to fill "
                 "the alignment gap.")

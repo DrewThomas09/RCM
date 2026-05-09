@@ -557,7 +557,7 @@ def run_payer_stress(
 
     rationale_bits: List[str] = []
     rationale_bits.append(
-        f"Top-1 share {top_1*100:.0f}%, Top-3 share {top_3*100:.0f}%, "
+        f"Top-1 share {top_1*100:.1f}%, Top-3 share {top_3*100:.1f}%, "
         f"HHI {hhi:.0f}."
     )
     rationale_bits.append(
@@ -565,7 +565,7 @@ def run_payer_stress(
     )
     if unclassified_share > 0.10:
         rationale_bits.append(
-            f"{unclassified_share*100:.0f}% of mix unclassified — "
+            f"{unclassified_share*100:.1f}% of mix unclassified — "
             f"add payer IDs to calibrate."
         )
     rationale = " ".join(rationale_bits)

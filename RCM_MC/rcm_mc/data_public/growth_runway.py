@@ -148,7 +148,7 @@ def _build_market_sizes(
         MarketSize("SAM (Serviceable Addressable)", round(sam_mm, 0),
                    round(current_share_sam * 100, 2),
                    round(sam_mm - revenue_mm, 0),
-                   f"Within current regional footprint (~{footprint_pct * 100:.0f}% of TAM)"),
+                   f"Within current regional footprint (~{footprint_pct * 100:.1f}% of TAM)"),
         MarketSize("SOM (Serviceable Obtainable)", round(som_mm, 0),
                    round(current_share_som * 100, 1),
                    round(som_mm - revenue_mm, 0),

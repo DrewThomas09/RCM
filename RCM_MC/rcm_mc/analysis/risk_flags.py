@@ -431,7 +431,7 @@ def _build_data_quality_flags(
             severity=RiskSeverity.CRITICAL,
             title="Insufficient data for reliable analysis",
             detail=(
-                f"Only {completeness.coverage_pct*100:.0f}% of required "
+                f"Only {completeness.coverage_pct*100:.1f}% of required "
                 f"metrics are available ({completeness.observed_count}/"
                 f"{completeness.total_metrics}). Core diligence "
                 f"conclusions need more data before they can be "
@@ -586,7 +586,7 @@ def _build_regulatory_context_flags(
             severity=RiskSeverity.HIGH,
             title="Medicaid rate compression",
             detail=(
-                f"{state} Medicaid pays {fee * 100:.0f}% of Medicare "
+                f"{state} Medicaid pays {fee * 100:.1f}% of Medicare "
                 f"rates — significantly below the national median — and "
                 f"this hospital's Medicaid exposure is material. Every "
                 f"1-pp Medicaid share shift adds margin pressure."

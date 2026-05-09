@@ -62,7 +62,7 @@ def _distribution_svg(dist: List[Any], width: int = 500, height: int = 100) -> s
             lines.append(
                 f'<text x="{x + seg_w//2}" y="{mt + bar_h//2 + 5}" '
                 f'text-anchor="middle" font-size="10" fill="#000" font-weight="700" '
-                f'font-family="JetBrains Mono,monospace">{d.pct:.0f}%</text>'
+                f'font-family="JetBrains Mono,monospace">{d.pct:.1f}%</text>'
             )
         lines.append(
             f'<text x="{x + seg_w//2}" y="{mt + bar_h + 14}" '
@@ -127,7 +127,7 @@ def _sector_risk_table(rows_data: List[Dict[str, Any]], corpus_avg: float) -> st
             f"<td class='r mn'>{r['n']}</td>"
             f"<td class='r mn' style='color:{score_color}'>{r['avg_score']:.1f}</td>"
             f"<td class='r'>{vs_html}</td>"
-            f"<td class='r mn' style='color:{high_color}'>{r['pct_high']:.0f}%</td>"
+            f"<td class='r mn' style='color:{high_color}'>{r['pct_high']:.1f}%</td>"
             f"<td class='r'>{ck_fmt_moic(r.get('moic_p50'))}</td>"
             f"</tr>"
         )

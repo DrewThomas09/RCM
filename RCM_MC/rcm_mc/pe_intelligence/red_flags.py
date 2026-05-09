@@ -61,7 +61,7 @@ def _red_payer_concentration(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         severity=severity,
         category="PAYER",
         finding=(
-            f"{top_name.title()} accounts for {top_share*100:.0f}% of payer "
+            f"{top_name.title()} accounts for {top_share*100:.1f}% of payer "
             "mix. A single-payer negotiation loss would materially "
             "re-rate the deal."
         ),
@@ -101,7 +101,7 @@ def _red_contract_labor_dependency(ctx: HeuristicContext) -> Optional[HeuristicH
         severity=severity,
         category="OPERATIONS",
         finding=(
-            f"{v*100:.0f}% of labor spend is contract/agency. Rates are "
+            f"{v*100:.1f}% of labor spend is contract/agency. Rates are "
             "volatile — a 10% agency-rate reset at $500M of labor is $50M "
             "of EBITDA exposure."
         ),
@@ -138,7 +138,7 @@ def _red_single_service_line_concentration(ctx: HeuristicContext) -> Optional[He
         severity=severity,
         category="OPERATIONS",
         finding=(
-            f"Top service line is {v*100:.0f}% of revenue. A CMS DRG update "
+            f"Top service line is {v*100:.1f}% of revenue. A CMS DRG update "
             "or payer policy change affecting this line moves the whole deal."
         ),
         partner_voice=(
@@ -177,7 +177,7 @@ def _red_340b_dependency(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         severity=severity,
         category="REGULATORY",
         finding=(
-            f"340B contributes ~{v*100:.0f}% of EBITDA. The program has "
+            f"340B contributes ~{v*100:.1f}% of EBITDA. The program has "
             "been cut twice by CMS since 2018 and the 2024 AHA ruling "
             "left the payback schedule unresolved."
         ),
@@ -215,7 +215,7 @@ def _red_covid_unwind_risk(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         severity=severity,
         category="FINANCIAL",
         finding=(
-            f"Approximately {v*100:.0f}% of baseline EBITDA is COVID-relief "
+            f"Approximately {v*100:.1f}% of baseline EBITDA is COVID-relief "
             "funds (PRF, ERC, rate add-ons). These do not recur — the "
             "entry multiple should be calculated on normalized EBITDA."
         ),

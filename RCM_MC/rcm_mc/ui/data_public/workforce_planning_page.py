@@ -38,7 +38,7 @@ def _role_spend_svg(inventory) -> str:
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" '
             f'font-family="JetBrains Mono,monospace">${r.annual_spend_mm:,.2f}M</text>'
             f'<text x="{w - 4}" y="{y + bh - 1}" fill="{turnover_c}" font-size="9" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{r.turnover_rate * 100:.0f}% T/O</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{r.turnover_rate * 100:.1f}% T/O</text>'
         )
 
     return (
@@ -200,7 +200,7 @@ def _agency_table(agency) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(a.role)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{a.current_agency_fte}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{a.target_agency_fte}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]}">{a.premium_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]}">{a.premium_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${a.current_agency_cost_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${a.target_agency_cost_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:600">${a.savings_mm:,.2f}</td>',

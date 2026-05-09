@@ -196,7 +196,7 @@ def _build_structures(ev_mm: float, ebitda_mm: float, hold_years: int) -> List[S
         seller_tax_cost_mm=round(seller_tax_roll, 2),
         net_benefit_mm=round(pv_shield_roll - seller_tax_roll + cash_out * 0.20, 2),
         complexity_score=7,
-        notes=f"{rollover_pct * 100:.0f}% rollover defers gain on that portion",
+        notes=f"{rollover_pct * 100:.1f}% rollover defers gain on that portion",
     ))
 
     return options

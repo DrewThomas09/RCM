@@ -223,14 +223,14 @@ def attribute_value_creation(
     elif organic_share + margin_share >= 50:
         note = (
             f"MOIC {moic:.2f}x with "
-            f"{organic_share + margin_share:.0f}% from "
+            f"{organic_share + margin_share:.1f}% from "
             "operating sources (organic + margin). "
             "Partner: this is an operating thesis — we "
             "control the outcome."
         )
     elif ma_share > 40:
         note = (
-            f"MOIC {moic:.2f}x with {ma_share:.0f}% from "
+            f"MOIC {moic:.2f}x with {ma_share:.1f}% from "
             "M&A. Partner: this is a roll-up — price "
             "and underwrite as such."
         )

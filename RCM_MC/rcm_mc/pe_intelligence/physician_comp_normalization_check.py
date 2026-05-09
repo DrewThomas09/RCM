@@ -259,7 +259,7 @@ def check_physician_comp_normalization(
         note = (
             f"Pro-forma overstates EBITDA by "
             f"${total_hair + churn_hit:,.1f}M "
-            f"({haircut_pct*100:.0f}%). "
+            f"({haircut_pct*100:.1f}%). "
             "Partner: walk or demand seller recut."
         )
     elif haircut_pct >= 0.10:
@@ -267,7 +267,7 @@ def check_physician_comp_normalization(
         note = (
             f"Expected normalization haircut $"
             f"{total_hair + churn_hit:,.1f}M "
-            f"({haircut_pct*100:.0f}%). Partner: model off "
+            f"({haircut_pct*100:.1f}%). Partner: model off "
             f"${adjusted_ebitda:,.1f}M; apply exit multiple "
             "accordingly."
         )
@@ -288,7 +288,7 @@ def check_physician_comp_normalization(
     if churn_flag:
         note += (
             f" Churn risk: base comp cut "
-            f"{base_cut_pct*100:.0f}% triggers 15% physician "
+            f"{base_cut_pct*100:.1f}% triggers 15% physician "
             "churn assumption — priced into adjusted EBITDA."
         )
 
@@ -323,7 +323,7 @@ def render_physician_comp_norm_markdown(
         f"- Surviving at QofE: ${r.total_surviving_m:,.1f}M",
         f"- Haircut: ${r.total_haircut_m:,.1f}M",
         f"- Churn EBITDA hit: ${r.churn_ebitda_hit_m:,.1f}M "
-        f"(cut {r.base_comp_cut_pct*100:.0f}%, "
+        f"(cut {r.base_comp_cut_pct*100:.1f}%, "
         f"flag {'YES' if r.churn_risk_flag else 'no'})",
         f"- **Adjusted EBITDA: ${r.adjusted_ebitda_m:,.1f}M**",
         "",

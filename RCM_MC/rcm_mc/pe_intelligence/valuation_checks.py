@@ -163,14 +163,14 @@ def check_terminal_value_share(
     if TV_SHARE_IN_BAND[0] <= share <= TV_SHARE_IN_BAND[1]:
         return BandCheck(
             metric="terminal_value_share", observed=share, verdict=VERDICT_IN_BAND,
-            rationale=f"Terminal value is {share*100:.0f}% of DCF EV — standard range.",
+            rationale=f"Terminal value is {share*100:.1f}% of DCF EV — standard range.",
             partner_note="Explicit period is doing meaningful work.",
         )
     if share <= TV_SHARE_IMPLAUSIBLE_LOW or share >= TV_SHARE_IMPLAUSIBLE_HIGH:
         return BandCheck(
             metric="terminal_value_share", observed=share, verdict=VERDICT_IMPLAUSIBLE,
             rationale=(
-                f"Terminal value is {share*100:.0f}% of DCF EV — "
+                f"Terminal value is {share*100:.1f}% of DCF EV — "
                 "outside any defensible range."
             ),
             partner_note="Model looks broken. Re-check the TV growth rate and discount method.",
@@ -183,12 +183,12 @@ def check_terminal_value_share(
         )
         return BandCheck(
             metric="terminal_value_share", observed=share, verdict=VERDICT_STRETCH,
-            rationale=f"Terminal value is {share*100:.0f}% of DCF EV.",
+            rationale=f"Terminal value is {share*100:.1f}% of DCF EV.",
             partner_note=partner_note,
         )
     return BandCheck(
         metric="terminal_value_share", observed=share, verdict=VERDICT_OUT_OF_BAND,
-        rationale=f"Terminal value is {share*100:.0f}% of DCF EV.",
+        rationale=f"Terminal value is {share*100:.1f}% of DCF EV.",
         partner_note="Look at the TV growth rate — is it above steady-state GDP? If yes, haircut it.",
     )
 

@@ -143,7 +143,7 @@ def _commentary(category: str, claimed: int,
     return (
         f"{category} claimed Y{claimed} but typical is "
         f"Y{typical_min}-Y{typical_max}. {years_early} "
-        f"yr(s) early → {haircut*100:.0f}% haircut."
+        f"yr(s) early → {haircut*100:.1f}% haircut."
     )
 
 
@@ -191,7 +191,7 @@ def score_synergy_sequencing(
     elif haircut_pct >= 0.15:
         note = (
             f"${haircut_total:,.1f}M "
-            f"({haircut_pct*100:.0f}%) of synergy haircut "
+            f"({haircut_pct*100:.1f}%) of synergy haircut "
             "for timing. Partner: flag to the team; "
             "re-phase plan."
         )

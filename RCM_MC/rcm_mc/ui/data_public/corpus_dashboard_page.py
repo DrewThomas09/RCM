@@ -172,7 +172,7 @@ def render_corpus_dashboard() -> str:
     </table>
     <div style="font-size:9px;color:#475569;max-width:180px;line-height:1.6;">
       Bars: 0–1 (red) · 1–2 (amber) · 2+ (green)<br>
-      {sum(1 for m in moics if m>=2)}/{len(moics)} deals achieved ≥2× ({100*sum(1 for m in moics if m>=2)/len(moics):.0f}%)
+      {sum(1 for m in moics if m>=2)}/{len(moics)} deals achieved ≥2× ({100*sum(1 for m in moics if m>=2)/len(moics):.1f}%)
     </div>
   </div>
 </div>"""
@@ -258,7 +258,7 @@ def render_corpus_dashboard() -> str:
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc}">{s.moic_p50:.2f}x</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.irr_p50*100:.1f}%</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.0f}%</td>
+      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.1f}%</td>
 </tr>""")
 
     sector_table = f"""
@@ -291,7 +291,7 @@ def render_corpus_dashboard() -> str:
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s.n_deals}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{mc}">{s.moic_p50:.2f}x</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;
-      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.0f}%</td>
+      color:{'#ef4444' if s.loss_rate>0.2 else '#f59e0b' if s.loss_rate>0.1 else '#22c55e'};">{s.loss_rate*100:.1f}%</td>
 </tr>""")
 
     vintage_table = f"""

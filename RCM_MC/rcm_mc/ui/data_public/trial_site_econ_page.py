@@ -167,7 +167,7 @@ def render_trial_site_econ(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Cost Structure</div>{c_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Trial Site Thesis:</strong> {r.total_sites} sites running {r.total_active_trials} active trials at ${r.annual_revenue_mm:,.2f}M revenue, {r.blended_margin_pct * 100:.1f}% operating margin.
-    Oncology and rare-disease therapeutic areas lead on revenue-per-site and enrollment rate; metabolic (GLP-1) and CNS (psychedelics) are fastest-growing. Phase IV and DCT drive highest margins at {max(p.typical_margin_pct for p in r.phase_econ) * 100:.0f}%.
+    Oncology and rare-disease therapeutic areas lead on revenue-per-site and enrollment rate; metabolic (GLP-1) and CNS (psychedelics) are fastest-growing. Phase IV and DCT drive highest margins at {max(p.typical_margin_pct for p in r.phase_econ) * 100:.1f}%.
     Large pharma direct relationships (Pfizer, Merck, Lilly) generate highest per-study fees; CRO pass-through adds volume but lower margin.
     Rising wage pressure on CRC/physician investigators and recruitment cost compression are the material operating headwinds to monitor.
   </div>

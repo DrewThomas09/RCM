@@ -632,7 +632,7 @@ def _panel_physician_comp(inp: WorkbenchInput) -> str:
                 f"${b.ebitda_at_risk_usd:,.0f}",
                 att_color,
                 peer=f"{b.confidence} confidence · "
-                     f"{b.realization_probability*100:.0f}% realization",
+                     f"{b.realization_probability*100:.1f}% realization",
             ))
             rows.append(
                 f'<div style="margin-top:6px;"><a href="/diligence/physician-attrition" '
@@ -914,7 +914,7 @@ def _panel_labor_referral(inp: WorkbenchInput) -> str:
         )
         rows.append(_kv_row(
             "Synthetic FTE",
-            f"{syn.severity} · {syn.npi_vs_scheduled_gap_pct*100:.0f}% gap",
+            f"{syn.severity} · {syn.npi_vs_scheduled_gap_pct*100:.1f}% gap",
             _SEVERITY_COLOR.get(syn.severity, P["text"]),
         ))
     if inp.revenue_by_provider:

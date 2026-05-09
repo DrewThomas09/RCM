@@ -130,15 +130,15 @@ def render_deal_dashboard(
     if rev_h > 0:
         ident_parts.append(
             f'<span class="ident-key">NPR</span> '
-            f'<span class="ident-val">${rev_h/1e6:,.0f}M</span>'
+            f'<span class="ident-val">${rev_h/1e6:,.2f}M</span>'
         )
         ident_parts.append(
             f'<span class="ident-key">EBITDA</span> '
-            f'<span class="ident-val">${ebitda_h/1e6:,.0f}M</span>'
+            f'<span class="ident-val">${ebitda_h/1e6:,.2f}M</span>'
         )
         ident_parts.append(
             f'<span class="ident-key">EV</span> '
-            f'<span class="ident-val">${ev_h/1e6:,.0f}M</span> '
+            f'<span class="ident-val">${ev_h/1e6:,.2f}M</span> '
             f'<span class="ident-key">@11.0x</span>'
         )
     ident_strip = (
@@ -185,7 +185,7 @@ def render_deal_dashboard(
         try:
             v = float(val)
             if suffix == "$M":
-                display = f"${v / 1e6:,.0f}M"
+                display = f"${v / 1e6:,.2f}M"
             elif suffix == "%":
                 display = f"{v:.1f}%"
             else:
@@ -216,7 +216,7 @@ def render_deal_dashboard(
             "DCF", f"/models/dcf/{did}", "DCF Valuation",
             "10% WACC · 5-year projection · sensitivity grid",
             accent=PALETTE["brand_accent"],
-            inline_value=(f"${ev_est/1e6:,.0f}M EV" if ev_est > 0 else ""),
+            inline_value=(f"${ev_est/1e6:,.2f}M EV" if ev_est > 0 else ""),
             inline_color=PALETTE["positive"],
         ),
         _model_tile(
@@ -239,7 +239,7 @@ def render_deal_dashboard(
         _model_tile(
             "DEN", f"/models/denial/{did}", "Denial Drivers",
             ("Root-cause decomposition · est. "
-             f"${recoverable/1e6:.1f}M recoverable" if recoverable > 0
+             f"${recoverable/1e6:.2f}M recoverable" if recoverable > 0
              else "Root-cause decomposition · AR bridge"),
             accent=PALETTE["warning"],
             inline_value=(f"{dr_val:.1f}% → 8%" if dr_val > 8 else ""),

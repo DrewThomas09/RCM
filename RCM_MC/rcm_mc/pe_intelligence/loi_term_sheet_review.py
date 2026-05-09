@@ -141,7 +141,7 @@ def review_loi(inputs: LOIReviewInputs) -> LOIReviewReport:
         if inputs.rw_cap_pct_ev > 0.15:
             reviews.append(LOITermReview(
                 term="rw_insurance_cap",
-                seller_proposal=(f"{inputs.rw_cap_pct_ev*100:.0f}% of EV"),
+                seller_proposal=(f"{inputs.rw_cap_pct_ev*100:.1f}% of EV"),
                 partner_counter="10-15% of EV (market standard)",
                 priority="should_push",
                 rationale=("Higher caps cost more premium; middle of "

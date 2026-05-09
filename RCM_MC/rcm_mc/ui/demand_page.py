@@ -166,7 +166,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
         f'<div class="cad-card">'
         f'<h2>Price Elasticity by DRG</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-        f'A 10% cut in Medicare reimbursement would reduce volume by ~{abs(elasticity)*10:.0f}%. '
+        f'A 10% cut in Medicare reimbursement would reduce volume by ~{abs(elasticity)*10:.1f}%. '
         f'Sticky DRGs (chronic conditions) are highly inelastic.</p>'
         f'<table class="cad-table"><thead><tr>'
         f'<th>DRG</th><th>Description</th><th>Volume</th><th>Elasticity</th><th>Type</th>'

@@ -83,7 +83,22 @@ RULES: list[ComplianceRule] = [
         "Tour-overlay JS is injected (P77).",
         lambda h: "data-tour" in h,
     ),
+    (
+        "number-format-clean",
+        "Rendered output has zero number-format violations (P94).",
+        lambda h: _number_format_clean(h),
+    ),
 ]
+
+
+def _number_format_clean(html: str) -> bool:
+    """Predicate: True iff the rendered HTML has zero violations of
+    the CLAUDE.md number-format rules (money 2dp, percent 1dp,
+    multiples 2dp). Imported lazily to avoid a hard module-import
+    cycle with the audit module.
+    """
+    from .voice_audit import audit_number_format
+    return not audit_number_format(html)
 
 
 def compliance_check(html: str) -> dict:

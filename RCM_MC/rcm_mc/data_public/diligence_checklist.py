@@ -491,7 +491,7 @@ def _eval_payer(deal: Dict[str, Any]) -> List[ChecklistItem]:
             title="Medicaid exposure",
             description="Heavy Medicaid → state rate-cut sensitivity.",
             status="WARNING",
-            detail=f"medicaid {medicaid*100:.0f}% of mix",
+            detail=f"medicaid {medicaid*100:.1f}% of mix",
         ))
     else:
         out.append(ChecklistItem(
@@ -499,7 +499,7 @@ def _eval_payer(deal: Dict[str, Any]) -> List[ChecklistItem]:
             title="Medicaid exposure",
             description="Heavy Medicaid → state rate-cut sensitivity.",
             status="PASS",
-            detail=f"medicaid {medicaid*100:.0f}% of mix",
+            detail=f"medicaid {medicaid*100:.1f}% of mix",
         ))
 
     return out

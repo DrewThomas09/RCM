@@ -72,8 +72,13 @@ _NUMBER_VIOLATIONS: list[tuple[str, str]] = [
     # M/B/k/no suffix or whitespace, NOT followed by another digit.
     (r"\$\d+(?:\.\d)?(?=[MBk\s,]|$)",
      'money values should render with 2 decimal places (e.g. $450.25M)'),
-    # Percent without a decimal — except for "0%" which is fine.
-    (r"\b\d+%(?:[^.\d])",
+    # Percent without a decimal. Both lookbehinds together prevent a
+    # match starting on the decimal portion of a well-formed value:
+    # ``10.0%`` should NOT trigger because the ``0%`` substring is
+    # preceded by ``.`` (the lookbehind ``(?<!\.)`` blocks it) and
+    # by another digit (the lookbehind ``(?<!\d)`` blocks two-or-more
+    # digit decimals like ``1.50%``).
+    (r"(?<!\.)(?<!\d)\b\d+%(?:[^.\d])",
      'percent values should render with 1 decimal place (e.g. 15.3%)'),
     # Multiples like "2.5x" / "2x" — should be 2dp. The negative
     # lookbehinds prevent matching inside a longer number ("2.80x"
@@ -83,19 +88,40 @@ _NUMBER_VIOLATIONS: list[tuple[str, str]] = [
 ]
 
 
-def audit_number_format(s: str) -> list[dict]:
+def _strip_html_for_audit(html: str) -> str:
+    """Remove ``<style>…</style>`` blocks and all tag markup so the
+    number-format audit sees partner-visible text only.
+
+    Called by ``audit_number_format`` to neutralise CSS percentages
+    (``width:100%;``), inline ``style="…"`` attributes, and JS in
+    ``<script>`` blocks — none of which carry partner-facing numbers
+    but all of which match the format-violation regexes.
+    """
+    s = re.sub(r"<(style|script)[^>]*>.*?</\1>", " ", html,
+               flags=re.DOTALL | re.IGNORECASE)
+    return re.sub(r"<[^>]+>", " ", s)
+
+
+def audit_number_format(s: str, *, strip_html: bool = True) -> list[dict]:
     """Flag rendered numbers that violate the format-compliance rules.
 
     Caller passes the output of a render function; the audit
     catches rendered "$450M" / "9%" / "2.8x" — none of which the
     kit's ``format_value`` would produce.
 
+    ``strip_html=True`` (default) removes ``<style>``/``<script>``
+    blocks and tag markup before applying the format regexes so a
+    full HTML response can be audited without false positives from
+    CSS percentages and inline-style attributes. Pass ``False`` for
+    plain text to skip the strip.
+
     Returns a list of issues. Empty list = clean.
     """
     if not s:
         return []
+    if strip_html and ("<" in s and ">" in s):
+        s = _strip_html_for_audit(s)
     issues = []
-    import re
     for pattern, message in _NUMBER_VIOLATIONS:
         for m in re.finditer(pattern, s):
             issues.append({

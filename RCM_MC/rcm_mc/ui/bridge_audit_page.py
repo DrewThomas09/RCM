@@ -514,7 +514,7 @@ def _per_lever_narrative_block(report: BridgeAuditReport) -> str:
             f'margin-top:4px;">'
             f'{html.escape(a.category_label)} · '
             f'median realization {a.adjusted_realization_median*100:.0f}% · '
-            f'{a.failure_rate*100:.0f}% fail rate · '
+            f'{a.failure_rate*100:.1f}% fail rate · '
             f'{a.duration_months_median}-month ramp</div>'
             + vs_bar
             + f'<div style="font-size:12.5px;color:{P["text_dim"]};'
@@ -550,10 +550,10 @@ def _lever_library_panel() -> str:
             p.category.value,
             html.escape(p.label),
             f'<span style="color:{realization_color};font-weight:700;">'
-            f'{p.realization_median*100:.0f}%</span>',
+            f'{p.realization_median*100:.1f}%</span>',
             f"{p.realization_p25*100:.0f}% – {p.realization_p75*100:.0f}%",
             f'<span style="color:{fail_color};font-weight:700;">'
-            f'{p.failure_rate*100:.0f}%</span>',
+            f'{p.failure_rate*100:.1f}%</span>',
             f"{p.realization_n_samples:,}",
             str(p.duration_months_median),
         ])
@@ -791,7 +791,7 @@ def render_bridge_audit_page(
             f"claims <strong>${worst.claimed_usd/1e6:,.1f}M</strong>, "
             f"realistic capture is "
             f"<strong>${worst.realistic_median_usd/1e6:,.2f}M</strong> "
-            f"(<strong>{worst.adjusted_realization_median*100:.0f}%</strong> "
+            f"(<strong>{worst.adjusted_realization_median*100:.1f}%</strong> "
             f"of claim). {len(overstated)} of "
             f"{len(report.per_lever)} levers overshoot."
         )

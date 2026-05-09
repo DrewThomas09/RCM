@@ -123,7 +123,7 @@ def _sector_breadth_table(corpus: List[Dict]) -> str:
 
         def cov_cell(pct: float) -> str:
             col = P["positive"] if pct >= 80 else (P["warning"] if pct >= 50 else P["negative"])
-            return f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{col};font-variant-numeric:tabular-nums">{pct:.0f}%</td>'
+            return f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{col};font-variant-numeric:tabular-nums">{pct:.1f}%</td>'
 
         rows += (
             f'<tr style="background:{bg}">'
@@ -214,7 +214,7 @@ def render_corpus_coverage() -> str:
   <div style="flex:1">
     <div style="font-size:11px;color:{P['text']};font-family:{_SANS};line-height:1.6">
       {n:,} healthcare PE transactions from public filings, press releases, and investor disclosures.<br>
-      {has_moic_pct:.0f}% have disclosed MOIC. All figures represent publicly available data only.<br>
+      {has_moic_pct:.1f}% have disclosed MOIC. All figures represent publicly available data only.<br>
       Sources: SEC filings, company press releases, LP letters, Bloomberg, Pitchbook disclosures.
     </div>
   </div>

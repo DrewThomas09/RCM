@@ -82,7 +82,7 @@ def _waterfall_svg(components, fund_moic: float) -> str:
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(short)}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{color}" font-size="8" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{c.pct_of_total_return * 100:.0f}%</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{c.pct_of_total_return * 100:.1f}%</text>'
         )
         running += contrib
 
@@ -308,8 +308,8 @@ def render_fund_attribution(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Attribution Thesis:</strong>
     Fund realized {r.fund_moic:.2f}x MOIC / {r.fund_irr * 100:.1f}% IRR. Operational improvements contributed
-    {r.components[0].pct_of_total_return * 100:.0f}% of return, leverage {r.components[3].pct_of_total_return * 100:.0f}%,
-    multiple expansion {r.components[2].pct_of_total_return * 100:.0f}%. A healthy attribution mix — returns come
+    {r.components[0].pct_of_total_return * 100:.1f}% of return, leverage {r.components[3].pct_of_total_return * 100:.1f}%,
+    multiple expansion {r.components[2].pct_of_total_return * 100:.1f}%. A healthy attribution mix — returns come
     from operational execution, not just entry/exit multiple arbitrage.
   </div>
 

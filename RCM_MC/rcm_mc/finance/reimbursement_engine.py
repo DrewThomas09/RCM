@@ -1154,7 +1154,7 @@ def explain_reimbursement_logic(
         key=lambda t: t[1], reverse=True,
     )[:2]
     methods_label = ", ".join(
-        f"{m.value.replace('_', ' ')} ({w*100:.0f}%)"
+        f"{m.value.replace('_', ' ')} ({w*100:.1f}%)"
         for m, w in method_desc
     )
 

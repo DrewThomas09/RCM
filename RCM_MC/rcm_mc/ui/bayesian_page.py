@@ -168,7 +168,7 @@ def render_bayesian_profile(
         f"Bayesian Calibration — {_html.escape(hospital_name)}",
         subtitle=(
             f"CCN {_html.escape(ccn)} | Data quality: {data_score['grade']} "
-            f"({data_score['completeness_pct']:.0f}% complete) | "
+            f"({data_score['completeness_pct']:.1f}% complete) | "
             f"{data_score['present_count']}/{data_score['total_metrics']} metrics"
         ),
     )

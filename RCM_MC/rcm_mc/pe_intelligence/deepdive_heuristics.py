@@ -71,7 +71,7 @@ def _h_rural_payer_concentration(ctx: HeuristicContext) -> Optional[HeuristicHit
         id="rural_govt_concentration",
         title="Rural + government-heavy — double concentration",
         severity=SEV_HIGH, category="PAYER",
-        finding=(f"Rural hospital with {govt*100:.0f}% government payer mix. "
+        finding=(f"Rural hospital with {govt*100:.1f}% government payer mix. "
                  "Catchment area concentration stacks with payer concentration."),
         partner_voice=("Rural + govt-heavy is the toughest underwrite in "
                        "healthcare PE. Be sure the CAH reimbursement "
@@ -188,7 +188,7 @@ def _h_mgmt_rollover_too_high(ctx: HeuristicContext) -> Optional[HeuristicHit]:
         id="mgmt_rollover_too_high",
         title="Management rollover > 30% — founder-scale limits",
         severity=SEV_LOW, category="STRUCTURE",
-        finding=(f"Management equity rollover {r*100:.0f}%. High rollover "
+        finding=(f"Management equity rollover {r*100:.1f}%. High rollover "
                  "means founder retains material control — scale thesis "
                  "is harder."),
         partner_voice=("Big rollover is great for alignment but limits "

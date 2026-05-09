@@ -109,7 +109,7 @@ def analyze_payer_mix_risk(
         risks.append(PayerRisk(
             category="dominant_payer",
             severity="high" if top[1] >= 0.60 else "medium",
-            detail=(f"{top[0]} is {top[1]*100:.0f}% of revenue — "
+            detail=(f"{top[0]} is {top[1]*100:.1f}% of revenue — "
                     "single-payer dependency."),
             remediation="Contract longevity analysis + down-rate scenario.",
         ))
@@ -123,7 +123,7 @@ def analyze_payer_mix_risk(
             risks.append(PayerRisk(
                 category="medicare_advantage_heavy",
                 severity="medium" if ma < 0.50 else "high",
-                detail=(f"Medicare Advantage is {ma*100:.0f}% of revenue. "
+                detail=(f"Medicare Advantage is {ma*100:.1f}% of revenue. "
                         "MA behaves differently from FFS Medicare — denial "
                         "patterns, rate negotiations, and network rules all "
                         "diverge."),
@@ -140,7 +140,7 @@ def analyze_payer_mix_risk(
             risks.append(PayerRisk(
                 category="medicaid_managed_care_heavy",
                 severity="medium",
-                detail=(f"Medicaid Managed Care is {mmc*100:.0f}% of "
+                detail=(f"Medicaid Managed Care is {mmc*100:.1f}% of "
                         "revenue. MCO rate negotiations differ from FFS."),
                 remediation="Per-MCO rate review + contract expiration mapping.",
             ))
@@ -154,7 +154,7 @@ def analyze_payer_mix_risk(
             risks.append(PayerRisk(
                 category="aca_exchange_heavy",
                 severity="medium",
-                detail=(f"ACA exchange is {aca*100:.0f}% of revenue. "
+                detail=(f"ACA exchange is {aca*100:.1f}% of revenue. "
                         "Enrollee turnover is high and subsidy policy "
                         "affects member count."),
                 remediation="Model subsidy-expiration scenario.",
@@ -202,7 +202,7 @@ def render_payer_mix_risk_markdown(
         "",
         f"**Payer HHI:** {report.payer_hhi:.0f}  ",
         f"**Top payer:** {report.top_payer or 'n/a'} "
-        f"({report.top_payer_share*100:.0f}%)",
+        f"({report.top_payer_share*100:.1f}%)",
         "",
         f"_{report.partner_note}_",
     ]

@@ -90,7 +90,7 @@ def _pentest_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn}">{p.high_findings}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{p.medium_findings}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{p.low_findings}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{p.remediated_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{p.remediated_pct * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.status)}</span></td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -246,7 +246,7 @@ def render_compliance_attestation(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Control Framework Maturity</div>{f_tbl}</div>
   <div style="{cell}"><div style="{h3}">Audit Calendar — Next 12 Months</div>{c_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
-    <strong style="color:{text}">Portfolio Security Posture:</strong> {r.soc2_type_ii_count} of {r.total_portcos} portcos hold SOC 2 Type II ({r.soc2_type_ii_count / r.total_portcos * 100:.0f}%); {r.hitrust_certified_count} hold HITRUST (essentials or r2); average posture score {r.avg_posture_score:.2f}/10.
+    <strong style="color:{text}">Portfolio Security Posture:</strong> {r.soc2_type_ii_count} of {r.total_portcos} portcos hold SOC 2 Type II ({r.soc2_type_ii_count / r.total_portcos * 100:.1f}%); {r.hitrust_certified_count} hold HITRUST (essentials or r2); average posture score {r.avg_posture_score:.2f}/10.
     Top-tier posture: Oak (RCM SaaS, 9.2) and Fir (Lab, 9.0) — both hold SOC 2 Type II + HITRUST r2 + ISO 27001. Laggards: Sage (Home Health, 6.5 — SOC 2 expired), Aspen (Eye Care, 6.8 — post-breach remediation).
     Penetration testing yielded {crit_findings} critical findings across {len(r.pentests)} portcos YTD; 3 have active critical remediation underway (Redwood, Aspen, Sage) with projected close by Q2 2026.
     Vendor book: 12 tier-1 vendors account for ~70% of portfolio tech spend; Change Healthcare (post-breach tier 2), Iron Mountain (SOC 2 gap), Stericycle (SOC 2 gap) are the 3 flagged vendors — compensating controls in place.

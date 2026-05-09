@@ -227,7 +227,7 @@ def _verdict_card(
             pct_label = "clears IC"
         pct_frame = (
             f' <span style="color:{pct_tone};font-weight:700;">'
-            f'({pct_at_risk:.0f}% of run-rate — {pct_label})</span>'
+            f'({pct_at_risk:.1f}% of run-rate — {pct_label})</span>'
         )
         peer_chip = (
             "<div style=\"margin-top:16px;\">"

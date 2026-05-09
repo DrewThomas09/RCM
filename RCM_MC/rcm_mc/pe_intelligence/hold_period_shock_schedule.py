@@ -209,7 +209,7 @@ def build_hold_shock_schedule(
     elif cumulative / max(0.01, base_ebitda) > 0.15:
         note = (f"Cumulative regulatory erosion "
                 f"${cumulative:,.1f}M "
-                f"({cumulative/base_ebitda*100:.0f}% of base "
+                f"({cumulative/base_ebitda*100:.1f}% of base "
                 "EBITDA). Partner: bake into base case, not "
                 "bear.")
     else:

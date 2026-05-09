@@ -289,7 +289,7 @@ def render_cost_structure(params: dict = None) -> str:
     <strong style="color:{text}">Operating Leverage Thesis:</strong>
     {r.variable_cost_pct * 100:.1f}% variable cost structure means every $1 of incremental revenue drops
     $${(1 - r.variable_cost_pct):.2f} to EBITDA. Current leverage coefficient {r.operating_leverage:.2f}x —
-    a 10% top-line expansion implies {r.operating_leverage * 10:.0f}% EBITDA growth without margin compression.
+    a 10% top-line expansion implies {r.operating_leverage * 10:.1f}% EBITDA growth without margin compression.
   </div>
 
 </div>"""

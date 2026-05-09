@@ -47,7 +47,7 @@ def _initiatives_table(items) -> str:
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(it.category)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${it.annualized_target_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${it.captured_ltm_mm:,.2f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{it.capture_rate_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{it.capture_rate_pct * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{_html.escape(it.owner)}</td>',
             f'<td style="text-align:center;padding:5px 10px"><span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(it.status)}</span></td>',
         ]
@@ -166,7 +166,7 @@ def render_zbb_tracker(params: dict = None) -> str:
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {r_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
     <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">ZBB Transformation Progress</div>
-    <div style="color:{r_c};font-weight:700;font-size:14px">${r.total_savings_captured_mm:,.1f}M captured / ${r.total_savings_captured_mm + r.total_savings_potential_mm:,.1f}M opportunity · {r.capture_rate_pct * 100:.0f}% capture rate</div>
+    <div style="color:{r_c};font-weight:700;font-size:14px">${r.total_savings_captured_mm:,.1f}M captured / ${r.total_savings_captured_mm + r.total_savings_potential_mm:,.1f}M opportunity · {r.capture_rate_pct * 100:.1f}% capture rate</div>
     <div style="color:{text_dim};font-size:11px;margin-top:4px">Run-rate reduced from ${r.total_baseline_mm:,.1f}M → ${r.current_run_rate_mm:,.1f}M · ${r.current_run_rate_mm - r.target_run_rate_mm:,.1f}M remains to target</div>
   </div>
   <div style="{cell}"><div style="{h3}">Cost Category Rebuild — Baseline vs Current vs Target</div>{c_tbl}</div>

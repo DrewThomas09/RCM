@@ -45,9 +45,9 @@ def _contracts_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${c.contract_value_annual_m:.1f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">${c.stipend_m:.1f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">${c.guaranteed_compensation_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.productivity_based_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{c.productivity_based_pct * 100:.1f}%</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{ex_c};font-weight:700">{"YES" if c.exclusivity else "NO"}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rp_c};font-weight:700">{c.renewal_probability_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{rp_c};font-weight:700">{c.renewal_probability_pct * 100:.1f}%</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
     return (f'<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -144,7 +144,7 @@ def _service_lines_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc}">{s.total_contracts}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">${s.revenue_m:.1f}M</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${s.avg_contract_size_m:.1f}M</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{s.weighted_renewal_prob * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos};font-weight:700">{s.weighted_renewal_prob * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.typical_term_years}y</td>',
         ]
         trs.append(f'<tr style="background:{rb}">{"".join(cells)}</tr>')
@@ -209,7 +209,7 @@ def render_hospital_anchor(params: dict = None) -> str:
 <div style="padding:20px;max-width:1400px;margin:0 auto">
   <div style="margin-bottom:20px">
     <h1 style="font-size:18px;font-weight:700;color:{text};letter-spacing:0.02em">Hospital Anchor Contract Tracker</h1>
-    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_contracts} contracts · ${r.total_contract_value_m:,.1f}M annual value · ${r.total_stipend_m:.1f}M stipend · {r.weighted_renewal_probability_pct * 100:.0f}% weighted renewal · {r.exclusive_contracts}/{r.total_contracts} exclusive · ${r.at_risk_revenue_m:.1f}M at risk — {r.corpus_deal_count:,} corpus deals</p>
+    <p style="font-size:12px;color:{text_dim};margin-top:4px">{r.total_contracts} contracts · ${r.total_contract_value_m:,.1f}M annual value · ${r.total_stipend_m:.1f}M stipend · {r.weighted_renewal_probability_pct * 100:.1f}% weighted renewal · {r.exclusive_contracts}/{r.total_contracts} exclusive · ${r.at_risk_revenue_m:.1f}M at risk — {r.corpus_deal_count:,} corpus deals</p>
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">{kpi_strip}</div>
   <div style="{cell}"><div style="{h3}">Renewal Schedule — Next 36 Months</div>{rn_tbl}</div>
@@ -220,7 +220,7 @@ def render_hospital_anchor(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Hospital Counterparties — Credit & Strategy</div>{cp_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Hospital Anchor Contract Summary:</strong> {r.total_contracts} active contracts generate ${r.total_contract_value_m:,.1f}M annual revenue with ${r.total_stipend_m:.1f}M hospital-paid stipends — 29% stipend-to-total mix supports productivity gap during ramp / volatility.
-    Renewal profile: {r.weighted_renewal_probability_pct * 100:.0f}% weighted renewal probability; {r.contracts_expiring_12mo} contracts expiring within 12 months (${sum(r2.revenue_at_risk_m for r2 in r.renewals if r2.months_until_expiry <= 12):.1f}M revenue at renewal).
+    Renewal profile: {r.weighted_renewal_probability_pct * 100:.1f}% weighted renewal probability; {r.contracts_expiring_12mo} contracts expiring within 12 months (${sum(r2.revenue_at_risk_m for r2 in r.renewals if r2.months_until_expiry <= 12):.1f}M revenue at renewal).
     Counterparty concentration: HCA Healthcare ($283M across 5 contracts) is the single largest relationship — represents 30% of contract book; diversified across anesthesia, radiology, ED, hospitalist, pathology.
     Credit quality: 60% of contracted revenue from A-/better counterparties (HCA BBB+, Kaiser AA+, Ascension A+, CommonSpirit A-, Baylor AA-, AdventHealth AA-, Methodist AA); Tenet (B+) and UHS (BB+) at weaker end.
     Stipend benchmarking: HCA contracts at P75, CommonSpirit/Ascension at P60, Tenet at P75 (under anesthesia pressure); AdventHealth stipend "tightening" flags risk ahead of Dec 2025 renewal.

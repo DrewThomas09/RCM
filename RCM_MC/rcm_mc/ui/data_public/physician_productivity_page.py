@@ -62,7 +62,7 @@ def _benchmark_svg(benchmarks) -> str:
             f'<circle cx="{xA:.1f}" cy="{y + 4}" r="4" fill="{mkr}" stroke="{P["text"]}" stroke-width="1"/>'
             # Percentile label
             f'<text x="{w - pad_r + 6}" y="{y + 6}" fill="{mkr}" font-size="9" '
-            f'font-family="JetBrains Mono,monospace">{b.percentile:.0f}%</text>'
+            f'font-family="JetBrains Mono,monospace">{b.percentile:.1f}%</text>'
         )
 
     # Scale ticks
@@ -209,7 +209,7 @@ def _capacity_table(scenarios) -> str:
         ec = pos if s.implied_ev_uplift_mm >= 0 else neg
         cells = [
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{_html.escape(s.scenario)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.productivity_pct_of_p75 * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.productivity_pct_of_p75 * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{s.implied_wrvu_lift_pct * 100:+.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.implied_revenue_lift_mm:+,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">${s.implied_ebitda_lift_mm:+,.2f}</td>',

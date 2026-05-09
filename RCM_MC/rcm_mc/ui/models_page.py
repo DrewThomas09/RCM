@@ -80,14 +80,14 @@ def _model_nav(deal_id: str, active: str = "") -> str:
 
 
 def _fmt_m(val: Any) -> str:
-    """Format as $XM."""
+    """Format as $X.XXM (CLAUDE.md: money values are 2 decimal places)."""
     if val is None:
         return "—"
     try:
         v = float(val)
         if abs(v) >= 1e9:
-            return f"${v / 1e9:,.1f}B"
-        return f"${v / 1e6:,.1f}M"
+            return f"${v / 1e9:,.2f}B"
+        return f"${v / 1e6:,.2f}M"
     except (TypeError, ValueError):
         return "—"
 
@@ -284,7 +284,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p>At a WACC of <strong>{wacc:.1%}</strong> and terminal growth of '
         f'<strong>{growth:.1%}</strong>, enterprise value is <strong>{_fmt_m(ev)}</strong>. '
-        f'Terminal value accounts for <strong>{tv_pct:.0f}%</strong> of total EV — '
+        f'Terminal value accounts for <strong>{tv_pct:.1f}%</strong> of total EV — '
         f'{"typical range (60-80%)" if 55 < tv_pct < 85 else "consider sensitivity to terminal assumptions"}.</p>'
         f'<p style="margin-top:8px;"><strong>Next steps:</strong> '
         f'Check the <a href="/models/lbo/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">LBO model</a> '

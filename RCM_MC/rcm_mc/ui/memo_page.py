@@ -197,4 +197,4 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
 
     return chartis_shell(body, f"Completeness — {html.escape(deal_name)}",
                     active_nav="/analysis",
-                    subtitle=f"Grade: {grade} | {pct:.0f}% coverage | {present}/{total} fields")
+                    subtitle=f"Grade: {grade} | {pct:.1f}% coverage | {present}/{total} fields")

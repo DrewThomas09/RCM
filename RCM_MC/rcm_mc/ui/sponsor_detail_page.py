@@ -183,7 +183,7 @@ def _sector_pie(sectors_with_counts: Dict[str, int]) -> str:
             f'width:{bar_w}%;"></div></div>'
             f'<span style="color:#6b7280;font-variant-numeric:'
             f'tabular-nums;text-align:right;">{count} · '
-            f'{pct:.0f}%</span></div>'
+            f'{pct:.1f}%</span></div>'
         )
     return "".join(parts)
 

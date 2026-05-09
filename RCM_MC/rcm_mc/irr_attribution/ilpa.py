@@ -105,7 +105,7 @@ def render_lp_narrative(result: AttributionResult) -> str:
                          / max(0.1, revenue_total))
         lines.append(
             f"- Revenue growth contributed **${revenue_total:.0f}M** "
-            f"({rev_share*100:.0f}% of value), "
+            f"({rev_share*100:.1f}% of value), "
             f"of which **{organic_share*100:.0f}%** organic and "
             f"**{(1-organic_share)*100:.0f}%** from add-on M&A.")
 
@@ -113,13 +113,13 @@ def render_lp_narrative(result: AttributionResult) -> str:
         lines.append(
             f"- Margin expansion contributed "
             f"**${c.margin_expansion_mm:.0f}M** "
-            f"({c.margin_expansion_mm / max(1.0, abs(c.total_value_created_mm))*100:.0f}%).")
+            f"({c.margin_expansion_mm / max(1.0, abs(c.total_value_created_mm))*100:.1f}%).")
 
     if c.multiple_expansion_mm > 0:
         lines.append(
             f"- Multiple expansion contributed "
             f"**${c.multiple_expansion_mm:.0f}M** "
-            f"({c.multiple_expansion_mm / max(1.0, abs(c.total_value_created_mm))*100:.0f}%) "
+            f"({c.multiple_expansion_mm / max(1.0, abs(c.total_value_created_mm))*100:.1f}%) "
             f"— note vintage / cycle dependence.")
 
     return "\n".join(lines)

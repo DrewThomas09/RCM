@@ -172,7 +172,7 @@ def simulate_productivity_drift(
         narrative=(
             f"Buyer holds firm on {buyer_proposed_reduction_pct*100:.0f}% "
             f"comp reduction. Median attrition {med_attrition*100:.0f}%; "
-            f"p90 {p90_attrition*100:.0f}%. EBITDA at median: "
+            f"p90 {p90_attrition*100:.1f}%. EBITDA at median: "
             f"${med_ebitda_loss:,.0f}."
         ),
     )
@@ -194,7 +194,7 @@ def simulate_productivity_drift(
         narrative=(
             f"Buyer capitulates — comp ratio drifts up by "
             f"{buyer_proposed_reduction_pct*100:.0f}%"
-            + (f" + {wrvu_inflation_pct*100:.0f}% wRVU inflation "
+            + (f" + {wrvu_inflation_pct*100:.1f}% wRVU inflation "
                f"(CY 2021 echo)" if wrvu_inflation_pct > 0 else "")
             + f". Annual drag: ${capitulate_loss:,.0f}."
         ),

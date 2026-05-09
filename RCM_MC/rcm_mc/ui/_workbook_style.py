@@ -487,7 +487,7 @@ def build_cover_sheet(
         rows.append((
             "Evidence grade:",
             f"{grade['grade']}  —  {grade['observed']} of {grade['total']} inputs observed "
-            f"({grade['pct']:.0f}%)",
+            f"({grade['pct']:.1f}%)",
         ))
 
     start = 3

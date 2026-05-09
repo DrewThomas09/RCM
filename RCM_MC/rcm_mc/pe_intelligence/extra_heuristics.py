@@ -167,7 +167,7 @@ def _h_no_trailing_kpi_reporting(ctx: HeuristicContext) -> Optional[HeuristicHit
         severity=SEV_MEDIUM,
         category="DATA",
         finding=(
-            f"Data coverage {ctx.data_coverage_pct*100:.0f}% suggests "
+            f"Data coverage {ctx.data_coverage_pct*100:.1f}% suggests "
             "trailing-12-month KPI series are not maintained — buyers and "
             "LPs cannot see the trend line."
         ),
@@ -228,7 +228,7 @@ def _h_urban_outpatient_gold_rush(ctx: HeuristicContext) -> Optional[HeuristicHi
         severity=SEV_MEDIUM,
         category="VALUATION",
         finding=(
-            f"Urban outpatient platform, {commercial*100:.0f}% commercial, "
+            f"Urban outpatient platform, {commercial*100:.1f}% commercial, "
             f"exit at {ctx.exit_multiple:.2f}x. This profile has compressed "
             "sharply when category cools — 2023 physician-practice multiples."
         ),

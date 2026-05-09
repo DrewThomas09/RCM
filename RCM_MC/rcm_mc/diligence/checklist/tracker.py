@@ -302,7 +302,7 @@ def summarize_coverage(state: DealChecklistState) -> str:
         )
     return (
         f"{state.open_p0} P0 items still open + {state.open_p1} P1 — "
-        f"P0 coverage {state.p0_coverage*100:.0f}%. "
+        f"P0 coverage {state.p0_coverage*100:.1f}%. "
         f"Do not schedule IC until P0 = 100%."
     )
 

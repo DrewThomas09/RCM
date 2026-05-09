@@ -109,7 +109,7 @@ def _score_contract(
     # 2. Revenue concentration
     if contract.revenue_share >= 0.25:
         score += 0.30
-        flags.append(f"Top-1 revenue share {contract.revenue_share*100:.0f}%.")
+        flags.append(f"Top-1 revenue share {contract.revenue_share*100:.1f}%.")
     elif contract.is_top3 or contract.revenue_share >= 0.15:
         score += 0.15
         flags.append("Top-3 revenue share.")
@@ -185,7 +185,7 @@ def analyze_contract_portfolio(
     actions: List[str] = []
     if maturity_wall >= 0.40:
         actions.append(
-            f"{maturity_wall*100:.0f}% of revenue expires in hold — "
+            f"{maturity_wall*100:.1f}% of revenue expires in hold — "
             "stagger renewals pre-close.")
     if portfolio_concentration >= 0.70:
         actions.append(
@@ -201,11 +201,11 @@ def analyze_contract_portfolio(
         note = "Payer portfolio is quiet — no material contract risk."
     elif high_risk >= 3:
         note = (f"{high_risk} high-risk contract(s) + "
-                f"{maturity_wall*100:.0f}% maturity wall — pre-close "
+                f"{maturity_wall*100:.1f}% maturity wall — pre-close "
                 "renegotiation required.")
     else:
         note = (f"{high_risk} high-risk contract(s); maturity wall "
-                f"{maturity_wall*100:.0f}% of revenue.")
+                f"{maturity_wall*100:.1f}% of revenue.")
 
     return ContractPortfolio(
         per_contract=per_contract,

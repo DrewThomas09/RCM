@@ -234,7 +234,7 @@ def _check_envision(inp: ScanInput) -> PatternCheck:
                 "bankruptcy clock."
             ),
             narrative=(
-                f"OON revenue share {oon*100:.0f}% exceeds the 35% "
+                f"OON revenue share {oon*100:.1f}% exceeds the 35% "
                 f"Envision threshold."
             ),
         )
@@ -246,7 +246,7 @@ def _check_envision(inp: ScanInput) -> PatternCheck:
                 "Envision Healthcare (2023) — OON-heavy ER group pattern."
             ),
             narrative=(
-                f"OON revenue share {oon*100:.0f}% exceeds the 20% "
+                f"OON revenue share {oon*100:.1f}% exceeds the 20% "
                 f"watch threshold."
             ),
         )
@@ -277,7 +277,7 @@ def _check_app(inp: ScanInput) -> PatternCheck:
             ),
             narrative=(
                 f"{hits} of 3 APP indicators present (locum dependency "
-                f"{locum*100:.0f}%, NSA-OON {nsa_present}, "
+                f"{locum*100:.1f}%, NSA-OON {nsa_present}, "
                 f"rollup {rollup})."
             ),
         )
@@ -475,7 +475,7 @@ def _check_nsa_cliff(inp: ScanInput) -> PatternCheck:
             name="NSA_CLIFF", category="REGULATORY", fired=True,
             severity="HIGH" if inp.oon_revenue_share < 0.35 else "CRITICAL",
             narrative=(
-                f"{inp.oon_revenue_share*100:.0f}% OON revenue "
+                f"{inp.oon_revenue_share*100:.1f}% OON revenue "
                 f"exposes target to NSA IDR compression."
             ),
         )

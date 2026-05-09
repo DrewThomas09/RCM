@@ -393,7 +393,7 @@ def render_tax_structure(params: dict = None) -> str:
     <strong style="color:{text}">Tax Thesis:</strong>
     Recommended structure: <strong style="color:{text}">{_html.escape(r.recommended_structure)}</strong>.
     Total optimization opportunity ${r.total_tax_optimization_mm:,.1f}M across step-up shield, PTE benefits,
-    and rollover deferral. Modeled for {_html.escape(state)} with {hold}-year hold and {growth * 100:.0f}% revenue growth.
+    and rollover deferral. Modeled for {_html.escape(state)} with {hold}-year hold and {growth * 100:.1f}% revenue growth.
   </div>
 
 </div>"""

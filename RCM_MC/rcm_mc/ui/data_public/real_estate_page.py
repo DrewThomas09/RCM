@@ -30,9 +30,9 @@ def _ownership_svg(total_sqft: int, owned_sqft: int, leased_sqft: int) -> str:
         f'<rect x="{pad_l}" y="{pad_t}" width="{own_w:.1f}" height="{bar_h}" fill="{pos}" opacity="0.85"/>'
         f'<rect x="{pad_l + own_w:.1f}" y="{pad_t}" width="{leased_w:.1f}" height="{bar_h}" fill="{acc}" opacity="0.55"/>'
         f'<text x="{pad_l + own_w / 2:.1f}" y="{pad_t + bar_h / 2 + 4}" fill="{P["text"]}" font-size="11" '
-        f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">Owned {owned_sqft:,} sqft ({owned_sqft / total_sqft * 100:.0f}%)</text>'
+        f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">Owned {owned_sqft:,} sqft ({owned_sqft / total_sqft * 100:.1f}%)</text>'
         f'<text x="{pad_l + own_w + leased_w / 2:.1f}" y="{pad_t + bar_h / 2 + 4}" fill="{P["text"]}" font-size="11" '
-        f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">Leased {leased_sqft:,} sqft ({leased_sqft / total_sqft * 100:.0f}%)</text>'
+        f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">Leased {leased_sqft:,} sqft ({leased_sqft / total_sqft * 100:.1f}%)</text>'
         f'<text x="{pad_l}" y="18" fill="{text_dim}" font-size="10" font-family="Inter,sans-serif">Real Estate Portfolio Ownership ({total_sqft:,} sqft total)</text>'
         f'</svg>'
     )

@@ -448,7 +448,7 @@ def actionable_insights(summary: pd.DataFrame, sensitivity: Optional[pd.DataFram
     if denial_woff > 0:
         insights.append(
             f"Denial write-offs account for {pretty_money(denial_woff)} "
-            f"({denial_pct:.0f}% of total drag). "
+            f"({denial_pct:.1f}% of total drag). "
             f"Reducing initial denial rates through better prior-auth capture and clinical documentation "
             f"is the highest-leverage intervention."
         )

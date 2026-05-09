@@ -103,15 +103,15 @@ def normalize_ebitda(reported_ebitda_m: float,
 
     if gap_pct >= 20:
         note = (f"Seller's Adjusted EBITDA (${seller_adj:,.1f}M) is "
-                f"{gap_pct:.0f}% above partner's number "
+                f"{gap_pct:.1f}% above partner's number "
                 f"(${partner_adj:,.1f}M). Significant bridge — "
                 "renegotiate purchase price off partner view.")
     elif gap_pct >= 10:
-        note = (f"Seller's bridge carries {gap_pct:.0f}% haircut vs "
+        note = (f"Seller's bridge carries {gap_pct:.1f}% haircut vs "
                 "partner — modest renegotiation leverage.")
     else:
         note = (f"Seller's bridge largely supportable "
-                f"(~{gap_pct:.0f}% haircut).")
+                f"(~{gap_pct:.1f}% haircut).")
 
     return NormalizationResult(
         reported_ebitda_m=round(reported_ebitda_m, 2),

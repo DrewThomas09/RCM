@@ -316,7 +316,7 @@ def compute_demand_profile(
         ),
         "elasticity": (
             f"Price elasticity of {elasticity:.2f}. "
-            f"{'Very inelastic — a 10% rate cut reduces volume only {abs(elasticity)*10:.0f}%.' if abs(elasticity) < 0.2 else 'Moderately inelastic.' if abs(elasticity) < 0.4 else 'Elastic — volume is sensitive to payment rate changes.'}"
+            f"{'Very inelastic — a 10% rate cut reduces volume only {abs(elasticity)*10:.1f}%.' if abs(elasticity) < 0.2 else 'Moderately inelastic.' if abs(elasticity) < 0.4 else 'Elastic — volume is sensitive to payment rate changes.'}"
         ),
         "tailwind": (
             f"Tailwind score of {tailwind:+.0f}. "

@@ -260,12 +260,12 @@ def build_vcp(ctx: VCPContext) -> VCPRoadmap:
                 "reveal levers or the thesis is not yet articulated.")
     elif over_under < -0.20:
         note = (f"VCP only closes "
-                f"{(total_impact / max(0.01, gap))*100:.0f}% of the "
+                f"{(total_impact / max(0.01, gap))*100:.1f}% of the "
                 f"${gap:,.1f}M bridge. The plan doesn't reach target; "
                 "either target is wrong or plan is incomplete.")
     elif over_under > 0.30:
         note = (f"VCP overshoots the bridge by "
-                f"{over_under*100:.0f}%. Either plan is optimistic or "
+                f"{over_under*100:.1f}%. Either plan is optimistic or "
                 "target is conservative. Partners haircut 20-30%.")
     else:
         note = (f"VCP closes ${total_impact:,.1f}M vs ${gap:,.1f}M "

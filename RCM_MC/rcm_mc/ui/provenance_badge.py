@@ -193,7 +193,7 @@ def _render_card(dp: Any) -> str:
             f'<div class="pv-card-row">'
             f'<span>Confidence</span>'
             f'<span class="pv-conf" style="background:'
-            f'{bg};color:{fg};">{conf * 100:.0f}%</span>'
+            f'{bg};color:{fg};">{conf * 100:.1f}%</span>'
             f'</div>')
 
     detail_html = ""

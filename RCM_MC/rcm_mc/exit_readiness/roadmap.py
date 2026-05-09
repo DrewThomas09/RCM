@@ -58,7 +58,7 @@ def _sponsor_to_sponsor_gaps(target: ExitTarget) -> List[ReadinessGap]:
             archetype=ExitArchetype.SPONSOR_TO_SPONSOR,
             title="Heavy cash-pay mix limits recurring-revenue claim",
             description=(
-                f"Cash-pay {target.cash_pay_share*100:.0f}% of "
+                f"Cash-pay {target.cash_pay_share*100:.1f}% of "
                 f"revenue. Sponsor buyers underwrite recurring/"
                 f"contract revenue first; cash-pay is treated as "
                 f"churn-prone. Convert as much as possible to "

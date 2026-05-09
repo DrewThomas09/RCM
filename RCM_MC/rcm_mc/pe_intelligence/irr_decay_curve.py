@@ -102,7 +102,7 @@ def trace_irr_decay(inputs: IRRDecayInputs) -> IRRDecayReport:
         last_above = 0
 
     if last_above == 0:
-        note = (f"IRR never clears {inputs.hurdle_irr*100:.0f}% hurdle "
+        note = (f"IRR never clears {inputs.hurdle_irr*100:.1f}% hurdle "
                 "under this trajectory. Thesis needs multiple "
                 "expansion or better EBITDA growth, not longer hold.")
     elif last_above == len(points):

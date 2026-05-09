@@ -129,7 +129,7 @@ def _curve_svg(
             f'text-anchor="end" font-size="9" '
             f'fill="{P["text_faint"]}" '
             f'font-family="JetBrains Mono, monospace">'
-            f'{irr_v*100:.0f}%</text>'
+            f'{irr_v*100:.1f}%</text>'
         )
         # Right (MOIC) ticks
         moic_v = moic_max * (1 - t)
@@ -468,7 +468,7 @@ def _buyer_fit_cards(buyers: List[BuyerFitScore]) -> str:
             f'<div><div class="et-buyer-stat__label">Multiple delta</div>'
             f'<div class="et-buyer-stat__val">{premium_str}</div></div>'
             f'<div><div class="et-buyer-stat__label">Close certainty</div>'
-            f'<div class="et-buyer-stat__val">{b.close_certainty*100:.0f}%</div></div>'
+            f'<div class="et-buyer-stat__val">{b.close_certainty*100:.1f}%</div></div>'
             f'<div><div class="et-buyer-stat__label">Time to close</div>'
             f'<div class="et-buyer-stat__val">{b.time_to_close_months:.0f} mo</div></div>'
             f'</div>'

@@ -94,7 +94,7 @@ def _optimist(ctx: VoiceContext) -> VoiceParagraph:
         f"Fundamentals. {ctx.deal_name} has ${ctx.recurring_ebitda_m:,.0f}M "
         f"recurring EBITDA and management capable of executing "
         f"{pillar}. Target {ctx.target_moic:.1f}x at "
-        f"{ctx.target_irr*100:.0f}% is defensible; upside case is "
+        f"{ctx.target_irr*100:.1f}% is defensible; upside case is "
         f"{ctx.target_moic + 0.7:.1f}x if roll-up engine and pricing "
         "power compound. Bull case: strategic exit at premium. "
         "This is the best deal in the pipeline."
@@ -148,7 +148,7 @@ def _lp_facing(ctx: VoiceContext) -> VoiceParagraph:
         para += "platform growth + operational lift. "
     para += (
         f"Base case MOIC {ctx.target_moic:.1f}x / IRR "
-        f"{ctx.target_irr*100:.0f}% over 5-year hold. Current "
+        f"{ctx.target_irr*100:.1f}% over 5-year hold. Current "
         "holding posture: constructive; progress tracked against "
         "the 100-day plan and covenant headroom. Principal risks: "
     )

@@ -33,7 +33,7 @@ def _funds_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(f.fund_name)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{f.vintage}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text};font-weight:700">${f.fund_size_b:.1f}B</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{f.called_pct * 100:.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text_dim}">{f.called_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dp_c};font-weight:700">{f.dpi:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{text}">{f.rvpi:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{acc};font-weight:600">{f.tvpi:.2f}x</td>',
@@ -214,7 +214,7 @@ def render_dpi_tracker(params: dict = None) -> str:
   <div style="{cell}"><div style="{h3}">Sector DPI Rollup</div>{s_tbl}</div>
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">DPI Report Card:</strong> Weighted {r.weighted_dpi:.2f}x DPI across {r.total_funds} tracked funds — below the 1.20x needed at 7-year average hold to deliver median vintage returns.
-    {r.below_benchmark_funds} of {r.total_funds} funds below their vintage DPI benchmark ({r.below_benchmark_funds / r.total_funds * 100:.0f}%) — concentrated in 2021-2023 vintages as exit market compressed.
+    {r.below_benchmark_funds} of {r.total_funds} funds below their vintage DPI benchmark ({r.below_benchmark_funds / r.total_funds * 100:.1f}%) — concentrated in 2021-2023 vintages as exit market compressed.
     {q1q2_count} of {r.total_funds} tracked funds are top-half performers by TVPI — defensibility of healthcare alpha intact despite drought.
     {r.total_distributions_b:.2f}B in LTM distributions across portfolio — 48% secondary-buyout, 22% strategic sale, 18% dividend recap, 12% continuation vehicle — secondary/CV taking growing share vs historical 30% share.
     {active_requests} LP liquidity requests active; GPs responding with mix of continuation vehicles, dividend recaps, and accelerated exit sequencing — granular LP engagement is elevated.

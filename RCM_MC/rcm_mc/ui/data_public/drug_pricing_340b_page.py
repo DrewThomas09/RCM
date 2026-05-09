@@ -172,7 +172,7 @@ def _drugs_svg(drugs) -> str:
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{pos}" opacity="0.85"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{text_dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${d.annual_savings_mm:.0f}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(d.category[:12])}</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 24}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{d.discount_pct * 100:.0f}% off</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 24}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{d.discount_pct * 100:.1f}% off</text>'
         )
     return (f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
             f'<rect width="{w}" height="{h}" fill="{bg}"/>{"".join(bars)}'
@@ -249,7 +249,7 @@ def render_drug_pricing_340b(params: dict = None) -> str:
   <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">340B Thesis:</strong> {r.total_covered_entities} covered entities across {_html.escape(platform)} platform;
     ${r.total_drug_spend_mm:,.0f}M WAC-equivalent drug spend produces ${r.total_program_savings_mm:,.0f}M 340B ceiling-price savings
-    ({(r.total_program_savings_mm / r.total_drug_spend_mm) * 100:.0f}% of spend) and ${r.total_margin_mm:,.0f}M net margin ({r.program_margin_pct * 100:.1f}%).
+    ({(r.total_program_savings_mm / r.total_drug_spend_mm) * 100:.1f}% of spend) and ${r.total_margin_mm:,.0f}M net margin ({r.program_margin_pct * 100:.1f}%).
     Contract pharmacy network of {r.contract_pharmacy_network_size:,} retail locations captures spread; weighted audit risk {r.audit_risk_weighted:.1f}/100.
     Manufacturer restrictions (Lilly, Sanofi, Novartis) erode ~${manuf_impact:,.1f}M/yr; audit exposure ${audit_exposure:,.2f}M if findings sustained.
     Diversion and duplicate-discount are material deal-breakers — ongoing compliance program required.

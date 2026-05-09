@@ -443,7 +443,7 @@ def render_sign_to_close_markdown(
         lines.append(
             f"| {risk.name} | {risk.severity} | "
             f"{risk.frequency} | "
-            f"{risk.typical_cost_to_buyer_pct*100:.0f}% EBITDA | "
+            f"{risk.typical_cost_to_buyer_pct*100:.1f}% EBITDA | "
             f"{risk.partner_counter_pre_close} |"
         )
     return "\n".join(lines)

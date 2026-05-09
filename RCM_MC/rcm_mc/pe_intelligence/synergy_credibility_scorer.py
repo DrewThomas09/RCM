@@ -165,10 +165,10 @@ def score_synergies(
     if not claims:
         note = "No synergies claimed."
     elif vs_ebitda >= 0.30:
-        note = (f"Claimed synergies {vs_ebitda*100:.0f}% of entry "
+        note = (f"Claimed synergies {vs_ebitda*100:.1f}% of entry "
                 "EBITDA. Partner-prudent realization "
                 f"${total_credit:,.1f}M "
-                f"({overall_real*100:.0f}% of claimed). "
+                f"({overall_real*100:.1f}% of claimed). "
                 "When synergies are a huge share of the thesis, "
                 "diligence the TOP 3 by owner, not the list.")
     elif overall_real < 0.40:
@@ -177,7 +177,7 @@ def score_synergies(
                 "operational. Underwrite heavily haircut.")
     elif overall_real >= 0.70:
         note = (f"Synergy credibility strong "
-                f"({overall_real*100:.0f}% realized). Signed / "
+                f"({overall_real*100:.1f}% realized). Signed / "
                 "executed actions backing the claims.")
     else:
         note = (f"Standard synergy profile. ${total_credit:,.1f}M "

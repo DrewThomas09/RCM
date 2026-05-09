@@ -113,48 +113,48 @@ def benchmark_physician_comp(inputs: PhysicianCompInputs) -> PhysicianCompReport
     if comp_ratio >= 1.20:
         findings.append(PhysicianCompFinding(
             level="high",
-            description=(f"Total comp {comp_ratio*100:.0f}% of MGMA median — "
+            description=(f"Total comp {comp_ratio*100:.1f}% of MGMA median — "
                          "above market. Expect margin pressure; look for "
                          "productivity justification in wRVU data."),
         ))
     elif comp_ratio <= 0.85:
         findings.append(PhysicianCompFinding(
             level="low",
-            description=(f"Total comp {comp_ratio*100:.0f}% of median — "
+            description=(f"Total comp {comp_ratio*100:.1f}% of median — "
                          "below market. Flight risk to competing practices; "
                          "stress test retention."),
         ))
     else:
         findings.append(PhysicianCompFinding(
             level="ok",
-            description=(f"Total comp {comp_ratio*100:.0f}% of median — "
+            description=(f"Total comp {comp_ratio*100:.1f}% of median — "
                          "within normal band."),
         ))
 
     if wrvu_ratio >= 1.20:
         findings.append(PhysicianCompFinding(
             level="high",
-            description=(f"Comp per wRVU {wrvu_ratio*100:.0f}% of median — "
+            description=(f"Comp per wRVU {wrvu_ratio*100:.1f}% of median — "
                          "inefficient; providers paid for less work."),
         ))
     elif wrvu_ratio <= 0.85:
         findings.append(PhysicianCompFinding(
             level="low",
-            description=(f"Comp per wRVU {wrvu_ratio*100:.0f}% of median — "
+            description=(f"Comp per wRVU {wrvu_ratio*100:.1f}% of median — "
                          "efficient or under-compensated relative to output."),
         ))
 
     if inputs.base_pct >= 0.80:
         findings.append(PhysicianCompFinding(
             level="high",
-            description=(f"Base comp {inputs.base_pct*100:.0f}% of total — "
+            description=(f"Base comp {inputs.base_pct*100:.1f}% of total — "
                          "productivity incentive is weak; expect flat "
                          "volume growth."),
         ))
     elif inputs.base_pct <= 0.30:
         findings.append(PhysicianCompFinding(
             level="low",
-            description=(f"Base comp {inputs.base_pct*100:.0f}% of total — "
+            description=(f"Base comp {inputs.base_pct*100:.1f}% of total — "
                          "heavily productivity-weighted; upside for top "
                          "performers but retention risk for average producers."),
         ))
